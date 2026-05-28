@@ -221,3 +221,38 @@ __marimo__/
 _bmad
 .claude
 .agents
+.cursor
+.bmad-core
+.bmad-creative-writing
+
+
+# Frontend
+node_modules/
+frontend/dist/
+frontend/.quasar/
+
+# Backend
+venv/
+.venv/
+backend/.venv/
+
+# Application data (host-side)
+data/
+local-data/
+
+# Environment
+.env
+.env.local
+
+# Database
+.db/
+
+# Testing
+.pytest_cache/
+.ruff_cache/
+
+# Quasar transient
+frontend/quasar.config.*.temporary.compiled.*
+
+# macOS
+.DS_Store

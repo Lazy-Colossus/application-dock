@@ -131,6 +131,10 @@ A session in progress is automatically saved after every confirmed target, survi
 Users can browse all past finalised sessions from the Archery home screen, newest first, and tap any session to view the full read-only results and per-target breakdown.
 **FRs covered:** FR-2.18, FR-2.19, FR-2.20, FR-2.21
 
+### Epic 5: Polish & UX Refinements (post-validation follow-ups)
+UI polish items surfaced during story validation that don't fit cleanly inside the original epic boundaries. Added 2026-05-28 by the PO; status: pending.
+**FRs covered:** FR-2.4 (display form of session labels)
+
 ---
 
 ## Epic 1: Platform Foundation & Shell

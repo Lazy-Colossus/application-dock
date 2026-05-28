@@ -1,0 +1,17 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: application-dock:latest
+    container_name: application-dock
+    restart: unless-stopped
+    ports:
+      - "8123:8000"
+    environment:
+      DATA_DIR: /data
+    volumes:
+      - archery-data:/data
+
+volumes:
+  archery-data:

@@ -1,0 +1,41 @@
+{
+  "name": "application-dock-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Application Dock — multi-app platform shell (Vue 3 + Quasar + Vite)",
+  "scripts": {
+    "dev": "quasar dev",
+    "build": "quasar build",
+    "lint": "eslint --ext .js,.ts,.vue ./",
+    "format": "prettier --write \"src/**/*.{js,ts,vue,sass,scss,css}\"",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@quasar/extras": "^1.16.12",
+    "pinia": "^2.2.4",
+    "quasar": "^2.17.0",
+    "vue": "^3.5.12",
+    "vue-router": "^4.4.5"
+  },
+  "devDependencies": {
+    "@quasar/app-vite": "^2.0.6",
+    "@types/node": "^22.7.5",
+    "@vitejs/plugin-vue": "^5.1.4",
+    "@vue/test-utils": "^2.4.6",
+    "@vue/eslint-config-typescript": "^14.1.1",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.12.0",
+    "eslint-plugin-vue": "^9.29.0",
+    "happy-dom": "^15.7.4",
+    "prettier": "^3.3.3",
+    "sass": "1.78.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.2",
+    "vue-tsc": "^2.1.6"
+  },
+  "engines": {
+    "node": ">=22.22",
+    "npm": ">=10"
+  }
+}
