@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Results</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0A0A0A;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 32px 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  .phone {
+    width: 375px;
+    min-height: 812px;
+    background: #141414;
+    border-radius: 40px;
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+    display: flex;
+    flex-direction: column;
+  }
+  .app-bar {
+    height: 56px;
+    background: #1E1E1E;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px 0 4px;
+    flex-shrink: 0;
+  }
+  .app-bar-title {
+    color: #F0F0F0;
+    font-weight: 700;
+    font-size: 18px;
+    flex: 1;
+    text-align: center;
+    margin: 0 8px;
+  }
+  .icon-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .subtitle-bar {
+    background: #141414;
+    padding: 8px 16px;
+    text-align: center;
+    color: #8A8A8A;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .scroll-body {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    padding-bottom: 0;
+  }
+  .archer-card {
+    background: #242424;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .rank-num {
+    font-family: 'Roboto Mono', 'Courier New', monospace;
+    font-weight: 700;
+    font-size: 32px;
+    min-width: 36px;
+    flex-shrink: 0;
+  }
+  .rank-1 { color: #C8960A; }
+  .rank-other { color: #8A8A8A; }
+  .archer-info {
+    flex: 1;
+  }
+  .archer-name {
+    color: #F0F0F0;
+    font-size: 16px;
+    font-weight: 500;
+  }
+  .archer-score {
+    font-family: 'Roboto Mono', 'Courier New', monospace;
+    font-weight: 700;
+    font-size: 28px;
+    color: #F0F0F0;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .section-label {
+    color: #8A8A8A;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    margin-top: 4px;
+  }
+  .breakdown-table {
+    background: #242424;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+  .table-header-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1.5fr;
+    gap: 4px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #2A2A2A;
+    margin-bottom: 4px;
+  }
+  .table-header-cell {
+    color: #8A8A8A;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .table-header-cell:not(:first-child) { text-align: right; }
+  .table-data-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1.5fr;
+    gap: 4px;
+    padding: 8px 0;
+    border-bottom: 1px solid #2A2A2A;
+  }
+  .table-data-row:last-child { border-bottom: none; }
+  .table-data-cell {
+    font-family: 'Roboto Mono', 'Courier New', monospace;
+    font-size: 13px;
+    color: #F0F0F0;
+  }
+  .table-data-cell:not(:first-child) { text-align: right; }
+  /* Sticky bottom actions */
+  .bottom-actions {
+    background: #141414;
+    padding: 16px;
+    border-top: 1px solid #2A2A2A;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .btn-accent {
+    width: 100%;
+    height: 56px;
+    background: #C8960A;
+    border: none;
+    border-radius: 8px;
+    color: #F0F0F0;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .btn-secondary {
+    width: 100%;
+    height: 56px;
+    background: transparent;
+    border: 1.5px solid #2A2A2A;
+    border-radius: 8px;
+    color: #F0F0F0;
+    font-size: 16px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="app-bar">
+    <div class="icon-btn">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polyline points="14,4 6,11 14,18" stroke="#8A8A8A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </div>
+    <span class="app-bar-title">Results</span>
+    <div class="icon-btn">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M11 2L2 9V20H8V14H14V20H20V9L11 2Z" stroke="#8A8A8A" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </div>
+  </div>
+  <div class="subtitle-bar">2026-05-28 · 3 archers</div>
+  <div class="scroll-body">
+    <!-- Ranked archer cards -->
+    <div class="archer-card">
+      <span class="rank-num rank-1">#1</span>
+      <div class="archer-info">
+        <div class="archer-name">Jamie</div>
+      </div>
+      <span class="archer-score">284</span>
+    </div>
+    <div class="archer-card">
+      <span class="rank-num rank-other">#2</span>
+      <div class="archer-info">
+        <div class="archer-name">Alice</div>
+      </div>
+      <span class="archer-score">241</span>
+    </div>
+    <div class="archer-card">
+      <span class="rank-num rank-other">#3</span>
+      <div class="archer-info">
+        <div class="archer-name">Ben</div>
+      </div>
+      <span class="archer-score">198</span>
+    </div>
+    <!-- Per-target breakdown -->
+    <div class="section-label">Per-Target Breakdown</div>
+    <div class="breakdown-table">
+      <div class="table-header-row">
+        <span class="table-header-cell">Target</span>
+        <span class="table-header-cell">S1</span>
+        <span class="table-header-cell">S2</span>
+        <span class="table-header-cell">Sub</span>
+      </div>
+      <div class="table-data-row">
+        <span class="table-data-cell">1</span>
+        <span class="table-data-cell">8</span>
+        <span class="table-data-cell">10</span>
+        <span class="table-data-cell">18</span>
+      </div>
+      <div class="table-data-row">
+        <span class="table-data-cell">2</span>
+        <span class="table-data-cell">5</span>
+        <span class="table-data-cell">8</span>
+        <span class="table-data-cell">13</span>
+      </div>
+      <div class="table-data-row">
+        <span class="table-data-cell">3</span>
+        <span class="table-data-cell">11</span>
+        <span class="table-data-cell">8</span>
+        <span class="table-data-cell">19</span>
+      </div>
+      <div class="table-data-row">
+        <span class="table-data-cell">4</span>
+        <span class="table-data-cell">0</span>
+        <span class="table-data-cell">5</span>
+        <span class="table-data-cell">5</span>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-actions">
+    <button class="btn-accent">Finalise Session</button>
+    <button class="btn-secondary">Return to Scoring</button>
+  </div>
+</div>
+</body>
+</html>

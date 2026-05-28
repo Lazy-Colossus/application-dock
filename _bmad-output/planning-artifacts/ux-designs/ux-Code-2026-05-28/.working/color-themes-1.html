@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Archery Score Counter — Color Theme Explorations</title>
+<style>
+  /* ============================================================
+     PAGE SHELL
+  ============================================================ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0A0A0A;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, sans-serif;
+    color: #E0E0E0;
+    padding: 32px 16px 64px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 500;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 8px;
+  }
+  .page-sub {
+    text-align: center;
+    font-size: .75rem;
+    color: #555;
+    margin-bottom: 40px;
+    letter-spacing: .06em;
+  }
+
+  /* 2 × 2 grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 375px);
+    gap: 32px;
+    justify-content: center;
+  }
+
+  @media (max-width: 860px) {
+    .grid { grid-template-columns: 375px; }
+  }
+
+  /* ============================================================
+     CARD SHELL (shared)
+  ============================================================ */
+  .card {
+    width: 375px;
+    border-radius: 20px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* variation label strip */
+  .card-label {
+    padding: 14px 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .card-label h2 {
+    font-size: .95rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .card-label p {
+    font-size: .7rem;
+    opacity: .65;
+    font-style: italic;
+  }
+
+  /* token chips row */
+  .tokens {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 12px 20px 14px;
+  }
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 20px;
+    padding: 3px 9px 3px 5px;
+    font-size: .6rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    border: 1px solid rgba(255,255,255,.08);
+  }
+  .chip-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,.15);
+  }
+
+  /* UI snippet wrapper */
+  .snippet {
+    flex: 1;
+    padding: 0 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* score entry panel */
+  .score-panel {
+    border-radius: 14px;
+    padding: 14px 12px 12px;
+  }
+  .panel-label {
+    font-size: .6rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    opacity: .45;
+    margin-bottom: 10px;
+  }
+  .shot-buttons {
+    display: flex;
+    gap: 6px;
+  }
+  .shot-btn {
+    flex: 1;
+    height: 56px;
+    border-radius: 10px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: -.01em;
+    position: relative;
+  }
+  .shot-btn.bullseye-ring {
+    /* extra gold ring for 11 */
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+
+  /* end score summary bar */
+  .end-summary {
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .end-label {
+    font-size: .65rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    opacity: .5;
+  }
+  .end-value {
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: -.02em;
+  }
+  .end-arrows {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .arrow-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .65rem;
+    font-weight: 700;
+  }
+
+  /* target grid */
+  .target-grid-panel {
+    border-radius: 14px;
+    padding: 14px 12px;
+  }
+  .target-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .target-label {
+    font-size: .6rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    opacity: .45;
+  }
+  .target-badge {
+    font-size: .6rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+  .target-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .target-row {
+    display: flex;
+    gap: 6px;
+  }
+  .target-cell {
+    flex: 1;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .7rem;
+    font-weight: 700;
+    border: 1px solid rgba(255,255,255,.05);
+  }
+
+  /* ============================================================
+     VARIATION 1 — GUNMETAL
+     surface-base:   #1C1C1E  (deep cool gray, iOS-adjacent)
+     surface-raised: #252527  (lifted surface)
+     surface-card:   #2C2C2E  (card / panel)
+     ink-primary:    #F2F2F7  (near-white)
+     ink-secondary:  #8E8E93  (mid gray)
+     accent:         #D4A017  (amber gold)
+     accent-muted:   #7A5C0D  (dark amber)
+     border:         #3A3A3C  (subtle separator)
+  ============================================================ */
+  .gm { background: #1C1C1E; }
+  .gm .card-label h2 { color: #F2F2F7; }
+  .gm .card-label p  { color: #8E8E93; }
+  .gm .chip          { background: #252527; color: #8E8E93; }
+  .gm .score-panel   { background: #2C2C2E; border: 1px solid #3A3A3C; }
+  .gm .panel-label   { color: #F2F2F7; }
+  .gm .shot-btn.s0   { background: #252527; color: #8E8E93; border: 1px solid #3A3A3C; }
+  .gm .shot-btn.s5   { background: #252527; color: #F2F2F7; border: 1px solid #3A3A3C; }
+  .gm .shot-btn.s8   { background: #252527; color: #F2F2F7; border: 1px solid #3A3A3C; }
+  .gm .shot-btn.s10  { background: #3A3000; color: #D4A017; border: 1px solid #5A4A00; }
+  .gm .shot-btn.s11  { background: #D4A017; color: #1C1C1E; border: none; outline-color: #D4A017; }
+  .gm .end-summary   { background: #252527; border: 1px solid #3A3A3C; }
+  .gm .end-label     { color: #8E8E93; }
+  .gm .end-value     { color: #D4A017; }
+  .gm .arrow-dot.confirmed { background: #7A5C0D; color: #D4A017; }
+  .gm .arrow-dot.pending   { background: #3A3A3C; color: #8E8E93; }
+  .gm .target-grid-panel { background: #2C2C2E; border: 1px solid #3A3A3C; }
+  .gm .target-label  { color: #F2F2F7; }
+  .gm .target-badge  { background: #7A5C0D; color: #D4A017; }
+  .gm .target-cell.confirmed { background: #1A3320; color: #4ADE80; border-color: #2A5030; }
+  .gm .target-cell.unconfirmed { background: #252527; color: #8E8E93; border-color: #3A3A3C; }
+
+  /* ============================================================
+     VARIATION 2 — EMBER
+     surface-base:   #1F1A13  (warm dark, hints of brown)
+     surface-raised: #28211A  (warmer lift)
+     surface-card:   #302820  (toasted card)
+     ink-primary:    #F5EDD8  (warm off-white)
+     ink-secondary:  #9A8872  (sandy mid)
+     accent:         #F5C518  (bright gold, IMDb-adjacent)
+     accent-muted:   #7D6010  (deep gold)
+     border:         #3D3020  (warm separator)
+  ============================================================ */
+  .em { background: #1F1A13; }
+  .em .card-label h2 { color: #F5EDD8; }
+  .em .card-label p  { color: #9A8872; }
+  .em .chip          { background: #28211A; color: #9A8872; }
+  .em .score-panel   { background: #302820; border: 1px solid #3D3020; }
+  .em .panel-label   { color: #F5EDD8; }
+  .em .shot-btn.s0   { background: #28211A; color: #9A8872; border: 1px solid #3D3020; }
+  .em .shot-btn.s5   { background: #28211A; color: #F5EDD8; border: 1px solid #3D3020; }
+  .em .shot-btn.s8   { background: #28211A; color: #F5EDD8; border: 1px solid #3D3020; }
+  .em .shot-btn.s10  { background: #3D2F00; color: #F5C518; border: 1px solid #5C4800; }
+  .em .shot-btn.s11  { background: #F5C518; color: #1F1A13; border: none; outline-color: #F5C518; }
+  .em .end-summary   { background: #28211A; border: 1px solid #3D3020; }
+  .em .end-label     { color: #9A8872; }
+  .em .end-value     { color: #F5C518; }
+  .em .arrow-dot.confirmed { background: #7D6010; color: #F5C518; }
+  .em .arrow-dot.pending   { background: #3D3020; color: #9A8872; }
+  .em .target-grid-panel { background: #302820; border: 1px solid #3D3020; }
+  .em .target-label  { color: #F5EDD8; }
+  .em .target-badge  { background: #7D6010; color: #F5C518; }
+  .em .target-cell.confirmed { background: #1C3018; color: #6EE77A; border-color: #2A4820; }
+  .em .target-cell.unconfirmed { background: #28211A; color: #9A8872; border-color: #3D3020; }
+
+  /* ============================================================
+     VARIATION 3 — SLATE
+     surface-base:   #1A1D23  (blue-tinted dark)
+     surface-raised: #22262E  (lifted slate)
+     surface-card:   #292E38  (card surface)
+     ink-primary:    #E8EAF0  (cool near-white)
+     ink-secondary:  #7A8599  (steel mid)
+     accent:         #C9943A  (muted amber, aged bronze)
+     accent-muted:   #614712  (dark bronze)
+     border:         #333A47  (cool separator)
+  ============================================================ */
+  .sl { background: #1A1D23; }
+  .sl .card-label h2 { color: #E8EAF0; }
+  .sl .card-label p  { color: #7A8599; }
+  .sl .chip          { background: #22262E; color: #7A8599; }
+  .sl .score-panel   { background: #292E38; border: 1px solid #333A47; }
+  .sl .panel-label   { color: #E8EAF0; }
+  .sl .shot-btn.s0   { background: #22262E; color: #7A8599; border: 1px solid #333A47; }
+  .sl .shot-btn.s5   { background: #22262E; color: #E8EAF0; border: 1px solid #333A47; }
+  .sl .shot-btn.s8   { background: #22262E; color: #E8EAF0; border: 1px solid #333A47; }
+  .sl .shot-btn.s10  { background: #352200; color: #C9943A; border: 1px solid #503400; }
+  .sl .shot-btn.s11  { background: #C9943A; color: #1A1D23; border: none; outline-color: #C9943A; }
+  .sl .end-summary   { background: #22262E; border: 1px solid #333A47; }
+  .sl .end-label     { color: #7A8599; }
+  .sl .end-value     { color: #C9943A; }
+  .sl .arrow-dot.confirmed { background: #614712; color: #C9943A; }
+  .sl .arrow-dot.pending   { background: #333A47; color: #7A8599; }
+  .sl .target-grid-panel { background: #292E38; border: 1px solid #333A47; }
+  .sl .target-label  { color: #E8EAF0; }
+  .sl .target-badge  { background: #614712; color: #C9943A; }
+  .sl .target-cell.confirmed { background: #18302A; color: #4ECCA3; border-color: #204838; }
+  .sl .target-cell.unconfirmed { background: #22262E; color: #7A8599; border-color: #333A47; }
+
+  /* ============================================================
+     VARIATION 4 — CARBON
+     surface-base:   #141414  (near-black)
+     surface-raised: #1E1E1E  (dark lift)
+     surface-card:   #242424  (card)
+     ink-primary:    #F0F0F0  (bright white)
+     ink-secondary:  #707070  (neutral gray)
+     accent:         #E8B400  (vivid yellow-amber)
+     accent-muted:   #6B5200  (deep amber)
+     border:         #2E2E2E  (hard edge)
+  ============================================================ */
+  .cb { background: #141414; }
+  .cb .card-label h2 { color: #F0F0F0; }
+  .cb .card-label p  { color: #707070; }
+  .cb .chip          { background: #1E1E1E; color: #707070; }
+  .cb .score-panel   { background: #242424; border: 1px solid #2E2E2E; }
+  .cb .panel-label   { color: #F0F0F0; }
+  .cb .shot-btn.s0   { background: #1E1E1E; color: #707070; border: 1px solid #2E2E2E; }
+  .cb .shot-btn.s5   { background: #1E1E1E; color: #F0F0F0; border: 1px solid #2E2E2E; }
+  .cb .shot-btn.s8   { background: #1E1E1E; color: #F0F0F0; border: 1px solid #2E2E2E; }
+  .cb .shot-btn.s10  { background: #2E2000; color: #E8B400; border: 1px solid #4A3600; }
+  .cb .shot-btn.s11  { background: #E8B400; color: #141414; border: none; outline-color: #E8B400; }
+  .cb .end-summary   { background: #1E1E1E; border: 1px solid #2E2E2E; }
+  .cb .end-label     { color: #707070; }
+  .cb .end-value     { color: #E8B400; }
+  .cb .arrow-dot.confirmed { background: #6B5200; color: #E8B400; }
+  .cb .arrow-dot.pending   { background: #2E2E2E; color: #707070; }
+  .cb .target-grid-panel { background: #242424; border: 1px solid #2E2E2E; }
+  .cb .target-label  { color: #F0F0F0; }
+  .cb .target-badge  { background: #6B5200; color: #E8B400; }
+  .cb .target-cell.confirmed { background: #142814; color: #22C55E; border-color: #1E3C1E; }
+  .cb .target-cell.unconfirmed { background: #1E1E1E; color: #707070; border-color: #2E2E2E; }
+</style>
+</head>
+<body>
+
+<h1>Archery Score Counter — Color Theme Explorations</h1>
+<p class="page-sub">4 dark-mode variations · mobile shell (375 px) · inline CSS only</p>
+
+<div class="grid">
+
+  <!-- ====================================================
+       VARIATION 1 · GUNMETAL
+  ==================================================== -->
+  <div class="card gm">
+    <div class="card-label">
+      <h2>Gunmetal</h2>
+      <p>Industrial precision — cold metal, disciplined amber</p>
+    </div>
+
+    <!-- token chips -->
+    <div class="tokens">
+      <span class="chip"><span class="chip-dot" style="background:#1C1C1E"></span>surface-base</span>
+      <span class="chip"><span class="chip-dot" style="background:#252527"></span>surface-raised</span>
+      <span class="chip"><span class="chip-dot" style="background:#2C2C2E"></span>surface-card</span>
+      <span class="chip"><span class="chip-dot" style="background:#F2F2F7"></span>ink-primary</span>
+      <span class="chip"><span class="chip-dot" style="background:#8E8E93"></span>ink-secondary</span>
+      <span class="chip"><span class="chip-dot" style="background:#D4A017"></span>accent</span>
+      <span class="chip"><span class="chip-dot" style="background:#7A5C0D"></span>accent-muted</span>
+      <span class="chip"><span class="chip-dot" style="background:#3A3A3C"></span>border</span>
+    </div>
+
+    <!-- UI snippet -->
+    <div class="snippet">
+      <!-- score entry panel -->
+      <div class="score-panel gm">
+        <div class="panel-label">Arrow Score — End 3 / Arrow 4</div>
+        <div class="shot-buttons">
+          <button class="shot-btn s0 gm">M</button>
+          <button class="shot-btn s5 gm">5</button>
+          <button class="shot-btn s8 gm">8</button>
+          <button class="shot-btn s10 gm">10</button>
+          <button class="shot-btn s11 bullseye-ring gm">11</button>
+        </div>
+      </div>
+      <!-- end summary bar -->
+      <div class="end-summary gm">
+        <div>
+          <div class="end-label">End Total</div>
+          <div class="end-value" style="color:#D4A017">34</div>
+        </div>
+        <div class="end-arrows">
+          <div class="arrow-dot confirmed gm">10</div>
+          <div class="arrow-dot confirmed gm">11</div>
+          <div class="arrow-dot confirmed gm">8</div>
+          <div class="arrow-dot pending gm">—</div>
+          <div class="arrow-dot pending gm">—</div>
+          <div class="arrow-dot pending gm">—</div>
+        </div>
+      </div>
+      <!-- target grid -->
+      <div class="target-grid-panel gm">
+        <div class="target-header">
+          <span class="target-label">Target Allocation</span>
+          <span class="target-badge gm">Round 1</span>
+        </div>
+        <div class="target-rows">
+          <div class="target-row">
+            <div class="target-cell confirmed gm">A1</div>
+            <div class="target-cell confirmed gm">A2</div>
+            <div class="target-cell confirmed gm">A3</div>
+            <div class="target-cell unconfirmed gm">A4</div>
+          </div>
+          <div class="target-row">
+            <div class="target-cell confirmed gm">B1</div>
+            <div class="target-cell unconfirmed gm">B2</div>
+            <div class="target-cell unconfirmed gm">B3</div>
+            <div class="target-cell unconfirmed gm">B4</div>
+          </div>
+          <div class="target-row">
+            <div class="target-cell unconfirmed gm">C1</div>
+            <div class="target-cell unconfirmed gm">C2</div>
+            <div class="target-cell unconfirmed gm">C3</div>
+            <div class="target-cell unconfirmed gm">C4</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       VARIATION 2 · EMBER
+  ==================================================== -->
+  <div class="card em">
+    <div class="card-label">
+      <h2>Ember</h2>
+      <p>Warm intensity — toasted surfaces, burning gold</p>
+    </div>
+
+    <div class="tokens">
+      <span class="chip"><span class="chip-dot" style="background:#1F1A13"></span>surface-base</span>
+      <span class="chip"><span class="chip-dot" style="background:#28211A"></span>surface-raised</span>
+      <span class="chip"><span class="chip-dot" style="background:#302820"></span>surface-card</span>
+      <span class="chip"><span class="chip-dot" style="background:#F5EDD8"></span>ink-primary</span>
+      <span class="chip"><span class="chip-dot" style="background:#9A8872"></span>ink-secondary</span>
+      <span class="chip"><span class="chip-dot" style="background:#F5C518"></span>accent</span>
+      <span class="chip"><span class="chip-dot" style="background:#7D6010"></span>accent-muted</span>
+      <span class="chip"><span class="chip-dot" style="background:#3D3020"></span>border</span>
+    </div>
+
+    <div class="snippet">
+      <div class="score-panel em">
+        <div class="panel-label">Arrow Score — End 3 / Arrow 4</div>
+        <div class="shot-buttons">
+          <button class="shot-btn s0 em">M</button>
+          <button class="shot-btn s5 em">5</button>
+          <button class="shot-btn s8 em">8</button>
+          <button class="shot-btn s10 em">10</button>
+          <button class="shot-btn s11 bullseye-ring em">11</button>
+        </div>
+      </div>
+      <div class="end-summary em">
+        <div>
+          <div class="end-label">End Total</div>
+          <div class="end-value" style="color:#F5C518">34</div>
+        </div>
+        <div class="end-arrows">
+          <div class="arrow-dot confirmed em">10</div>
+          <div class="arrow-dot confirmed em">11</div>
+          <div class="arrow-dot confirmed em">8</div>
+          <div class="arrow-dot pending em">—</div>
+          <div class="arrow-dot pending em">—</div>
+          <div class="arrow-dot pending em">—</div>
+        </div>
+      </div>
+      <div class="target-grid-panel em">
+        <div class="target-header">
+          <span class="target-label">Target Allocation</span>
+          <span class="target-badge em">Round 1</span>
+        </div>
+        <div class="target-rows">
+          <div class="target-row">
+            <div class="target-cell confirmed em">A1</div>
+            <div class="target-cell confirmed em">A2</div>
+            <div class="target-cell confirmed em">A3</div>
+            <div class="target-cell unconfirmed em">A4</div>
+          </div>
+          <div class="target-row">
+            <div class="target-cell confirmed em">B1</div>
+            <div class="target-cell unconfirmed em">B2</div>
+            <div class="target-cell unconfirmed em">B3</div>
+            <div class="target-cell unconfirmed em">B4</div>
+          </div>
+          <div class="target-row">
+            <div class="target-cell unconfirmed em">C1</div>
+            <div class="target-cell unconfirmed em">C2</div>
+            <div class="target-cell unconfirmed em">C3</div>
+            <div class="target-cell unconfirmed em">C4</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       VARIATION 3 · SLATE
+  ==================================================== -->
+  <div class="card sl">
+    <div class="card-label">
+      <h2>Slate</h2>
+      <p>Cool authority — blue-steel composure, aged bronze accent</p>
+    </div>
+
+    <div class="tokens">
+      <span class="chip"><span class="chip-dot" style="background:#1A1D23"></span>surface-base</span>
+      <span class="chip"><span class="chip-dot" style="background:#22262E"></span>surface-raised</span>
+      <span class="chip"><span class="chip-dot" style="background:#292E38"></span>surface-card</span>
+      <span class="chip"><span class="chip-dot" style="background:#E8EAF0"></span>ink-primary</span>
+      <span class="chip"><span class="chip-dot" style="background:#7A8599"></span>ink-secondary</span>
+      <span class="chip"><span class="chip-dot" style="background:#C9943A"></span>accent</span>
+      <span class="chip"><span class="chip-dot" style="background:#614712"></span>accent-muted</span>
+      <span class="chip"><span class="chip-dot" style="background:#333A47"></span>border</span>
+    </div>
+
+    <div class="snippet">
+      <div class="score-panel sl">
+        <div class="panel-label">Arrow Score — End 3 / Arrow 4</div>
+        <div class="shot-buttons">
+          <button class="shot-btn s0 sl">M</button>
+          <button class="shot-btn s5 sl">5</button>
+          <button class="shot-btn s8 sl">8</button>
+          <button class="shot-btn s10 sl">10</button>
+          <button class="shot-btn s11 bullseye-ring sl">11</button>
+        </div>
+      </div>
+      <div class="end-summary sl">
+        <div>
+          <div class="end-label">End Total</div>
+          <div class="end-value" style="color:#C9943A">34</div>
+        </div>
+        <div class="end-arrows">
+          <div class="arrow-dot confirmed sl">10</div>
+          <div class="arrow-dot confirmed sl">11</div>
+          <div class="arrow-dot confirmed sl">8</div>
+          <div class="arrow-dot pending sl">—</div>
+          <div class="arrow-dot pending sl">—</div>
+          <div class="arrow-dot pending sl">—</div>
+        </div>
+      </div>
+      <div class="target-grid-panel sl">
+        <div class="target-header">
+          <span class="target-label">Target Allocation</span>
+          <span class="target-badge sl">Round 1</span>
+        </div>
+        <div class="target-rows">
+          <div class="target-row">
+            <div class="target-cell confirmed sl">A1</div>
+            <div class="target-cell confirmed sl">A2</div>
+            <div class="target-cell confirmed sl">A3</div>
+            <div class="target-cell unconfirmed sl">A4</div>
+          </div>
+          <div class="target-row">
+            <div class="target-cell confirmed sl">B1</div>
+            <div class="target-cell unconfirmed sl">B2</div>
+            <div class="target-cell unconfirmed sl">B3</div>
+            <div class="target-cell unconfirmed sl">B4</div>
+          </div>
+          <div class="target-row">
+            <div class="target-cell unconfirmed sl">C1</div>
+            <div class="target-cell unconfirmed sl">C2</div>
+            <div class="target-cell unconfirmed sl">C3</div>
+            <div class="target-cell unconfirmed sl">C4</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       VARIATION 4 · CARBON
+  ==================================================== -->
+  <div class="card cb">
+    <div class="card-label">
+      <h2>Carbon</h2>
+      <p>High contrast boldness — void-black depth, electric amber</p>
+    </div>
+
+    <div class="tokens">
+      <span class="chip"><span class="chip-dot" style="background:#141414"></span>surface-base</span>
+      <span class="chip"><span class="chip-dot" style="background:#1E1E1E"></span>surface-raised</span>
+      <span class="chip"><span class="chip-dot" style="background:#242424"></span>surface-card</span>
+      <span class="chip"><span class="chip-dot" style="background:#F0F0F0"></span>ink-primary</span>
+      <span class="chip"><span class="chip-dot" style="background:#707070"></span>ink-secondary</span>
+      <span class="chip"><span class="chip-dot" style="background:#E8B400"></span>accent</span>
+      <span class="chip"><span class="chip-dot" style="background:#6B5200"></span>accent-muted</span>
+      <span class="chip"><span class="chip-dot" style="background:#2E2E2E"></span>border</span>
+    </div>
+
+    <div class="snippet">
+      <div class="score-panel cb">
+        <div class="panel-label">Arrow Score — End 3 / Arrow 4</div>
+        <div class="shot-buttons">
+          <button class="shot-btn s0 cb">M</button>
+          <button class="shot-btn s5 cb">5</button>
+          <button class="shot-btn s8 cb">8</button>
+          <button class="shot-btn s10 cb">10</button>
+          <button class="shot-btn s11 bullseye-ring cb">11</button>
+        </div>
+      </div>
+      <div class="end-summary cb">
+        <div>
+          <div class="end-label">End Total</div>
+          <div class="end-value" style="color:#E8B400">34</div>
+        </div>
+        <div class="end-arrows">
+          <div class="arrow-dot confirmed cb">10</div>
+          <div class="arrow-dot confirmed cb">11</div>
+          <div class="arrow-dot confirmed cb">8</div>
+          <div class="arrow-dot pending cb">—</div>
+          <div class="arrow-dot pending cb">—</div>
+          <div class="arrow-dot pending cb">—</div>
+        </div>
+      </div>
+      <div class="target-grid-panel cb">
+        <div class="target-header">
+          <span class="target-label">Target Allocation</span>
+          <span class="target-badge cb">Round 1</span>
+        </div>
+        <div class="target-rows">
+          <div class="target-row">
+            <div class="target-cell confirmed cb">A1</div>
+            <div class="target-cell confirmed cb">A2</div>
+            <div class="target-cell confirmed cb">A3</div>
+            <div class="target-cell unconfirmed cb">A4</div>
+          </div>
+          <div class="target-row">
+            <div class="target-cell confirmed cb">B1</div>
+            <div class="target-cell unconfirmed cb">B2</div>
+            <div class="target-cell unconfirmed cb">B3</div>
+            <div class="target-cell unconfirmed cb">B4</div>
+          </div>
+          <div class="target-row">
+            <div class="target-cell unconfirmed cb">C1</div>
+            <div class="target-cell unconfirmed cb">C2</div>
+            <div class="target-cell unconfirmed cb">C3</div>
+            <div class="target-cell unconfirmed cb">C4</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /grid -->
+</body>
+</html>
