@@ -5,9 +5,9 @@
       {{ store.error }}
     </q-banner>
 
-    <!-- Session label -->
+    <!-- Session name (Story 6.2) -->
     <div class="results-page__label q-mb-md">
-      {{ store.session ? formatSessionLabel(store.session.label) : '' }}
+      {{ store.session ? displaySessionName(store.session) : '' }}
     </div>
 
     <!-- Ranked summary -->
@@ -80,7 +80,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useArcherySessionStore } from '@/apps/archery/stores/useArcherySessionStore';
 import { ranked } from '@/apps/archery/composables/useScores';
-import { formatSessionLabel } from '@/apps/archery/composables/useSessionLabel';
+import { displaySessionName } from '@/apps/archery/composables/useSessionLabel';
 import ResultsTable from '@/apps/archery/components/ResultsTable.vue';
 
 const store = useArcherySessionStore();

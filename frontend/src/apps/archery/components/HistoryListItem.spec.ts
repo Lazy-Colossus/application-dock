@@ -9,6 +9,7 @@ const STUBS = {
 
 const SUMMARY: SessionSummary = {
   label: '2026-05-29',
+  name: '2026-05-29',
   archer_count: 3,
   winner: 'Alice',
   winning_score: 324
@@ -16,6 +17,7 @@ const SUMMARY: SessionSummary = {
 
 const SUFFIX_SUMMARY: SessionSummary = {
   label: '2026-05-29-2',
+  name: '2026-05-29-2',
   archer_count: 2,
   winner: 'Bob',
   winning_score: 200

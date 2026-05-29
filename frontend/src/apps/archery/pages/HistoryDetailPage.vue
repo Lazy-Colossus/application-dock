@@ -22,9 +22,9 @@
 
     <!-- Content -->
     <template v-else-if="store.detail">
-      <!-- Session label heading -->
+      <!-- Session name heading -->
       <div class="history-detail-page__label q-mb-md">
-        {{ formatSessionLabel(store.detail.label) }}
+        {{ displaySessionName(store.detail) }}
       </div>
 
       <!-- Ranked summary cards -->
@@ -61,7 +61,7 @@ import { computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useArcheryHistoryStore } from '@/apps/archery/stores/useArcheryHistoryStore';
 import { ranked } from '@/apps/archery/composables/useScores';
-import { formatSessionLabel } from '@/apps/archery/composables/useSessionLabel';
+import { displaySessionName } from '@/apps/archery/composables/useSessionLabel';
 import ResultsTable from '@/apps/archery/components/ResultsTable.vue';
 
 const route = useRoute();

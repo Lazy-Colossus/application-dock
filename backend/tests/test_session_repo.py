@@ -25,6 +25,8 @@ def _session(
 ) -> SessionData:
     payload: dict[str, Any] = {
         "label": label,
+        "name": label,
+        "date": label[:10] if label[:10].count("-") == 2 else "2026-05-28",
         "created": "2026-05-28T14:00:00Z",
         "status": status,
         "archers": ["Alice", "Bob"],
@@ -169,42 +171,89 @@ def test_list_sessions_silently_ignores_non_session_named_files(
 # ─── in-progress helpers ─────────────────────────────────────────────────────
 
 
-def test_write_in_progress_creates_underscore_file(isolate_data_dir: Path) -> None:
-    session_repo.write_in_progress(_session(label="active"))
-    assert (isolate_data_dir / "_in_progress.json").exists()
+def test_write_in_progress_creates_ip_prefixed_file(isolate_data_dir: Path) -> None:
+    session_repo.write_in_progress(_session(label="2026-05-29"))
+    assert (isolate_data_dir / "_ip_2026-05-29.json").exists()
 
 
 def test_write_in_progress_coerces_status(isolate_data_dir: Path) -> None:
     # Even if caller passes status="finalised", the file is written as in_progress.
-    session_repo.write_in_progress(_session(label="active", status="finalised"))
-    raw = json.loads((isolate_data_dir / "_in_progress.json").read_text())
+    session_repo.write_in_progress(_session(label="2026-05-29", status="finalised"))
+    raw = json.loads((isolate_data_dir / "_ip_2026-05-29.json").read_text())
     assert raw["status"] == "in_progress"
 
 
 def test_read_in_progress_returns_none_when_absent() -> None:
-    assert session_repo.read_in_progress() is None
+    assert session_repo.read_in_progress("2026-05-29") is None
 
 
 def test_read_in_progress_returns_session_when_present() -> None:
-    original = _session(label="active")
+    original = _session(label="2026-05-29")
     session_repo.write_in_progress(original)
-    result = session_repo.read_in_progress()
+    result = session_repo.read_in_progress("2026-05-29")
     assert result is not None
-    assert result.label == "active"
+    assert result.label == "2026-05-29"
     assert result.status == "in_progress"
 
 
 def test_delete_in_progress_removes_file(isolate_data_dir: Path) -> None:
-    session_repo.write_in_progress(_session(label="active"))
-    assert (isolate_data_dir / "_in_progress.json").exists()
-    session_repo.delete_in_progress()
-    assert not (isolate_data_dir / "_in_progress.json").exists()
+    session_repo.write_in_progress(_session(label="2026-05-29"))
+    assert (isolate_data_dir / "_ip_2026-05-29.json").exists()
+    session_repo.delete_in_progress("2026-05-29")
+    assert not (isolate_data_dir / "_ip_2026-05-29.json").exists()
 
 
 def test_delete_in_progress_is_idempotent() -> None:
     # No file exists — must not raise.
-    session_repo.delete_in_progress()
-    session_repo.delete_in_progress()
+    session_repo.delete_in_progress("2026-05-29")
+    session_repo.delete_in_progress("2026-05-29")
+
+
+# ─── multiple concurrent in-progress sessions (Story 6.1) ───────────────────
+
+
+def test_list_in_progress_returns_all_newest_first(isolate_data_dir: Path) -> None:
+    for label in ["2026-05-20", "2026-05-29", "2026-05-21-2", "2026-05-21"]:
+        session_repo.write_in_progress(_session(label=label, date=label[:10]))
+    labels = [s.label for s in session_repo.list_in_progress()]
+    assert labels == ["2026-05-29", "2026-05-21-2", "2026-05-21", "2026-05-20"]
+
+
+def test_list_in_progress_empty_when_none() -> None:
+    assert session_repo.list_in_progress() == []
+
+
+def test_in_progress_labels_helper(isolate_data_dir: Path) -> None:
+    session_repo.write_in_progress(_session(label="2026-05-29"))
+    session_repo.write_in_progress(_session(label="2026-05-29-2"))
+    assert session_repo.list_in_progress_labels() == {"2026-05-29", "2026-05-29-2"}
+
+
+def test_finalised_files_not_listed_as_in_progress(isolate_data_dir: Path) -> None:
+    session_repo.write_session(
+        isolate_data_dir / "2026-05-29.json",
+        _session(label="2026-05-29", status="finalised"),
+    )
+    assert session_repo.list_in_progress() == []
+    assert session_repo.list_session_labels() == {"2026-05-29"}
+
+
+def test_legacy_in_progress_file_is_migrated(isolate_data_dir: Path) -> None:
+    # Pre-Story-6.1 file without name/date.
+    legacy = {
+        "label": "2026-05-29",
+        "created": "2026-05-29T10:00:00Z",
+        "status": "in_progress",
+        "archers": ["Alice", "Bob"],
+        "targets": [],
+    }
+    (isolate_data_dir / "_in_progress.json").write_text(json.dumps(legacy))
+    result = session_repo.read_in_progress("2026-05-29")
+    assert result is not None
+    assert result.name == "2026-05-29"
+    assert result.date == "2026-05-29"
+    assert (isolate_data_dir / "_ip_2026-05-29.json").exists()
+    assert not (isolate_data_dir / "_in_progress.json").exists()
 
 
 # ─── atomicity (best effort) ─────────────────────────────────────────────────

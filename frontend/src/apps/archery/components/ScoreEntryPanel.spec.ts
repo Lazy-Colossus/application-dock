@@ -13,6 +13,8 @@ import type { SessionData } from '@/apps/archery/types';
 
 const SESSION: SessionData = {
   label: '2026-05-29',
+  name: '2026-05-29',
+  date: '2026-05-29',
   created: '2026-05-29T10:00:00Z',
   status: 'in_progress',
   archers: ['Alice', 'Bob'],

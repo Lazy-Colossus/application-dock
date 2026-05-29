@@ -16,6 +16,8 @@ client = TestClient(app)
 
 _SESSION = {
     "label": "2026-05-21",
+    "name": "2026-05-21",
+    "date": "2026-05-21",
     "created": "2026-05-21T10:00:00Z",
     "status": "finalised",
     "archers": ["Alice", "Bob"],

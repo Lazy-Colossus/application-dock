@@ -20,6 +20,7 @@ import { api } from '@/composables/useApi';
 
 const SUMMARY: SessionSummary = {
   label: '2026-05-29',
+  name: '2026-05-29',
   archer_count: 2,
   winner: 'Alice',
   winning_score: 324
@@ -27,6 +28,8 @@ const SUMMARY: SessionSummary = {
 
 const SESSION: SessionData = {
   label: '2026-05-29',
+  name: '2026-05-29',
+  date: '2026-05-29',
   created: '2026-05-29T10:00:00Z',
   status: 'finalised',
   archers: ['Alice'],

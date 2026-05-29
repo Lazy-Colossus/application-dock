@@ -13,8 +13,8 @@ vi.mock('@/composables/useApi', () => ({
 import { api } from '@/composables/useApi';
 
 const SUMMARIES: SessionSummary[] = [
-  { label: '2026-05-29', archer_count: 2, winner: 'Alice', winning_score: 324 },
-  { label: '2026-05-28', archer_count: 3, winner: 'Bob', winning_score: 200 }
+  { label: '2026-05-29', name: '2026-05-29', archer_count: 2, winner: 'Alice', winning_score: 324 },
+  { label: '2026-05-28', name: '2026-05-28', archer_count: 3, winner: 'Bob', winning_score: 200 }
 ];
 
 const router = createRouter({

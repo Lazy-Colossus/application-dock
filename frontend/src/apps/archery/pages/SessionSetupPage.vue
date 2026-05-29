@@ -5,6 +5,16 @@
       {{ store.error }}
     </q-banner>
 
+    <!-- Session name (Story 6.2) — preloaded with today's date, editable -->
+    <q-input
+      v-model="store.draftSessionName"
+      outlined
+      dense
+      class="session-setup-page__session-name q-mb-md"
+      label="Session name"
+      data-testid="session-name-input"
+    />
+
     <div class="text-h5 q-mb-md session-setup-page__heading">Roster</div>
 
     <!-- Name input row -->
@@ -75,20 +85,16 @@ const store = useArcherySessionStore();
 const router = useRouter();
 const inputError = ref<string | null>(null);
 
-onMounted(async () => {
+onMounted(() => {
   // If a session is already active in the store, go straight to scoring.
   if (store.session !== null) {
     void router.replace('/archery/scoring');
     return;
   }
-  // Check the server in case there is an in-progress file we don't know about
-  // (e.g. user navigated here directly, or opened a second browser tab).
-  // Redirect to home so the resume/discard sheet is shown.
-  try {
-    const s = await store.checkInProgress();
-    if (s) void router.replace('/archery');
-  } catch {
-    // network error — stay on setup, user can try to start a session
+  // Preload the session name with today's date (Story 6.2). Multiple concurrent
+  // sessions are allowed, so we do NOT redirect away when others are in progress.
+  if (!store.draftSessionName) {
+    store.draftSessionName = new Date().toISOString().slice(0, 10);
   }
 });
 

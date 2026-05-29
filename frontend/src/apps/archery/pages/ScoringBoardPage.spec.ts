@@ -12,6 +12,8 @@ vi.mock('@/composables/useApi', () => ({
 
 const SESSION = {
   label: '2026-05-29',
+  name: '2026-05-29',
+  date: '2026-05-29',
   created: '2026-05-29T10:00:00Z',
   status: 'in_progress' as const,
   archers: ['Alice', 'Bob'],

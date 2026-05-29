@@ -30,8 +30,17 @@ def patch_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(session_repo.settings, "data_dir", tmp_path)
 
 
-def seed_session(tmp_path: Path, label: str, archers: list[str], targets: list[dict] | None = None) -> None:
-    data = {**_FINALISED_BASE, "label": label, "archers": archers, "targets": targets or []}
+def seed_session(
+    tmp_path: Path, label: str, archers: list[str], targets: list[dict] | None = None
+) -> None:
+    data = {
+        **_FINALISED_BASE,
+        "label": label,
+        "name": label,
+        "date": label[:10],
+        "archers": archers,
+        "targets": targets or [],
+    }
     (tmp_path / f"{label}.json").write_text(json.dumps(data))
 
 
@@ -49,7 +58,12 @@ def test_returns_array_not_envelope(tmp_path: Path) -> None:
 
 def test_excludes_in_progress(tmp_path: Path) -> None:
     seed_session(tmp_path, "2026-05-28", ["Alice"])
-    in_progress = {**_FINALISED_BASE, "label": "2026-05-29", "status": "in_progress", "archers": ["Bob"]}
+    in_progress = {
+        **_FINALISED_BASE,
+        "label": "2026-05-29",
+        "status": "in_progress",
+        "archers": ["Bob"],
+    }
     (tmp_path / "_in_progress.json").write_text(json.dumps(in_progress))
     resp = client.get("/api/archery/sessions")
     assert len(resp.json()) == 1
@@ -76,10 +90,7 @@ def test_summary_fields(tmp_path: Path) -> None:
 
 
 def test_winner_computed_from_all_targets(tmp_path: Path) -> None:
-    targets = [
-        {"number": i + 1, "scores": {"Alice": [10, 8], "Bob": [5, 11]}}
-        for i in range(18)
-    ]
+    targets = [{"number": i + 1, "scores": {"Alice": [10, 8], "Bob": [5, 11]}} for i in range(18)]
     seed_session(tmp_path, "2026-05-29", ["Alice", "Bob"], targets)
     s = client.get("/api/archery/sessions").json()[0]
     # Alice: 18 * 18 = 324; Bob: 18 * 16 = 288

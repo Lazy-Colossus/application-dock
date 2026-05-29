@@ -6,15 +6,18 @@ Routers translate exceptions to HTTP responses — no HTTPException here.
 
 from __future__ import annotations
 
-import json
 from datetime import UTC, date, datetime
-from pathlib import Path
 
 from app.core.config import settings
 from app.repositories import session_repo
-from app.schemas.session import SessionData, SessionSummary
-
-_IN_PROGRESS_FILENAME = "_in_progress.json"
+from app.schemas.session import (
+    TARGET_NUMBER_MAX,
+    TARGET_NUMBER_MIN,
+    InProgressSummary,
+    SessionData,
+    SessionSummary,
+    TargetScores,
+)
 
 
 def generate_session_label(today: date | None = None) -> str:
@@ -24,120 +27,137 @@ def generate_session_label(today: date | None = None) -> str:
       - First session of the day: YYYY-MM-DD
       - Subsequent:               YYYY-MM-DD-2, YYYY-MM-DD-3, …
 
-    Collision check covers both finalised .json files and the current
-    _in_progress.json label (so an in-progress session on the same day
-    is counted).
+    Collisions are checked against BOTH finalised labels and all in-progress
+    labels, so concurrent same-day sessions get distinct labels (Story 6.1).
     """
     if today is None:
         today = datetime.now(UTC).date()
 
     base = today.isoformat()
-    data_dir: Path = settings.data_dir
+    taken = session_repo.list_session_labels() | session_repo.list_in_progress_labels()
 
-    # Collect all labels that already exist.
-    taken: set[str] = set()
-
-    # Finalised session files: YYYY-MM-DD.json or YYYY-MM-DD-N.json
-    for p in data_dir.glob(f"{base}*.json"):
-        stem = p.stem
-        taken.add(stem)
-
-    # In-progress session label (if any)
-    in_progress_path = data_dir / _IN_PROGRESS_FILENAME
-    if in_progress_path.exists():
-        try:
-            raw = json.loads(in_progress_path.read_text(encoding="utf-8"))
-            label = raw.get("label", "")
-            if label.startswith(base):
-                taken.add(label)
-        except (json.JSONDecodeError, OSError):
-            pass
-
-    # Find first non-colliding label
     if base not in taken:
         return base
     n = 2
-    while True:
-        candidate = f"{base}-{n}"
-        if candidate not in taken:
-            return candidate
+    while f"{base}-{n}" in taken:
         n += 1
+    return f"{base}-{n}"
 
 
 def _pick_finalise_label(base: str, prefer: str) -> str:
-    """Return the preferred label if its .json file is free, else the next suffix.
+    """Return the preferred label if free among finalised files, else next suffix.
 
-    Unlike generate_session_label, this intentionally ignores _in_progress.json
-    because we are replacing it; only already-finalised files are collisions.
+    Unlike generate_session_label, this only considers already-finalised labels
+    as collisions — the in-progress file being finalised is expected to exist.
     """
-    data_dir: Path = settings.data_dir
-    if not (data_dir / f"{prefer}.json").exists():
+    finalised = session_repo.list_session_labels()
+    if prefer not in finalised:
         return prefer
     n = 2
-    while True:
-        candidate = f"{base}-{n}"
-        if not (data_dir / f"{candidate}.json").exists():
-            return candidate
+    while f"{base}-{n}" in finalised:
         n += 1
+    return f"{base}-{n}"
 
 
-def finalise_in_progress() -> SessionData:
-    """Finalise the active in-progress session to a permanent file.
+def _materialise_targets(session: SessionData) -> list[TargetScores]:
+    """Build the full 1..18 target list with all unentered shots set to 0.
+
+    Story 7.1: finalising fills every missing target/archer/shot with 0 so the
+    finalised file satisfies the strict finalised schema.
+    """
+    existing = {t.number: t for t in session.targets}
+    materialised: list[TargetScores] = []
+    for number in range(TARGET_NUMBER_MIN, TARGET_NUMBER_MAX + 1):
+        prior = existing.get(number)
+        scores: dict[str, list[int]] = {}
+        for archer in session.archers:
+            shots = prior.scores.get(archer) if prior else None
+            first = shots[0] if shots else None
+            second = shots[1] if shots else None
+            scores[archer] = [first or 0, second or 0]
+        materialised.append(TargetScores(number=number, scores=scores, confirmed=True))
+    return materialised
+
+
+def finalise_in_progress(label: str) -> SessionData:
+    """Finalise one in-progress session to a permanent file.
+
+    Unentered targets and shots are written as 0 (Story 7.1). Other in-progress
+    sessions are untouched.
 
     Raises:
-        FileNotFoundError: if no in-progress session exists.
+        FileNotFoundError: if no in-progress session exists for `label`.
     """
-    current = session_repo.read_in_progress()
+    current = session_repo.read_in_progress(label)
     if current is None:
-        raise FileNotFoundError("no in-progress session")
+        raise FileNotFoundError(label)
 
-    original_label = current.label
-    base = original_label[:10]  # YYYY-MM-DD prefix
-    label = _pick_finalise_label(base, original_label)
+    base = current.label[:10]  # YYYY-MM-DD prefix
+    final_label = _pick_finalise_label(base, current.label)
 
-    finalised = current.model_copy(update={"status": "finalised", "label": label})
-    session_repo.write_session(settings.data_dir / f"{label}.json", finalised)
-    session_repo.delete_in_progress()
+    finalised = current.model_copy(
+        update={
+            "status": "finalised",
+            "label": final_label,
+            "targets": _materialise_targets(current),
+        }
+    )
+    session_repo.write_session(settings.data_dir / f"{final_label}.json", finalised)
+    session_repo.delete_in_progress(label)
     return finalised
 
 
-def get_in_progress() -> SessionData | None:
-    return session_repo.read_in_progress()
+def get_in_progress(label: str) -> SessionData | None:
+    return session_repo.read_in_progress(label)
 
 
-def discard_in_progress() -> None:
-    session_repo.delete_in_progress()
+def list_in_progress_summaries() -> list[InProgressSummary]:
+    """Lightweight rows for the home screen / resume picker, newest first."""
+    return [
+        InProgressSummary(
+            label=s.label,
+            name=s.name,
+            date=s.date,
+            confirmed_targets=len(s.targets),
+        )
+        for s in session_repo.list_in_progress()
+    ]
+
+
+def discard_in_progress(label: str) -> None:
+    session_repo.delete_in_progress(label)
 
 
 def update_in_progress(session: SessionData) -> SessionData:
     """Persist an updated in-progress session (e.g. after scoring a target).
 
     Raises:
-        FileNotFoundError: if no in-progress session exists.
+        FileNotFoundError: if no in-progress session exists for the label.
     """
-    if session_repo.read_in_progress() is None:
-        raise FileNotFoundError("no in-progress session")
+    if session_repo.read_in_progress(session.label) is None:
+        raise FileNotFoundError(session.label)
 
     updated = session.model_copy(update={"status": "in_progress"})
     session_repo.write_in_progress(updated)
     return updated
 
 
-def create_session(archers: list[str]) -> SessionData:
+def create_session(archers: list[str], name: str | None = None) -> SessionData:
     """Create a new in-progress session and persist it.
 
-    Raises:
-        RuntimeError: if an in-progress session already exists.
+    Multiple concurrent in-progress sessions are allowed (Story 6.1). `name`
+    defaults to the label (the date) when omitted or blank.
     """
-    in_progress_path = settings.data_dir / _IN_PROGRESS_FILENAME
-    if in_progress_path.exists():
-        raise RuntimeError("session already in progress")
-
     label = generate_session_label()
-    created = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now = datetime.now(UTC)
+    created = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    resolved_name = (name or "").strip() or label
 
     session = SessionData(
         label=label,
+        name=resolved_name,
+        date=now.date().isoformat(),
         created=created,
         status="in_progress",
         archers=archers,
@@ -151,10 +171,17 @@ def create_session(archers: list[str]) -> SessionData:
 
 
 def _archer_total(s: SessionData, archer: str) -> int:
-    """Sum both shots across all targets for one archer. Missing archers → 0."""
-    return sum(
-        t.scores.get(archer, [0, 0])[0] + t.scores.get(archer, [0, 0])[1] for t in s.targets
-    )
+    """Sum both shots across all targets for one archer.
+
+    Missing archers, missing targets, and unentered (null) shots all count as 0
+    so totals work for in-progress sessions too (Story 7.1).
+    """
+    total = 0
+    for t in s.targets:
+        shots = t.scores.get(archer)
+        if shots:
+            total += (shots[0] or 0) + (shots[1] or 0)
+    return total
 
 
 def _summarise(s: SessionData) -> SessionSummary:
@@ -168,6 +195,7 @@ def _summarise(s: SessionData) -> SessionSummary:
     winner_name, winner_score = totals[0] if totals else ("", 0)
     return SessionSummary(
         label=s.label,
+        name=s.name,
         archer_count=len(s.archers),
         winner=winner_name,
         winning_score=winner_score,

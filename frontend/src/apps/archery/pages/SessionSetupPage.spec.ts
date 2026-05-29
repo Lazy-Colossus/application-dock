@@ -119,7 +119,7 @@ describe('SessionSetupPage', () => {
 
   it('confirm calls store.createSession', async () => {
     const wrapper = mountPage();
-    await flushPromises(); // wait for onMounted checkInProgress to settle
+    await flushPromises(); // wait for onMounted to settle
     const store = useArcherySessionStore();
     store.draftRoster = ['Alice'];
     store.createSession = vi.fn().mockResolvedValue(undefined);
@@ -127,5 +127,14 @@ describe('SessionSetupPage', () => {
     const confirmBtn = wrapper.find('[data-testid="confirm-btn"]');
     await confirmBtn.trigger('click');
     expect(store.createSession).toHaveBeenCalled();
+  });
+
+  it('preloads the session-name input with today’s date (Story 6.2)', async () => {
+    const wrapper = mountPage();
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+    const today = new Date().toISOString().slice(0, 10);
+    const input = wrapper.find('[data-testid="session-name-input"] input');
+    expect((input.element as HTMLInputElement).value).toBe(today);
   });
 });

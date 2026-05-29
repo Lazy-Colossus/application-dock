@@ -1,11 +1,11 @@
 <template>
   <button
     class="hli row items-center"
-    :aria-label="`Session ${formatSessionLabel(summary.label)}, ${summary.archer_count} archers, winner ${summary.winner} with ${summary.winning_score} points`"
+    :aria-label="`Session ${displaySessionName(summary)}, ${summary.archer_count} archers, winner ${summary.winner} with ${summary.winning_score} points`"
     @click="emit('tap', summary.label)"
   >
     <div class="col column no-wrap q-py-md q-pl-md">
-      <span class="hli__label">{{ formatSessionLabel(summary.label) }}</span>
+      <span class="hli__label">{{ displaySessionName(summary) }}</span>
       <span class="hli__sub">
         {{ summary.archer_count }} archers — Winner: {{ summary.winner }} ({{ summary.winning_score }})
       </span>
@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { formatSessionLabel } from '@/apps/archery/composables/useSessionLabel';
+import { displaySessionName } from '@/apps/archery/composables/useSessionLabel';
 import type { SessionSummary } from '@/apps/archery/types';
 
 defineProps<{ summary: SessionSummary }>();

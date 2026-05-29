@@ -5,6 +5,8 @@ export interface TargetScores {
 
 export interface SessionData {
   label: string;
+  name: string;
+  date: string;
   created: string;
   status: 'in_progress' | 'finalised';
   archers: string[];
@@ -13,7 +15,15 @@ export interface SessionData {
 
 export interface SessionSummary {
   label: string;
+  name: string;
   archer_count: number;
   winner: string;
   winning_score: number;
+}
+
+export interface InProgressSummary {
+  label: string;
+  name: string;
+  date: string;
+  confirmed_targets: number;
 }

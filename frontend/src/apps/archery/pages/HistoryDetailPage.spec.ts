@@ -14,6 +14,8 @@ import { api } from '@/composables/useApi';
 
 const SESSION: SessionData = {
   label: '2026-05-21',
+  name: '2026-05-21',
+  date: '2026-05-21',
   created: '2026-05-21T10:00:00Z',
   status: 'finalised',
   archers: ['Alice', 'Bob'],
@@ -72,12 +74,21 @@ describe('HistoryDetailPage', () => {
     expect(wrapper.find('.results-table-stub').exists()).toBe(true);
   });
 
-  it('shows session label formatted', async () => {
+  it('formats a date-default session label as YYYY-MM-DD #N', async () => {
+    // A date-default session has name === label, so the suffix-format rule applies.
     const { wrapper, store } = await mountAt('2026-05-21-2');
     store.detailLoading = false;
-    store.detail = { ...SESSION, label: '2026-05-21-2' };
+    store.detail = { ...SESSION, label: '2026-05-21-2', name: '2026-05-21-2' };
     await wrapper.vm.$nextTick();
     expect(wrapper.find('.history-detail-page__label').text()).toBe('2026-05-21 #2');
+  });
+
+  it('shows a custom session name verbatim', async () => {
+    const { wrapper, store } = await mountAt('2026-05-21-2');
+    store.detailLoading = false;
+    store.detail = { ...SESSION, label: '2026-05-21-2', name: 'Club Champs' };
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('.history-detail-page__label').text()).toBe('Club Champs');
   });
 
   it('shows error banner when detailError is set', async () => {

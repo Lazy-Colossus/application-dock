@@ -75,18 +75,12 @@ import ScoreEntryPanel from '@/apps/archery/components/ScoreEntryPanel.vue';
 const store = useArcherySessionStore();
 const router = useRouter();
 
-onMounted(async () => {
+onMounted(() => {
+  // With multiple concurrent sessions, the board can only render the session
+  // already loaded into the store (via create or resume). If none is loaded,
+  // there is nothing to disambiguate here — send the operator home to pick one.
   if (store.session === null) {
-    try {
-      const s = await store.checkInProgress();
-      if (s) {
-        store.session = s;
-      } else {
-        void router.replace('/archery');
-      }
-    } catch {
-      void router.replace('/archery');
-    }
+    void router.replace('/archery');
   }
 });
 
