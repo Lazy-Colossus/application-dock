@@ -17,5 +17,10 @@ config.global.stubs = {
   'q-banner': { template: '<div><slot /></div>' },
   'q-spinner': true,
   'q-dialog': { template: '<div><slot /></div>' },
-  'q-bottom-sheet': { template: '<div><slot /></div>' }
+  'q-bottom-sheet': { template: '<div><slot /></div>' },
+  'q-input': {
+    template: '<div><input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" /><div v-if="errorMessage">{{ errorMessage }}</div></div>',
+    props: ['modelValue', 'error', 'errorMessage'],
+    emits: ['update:modelValue']
+  }
 };

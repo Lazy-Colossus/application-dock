@@ -10,6 +10,4 @@ when running tests outside the container.
 import os
 import tempfile
 
-os.environ.setdefault(
-    "DATA_DIR", tempfile.mkdtemp(prefix="archery-test-data-")
-)
+os.environ.setdefault("DATA_DIR", tempfile.mkdtemp(prefix="archery-test-data-"))

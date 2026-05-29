@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
-from app.routers import shell
+from app.routers import archery, shell
 
 app = FastAPI(title="Application Dock")
 
@@ -19,6 +19,7 @@ def health() -> dict[str, str]:
 
 app.include_router(api_router)
 app.include_router(shell.router)
+app.include_router(archery.router)
 
 
 # Serve the built Quasar SPA when present (production / post-build). In dev the
