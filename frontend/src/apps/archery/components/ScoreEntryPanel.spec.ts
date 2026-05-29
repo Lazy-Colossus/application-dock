@@ -83,30 +83,19 @@ describe('ScoreEntryPanel', () => {
     expect(wrapper.text()).toContain('Shot 1 of 2');
   });
 
-  it('confirm button disabled until all shots complete', async () => {
+  it('confirm button is always enabled (Story 7.3)', () => {
     const { wrapper } = mountPanel();
     const confirmBtn = wrapper.find('[data-testid="confirm-btn"]');
-    expect(confirmBtn.attributes('disabled')).toBeDefined();
-
-    // Fill Alice
-    await shotBtnByValue(wrapper, 5).trigger('click');
-    await shotBtnByValue(wrapper, 8).trigger('click');
-    // Still need Bob
-    expect(confirmBtn.attributes('disabled')).toBeDefined();
-
-    // Fill Bob
-    await shotBtnByValue(wrapper, 10).trigger('click');
-    await shotBtnByValue(wrapper, 11).trigger('click');
     expect(confirmBtn.attributes('disabled')).toBeUndefined();
   });
 
-  it('confirm calls saveTarget with correct data and closes panel', async () => {
+  it('confirm with a fully entered target saves it confirmed', async () => {
     const { wrapper, store } = mountPanel();
     const saveSpy = vi.spyOn(store, 'saveTarget');
     const closeSpy = vi.spyOn(store, 'closeTarget');
 
-    await shotBtnByValue(wrapper, 5).trigger('click');  // Alice shot 1
-    await shotBtnByValue(wrapper, 8).trigger('click');  // Alice shot 2 → advance to Bob
+    await shotBtnByValue(wrapper, 5).trigger('click'); // Alice shot 1
+    await shotBtnByValue(wrapper, 8).trigger('click'); // Alice shot 2 → advance to Bob
     await shotBtnByValue(wrapper, 10).trigger('click'); // Bob shot 1
     await shotBtnByValue(wrapper, 11).trigger('click'); // Bob shot 2
 
@@ -115,30 +104,51 @@ describe('ScoreEntryPanel', () => {
 
     expect(saveSpy).toHaveBeenCalledWith({
       number: 1,
-      scores: { Alice: [5, 8], Bob: [10, 11] }
+      scores: { Alice: [5, 8], Bob: [10, 11] },
+      confirmed: true
     });
     expect(closeSpy).toHaveBeenCalled();
   });
 
-  it('back link hidden on first archer first shot', () => {
+  it('confirm zero-fills unentered shots and marks confirmed (Story 7.3)', async () => {
+    const { wrapper, store } = mountPanel();
+    const saveSpy = vi.spyOn(store, 'saveTarget');
+
+    // Enter only Alice's first shot; leave the rest blank.
+    await shotBtnByValue(wrapper, 11).trigger('click');
+
+    await wrapper.find('[data-testid="confirm-btn"]').trigger('click');
+    await wrapper.vm.$nextTick();
+
+    expect(saveSpy).toHaveBeenCalledWith({
+      number: 1,
+      scores: { Alice: [11, 0], Bob: [0, 0] },
+      confirmed: true
+    });
+  });
+
+  it('tapping an archer chip jumps to that archer (Story 7.4)', async () => {
     const { wrapper } = mountPanel();
+    const chips = wrapper.findAll('[data-testid="archer-chip"]');
+    await chips[1].trigger('click'); // Bob
+    expect(wrapper.find('.sep__archer-name').text()).toBe('Bob');
+  });
+
+  it('tapping a shot slot then a value writes that slot (Story 7.4)', async () => {
+    const { wrapper } = mountPanel();
+    // Use the last archer so the post-shot auto-advance doesn't move off them.
+    await wrapper.findAll('[data-testid="archer-chip"]')[1].trigger('click'); // Bob
+    await wrapper.find('[data-testid="slot-1"]').trigger('click'); // select shot 2
+    await shotBtnByValue(wrapper, 8).trigger('click');
+    expect(wrapper.find('.sep__archer-name').text()).toBe('Bob');
+    expect(wrapper.find('[data-testid="slot-1"]').text()).toContain('8');
+    expect(wrapper.find('[data-testid="slot-0"]').text().trim()).toBe('');
+  });
+
+  it('has no back-to-name link (Story 7.4)', async () => {
+    const { wrapper } = mountPanel();
+    await shotBtnByValue(wrapper, 5).trigger('click');
     expect(wrapper.find('.sep__back-link').exists()).toBe(false);
-  });
-
-  it('back link visible after advancing', async () => {
-    const { wrapper } = mountPanel();
-    await shotBtnByValue(wrapper, 5).trigger('click'); // shot 1 → now on shot 2
-    expect(wrapper.find('.sep__back-link').exists()).toBe(true);
-  });
-
-  it('back link navigates back preserving values', async () => {
-    const { wrapper } = mountPanel();
-    await shotBtnByValue(wrapper, 5).trigger('click'); // Alice shot 1 = 5, now shot 2
-    await wrapper.find('.sep__back-link').trigger('click'); // back to shot 1
-    expect(wrapper.text()).toContain('Shot 1 of 2');
-    // Shot 1 slot should still show 5
-    const slots = wrapper.findAll('.sep__slot');
-    expect(slots[0].text()).toContain('5');
   });
 
   it('pre-populates from existing confirmed target', () => {
@@ -153,21 +163,39 @@ describe('ScoreEntryPanel', () => {
     expect(slots[1].text()).toContain('8');
   });
 
-  it('close button shows discard dialog when entries present', async () => {
-    const { wrapper } = mountPanel();
-    await shotBtnByValue(wrapper, 5).trigger('click');
-    // Find the X close button (the button with icon="close" label area)
-    const closeBtn = wrapper.find('.sep__close');
-    await closeBtn.trigger('click');
-    expect(wrapper.find('[data-testid="discard-confirm-btn"]').exists()).toBe(true);
+  it('X-close saves the partial entry unconfirmed, then closes (Story 7.2)', async () => {
+    const { wrapper, store } = mountPanel();
+    const saveSpy = vi.spyOn(store, 'saveTarget');
+    const closeSpy = vi.spyOn(store, 'closeTarget');
+
+    await shotBtnByValue(wrapper, 5).trigger('click'); // Alice shot 1 = 5
+    await wrapper.find('[data-testid="close-btn"]').trigger('click');
+    await wrapper.vm.$nextTick();
+
+    expect(saveSpy).toHaveBeenCalledWith({
+      number: 1,
+      scores: { Alice: [5, null], Bob: [null, null] },
+      confirmed: false
+    });
+    expect(closeSpy).toHaveBeenCalled();
   });
 
-  it('discard guard forceClose calls closeTarget', async () => {
+  it('X-close with nothing entered just closes without saving (Story 7.2)', async () => {
     const { wrapper, store } = mountPanel();
+    const saveSpy = vi.spyOn(store, 'saveTarget');
     const closeSpy = vi.spyOn(store, 'closeTarget');
-    await shotBtnByValue(wrapper, 5).trigger('click');
-    await wrapper.find('.sep__close').trigger('click');
-    await wrapper.find('[data-testid="discard-confirm-btn"]').trigger('click');
+
+    await wrapper.find('[data-testid="close-btn"]').trigger('click');
+    await wrapper.vm.$nextTick();
+
+    expect(saveSpy).not.toHaveBeenCalled();
     expect(closeSpy).toHaveBeenCalled();
+  });
+
+  it('has no discard guard dialog (Story 7.2)', async () => {
+    const { wrapper } = mountPanel();
+    await shotBtnByValue(wrapper, 5).trigger('click');
+    await wrapper.find('[data-testid="close-btn"]').trigger('click');
+    expect(wrapper.find('[data-testid="discard-confirm-btn"]').exists()).toBe(false);
   });
 });

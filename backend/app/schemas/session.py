@@ -167,6 +167,24 @@ class CreateSessionRequest(BaseModel):
         return value
 
 
+class AddPlayerRequest(BaseModel):
+    """POST /api/archery/players request body (Story 8.2)."""
+
+    name: str
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def _trim(cls, value: object) -> object:
+        return value.strip() if isinstance(value, str) else value
+
+    @field_validator("name")
+    @classmethod
+    def _non_empty(cls, value: str) -> str:
+        if value == "":
+            raise ValueError("player name must be non-empty")
+        return value
+
+
 class SessionSummary(BaseModel):
     """One row in GET /api/archery/sessions (consumed in Story 4.1).
 

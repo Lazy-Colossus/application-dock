@@ -20,6 +20,8 @@ vi.mock('@/composables/useApi', () => ({
 
 import { api } from '@/composables/useApi';
 
+const focusSpy = vi.fn();
+
 const router = createRouter({
   history: createMemoryHistory(),
   routes: [
@@ -43,8 +45,13 @@ function mountPage() {
         },
         'q-input': {
           template: '<div><input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" /><div v-if="errorMessage" data-testid="input-error">{{ errorMessage }}</div></div>',
-          props: ['modelValue', 'error', 'errorMessage'],
-          emits: ['update:modelValue']
+          props: ['modelValue', 'error', 'errorMessage', 'label'],
+          emits: ['update:modelValue'],
+          methods: {
+            focus() {
+              focusSpy();
+            }
+          }
         },
         'ArcherChip': {
           template: '<div class="archer-chip">{{ name }}<button @click="$emit(\'remove\')">x</button></div>',
@@ -127,6 +134,27 @@ describe('SessionSetupPage', () => {
     const confirmBtn = wrapper.find('[data-testid="confirm-btn"]');
     await confirmBtn.trigger('click');
     expect(store.createSession).toHaveBeenCalled();
+  });
+
+  it('keeps focus in the name field after a successful add (Story 8.1)', async () => {
+    const wrapper = mountPage();
+    const store = useArcherySessionStore();
+    store.draftName = 'Alice';
+    focusSpy.mockClear();
+    await wrapper.findAll('button')[0].trigger('click');
+    await wrapper.vm.$nextTick();
+    expect(store.draftName).toBe('');
+    expect(focusSpy).toHaveBeenCalled();
+  });
+
+  it('keeps focus in the name field after a rejected add (Story 8.1)', async () => {
+    const wrapper = mountPage();
+    const store = useArcherySessionStore();
+    store.draftName = '';
+    focusSpy.mockClear();
+    await wrapper.findAll('button')[0].trigger('click');
+    await wrapper.vm.$nextTick();
+    expect(focusSpy).toHaveBeenCalled();
   });
 
   it('preloads the session-name input with today’s date (Story 6.2)', async () => {

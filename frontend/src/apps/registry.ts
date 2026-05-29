@@ -13,8 +13,9 @@ export interface AppDescriptor {
 export const apps: AppDescriptor[] = [
   {
     id: 'archery',
+    // Thematic monochrome target reticle (Material Icons) — Story 9.2.
     label: 'Archery Score Counter',
-    icon: 'sports_score',
+    icon: 'adjust',
     route: '/archery'
   }
 ];

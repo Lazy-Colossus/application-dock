@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Path
 
 from app.schemas.session import (
+    AddPlayerRequest,
     CreateSessionRequest,
     InProgressSummary,
     SessionData,
@@ -16,6 +17,27 @@ _LABEL_PATTERN = r"^\d{4}-\d{2}-\d{2}(-\d+)?$"
 @router.post("/sessions", response_model=SessionData)
 def create_session(req: CreateSessionRequest) -> SessionData:
     return archery_service.create_session(req.archers, req.name)
+
+
+# ── Recurring players (Story 8.2) ────────────────────────────────────────────
+
+
+@router.get("/players", response_model=list[str])
+def list_players() -> list[str]:
+    return archery_service.list_recurring_players()
+
+
+@router.post("/players", response_model=list[str])
+def add_player(req: AddPlayerRequest) -> list[str]:
+    try:
+        return archery_service.add_recurring_player(req.name)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.delete("/players/{name}", response_model=list[str])
+def remove_player(name: str) -> list[str]:
+    return archery_service.remove_recurring_player(name)
 
 
 @router.get("/sessions", response_model=list[SessionSummary])

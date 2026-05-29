@@ -1,6 +1,9 @@
 export interface TargetScores {
   number: number;
-  scores: Record<string, [number, number]>;
+  // Mid-session a shot may be null ("not yet entered"); 0 is a real value.
+  scores: Record<string, [number | null, number | null]>;
+  // Source of truth for the green board state (Story 7.1). Absent ⇒ not confirmed.
+  confirmed?: boolean;
 }
 
 export interface SessionData {

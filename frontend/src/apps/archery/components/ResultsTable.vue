@@ -24,10 +24,10 @@
           >
             <template v-if="scoreFor(n, archer)">
               <span class="results-table__shots">
-                {{ scoreFor(n, archer)![0] }} / {{ scoreFor(n, archer)![1] }}
+                {{ scoreFor(n, archer)![0] ?? 0 }} / {{ scoreFor(n, archer)![1] ?? 0 }}
               </span>
               <span class="results-table__sub">
-                = {{ scoreFor(n, archer)![0] + scoreFor(n, archer)![1] }}
+                = {{ (scoreFor(n, archer)![0] ?? 0) + (scoreFor(n, archer)![1] ?? 0) }}
               </span>
             </template>
             <span v-else class="results-table__empty">—</span>
@@ -44,7 +44,7 @@ import { totalFor } from '@/apps/archery/composables/useScores';
 
 const props = defineProps<{ session: SessionData }>();
 
-function scoreFor(targetNumber: number, archer: string): [number, number] | null {
+function scoreFor(targetNumber: number, archer: string): [number | null, number | null] | null {
   const t = props.session.targets.find((x) => x.number === targetNumber);
   return t?.scores[archer] ?? null;
 }

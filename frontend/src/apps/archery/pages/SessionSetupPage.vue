@@ -20,6 +20,7 @@
     <!-- Name input row -->
     <div class="row items-start q-gutter-sm q-mb-sm">
       <q-input
+        ref="nameInput"
         v-model="store.draftName"
         outlined
         dense
@@ -28,6 +29,7 @@
         autocapitalize="words"
         :error="!!inputError"
         :error-message="inputError ?? ''"
+        data-testid="archer-name-input"
         @keyup.enter="addArcher"
       />
       <q-btn
@@ -76,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useArcherySessionStore } from '@/apps/archery/stores/useArcherySessionStore';
 import ArcherChip from '@/apps/archery/components/ArcherChip.vue';
@@ -84,6 +86,13 @@ import ArcherChip from '@/apps/archery/components/ArcherChip.vue';
 const store = useArcherySessionStore();
 const router = useRouter();
 const inputError = ref<string | null>(null);
+const nameInput = ref<{ focus?: () => void } | null>(null);
+
+// Story 8.1: keep the cursor in the name field so several archers can be
+// entered in a row. Re-focus after the re-render (success or rejection).
+function focusNameInput(): void {
+  void nextTick(() => nameInput.value?.focus?.());
+}
 
 onMounted(() => {
   // If a session is already active in the store, go straight to scoring.
@@ -102,15 +111,18 @@ function addArcher(): void {
   const name = store.draftName.trim();
   if (!name) {
     inputError.value = 'Archer name is required.';
+    focusNameInput();
     return;
   }
   if (store.draftRoster.includes(name)) {
     inputError.value = 'Archer name is already used.';
+    focusNameInput();
     return;
   }
   inputError.value = null;
   store.draftRoster.push(name);
   store.draftName = '';
+  focusNameInput();
 }
 
 function removeArcher(name: string): void {

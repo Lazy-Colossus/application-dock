@@ -1,7 +1,7 @@
 <template>
   <q-bottom-sheet
     v-model="store.scoreEntryOpen"
-    :no-backdrop-dismiss="hasAnyEntry"
+    :no-backdrop-dismiss="true"
     :transition-show="prefersReducedMotion ? 'none' : undefined"
     :transition-hide="prefersReducedMotion ? 'none' : undefined"
   >
@@ -11,52 +11,58 @@
 
       <!-- Header -->
       <div class="row items-center q-mb-md">
-        <div class="col text-center sep__title">
-          Target {{ store.activeTargetNumber }}
-        </div>
+        <div class="col text-center sep__title">Target {{ store.activeTargetNumber }}</div>
         <q-btn
-          flat round dense icon="close"
+          flat
+          round
+          dense
+          icon="close"
           class="sep__close"
           aria-label="Close"
-          @click="requestClose"
+          data-testid="close-btn"
+          @click="onClose"
         />
       </div>
 
-      <!-- Archer progress chips -->
+      <!-- Archer chips — tap to jump to that archer (Story 7.4) -->
       <div class="row justify-center q-gutter-sm q-mb-md">
-        <div
+        <button
           v-for="(name, i) in roster"
           :key="name"
+          type="button"
           class="sep__archer-chip"
           :class="{ 'sep__archer-chip--active': i === archerIndex }"
+          data-testid="archer-chip"
+          @click="selectArcher(i)"
         >
           {{ name }}
-        </div>
+        </button>
       </div>
 
       <!-- Active archer label + sub-label -->
       <div class="text-center q-mb-xs sep__archer-name">{{ currentArcher }}</div>
       <div class="text-center sep__shot-label q-mb-md">Shot {{ shotIndex + 1 }} of 2</div>
 
-      <!-- Shot slot indicators -->
+      <!-- Shot slots — tap to choose which slot the next value fills (Story 7.4) -->
       <div class="row justify-center q-gutter-sm q-mb-md">
-        <div
+        <button
+          type="button"
           class="sep__slot"
           :class="{ 'sep__slot--active': shotIndex === 0, 'sep__slot--filled': currentEntry[0] !== null }"
+          data-testid="slot-0"
+          @click="selectSlot(0)"
         >
           {{ currentEntry[0] !== null ? currentEntry[0] : '' }}
-        </div>
-        <div
+        </button>
+        <button
+          type="button"
           class="sep__slot"
           :class="{ 'sep__slot--active': shotIndex === 1, 'sep__slot--filled': currentEntry[1] !== null }"
+          data-testid="slot-1"
+          @click="selectSlot(1)"
         >
           {{ currentEntry[1] !== null ? currentEntry[1] : '' }}
-        </div>
-      </div>
-
-      <!-- Back link -->
-      <div v-if="canGoBack" class="text-center q-mb-md">
-        <button class="sep__back-link" @click="onBack">← Back to {{ backTargetName }}</button>
+        </button>
       </div>
 
       <!-- Shot button grid -->
@@ -65,30 +71,19 @@
         <div /><!-- 6th cell spacer -->
       </div>
 
-      <!-- Confirm button -->
+      <!-- Confirm button — always enabled; empty shots saved as 0 (Story 7.3) -->
       <q-btn
         class="full-width sep__confirm"
         label="Confirm Target"
         unelevated
         no-caps
-        :disable="!allComplete || store.loading"
+        :disable="store.loading"
         :loading="store.loading"
         data-testid="confirm-btn"
         @click="onConfirm"
       />
     </div>
   </q-bottom-sheet>
-
-  <!-- Discard guard dialog (outside sheet to avoid z-index nesting) -->
-  <q-dialog v-model="discardGuardOpen">
-    <div class="sep__discard-dialog q-pa-md">
-      <p class="q-mb-md">Discard entry?</p>
-      <div class="row q-gutter-sm justify-end">
-        <q-btn flat label="Cancel" no-caps @click="discardGuardOpen = false" />
-        <q-btn flat label="Discard" no-caps data-testid="discard-confirm-btn" @click="forceClose" />
-      </div>
-    </div>
-  </q-dialog>
 </template>
 
 <script setup lang="ts">
@@ -104,37 +99,19 @@ const store = useArcherySessionStore();
 const prefersReducedMotion =
   typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
 
-// Panel-local state — not committed to store until Confirm Target
+// Panel-local entry state — committed to the store on close or confirm.
 const entries = ref<Record<string, [number | null, number | null]>>({});
 const archerIndex = ref(0);
 const shotIndex = ref(0);
-const discardGuardOpen = ref(false);
 
 const roster = computed(() => store.session?.archers ?? []);
-
 const currentArcher = computed(() => roster.value[archerIndex.value] ?? '');
-
-const currentEntry = computed<[number | null, number | null]>(() => {
-  return entries.value[currentArcher.value] ?? [null, null];
-});
+const currentEntry = computed<[number | null, number | null]>(
+  () => entries.value[currentArcher.value] ?? [null, null]
+);
 
 const hasAnyEntry = computed(() =>
   Object.values(entries.value).some(([s1, s2]) => s1 !== null || s2 !== null)
-);
-
-const allComplete = computed(
-  () =>
-    roster.value.length > 0 &&
-    roster.value.every((name) => {
-      const e = entries.value[name];
-      return e && e[0] !== null && e[1] !== null;
-    })
-);
-
-const canGoBack = computed(() => archerIndex.value > 0 || shotIndex.value > 0);
-
-const backTargetName = computed(() =>
-  shotIndex.value === 0 ? roster.value[archerIndex.value - 1] : roster.value[archerIndex.value]
 );
 
 function initEntries(): void {
@@ -145,7 +122,7 @@ function initEntries(): void {
   const init: Record<string, [number | null, number | null]> = {};
   for (const name of roster.value) {
     const prior = existing?.scores[name];
-    init[name] = prior ? ([prior[0], prior[1]] as [number, number]) : [null, null];
+    init[name] = prior ? [prior[0], prior[1]] : [null, null];
   }
   entries.value = init;
 }
@@ -165,28 +142,31 @@ watch(
   }
 );
 
+function selectArcher(i: number): void {
+  archerIndex.value = i;
+  const e = entries.value[roster.value[i]] ?? [null, null];
+  // Land on the first empty slot for quick entry; default to slot 0.
+  shotIndex.value = e[0] === null ? 0 : e[1] === null ? 1 : 0;
+}
+
+function selectSlot(j: 0 | 1): void {
+  shotIndex.value = j;
+}
+
 function onShotTap(value: number): void {
   const archer = currentArcher.value;
   if (!archer) return;
   const entry = entries.value[archer] ?? [null, null];
-  if (shotIndex.value === 0) {
-    entries.value = { ...entries.value, [archer]: [value, entry[1]] };
-    shotIndex.value = 1;
-  } else {
-    entries.value = { ...entries.value, [archer]: [entry[0], value] };
-    if (archerIndex.value < roster.value.length - 1) {
-      archerIndex.value++;
-      shotIndex.value = 0;
-    }
-  }
-}
+  const next: [number | null, number | null] = [entry[0], entry[1]];
+  next[shotIndex.value] = value;
+  entries.value = { ...entries.value, [archer]: next };
 
-function onBack(): void {
-  if (shotIndex.value === 1) {
-    shotIndex.value = 0;
-  } else if (archerIndex.value > 0) {
-    archerIndex.value--;
+  // Auto-advance for fast sequential entry; manual chip/slot taps override.
+  if (shotIndex.value === 0) {
     shotIndex.value = 1;
+  } else if (archerIndex.value < roster.value.length - 1) {
+    archerIndex.value++;
+    shotIndex.value = 0;
   }
 }
 
@@ -195,31 +175,39 @@ async function onConfirm(): Promise<void> {
   if (n === null) return;
   const scores: Record<string, [number, number]> = {};
   for (const name of roster.value) {
-    const e = entries.value[name];
-    if (e && e[0] !== null && e[1] !== null) {
-      scores[name] = [e[0], e[1]];
-    }
+    const e = entries.value[name] ?? [null, null];
+    scores[name] = [e[0] ?? 0, e[1] ?? 0];
   }
-  const target: TargetScores = { number: n, scores };
+  const target: TargetScores = { number: n, scores, confirmed: true };
   try {
     await store.saveTarget(target);
     store.closeTarget();
   } catch {
-    // error is surfaced via store.error on ScoringBoardPage
+    // error surfaced via store.error on ScoringBoardPage; entries kept
   }
 }
 
-function requestClose(): void {
-  if (hasAnyEntry.value) {
-    discardGuardOpen.value = true;
-  } else {
+async function onClose(): Promise<void> {
+  const n = store.activeTargetNumber;
+  // Nothing entered → nothing to persist.
+  if (n === null || !hasAnyEntry.value) {
+    store.closeTarget();
+    return;
+  }
+  // Save the partial entry as-is (nulls preserved), unconfirmed (Story 7.2).
+  const scores: Record<string, [number | null, number | null]> = {};
+  for (const name of roster.value) {
+    const e = entries.value[name] ?? [null, null];
+    scores[name] = [e[0], e[1]];
+  }
+  const target: TargetScores = { number: n, scores, confirmed: false };
+  try {
+    await store.saveTarget(target);
+  } catch {
+    // error surfaced via store.error on ScoringBoardPage
+  } finally {
     store.closeTarget();
   }
-}
-
-function forceClose(): void {
-  discardGuardOpen.value = false;
-  store.closeTarget();
 }
 </script>
 
@@ -251,6 +239,7 @@ function forceClose(): void {
   font-size: 13px
   color: #8A8A8A
   border: 1px solid transparent
+  cursor: pointer
 
   &--active
     border-color: #C8960A
@@ -277,6 +266,8 @@ function forceClose(): void {
   font-weight: 700
   font-size: 16px
   color: #F0F0F0
+  background: transparent
+  cursor: pointer
 
   &--active
     border-color: #C8960A
@@ -284,14 +275,6 @@ function forceClose(): void {
   &--filled
     background: #C8960A
     border-color: #C8960A
-
-.sep__back-link
-  background: none
-  border: none
-  font-size: 12px
-  color: #8A8A8A
-  cursor: pointer
-  padding: 4px 8px
 
 .sep__grid
   display: grid
@@ -304,10 +287,4 @@ function forceClose(): void {
   background: #C8960A
   color: #F0F0F0
   font-size: 16px
-
-.sep__discard-dialog
-  background: #242424
-  border-radius: 8px
-  color: #F0F0F0
-  min-width: 240px
 </style>

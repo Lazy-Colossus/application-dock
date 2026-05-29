@@ -55,7 +55,7 @@ export const useArcherySessionStore = defineStore('archerySession', () => {
   }
 
   function isConfirmed(n: number): boolean {
-    return session.value?.targets.some((t) => t.number === n) ?? false;
+    return session.value?.targets.some((t) => t.number === n && t.confirmed === true) ?? false;
   }
 
   function openTarget(n: number): void {

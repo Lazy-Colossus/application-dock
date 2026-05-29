@@ -24,6 +24,9 @@ from app.schemas.session import SessionData
 _IP_PREFIX = "_ip_"
 _LEGACY_IN_PROGRESS_FILENAME = "_in_progress.json"
 
+# Recurring players list (Story 8.2). Underscore-prefixed → excluded from history.
+_RECURRING_PLAYERS_FILENAME = "_recurring_players.json"
+
 # Session filenames: YYYY-MM-DD.json or YYYY-MM-DD-N.json where N>=2.
 # The unsuffixed form is conceptually session #1 of that day; subsequent
 # sessions on the same day get -2, -3, etc. So in "newest first" order, a
@@ -33,7 +36,7 @@ _SESSION_LABEL_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})(?:-(\d+))?$")
 logger = logging.getLogger(__name__)
 
 
-def _atomic_write_json(path: Path, payload: dict[str, object]) -> None:
+def _atomic_write_json(path: Path, payload: dict[str, object] | list[str]) -> None:
     # `os.replace` is atomic on POSIX (best-effort on Windows). If the process
     # is killed between writing .tmp and the rename, the previous file at
     # `path` (if any) remains intact and uncorrupted.
@@ -194,3 +197,26 @@ def list_in_progress_labels() -> set[str]:
         if _SESSION_LABEL_RE.match(label):
             labels.add(label)
     return labels
+
+
+# ── Recurring players (Story 8.2) ────────────────────────────────────────────
+
+
+def read_recurring_players() -> list[str]:
+    """Return the recurring-players list, or [] if the file is absent/corrupt."""
+    path = settings.data_dir / _RECURRING_PLAYERS_FILENAME
+    if not path.exists():
+        return []
+    try:
+        data = json.loads(path.read_text())
+    except json.JSONDecodeError as exc:
+        logger.warning("malformed recurring players file, treating as empty: %s", exc)
+        return []
+    if not isinstance(data, list):
+        return []
+    return [str(name) for name in data]
+
+
+def write_recurring_players(names: list[str]) -> None:
+    """Persist the recurring-players list atomically."""
+    _atomic_write_json(settings.data_dir / _RECURRING_PLAYERS_FILENAME, names)

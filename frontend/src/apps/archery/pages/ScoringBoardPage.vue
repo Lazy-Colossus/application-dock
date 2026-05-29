@@ -1,18 +1,17 @@
 <template>
   <q-page class="scoring-board-page">
-    <!-- Subtitle bar -->
-    <div class="scoring-board-page__subtitle">
-      {{ confirmedCount }} of 18 confirmed
-    </div>
-
-    <!-- View Results banner (AC 1: non-blocking; targets remain tappable below) -->
-    <div v-if="confirmedCount === 18" class="scoring-board-page__banner row items-center q-px-md">
-      <span class="col text-body2" style="color: #F0F0F0">All 18 confirmed</span>
+    <!-- Top bar: confirmed count + persistent View Results (Story 7.5, FR-7.6) -->
+    <div class="scoring-board-page__topbar row items-center q-px-md">
+      <span class="col scoring-board-page__count">
+        {{ confirmedCount }} of 18 confirmed
+        <span v-if="confirmedCount === 18" class="scoring-board-page__all-done"> · all done ✓</span>
+      </span>
       <q-btn
-        unelevated
+        flat
+        dense
         no-caps
         label="View Results"
-        style="background: #C8960A; color: #F0F0F0; height: 44px; border-radius: 8px"
+        class="scoring-board-page__results-link"
         data-testid="view-results-btn"
         @click="router.push('/archery/results')"
       />
@@ -59,8 +58,19 @@
       />
     </div>
 
-    <!-- Score entry panel stub (Story 2.4 replaces stub content) -->
     <ScoreEntryPanel />
+
+    <!-- Bottom-anchored primary action within thumb reach (Story 7.5, FR-7.5) -->
+    <div class="scoring-board-page__footer q-px-md">
+      <q-btn
+        class="full-width scoring-board-page__done-btn"
+        unelevated
+        no-caps
+        label="View Results"
+        data-testid="view-results-bottom-btn"
+        @click="router.push('/archery/results')"
+      />
+    </div>
   </q-page>
 </template>
 
@@ -84,7 +94,9 @@ onMounted(() => {
   }
 });
 
-const confirmedCount = computed(() => store.session?.targets.length ?? 0);
+const confirmedCount = computed(
+  () => store.session?.targets.filter((t) => t.confirmed === true).length ?? 0
+);
 
 function isConfirmed(n: number): boolean {
   return store.isConfirmed(n);
@@ -92,18 +104,21 @@ function isConfirmed(n: number): boolean {
 </script>
 
 <style scoped lang="sass">
-.scoring-board-page__banner
-  background: #2E2000
-  border-radius: 8px
-  height: 56px
-  margin: 8px 16px 0
-
-.scoring-board-page__subtitle
-  text-align: center
+.scoring-board-page__topbar
   font-size: 13px
   color: #8A8A8A
   background: #1A1A1A
-  padding: 8px 0
+  min-height: 44px
+
+.scoring-board-page__count
+  text-align: left
+
+.scoring-board-page__all-done
+  color: #2E7D32
+
+.scoring-board-page__results-link
+  color: #C8960A
+  min-height: 44px
 
 .scoring-board-page__grid
   display: grid
@@ -112,4 +127,22 @@ function isConfirmed(n: number): boolean {
 
   @media (min-width: 768px)
     grid-template-columns: repeat(6, 1fr)
+
+// Reserve space so the sticky footer never covers the last row of targets.
+.scoring-board-page__archers
+  padding-bottom: 88px
+
+.scoring-board-page__footer
+  position: sticky
+  bottom: 0
+  padding-top: 8px
+  padding-bottom: max(8px, env(safe-area-inset-bottom))
+  background: #121212
+
+.scoring-board-page__done-btn
+  height: 56px
+  border-radius: 8px
+  background: #C8960A
+  color: #F0F0F0
+  font-size: 16px
 </style>

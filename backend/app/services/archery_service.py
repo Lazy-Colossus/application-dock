@@ -218,3 +218,35 @@ def read_finalised(label: str) -> SessionData:
     if s.status != "finalised":
         raise FileNotFoundError(label)
     return s
+
+
+# ── Recurring players (Story 8.2) ────────────────────────────────────────────
+
+
+def list_recurring_players() -> list[str]:
+    return session_repo.read_recurring_players()
+
+
+def add_recurring_player(name: str) -> list[str]:
+    """Add a player to the recurring list (trimmed, de-duplicated).
+
+    Raises:
+        ValueError: if the name is empty after trimming.
+    """
+    trimmed = name.strip()
+    if not trimmed:
+        raise ValueError("player name must be non-empty")
+    players = session_repo.read_recurring_players()
+    if trimmed not in players:
+        players.append(trimmed)
+        session_repo.write_recurring_players(players)
+    return players
+
+
+def remove_recurring_player(name: str) -> list[str]:
+    """Remove a player from the recurring list. Idempotent."""
+    players = session_repo.read_recurring_players()
+    if name in players:
+        players = [p for p in players if p != name]
+        session_repo.write_recurring_players(players)
+    return players

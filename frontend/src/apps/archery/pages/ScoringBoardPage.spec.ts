@@ -18,8 +18,16 @@ const SESSION = {
   status: 'in_progress' as const,
   archers: ['Alice', 'Bob'],
   targets: [
-    { number: 1, scores: { Alice: [10, 8] as [number, number], Bob: [8, 5] as [number, number] } },
-    { number: 5, scores: { Alice: [5, 0] as [number, number], Bob: [10, 11] as [number, number] } }
+    {
+      number: 1,
+      scores: { Alice: [10, 8] as [number, number], Bob: [8, 5] as [number, number] },
+      confirmed: true
+    },
+    {
+      number: 5,
+      scores: { Alice: [5, 0] as [number, number], Bob: [10, 11] as [number, number] },
+      confirmed: true
+    }
   ]
 };
 
@@ -106,5 +114,26 @@ describe('ScoringBoardPage', () => {
     expect(chips.length).toBe(2);
     expect(chips[0].text()).toBe('Alice');
     expect(chips[1].text()).toBe('Bob');
+  });
+
+  it('shows a persistent top View Results control that routes to results (Story 7.5)', async () => {
+    const pushSpy = vi.spyOn(router, 'push');
+    const w = mountPage();
+    const btn = w.find('[data-testid="view-results-btn"]');
+    expect(btn.exists()).toBe(true);
+    await btn.trigger('click');
+    expect(pushSpy).toHaveBeenCalledWith('/archery/results');
+  });
+
+  it('shows a bottom-anchored View Results control (Story 7.5)', () => {
+    const w = mountPage();
+    expect(w.find('[data-testid="view-results-bottom-btn"]').exists()).toBe(true);
+  });
+
+  it('View Results is available even at 0 confirmed', () => {
+    const fresh = { ...SESSION, targets: [] };
+    const w = mountPage(fresh as typeof SESSION);
+    expect(w.find('[data-testid="view-results-btn"]').exists()).toBe(true);
+    expect(w.text()).toContain('0 of 18 confirmed');
   });
 });
