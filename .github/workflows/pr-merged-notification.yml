@@ -22,8 +22,7 @@ jobs:
                       "cardId": "pr-merged-${{ github.event.pull_request.number }}",
                       "card": {
                           "header": {
-                              "title": "PR `${{ github.event.pull_request.title }}` merged to ${{ github.event.pull_request.base.ref }}",
-                              "subtitle": "PR #${{ github.event.pull_request.number }}"
+                              "title": "PR `${{ github.event.pull_request.title }}` merged to ${{ github.event.pull_request.base.ref }}"
                           },
                           "sections": [
                               {
