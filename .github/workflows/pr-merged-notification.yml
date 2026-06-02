@@ -53,7 +53,7 @@ jobs:
                                                                   "topLabel": "Merged by",
                                                                   "text": "${{ github.event.pull_request.merged_by.login }}"
                                                               }
-                                                          },
+                                                          }
                                                       ]
                                                   }
                                               ]
