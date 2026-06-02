@@ -29,27 +29,47 @@ jobs:
                               {
                                   "widgets": [
                                       {
-                                          "decoratedText": {
-                                              "topLabel": "Title",
-                                              "text": "${{ github.event.pull_request.title }}"
-                                          }
-                                      },
-                                      {
-                                          "decoratedText": {
-                                              "topLabel": "Merged by",
-                                              "text": "${{ github.event.pull_request.merged_by.login }}"
-                                          }
-                                      },
-                                      {
-                                          "decoratedText": {
-                                              "topLabel": "Author",
-                                              "text": "${{ github.event.pull_request.user.login }}"
-                                          }
-                                      },
-                                      {
-                                          "decoratedText": {
-                                              "topLabel": "Branch",
-                                              "text": "${{ github.event.pull_request.head.ref }} -> ${{ github.event.pull_request.base.ref }}"
+                                          "columns": {
+                                              "columnItems": [
+                                                  {
+                                                      "horizontalSizeStyle": "FILL_AVAILABLE_SPACE",
+                                                      "horizontalAlignment": "START",
+                                                      "verticalAlignment": "TOP",
+                                                      "widgets": [
+                                                          {
+                                                              "decoratedText": {
+                                                                  "topLabel": "Title",
+                                                                  "text": "${{ github.event.pull_request.title }}"
+                                                              }
+                                                          },
+                                                          {
+                                                              "decoratedText": {
+                                                                  "topLabel": "Author",
+                                                                  "text": "${{ github.event.pull_request.user.login }}"
+                                                              }
+                                                          }
+                                                      ]
+                                                  },
+                                                  {
+                                                      "horizontalSizeStyle": "FILL_AVAILABLE_SPACE",
+                                                      "horizontalAlignment": "START",
+                                                      "verticalAlignment": "TOP",
+                                                      "widgets": [
+                                                          {
+                                                              "decoratedText": {
+                                                                  "topLabel": "Merged by",
+                                                                  "text": "${{ github.event.pull_request.merged_by.login }}"
+                                                              }
+                                                          },
+                                                          {
+                                                              "decoratedText": {
+                                                                  "topLabel": "Branch",
+                                                                  "text": "${{ github.event.pull_request.head.ref }} -> ${{ github.event.pull_request.base.ref }}"
+                                                              }
+                                                          }
+                                                      ]
+                                                  }
+                                              ]
                                           }
                                       },
                                       {
