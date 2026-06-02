@@ -22,7 +22,7 @@ jobs:
                       "cardId": "pr-merged-${{ github.event.pull_request.number }}",
                       "card": {
                           "header": {
-                              "title": "PR Merged to main",
+                              "title": "PR `${{ github.event.pull_request.title }}` merged to ${{ github.event.pull_request.base.ref }}",
                               "subtitle": "PR #${{ github.event.pull_request.number }}"
                           },
                           "sections": [
@@ -36,12 +36,6 @@ jobs:
                                                       "horizontalAlignment": "START",
                                                       "verticalAlignment": "TOP",
                                                       "widgets": [
-                                                          {
-                                                              "decoratedText": {
-                                                                  "topLabel": "Title",
-                                                                  "text": "${{ github.event.pull_request.title }}"
-                                                              }
-                                                          },
                                                           {
                                                               "decoratedText": {
                                                                   "topLabel": "Author",
@@ -61,12 +55,6 @@ jobs:
                                                                   "text": "${{ github.event.pull_request.merged_by.login }}"
                                                               }
                                                           },
-                                                          {
-                                                              "decoratedText": {
-                                                                  "topLabel": "Branch",
-                                                                  "text": "${{ github.event.pull_request.head.ref }} -> ${{ github.event.pull_request.base.ref }}"
-                                                              }
-                                                          }
                                                       ]
                                                   }
                                               ]
