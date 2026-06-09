@@ -115,8 +115,8 @@
     {
       "label": "Win Start Dev (BE + FE)",
       "dependsOn": [
-        "Start Backend",
-        "Start Frontend"
+        "Win Start Backend",
+        "Win Start Frontend"
       ],
       "dependsOrder": "parallel",
       "group": {

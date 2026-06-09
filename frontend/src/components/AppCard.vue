@@ -4,7 +4,7 @@
     class="app-card"
     :aria-label="`Open ${descriptor.label}`"
   >
-    <q-icon :name="descriptor.icon" color="primary" size="32px" class="app-card__icon" />
+    <q-icon :name="descriptor.icon" color="accent" size="32px" class="app-card__icon" />
     <div class="app-card__label">{{ descriptor.label }}</div>
   </router-link>
 </template>

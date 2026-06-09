@@ -1,10 +1,9 @@
 from pathlib import Path
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.core.config import settings
 from app.routers import archery, shell
 
 app = FastAPI(title="Application Dock")
@@ -28,14 +27,12 @@ app.include_router(archery.router)
 _DIST_DIR = Path(__file__).resolve().parent.parent / "dist" / "spa"
 
 if _DIST_DIR.is_dir():
-    app.mount("/assets", StaticFiles(directory=_DIST_DIR / "assets"), name="assets")
+    _assets_dir = _DIST_DIR / "assets"
+    if _assets_dir.is_dir():
+        app.mount("/assets", StaticFiles(directory=_assets_dir), name="assets")
 
     @app.get("/{full_path:path}", include_in_schema=False)
     def spa_fallback(full_path: str) -> FileResponse:
-        # Any non-/api route returns index.html so Vue Router (history mode) can
-        # handle the path on the client.
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404)
         return FileResponse(_DIST_DIR / "index.html")
-
-
-# Touch settings so the module-level mkdir on DATA_DIR runs at import time.
-_ = settings.data_dir

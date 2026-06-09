@@ -7,7 +7,11 @@ modules are imported, so `app.core.config.settings.data_dir.mkdir(...)`
 when running tests outside the container.
 """
 
+import atexit
 import os
+import shutil
 import tempfile
 
-os.environ.setdefault("DATA_DIR", tempfile.mkdtemp(prefix="archery-test-data-"))
+_tmp_data_dir = tempfile.mkdtemp(prefix="archery-test-data-")
+os.environ["DATA_DIR"] = _tmp_data_dir
+atexit.register(shutil.rmtree, _tmp_data_dir, ignore_errors=True)

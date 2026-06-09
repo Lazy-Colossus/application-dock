@@ -31,7 +31,7 @@ async function request<T>(method: string, path: string, body?: JsonBody): Promis
     });
   } catch (e) {
     // Network failure — no response at all.
-    throw new ApiError(0, e instanceof Error ? e.message : 'Network error');
+    throw new ApiError(0, 'Network error');
   }
 
   // 204 No Content — return undefined cast as T (callers using T = void)
@@ -66,8 +66,8 @@ async function request<T>(method: string, path: string, body?: JsonBody): Promis
 
 export const api = {
   get: <T>(path: string) => request<T>('GET', path),
-  post: <T>(path: string, body?: JsonBody) => request<T>('POST', path, body ?? null),
-  put: <T>(path: string, body?: JsonBody) => request<T>('PUT', path, body ?? null),
+  post: <T>(path: string, body?: JsonBody) => request<T>('POST', path, body),
+  put: <T>(path: string, body?: JsonBody) => request<T>('PUT', path, body),
   del: <T = void>(path: string) => request<T>('DELETE', path)
 };
 

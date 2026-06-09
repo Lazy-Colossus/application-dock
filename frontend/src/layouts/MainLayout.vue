@@ -48,7 +48,11 @@ const pageTitle = computed(() => {
 });
 
 function goBack(): void {
-  router.back();
+  if (window.history.length > 1) {
+    router.back();
+  } else {
+    void router.push('/');
+  }
 }
 </script>
 

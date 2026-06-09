@@ -15,4 +15,10 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-settings.data_dir.mkdir(parents=True, exist_ok=True)
+try:
+    settings.data_dir.mkdir(parents=True, exist_ok=True)
+except PermissionError as exc:
+    raise RuntimeError(
+        f"Cannot create data directory {settings.data_dir!r}: {exc}. "
+        "Set the DATA_DIR environment variable to a writable path."
+    ) from exc
