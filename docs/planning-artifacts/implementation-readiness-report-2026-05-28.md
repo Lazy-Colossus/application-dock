@@ -1,9 +1,9 @@
 ---
 stepsCompleted: ["step-01-document-discovery", "step-02-prd-analysis", "step-03-epic-coverage-validation", "step-04-ux-alignment", "step-05-epic-quality-review", "step-06-final-assessment"]
 documentsInScope:
-  prd: "_bmad-output/planning-artifacts/prds/prd-Code-2026-05-26/prd.md"
-  architecture: "_bmad-output/planning-artifacts/architecture.md"
-  epics: "_bmad-output/planning-artifacts/epics.md"
+  prd: "docs/planning-artifacts/prds/prd-Code-2026-05-26/prd.md"
+  architecture: "docs/planning-artifacts/architecture.md"
+  epics: "docs/planning-artifacts/epics.md"
   ux: null
 ---
 
@@ -380,4 +380,4 @@ This assessment identified **6 issues** across **3 categories** (ordering, cover
 
 *Assessment completed: 2026-05-28*
 *Assessor: Implementation Readiness Validator (BMad)*
-*Report file: `_bmad-output/planning-artifacts/implementation-readiness-report-2026-05-28.md`*
+*Report file: `docs/planning-artifacts/implementation-readiness-report-2026-05-28.md`*

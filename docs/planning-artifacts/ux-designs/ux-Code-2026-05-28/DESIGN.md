@@ -2,9 +2,9 @@
 name: Multi-App Platform — Archery Score Counter
 status: final
 sources:
-  - _bmad-output/planning-artifacts/prds/prd-Code-2026-05-26/prd.md
-  - _bmad-output/planning-artifacts/architecture.md
-  - _bmad-output/planning-artifacts/epics.md
+  - docs/planning-artifacts/prds/prd-Code-2026-05-26/prd.md
+  - docs/planning-artifacts/architecture.md
+  - docs/planning-artifacts/epics.md
 updated: 2026-05-28
 colors:
   surface-base: '#141414'

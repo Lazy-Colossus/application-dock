@@ -55,17 +55,15 @@ application-dock/
 ├── backend/          ← FastAPI app + Dockerfile
 ├── frontend/         ← Quasar SPA (Vite)
 ├── docker-compose.yml
-├── docs/
-│   ├── architecture.md       ← whole architecture (symlink → planning-artifacts)
-│   ├── architecture/         ← coding-standards.md, tech-stack.md, source-tree.md
-│   ├── prd.md                ← (symlink)
-│   ├── epics.md              ← (symlink)
-│   ├── ux/                   ← DESIGN.md, EXPERIENCE.md, mockups/ (symlink)
-│   └── stories/              ← one file per implementation story
-└── _bmad-output/     ← original planning artifacts (canonical files; symlinked into docs/)
+└── docs/
+    ├── architecture/         ← coding-standards.md, tech-stack.md, source-tree.md
+    ├── stories/              ← per-app subfolders (archery-tracker/, application-dock-general/, etc.)
+    │                           each contains for-review/ and done/ buckets; drafts sit in the app root
+    ├── implementation-artifacts/
+    └── planning-artifacts/   ← architecture.md, epics.md, prd, ux-designs/
 ```
 
-For the authoritative architecture and full project source tree, see `docs/architecture.md` and `docs/architecture/source-tree.md`.
+For the authoritative architecture and full project source tree, see `docs/architecture/source-tree.md`.
 
 ## Tests
 

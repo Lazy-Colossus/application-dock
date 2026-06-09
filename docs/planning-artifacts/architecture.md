@@ -4,7 +4,7 @@ lastStep: 8
 status: 'complete'
 completedAt: '2026-05-28'
 inputDocuments:
-  - _bmad-output/planning-artifacts/prds/prd-Code-2026-05-26/prd.md
+  - docs/planning-artifacts/prds/prd-Code-2026-05-26/prd.md
 workflowType: 'architecture'
 project_name: 'Code (Multi-App Platform)'
 user_name: 'The Jacob'

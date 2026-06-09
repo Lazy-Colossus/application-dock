@@ -3,8 +3,8 @@ stepsCompleted: [1, 2, 3, 4]
 status: complete
 completedAt: '2026-05-28'
 inputDocuments:
-  - _bmad-output/planning-artifacts/prds/prd-Code-2026-05-26/prd.md
-  - _bmad-output/planning-artifacts/architecture.md
+  - docs/planning-artifacts/prds/prd-Code-2026-05-26/prd.md
+  - docs/planning-artifacts/architecture.md
 ---
 
 # Multi-App Platform — Archery Score Counter - Epic Breakdown

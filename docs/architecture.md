@@ -1,1 +1,0 @@
-../_bmad-output/planning-artifacts/architecture.md

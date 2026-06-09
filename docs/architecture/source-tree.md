@@ -29,20 +29,37 @@ application-dock/                       ← repo root
 │       └── …                           ← see "Frontend (src/)" below
 │
 ├── docs/
-│   ├── architecture.md                 ← symlink → _bmad-output/planning-artifacts/architecture.md
 │   ├── architecture/                   ← dev-load-always shards (this file + tech-stack + coding-standards)
-│   ├── prd.md                          ← symlink → _bmad-output/planning-artifacts/prds/…/prd.md
-│   ├── epics.md                        ← symlink → _bmad-output/planning-artifacts/epics.md
-│   ├── ux/                             ← symlink → _bmad-output/planning-artifacts/ux-designs/ux-Code-2026-05-28
-│   │   ├── DESIGN.md
-│   │   ├── EXPERIENCE.md
-│   │   └── mockups/                    ← HTML reference mockups
-│   └── stories/                        ← one file per drafted story (created by SM)
+│   ├── stories/                        ← per-app subfolders; status buckets inside each
+│   │   ├── application-dock-general/   ← shell / platform-level stories
+│   │   │   ├── for-review/             ← status: Ready for Review
+│   │   │   ├── done/                   ← status: Done
+│   │   │   └── *.story.md              ← status: Draft (not yet started)
+│   │   ├── archery-tracker/            ← archery app stories (same layout)
+│   │   │   ├── for-review/
+│   │   │   ├── done/
+│   │   │   └── *.story.md
+│   │   └── <app-name>/                 ← add one folder per new app; same three-bucket layout
+│   │       ├── for-review/
+│   │       ├── done/
+│   │       └── *.story.md
+│   ├── implementation-artifacts/
+│   │   └── deferred-work.md
+│   └── planning-artifacts/
+│       ├── architecture.md
+│       ├── epics.md
+│       ├── implementation-readiness-report-*.md
+│       ├── prds/
+│       │   └── prd-Code-*/
+│       │       └── prd.md
+│       └── ux-designs/
+│           └── ux-Code-*/
+│               ├── DESIGN.md
+│               ├── EXPERIENCE.md
+│               └── mockups/            ← HTML reference mockups
 │
-├── data/                               ← gitignored; exists only on host; mounted into container
-│   └── …                               ← *.json finalised sessions + _in_progress.json
-│
-└── _bmad-output/                       ← original planning-artifacts; symlinked into docs/
+└── data/                               ← gitignored; exists only on host; mounted into container
+    └── …                               ← *.json finalised sessions + _in_progress.json
 ```
 
 ## Backend (`backend/app/`)
