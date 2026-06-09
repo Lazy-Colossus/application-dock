@@ -70,8 +70,8 @@
     {
       "label": "Mac Launch App",
       "dependsOn": [
-        "Backend: dev server",
-        "Frontend: dev server"
+        "Mac Backend: dev server",
+        "Mac Frontend: dev server"
       ],
       "dependsOrder": "parallel",
       "problemMatcher": [],
