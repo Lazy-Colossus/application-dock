@@ -1,6 +1,8 @@
 <template>
-  <q-bottom-sheet
+  <q-dialog
     v-model="store.scoreEntryOpen"
+    position="bottom"
+    full-width
     :no-backdrop-dismiss="true"
     :transition-show="prefersReducedMotion ? 'none' : undefined"
     :transition-hide="prefersReducedMotion ? 'none' : undefined"
@@ -83,7 +85,7 @@
         @click="onConfirm"
       />
     </div>
-  </q-bottom-sheet>
+  </q-dialog>
 </template>
 
 <script setup lang="ts">
