@@ -30,6 +30,11 @@
       @click="router.push('/archery/history')"
     />
 
+    <!-- Error banner (resume/discard failures) -->
+    <q-banner v-if="store.error" dense rounded class="bg-negative text-white q-mb-sm">
+      {{ store.error }}
+    </q-banner>
+
     <!-- New Session conflict popup (FR-6.4) -->
     <q-dialog v-model="conflictOpen">
       <div class="archery-dialog q-pa-md">
@@ -127,7 +132,7 @@ function onConflictLeave() {
 async function onConflictDelete() {
   await store.discardAllInProgress();
   conflictOpen.value = false;
-  goToSetup();
+  if (!store.error) goToSetup();
 }
 
 function onResume() {

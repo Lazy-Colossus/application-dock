@@ -18,8 +18,6 @@ vi.mock('@/composables/useApi', () => ({
   api: { post: vi.fn(), get: vi.fn() }
 }));
 
-import { api } from '@/composables/useApi';
-
 const focusSpy = vi.fn();
 
 const router = createRouter({
@@ -67,9 +65,6 @@ describe('SessionSetupPage', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    // Default: no in-progress session on the server (404)
-    const err = Object.assign(new Error('404'), { status: 404 });
-    vi.mocked(api.get).mockRejectedValue(err);
   });
 
   it('shows empty state when roster is empty', () => {
@@ -116,7 +111,7 @@ describe('SessionSetupPage', () => {
 
   it('confirm button enabled when roster has archers', async () => {
     const wrapper = mountPage();
-    await flushPromises(); // wait for onMounted checkInProgress to settle
+    await flushPromises();
     const store = useArcherySessionStore();
     store.draftRoster = ['Alice'];
     await wrapper.vm.$nextTick();
@@ -126,7 +121,7 @@ describe('SessionSetupPage', () => {
 
   it('confirm calls store.createSession', async () => {
     const wrapper = mountPage();
-    await flushPromises(); // wait for onMounted to settle
+    await flushPromises();
     const store = useArcherySessionStore();
     store.draftRoster = ['Alice'];
     store.createSession = vi.fn().mockResolvedValue(undefined);

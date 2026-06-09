@@ -25,7 +25,7 @@ _BASE = {
     "targets": [],
 }
 
-_TARGET_1 = {"number": 1, "scores": {"Alice": [10, 8], "Bob": [5, 11]}}
+_TARGET_1 = {"number": 1, "scores": {"Alice": [10, 8], "Bob": [5, 11]}, "confirmed": True}
 
 
 @pytest.fixture(autouse=True)

@@ -203,10 +203,9 @@ async function onClose(): Promise<void> {
   const target: TargetScores = { number: n, scores, confirmed: false };
   try {
     await store.saveTarget(target);
-  } catch {
-    // error surfaced via store.error on ScoringBoardPage
-  } finally {
     store.closeTarget();
+  } catch {
+    // error surfaced via store.error on ScoringBoardPage; entries kept, drawer stays open
   }
 }
 </script>

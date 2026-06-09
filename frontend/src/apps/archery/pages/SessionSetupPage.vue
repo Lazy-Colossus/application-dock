@@ -102,9 +102,8 @@ onMounted(() => {
   }
   // Preload the session name with today's date (Story 6.2). Multiple concurrent
   // sessions are allowed, so we do NOT redirect away when others are in progress.
-  if (!store.draftSessionName) {
-    store.draftSessionName = new Date().toISOString().slice(0, 10);
-  }
+  // Always reset so direct navigation (bypassing goToSetup) doesn't preserve a stale name.
+  store.draftSessionName = new Date().toISOString().slice(0, 10);
 });
 
 function addArcher(): void {

@@ -68,7 +68,7 @@ export const useArcherySessionStore = defineStore('archerySession', () => {
     loading.value = true;
     error.value = null;
     try {
-      await api.post<SessionData>(`/archery/sessions/in-progress/${session.value.label}/finalise`, null);
+      await api.post(`/archery/sessions/in-progress/${session.value.label}/finalise`);
       session.value = null;
     } catch (e) {
       error.value = messageFrom(e);
@@ -131,10 +131,10 @@ export const useArcherySessionStore = defineStore('archerySession', () => {
     loading.value = true;
     error.value = null;
     try {
-      for (const s of inProgressList.value) {
+      for (const s of [...inProgressList.value]) {
         await api.del(`/archery/sessions/in-progress/${s.label}`);
+        inProgressList.value = inProgressList.value.filter((x) => x.label !== s.label);
       }
-      inProgressList.value = [];
       session.value = null;
     } catch (e) {
       error.value = messageFrom(e);

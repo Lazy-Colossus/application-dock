@@ -182,6 +182,8 @@ class AddPlayerRequest(BaseModel):
     def _non_empty(cls, value: str) -> str:
         if value == "":
             raise ValueError("player name must be non-empty")
+        if "/" in value:
+            raise ValueError("player name must not contain '/'")
         return value
 
 

@@ -74,7 +74,7 @@ def _materialise_targets(session: SessionData) -> list[TargetScores]:
             shots = prior.scores.get(archer) if prior else None
             first = shots[0] if shots else None
             second = shots[1] if shots else None
-            scores[archer] = [first or 0, second or 0]
+            scores[archer] = [0 if first is None else first, 0 if second is None else second]
         materialised.append(TargetScores(number=number, scores=scores, confirmed=True))
     return materialised
 
@@ -118,7 +118,7 @@ def list_in_progress_summaries() -> list[InProgressSummary]:
             label=s.label,
             name=s.name,
             date=s.date,
-            confirmed_targets=len(s.targets),
+            confirmed_targets=sum(1 for t in s.targets if t.confirmed),
         )
         for s in session_repo.list_in_progress()
     ]
@@ -180,7 +180,7 @@ def _archer_total(s: SessionData, archer: str) -> int:
     for t in s.targets:
         shots = t.scores.get(archer)
         if shots:
-            total += (shots[0] or 0) + (shots[1] or 0)
+            total += (0 if shots[0] is None else shots[0]) + (0 if shots[1] is None else shots[1])
     return total
 
 

@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { api } from '@/composables/useApi';
+import { api, ApiError } from '@/composables/useApi';
 import type { SessionData, SessionSummary } from '@/apps/archery/types';
 
 export const useArcheryHistoryStore = defineStore('archeryHistory', () => {
@@ -33,8 +33,7 @@ export const useArcheryHistoryStore = defineStore('archeryHistory', () => {
     try {
       detail.value = await api.get<SessionData>(`/archery/sessions/${encodeURIComponent(label)}`);
     } catch (e: unknown) {
-      const status = (e as { status?: number }).status;
-      if (status === 404) {
+      if (e instanceof ApiError && e.status === 404) {
         detailError.value = `Session ${label} not found.`;
       } else {
         detailError.value = e instanceof Error ? e.message : String(e);
