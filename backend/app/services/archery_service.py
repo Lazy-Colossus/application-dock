@@ -228,25 +228,26 @@ def list_recurring_players() -> list[str]:
 
 
 def add_recurring_player(name: str) -> list[str]:
-    """Add a player to the recurring list (trimmed, de-duplicated).
+    """Add a player to the recurring list (trimmed, lowercased, de-duplicated).
 
     Raises:
         ValueError: if the name is empty after trimming.
     """
-    trimmed = name.strip()
-    if not trimmed:
+    normalised = name.strip().lower()
+    if not normalised:
         raise ValueError("player name must be non-empty")
     players = session_repo.read_recurring_players()
-    if trimmed not in players:
-        players.append(trimmed)
+    if normalised not in players:
+        players.append(normalised)
         session_repo.write_recurring_players(players)
     return players
 
 
 def remove_recurring_player(name: str) -> list[str]:
     """Remove a player from the recurring list. Idempotent."""
+    normalised = name.strip().lower()
     players = session_repo.read_recurring_players()
-    if name in players:
-        players = [p for p in players if p != name]
+    if normalised in players:
+        players = [p for p in players if p != normalised]
         session_repo.write_recurring_players(players)
     return players

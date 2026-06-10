@@ -36,6 +36,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Results' }
       },
       {
+        path: 'archery/players',
+        name: 'archery-players',
+        component: () => import('@/apps/archery/pages/RecurringPlayersPage.vue'),
+        meta: { title: 'Players' }
+      },
+      {
         path: 'archery/history',
         name: 'archery-history',
         component: () => import('@/apps/archery/pages/HistoryPage.vue'),
