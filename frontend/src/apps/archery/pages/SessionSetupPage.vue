@@ -39,8 +39,44 @@
         unelevated
         no-caps
         style="height: 56px; min-width: 64px"
+        data-testid="add-btn"
         @click="addArcher"
       />
+      <q-btn
+        flat
+        no-caps
+        label="From list"
+        style="height: 56px; color: var(--color-ink-secondary, #9e9e9e)"
+        data-testid="picker-btn"
+        @click="pickerOpen = !pickerOpen"
+      />
+    </div>
+
+    <!-- Recurring players picker (Story 8.4) -->
+    <div
+      v-if="pickerOpen"
+      class="recurring-picker column q-gutter-xs q-mb-sm"
+      data-testid="recurring-picker"
+    >
+      <template v-if="recurringStore.players.length === 0">
+        <p class="text-caption text-grey-5 q-pa-sm" data-testid="picker-empty-state">
+          No recurring players — add some in
+          <router-link to="/archery/players" data-testid="picker-manage-link">
+            Manage Players
+          </router-link>
+        </p>
+      </template>
+      <template v-else>
+        <button
+          v-for="name in availablePlayers"
+          :key="name"
+          class="recurring-picker__item"
+          data-testid="recurring-player-option"
+          @click="pickPlayer(name)"
+        >
+          {{ name }}
+        </button>
+      </template>
     </div>
 
     <!-- Roster list -->
@@ -78,15 +114,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useArcherySessionStore } from '@/apps/archery/stores/useArcherySessionStore';
+import { useRecurringPlayersStore } from '@/apps/archery/stores/useRecurringPlayersStore';
 import ArcherChip from '@/apps/archery/components/ArcherChip.vue';
 
 const store = useArcherySessionStore();
+const recurringStore = useRecurringPlayersStore();
 const router = useRouter();
 const inputError = ref<string | null>(null);
 const nameInput = ref<{ focus?: () => void } | null>(null);
+const pickerOpen = ref(false);
+
+const availablePlayers = computed(() =>
+  recurringStore.players.filter(
+    (n) => !store.draftRoster.some((r) => r.toLowerCase() === n.toLowerCase())
+  )
+);
 
 // Story 8.1: keep the cursor in the name field so several archers can be
 // entered in a row. Re-focus after the re-render (success or rejection).
@@ -104,24 +149,36 @@ onMounted(() => {
   // sessions are allowed, so we do NOT redirect away when others are in progress.
   // Always reset so direct navigation (bypassing goToSetup) doesn't preserve a stale name.
   store.draftSessionName = new Date().toISOString().slice(0, 10);
+  void recurringStore.loadPlayers();
 });
 
-function addArcher(): void {
-  const name = store.draftName.trim();
+// Shared validation for both typed input and picker selection.
+function addName(name: string): boolean {
   if (!name) {
     inputError.value = 'Archer name is required.';
-    focusNameInput();
-    return;
+    return false;
   }
-  if (store.draftRoster.includes(name)) {
+  if (store.draftRoster.some((r) => r.toLowerCase() === name.toLowerCase())) {
     inputError.value = 'Archer name is already used.';
-    focusNameInput();
-    return;
+    return false;
   }
   inputError.value = null;
   store.draftRoster.push(name);
-  store.draftName = '';
+  return true;
+}
+
+function addArcher(): void {
+  const name = store.draftName.trim();
+  if (addName(name)) {
+    store.draftName = '';
+  }
   focusNameInput();
+}
+
+function pickPlayer(name: string): void {
+  if (addName(name)) {
+    pickerOpen.value = false;
+  }
 }
 
 function removeArcher(name: string): void {
@@ -147,4 +204,23 @@ async function confirmRoster(): Promise<void> {
 
 .session-setup-page__input
   min-height: 56px
+
+.recurring-picker
+  background: var(--color-surface-card, #1e1e1e)
+  border-radius: 8px
+  padding: 8px
+
+.recurring-picker__item
+  background: transparent
+  border: none
+  color: var(--color-ink-primary, #f0f0f0)
+  text-align: left
+  padding: 10px 12px
+  border-radius: 6px
+  cursor: pointer
+  min-height: 44px
+  width: 100%
+  text-transform: capitalize
+  &:hover
+    background: rgba(255, 255, 255, 0.08)
 </style>

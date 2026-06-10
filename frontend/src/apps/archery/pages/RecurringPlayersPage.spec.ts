@@ -103,7 +103,7 @@ describe('RecurringPlayersPage', () => {
     await input.setValue('Alice');
     await wrapper.find('[data-testid="add-btn"]').trigger('click');
     await flushPromises();
-    expect(store.addPlayer).toHaveBeenCalledWith('Alice');
+    expect(store.addPlayer).toHaveBeenCalledWith('alice');
   });
 
   it('clears input after successful add', async () => {

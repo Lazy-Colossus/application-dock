@@ -101,6 +101,12 @@ def test_session_rejects_duplicate_archer_names() -> None:
     assert "unique" in str(exc.value)
 
 
+def test_session_rejects_case_variant_duplicate_archer_names() -> None:
+    with pytest.raises(ValidationError) as exc:
+        _make_session(archers=["Alice", "alice"])
+    assert "unique" in str(exc.value)
+
+
 def test_session_rejects_empty_archer_name() -> None:
     with pytest.raises(ValidationError) as exc:
         _make_session(archers=["Alice", ""])
@@ -234,6 +240,11 @@ def test_create_session_request_rejects_empty_list() -> None:
 def test_create_session_request_rejects_duplicates() -> None:
     with pytest.raises(ValidationError):
         CreateSessionRequest(archers=["Alice", "Alice"])
+
+
+def test_create_session_request_rejects_case_variant_duplicates() -> None:
+    with pytest.raises(ValidationError):
+        CreateSessionRequest(archers=["Alice", "alice"])
 
 
 # ─── SessionSummary ──────────────────────────────────────────────────────────

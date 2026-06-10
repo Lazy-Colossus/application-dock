@@ -85,7 +85,7 @@ async function addPlayer(): Promise<void> {
     return;
   }
   inputError.value = null;
-  await store.addPlayer(name);
+  await store.addPlayer(name.toLowerCase());
   if (!store.error) {
     newName.value = '';
   }

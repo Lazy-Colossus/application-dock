@@ -103,7 +103,7 @@ class SessionData(BaseModel):
         for name in value:
             if not isinstance(name, str) or name == "":
                 raise ValueError("archer names must be non-empty strings")
-        if len(set(value)) != len(value):
+        if len({v.lower() for v in value}) != len(value):
             raise ValueError("archer names must be unique within a session")
         return value
 
@@ -162,7 +162,7 @@ class CreateSessionRequest(BaseModel):
         for name in value:
             if not isinstance(name, str) or name == "":
                 raise ValueError("archer names must be non-empty strings")
-        if len(set(value)) != len(value):
+        if len({v.lower() for v in value}) != len(value):
             raise ValueError("archer names must be unique")
         return value
 
