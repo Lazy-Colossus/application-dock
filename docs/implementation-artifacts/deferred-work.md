@@ -30,6 +30,13 @@
 - `loadHistory` in `useArcheryHistoryStore` uses `e.message` rather than `messageFrom(e)` — misses the `ApiError.detail` field; list error banner shows the full "404: Not Found" status string instead of the backend's detail message [`frontend/src/apps/archery/stores/useArcheryHistoryStore.ts:22–24`]
 - Single shared `loading` ref in `useArcherySessionStore` covers all async operations — a background `discardAllInProgress` call disables the `ScoreEntryPanel` confirm button; separate loading flags per concern would improve UX [`frontend/src/apps/archery/stores/useArcherySessionStore.ts`]
 
+## Deferred from: code review of 8.4.pick-recurring-players-in-setup (2026-06-11)
+
+- `pickPlayer` failure sets `inputError` on typed input, not the picker — unreachable in practice (names come from `availablePlayers`); pre-existing design constraint [`SessionSetupPage.vue:addName`]
+- `recurringStore.error` not surfaced in `SessionSetupPage` — `loadPlayers` failure shows "No recurring players" instead of an error banner; UX hardening out of story scope [`SessionSetupPage.vue`]
+- No loading indicator on picker while `loadPlayers` in flight — transient false "No recurring players" display; UX polish [`SessionSetupPage.vue`]
+- `RecurringPlayersPage` local duplicate check uses `store.players.includes(name.toLowerCase())` (strict match) rather than case-insensitive `.some()` — misses legacy mixed-case entries; backend deduplication handles it correctly [`RecurringPlayersPage.vue:83`]
+
 ## Deferred from: code review of archery Chunk C (2026-06-10)
 
 - `today` constant in `ArcheryHomePage` is captured at component construction — if the page stays mounted past midnight the `todaysInProgress` computed uses a stale date; low risk on LAN session context [`frontend/src/apps/archery/pages/ArcheryHomePage.vue:98`]

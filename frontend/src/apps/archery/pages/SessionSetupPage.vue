@@ -66,6 +66,11 @@
           </router-link>
         </p>
       </template>
+      <template v-else-if="availablePlayers.length === 0">
+        <p class="text-caption text-grey-5 q-pa-sm" data-testid="picker-all-rostered">
+          All recurring players are already in this session's roster.
+        </p>
+      </template>
       <template v-else>
         <button
           v-for="name in availablePlayers"
@@ -163,7 +168,7 @@ function addName(name: string): boolean {
     return false;
   }
   inputError.value = null;
-  store.draftRoster.push(name);
+  store.draftRoster.push(name.toLowerCase());
   return true;
 }
 

@@ -95,7 +95,7 @@ describe('SessionSetupPage', () => {
     const store = useArcherySessionStore();
     store.draftName = 'Alice';
     await wrapper.find('[data-testid="add-btn"]').trigger('click');
-    expect(store.draftRoster).toContain('Alice');
+    expect(store.draftRoster).toContain('alice');
     expect(store.draftName).toBe('');
   });
 
@@ -255,6 +255,7 @@ describe('SessionSetupPage — recurring player picker (Story 8.4)', () => {
   });
 
   it('shows empty state pointing to management when no recurring players exist (AC 5)', async () => {
+    await router.isReady();
     const wrapper = mountPage([]);
     await wrapper.find('[data-testid="picker-btn"]').trigger('click');
     await wrapper.vm.$nextTick();
@@ -262,5 +263,28 @@ describe('SessionSetupPage — recurring player picker (Story 8.4)', () => {
     const link = wrapper.find('[data-testid="picker-manage-link"]');
     expect(link.exists()).toBe(true);
     expect(link.attributes('href')).toBe('/archery/players');
+  });
+
+  it('shows all-rostered message when all recurring players are already in the roster', async () => {
+    const wrapper = mountPage(['alice', 'bob']);
+    const store = useArcherySessionStore();
+    store.draftRoster = ['alice', 'bob'];
+    await wrapper.find('[data-testid="picker-btn"]').trigger('click');
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('[data-testid="picker-all-rostered"]').exists()).toBe(true);
+    expect(wrapper.findAll('[data-testid="recurring-player-option"]').length).toBe(0);
+  });
+
+  it('picked player is excluded when picker is re-opened (AC 4)', async () => {
+    const wrapper = mountPage(['alice', 'bob']);
+    await wrapper.find('[data-testid="picker-btn"]').trigger('click');
+    await wrapper.vm.$nextTick();
+    await wrapper.findAll('[data-testid="recurring-player-option"]')[0].trigger('click');
+    await wrapper.vm.$nextTick();
+    await wrapper.find('[data-testid="picker-btn"]').trigger('click');
+    await wrapper.vm.$nextTick();
+    const options = wrapper.findAll('[data-testid="recurring-player-option"]');
+    expect(options.length).toBe(1);
+    expect(options[0].text()).toBe('bob');
   });
 });
