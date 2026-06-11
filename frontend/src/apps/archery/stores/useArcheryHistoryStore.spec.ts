@@ -23,7 +23,8 @@ const SUMMARY: SessionSummary = {
   name: '2026-05-29',
   archer_count: 2,
   winner: 'Alice',
-  winning_score: 324
+  winning_score: 324,
+  top_archers: [{ name: 'Alice', score: 324 }]
 };
 
 const SESSION: SessionData = {

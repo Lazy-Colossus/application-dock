@@ -257,6 +257,7 @@ def test_session_summary_shape() -> None:
         archer_count=3,
         winner="Jamie",
         winning_score=284,
+        top_archers=[{"name": "Jamie", "score": 284}],
     )
     assert summary.model_dump() == {
         "label": "2026-05-21",
@@ -264,4 +265,5 @@ def test_session_summary_shape() -> None:
         "archer_count": 3,
         "winner": "Jamie",
         "winning_score": 284,
+        "top_archers": [{"name": "Jamie", "score": 284}],
     }

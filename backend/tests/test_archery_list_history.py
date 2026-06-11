@@ -116,3 +116,45 @@ def test_session_with_no_targets_has_zero_winner_score(tmp_path: Path) -> None:
     seed_session(tmp_path, "2026-05-29", ["Alice", "Bob"])
     s = client.get("/api/archery/sessions").json()[0]
     assert s["winning_score"] == 0
+
+
+# ─── Story 9.1: top_archers in summary ──────────────────────────────────────
+
+
+def test_summary_includes_top_archers_field(tmp_path: Path) -> None:
+    targets = [{"number": 1, "scores": {"Alice": [10, 8], "Bob": [5, 5], "Charlie": [8, 8]}}]
+    seed_session(tmp_path, "2026-05-29", ["Alice", "Bob", "Charlie"], targets)
+    s = client.get("/api/archery/sessions").json()[0]
+    assert "top_archers" in s
+    assert len(s["top_archers"]) == 3
+    # Alice: 18, Charlie: 16, Bob: 10
+    assert s["top_archers"][0]["name"] == "Alice"
+    assert s["top_archers"][0]["score"] == 18
+    assert s["top_archers"][1]["name"] == "Charlie"
+    assert s["top_archers"][2]["name"] == "Bob"
+
+
+def test_top_archers_capped_at_three_in_response(tmp_path: Path) -> None:
+    targets = [
+        {
+            "number": 1,
+            "scores": {
+                "Alice": [11, 11],
+                "Bob": [10, 10],
+                "Charlie": [8, 8],
+                "Diana": [5, 5],
+            },
+        }
+    ]
+    seed_session(tmp_path, "2026-05-29", ["Alice", "Bob", "Charlie", "Diana"], targets)
+    s = client.get("/api/archery/sessions").json()[0]
+    assert len(s["top_archers"]) == 3
+
+
+def test_top_archers_tiebreak_in_response(tmp_path: Path) -> None:
+    targets = [{"number": 1, "scores": {"Charlie": [5, 5], "Alice": [5, 5], "Bob": [5, 5]}}]
+    seed_session(tmp_path, "2026-05-29", ["Charlie", "Alice", "Bob"], targets)
+    s = client.get("/api/archery/sessions").json()[0]
+    assert s["top_archers"][0]["name"] == "Alice"
+    assert s["top_archers"][1]["name"] == "Bob"
+    assert s["top_archers"][2]["name"] == "Charlie"

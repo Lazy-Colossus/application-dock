@@ -13,6 +13,7 @@ from app.repositories import session_repo
 from app.schemas.session import (
     TARGET_NUMBER_MAX,
     TARGET_NUMBER_MIN,
+    ArcherScore,
     InProgressSummary,
     SessionData,
     SessionSummary,
@@ -193,12 +194,14 @@ def _summarise(s: SessionData) -> SessionSummary:
     totals = [(a, _archer_total(s, a)) for a in s.archers]
     totals.sort(key=lambda x: (-x[1], x[0].casefold()))
     winner_name, winner_score = totals[0] if totals else ("", 0)
+    top_archers = [ArcherScore(name=a, score=sc) for a, sc in totals[:3]]
     return SessionSummary(
         label=s.label,
         name=s.name,
         archer_count=len(s.archers),
         winner=winner_name,
         winning_score=winner_score,
+        top_archers=top_archers,
     )
 
 

@@ -1,5 +1,11 @@
 # Deferred Work
 
+## Deferred from: code review of 9.1.history-subtext-top-3-archers (2026-06-12)
+
+- All-zero finalised session renders as `Alice 0 · Bob 0 · Charlie 0` with no "no scores recorded" hint — pre-existing (Story 7.1 materialises unentered shots as 0); subtext line now makes this more visible than before
+- Pre-existing name-validation gaps now newly visible in the prominent subtext: names containing `·`, `,`, embedded newline, or zero-width space corrupt the rendered list. Only `/` is currently rejected (and only by `AddPlayerRequest`, not `CreateSessionRequest`/`SessionData`) — broader name-validation hardening is out of scope for 9.1
+- Aria-label pluralisation says `"1 archers"` for single-archer sessions — pre-existing string template, predates 9.1
+
 ## Deferred from: code review of 1.1 & 1.2 (2026-06-03)
 
 - conftest.py import ordering fragile — works correctly under current pytest structure, risk only if tests are reorganised to import `app.main` at module level outside of `backend/tests/`

@@ -1,14 +1,12 @@
 <template>
   <button
     class="hli row items-center"
-    :aria-label="`Session ${displaySessionName(summary)}, ${summary.archer_count} archers, winner ${summary.winner} with ${summary.winning_score} points`"
+    :aria-label="`Session ${displaySessionName(summary)}, ${summary.archer_count} archers, top scores: ${summary.top_archers.map(a => `${a.name} ${a.score}`).join(', ')}`"
     @click="emit('tap', summary.label)"
   >
     <div class="col column no-wrap q-py-md q-pl-md">
       <span class="hli__label">{{ displaySessionName(summary) }}</span>
-      <span class="hli__sub">
-        {{ summary.archer_count }} archers — Winner: {{ summary.winner }} ({{ summary.winning_score }})
-      </span>
+      <span class="hli__sub">{{ summary.archer_count }} archers · {{ summary.top_archers.map(a => `${a.name} ${a.score}`).join(' · ') }}</span>
     </div>
     <q-icon name="chevron_right" class="hli__chevron q-mr-md" />
   </button>
@@ -44,6 +42,9 @@ const emit = defineEmits<{ (e: 'tap', label: string): void }>();
   font-family: Roboto, sans-serif
   font-size: 12px
   color: #8A8A8A
+  white-space: nowrap
+  overflow: hidden
+  text-overflow: ellipsis
 
 .hli__chevron
   color: #4A4A4A
