@@ -16,6 +16,17 @@
           {{ pageTitle }}
         </q-toolbar-title>
         <q-btn
+          v-if="isHome"
+          flat
+          round
+          dense
+          icon="settings"
+          color="primary"
+          aria-label="Open settings"
+          to="/settings"
+        />
+        <q-btn
+          v-else
           flat
           round
           dense
@@ -41,6 +52,7 @@ const route = useRoute();
 const router = useRouter();
 
 const showBack = computed(() => route.path !== '/');
+const isHome = computed(() => route.path === '/');
 
 const pageTitle = computed(() => {
   const t = route.meta?.title;

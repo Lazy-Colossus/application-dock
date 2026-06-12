@@ -10,8 +10,11 @@ services:
       - "8123:8000"
     environment:
       DATA_DIR: /data
+      HOST_SCRIPTS_DIR_ON_HOST: ${HOST_SCRIPTS_DIR:-/home/jake/scripts}
     volumes:
       - archery-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${HOST_SCRIPTS_DIR:-/scripts}:/host-scripts:ro
 
 volumes:
   archery-data:

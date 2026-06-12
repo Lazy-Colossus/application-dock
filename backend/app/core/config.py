@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     )
 
     data_dir: Path = Path("/data")
+    host_scripts_dir_on_host: Path = Path("/scripts")
 
 
 settings = Settings()

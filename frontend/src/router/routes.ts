@@ -12,6 +12,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Apps' }
       },
       {
+        path: 'settings',
+        name: 'settings',
+        component: () => import('@/pages/SettingsPage.vue'),
+        meta: { title: 'Settings' }
+      },
+      {
         path: 'archery',
         name: 'archery-home',
         component: () => import('@/apps/archery/pages/ArcheryHomePage.vue'),

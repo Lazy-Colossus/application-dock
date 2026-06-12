@@ -65,6 +65,37 @@ application-dock/
 
 For the authoritative architecture and full project source tree, see `docs/architecture/source-tree.md`.
 
+## Updating
+
+The Settings page exposes an **Update applications** button that triggers a host-side
+update script via the Docker socket. To enable it:
+
+1. **Create an update script** at a path on the host, e.g. `/opt/application-dock/scripts/update-application-dock.sh`.
+   The script must be executable (`chmod +x`) and may issue any `docker compose` / `docker`
+   commands needed to pull and restart the stack.
+
+2. **Pre-pull the sidecar image** on the host:
+   ```bash
+   docker pull docker:cli
+   ```
+
+3. **Set `HOST_SCRIPTS_DIR`** in your environment (or a `.env` file alongside `docker-compose.yml`)
+   to the absolute host path of the scripts directory:
+   ```bash
+   HOST_SCRIPTS_DIR=/opt/application-dock/scripts
+   ```
+   Both the volume mount and the `HOST_SCRIPTS_DIR_ON_HOST` env var inside the container
+   are derived from this single value.
+
+4. **Restart the stack** — `docker compose up -d` — to apply the new mounts.
+
+When `HOST_SCRIPTS_DIR` is unset or the script is absent, the button renders as
+**Update not available** and no action is possible (graceful degradation).
+
+> **Security note:** mounting `/var/run/docker.sock` gives the container root-equivalent
+> access to the host. This is intentional for single-user home deployments. Do not expose
+> the app to an untrusted network without removing or replacing this feature.
+
 ## Tests
 
 **Backend:**
