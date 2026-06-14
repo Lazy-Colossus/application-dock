@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     host_scripts_dir_on_host: Path = Path("/scripts")
     host_project_dir_on_host: str = ""
     host_compose_file_dir_on_host: str = ""
+    host_uid: str = ""
 
 
 settings = Settings()

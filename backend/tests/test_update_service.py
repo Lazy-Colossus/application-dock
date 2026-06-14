@@ -48,7 +48,7 @@ def test_trigger_update_calls_containers_run(monkeypatch):
     mock_client.containers.run.assert_called_once()
     call = mock_client.containers.run.call_args
     assert call.args[0] == "docker:cli"
-    assert call.kwargs["command"] == ["sh", "/host-scripts/update-application-dock.sh"]
+    assert call.kwargs["command"] == ["sh", "/host-scripts/update-application-dock-docker.sh"]
     assert call.kwargs["detach"] is True
     assert call.kwargs["remove"] is True
     assert call.kwargs["name"] == "application-dock-updater"
