@@ -21,7 +21,7 @@ router = APIRouter(prefix="/api", tags=["shell"])
 _APPS: list[AppDescriptor] = [
     AppDescriptor(
         id="archery",
-        label="Archery Score Counter",
+        label="Archery Score Counterrr",
         icon="sports_score",
         route="/archery",
     ),
