@@ -71,84 +71,135 @@ The Settings page exposes an **Update applications** button that triggers a host
 update script via the Docker socket. When the feature is not configured the button shows
 **Update not available** — the app degrades gracefully without crashing.
 
+### How it works
+
+Clicking the button causes the backend to spawn a short-lived `docker:cli` sidecar
+container with the host Docker socket mounted. The sidecar runs your
+`update-application-dock-docker.sh` script, then exits. The backend returns immediately
+(fire-and-forget) — the page warns you that connection will drop and you refresh manually
+once the new container is up.
+
+The sidecar can be given up to three host directories, each mounted at a fixed path:
+
+| Env var | Sidecar path | Mode | Purpose |
+|---|---|---|---|
+| `HOST_SCRIPTS_DIR` | `/host-scripts` | rw | Script location; log files go here |
+| `HOST_PROJECT_DIR` | `/host-project` | rw | Git repo root (for `git pull` + `docker build`) |
+| `HOST_COMPOSE_FILE_DIR` | `/host-compose-dir` | ro | Directory containing your `docker-compose.yml` |
+
+Only `HOST_SCRIPTS_DIR` is required. The other two are optional — set them if your update
+script needs to access your repo or a compose file that lives outside the scripts directory.
+
 ### One-time setup
 
-**1. Create the update script on the host**
-
-```bash
-mkdir -p /home/jake/scripts
-cat > /home/jake/scripts/update-application-dock.sh << 'EOF'
-#!/bin/sh
-cd /path/to/your/compose/dir
-docker compose pull
-docker compose up -d
-EOF
-chmod +x /home/jake/scripts/update-application-dock.sh
-```
-
-The script has access to the host Docker socket and can run any `docker`/`docker compose`
-commands it needs. It is responsible for knowing where your `docker-compose.yml` lives.
-
-**2. Pre-pull the sidecar image on the host**
+**1. Pre-pull the sidecar image on the host**
 
 ```bash
 docker pull docker:cli
 ```
 
-The button will fail with a 502 if this image is missing when the update is triggered.
+**2. Create `.env` next to `docker-compose.yml`**
 
-**3. Set the env var and restart**
-
-Create or edit a `.env` file next to `docker-compose.yml`:
-
+Minimum (script only):
 ```bash
 HOST_SCRIPTS_DIR=/home/jake/scripts
 ```
 
-Then do a full restart so the new mounts are applied:
+If your script also does `git pull` / `docker build` and `docker compose up`:
+```bash
+HOST_SCRIPTS_DIR=/home/jake/scripts
+HOST_PROJECT_DIR=/DATA/AppData/Application-Dock/application-dock
+HOST_COMPOSE_FILE_DIR=/var/lib/casaos/apps/cheerful_bethany
+```
+
+**3. Write the update script**
+
+The script runs inside the `docker:cli` sidecar — use the fixed mount paths, not host
+paths. A typical full-update script:
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+REPO=/host-project
+COMPOSE=/host-compose-dir/docker-compose.yml
+LOG=/host-scripts/update-application-dock.log
+
+log() { echo "[$(date '+%F %T')] $*" >> "$LOG"; }
+
+cd "$REPO"
+git fetch --quiet origin
+LOCAL=$(git rev-parse HEAD)
+REMOTE=$(git rev-parse '@{u}')
+if [ "$LOCAL" = "$REMOTE" ]; then
+    log "Already up to date"
+    exit 0
+fi
+
+log "Update detected: $LOCAL -> $REMOTE"
+{
+    git pull --ff-only --quiet
+    docker build -t app-doc:latest -f backend/Dockerfile .
+    docker compose -f "$COMPOSE" up -d
+} >> "$LOG" 2>&1
+log "Update complete"
+```
+
+```bash
+chmod +x /home/jake/scripts/update-application-dock-docker.sh
+```
+
+**4. Restart the stack**
 
 ```bash
 docker compose down && docker compose up -d --build
 ```
 
-> **Why two env vars?** The compose file passes `HOST_SCRIPTS_DIR` as both a volume mount
-> source and as `HOST_SCRIPTS_DIR_ON_HOST` inside the container. The Docker SDK (running
-> inside the container) needs the *host* path when it tells the daemon to mount the scripts
-> directory into the sidecar — it can't use the container's own `/host-scripts` path for
-> that. Setting `HOST_SCRIPTS_DIR` once in `.env` covers both.
-
 ### Verifying the setup
 
-Confirm both mounts are present in the running container:
-
 ```bash
-# Docker socket
+# Socket accessible inside the app container
 docker exec application-dock ls /var/run/docker.sock
 
-# Scripts directory
-docker exec application-dock ls /host-scripts/update-application-dock.sh
+# Script visible inside the app container
+docker exec application-dock ls /host-scripts/update-application-dock-docker.sh
 ```
 
-Both should return the path without errors. If the socket is missing the button will show
-**Update not available** and clicking it returns a 503. If `docker.sock` is there but the
-SDK can't connect, you'll see an **Update launch failed** error — see Troubleshooting below.
+Test the sidecar manually (same command the backend runs):
+
+```bash
+docker run --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /home/jake/scripts:/host-scripts:rw \
+  -v /DATA/AppData/Application-Dock/application-dock:/host-project:rw \
+  -v /var/lib/casaos/apps/cheerful_bethany:/host-compose-dir:ro \
+  docker:cli \
+  sh /host-scripts/update-application-dock.sh
+```
+
+You should see your script's output with no "No such file or directory" errors.
 
 ### Troubleshooting
 
-**"Update launch failed: Error while fetching server API version … FileNotFoundError"**
+**"Update launch failed: … FileNotFoundError" (docker socket)**
 
-The container can't reach the Docker socket. Steps:
-1. Check that `docker-compose.yml` has the socket mount (`/var/run/docker.sock:/var/run/docker.sock`).
-2. Verify you restarted *after* pulling the updated compose file: `docker compose down && up -d`.
-3. Confirm the socket exists on the host: `ls /var/run/docker.sock`. Some distros put it at `/run/docker.sock` — if so, edit the volume line in `docker-compose.yml` to match.
-4. Run `docker exec application-dock ls /var/run/docker.sock` to confirm the mount is live inside the container.
+The sidecar can't reach `/var/run/docker.sock`:
+1. Confirm the socket exists on the host: `ls /var/run/docker.sock`. Some distros use `/run/docker.sock` — update the volume line in `docker-compose.yml` to match.
+2. Verify you restarted after updating compose: `docker compose down && up -d`.
+3. Confirm it's mounted: `docker exec application-dock ls /var/run/docker.sock`.
+
+**Script runs but "can't cd to /some/host/path"**
+
+The script is using a host path instead of the sidecar path. Replace host paths in your
+script with the fixed sidecar paths (`/host-project`, `/host-compose-dir`, `/host-scripts`).
+Make sure the corresponding `HOST_*` env vars are set in `.env` and the stack was restarted.
 
 **"Update not available" button even after setup**
 
 The backend checks for the script at startup. Causes:
-- `HOST_SCRIPTS_DIR` was not set before `docker compose up` — set it in `.env` and restart.
-- The file is named differently — it must be exactly `update-application-dock.sh`.
-- The volume mount path doesn't match — confirm with `docker exec application-dock ls /host-scripts/`.
+- `HOST_SCRIPTS_DIR` not set before `docker compose up` — set it in `.env` and restart.
+- File is named differently — it must be exactly `update-application-dock-docker.sh`.
+- Confirm: `docker exec application-dock ls /host-scripts/`.
 
 > **Security note:** mounting `/var/run/docker.sock` gives the container root-equivalent
 > access to the host daemon. This is intentional for single-user home deployments. Do not

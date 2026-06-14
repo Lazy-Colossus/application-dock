@@ -1,7 +1,7 @@
 """
 Startup detection and fire-and-forget trigger for the host update script.
 
-Compose contract: the host directory containing `update-application-dock.sh` must be
+Compose contract: the host directory containing `update-application-dock-docker.sh` must be
 mounted read-only at `/host-scripts` (fixed — not env-configurable, to keep the mount
 and the existence check from drifting), and the Docker socket must be mounted at
 `/var/run/docker.sock`. When either mount is absent the feature degrades silently:
@@ -21,7 +21,7 @@ import docker.errors
 from app.core.config import settings
 
 HOST_SCRIPTS_MOUNT = Path("/host-scripts")
-UPDATE_SCRIPT_PATH = HOST_SCRIPTS_MOUNT / "update-application-dock.sh"
+UPDATE_SCRIPT_PATH = HOST_SCRIPTS_MOUNT / "update-application-dock-docker.sh"
 _update_available: bool = UPDATE_SCRIPT_PATH.is_file()
 
 
@@ -34,13 +34,22 @@ def trigger_update() -> None:
         raise RuntimeError("Update not available")
     try:
         client = docker.from_env()
+        volumes: dict[str, dict[str, str]] = {
+            "/var/run/docker.sock": {"bind": "/var/run/docker.sock", "mode": "rw"},
+            # rw so the script can write log files inside the scripts directory
+            str(settings.host_scripts_dir_on_host): {"bind": "/host-scripts", "mode": "rw"},
+        }
+        if settings.host_project_dir_on_host:
+            volumes[settings.host_project_dir_on_host] = {"bind": "/host-project", "mode": "rw"}
+        if settings.host_compose_file_dir_on_host:
+            volumes[settings.host_compose_file_dir_on_host] = {
+                "bind": "/host-compose-dir",
+                "mode": "ro",
+            }
         client.containers.run(
             "docker:cli",
-            command=["sh", "/host-scripts/update-application-dock.sh"],
-            volumes={
-                "/var/run/docker.sock": {"bind": "/var/run/docker.sock", "mode": "rw"},
-                str(settings.host_scripts_dir_on_host): {"bind": "/host-scripts", "mode": "ro"},
-            },
+            command=["sh", "/host-scripts/update-application-dock-docker.sh"],
+            volumes=volumes,
             detach=True,
             remove=True,
             name="application-dock-updater",

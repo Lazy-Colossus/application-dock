@@ -11,10 +11,12 @@ services:
     environment:
       DATA_DIR: /data
       HOST_SCRIPTS_DIR_ON_HOST: ${HOST_SCRIPTS_DIR:-/home/jake/scripts}
+      HOST_PROJECT_DIR_ON_HOST: ${HOST_PROJECT_DIR:-}
+      HOST_COMPOSE_FILE_DIR_ON_HOST: ${HOST_COMPOSE_FILE_DIR:-}
     volumes:
       - archery-data:/data
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${HOST_SCRIPTS_DIR:-/scripts}:/host-scripts:ro
+      - ${HOST_SCRIPTS_DIR:-/home/jake/scripts}:/host-scripts:rw
 
 volumes:
   archery-data:
