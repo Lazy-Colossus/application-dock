@@ -1,8 +1,18 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
 
 import { ApiError, api } from '@/composables/useApi';
 
+// Mock useAuthStore so useApi can be tested without Pinia setup complexity
+vi.mock('@/stores/useAuthStore', () => ({
+  useAuthStore: () => ({ token: null, logout: vi.fn() })
+}));
+
 const originalFetch = globalThis.fetch;
+
+beforeEach(() => {
+  setActivePinia(createPinia());
+});
 
 afterEach(() => {
   globalThis.fetch = originalFetch;

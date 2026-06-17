@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from app.core.dependencies import get_current_user
 from app.services import update_service
 
 
@@ -21,7 +22,7 @@ router = APIRouter(prefix="/api", tags=["shell"])
 _APPS: list[AppDescriptor] = [
     AppDescriptor(
         id="archery",
-        label="Archery Score Counterrr",
+        label="Archery Score Counter",
         icon="sports_score",
         route="/archery",
     ),
@@ -29,17 +30,17 @@ _APPS: list[AppDescriptor] = [
 
 
 @router.get("/apps", response_model=list[AppDescriptor])
-def list_apps() -> list[AppDescriptor]:
+def list_apps(_: str = Depends(get_current_user)) -> list[AppDescriptor]:
     return _APPS
 
 
 @router.get("/shell/update-status", response_model=UpdateStatus)
-def get_update_status() -> UpdateStatus:
+def get_update_status(_: str = Depends(get_current_user)) -> UpdateStatus:
     return UpdateStatus(available=update_service.is_update_available())
 
 
 @router.post("/shell/update", status_code=202)
-def trigger_update() -> dict[str, str]:
+def trigger_update(_: str = Depends(get_current_user)) -> dict[str, str]:
     try:
         update_service.trigger_update()
     except RuntimeError as exc:

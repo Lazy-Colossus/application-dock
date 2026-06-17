@@ -1,7 +1,17 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createRouter, createMemoryHistory } from 'vue-router';
+import { createPinia, setActivePinia } from 'pinia';
 import MainLayout from '@/layouts/MainLayout.vue';
+
+// Auth store not under test here; stub it out
+vi.mock('@/stores/useAuthStore', () => ({
+  useAuthStore: () => ({ isAuthenticated: false, logout: vi.fn() })
+}));
+
+beforeEach(() => {
+  setActivePinia(createPinia());
+});
 
 async function mountAt(path: string) {
   const router = createRouter({
@@ -9,8 +19,8 @@ async function mountAt(path: string) {
     routes: [
       { path: '/', component: { template: '<div />' } },
       { path: '/archery', component: { template: '<div />' } },
-      { path: '/settings', component: { template: '<div />' } },
-    ],
+      { path: '/settings', component: { template: '<div />' } }
+    ]
   });
   await router.push(path);
   await router.isReady();
@@ -49,5 +59,10 @@ describe('MainLayout toolbar control', () => {
   it('back arrow present on /archery', async () => {
     const wrapper = await mountAt('/archery');
     expect(wrapper.find('[aria-label="Go back"]').exists()).toBe(true);
+  });
+
+  it('logout button hidden when not authenticated', async () => {
+    const wrapper = await mountAt('/');
+    expect(wrapper.find('[aria-label="Log out"]').exists()).toBe(false);
   });
 });

@@ -33,6 +33,7 @@ def test_list_apps_response_is_direct_array_no_envelope() -> None:
 
 # --- /api/shell/update-status ---
 
+
 def test_get_update_status_returns_available_false(monkeypatch) -> None:
     monkeypatch.setattr(update_service, "is_update_available", lambda: False)
     response = client.get("/api/shell/update-status")
@@ -48,6 +49,7 @@ def test_get_update_status_returns_available_true(monkeypatch) -> None:
 
 
 # --- /api/shell/update ---
+
 
 def test_post_update_returns_202_when_available(monkeypatch) -> None:
     monkeypatch.setattr(update_service, "trigger_update", lambda: None)

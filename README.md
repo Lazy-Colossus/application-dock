@@ -33,7 +33,14 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
 export DATA_DIR=./local-data   # local writable path; /data isn't writable outside Docker
+export JWT_SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(32))")
 uvicorn app.main:app --reload --port 8000
+```
+
+**First-time auth setup** — run once to create login credentials:
+
+```bash
+DATA_DIR=./local-data python scripts/setup_auth.py
 ```
 
 **Terminal 2 — Frontend** (Quasar dev server on port 9000, proxies `/api/*` to backend):

@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException, Path
 
+from app.core.dependencies import get_current_user
 from app.schemas.session import (
     AddPlayerRequest,
     CreateSessionRequest,
@@ -15,7 +16,7 @@ _LABEL_PATTERN = r"^\d{4}-\d{2}-\d{2}(-\d+)?$"
 
 
 @router.post("/sessions", response_model=SessionData)
-def create_session(req: CreateSessionRequest) -> SessionData:
+def create_session(req: CreateSessionRequest, _: str = Depends(get_current_user)) -> SessionData:
     return archery_service.create_session(req.archers, req.name)
 
 
@@ -23,12 +24,12 @@ def create_session(req: CreateSessionRequest) -> SessionData:
 
 
 @router.get("/players", response_model=list[str])
-def list_players() -> list[str]:
+def list_players(_: str = Depends(get_current_user)) -> list[str]:
     return archery_service.list_recurring_players()
 
 
 @router.post("/players", response_model=list[str])
-def add_player(req: AddPlayerRequest) -> list[str]:
+def add_player(req: AddPlayerRequest, _: str = Depends(get_current_user)) -> list[str]:
     try:
         return archery_service.add_recurring_player(req.name)
     except ValueError as exc:
@@ -36,22 +37,24 @@ def add_player(req: AddPlayerRequest) -> list[str]:
 
 
 @router.delete("/players/{name}", response_model=list[str])
-def remove_player(name: str) -> list[str]:
+def remove_player(name: str, _: str = Depends(get_current_user)) -> list[str]:
     return archery_service.remove_recurring_player(name)
 
 
 @router.get("/sessions", response_model=list[SessionSummary])
-def list_sessions() -> list[SessionSummary]:
+def list_sessions(_: str = Depends(get_current_user)) -> list[SessionSummary]:
     return archery_service.list_history()
 
 
 @router.get("/sessions/in-progress", response_model=list[InProgressSummary])
-def list_in_progress() -> list[InProgressSummary]:
+def list_in_progress(_: str = Depends(get_current_user)) -> list[InProgressSummary]:
     return archery_service.list_in_progress_summaries()
 
 
 @router.get("/sessions/in-progress/{label}", response_model=SessionData)
-def get_in_progress(label: str = Path(..., pattern=_LABEL_PATTERN)) -> SessionData:
+def get_in_progress(
+    label: str = Path(..., pattern=_LABEL_PATTERN), _: str = Depends(get_current_user)
+) -> SessionData:
     s = archery_service.get_in_progress(label)
     if s is None:
         raise HTTPException(status_code=404, detail=f"No in-progress session {label}.")
@@ -60,7 +63,9 @@ def get_in_progress(label: str = Path(..., pattern=_LABEL_PATTERN)) -> SessionDa
 
 @router.put("/sessions/in-progress/{label}", response_model=SessionData)
 def update_in_progress(
-    body: SessionData, label: str = Path(..., pattern=_LABEL_PATTERN)
+    body: SessionData,
+    label: str = Path(..., pattern=_LABEL_PATTERN),
+    _: str = Depends(get_current_user),
 ) -> SessionData:
     if body.label != label:
         raise HTTPException(status_code=400, detail="Path label does not match body label.")
@@ -71,12 +76,16 @@ def update_in_progress(
 
 
 @router.delete("/sessions/in-progress/{label}", status_code=204)
-def delete_in_progress(label: str = Path(..., pattern=_LABEL_PATTERN)) -> None:
+def delete_in_progress(
+    label: str = Path(..., pattern=_LABEL_PATTERN), _: str = Depends(get_current_user)
+) -> None:
     archery_service.discard_in_progress(label)
 
 
 @router.post("/sessions/in-progress/{label}/finalise", response_model=SessionData)
-def finalise_session(label: str = Path(..., pattern=_LABEL_PATTERN)) -> SessionData:
+def finalise_session(
+    label: str = Path(..., pattern=_LABEL_PATTERN), _: str = Depends(get_current_user)
+) -> SessionData:
     try:
         return archery_service.finalise_in_progress(label)
     except FileNotFoundError as exc:
@@ -84,7 +93,9 @@ def finalise_session(label: str = Path(..., pattern=_LABEL_PATTERN)) -> SessionD
 
 
 @router.get("/sessions/{label}", response_model=SessionData)
-def get_session(label: str = Path(..., pattern=_LABEL_PATTERN)) -> SessionData:
+def get_session(
+    label: str = Path(..., pattern=_LABEL_PATTERN), _: str = Depends(get_current_user)
+) -> SessionData:
     try:
         return archery_service.read_finalised(label)
     except FileNotFoundError as exc:

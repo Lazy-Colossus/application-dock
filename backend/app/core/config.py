@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     host_compose_file_dir_on_host: str = ""
     host_uid: str = ""
 
+    jwt_secret_key: str = ""
+    jwt_algorithm: str = "HS256"
+    jwt_expire_days: int = 7
+
 
 settings = Settings()
 try:

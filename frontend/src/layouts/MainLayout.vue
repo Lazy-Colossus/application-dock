@@ -16,6 +16,16 @@
           {{ pageTitle }}
         </q-toolbar-title>
         <q-btn
+          v-if="authStore.isAuthenticated"
+          flat
+          round
+          dense
+          icon="logout"
+          color="grey-5"
+          aria-label="Log out"
+          @click="handleLogout"
+        />
+        <q-btn
           v-if="isHome"
           flat
           round
@@ -47,9 +57,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 const route = useRoute();
 const router = useRouter();
+const authStore = useAuthStore();
 
 const showBack = computed(() => route.path !== '/');
 const isHome = computed(() => route.path === '/');
@@ -65,6 +77,11 @@ function goBack(): void {
   } else {
     void router.push('/');
   }
+}
+
+function handleLogout(): void {
+  authStore.logout();
+  void router.push('/login');
 }
 </script>
 

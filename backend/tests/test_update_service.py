@@ -4,8 +4,8 @@ import pytest
 
 import app.services.update_service as update_service
 
-
 # --- is_update_available ---
+
 
 def test_is_update_available_returns_true_when_flag_set(monkeypatch):
     monkeypatch.setattr(update_service, "_update_available", True)
@@ -21,18 +21,23 @@ def test_boot_detection_true_when_script_exists(tmp_path, monkeypatch):
     script = tmp_path / "update-application-dock.sh"
     script.touch()
     monkeypatch.setattr(update_service, "UPDATE_SCRIPT_PATH", script)
-    monkeypatch.setattr(update_service, "_update_available", update_service.UPDATE_SCRIPT_PATH.is_file())
+    monkeypatch.setattr(
+        update_service, "_update_available", update_service.UPDATE_SCRIPT_PATH.is_file()
+    )
     assert update_service.is_update_available() is True
 
 
 def test_boot_detection_false_when_script_absent(tmp_path, monkeypatch):
     missing = tmp_path / "update-application-dock.sh"
     monkeypatch.setattr(update_service, "UPDATE_SCRIPT_PATH", missing)
-    monkeypatch.setattr(update_service, "_update_available", update_service.UPDATE_SCRIPT_PATH.is_file())
+    monkeypatch.setattr(
+        update_service, "_update_available", update_service.UPDATE_SCRIPT_PATH.is_file()
+    )
     assert update_service.is_update_available() is False
 
 
 # --- trigger_update ---
+
 
 def test_trigger_update_raises_when_unavailable(monkeypatch):
     monkeypatch.setattr(update_service, "_update_available", False)

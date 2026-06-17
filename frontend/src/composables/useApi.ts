@@ -22,11 +22,19 @@ const BASE_URL = '/api';
 type JsonBody = Record<string, unknown> | unknown[] | null;
 
 async function request<T>(method: string, path: string, body?: JsonBody): Promise<T> {
+  // Lazy import to avoid circular dependency (useAuthStore imports useApi)
+  const { useAuthStore } = await import('@/stores/useAuthStore');
+  const authStore = useAuthStore();
+
+  const headers: Record<string, string> = {};
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (authStore.token) headers['Authorization'] = `Bearer ${authStore.token}`;
+
   let response: Response;
   try {
     response = await fetch(`${BASE_URL}${path}`, {
       method,
-      headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+      headers: Object.keys(headers).length > 0 ? headers : undefined,
       body: body !== undefined ? JSON.stringify(body) : undefined
     });
   } catch (e) {
@@ -58,7 +66,16 @@ async function request<T>(method: string, path: string, body?: JsonBody): Promis
       typeof (parsed as { detail: unknown }).detail === 'string'
         ? (parsed as { detail: string }).detail
         : response.statusText || `HTTP ${response.status}`;
-    throw new ApiError(response.status, detail, parsed);
+    const apiError = new ApiError(response.status, detail, parsed);
+
+    // If token was present but server rejected it (expired/invalid), clear and
+    // redirect to login. Skip redirect when there was no token (e.g. bad login creds).
+    if (response.status === 401 && authStore.token !== null) {
+      authStore.logout();
+      window.location.href = '/login';
+    }
+
+    throw apiError;
   }
 
   return parsed as T;
