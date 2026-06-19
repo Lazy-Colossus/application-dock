@@ -1,5 +1,22 @@
 # Deferred Work
 
+## Deferred from: code review of 1.5.jwt-authentication pass 2 (2026-06-18)
+
+- No test validates 7-day expiry claim in JWT — `test_login_success` checks only token presence; low risk, `jose.jwt.decode` validates `exp` at runtime [`backend/tests/test_auth.py:48–56`]
+- `restoreSession` retries `GET /auth/me` on every navigation when a non-401 error occurs — 401 path is safe (logout clears token); non-401 errors retry each nav; acceptable for self-hosted LAN [`frontend/src/stores/useAuthStore.ts`]
+- `_atomic_write_json` imported as private underscore-prefixed symbol from `session_repo` — P8 dedup fix; extract to shared `core/utils.py` when touching repositories again [`backend/app/repositories/auth_repo.py:14`]
+- `conftest.py` exact `== "test_auth.py"` match would include a future `test_auth_helpers.py` in auth bypass — proper fix is a pytest marker; low probability currently [`backend/tests/conftest.py:16`]
+
+## Deferred from: code review of 1.5.jwt-authentication (2026-06-18)
+
+- JWT token stored in `localStorage` — XSS-accessible; documented design decision ("acceptable for self-hosted personal use") [`frontend/src/stores/useAuthStore.ts:13`]
+- `isAuthenticated` based on token presence, not expiry/signature validity — by design; server 401s handle the expiry path [`frontend/src/stores/useAuthStore.ts:18`]
+- Cross-tab logout not reflected in current tab's Pinia store — `localStorage` is not watched for changes; out of scope for this story
+- World-readable tmp file permissions in `_atomic_write_json` — pre-existing in session_repo too; security hardening out of scope [`backend/app/repositories/auth_repo.py:29`]
+- AC5: no setup-script round-trip integration test — functional coverage via auth_repo unit paths; setup-script integration test is nice-to-have
+- No minimum password length/entropy validation — setup script validates non-empty; login schema correctly returns 401; out of scope
+- Concurrent 401 responses trigger multiple `logout()` calls — harmless (logout is idempotent); same root cause as the login-loop patch item
+
 ## Deferred from: code review of 9.1.history-subtext-top-3-archers (2026-06-12)
 
 - All-zero finalised session renders as `Alice 0 · Bob 0 · Charlie 0` with no "no scores recorded" hint — pre-existing (Story 7.1 materialises unentered shots as 0); subtext line now makes this more visible than before

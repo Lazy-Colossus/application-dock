@@ -3,15 +3,20 @@ import { createPinia, setActivePinia } from 'pinia';
 
 import { ApiError, api } from '@/composables/useApi';
 
+const mockLogout = vi.fn();
+const mockAuthStore = { token: null as string | null, logout: mockLogout };
+
 // Mock useAuthStore so useApi can be tested without Pinia setup complexity
 vi.mock('@/stores/useAuthStore', () => ({
-  useAuthStore: () => ({ token: null, logout: vi.fn() })
+  useAuthStore: () => mockAuthStore
 }));
 
 const originalFetch = globalThis.fetch;
 
 beforeEach(() => {
   setActivePinia(createPinia());
+  mockAuthStore.token = null;
+  mockLogout.mockClear();
 });
 
 afterEach(() => {
@@ -68,6 +73,34 @@ describe('useApi', () => {
     await expect(api.get('/anything')).rejects.toMatchObject({
       status: 500,
       detail: 'BORK'
+    });
+  });
+
+  describe('401 redirect behaviour', () => {
+    beforeEach(() => {
+      Object.defineProperty(window, 'location', { value: { href: '' }, writable: true });
+    });
+
+    it('calls logout and redirects when token present and 401 on non-login endpoint', async () => {
+      mockAuthStore.token = 'valid-token';
+      mockFetch(async () => new Response(JSON.stringify({ detail: 'Unauthorized' }), { status: 401 }));
+      await expect(api.get('/archery/sessions')).rejects.toMatchObject({ status: 401 });
+      expect(mockLogout).toHaveBeenCalledOnce();
+      expect(window.location.href).toBe('/login');
+    });
+
+    it('does NOT redirect when 401 on /auth/login (wrong credentials)', async () => {
+      mockAuthStore.token = 'stale-token';
+      mockFetch(async () => new Response(JSON.stringify({ detail: 'Invalid credentials' }), { status: 401 }));
+      await expect(api.post('/auth/login', { username: 'x', password: 'y' })).rejects.toMatchObject({ status: 401 });
+      expect(mockLogout).not.toHaveBeenCalled();
+    });
+
+    it('does NOT redirect when 401 and no token present', async () => {
+      mockAuthStore.token = null;
+      mockFetch(async () => new Response(JSON.stringify({ detail: 'Unauthorized' }), { status: 401 }));
+      await expect(api.get('/archery/sessions')).rejects.toMatchObject({ status: 401 });
+      expect(mockLogout).not.toHaveBeenCalled();
     });
   });
 });

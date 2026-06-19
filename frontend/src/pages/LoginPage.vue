@@ -61,7 +61,9 @@ const password = ref('');
 async function handleLogin(): Promise<void> {
   await authStore.login(username.value, password.value);
   if (authStore.isAuthenticated) {
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/';
+    const raw = typeof route.query.redirect === 'string' ? route.query.redirect : '/';
+    // Reject absolute URLs and protocol-relative paths to prevent open redirect
+    const redirect = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/';
     await router.push(redirect);
   }
 }

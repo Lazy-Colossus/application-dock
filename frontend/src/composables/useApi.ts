@@ -69,8 +69,9 @@ async function request<T>(method: string, path: string, body?: JsonBody): Promis
     const apiError = new ApiError(response.status, detail, parsed);
 
     // If token was present but server rejected it (expired/invalid), clear and
-    // redirect to login. Skip redirect when there was no token (e.g. bad login creds).
-    if (response.status === 401 && authStore.token !== null) {
+    // redirect to login. Skip redirect for the login endpoint itself (wrong
+    // credentials returns 401 there too) and when no token was present.
+    if (response.status === 401 && authStore.token !== null && path !== '/auth/login') {
       authStore.logout();
       window.location.href = '/login';
     }

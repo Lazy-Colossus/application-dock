@@ -43,8 +43,8 @@ def get_update_status(_: str = Depends(get_current_user)) -> UpdateStatus:
 def trigger_update(_: str = Depends(get_current_user)) -> dict[str, str]:
     try:
         update_service.trigger_update()
+    except update_service.UpdateUnavailableError as exc:
+        raise HTTPException(status_code=503, detail="Update not available") from exc
     except RuntimeError as exc:
-        if str(exc) == "Update not available":
-            raise HTTPException(status_code=503, detail="Update not available") from exc
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     return {"detail": "Update started"}

@@ -18,7 +18,7 @@ def test_is_update_available_returns_false_when_flag_set(monkeypatch):
 
 
 def test_boot_detection_true_when_script_exists(tmp_path, monkeypatch):
-    script = tmp_path / "update-application-dock.sh"
+    script = tmp_path / "update-application-dock-docker.sh"
     script.touch()
     monkeypatch.setattr(update_service, "UPDATE_SCRIPT_PATH", script)
     monkeypatch.setattr(
@@ -28,7 +28,7 @@ def test_boot_detection_true_when_script_exists(tmp_path, monkeypatch):
 
 
 def test_boot_detection_false_when_script_absent(tmp_path, monkeypatch):
-    missing = tmp_path / "update-application-dock.sh"
+    missing = tmp_path / "update-application-dock-docker.sh"
     monkeypatch.setattr(update_service, "UPDATE_SCRIPT_PATH", missing)
     monkeypatch.setattr(
         update_service, "_update_available", update_service.UPDATE_SCRIPT_PATH.is_file()
@@ -57,6 +57,10 @@ def test_trigger_update_calls_containers_run(monkeypatch):
     assert call.kwargs["detach"] is True
     assert call.kwargs["remove"] is True
     assert call.kwargs["name"] == "application-dock-updater"
+    volumes = call.kwargs["volumes"]
+    assert volumes["/var/run/docker.sock"] == {"bind": "/var/run/docker.sock", "mode": "rw"}
+    scripts_key = str(update_service.settings.host_scripts_dir_on_host)
+    assert volumes[scripts_key] == {"bind": "/host-scripts", "mode": "ro"}
 
 
 def test_trigger_update_reraises_docker_exception(monkeypatch):

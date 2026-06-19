@@ -1,4 +1,4 @@
-"""Interactive script to create or overwrite the auth credentials file (_auth.json).
+"""Interactive script to create or overwrite auth credentials in _auth.json.
 
 Usage (from backend/ directory):
     DATA_DIR=./local-data python scripts/setup_auth.py
@@ -22,18 +22,18 @@ from app.services.auth_service import hash_password  # noqa: E402
 def main() -> None:
     print(f"Auth credentials will be stored in: {settings.data_dir / '_auth.json'}")
 
-    existing = auth_repo.read_user()
+    username = input("\nUsername: ").strip()
+    if not username:
+        print("Error: username cannot be empty.")
+        sys.exit(1)
+
+    existing = auth_repo.read_user(username)
     if existing is not None:
         print(f"\n⚠️  Existing credentials found for user '{existing.username}'.")
         confirm = input("Overwrite? [y/N] ").strip().lower()
         if confirm != "y":
             print("Aborted.")
             sys.exit(0)
-
-    username = input("\nUsername: ").strip()
-    if not username:
-        print("Error: username cannot be empty.")
-        sys.exit(1)
 
     password = getpass.getpass("Password: ")
     if not password:

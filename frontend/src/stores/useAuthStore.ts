@@ -47,5 +47,16 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem(TOKEN_KEY);
   }
 
-  return { token, username, loading, error, isAuthenticated, login, logout };
+  async function restoreSession(): Promise<void> {
+    if (!token.value || username.value !== null) return;
+    try {
+      const { api } = await import('@/composables/useApi');
+      const data = await api.get<{ username: string }>('/auth/me');
+      username.value = data.username;
+    } catch {
+      // 401 handled by useApi (logout + redirect); other errors are non-fatal
+    }
+  }
+
+  return { token, username, loading, error, isAuthenticated, login, logout, restoreSession };
 });

@@ -16,7 +16,7 @@ services:
     volumes:
       - archery-data:/data
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${HOST_SCRIPTS_DIR:-/home/jake/scripts}:/host-scripts:rw
+      - ${HOST_SCRIPTS_DIR:-/home/jake/scripts}:/host-scripts:ro
 
 volumes:
   archery-data:

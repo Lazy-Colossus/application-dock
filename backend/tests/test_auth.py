@@ -112,3 +112,105 @@ def test_protected_route_invalid_token() -> None:
 def test_health_unprotected() -> None:
     resp = client.get("/api/health")
     assert resp.status_code == 200
+
+
+# ── /api/auth/users ───────────────────────────────────────────────────────────
+
+
+def test_list_users(auth_user: None) -> None:
+    token = _login_token()
+    resp = client.get("/api/auth/users", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "usernames" in data
+    assert _TEST_USERNAME in data["usernames"]
+
+
+def test_list_users_unauthenticated() -> None:
+    resp = client.get("/api/auth/users")
+    assert resp.status_code == 401
+
+
+def test_create_user_success(auth_user: None) -> None:
+    token = _login_token()
+    resp = client.post(
+        "/api/auth/users",
+        json={"username": "newuser"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 201
+    assert resp.json()["username"] == "newuser"
+    # New user must be able to log in with tmp123
+    login_resp = client.post("/api/auth/login", json={"username": "newuser", "password": "tmp123"})
+    assert login_resp.status_code == 200
+    # Original user still works
+    assert client.post(
+        "/api/auth/login", json={"username": _TEST_USERNAME, "password": _TEST_PASSWORD}
+    ).status_code == 200
+
+
+def test_create_user_duplicate(auth_user: None) -> None:
+    token = _login_token()
+    resp = client.post(
+        "/api/auth/users",
+        json={"username": _TEST_USERNAME},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 409
+    assert resp.json()["detail"] == "Username already exists"
+
+
+def test_create_user_empty_username(auth_user: None) -> None:
+    token = _login_token()
+    resp = client.post(
+        "/api/auth/users",
+        json={"username": "   "},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 400
+
+
+def test_create_user_unauthenticated() -> None:
+    resp = client.post("/api/auth/users", json={"username": "hacker"})
+    assert resp.status_code == 401
+
+
+# ── /api/auth/change-password ─────────────────────────────────────────────────
+
+
+def test_change_password_success(auth_user: None) -> None:
+    token = _login_token()
+    resp = client.post(
+        "/api/auth/change-password",
+        json={"current_password": _TEST_PASSWORD, "new_password": "newpass99"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["detail"] == "Password changed"
+    # Old password no longer works
+    assert client.post(
+        "/api/auth/login", json={"username": _TEST_USERNAME, "password": _TEST_PASSWORD}
+    ).status_code == 401
+    # New password works
+    assert client.post(
+        "/api/auth/login", json={"username": _TEST_USERNAME, "password": "newpass99"}
+    ).status_code == 200
+
+
+def test_change_password_wrong_current(auth_user: None) -> None:
+    token = _login_token()
+    resp = client.post(
+        "/api/auth/change-password",
+        json={"current_password": "wrongpassword", "new_password": "newpass99"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "Current password is incorrect"
+
+
+def test_change_password_unauthenticated() -> None:
+    resp = client.post(
+        "/api/auth/change-password",
+        json={"current_password": "x", "new_password": "y"},
+    )
+    assert resp.status_code == 401

@@ -14,7 +14,7 @@
         @click="onUpdateClick"
       />
       <p v-if="!available" class="hint-text">No update script found on host</p>
-      <p v-if="error" class="error-text">{{ error }}</p>
+      <p v-if="updateError" class="error-text">{{ updateError }}</p>
     </template>
 
     <q-dialog v-model="confirmOpen">
@@ -29,6 +29,64 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <div class="section-label section-label--spaced">USERS</div>
+
+    <ul data-testid="username-list" class="username-list">
+      <li v-for="name in usernames" :key="name">{{ name }}</li>
+    </ul>
+
+    <div class="users-add-row">
+      <input
+        data-testid="new-username-input"
+        v-model="newUsername"
+        placeholder="New username"
+        type="text"
+        class="username-input"
+      />
+      <q-btn
+        data-testid="add-user-btn"
+        label="Add user"
+        :disable="newUsername.trim() === ''"
+        color="primary"
+        unelevated
+        no-caps
+        @click="onAddUser"
+      />
+    </div>
+
+    <div class="section-label section-label--spaced">SECURITY</div>
+
+    <q-input
+      data-testid="current-password"
+      v-model="currentPassword"
+      type="password"
+      label="Current password"
+    />
+    <q-input
+      data-testid="new-password"
+      v-model="newPassword"
+      type="password"
+      label="New password"
+      :rules="[(val: string) => val.length >= 8 || 'Minimum 8 characters']"
+    />
+    <q-input
+      data-testid="confirm-password"
+      v-model="confirmPassword"
+      type="password"
+      label="Confirm new password"
+      :error="confirmMismatch"
+      error-message="Passwords do not match"
+    />
+    <q-btn
+      data-testid="change-password-btn"
+      label="Change password"
+      :disable="!currentPassword || !newPassword || !confirmPassword"
+      color="primary"
+      unelevated
+      no-caps
+      @click="onChangePassword"
+    />
   </q-page>
 </template>
 
@@ -39,9 +97,17 @@ import { api, ApiError } from '@/composables/useApi';
 
 const checking = ref(true);
 const available = ref(false);
-const error = ref<string | null>(null);
+const updateError = ref<string | null>(null);
 const confirmOpen = ref(false);
 const updateTriggered = ref(false);
+
+const usernames = ref<string[]>([]);
+const newUsername = ref('');
+
+const currentPassword = ref('');
+const newPassword = ref('');
+const confirmPassword = ref('');
+const confirmMismatch = ref(false);
 
 const btnLabel = computed(() => (available.value ? 'Update applications' : 'Update not available'));
 
@@ -50,11 +116,16 @@ onMounted(async () => {
     const status = await api.get<{ available: boolean }>('/shell/update-status');
     available.value = status.available;
   } catch (e) {
-    if (e instanceof ApiError) {
-      error.value = e.detail;
-    }
+    updateError.value = e instanceof ApiError ? e.detail : 'Could not reach server';
   } finally {
     checking.value = false;
+  }
+
+  try {
+    const data = await api.get<{ usernames: string[] }>('/auth/users');
+    usernames.value = data.usernames;
+  } catch {
+    // Non-critical — USERS section will remain empty on error
   }
 });
 
@@ -84,6 +155,50 @@ async function onConfirm() {
     }
   }
 }
+
+async function onChangePassword() {
+  if (newPassword.value !== confirmPassword.value) {
+    confirmMismatch.value = true;
+    return;
+  }
+  confirmMismatch.value = false;
+  try {
+    await api.post('/auth/change-password', {
+      current_password: currentPassword.value,
+      new_password: newPassword.value,
+    });
+    currentPassword.value = '';
+    newPassword.value = '';
+    confirmPassword.value = '';
+    Notify.create({ type: 'positive', message: 'Password changed successfully.' });
+  } catch (e) {
+    if (e instanceof ApiError) {
+      Notify.create({ type: 'negative', message: e.detail });
+    }
+  }
+}
+
+async function onAddUser() {
+  const username = newUsername.value.trim();
+  try {
+    await api.post<{ username: string }>('/auth/users', { username });
+    usernames.value = [...usernames.value, username];
+    newUsername.value = '';
+    Notify.create({
+      type: 'positive',
+      message: `User created. Temporary password: tmp123 — ask them to change it after first login.`,
+      persistent: true,
+      actions: [{ label: 'Dismiss', color: 'white' }],
+    });
+  } catch (e) {
+    if (e instanceof ApiError) {
+      Notify.create({
+        type: 'negative',
+        message: e.detail,
+      });
+    }
+  }
+}
 </script>
 
 <style lang="sass" scoped>
@@ -95,6 +210,9 @@ async function onConfirm() {
   text-transform: uppercase
   margin-bottom: 12px
 
+  &--spaced
+    margin-top: 32px
+
 .hint-text
   color: #8A8A8A
   font-size: 12px
@@ -104,4 +222,24 @@ async function onConfirm() {
   color: #f44336
   font-size: 12px
   margin-top: 8px
+
+.username-list
+  list-style: none
+  padding: 0
+  margin: 0 0 12px
+
+  li
+    font-size: 14px
+    padding: 2px 0
+
+.users-add-row
+  display: flex
+  align-items: center
+  gap: 8px
+
+.username-input
+  font-size: 14px
+  padding: 6px 10px
+  border: 1px solid #ccc
+  border-radius: 4px
 </style>

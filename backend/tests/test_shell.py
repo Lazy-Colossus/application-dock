@@ -60,7 +60,7 @@ def test_post_update_returns_202_when_available(monkeypatch) -> None:
 
 def test_post_update_returns_503_when_not_available(monkeypatch) -> None:
     def _raise() -> None:
-        raise RuntimeError("Update not available")
+        raise update_service.UpdateUnavailableError("Update not available")
 
     monkeypatch.setattr(update_service, "trigger_update", _raise)
     response = client.post("/api/shell/update")

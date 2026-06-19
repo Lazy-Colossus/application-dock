@@ -130,7 +130,7 @@ set -euo pipefail
 
 REPO=/host-project
 COMPOSE=/host-compose-dir/docker-compose.yml
-LOG=/host-scripts/update-application-dock.log
+LOG=/host-project/update-application-dock.log
 
 log() { echo "[$(date '+%F %T')] $*" >> "$LOG"; }
 
@@ -177,11 +177,11 @@ Test the sidecar manually (same command the backend runs):
 ```bash
 docker run --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  -v /home/jake/scripts:/host-scripts:rw \
+  -v /home/jake/scripts:/host-scripts:ro \
   -v /DATA/AppData/Application-Dock/application-dock:/host-project:rw \
   -v /var/lib/casaos/apps/cheerful_bethany:/host-compose-dir:ro \
   docker:cli \
-  sh /host-scripts/update-application-dock.sh
+  sh /host-scripts/update-application-dock-docker.sh
 ```
 
 You should see your script's output with no "No such file or directory" errors.

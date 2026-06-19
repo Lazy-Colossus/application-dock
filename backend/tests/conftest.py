@@ -13,7 +13,7 @@ from app.main import app
 @pytest.fixture(autouse=True)
 def bypass_auth_for_non_auth_tests(request: pytest.FixtureRequest) -> None:  # type: ignore[return]
     """Override the auth dependency with a no-op for every test outside test_auth.py."""
-    if "test_auth" in request.fspath.basename:
+    if request.fspath.basename == "test_auth.py":
         yield
         return
     app.dependency_overrides[get_current_user] = lambda: "test_user"

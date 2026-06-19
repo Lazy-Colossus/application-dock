@@ -17,6 +17,7 @@ from pathlib import Path
 
 import docker
 import docker.errors
+import requests.exceptions
 
 from app.core.config import settings
 
@@ -25,19 +26,22 @@ UPDATE_SCRIPT_PATH = HOST_SCRIPTS_MOUNT / "update-application-dock-docker.sh"
 _update_available: bool = UPDATE_SCRIPT_PATH.is_file()
 
 
+class UpdateUnavailableError(RuntimeError):
+    pass
+
+
 def is_update_available() -> bool:
     return _update_available
 
 
 def trigger_update() -> None:
     if not is_update_available():
-        raise RuntimeError("Update not available")
+        raise UpdateUnavailableError("Update not available")
     try:
         client = docker.from_env()
         volumes: dict[str, dict[str, str]] = {
             "/var/run/docker.sock": {"bind": "/var/run/docker.sock", "mode": "rw"},
-            # rw so the script can write log files inside the scripts directory
-            str(settings.host_scripts_dir_on_host): {"bind": "/host-scripts", "mode": "rw"},
+            str(settings.host_scripts_dir_on_host): {"bind": "/host-scripts", "mode": "ro"},
         }
         if settings.host_project_dir_on_host:
             volumes[settings.host_project_dir_on_host] = {"bind": "/host-project", "mode": "rw"}
@@ -54,5 +58,5 @@ def trigger_update() -> None:
             remove=True,
             name="application-dock-updater",
         )
-    except docker.errors.DockerException as exc:
+    except (docker.errors.DockerException, requests.exceptions.ConnectionError) as exc:
         raise RuntimeError(f"Update launch failed: {exc}") from exc

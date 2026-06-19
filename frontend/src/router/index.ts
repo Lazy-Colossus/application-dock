@@ -25,6 +25,8 @@ export default route(function (/* { store, ssrContext } */) {
     const { useAuthStore } = await import('@/stores/useAuthStore');
     const auth = useAuthStore();
 
+    await auth.restoreSession();
+
     if (to.meta.requiresAuth && !auth.isAuthenticated) {
       return { path: '/login', query: { redirect: to.fullPath } };
     }
