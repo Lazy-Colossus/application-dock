@@ -41,4 +41,15 @@ describe("WordRow", () => {
     // No separate reading line when there is no kanji.
     expect(wrapper.find(".word-row__reading").exists()).toBe(false);
   });
+
+  it("hides romaji by default and reveals it per-row on toggle", async () => {
+    const wrapper = mount(WordRow, { props: { word: word() } });
+    expect(wrapper.find('[data-testid="romaji"]').exists()).toBe(false);
+
+    await wrapper.find('[data-testid="romaji-toggle"]').trigger("click");
+    expect(wrapper.find('[data-testid="romaji"]').text()).toBe("daigaku");
+
+    await wrapper.find('[data-testid="romaji-toggle"]').trigger("click");
+    expect(wrapper.find('[data-testid="romaji"]').exists()).toBe(false);
+  });
 });
