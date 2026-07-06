@@ -78,3 +78,17 @@ def test_unknown_user_rejected() -> None:
         "/api/hotaru/words", params={"user": "ghost"}, json={"reading": "a", "meaning": "b"}
     )
     assert r.status_code == 404
+
+
+def test_explicit_unknown_source_rejected() -> None:
+    # A crafted source that isn't a known textbook source (e.g. the frontend's Custom
+    # sentinel or another user's id) is rejected.
+    for bad in ("__custom__", "jake"):
+        r = _post({"reading": "x", "meaning": "y", "source": bad})
+        assert r.status_code == 422, bad
+
+
+def test_known_textbook_source_accepted() -> None:
+    r = _post({"reading": "x", "meaning": "y", "source": "genki_3", "lesson": "L2"})
+    assert r.status_code == 201
+    assert r.json()["source"] == "genki_3"

@@ -45,7 +45,8 @@ def create_word(
     word filed into a textbook lesson still respects privacy.
 
     Raises:
-        ValueError: if reading or meaning is blank after trimming.
+        ValueError: if reading or meaning is blank, or an explicit `source` is not a
+        known textbook source.
     """
     reading = reading.strip()
     meaning = meaning.strip()
@@ -54,8 +55,15 @@ def create_word(
     if not meaning:
         raise ValueError("Meaning is required.")
 
+    # A blank source means "a Custom word" → owned by the active user. An explicit
+    # source is only allowed when filing into a known textbook (else it could collide
+    # with the frontend's Custom sentinel or spoof another user's id).
+    provided_source = (source or "").strip()
+    if provided_source and provided_source not in vocab_repo.textbook_sources():
+        raise ValueError(f"Unknown source {provided_source!r}.")
+    source = provided_source or user
+
     kanji = (kanji or "").strip() or None
-    source = (source or "").strip() or user
     caps = ["r2m", "m2r"] + (["k2r"] if kanji else [])
 
     word = Word(

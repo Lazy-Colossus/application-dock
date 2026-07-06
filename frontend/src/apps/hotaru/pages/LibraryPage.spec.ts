@@ -2,15 +2,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, push } = vi.hoisted(() => ({
+const { getMock, push, replace } = vi.hoisted(() => ({
   getMock: vi.fn(),
   push: vi.fn(),
+  replace: vi.fn(),
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
   api: { get: getMock, post: vi.fn(), put: vi.fn(), del: vi.fn() },
 }));
-vi.mock("vue-router", () => ({ useRouter: () => ({ push }) }));
+vi.mock("vue-router", () => ({ useRouter: () => ({ push, replace }) }));
 
 import LibraryPage from "./LibraryPage.vue";
 import type { Word } from "@/apps/hotaru/types";

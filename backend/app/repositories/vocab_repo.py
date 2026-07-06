@@ -41,6 +41,12 @@ def read_shared() -> list[Word]:
     return [Word.model_validate(w) for w in rows]
 
 
+def textbook_sources() -> set[str]:
+    """Distinct `source` values in the shipped seed (e.g. {"genki_3"}) — the only
+    valid targets when a user files a word into an existing lesson."""
+    return {w.source for w in read_seed()}
+
+
 def _private_path(user: str) -> Path:
     return _HOTARU_DIR / "users" / user / "words_private.json"
 

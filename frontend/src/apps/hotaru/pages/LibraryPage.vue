@@ -131,6 +131,10 @@ function selectSection(key: string): void {
 
 onMounted(async () => {
   if (userStore.users.length === 0) await userStore.loadUsers();
+  if (userStore.activeUserId === null) {
+    void router.replace("/hotaru/identity");
+    return;
+  }
   await store.loadWords(userStore.activeUserId);
   const firstTextbook = sections.value.find((s) => s.key !== CUSTOM);
   if (firstTextbook) selectSection(firstTextbook.key);

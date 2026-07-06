@@ -170,6 +170,7 @@ watch([lessonOptions, source], () => {
 });
 
 onMounted(async () => {
+  if (userStore.users.length === 0) await userStore.loadUsers();
   if (userStore.activeUserId === null) {
     void router.replace("/hotaru/identity");
     return;

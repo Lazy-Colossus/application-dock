@@ -100,7 +100,11 @@ export const useHotaruLibraryStore = defineStore("hotaruLibrary", () => {
         `/hotaru/words?user=${encodeURIComponent(user)}`,
         payload as unknown as Record<string, unknown>,
       );
-      await loadWords(user);
+      // The word is already persisted; a refresh failure must NOT report the
+      // create as failed (that would risk a duplicate re-submit). Reflect the
+      // new word locally and let a reload error surface only via loadWords.
+      words.value = [...words.value, created];
+      void loadWords(user);
       return created;
     } catch (e) {
       error.value =
