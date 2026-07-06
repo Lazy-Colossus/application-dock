@@ -122,6 +122,17 @@ describe("LibraryPage (two-level)", () => {
     expect(wrapper.find('[data-testid="delete-word"]').exists()).toBe(true);
   });
 
+  it("marks private words with the lock in the Private subsection", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="section-__custom__"]').trigger("click");
+    await wrapper.find('[data-testid="sub-private"]').trigger("click");
+    expect(wrapper.find('[data-testid="private-mark"]').exists()).toBe(true);
+    // Shared subsection shows no lock.
+    await wrapper.find('[data-testid="sub-shared"]').trigger("click");
+    expect(wrapper.find('[data-testid="private-mark"]').exists()).toBe(false);
+  });
+
   it("edit routes to the edit page for that word", async () => {
     const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
     await flushPromises();

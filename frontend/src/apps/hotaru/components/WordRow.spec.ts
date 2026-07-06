@@ -75,4 +75,30 @@ describe("WordRow", () => {
     expect(wrapper.emitted("edit")?.[0]).toEqual([w]);
     expect(wrapper.emitted("delete")?.[0]).toEqual([w]);
   });
+
+  it("shows a private mark for private words", () => {
+    const wrapper = mount(WordRow, {
+      props: { word: word({ visibility: "private" }) },
+      global: { stubs: STUBS },
+    });
+    const mark = wrapper.find('[data-testid="private-mark"]');
+    expect(mark.exists()).toBe(true);
+    expect(mark.attributes("aria-label")).toBe("Private");
+  });
+
+  it("shows no mark for shared words (shared is the implicit default)", () => {
+    const wrapper = mount(WordRow, {
+      props: { word: word({ visibility: "shared" }) },
+      global: { stubs: STUBS },
+    });
+    expect(wrapper.find('[data-testid="private-mark"]').exists()).toBe(false);
+  });
+
+  it("shows the private mark independent of the editable prop", () => {
+    const wrapper = mount(WordRow, {
+      props: { word: word({ visibility: "private" }), editable: true },
+      global: { stubs: STUBS },
+    });
+    expect(wrapper.find('[data-testid="private-mark"]').exists()).toBe(true);
+  });
 });

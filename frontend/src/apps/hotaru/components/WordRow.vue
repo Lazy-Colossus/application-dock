@@ -10,6 +10,15 @@
       }}</span>
     </div>
     <div class="word-row__meaning col">{{ word.meaning }}</div>
+    <span
+      v-if="word.visibility === 'private'"
+      class="word-row__private"
+      aria-label="Private"
+      title="Private"
+      data-testid="private-mark"
+    >
+      <q-icon name="lock" size="17px" />
+    </span>
     <button
       class="word-row__romaji-toggle"
       :class="{ 'word-row__romaji-toggle--on': showRomaji }"
@@ -83,6 +92,14 @@ const showRomaji = ref(false);
 .word-row__meaning
   font-size: 14px
   color: var(--hotaru-cream-soft)
+
+// Private-scope marker: 🔒 in the amber-private accent. Shared words show
+// nothing (shared is the implicit default). Status glyph, not interactive.
+.word-row__private
+  flex: none
+  display: inline-flex
+  align-items: center
+  color: var(--hotaru-amber-private)
 
 .word-row__romaji-toggle
   flex: none
