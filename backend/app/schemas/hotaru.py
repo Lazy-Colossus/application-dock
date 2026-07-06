@@ -1,9 +1,11 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel
 
 DrillCap = Literal["r2m", "m2r", "k2r"]
 Visibility = Literal["shared", "private"]
+Grade = Literal["correct", "close", "incorrect"]
 
 
 class HotaruUser(BaseModel):
@@ -59,3 +61,12 @@ class Topic(BaseModel):
 
 class CreateTopicRequest(BaseModel):
     name: str
+
+
+class ProgressEntry(BaseModel):
+    # Per-user, per-word SRS state. `tier` 0–4 (New→Mastered); `points` accrue
+    # within a tier. A brand-new (unseen) word is the defaults below. "Due" is
+    # derived from these fields on demand (srs.due_at) — never a field here.
+    tier: int = 0
+    points: int = 0
+    last_reviewed_at: datetime | None = None
