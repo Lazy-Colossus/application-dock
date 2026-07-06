@@ -47,6 +47,12 @@ export const useHotaruLibraryStore = defineStore("hotaruLibrary", () => {
   const loading = ref(false);
   const error = ref<string | null>(null);
 
+  // Last-viewed Library section/subsection, remembered across in-app navigation
+  // (e.g. adding a word) so the user returns to where they were. null = not yet
+  // chosen; LibraryPage picks a sensible default on first visit.
+  const activeSection = ref<string | null>(null);
+  const activeSubsection = ref<string | null>(null);
+
   const lessons = computed<string[]>(() =>
     sortLessons(Array.from(new Set(words.value.map((w) => w.lesson)))),
   );
@@ -182,6 +188,8 @@ export const useHotaruLibraryStore = defineStore("hotaruLibrary", () => {
     words,
     loading,
     error,
+    activeSection,
+    activeSubsection,
     lessons,
     wordsByLesson,
     textbookSources,

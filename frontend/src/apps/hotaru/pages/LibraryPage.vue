@@ -73,7 +73,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
+import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
 import WordRow from "@/apps/hotaru/components/WordRow.vue";
 import { useHotaruLibraryStore } from "@/apps/hotaru/stores/useHotaruLibraryStore";
@@ -84,6 +85,10 @@ import "./../css/hotaru.sass";
 const store = useHotaruLibraryStore();
 const userStore = useHotaruUserStore();
 const router = useRouter();
+
+// The last-viewed selection lives in the store so it survives navigating to the
+// Add-word page and back.
+const { activeSection, activeSubsection } = storeToRefs(store);
 
 const CUSTOM = "__custom__";
 
@@ -139,6 +144,27 @@ function selectSection(key: string): void {
   subsection.value = subs[0] ?? "shared";
 }
 
+// Fall back to a valid selection if the remembered one no longer exists (e.g.
+// data changed since it was stored).
+function ensureValidSelection(): void {
+  const keys = sections.value.map((s) => s.key);
+  if (!keys.includes(section.value)) {
+    const firstTextbook = sections.value.find((s) => s.key !== CUSTOM);
+    selectSection(firstTextbook ? firstTextbook.key : CUSTOM);
+    return;
+  }
+  const subKeys = subsections.value.map((s) => s.key);
+  if (!subKeys.includes(subsection.value)) {
+    subsection.value = subKeys[0] ?? "shared";
+  }
+}
+
+// Persist every selection change so we can restore it after navigating away.
+watch([section, subsection], ([s, sub]) => {
+  activeSection.value = s;
+  activeSubsection.value = sub;
+});
+
 onMounted(async () => {
   if (userStore.users.length === 0) await userStore.loadUsers();
   if (userStore.activeUserId === null) {
@@ -146,8 +172,16 @@ onMounted(async () => {
     return;
   }
   await store.loadWords(userStore.activeUserId);
-  const firstTextbook = sections.value.find((s) => s.key !== CUSTOM);
-  if (firstTextbook) selectSection(firstTextbook.key);
+  if (activeSection.value !== null) {
+    // Returning to the library — restore where the user was.
+    section.value = activeSection.value;
+    subsection.value = activeSubsection.value ?? "shared";
+    ensureValidSelection();
+  } else {
+    // First visit — default to the first textbook section.
+    const firstTextbook = sections.value.find((s) => s.key !== CUSTOM);
+    selectSection(firstTextbook ? firstTextbook.key : CUSTOM);
+  }
 });
 
 function onAdd(): void {

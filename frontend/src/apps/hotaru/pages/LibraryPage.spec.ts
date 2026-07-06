@@ -104,6 +104,20 @@ describe("LibraryPage (two-level)", () => {
     expect(wrapper.text()).not.toContain("my private word");
   });
 
+  it("remembers the section across a remount (e.g. after adding a word)", async () => {
+    const first = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await first.find('[data-testid="section-__custom__"]').trigger("click");
+    await first.find('[data-testid="sub-private"]').trigger("click");
+    first.unmount();
+
+    // Remount with the SAME pinia (as returning from the Add-word page would).
+    const second = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    expect(second.text()).toContain("my private word");
+    expect(second.text()).not.toContain("thanks"); // did not reset to Genki
+  });
+
   it("the ＋ FAB routes to add-word", async () => {
     const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
     await flushPromises();
