@@ -1,7 +1,7 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import { api } from "@/composables/useApi";
-import type { Word, Visibility } from "@/apps/hotaru/types";
+import type { Word, Topic, Visibility } from "@/apps/hotaru/types";
 
 export interface CreateWordInput {
   reading: string;
@@ -44,6 +44,7 @@ function sortLessons(values: string[]): string[] {
 
 export const useHotaruLibraryStore = defineStore("hotaruLibrary", () => {
   const words = ref<Word[]>([]);
+  const topics = ref<Topic[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -184,8 +185,115 @@ export const useHotaruLibraryStore = defineStore("hotaruLibrary", () => {
     }
   }
 
+  // --- Topics --------------------------------------------------------------
+
+  function topicById(id: string): Topic | undefined {
+    return topics.value.find((t) => t.id === id);
+  }
+
+  function topicsForWord(wordId: string): Topic[] {
+    return topics.value.filter((t) => t.word_ids.includes(wordId));
+  }
+
+  // The topic view is a client-side intersection with the already-loaded (and
+  // privacy-correct) master list — snappy, and it can't expose a word the
+  // active user can't see.
+  function wordsForTopic(topicId: string): Word[] {
+    const topic = topicById(topicId);
+    if (!topic) return [];
+    const ids = new Set(topic.word_ids);
+    return words.value.filter((w) => ids.has(w.id));
+  }
+
+  async function loadTopics(): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      topics.value = await api.get<Topic[]>("/hotaru/topics");
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function createTopic(name: string): Promise<Topic | null> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const created = await api.post<Topic>("/hotaru/topics", { name });
+      topics.value = [...topics.value, created];
+      return created;
+    } catch (e) {
+      error.value =
+        (e as { detail?: string }).detail ??
+        (e instanceof Error ? e.message : String(e));
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  function replaceTopic(updated: Topic): void {
+    topics.value = topics.value.map((t) => (t.id === updated.id ? updated : t));
+  }
+
+  async function assignWord(
+    topicId: string,
+    wordId: string,
+    user: string,
+  ): Promise<boolean> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const updated = await api.post<Topic>(
+        `/hotaru/topics/${encodeURIComponent(topicId)}/words/${encodeURIComponent(wordId)}?user=${encodeURIComponent(user)}`,
+      );
+      replaceTopic(updated);
+      return true;
+    } catch (e) {
+      error.value =
+        (e as { detail?: string }).detail ??
+        (e instanceof Error ? e.message : String(e));
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function unassignWord(
+    topicId: string,
+    wordId: string,
+    user: string,
+  ): Promise<boolean> {
+    loading.value = true;
+    error.value = null;
+    try {
+      await api.del(
+        `/hotaru/topics/${encodeURIComponent(topicId)}/words/${encodeURIComponent(wordId)}?user=${encodeURIComponent(user)}`,
+      );
+      // 204 (no body) — reflect the removal locally.
+      const topic = topicById(topicId);
+      if (topic) {
+        replaceTopic({
+          ...topic,
+          word_ids: topic.word_ids.filter((id) => id !== wordId),
+        });
+      }
+      return true;
+    } catch (e) {
+      error.value =
+        (e as { detail?: string }).detail ??
+        (e instanceof Error ? e.message : String(e));
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   return {
     words,
+    topics,
     loading,
     error,
     activeSection,
@@ -197,9 +305,16 @@ export const useHotaruLibraryStore = defineStore("hotaruLibrary", () => {
     wordsBySourceLesson,
     customWords,
     wordById,
+    topicById,
+    topicsForWord,
+    wordsForTopic,
     loadWords,
     createWord,
     updateWord,
     deleteWord,
+    loadTopics,
+    createTopic,
+    assignWord,
+    unassignWord,
   };
 });

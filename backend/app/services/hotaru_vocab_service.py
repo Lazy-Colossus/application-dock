@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-from app.repositories import vocab_repo
-from app.schemas.hotaru import DrillCap, Visibility, Word
+from app.repositories import topic_repo, vocab_repo
+from app.schemas.hotaru import DrillCap, Topic, Visibility, Word
 
 
 def _drill_caps(kanji: str | None) -> list[DrillCap]:
@@ -19,19 +19,32 @@ def _drill_caps(kanji: str | None) -> list[DrillCap]:
     return caps
 
 
-def list_words(lesson: str | None = None, user: str | None = None) -> list[Word]:
-    """Assemble the Master Vocabulary List and optionally filter by lesson.
+def list_words(
+    lesson: str | None = None,
+    user: str | None = None,
+    topic: str | None = None,
+) -> list[Word]:
+    """Assemble the Master Vocabulary List and optionally filter by lesson/topic.
 
     Master = read-only seed + shared user-added words + (the active user's own
     private words, when `user` is given). Private words are read only from that
     user's own directory (path-as-privacy-boundary), so no visibility filtering
     is needed here.
+
+    A `topic` filter is applied AFTER assembly, so the topic view is the
+    intersection of the topic's `word_ids` with the caller's visible words —
+    another user's private word (whose id may sit in the shared topic) simply
+    isn't in `words`, so it can't appear (FR-7). Unknown topic → empty list.
     """
     words = vocab_repo.read_seed() + vocab_repo.read_shared()
     if user is not None:
         words += vocab_repo.read_private(user)
     if lesson is not None:
         words = [w for w in words if w.lesson == lesson]
+    if topic is not None:
+        found = topic_repo.find_topic(topic)
+        member_ids = set(found.word_ids) if found else set()
+        words = [w for w in words if w.id in member_ids]
     return words
 
 
@@ -169,3 +182,50 @@ def update_word(
         else:
             vocab_repo.write_shared(vocab_repo.read_shared() + [updated])
     return updated
+
+
+# --- Topics (shared, many-to-many grouping over the master list) -------------
+
+
+def list_topics() -> list[Topic]:
+    return topic_repo.read_topics()
+
+
+def create_topic(name: str) -> Topic:
+    """Create an empty shared topic. Raises ValueError on a blank name."""
+    name = name.strip()
+    if not name:
+        raise ValueError("Topic name is required.")
+    topic = Topic(id=f"t-{uuid4().hex[:8]}", name=name, word_ids=[])
+    topic_repo.add(topic)
+    return topic
+
+
+def assign_word(topic_id: str, word_id: str, user: str) -> Topic:
+    """Add a word to a topic (idempotent).
+
+    Raises FileNotFoundError if the topic is unknown, or if `word_id` is not in
+    the caller's visible master list (can't assign what you can't see — keeps
+    topics.json free of junk ids).
+    """
+    topic = topic_repo.find_topic(topic_id)
+    if topic is None:
+        raise FileNotFoundError(topic_id)
+    if not any(w.id == word_id for w in list_words(user=user)):
+        raise FileNotFoundError(word_id)
+    if word_id not in topic.word_ids:
+        topic = topic.model_copy(update={"word_ids": topic.word_ids + [word_id]})
+        topic_repo.replace(topic)
+    return topic
+
+
+def unassign_word(topic_id: str, word_id: str) -> Topic:
+    """Remove a word from a topic (idempotent). Raises FileNotFoundError if the
+    topic is unknown."""
+    topic = topic_repo.find_topic(topic_id)
+    if topic is None:
+        raise FileNotFoundError(topic_id)
+    if word_id in topic.word_ids:
+        topic = topic.model_copy(update={"word_ids": [w for w in topic.word_ids if w != word_id]})
+        topic_repo.replace(topic)
+    return topic

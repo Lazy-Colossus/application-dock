@@ -24,3 +24,11 @@ export interface Word {
   visibility: Visibility;
   drill_caps: DrillCap[];
 }
+
+// Shared, many-to-many grouping over the master list. `word_ids` holds raw ids;
+// a private word's id here still only resolves for its owner (FR-7).
+export interface Topic {
+  id: string;
+  name: string;
+  word_ids: string[];
+}

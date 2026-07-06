@@ -46,3 +46,16 @@ class UpdateWordRequest(BaseModel):
     pos: str = ""
     lesson: str = ""
     visibility: Visibility = "shared"
+
+
+class Topic(BaseModel):
+    # Shared, many-to-many grouping over the master list. `word_ids` holds raw
+    # ids; the topic view is the intersection with the caller's visible words,
+    # so private words never leak across users (FR-7).
+    id: str
+    name: str
+    word_ids: list[str]
+
+
+class CreateTopicRequest(BaseModel):
+    name: str

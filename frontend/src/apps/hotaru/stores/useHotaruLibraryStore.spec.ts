@@ -200,4 +200,71 @@ describe("useHotaruLibraryStore", () => {
     expect(store.wordById("a")?.id).toBe("a");
     expect(store.wordById("nope")).toBeUndefined();
   });
+
+  // --- topics ---------------------------------------------------------------
+
+  function topic(id: string, name: string, word_ids: string[] = []) {
+    return { id, name, word_ids };
+  }
+
+  it("loadTopics fetches the shared topics", async () => {
+    getMock.mockResolvedValueOnce([topic("t1", "Food", ["a"])]);
+    const store = useHotaruLibraryStore();
+    await store.loadTopics();
+    expect(getMock).toHaveBeenCalledWith("/hotaru/topics");
+    expect(store.topics.map((t) => t.id)).toEqual(["t1"]);
+  });
+
+  it("createTopic posts and reflects the new topic locally", async () => {
+    postMock.mockResolvedValueOnce(topic("t2", "Verbs"));
+    const store = useHotaruLibraryStore();
+    const created = await store.createTopic("Verbs");
+    expect(postMock).toHaveBeenCalledWith("/hotaru/topics", { name: "Verbs" });
+    expect(created?.id).toBe("t2");
+    expect(store.topics.map((t) => t.id)).toEqual(["t2"]);
+  });
+
+  it("assignWord posts to the surgical endpoint and stores the returned topic", async () => {
+    getMock.mockResolvedValueOnce([topic("t1", "Food", [])]);
+    postMock.mockResolvedValueOnce(topic("t1", "Food", ["a"]));
+    const store = useHotaruLibraryStore();
+    await store.loadTopics();
+    const ok = await store.assignWord("t1", "a", "dani");
+    expect(ok).toBe(true);
+    expect(postMock).toHaveBeenCalledWith(
+      "/hotaru/topics/t1/words/a?user=dani",
+    );
+    expect(store.topicById("t1")?.word_ids).toEqual(["a"]);
+  });
+
+  it("unassignWord deletes and removes membership locally", async () => {
+    getMock.mockResolvedValueOnce([topic("t1", "Food", ["a", "b"])]);
+    delMock.mockResolvedValueOnce(undefined);
+    const store = useHotaruLibraryStore();
+    await store.loadTopics();
+    const ok = await store.unassignWord("t1", "a", "dani");
+    expect(ok).toBe(true);
+    expect(delMock).toHaveBeenCalledWith("/hotaru/topics/t1/words/a?user=dani");
+    expect(store.topicById("t1")?.word_ids).toEqual(["b"]);
+  });
+
+  it("assignWord surfaces ApiError.detail and returns false", async () => {
+    postMock.mockRejectedValueOnce({ detail: "Not found: t-x." });
+    const store = useHotaruLibraryStore();
+    const ok = await store.assignWord("t-x", "a", "dani");
+    expect(ok).toBe(false);
+    expect(store.error).toBe("Not found: t-x.");
+  });
+
+  it("topicsForWord and wordsForTopic intersect membership with loaded data", async () => {
+    getMock.mockResolvedValueOnce([word("a", "L1"), word("b", "L2")]); // words
+    getMock.mockResolvedValueOnce([topic("t1", "Food", ["a"])]); // topics
+    const store = useHotaruLibraryStore();
+    await store.loadWords();
+    await store.loadTopics();
+    expect(store.topicsForWord("a").map((t) => t.id)).toEqual(["t1"]);
+    expect(store.topicsForWord("b")).toEqual([]);
+    expect(store.wordsForTopic("t1").map((w) => w.id)).toEqual(["a"]);
+    expect(store.wordsForTopic("nope")).toEqual([]);
+  });
 });

@@ -60,16 +60,22 @@ const WORDS = [
   word("cp", "dani", "", "my private word", "private"),
 ];
 
+// A topic grouping the "thanks" word; toggle to [] to test the empty state.
+let topics: { id: string; name: string; word_ids: string[] }[] = [
+  { id: "t1", name: "Greetings", word_ids: ["g1"] },
+];
+
 beforeEach(() => {
   setActivePinia(createPinia());
   localStorage.setItem("hotaru.activeUser", "dani");
-  // First call = users (from userStore.loadUsers), second = words.
+  topics = [{ id: "t1", name: "Greetings", word_ids: ["g1"] }];
+  // Route each GET: users, topics, else words.
   getMock.mockReset();
-  getMock.mockImplementation((path: string) =>
-    path.startsWith("/hotaru/users")
-      ? Promise.resolve(USERS)
-      : Promise.resolve(WORDS),
-  );
+  getMock.mockImplementation((path: string) => {
+    if (path.startsWith("/hotaru/users")) return Promise.resolve(USERS);
+    if (path.startsWith("/hotaru/topics")) return Promise.resolve(topics);
+    return Promise.resolve(WORDS);
+  });
   delMock.mockReset().mockResolvedValue(undefined);
   push.mockReset();
 });
@@ -179,5 +185,25 @@ describe("LibraryPage (two-level)", () => {
     await flushPromises();
     expect(delMock).not.toHaveBeenCalled();
     confirm.mockRestore();
+  });
+
+  it("Topics section lists the selected topic's words", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="section-__topics__"]').trigger("click");
+    // Its subsection is the topic; default-selects the first topic (t1).
+    expect(wrapper.find('[data-testid="sub-t1"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain("thanks"); // g1 is in the topic
+    expect(wrapper.text()).not.toContain("university"); // l1a is not
+  });
+
+  it("Topics section shows an empty hint when there are no topics", async () => {
+    topics = [];
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="section-__topics__"]').trigger("click");
+    expect(wrapper.find('[data-testid="library-empty"]').text()).toContain(
+      "No topics yet",
+    );
   });
 });

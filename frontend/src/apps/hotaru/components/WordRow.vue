@@ -29,6 +29,14 @@
     >
       A
     </button>
+    <button
+      class="word-row__action"
+      aria-label="Topics"
+      data-testid="manage-topics"
+      @click="emit('topics', word)"
+    >
+      <q-icon name="sell" size="18px" />
+    </button>
     <template v-if="editable">
       <button
         class="word-row__action"
@@ -61,6 +69,7 @@ withDefaults(defineProps<{ word: Word; editable?: boolean }>(), {
 const emit = defineEmits<{
   edit: [word: Word];
   delete: [word: Word];
+  topics: [word: Word];
 }>();
 
 // Per-row romaji visibility — off by default so the list stays clean.

@@ -1,6 +1,13 @@
 from fastapi import APIRouter, HTTPException
 
-from app.schemas.hotaru import CreateWordRequest, HotaruUser, UpdateWordRequest, Word
+from app.schemas.hotaru import (
+    CreateTopicRequest,
+    CreateWordRequest,
+    HotaruUser,
+    Topic,
+    UpdateWordRequest,
+    Word,
+)
 from app.services import hotaru_vocab_service
 
 router = APIRouter(prefix="/api/hotaru", tags=["hotaru"])
@@ -22,10 +29,14 @@ def list_users() -> list[HotaruUser]:
 
 
 @router.get("/words", response_model=list[Word])
-def list_words(lesson: str | None = None, user: str | None = None) -> list[Word]:
+def list_words(
+    lesson: str | None = None,
+    user: str | None = None,
+    topic: str | None = None,
+) -> list[Word]:
     if user is not None and user not in VALID_USER_IDS:
         raise HTTPException(status_code=404, detail=f"Unknown user {user}.")
-    return hotaru_vocab_service.list_words(lesson=lesson, user=user)
+    return hotaru_vocab_service.list_words(lesson=lesson, user=user, topic=topic)
 
 
 @router.post("/words", response_model=Word, status_code=201)
@@ -82,3 +93,36 @@ def delete_word(word_id: str, user: str) -> None:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=f"Word {word_id} not found.") from exc
+
+
+@router.get("/topics", response_model=list[Topic])
+def list_topics() -> list[Topic]:
+    return hotaru_vocab_service.list_topics()
+
+
+@router.post("/topics", response_model=Topic, status_code=201)
+def create_topic(req: CreateTopicRequest) -> Topic:
+    try:
+        return hotaru_vocab_service.create_topic(name=req.name)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/topics/{topic_id}/words/{word_id}", response_model=Topic)
+def assign_word(topic_id: str, word_id: str, user: str) -> Topic:
+    if user not in VALID_USER_IDS:
+        raise HTTPException(status_code=404, detail=f"Unknown user {user}.")
+    try:
+        return hotaru_vocab_service.assign_word(topic_id=topic_id, word_id=word_id, user=user)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=f"Not found: {exc}.") from exc
+
+
+@router.delete("/topics/{topic_id}/words/{word_id}", status_code=204)
+def unassign_word(topic_id: str, word_id: str, user: str) -> None:
+    if user not in VALID_USER_IDS:
+        raise HTTPException(status_code=404, detail=f"Unknown user {user}.")
+    try:
+        hotaru_vocab_service.unassign_word(topic_id=topic_id, word_id=word_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=f"Not found: {exc}.") from exc

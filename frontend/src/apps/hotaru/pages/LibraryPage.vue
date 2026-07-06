@@ -43,6 +43,13 @@
       {{ store.error }}
     </div>
     <div
+      v-else-if="section === TOPICS && store.topics.length === 0"
+      class="library-state"
+      data-testid="library-empty"
+    >
+      No topics yet — add words to a topic from any row.
+    </div>
+    <div
       v-else-if="visibleWords.length === 0"
       class="library-state"
       data-testid="library-empty"
@@ -57,6 +64,7 @@
         :editable="editable"
         @edit="onEdit"
         @delete="onDelete"
+        @topics="onManageTopics"
       />
     </div>
 
@@ -69,6 +77,16 @@
       data-testid="add-word-fab"
       @click="onAdd"
     />
+
+    <WordTopicsDialog
+      v-if="topicsWord"
+      v-model="topicsDialogOpen"
+      :word="topicsWord"
+      :topics="store.topics"
+      @assign="onAssign"
+      @unassign="onUnassign"
+      @create="onCreateTopic"
+    />
   </q-page>
 </template>
 
@@ -77,6 +95,7 @@ import { ref, computed, onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
 import WordRow from "@/apps/hotaru/components/WordRow.vue";
+import WordTopicsDialog from "@/apps/hotaru/components/WordTopicsDialog.vue";
 import { useHotaruLibraryStore } from "@/apps/hotaru/stores/useHotaruLibraryStore";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
 import type { Visibility, Word } from "@/apps/hotaru/types";
@@ -91,6 +110,7 @@ const router = useRouter();
 const { activeSection, activeSubsection } = storeToRefs(store);
 
 const CUSTOM = "__custom__";
+const TOPICS = "__topics__";
 
 function prettifySource(source: string): string {
   return source
@@ -110,7 +130,11 @@ const sections = computed<Tab[]>(() => {
   const textbook = store
     .textbookSources(userIds.value)
     .map((s) => ({ key: s, label: prettifySource(s) }));
-  return [...textbook, { key: CUSTOM, label: "Custom words" }];
+  return [
+    ...textbook,
+    { key: CUSTOM, label: "Custom words" },
+    { key: TOPICS, label: "Topics" },
+  ];
 });
 
 const section = ref<string>(CUSTOM);
@@ -123,6 +147,9 @@ const subsections = computed<Tab[]>(() => {
       { key: "private", label: "Private" },
     ];
   }
+  if (section.value === TOPICS) {
+    return store.topics.map((t) => ({ key: t.id, label: t.name }));
+  }
   return store
     .lessonsForSource(section.value)
     .map((l) => ({ key: l, label: l }));
@@ -132,16 +159,24 @@ const visibleWords = computed(() => {
   if (section.value === CUSTOM) {
     return store.customWords(userIds.value, subsection.value as Visibility);
   }
+  if (section.value === TOPICS) {
+    return store.wordsForTopic(subsection.value);
+  }
   return store.wordsBySourceLesson(section.value, subsection.value);
 });
 
 // Only user-added Custom words are editable — textbook words are read-only seed.
 const editable = computed(() => section.value === CUSTOM);
 
+function subsectionKeys(key: string): string[] {
+  if (key === CUSTOM) return ["shared"];
+  if (key === TOPICS) return store.topics.map((t) => t.id);
+  return store.lessonsForSource(key);
+}
+
 function selectSection(key: string): void {
   section.value = key;
-  const subs = key === CUSTOM ? ["shared"] : store.lessonsForSource(key);
-  subsection.value = subs[0] ?? "shared";
+  subsection.value = subsectionKeys(key)[0] ?? "shared";
 }
 
 // Fall back to a valid selection if the remembered one no longer exists (e.g.
@@ -149,7 +184,9 @@ function selectSection(key: string): void {
 function ensureValidSelection(): void {
   const keys = sections.value.map((s) => s.key);
   if (!keys.includes(section.value)) {
-    const firstTextbook = sections.value.find((s) => s.key !== CUSTOM);
+    const firstTextbook = sections.value.find(
+      (s) => s.key !== CUSTOM && s.key !== TOPICS,
+    );
     selectSection(firstTextbook ? firstTextbook.key : CUSTOM);
     return;
   }
@@ -171,7 +208,10 @@ onMounted(async () => {
     void router.replace("/hotaru/identity");
     return;
   }
-  await store.loadWords(userStore.activeUserId);
+  await Promise.all([
+    store.loadWords(userStore.activeUserId),
+    store.loadTopics(),
+  ]);
   if (activeSection.value !== null) {
     // Returning to the library — restore where the user was.
     section.value = activeSection.value;
@@ -179,7 +219,9 @@ onMounted(async () => {
     ensureValidSelection();
   } else {
     // First visit — default to the first textbook section.
-    const firstTextbook = sections.value.find((s) => s.key !== CUSTOM);
+    const firstTextbook = sections.value.find(
+      (s) => s.key !== CUSTOM && s.key !== TOPICS,
+    );
     selectSection(firstTextbook ? firstTextbook.key : CUSTOM);
   }
 });
@@ -198,6 +240,36 @@ async function onDelete(word: Word): Promise<void> {
   if (!window.confirm(`Delete "${word.meaning}"? This can't be undone.`))
     return;
   await store.deleteWord(word.id, user);
+}
+
+// --- Topic assignment dialog ------------------------------------------------
+
+const topicsWord = ref<Word | null>(null);
+const topicsDialogOpen = ref(false);
+
+function onManageTopics(word: Word): void {
+  topicsWord.value = word;
+  topicsDialogOpen.value = true;
+}
+
+async function onAssign(topicId: string, wordId: string): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null) return;
+  await store.assignWord(topicId, wordId, user);
+}
+
+async function onUnassign(topicId: string, wordId: string): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null) return;
+  await store.unassignWord(topicId, wordId, user);
+}
+
+// Create a topic, then immediately add the current word to it.
+async function onCreateTopic(name: string): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null || topicsWord.value === null) return;
+  const created = await store.createTopic(name);
+  if (created) await store.assignWord(created.id, topicsWord.value.id, user);
 }
 </script>
 

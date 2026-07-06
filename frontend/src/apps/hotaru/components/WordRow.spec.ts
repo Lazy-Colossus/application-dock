@@ -101,4 +101,15 @@ describe("WordRow", () => {
     });
     expect(wrapper.find('[data-testid="private-mark"]').exists()).toBe(true);
   });
+
+  it("emits topics with the word from the manage-topics affordance", async () => {
+    const w = word();
+    const wrapper = mount(WordRow, {
+      props: { word: w },
+      global: { stubs: STUBS },
+    });
+    // Shown on all rows (topics span the master list), even when not editable.
+    await wrapper.find('[data-testid="manage-topics"]').trigger("click");
+    expect(wrapper.emitted("topics")?.[0]).toEqual([w]);
+  });
 });
