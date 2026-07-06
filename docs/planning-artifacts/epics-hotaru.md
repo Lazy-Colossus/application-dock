@@ -256,6 +256,24 @@ So that I can practise themes beyond textbook lessons.
 **When** I filter by a Topic
 **Then** I see that topic's words (private words still follow FR-7 visibility).
 
+### Story 1.8: Edit or delete a custom word
+
+_Added 2026-07-06 — not from an original FR. Once users can add words (Story 1.5), they need to fix or remove their own; the seeded Genki words stay read-only._
+
+As a learner,
+I want to edit or delete a word I added,
+So that I can fix mistakes and remove words I no longer want.
+
+**Acceptance Criteria:**
+
+**Given** a custom word (one whose `source` is a user id), when I view it, then I can edit its fields or delete it; seeded (textbook) words are read-only and expose no edit/delete.
+
+**Given** I delete a custom word (`DELETE /api/hotaru/words/{id}?user=`), when it is removed, then it is dropped from its writable file (`vocab_shared.json` or the owner's `words_private.json`) and disappears from the library; a private word can only be deleted by its owner.
+
+**Given** I edit a custom word (`PATCH /api/hotaru/words/{id}?user=`), when I save, then its fields (reading/meaning/kanji/romaji/pos/lesson/visibility) update in place; changing visibility moves it between the shared and the owner's private file; `id` and `drill_caps` stay consistent (drill_caps recomputed from kanji).
+
+**Given** any attempt to edit or delete a seeded word or another user's private word, when made, then it is rejected (403/404) — the seed is never mutated.
+
 ## Epic 2: Drilling & Spaced Repetition
 
 Dani and Jake can practise a chosen scope Anki-style — in either direction, with their preferred scoring — and watch each word's familiarity firm up, calm and debt-free.

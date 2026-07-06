@@ -48,3 +48,11 @@ def _private_path(user: str) -> Path:
 def read_private(user: str) -> list[Word]:
     rows = _storage.read_json(_private_path(user), default=[])
     return [Word.model_validate(w) for w in rows]
+
+
+def write_shared(words: list[Word]) -> None:
+    _storage.atomic_write_json(_SHARED_PATH, [w.model_dump(mode="json") for w in words])
+
+
+def write_private(user: str, words: list[Word]) -> None:
+    _storage.atomic_write_json(_private_path(user), [w.model_dump(mode="json") for w in words])

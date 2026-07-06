@@ -22,3 +22,16 @@ class Word(BaseModel):
     lesson: str
     visibility: Visibility
     drill_caps: list[DrillCap]
+
+
+class CreateWordRequest(BaseModel):
+    reading: str
+    meaning: str
+    kanji: str | None = None
+    romaji: str = ""
+    pos: str = ""
+    # When filing into an existing lesson, `source` is the chosen textbook slug;
+    # otherwise it defaults (server-side) to the active user id (a Custom word).
+    source: str | None = None
+    lesson: str = ""
+    visibility: Visibility = "shared"

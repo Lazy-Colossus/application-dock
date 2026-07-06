@@ -1,15 +1,30 @@
 <template>
   <q-page class="hotaru-app column no-wrap q-pa-md">
+    <!-- Level 1: sections (each textbook source + Custom words) -->
+    <div class="library-tabs row items-center q-gutter-xs q-mb-sm">
+      <button
+        v-for="s in sections"
+        :key="s.key"
+        class="library-tab"
+        :class="{ 'library-tab--active': s.key === section }"
+        :data-testid="`section-${s.key}`"
+        @click="selectSection(s.key)"
+      >
+        {{ s.label }}
+      </button>
+    </div>
+
+    <!-- Level 2: subsections (lessons, or Shared/Private) -->
     <div class="library-tabs row items-center q-gutter-xs q-mb-md">
       <button
-        v-for="lesson in store.lessons"
-        :key="lesson"
-        class="library-tab"
-        :class="{ 'library-tab--active': lesson === selected }"
-        :data-testid="`lesson-${lesson}`"
-        @click="selected = lesson"
+        v-for="sub in subsections"
+        :key="sub.key"
+        class="library-tab library-tab--sub"
+        :class="{ 'library-tab--active': sub.key === subsection }"
+        :data-testid="`sub-${sub.key}`"
+        @click="subsection = sub.key"
       >
-        {{ lesson }}
+        {{ sub.label }}
       </button>
     </div>
 
@@ -37,39 +52,93 @@
     <div v-else class="library-list column" data-testid="library-list">
       <WordRow v-for="word in visibleWords" :key="word.id" :word="word" />
     </div>
+
+    <q-btn
+      class="library-add"
+      round
+      unelevated
+      icon="add"
+      aria-label="Add word"
+      data-testid="add-word-fab"
+      @click="onAdd"
+    />
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import WordRow from "@/apps/hotaru/components/WordRow.vue";
 import { useHotaruLibraryStore } from "@/apps/hotaru/stores/useHotaruLibraryStore";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
+import type { Visibility } from "@/apps/hotaru/types";
 import "./../css/hotaru.sass";
 
 const store = useHotaruLibraryStore();
 const userStore = useHotaruUserStore();
+const router = useRouter();
 
-const selected = ref<string | null>(null);
+const CUSTOM = "__custom__";
 
-const visibleWords = computed(() =>
-  selected.value ? store.wordsByLesson(selected.value) : [],
-);
+function prettifySource(source: string): string {
+  return source
+    .split("_")
+    .map((t) => t.charAt(0).toUpperCase() + t.slice(1))
+    .join(" ");
+}
 
-// Default the selected lesson to the first available once words load.
-watch(
-  () => store.lessons,
-  (lessons) => {
-    if (selected.value === null && lessons.length > 0) {
-      selected.value = lessons[0];
-    }
-  },
-  { immediate: true },
-);
+const userIds = computed(() => userStore.users.map((u) => u.id));
 
-onMounted(() => {
-  void store.loadWords(userStore.activeUserId);
+interface Tab {
+  key: string;
+  label: string;
+}
+
+const sections = computed<Tab[]>(() => {
+  const textbook = store
+    .textbookSources(userIds.value)
+    .map((s) => ({ key: s, label: prettifySource(s) }));
+  return [...textbook, { key: CUSTOM, label: "Custom words" }];
 });
+
+const section = ref<string>(CUSTOM);
+const subsection = ref<string>("shared");
+
+const subsections = computed<Tab[]>(() => {
+  if (section.value === CUSTOM) {
+    return [
+      { key: "shared", label: "Shared" },
+      { key: "private", label: "Private" },
+    ];
+  }
+  return store
+    .lessonsForSource(section.value)
+    .map((l) => ({ key: l, label: l }));
+});
+
+const visibleWords = computed(() => {
+  if (section.value === CUSTOM) {
+    return store.customWords(userIds.value, subsection.value as Visibility);
+  }
+  return store.wordsBySourceLesson(section.value, subsection.value);
+});
+
+function selectSection(key: string): void {
+  section.value = key;
+  const subs = key === CUSTOM ? ["shared"] : store.lessonsForSource(key);
+  subsection.value = subs[0] ?? "shared";
+}
+
+onMounted(async () => {
+  if (userStore.users.length === 0) await userStore.loadUsers();
+  await store.loadWords(userStore.activeUserId);
+  const firstTextbook = sections.value.find((s) => s.key !== CUSTOM);
+  if (firstTextbook) selectSection(firstTextbook.key);
+});
+
+function onAdd(): void {
+  void router.push("/hotaru/add-word");
+}
 </script>
 
 <style scoped lang="sass">
@@ -85,6 +154,10 @@ onMounted(() => {
   font-size: 13px
   cursor: pointer
 
+.library-tab--sub
+  font-size: 12px
+  padding: 3px 10px
+
 .library-tab--active
   background: var(--hotaru-bamboo)
   color: var(--hotaru-bamboo-on)
@@ -94,4 +167,11 @@ onMounted(() => {
   color: var(--hotaru-cream-soft)
   text-align: center
   padding: 32px 0
+
+.library-add
+  position: fixed
+  right: 20px
+  bottom: 20px
+  background: var(--hotaru-bamboo)
+  color: var(--hotaru-bamboo-on)
 </style>
