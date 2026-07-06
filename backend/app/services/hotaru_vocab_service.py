@@ -8,7 +8,15 @@ from __future__ import annotations
 from uuid import uuid4
 
 from app.repositories import vocab_repo
-from app.schemas.hotaru import Visibility, Word
+from app.schemas.hotaru import DrillCap, Visibility, Word
+
+
+def _drill_caps(kanji: str | None) -> list[DrillCap]:
+    """Reading + meaning are always present (r2m/m2r floor); k2r iff kanji."""
+    caps: list[DrillCap] = ["r2m", "m2r"]
+    if kanji:
+        caps.append("k2r")
+    return caps
 
 
 def list_words(lesson: str | None = None, user: str | None = None) -> list[Word]:
@@ -64,7 +72,6 @@ def create_word(
     source = provided_source or user
 
     kanji = (kanji or "").strip() or None
-    caps = ["r2m", "m2r"] + (["k2r"] if kanji else [])
 
     word = Word(
         id=f"{source}-{uuid4().hex[:8]}",
@@ -76,7 +83,7 @@ def create_word(
         pos=pos.strip(),
         lesson=lesson.strip(),
         visibility=visibility,
-        drill_caps=caps,
+        drill_caps=_drill_caps(kanji),
     )
 
     if visibility == "private":
@@ -84,3 +91,81 @@ def create_word(
     else:
         vocab_repo.write_shared(vocab_repo.read_shared() + [word])
     return word
+
+
+def _locate(user: str, word_id: str) -> tuple[Word, str]:
+    """Find a mutable word or raise: PermissionError if it's a read-only seed
+    word, FileNotFoundError if the user can't see it at all."""
+    found = vocab_repo.find_word(user, word_id)
+    if found is None:
+        if vocab_repo.is_seed_word(word_id):
+            raise PermissionError(f"Word {word_id} is read-only (seed).")
+        raise FileNotFoundError(word_id)
+    return found
+
+
+def delete_word(user: str, word_id: str) -> None:
+    """Delete a user-added word. Raises PermissionError (seed) / FileNotFoundError."""
+    _, location = _locate(user, word_id)
+    vocab_repo.remove_word(user, word_id, location)
+
+
+def update_word(
+    user: str,
+    word_id: str,
+    reading: str,
+    meaning: str,
+    kanji: str | None = None,
+    romaji: str = "",
+    pos: str = "",
+    lesson: str = "",
+    visibility: Visibility = "shared",
+) -> Word:
+    """Update the editable fields of a user-added word in place.
+
+    `id` and `source` are preserved. `drill_caps` is recomputed. Changing
+    `visibility` moves the word between the shared file and the owner's private
+    file. Raises ValueError (blank field) / PermissionError (seed) / FileNotFoundError.
+    """
+    existing, location = _locate(user, word_id)
+
+    reading = reading.strip()
+    meaning = meaning.strip()
+    if not reading:
+        raise ValueError("Reading is required.")
+    if not meaning:
+        raise ValueError("Meaning is required.")
+
+    kanji = (kanji or "").strip() or None
+    updated = existing.model_copy(
+        update={
+            "reading": reading,
+            "meaning": meaning,
+            "kanji": kanji,
+            "romaji": romaji.strip(),
+            "pos": pos.strip(),
+            "lesson": lesson.strip(),
+            "visibility": visibility,
+            "drill_caps": _drill_caps(kanji),
+        }
+    )
+
+    new_location = "private" if visibility == "private" else "shared"
+    if new_location == location:
+        # Replace in place within the same file.
+        if location == "private":
+            vocab_repo.write_private(
+                user, [updated if w.id == word_id else w for w in vocab_repo.read_private(user)]
+            )
+        else:
+            vocab_repo.write_shared(
+                [updated if w.id == word_id else w for w in vocab_repo.read_shared()]
+            )
+    else:
+        # Visibility changed → remove from the old file, append to the new one.
+        vocab_repo.remove_word(user, word_id, location)
+        if new_location == "private":
+            vocab_repo.write_private(user, vocab_repo.read_private(user) + [updated])
+        else:
+            vocab_repo.write_shared(vocab_repo.read_shared() + [updated])
+    return updated

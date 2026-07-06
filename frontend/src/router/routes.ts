@@ -42,6 +42,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "Add word" },
       },
       {
+        path: "hotaru/words/:id/edit",
+        name: "hotaru-edit-word",
+        component: () => import("@/apps/hotaru/pages/AddWordPage.vue"),
+        meta: { title: "Edit word" },
+      },
+      {
         path: "archery/setup",
         name: "archery-setup",
         component: () => import("@/apps/archery/pages/SessionSetupPage.vue"),

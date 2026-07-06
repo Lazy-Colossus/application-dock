@@ -62,3 +62,28 @@ def write_shared(words: list[Word]) -> None:
 
 def write_private(user: str, words: list[Word]) -> None:
     _storage.atomic_write_json(_private_path(user), [w.model_dump(mode="json") for w in words])
+
+
+def find_word(user: str, word_id: str) -> tuple[Word, str] | None:
+    """Locate a word in the writable stores the user can mutate. Returns
+    (word, location) where location is "shared" or "private", or None. The
+    read-only seed is never searched here — it is immutable."""
+    for w in read_shared():
+        if w.id == word_id:
+            return w, "shared"
+    for w in read_private(user):
+        if w.id == word_id:
+            return w, "private"
+    return None
+
+
+def is_seed_word(word_id: str) -> bool:
+    return any(w.id == word_id for w in read_seed())
+
+
+def remove_word(user: str, word_id: str, location: str) -> None:
+    """Drop a word from its writable file atomically."""
+    if location == "private":
+        write_private(user, [w for w in read_private(user) if w.id != word_id])
+    else:
+        write_shared([w for w in read_shared() if w.id != word_id])

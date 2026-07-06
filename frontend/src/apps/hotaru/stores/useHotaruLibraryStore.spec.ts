@@ -1,13 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, postMock } = vi.hoisted(() => ({
+const { getMock, postMock, putMock, delMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
   postMock: vi.fn(),
+  putMock: vi.fn(),
+  delMock: vi.fn(),
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
-  api: { get: getMock, post: postMock, put: vi.fn(), del: vi.fn() },
+  api: { get: getMock, post: postMock, put: putMock, del: delMock },
 }));
 
 import { useHotaruLibraryStore } from "./useHotaruLibraryStore";
@@ -37,6 +39,8 @@ beforeEach(() => {
   setActivePinia(createPinia());
   getMock.mockReset();
   postMock.mockReset();
+  putMock.mockReset();
+  delMock.mockReset();
 });
 
 describe("useHotaruLibraryStore", () => {
@@ -144,5 +148,56 @@ describe("useHotaruLibraryStore", () => {
     );
     expect(result).toBeNull();
     expect(store.error).toBe("Reading is required.");
+  });
+
+  it("deleteWord removes the word locally and reloads", async () => {
+    getMock.mockResolvedValueOnce([
+      word("a", "", "dani"),
+      word("b", "", "dani"),
+    ]);
+    delMock.mockResolvedValueOnce(undefined);
+    getMock.mockResolvedValueOnce([word("b", "", "dani")]); // the reload
+    const store = useHotaruLibraryStore();
+    await store.loadWords("dani");
+    const ok = await store.deleteWord("a", "dani");
+    expect(ok).toBe(true);
+    expect(delMock).toHaveBeenCalledWith("/hotaru/words/a?user=dani");
+    expect(store.words.map((w) => w.id)).toEqual(["b"]);
+  });
+
+  it("deleteWord surfaces ApiError.detail and returns false", async () => {
+    delMock.mockRejectedValueOnce({ detail: "Word a not found." });
+    const store = useHotaruLibraryStore();
+    const ok = await store.deleteWord("a", "dani");
+    expect(ok).toBe(false);
+    expect(store.error).toBe("Word a not found.");
+  });
+
+  it("updateWord PUTs and replaces the word locally", async () => {
+    getMock.mockResolvedValueOnce([word("a", "", "dani")]);
+    const updated = { ...word("a", "", "dani"), meaning: "kitty" };
+    putMock.mockResolvedValueOnce(updated);
+    getMock.mockResolvedValueOnce([updated]); // the reload
+    const store = useHotaruLibraryStore();
+    await store.loadWords("dani");
+    const result = await store.updateWord(
+      "a",
+      { reading: "よみ", meaning: "kitty" },
+      "dani",
+    );
+    expect(putMock).toHaveBeenCalledWith("/hotaru/words/a?user=dani", {
+      reading: "よみ",
+      meaning: "kitty",
+    });
+    expect(result?.meaning).toBe("kitty");
+    expect(store.words[0].meaning).toBe("kitty");
+  });
+
+  it("wordById finds a loaded word", async () => {
+    getMock.mockResolvedValueOnce([word("a", "L1")]);
+    const store = useHotaruLibraryStore();
+    await store.loadWords();
+    expect(store.wordById("a")?.id).toBe("a");
+    expect(store.wordById("nope")).toBeUndefined();
   });
 });

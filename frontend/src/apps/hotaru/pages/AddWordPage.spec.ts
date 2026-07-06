@@ -2,18 +2,23 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, postMock, push, replace } = vi.hoisted(() => ({
-  getMock: vi.fn(),
-  postMock: vi.fn(),
-  push: vi.fn(),
-  replace: vi.fn(),
-}));
+const { getMock, postMock, putMock, push, replace, routeParams } = vi.hoisted(
+  () => ({
+    getMock: vi.fn(),
+    postMock: vi.fn(),
+    putMock: vi.fn(),
+    push: vi.fn(),
+    replace: vi.fn(),
+    routeParams: { value: {} as Record<string, string> },
+  }),
+);
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
-  api: { get: getMock, post: postMock, put: vi.fn(), del: vi.fn() },
+  api: { get: getMock, post: postMock, put: putMock, del: vi.fn() },
 }));
 vi.mock("vue-router", () => ({
   useRouter: () => ({ push, replace }),
+  useRoute: () => ({ params: routeParams.value }),
   onBeforeRouteLeave: () => {},
 }));
 
@@ -24,6 +29,19 @@ const USERS = [
   { id: "dani", name: "Dani" },
   { id: "jake", name: "Jake" },
 ];
+
+const CUSTOM: Word = {
+  id: "dani-abcd1234",
+  source: "dani",
+  reading: "ねこ",
+  kanji: "猫",
+  romaji: "neko",
+  meaning: "cat",
+  pos: "noun",
+  lesson: "",
+  visibility: "shared",
+  drill_caps: ["r2m", "m2r", "k2r"],
+};
 
 const SEED: Word[] = [
   {
@@ -38,6 +56,7 @@ const SEED: Word[] = [
     visibility: "shared",
     drill_caps: ["r2m", "m2r", "k2r"],
   },
+  CUSTOM,
 ];
 
 const STUBS = {
@@ -62,8 +81,10 @@ beforeEach(() => {
         : Promise.resolve(SEED),
     );
   postMock.mockReset();
+  putMock.mockReset();
   push.mockReset();
   replace.mockReset();
+  routeParams.value = {};
 });
 
 async function mountPage() {
@@ -121,5 +142,49 @@ describe("AddWordPage", () => {
     const body = postMock.mock.calls[0][1];
     expect(body.source).toBe("genki_3");
     expect(body.lesson).toBe("L1");
+  });
+
+  describe("edit mode", () => {
+    it("prefills the form from the word and shows edit affordances", async () => {
+      routeParams.value = { id: CUSTOM.id };
+      const wrapper = await mountPage();
+      expect(wrapper.text()).toContain("Edit word");
+      expect(
+        (
+          wrapper.find('[data-testid="field-reading"]')
+            .element as HTMLInputElement
+        ).value,
+      ).toBe("ねこ");
+      expect(
+        (
+          wrapper.find('[data-testid="field-meaning"]')
+            .element as HTMLInputElement
+        ).value,
+      ).toBe("cat");
+    });
+
+    it("PUTs the changes (without source) and navigates back to library", async () => {
+      routeParams.value = { id: CUSTOM.id };
+      putMock.mockResolvedValueOnce({ ...CUSTOM, meaning: "kitty" });
+      const wrapper = await mountPage();
+      await wrapper.find('[data-testid="field-meaning"]').setValue("kitty");
+      await wrapper.find("form").trigger("submit");
+      await flushPromises();
+
+      expect(putMock).toHaveBeenCalledWith(
+        "/hotaru/words/dani-abcd1234?user=dani",
+        expect.objectContaining({ meaning: "kitty" }),
+      );
+      const body = putMock.mock.calls[0][1];
+      expect(body).not.toHaveProperty("source");
+      expect(postMock).not.toHaveBeenCalled();
+      expect(push).toHaveBeenCalledWith("/hotaru/library");
+    });
+
+    it("redirects to library when the word id is unknown", async () => {
+      routeParams.value = { id: "does-not-exist" };
+      await mountPage();
+      expect(replace).toHaveBeenCalledWith("/hotaru/library");
+    });
   });
 });

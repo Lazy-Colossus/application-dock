@@ -52,4 +52,27 @@ describe("WordRow", () => {
     await wrapper.find('[data-testid="romaji-toggle"]').trigger("click");
     expect(wrapper.find('[data-testid="romaji"]').exists()).toBe(false);
   });
+
+  const STUBS = { "q-icon": { template: "<i />" } };
+
+  it("hides edit/delete affordances unless editable", () => {
+    const wrapper = mount(WordRow, {
+      props: { word: word() },
+      global: { stubs: STUBS },
+    });
+    expect(wrapper.find('[data-testid="edit-word"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="delete-word"]').exists()).toBe(false);
+  });
+
+  it("emits edit and delete with the word when editable", async () => {
+    const w = word();
+    const wrapper = mount(WordRow, {
+      props: { word: w, editable: true },
+      global: { stubs: STUBS },
+    });
+    await wrapper.find('[data-testid="edit-word"]').trigger("click");
+    await wrapper.find('[data-testid="delete-word"]').trigger("click");
+    expect(wrapper.emitted("edit")?.[0]).toEqual([w]);
+    expect(wrapper.emitted("delete")?.[0]).toEqual([w]);
+  });
 });

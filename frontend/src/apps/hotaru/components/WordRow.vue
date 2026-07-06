@@ -20,6 +20,24 @@
     >
       A
     </button>
+    <template v-if="editable">
+      <button
+        class="word-row__action"
+        aria-label="Edit word"
+        data-testid="edit-word"
+        @click="emit('edit', word)"
+      >
+        <q-icon name="edit" size="18px" />
+      </button>
+      <button
+        class="word-row__action"
+        aria-label="Delete word"
+        data-testid="delete-word"
+        @click="emit('delete', word)"
+      >
+        <q-icon name="delete" size="18px" />
+      </button>
+    </template>
   </div>
 </template>
 
@@ -27,7 +45,14 @@
 import { ref } from "vue";
 import type { Word } from "@/apps/hotaru/types";
 
-defineProps<{ word: Word }>();
+withDefaults(defineProps<{ word: Word; editable?: boolean }>(), {
+  editable: false,
+});
+
+const emit = defineEmits<{
+  edit: [word: Word];
+  delete: [word: Word];
+}>();
 
 // Per-row romaji visibility — off by default so the list stays clean.
 const showRomaji = ref(false);
@@ -74,4 +99,17 @@ const showRomaji = ref(false);
   background: var(--hotaru-bamboo)
   color: var(--hotaru-bamboo-on)
   border-color: var(--hotaru-bamboo)
+
+.word-row__action
+  flex: none
+  width: 28px
+  height: 28px
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  border-radius: 9999px
+  border: none
+  background: transparent
+  color: var(--hotaru-sage)
+  cursor: pointer
 </style>

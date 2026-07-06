@@ -35,3 +35,14 @@ class CreateWordRequest(BaseModel):
     source: str | None = None
     lesson: str = ""
     visibility: Visibility = "shared"
+
+
+class UpdateWordRequest(BaseModel):
+    # Editable fields only — `id` and `source` are server-preserved.
+    reading: str
+    meaning: str
+    kanji: str | None = None
+    romaji: str = ""
+    pos: str = ""
+    lesson: str = ""
+    visibility: Visibility = "shared"

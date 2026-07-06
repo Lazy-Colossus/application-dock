@@ -50,7 +50,14 @@
       No words here yet.
     </div>
     <div v-else class="library-list column" data-testid="library-list">
-      <WordRow v-for="word in visibleWords" :key="word.id" :word="word" />
+      <WordRow
+        v-for="word in visibleWords"
+        :key="word.id"
+        :word="word"
+        :editable="editable"
+        @edit="onEdit"
+        @delete="onDelete"
+      />
     </div>
 
     <q-btn
@@ -71,7 +78,7 @@ import { useRouter } from "vue-router";
 import WordRow from "@/apps/hotaru/components/WordRow.vue";
 import { useHotaruLibraryStore } from "@/apps/hotaru/stores/useHotaruLibraryStore";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
-import type { Visibility } from "@/apps/hotaru/types";
+import type { Visibility, Word } from "@/apps/hotaru/types";
 import "./../css/hotaru.sass";
 
 const store = useHotaruLibraryStore();
@@ -123,6 +130,9 @@ const visibleWords = computed(() => {
   return store.wordsBySourceLesson(section.value, subsection.value);
 });
 
+// Only user-added Custom words are editable — textbook words are read-only seed.
+const editable = computed(() => section.value === CUSTOM);
+
 function selectSection(key: string): void {
   section.value = key;
   const subs = key === CUSTOM ? ["shared"] : store.lessonsForSource(key);
@@ -142,6 +152,18 @@ onMounted(async () => {
 
 function onAdd(): void {
   void router.push("/hotaru/add-word");
+}
+
+function onEdit(word: Word): void {
+  void router.push(`/hotaru/words/${word.id}/edit`);
+}
+
+async function onDelete(word: Word): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null) return;
+  if (!window.confirm(`Delete "${word.meaning}"? This can't be undone.`))
+    return;
+  await store.deleteWord(word.id, user);
 }
 </script>
 

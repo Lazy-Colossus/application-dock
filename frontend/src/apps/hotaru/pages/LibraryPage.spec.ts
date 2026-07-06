@@ -2,14 +2,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, push, replace } = vi.hoisted(() => ({
+const { getMock, delMock, push, replace } = vi.hoisted(() => ({
   getMock: vi.fn(),
+  delMock: vi.fn(),
   push: vi.fn(),
   replace: vi.fn(),
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
-  api: { get: getMock, post: vi.fn(), put: vi.fn(), del: vi.fn() },
+  api: { get: getMock, post: vi.fn(), put: vi.fn(), del: delMock },
 }));
 vi.mock("vue-router", () => ({ useRouter: () => ({ push, replace }) }));
 
@@ -44,6 +45,7 @@ function word(
 
 const STUBS = {
   "q-page": { template: "<div><slot /></div>" },
+  "q-icon": { template: "<i />" },
   "q-btn": {
     template:
       "<button :data-testid=\"$attrs['data-testid']\" @click=\"$emit('click')\" />",
@@ -68,6 +70,7 @@ beforeEach(() => {
       ? Promise.resolve(USERS)
       : Promise.resolve(WORDS),
   );
+  delMock.mockReset().mockResolvedValue(undefined);
   push.mockReset();
 });
 
@@ -106,5 +109,50 @@ describe("LibraryPage (two-level)", () => {
     await flushPromises();
     await wrapper.find('[data-testid="add-word-fab"]').trigger("click");
     expect(push).toHaveBeenCalledWith("/hotaru/add-word");
+  });
+
+  it("shows edit/delete affordances for Custom words but not textbook words", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    // Textbook section (default) → no delete affordance.
+    expect(wrapper.find('[data-testid="delete-word"]').exists()).toBe(false);
+    // Custom → Shared → editable.
+    await wrapper.find('[data-testid="section-__custom__"]').trigger("click");
+    await wrapper.find('[data-testid="sub-shared"]').trigger("click");
+    expect(wrapper.find('[data-testid="delete-word"]').exists()).toBe(true);
+  });
+
+  it("edit routes to the edit page for that word", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="section-__custom__"]').trigger("click");
+    await wrapper.find('[data-testid="sub-shared"]').trigger("click");
+    await wrapper.find('[data-testid="edit-word"]').trigger("click");
+    expect(push).toHaveBeenCalledWith("/hotaru/words/cs/edit");
+  });
+
+  it("delete asks for confirmation and calls the API on confirm", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="section-__custom__"]').trigger("click");
+    await wrapper.find('[data-testid="sub-shared"]').trigger("click");
+    await wrapper.find('[data-testid="delete-word"]').trigger("click");
+    await flushPromises();
+    expect(confirm).toHaveBeenCalled();
+    expect(delMock).toHaveBeenCalledWith("/hotaru/words/cs?user=dani");
+    confirm.mockRestore();
+  });
+
+  it("delete does nothing when the confirmation is dismissed", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="section-__custom__"]').trigger("click");
+    await wrapper.find('[data-testid="sub-shared"]').trigger("click");
+    await wrapper.find('[data-testid="delete-word"]').trigger("click");
+    await flushPromises();
+    expect(delMock).not.toHaveBeenCalled();
+    confirm.mockRestore();
   });
 });

@@ -1,6 +1,8 @@
 <template>
   <q-page class="hotaru-app column no-wrap q-pa-md">
-    <div class="addword-title q-mb-md">Add a word</div>
+    <div class="addword-title q-mb-md">
+      {{ isEdit ? "Edit word" : "Add a word" }}
+    </div>
 
     <form class="column q-gutter-sm" @submit.prevent="onSubmit">
       <label class="addword-field">
@@ -81,6 +83,7 @@
             <select
               v-model="source"
               class="addword-input"
+              :disabled="isEdit"
               data-testid="field-source"
             >
               <option v-for="s in sourceOptions" :key="s" :value="s">
@@ -110,7 +113,7 @@
       <q-btn
         type="submit"
         class="addword-submit q-mt-sm"
-        label="Add word"
+        :label="isEdit ? 'Save changes' : 'Add word'"
         unelevated
         no-caps
         :disable="store.loading || !reading.trim() || !meaning.trim()"
@@ -122,7 +125,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
-import { useRouter, onBeforeRouteLeave } from "vue-router";
+import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router";
 import { useHotaruLibraryStore } from "@/apps/hotaru/stores/useHotaruLibraryStore";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
 import type { Visibility } from "@/apps/hotaru/types";
@@ -131,6 +134,12 @@ import "./../css/hotaru.sass";
 const store = useHotaruLibraryStore();
 const userStore = useHotaruUserStore();
 const router = useRouter();
+const route = useRoute();
+
+const wordId = computed(() =>
+  typeof route.params.id === "string" ? route.params.id : null,
+);
+const isEdit = computed(() => wordId.value !== null);
 
 const reading = ref("");
 const meaning = ref("");
@@ -143,31 +152,66 @@ const source = ref("");
 const lesson = ref("");
 const submitted = ref(false);
 
+// Snapshot of the form at load; unsaved-changes prompt compares against it so a
+// prefilled edit form isn't treated as dirty until the user actually changes it.
+const baseline = ref("");
+function snapshot(): string {
+  return JSON.stringify([
+    reading.value.trim(),
+    meaning.value.trim(),
+    kanji.value.trim(),
+    romaji.value.trim(),
+    pos.value.trim(),
+    visibility.value,
+    addToLesson.value,
+    source.value,
+    lesson.value,
+  ]);
+}
+
 const userIds = computed(() => userStore.users.map((u) => u.id));
-const sourceOptions = computed(() => store.textbookSources(userIds.value));
+// In edit mode the word's own source may be a user id (a Custom word); include it
+// so the locked select can display it even though it isn't a textbook source.
+const sourceOptions = computed(() => {
+  const opts = store.textbookSources(userIds.value);
+  if (source.value && !opts.includes(source.value))
+    return [source.value, ...opts];
+  return opts;
+});
 const lessonOptions = computed(() =>
   source.value ? store.lessonsForSource(source.value) : [],
 );
 
-// Any content the user typed but hasn't saved yet.
-const dirty = computed(
-  () =>
-    !!(
-      reading.value.trim() ||
-      meaning.value.trim() ||
-      kanji.value.trim() ||
-      romaji.value.trim() ||
-      pos.value.trim()
-    ),
-);
+// Any change from the loaded baseline is unsaved work.
+const dirty = computed(() => snapshot() !== baseline.value);
 
 watch(sourceOptions, (opts) => {
   if (!source.value && opts.length > 0) source.value = opts[0];
 });
 watch([lessonOptions, source], () => {
+  if (isEdit.value) return; // don't clobber the prefilled lesson on edit
   const opts = lessonOptions.value;
   if (opts.length > 0 && !opts.includes(lesson.value)) lesson.value = opts[0];
 });
+
+function prefill(): void {
+  const word = wordId.value ? store.wordById(wordId.value) : undefined;
+  if (!word) {
+    // Word not found (bad id or not loaded) — nothing to edit.
+    void router.replace("/hotaru/library");
+    return;
+  }
+  reading.value = word.reading;
+  meaning.value = word.meaning;
+  kanji.value = word.kanji ?? "";
+  romaji.value = word.romaji;
+  pos.value = word.pos;
+  visibility.value = word.visibility;
+  source.value = word.source;
+  lesson.value = word.lesson;
+  addToLesson.value = word.lesson !== "";
+  baseline.value = snapshot();
+}
 
 onMounted(async () => {
   if (userStore.users.length === 0) await userStore.loadUsers();
@@ -176,6 +220,8 @@ onMounted(async () => {
     return;
   }
   if (store.words.length === 0) await store.loadWords(userStore.activeUserId);
+  if (isEdit.value) prefill();
+  else baseline.value = snapshot();
 });
 
 // Warn before leaving with unsaved input (not after a successful save).
@@ -192,21 +238,41 @@ async function onSubmit(): Promise<void> {
     void router.replace("/hotaru/identity");
     return;
   }
-  const created = await store.createWord(
-    {
-      reading: reading.value,
-      meaning: meaning.value,
-      kanji: kanji.value || null,
-      romaji: romaji.value,
-      pos: pos.value,
-      visibility: visibility.value,
-      ...(addToLesson.value
-        ? { source: source.value, lesson: lesson.value }
-        : {}),
-    },
-    user,
-  );
-  if (created) {
+
+  let ok = false;
+  if (isEdit.value && wordId.value) {
+    // source is server-preserved on update, so it is not sent.
+    ok = !!(await store.updateWord(
+      wordId.value,
+      {
+        reading: reading.value,
+        meaning: meaning.value,
+        kanji: kanji.value || null,
+        romaji: romaji.value,
+        pos: pos.value,
+        visibility: visibility.value,
+        lesson: addToLesson.value ? lesson.value : "",
+      },
+      user,
+    ));
+  } else {
+    ok = !!(await store.createWord(
+      {
+        reading: reading.value,
+        meaning: meaning.value,
+        kanji: kanji.value || null,
+        romaji: romaji.value,
+        pos: pos.value,
+        visibility: visibility.value,
+        ...(addToLesson.value
+          ? { source: source.value, lesson: lesson.value }
+          : {}),
+      },
+      user,
+    ));
+  }
+
+  if (ok) {
     submitted.value = true;
     void router.push("/hotaru/library");
   }
