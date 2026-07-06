@@ -107,7 +107,7 @@ Full-stack web (mobile-first SPA + REST API) — delivered as a new app module i
 
 **Word schema (Pydantic):** `{id, source, reading, kanji|None, romaji, meaning, pos, lesson, visibility, drill_caps[]}`. **Every** word carries `visibility` (`shared|private`) for a consistent total shape; seeded words are always `shared`. `""` kanji from source → `None` on ingest.
 
-**`source` field (revision, 2026-07-06 — supersedes `edition`/`owner`):** every word carries `source` identifying origin — a textbook slug for seeded words (`genki_3`, derived `f"genki_{edition}"` at seed time) or a user id for user-added words (`user1`/`user2`). `source` **replaces** the standalone `edition` field (its info is folded into the slug) **and** the separate `owner` field (for user words, `source` *is* the owner). No separate "seeded vs user-added" boolean — origin is derivable from `source` (and from storage location). Word ID embeds it: seeded `"{source}-{lesson}-{seq}"` (e.g. `genki_3-G-0007`); user-added `"{source}-{uuid8}"` (e.g. `user1-a1b2c3d4`).
+**`source` field (revision, 2026-07-06 — supersedes `edition`/`owner`):** every word carries `source` identifying origin — a textbook slug for seeded words (`genki_3`, derived `f"genki_{edition}"` at seed time) or a user id for user-added words (`dani`/`jake` — the two canonical user ids). `source` **replaces** the standalone `edition` field (its info is folded into the slug) **and** the separate `owner` field (for user words, `source` *is* the owner). No separate "seeded vs user-added" boolean — origin is derivable from `source` (and from storage location). Word ID embeds it: seeded `"{source}-{lesson}-{seq}"` (e.g. `genki_3-G-0007`); user-added `"{source}-{uuid8}"` (e.g. `dani-a1b2c3d4`).
 
 **`drill_caps`** computed at seed time: `r2m` + `m2r` floor (reading+meaning always present → every word drillable); add `k2r` iff `kanji is not None`. The practice service *consumes* caps, never derives them.
 
@@ -167,7 +167,7 @@ _General naming/format/error/loading/test conventions are inherited from `docs/a
 ### Data file & path conventions (canonical — do not invent alternatives)
 - Exact paths under `DATA_DIR/hotaru/`: `vocab_seed.json`, `vocab_shared.json`, `topics.json`, `notes_shared.json`, `users/{user}/words_private.json`, `users/{user}/progress.json`, `users/{user}/notes_private.json`.
 - Every repo write does `path.parent.mkdir(parents=True, exist_ok=True)` before the atomic write (nested dirs the archery sibling never used).
-- **Word ID format:** seed → `"{source}-{lesson}-{seq}"` (e.g. `genki_3-G-0007`, `seq` zero-padded width 4, `source = f"genki_{edition}"`); user-added → `"{source}-{uuid8}"` (e.g. `user1-a1b2c3d4`). Never an array index; IDs are immutable.
+- **Word ID format:** seed → `"{source}-{lesson}-{seq}"` (e.g. `genki_3-G-0007`, `seq` zero-padded width 4, `source = f"genki_{edition}"`); user-added → `"{source}-{uuid8}"` (e.g. `dani-a1b2c3d4`). Never an array index; IDs are immutable. **Canonical user ids: `dani`, `jake`.**
 
 ### Repository decomposition
 - One `repositories/_storage.py` with shared `_atomic_write_json(path, payload)` + `_read_json(path)`. Do NOT copy the atomic-write helper into each repo.

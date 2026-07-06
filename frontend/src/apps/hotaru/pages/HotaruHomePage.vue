@@ -1,9 +1,18 @@
 <template>
   <q-page class="hotaru-app column no-wrap q-pa-md">
-    <div class="hotaru-brand text-center q-mt-lg q-mb-xl">
+    <div class="hotaru-topbar row items-center justify-end">
+      <AvatarSwitcher />
+    </div>
+
+    <div class="hotaru-brand text-center q-mb-xl">
       <div class="hotaru-glyph">蛍</div>
       <div class="hotaru-title">Hotaru</div>
-      <div class="hotaru-tagline">Japanese vocabulary</div>
+      <div class="hotaru-tagline">
+        <template v-if="store.activeUser"
+          >Welcome back, {{ store.activeUser.name }}</template
+        >
+        <template v-else>Japanese vocabulary</template>
+      </div>
     </div>
 
     <q-btn
@@ -26,7 +35,24 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from "vue";
+import { useRouter } from "vue-router";
+import AvatarSwitcher from "@/apps/hotaru/components/AvatarSwitcher.vue";
+import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
 import "./../css/hotaru.sass";
+
+const store = useHotaruUserStore();
+const router = useRouter();
+
+onMounted(async () => {
+  if (store.users.length === 0) {
+    await store.loadUsers();
+  }
+  // Entry guard: no one has said who's studying yet.
+  if (store.activeUser === null) {
+    void router.replace("/hotaru/identity");
+  }
+});
 
 // Placeholder actions — Practice (Epic 2) and Library (Story 1.4+) pages do not
 // exist yet. Wired to real routes in later stories.
@@ -40,6 +66,9 @@ function onLibrary(): void {
 </script>
 
 <style scoped lang="sass">
+.hotaru-topbar
+  min-height: 40px
+
 .hotaru-glyph
   font-size: 56px
   line-height: 1

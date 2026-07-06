@@ -4,10 +4,16 @@
 export type DrillCap = "r2m" | "m2r" | "k2r";
 export type Visibility = "shared" | "private";
 
+// One of the two hardcoded users (ids "dani" / "jake"). No auth.
+export interface HotaruUser {
+  id: string;
+  name: string;
+}
+
 export interface Word {
   id: string;
   // Origin: a textbook slug (e.g. "genki_3") for seeded words, or a user id
-  // (e.g. "user1") for user-added words. Also serves as ownership.
+  // (e.g. "dani") for user-added words. Also serves as ownership.
   source: string;
   reading: string;
   kanji: string | null;
