@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hotaru — Stone Lantern Artwork Comparison</title>
+<style>
+/*
+  PALETTE — Hotaru lantern gallery
+  -----------------------------------------------------------
+  Page background deep      #14180f  (near-black mossy soil)
+  Page background mid       #1c2114  (forest floor)
+  Card mossy green-brown    #2a3019  (top of card gradient)
+  Card mossy darker         #1f2412  (bottom of card gradient)
+  Stone light face          #c9c2ac  (lit granite)
+  Stone mid                 #8d8771  (granite body)
+  Stone shadow face         #5a5747  (shaded granite)
+  Stone deep shadow         #3a3a2e  (recesses)
+  Moss accent               #6e7a3a  (moss flecks)
+  Moss accent dark          #46541f
+  Amber glow core           #ffd27a  (hibukuro light, hot centre)
+  Amber glow                #ff9d3c  (warm fire)
+  Amber glow outer          #d2641c  (glow falloff)
+  Firefly body              #d9ff8c  (yellow-green spark)
+  Firefly halo              #aaff66
+  Text primary              #e7e2cf
+  Text muted                #9aa07f
+  -----------------------------------------------------------
+*/
+
+:root{
+  --bg-deep:#14180f;
+  --bg-mid:#1c2114;
+  --card-top:#2a3019;
+  --card-bot:#1f2412;
+  --stone-light:#c9c2ac;
+  --stone-mid:#8d8771;
+  --stone-shadow:#5a5747;
+  --stone-deep:#3a3a2e;
+  --moss:#6e7a3a;
+  --moss-dark:#46541f;
+  --amber-core:#ffd27a;
+  --amber:#ff9d3c;
+  --amber-outer:#d2641c;
+  --firefly:#d9ff8c;
+  --firefly-halo:#aaff66;
+  --text:#e7e2cf;
+  --text-muted:#9aa07f;
+}
+
+*{box-sizing:border-box;}
+
+html,body{margin:0;padding:0;}
+
+body{
+  background:
+    radial-gradient(1200px 700px at 50% -10%, #232a16 0%, var(--bg-mid) 45%, var(--bg-deep) 100%);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  min-height:100vh;
+  padding:48px 24px 72px;
+}
+
+header{
+  text-align:center;
+  max-width:900px;
+  margin:0 auto 44px;
+}
+header h1{
+  font-size:clamp(1.6rem,3.4vw,2.4rem);
+  font-weight:600;
+  letter-spacing:.02em;
+  margin:0 0 10px;
+}
+header h1 .jp{
+  color:var(--moss);
+  font-weight:400;
+  margin-left:.4em;
+}
+header p{
+  margin:0;
+  color:var(--text-muted);
+  font-size:1rem;
+  line-height:1.5;
+}
+
+.grid{
+  max-width:1180px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:28px;
+}
+
+.card{
+  position:relative;
+  border-radius:18px;
+  padding:24px 22px 26px;
+  background:linear-gradient(165deg,var(--card-top) 0%,var(--card-bot) 100%);
+  border:1px solid #3a4322;
+  box-shadow:0 12px 30px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.04);
+  overflow:hidden;
+  isolation:isolate;
+}
+/* subtle moss/granular texture over the card */
+.card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:18px;
+  pointer-events:none;
+  opacity:.5;
+  background-image:
+    radial-gradient(circle at 18% 22%, rgba(110,122,58,.45) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 72% 12%, rgba(70,84,31,.5) 0 1.2px, transparent 2px),
+    radial-gradient(circle at 88% 64%, rgba(110,122,58,.4) 0 1.6px, transparent 2px),
+    radial-gradient(circle at 30% 80%, rgba(70,84,31,.5) 0 1.3px, transparent 2px),
+    radial-gradient(circle at 55% 48%, rgba(110,122,58,.3) 0 1px, transparent 2px),
+    radial-gradient(circle at 8% 60%, rgba(70,84,31,.45) 0 1.1px, transparent 2px);
+}
+
+.stage{
+  position:relative;
+  height:300px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  z-index:1;
+}
+.stage svg{
+  height:280px;
+  width:auto;
+  display:block;
+  overflow:visible;
+}
+
+.caption{
+  position:relative;
+  z-index:2;
+  margin-top:18px;
+  text-align:center;
+}
+.caption .num{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:26px;height:26px;
+  border-radius:50%;
+  background:rgba(255,157,60,.16);
+  border:1px solid rgba(255,157,60,.4);
+  color:var(--amber-core);
+  font-size:.85rem;
+  font-weight:600;
+  margin-bottom:8px;
+}
+.caption h2{
+  font-size:1.12rem;
+  font-weight:600;
+  margin:0 0 4px;
+  letter-spacing:.01em;
+}
+.caption h2 .jp{color:var(--moss);font-weight:400;font-size:.92em;}
+.caption p{
+  margin:0;
+  color:var(--text-muted);
+  font-size:.86rem;
+  line-height:1.45;
+}
+
+/* ---------- AMBER GLOW from the fire box ---------- */
+.glow{
+  position:absolute;
+  left:50%;
+  width:150px;height:150px;
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+  background:radial-gradient(circle,
+     rgba(255,210,122,.95) 0%,
+     rgba(255,157,60,.6) 28%,
+     rgba(210,100,28,.32) 52%,
+     rgba(210,100,28,0) 72%);
+  filter:blur(2px);
+  z-index:0;
+  pointer-events:none;
+  mix-blend-mode:screen;
+  animation:flicker 3.6s ease-in-out infinite;
+}
+@keyframes flicker{
+  0%,100%{opacity:.78;transform:translate(-50%,-50%) scale(1);}
+  35%    {opacity:1;  transform:translate(-50%,-50%) scale(1.06);}
+  55%    {opacity:.7; transform:translate(-50%,-50%) scale(.97);}
+  78%    {opacity:.95;transform:translate(-50%,-50%) scale(1.03);}
+}
+
+/* glow vertical anchor differs per lantern (fire box height) */
+.glow-1{top:46%;}
+.glow-2{top:48%;}
+.glow-3{top:50%;}
+.glow-4{top:47%;}
+.glow-5{top:43%;}
+
+/* the SVG window cut-outs also pulse to feel lit */
+.firelit{animation:litpulse 3.6s ease-in-out infinite;}
+@keyframes litpulse{
+  0%,100%{opacity:.85;}
+  35%{opacity:1;}
+  60%{opacity:.78;}
+}
+
+/* ---------- FIREFLIES (pure CSS) ---------- */
+.firefly{
+  position:absolute;
+  width:5px;height:5px;
+  border-radius:50%;
+  background:radial-gradient(circle,var(--firefly) 0%,var(--firefly-halo) 40%,rgba(170,255,102,0) 75%);
+  box-shadow:0 0 6px 2px rgba(170,255,102,.5);
+  z-index:3;
+  pointer-events:none;
+  opacity:0;
+}
+.ff-a{left:22%;top:30%;animation:drift-a 7s ease-in-out infinite, blink 2.2s ease-in-out infinite;}
+.ff-b{left:74%;top:42%;animation:drift-b 9s ease-in-out infinite, blink 2.8s ease-in-out infinite .6s;}
+.ff-c{left:60%;top:22%;animation:drift-c 8s ease-in-out infinite, blink 3.1s ease-in-out infinite 1.1s;}
+
+@keyframes blink{
+  0%,100%{opacity:0;}
+  40%{opacity:1;}
+  70%{opacity:.35;}
+}
+@keyframes drift-a{
+  0%{transform:translate(0,0);}
+  25%{transform:translate(28px,-22px);}
+  50%{transform:translate(8px,18px);}
+  75%{transform:translate(-24px,-6px);}
+  100%{transform:translate(0,0);}
+}
+@keyframes drift-b{
+  0%{transform:translate(0,0);}
+  30%{transform:translate(-30px,14px);}
+  55%{transform:translate(-6px,-26px);}
+  80%{transform:translate(20px,8px);}
+  100%{transform:translate(0,0);}
+}
+@keyframes drift-c{
+  0%{transform:translate(0,0);}
+  33%{transform:translate(18px,20px);}
+  66%{transform:translate(-22px,10px);}
+  100%{transform:translate(0,0);}
+}
+
+footer{
+  max-width:900px;
+  margin:48px auto 0;
+  text-align:center;
+  color:var(--text-muted);
+  font-size:.8rem;
+  line-height:1.6;
+}
+
+@media (prefers-reduced-motion:reduce){
+  .glow,.firelit,.firefly{animation:none;}
+  .firefly{opacity:.7;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Hotaru — Stone Lantern Artwork<span class="jp">灯籠</span></h1>
+  <p>Five candidate renderings of a Japanese stone lantern (tōrō). Pick the silhouette that should carry the app.
+     Four yukimi-dōrō variations plus one kotoji-dōrō wildcard.</p>
+</header>
+
+<main class="grid">
+
+  <!-- ============ 1 · YUKIMI — CLASSIC HEXAGONAL ============ -->
+  <section class="card">
+    <div class="stage">
+      <span class="glow glow-1"></span>
+      <span class="firefly ff-a"></span>
+      <span class="firefly ff-b"></span>
+      <span class="firefly ff-c"></span>
+      <svg viewBox="0 0 200 280" role="img" aria-label="Classic hexagonal yukimi-doro lantern">
+        <defs>
+          <linearGradient id="stoneV1" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#c9c2ac"/>
+            <stop offset=".5" stop-color="#8d8771"/>
+            <stop offset="1" stop-color="#5a5747"/>
+          </linearGradient>
+          <radialGradient id="fire1" cx="50%" cy="55%" r="60%">
+            <stop offset="0" stop-color="#ffe6b0"/>
+            <stop offset=".45" stop-color="#ff9d3c"/>
+            <stop offset="1" stop-color="#a33f0c"/>
+          </radialGradient>
+        </defs>
+
+        <!-- ground shadow -->
+        <ellipse cx="100" cy="268" rx="72" ry="11" fill="#000" opacity=".45"/>
+
+        <!-- three short curved legs -->
+        <path d="M58 246 q-7 -34 6 -56 l11 4 q-9 22 -3 52z" fill="url(#stoneV1)"/>
+        <path d="M142 246 q7 -34 -6 -56 l-11 4 q9 22 3 52z" fill="url(#stoneV1)"/>
+        <path d="M100 250 q-9 -30 0 -56 l0 0 q9 26 0 56z" fill="#6f6a57"/>
+
+        <!-- hexagonal fire box (hibukuro) -->
+        <polygon points="62,140 100,124 138,140 138,194 100,210 62,194"
+                 fill="url(#stoneV1)" stroke="#46442f" stroke-width="1.5"/>
+        <!-- fire box left face shaded -->
+        <polygon points="62,140 100,124 100,210 62,194" fill="#000" opacity=".14"/>
+        <!-- sun window (round) -->
+        <circle class="firelit" cx="86" cy="167" r="11" fill="url(#fire1)"/>
+        <circle cx="86" cy="167" r="11" fill="none" stroke="#3a3a2e" stroke-width="2"/>
+        <!-- moon window (crescent via overlap) -->
+        <circle class="firelit" cx="118" cy="167" r="9" fill="url(#fire1)"/>
+        <circle cx="121" cy="165" r="9" fill="#8d8771"/>
+        <circle cx="118" cy="167" r="9" fill="none" stroke="#3a3a2e" stroke-width="2"/>
+
+        <!-- platform (chudai) under roof -->
+        <polygon points="58,124 100,110 142,124 142,134 100,120 58,134" fill="#7c7762"/>
+
+        <!-- hexagonal umbrella roof (kasa) with upturned corners -->
+        <path d="M100 56
+                 L150 96
+                 q4 6 -4 9
+                 q-10 -10 -14 -2
+                 q-2 8 -10 6
+                 L100 113
+                 L78 109
+                 q-8 2 -10 -6
+                 q-4 -8 -14 2
+                 q-8 -3 -4 -9 Z"
+              fill="url(#stoneV1)" stroke="#46442f" stroke-width="1.2"/>
+        <!-- roof ridge highlight -->
+        <path d="M100 56 L150 96 q4 6 -4 9 L100 70 Z" fill="#fff" opacity=".08"/>
+        <path d="M100 56 L50 96 q-4 6 4 9 L100 70 Z" fill="#000" opacity=".12"/>
+
+        <!-- onion finial (hoju) -->
+        <rect x="95" y="44" width="10" height="14" rx="2" fill="#7c7762"/>
+        <path d="M100 22 q10 8 8 18 q-2 8 -8 8 q-6 0 -8 -8 q-2 -10 8 -18z" fill="url(#stoneV1)"/>
+
+        <!-- moss flecks -->
+        <g fill="#6e7a3a" opacity=".7">
+          <circle cx="66" cy="190" r="2.2"/><circle cx="134" cy="148" r="1.8"/>
+          <circle cx="56" cy="240" r="2"/><circle cx="100" cy="206" r="1.6"/>
+        </g>
+        <g fill="#46541f" opacity=".6">
+          <circle cx="72" cy="100" r="2"/><circle cx="138" cy="186" r="1.6"/>
+          <circle cx="142" cy="240" r="2.1"/>
+        </g>
+      </svg>
+    </div>
+    <div class="caption">
+      <span class="num">1</span>
+      <h2>Yukimi — Classic Hexagonal <span class="jp">雪見</span></h2>
+      <p>The traditional reference: hexagonal roof, three curved legs, sun &amp; moon windows.</p>
+    </div>
+  </section>
+
+  <!-- ============ 2 · YUKIMI — ROUND DOME ROOF ============ -->
+  <section class="card">
+    <div class="stage">
+      <span class="glow glow-2"></span>
+      <span class="firefly ff-a"></span>
+      <span class="firefly ff-b"></span>
+      <span class="firefly ff-c"></span>
+      <svg viewBox="0 0 200 280" role="img" aria-label="Round dome roof yukimi-doro lantern">
+        <defs>
+          <linearGradient id="stoneV2" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#cdc6b0"/>
+            <stop offset=".5" stop-color="#90896f"/>
+            <stop offset="1" stop-color="#5c5848"/>
+          </linearGradient>
+          <radialGradient id="dome2" cx="38%" cy="30%" r="80%">
+            <stop offset="0" stop-color="#d6cfb8"/>
+            <stop offset=".6" stop-color="#8d8771"/>
+            <stop offset="1" stop-color="#534f40"/>
+          </radialGradient>
+          <radialGradient id="fire2" cx="50%" cy="50%" r="60%">
+            <stop offset="0" stop-color="#ffe6b0"/>
+            <stop offset=".5" stop-color="#ff9d3c"/>
+            <stop offset="1" stop-color="#a33f0c"/>
+          </radialGradient>
+        </defs>
+
+        <ellipse cx="100" cy="268" rx="74" ry="11" fill="#000" opacity=".45"/>
+
+        <!-- three curved legs, softer -->
+        <path d="M60 248 q-10 -32 4 -54 q4 1 8 2 q-9 24 -2 52z" fill="url(#stoneV2)"/>
+        <path d="M140 248 q10 -32 -4 -54 q-4 1 -8 2 q9 24 2 52z" fill="url(#stoneV2)"/>
+        <path d="M100 252 q-7 -30 0 -54 q7 24 0 54z" fill="#6f6a57"/>
+
+        <!-- rounded fire box -->
+        <path d="M64 150 q36 -22 72 0 l0 44 q-36 22 -72 0 z"
+              fill="url(#stoneV2)" stroke="#46442f" stroke-width="1.5"/>
+        <ellipse cx="100" cy="150" rx="36" ry="11" fill="#a39c84"/>
+        <path d="M64 150 q36 -22 72 0 l0 44 q-36 12 -72 0z" fill="#000" opacity=".10"/>
+        <!-- two arched windows -->
+        <path class="firelit" d="M80 162 q6 -12 0 0 q-6 12 0 22 q6 -10 0 -22z" fill="url(#fire2)"/>
+        <ellipse class="firelit" cx="82" cy="175" rx="8" ry="13" fill="url(#fire2)"/>
+        <ellipse cx="82" cy="175" rx="8" ry="13" fill="none" stroke="#3a3a2e" stroke-width="2"/>
+        <ellipse class="firelit" cx="116" cy="175" rx="8" ry="13" fill="url(#fire2)"/>
+        <ellipse cx="116" cy="175" rx="8" ry="13" fill="none" stroke="#3a3a2e" stroke-width="2"/>
+
+        <!-- platform -->
+        <ellipse cx="100" cy="138" rx="44" ry="12" fill="#7c7762"/>
+        <ellipse cx="100" cy="134" rx="44" ry="11" fill="#8d8771"/>
+
+        <!-- near-circular gently domed wide roof -->
+        <path d="M44 116 q56 -56 112 0 q-56 18 -112 0z" fill="url(#dome2)" stroke="#46442f" stroke-width="1.2"/>
+        <path d="M44 116 q56 -56 112 0 q-56 -6 -112 0z" fill="#fff" opacity=".07"/>
+        <!-- tiny upturned rim hints -->
+        <path d="M44 116 q-6 -2 -4 -8 q6 2 8 6z" fill="url(#stoneV2)"/>
+        <path d="M156 116 q6 -2 4 -8 q-6 2 -8 6z" fill="url(#stoneV2)"/>
+
+        <!-- finial -->
+        <rect x="95" y="60" width="10" height="12" rx="2" fill="#7c7762"/>
+        <circle cx="100" cy="52" r="11" fill="url(#stoneV2)"/>
+        <circle cx="96" cy="48" r="3" fill="#fff" opacity=".25"/>
+
+        <g fill="#6e7a3a" opacity=".7">
+          <circle cx="70" cy="186" r="2.2"/><circle cx="128" cy="158" r="1.8"/>
+          <circle cx="58" cy="242" r="2"/><circle cx="150" cy="110" r="2"/>
+        </g>
+        <g fill="#46541f" opacity=".6">
+          <circle cx="60" cy="108" r="2.1"/><circle cx="132" cy="190" r="1.6"/>
+        </g>
+      </svg>
+    </div>
+    <div class="caption">
+      <span class="num">2</span>
+      <h2>Yukimi — Round Dome <span class="jp">雪見</span></h2>
+      <p>Softer cousin: a gently domed circular roof and rounded fire box. Friendlier silhouette.</p>
+    </div>
+  </section>
+
+  <!-- ============ 3 · YUKIMI — TALL ROOF / SIX-LEGGED ============ -->
+  <section class="card">
+    <div class="stage">
+      <span class="glow glow-3"></span>
+      <span class="firefly ff-a"></span>
+      <span class="firefly ff-b"></span>
+      <span class="firefly ff-c"></span>
+      <svg viewBox="0 0 200 280" role="img" aria-label="Tall roof six-legged ornate yukimi-doro lantern">
+        <defs>
+          <linearGradient id="stoneV3" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#cbc4ae"/>
+            <stop offset=".5" stop-color="#8d8771"/>
+            <stop offset="1" stop-color="#56533f"/>
+          </linearGradient>
+          <radialGradient id="fire3" cx="50%" cy="50%" r="60%">
+            <stop offset="0" stop-color="#ffe6b0"/>
+            <stop offset=".5" stop-color="#ff9d3c"/>
+            <stop offset="1" stop-color="#a33f0c"/>
+          </radialGradient>
+        </defs>
+
+        <ellipse cx="100" cy="270" rx="78" ry="11" fill="#000" opacity=".45"/>
+
+        <!-- six legs (three pairs, splayed) -->
+        <g fill="url(#stoneV3)">
+          <path d="M52 252 q-8 -28 2 -44 l8 2 q-7 18 -2 42z"/>
+          <path d="M74 254 q-5 -28 1 -46 l7 1 q-5 20 -1 45z"/>
+          <path d="M96 255 q-3 -28 0 -48 l8 0 q-3 22 0 48z"/>
+          <path d="M148 252 q8 -28 -2 -44 l-8 2 q7 18 2 42z"/>
+          <path d="M126 254 q5 -28 -1 -46 l-7 1 q5 20 1 45z"/>
+          <path d="M104 255 q3 -28 0 -48 l-8 0 q3 22 0 48z" fill="#7c7762"/>
+        </g>
+
+        <!-- lower platform -->
+        <ellipse cx="100" cy="206" rx="50" ry="13" fill="#7c7762"/>
+        <ellipse cx="100" cy="202" rx="50" ry="12" fill="#8d8771"/>
+
+        <!-- finely carved fire box (taller, panelled) -->
+        <polygon points="68,142 100,128 132,142 132,196 100,210 68,196"
+                 fill="url(#stoneV3)" stroke="#46442f" stroke-width="1.5"/>
+        <polygon points="68,142 100,128 100,210 68,196" fill="#000" opacity=".15"/>
+        <!-- carved panel lines -->
+        <line x1="76" y1="150" x2="76" y2="192" stroke="#3a3a2e" stroke-width="1" opacity=".5"/>
+        <line x1="124" y1="150" x2="124" y2="192" stroke="#3a3a2e" stroke-width="1" opacity=".5"/>
+        <!-- tall arched glowing window -->
+        <path class="firelit" d="M88 192 l0 -26 q12 -16 24 0 l0 26 z" fill="url(#fire3)"/>
+        <path d="M88 192 l0 -26 q12 -16 24 0 l0 26 z" fill="none" stroke="#3a3a2e" stroke-width="2"/>
+        <line x1="100" y1="166" x2="100" y2="192" stroke="#3a3a2e" stroke-width="1.4" opacity=".7"/>
+
+        <!-- upper platform / chudai with eaves rings -->
+        <ellipse cx="100" cy="124" rx="42" ry="11" fill="#7c7762"/>
+        <ellipse cx="100" cy="120" rx="42" ry="10" fill="#9a9379"/>
+
+        <!-- TALL flared umbrella roof with strong upturned corners (warabide) -->
+        <path d="M100 44
+                 C 150 70, 162 104, 158 112
+                 q-12 -14 -18 -2
+                 q-3 9 -12 5
+                 L100 124
+                 L72 115
+                 q-9 4 -12 -5
+                 q-6 -12 -18 2
+                 C 38 104, 50 70, 100 44 Z"
+              fill="url(#stoneV3)" stroke="#46442f" stroke-width="1.2"/>
+        <path d="M100 44 C150 70,162 104,158 112 L100 60 Z" fill="#fff" opacity=".08"/>
+        <path d="M100 44 C50 70,38 104,42 112 L100 60 Z" fill="#000" opacity=".12"/>
+
+        <!-- ornate finial: ringed neck + onion -->
+        <rect x="96" y="30" width="8" height="16" rx="2" fill="#7c7762"/>
+        <ellipse cx="100" cy="34" rx="9" ry="3" fill="#9a9379"/>
+        <path d="M100 8 q11 9 9 20 q-2 9 -9 9 q-7 0 -9 -9 q-2 -11 9 -20z" fill="url(#stoneV3)"/>
+        <circle cx="100" cy="6" r="3" fill="#9a9379"/>
+
+        <g fill="#6e7a3a" opacity=".7">
+          <circle cx="72" cy="188" r="2.2"/><circle cx="130" cy="152" r="1.8"/>
+          <circle cx="50" cy="246" r="2"/><circle cx="150" cy="106" r="2"/><circle cx="100" cy="208" r="1.6"/>
+        </g>
+        <g fill="#46541f" opacity=".6">
+          <circle cx="56" cy="110" r="2.1"/><circle cx="134" cy="190" r="1.6"/><circle cx="148" cy="244" r="2"/>
+        </g>
+      </svg>
+    </div>
+    <div class="caption">
+      <span class="num">3</span>
+      <h2>Yukimi — Tall Roof, Six-Legged <span class="jp">雪見</span></h2>
+      <p>Ornate water's-edge piece: flared roof, six splayed legs, carved fire box.</p>
+    </div>
+  </section>
+
+  <!-- ============ 4 · YUKIMI — MINIMAL / ZEN ICON ============ -->
+  <section class="card">
+    <div class="stage">
+      <span class="glow glow-4"></span>
+      <span class="firefly ff-a"></span>
+      <span class="firefly ff-b"></span>
+      <span class="firefly ff-c"></span>
+      <svg viewBox="0 0 200 280" role="img" aria-label="Minimal zen yukimi-doro icon">
+        <defs>
+          <linearGradient id="stoneV4" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#bdb7a1"/>
+            <stop offset="1" stop-color="#6e6a57"/>
+          </linearGradient>
+          <radialGradient id="fire4" cx="50%" cy="50%" r="60%">
+            <stop offset="0" stop-color="#ffe6b0"/>
+            <stop offset=".55" stop-color="#ff9d3c"/>
+            <stop offset="1" stop-color="#b8480e"/>
+          </radialGradient>
+        </defs>
+
+        <ellipse cx="100" cy="266" rx="60" ry="9" fill="#000" opacity=".4"/>
+
+        <!-- flat geometric three legs -->
+        <path d="M66 246 L74 198 L84 200 L78 246 Z" fill="url(#stoneV4)"/>
+        <path d="M134 246 L126 198 L116 200 L122 246 Z" fill="url(#stoneV4)"/>
+        <path d="M94 250 L96 198 L104 198 L106 250 Z" fill="#7c7762"/>
+
+        <!-- single flat platform bar -->
+        <rect x="58" y="186" width="84" height="14" rx="3" fill="#86806a"/>
+
+        <!-- clean trapezoid fire box -->
+        <path d="M70 184 L74 138 L126 138 L130 184 Z" fill="url(#stoneV4)" stroke="#46442f" stroke-width="1.2"/>
+        <!-- one bold round glowing window -->
+        <circle class="firelit" cx="100" cy="162" r="16" fill="url(#fire4)"/>
+        <circle cx="100" cy="162" r="16" fill="none" stroke="#3a3a2e" stroke-width="2.5"/>
+
+        <!-- thin flat platform under roof -->
+        <rect x="62" y="128" width="76" height="10" rx="2" fill="#7c7762"/>
+
+        <!-- simple wide roof: shallow arc with two clean upturned tips -->
+        <path d="M48 126 Q100 86 152 126 Q140 122 130 124 L100 116 L70 124 Q60 122 48 126 Z"
+              fill="url(#stoneV4)" stroke="#46442f" stroke-width="1.2"/>
+        <path d="M44 128 q4 -10 8 -2 q-4 1 -8 2z" fill="url(#stoneV4)"/>
+        <path d="M156 128 q-4 -10 -8 -2 q4 1 8 2z" fill="url(#stoneV4)"/>
+
+        <!-- simple finial dot -->
+        <rect x="96" y="74" width="8" height="12" rx="2" fill="#7c7762"/>
+        <circle cx="100" cy="68" r="9" fill="url(#stoneV4)"/>
+
+        <!-- a few restrained moss flecks -->
+        <g fill="#6e7a3a" opacity=".6">
+          <circle cx="74" cy="176" r="2"/><circle cx="126" cy="148" r="1.6"/>
+          <circle cx="138" cy="120" r="1.8"/>
+        </g>
+      </svg>
+    </div>
+    <div class="caption">
+      <span class="num">4</span>
+      <h2>Yukimi — Minimal Zen Icon <span class="jp">雪見</span></h2>
+      <p>Pared-back, flat-geometric interpretation. Reads cleanly as a small UI motif.</p>
+    </div>
+  </section>
+
+  <!-- ============ 5 · KOTOJI-DORO (WILDCARD) ============ -->
+  <section class="card">
+    <div class="stage">
+      <span class="glow glow-5"></span>
+      <span class="firefly ff-a"></span>
+      <span class="firefly ff-b"></span>
+      <span class="firefly ff-c"></span>
+      <svg viewBox="0 0 200 280" role="img" aria-label="Kotoji-doro two-legged lantern">
+        <defs>
+          <linearGradient id="stoneV5" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#cbc4ae"/>
+            <stop offset=".5" stop-color="#8d8771"/>
+            <stop offset="1" stop-color="#56533f"/>
+          </linearGradient>
+          <radialGradient id="fire5" cx="50%" cy="50%" r="60%">
+            <stop offset="0" stop-color="#ffe6b0"/>
+            <stop offset=".5" stop-color="#ff9d3c"/>
+            <stop offset="1" stop-color="#a33f0c"/>
+          </radialGradient>
+        </defs>
+
+        <!-- two ground shadows (legs land in different spots) -->
+        <ellipse cx="72" cy="266" rx="20" ry="7" fill="#000" opacity=".4"/>
+        <ellipse cx="132" cy="252" rx="20" ry="7" fill="#000" opacity=".4"/>
+
+        <!-- TWO curved legs of UNEQUAL length (koto-bridge form) -->
+        <!-- short outer leg lands far right & low -->
+        <path d="M124 132 C 150 168, 152 214, 138 250
+                 l-10 -2 C 142 214, 138 170, 116 138 Z"
+              fill="url(#stoneV5)" stroke="#46442f" stroke-width="1"/>
+        <!-- long inner leg sweeps left & to the ground further out -->
+        <path d="M104 132 C 96 178, 84 226, 66 264
+                 l-11 -3 C 76 224, 88 176, 96 134 Z"
+              fill="url(#stoneV5)" stroke="#46442f" stroke-width="1"/>
+        <!-- shading on legs -->
+        <path d="M104 132 C96 178,84 226,66 264 l-4 -1 C 84 224,94 176,100 133 Z" fill="#000" opacity=".15"/>
+
+        <!-- platform (chudai) where legs meet the box -->
+        <ellipse cx="110" cy="130" rx="34" ry="9" fill="#7c7762"/>
+        <ellipse cx="110" cy="126" rx="34" ry="8" fill="#9a9379"/>
+
+        <!-- rounded fire box -->
+        <path d="M82 124 q28 -18 56 0 l0 0 q4 30 -28 36 q-32 -6 -28 -36 z"
+              transform="translate(-0,-2)"
+              fill="url(#stoneV5)" stroke="#46442f" stroke-width="1.5"/>
+        <ellipse cx="110" cy="122" rx="28" ry="8" fill="#a39c84"/>
+        <!-- two glowing windows -->
+        <ellipse class="firelit" cx="98" cy="132" rx="7" ry="11" fill="url(#fire5)"/>
+        <ellipse cx="98" cy="132" rx="7" ry="11" fill="none" stroke="#3a3a2e" stroke-width="2"/>
+        <ellipse class="firelit" cx="122" cy="132" rx="7" ry="11" fill="url(#fire5)"/>
+        <ellipse cx="122" cy="132" rx="7" ry="11" fill="none" stroke="#3a3a2e" stroke-width="2"/>
+
+        <!-- platform under roof -->
+        <ellipse cx="110" cy="98" rx="40" ry="10" fill="#7c7762"/>
+        <ellipse cx="110" cy="94" rx="40" ry="9" fill="#8d8771"/>
+
+        <!-- wide round roof with upturned rim -->
+        <path d="M62 92 q48 -50 96 0 q-48 16 -96 0z" fill="url(#stoneV5)" stroke="#46442f" stroke-width="1.2"/>
+        <path d="M62 92 q48 -50 96 0 q-48 -5 -96 0z" fill="#fff" opacity=".08"/>
+        <path d="M62 92 q-6 -2 -4 -8 q6 3 8 7z" fill="url(#stoneV5)"/>
+        <path d="M158 92 q6 -2 4 -8 q-6 3 -8 7z" fill="url(#stoneV5)"/>
+
+        <!-- finial -->
+        <rect x="106" y="40" width="8" height="12" rx="2" fill="#7c7762"/>
+        <path d="M110 18 q10 8 8 18 q-2 8 -8 8 q-6 0 -8 -8 q-2 -10 8 -18z" fill="url(#stoneV5)"/>
+
+        <g fill="#6e7a3a" opacity=".7">
+          <circle cx="128" cy="116" r="2"/><circle cx="92" cy="104" r="1.8"/>
+          <circle cx="132" cy="210" r="2.1"/><circle cx="78" cy="220" r="2"/>
+        </g>
+        <g fill="#46541f" opacity=".6">
+          <circle cx="146" cy="200" r="1.8"/><circle cx="70" cy="80" r="2"/><circle cx="150" cy="84" r="1.6"/>
+        </g>
+      </svg>
+    </div>
+    <div class="caption">
+      <span class="num">5</span>
+      <h2>Kotoji-dōrō — Wildcard <span class="jp">琴柱</span></h2>
+      <p>The famous two unequal curved legs (a koto-string bridge) under a wide round roof.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Pure inline SVG · CSS-only glow &amp; fireflies · system fonts · no scripts, no external resources.<br>
+  Hotaru lantern artwork comparison — 2026-06-10.
+</footer>
+
+</body>
+</html>

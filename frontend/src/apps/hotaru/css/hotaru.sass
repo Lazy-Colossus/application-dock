@@ -1,0 +1,36 @@
+// Hotaru forest-twilight theme — SCOPED to the Hotaru app only.
+// Applied via the `.hotaru-app` root class on Hotaru pages so the shell landing
+// page and the Archery app keep the global Carbon theme untouched.
+// Token values from ux-designs/.../DESIGN.md.
+
+.hotaru-app
+  // Field (twilight forest floor)
+  --hotaru-field: #292d1a
+  --hotaru-field-low: #1a1d10
+  --hotaru-field-glow: #343721
+  // Washi / beige surfaces
+  --hotaru-surface: #ece1c8
+  --hotaru-surface-hi: #f6efda
+  // Ink
+  --hotaru-cream: #ece1c8
+  --hotaru-cream-soft: #c6cd9a
+  --hotaru-sage: #a3b178
+  // Bamboo green — primary accent
+  --hotaru-bamboo: #8caf5d
+  --hotaru-bamboo-bright: #a8cc6e
+  --hotaru-bamboo-deep: #5d7d38
+  --hotaru-bamboo-on: #22260f
+  // Firefly glow + lamp-yellow (the practiced word)
+  --hotaru-firefly: #fff0a8
+  --hotaru-lamp-yellow: #ffd24a
+  // Familiarity ramp (5 tiers, new -> mastered)
+  --hotaru-fam-1: #e4a59e
+  --hotaru-fam-2: #eebf86
+  --hotaru-fam-3: #d2d088
+  --hotaru-fam-4: #a6c87e
+  --hotaru-fam-5: #7aa44d
+
+  // Full-bleed twilight field for the app surface.
+  min-height: 100%
+  background: radial-gradient(120% 100% at 50% 0%, var(--hotaru-field-glow), var(--hotaru-field) 45%, var(--hotaru-field-low))
+  color: var(--hotaru-cream)

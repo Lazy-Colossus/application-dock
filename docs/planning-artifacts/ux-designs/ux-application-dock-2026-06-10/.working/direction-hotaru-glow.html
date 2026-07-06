@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hotaru — Hotaru Glow</title>
+<!--
+  DIRECTION: Hotaru Glow — the serene-zen end of the vision (most restrained).
+  RATIONALE: The same midnight base, pared right back: a single warm firefly-amber
+  glow accent, generous breathing room, lighter type weights, and sparse, slow
+  fireflies. The calmest, most meditative reading — one quiet light in the dark.
+-->
+<style>
+  /* ── PALETTE (hex documented) ──────────────────────────────────────────
+     Field / base (soft, low-contrast midnight):
+       --night-0   #0a0f24  midnight indigo (page backdrop)
+       --night-1   #101733  frame
+       --night-2   #18203f  raised surface
+       --glass     rgba(26,34,64,0.5) soft glass card fill
+     Accent (one only):
+       --amber     #f2c879  firefly amber (the single warm glow)
+       --amber-soft rgba(242,200,121,.42)
+     Ink (lighter weights, gentle contrast):
+       --ink-hi    #e7ecfb  high-emphasis
+       --ink-mid   #9aa4c8  secondary
+       --ink-lo    #636d93  tertiary / hint
+     Familiarity ramp (5 tiers — a single muted hue range + shape + label so it
+     stays calm; never colour-only, and not red/green):
+       new       #59628a  (○ hollow ring)
+       learning  #7d8dc4  (◔ quarter)   cool slate-blue
+       familiar  #9fb6cf  (◑ half)       pale blue
+       strong    #d9c089  (◕ three-qtr)  muted gold
+       mastered  #f2c879  (● full)        firefly amber (the only true glow)
+     ──────────────────────────────────────────────────────────────────── */
+  :root{
+    --night-0:#0a0f24; --night-1:#101733; --night-2:#18203f;
+    --glass:rgba(26,34,64,0.5);
+    --amber:#f2c879; --amber-soft:rgba(242,200,121,.42);
+    --ink-hi:#e7ecfb; --ink-mid:#9aa4c8; --ink-lo:#636d93;
+    --t-new:#59628a; --t-learning:#7d8dc4; --t-familiar:#9fb6cf;
+    --t-strong:#d9c089; --t-mastered:#f2c879;
+    --r:22px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:radial-gradient(110% 80% at 50% 0%,#121a3a 0%,var(--night-0) 60%,#070b1c 100%);
+    min-height:100vh;color:var(--ink-hi);
+    display:flex;flex-direction:column;align-items:center;gap:16px;
+    padding:34px 16px 60px;
+  }
+  .tagline{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);
+    font-weight:400;opacity:.8}
+  .personality{font-size:12px;color:var(--ink-mid);text-align:center;max-width:760px;line-height:1.6;font-weight:300}
+  .stage{display:flex;flex-wrap:wrap;gap:26px;justify-content:center;align-items:flex-start}
+
+  /* ── phone frame ───────────────────────────────────────────────────── */
+  .phone{
+    position:relative;width:360px;height:740px;border-radius:42px;
+    background:linear-gradient(170deg,var(--night-1),#0b1024);
+    border:1px solid rgba(120,140,210,.14);
+    box-shadow:0 0 0 9px #060a18,0 24px 70px rgba(0,0,0,.6),0 0 50px rgba(242,200,121,.04);
+    overflow:hidden;
+  }
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);
+    width:120px;height:26px;background:#060a18;border-radius:14px;z-index:30}
+  .screen{position:absolute;inset:0;padding:48px 22px 22px;display:flex;flex-direction:column;overflow:hidden}
+  .label-pill{position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+    background:rgba(242,200,121,.92);color:#2a1c00;font-size:11px;font-weight:600;
+    padding:4px 12px;border-radius:999px;letter-spacing:.04em;z-index:40;white-space:nowrap;
+    box-shadow:0 0 14px rgba(242,200,121,.4)}
+
+  /* ── fireflies (pure CSS) — sparse + slow ──────────────────────────── */
+  .ff{position:absolute;width:6px;height:6px;border-radius:50%;
+    background:radial-gradient(circle,var(--amber) 0%,var(--amber-soft) 42%,transparent 72%);
+    filter:blur(.4px);pointer-events:none;z-index:5;opacity:0}
+  .ff1{top:64%;left:18%;animation:drift1 22s ease-in-out infinite,glow 6s ease-in-out infinite}
+  .ff2{top:32%;left:72%;animation:drift2 26s ease-in-out infinite,glow 7s ease-in-out infinite 1.5s}
+  .ff3{top:76%;left:62%;animation:drift1 24s ease-in-out infinite reverse,glow 6.5s ease-in-out infinite 3s}
+  @keyframes drift1{0%{transform:translate(0,0)}30%{transform:translate(18px,-22px)}60%{transform:translate(4px,-44px)}100%{transform:translate(0,0)}}
+  @keyframes drift2{0%{transform:translate(0,0)}50%{transform:translate(-22px,28px)}100%{transform:translate(0,0)}}
+  @keyframes glow{0%,100%{opacity:.1;transform:scale(.7)}50%{opacity:.7;transform:scale(1.1)}}
+
+  /* ── shared bits ───────────────────────────────────────────────────── */
+  .topbar{display:flex;align-items:center;justify-content:space-between;z-index:10;margin-bottom:24px}
+  .brand{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:400;letter-spacing:.05em}
+  .brand .kanji{font-size:22px;color:var(--amber);text-shadow:0 0 16px rgba(242,200,121,.5)}
+  .progress{font-size:13px;color:var(--ink-lo);font-weight:300;letter-spacing:.08em}
+
+  .card{position:relative;z-index:10;flex:1;border-radius:var(--r);
+    background:var(--glass);backdrop-filter:blur(12px);
+    border:1px solid rgba(140,160,230,.1);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 14px 36px rgba(0,0,0,.35);
+    padding:26px 22px;display:flex;flex-direction:column}
+  .card-top{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--ink-lo);letter-spacing:.08em;font-weight:300}
+  .fam{display:inline-flex;align-items:center;gap:7px;font-size:11px;color:var(--ink-mid);font-weight:300}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;
+    background:var(--t-learning);box-shadow:0 0 8px rgba(125,141,196,.6)}
+  .mode{font-size:10px;color:var(--ink-lo);text-transform:uppercase;letter-spacing:.16em;font-weight:300}
+
+  .prompt-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px}
+  .prompt-lab{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-lo);font-weight:300}
+  .prompt{font-size:30px;font-weight:300;color:var(--ink-hi);letter-spacing:.01em}
+  .jp{font-size:50px;font-weight:300;color:var(--amber);text-shadow:0 0 30px rgba(242,200,121,.4);line-height:1.15}
+  .reading{font-size:19px;color:var(--ink-mid);font-weight:300;letter-spacing:.04em}
+  .meaning{font-size:13px;color:var(--ink-lo);font-weight:300}
+
+  .showbtn{align-self:center;margin-top:14px;padding:11px 34px;border:1px solid var(--amber-soft);border-radius:999px;
+    font-size:14px;font-weight:400;letter-spacing:.06em;color:var(--amber);cursor:pointer;
+    background:rgba(242,200,121,.06);box-shadow:0 0 22px rgba(242,200,121,.18)}
+
+  .note{margin-top:20px;border-radius:16px;padding:12px 15px;font-size:12.5px;line-height:1.5;font-weight:300;
+    background:rgba(242,200,121,.05);border:1px solid rgba(242,200,121,.16);color:var(--ink-mid)}
+  .note b{color:var(--amber);font-weight:400}
+
+  .grades{display:flex;gap:10px;margin-top:18px;z-index:10}
+  .grade{flex:1;border-radius:16px;padding:14px 6px;text-align:center;font-size:13px;font-weight:400;cursor:pointer;
+    border:1px solid rgba(140,160,230,.14);background:rgba(255,255,255,.025);color:var(--ink-hi)}
+  .grade small{display:block;font-size:10px;font-weight:300;color:var(--ink-lo);margin-top:4px;letter-spacing:.05em}
+  .grade.correct{border-color:rgba(159,182,207,.4)}
+  .grade.correct b{color:var(--t-familiar);font-weight:400}
+  .grade.close{border-color:rgba(242,200,121,.4)}
+  .grade.close b{color:var(--amber);font-weight:400}
+  .grade.incorrect b{color:var(--ink-mid);font-weight:400}
+
+  .sec-head{z-index:10;margin-bottom:22px}
+  .sec-head h2{font-size:20px;font-weight:300;letter-spacing:.01em}
+  .sec-head p{font-size:13px;color:var(--ink-mid);margin-top:6px;font-weight:300;line-height:1.5}
+  .lesson-card{z-index:10;border-radius:var(--r);background:var(--glass);backdrop-filter:blur(12px);
+    border:1px solid rgba(140,160,230,.1);padding:22px;display:flex;flex-direction:column;gap:6px;margin-bottom:20px;
+    box-shadow:0 12px 30px rgba(0,0,0,.3)}
+  .lesson-card .src{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--amber);font-weight:400}
+  .lesson-card .name{font-size:24px;font-weight:300}
+  .lesson-card .meta{font-size:13px;color:var(--ink-mid);font-weight:300}
+  .startbtn{margin-top:16px;align-self:flex-start;padding:11px 30px;border:1px solid var(--amber-soft);border-radius:999px;
+    font-size:14px;font-weight:400;letter-spacing:.06em;color:var(--amber);background:rgba(242,200,121,.06);
+    box-shadow:0 0 22px rgba(242,200,121,.18);cursor:pointer}
+
+  .legend{z-index:10;border-radius:var(--r);background:rgba(16,23,51,.5);
+    border:1px solid rgba(140,160,230,.08);padding:20px}
+  .legend h3{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-lo);margin-bottom:16px;font-weight:300}
+  .ramp{display:flex;flex-direction:column;gap:14px}
+  .tier{display:flex;align-items:center;gap:13px}
+  .tier .glyph{width:22px;height:22px;border-radius:50%;flex:none;display:grid;place-items:center;
+    font-size:12px;font-weight:400;color:var(--night-0)}
+  .tier .txt{flex:1}
+  .tier .txt .nm{font-size:13px;font-weight:400}
+  .tier .txt .ds{font-size:11px;color:var(--ink-lo);font-weight:300}
+  .tier .count{font-size:12px;color:var(--ink-mid);font-weight:300}
+  .g-new{background:transparent;border:1.5px solid var(--t-new);color:var(--t-new)}
+  .g-learning{background:var(--t-learning)}
+  .g-familiar{background:var(--t-familiar)}
+  .g-strong{background:var(--t-strong)}
+  .g-mastered{background:var(--t-mastered);box-shadow:0 0 12px rgba(242,200,121,.5)}
+
+  /* EXTRA STATE: gentle empty / end-of-session rest panel */
+  .rest{margin-top:20px;z-index:10;border-radius:var(--r);padding:22px 18px;text-align:center;
+    background:rgba(242,200,121,.04);border:1px solid rgba(242,200,121,.14)}
+  .rest .moon{font-size:26px}
+  .rest .t{font-size:15px;font-weight:300;margin-top:8px;color:var(--ink-hi)}
+  .rest .s{font-size:12px;color:var(--ink-lo);margin-top:4px;font-weight:300}
+</style>
+</head>
+<body>
+  <div class="tagline">Hotaru · Hotaru Glow 蛍</div>
+  <div class="personality">The serene-zen end — most restrained. Soft midnight, one warm firefly-amber glow, light type, and just three slow fireflies. Quiet and meditative.</div>
+
+  <div class="stage">
+    <!-- ════ HERO: Practice Session flashcard (drill) — revealed state ════ -->
+    <div class="phone">
+      <div class="label-pill">HERO · Practice Session — flashcard</div>
+      <div class="notch"></div>
+      <span class="ff ff1"></span><span class="ff ff2"></span><span class="ff ff3"></span>
+      <div class="screen">
+        <div class="topbar">
+          <div class="brand"><span class="kanji">蛍</span> Hotaru</div>
+          <div class="progress">7 / 20</div>
+        </div>
+
+        <div class="card">
+          <div class="card-top">
+            <span class="fam"><span class="dot"></span> learning</span>
+            <span class="mode">EN → JP</span>
+          </div>
+
+          <div class="prompt-wrap">
+            <div class="prompt-lab">prompt</div>
+            <div class="prompt">promise</div>
+            <div class="jp">約束</div>
+            <div class="reading">やくそく</div>
+            <div class="meaning">promise</div>
+            <button class="showbtn">Show</button>
+          </div>
+
+          <div class="note">🦊 <b>Jake’s note:</b> “yak + soku → I promise to feed the yak.”</div>
+        </div>
+
+        <div class="grades">
+          <div class="grade correct"><b>Correct</b><small>I knew it</small></div>
+          <div class="grade close"><b>Close</b><small>almost</small></div>
+          <div class="grade incorrect"><b>Incorrect</b><small>show again</small></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ SECONDARY: pre-session overview / picker ════ -->
+    <div class="phone">
+      <div class="label-pill">SECONDARY · Pick a session</div>
+      <div class="notch"></div>
+      <span class="ff ff1"></span><span class="ff ff2"></span>
+      <div class="screen">
+        <div class="topbar">
+          <div class="brand"><span class="kanji">蛍</span> Hotaru</div>
+        </div>
+        <div class="sec-head">
+          <h2>What would you like to do?</h2>
+          <p>No pressure. Sit for a moment and let a few words drift by.</p>
+        </div>
+
+        <div class="lesson-card">
+          <span class="src">Genki</span>
+          <span class="name">Lesson 2</span>
+          <span class="meta">24 words · last seen 3 days ago</span>
+          <button class="startbtn">Begin</button>
+        </div>
+
+        <div class="legend">
+          <h3>Familiarity</h3>
+          <div class="ramp">
+            <div class="tier"><span class="glyph g-new">○</span><span class="txt"><span class="nm">New</span><span class="ds">ring · not yet seen</span></span><span class="count">6</span></div>
+            <div class="tier"><span class="glyph g-learning">◔</span><span class="txt"><span class="nm">Learning</span><span class="ds">quarter · just starting</span></span><span class="count">7</span></div>
+            <div class="tier"><span class="glyph g-familiar">◑</span><span class="txt"><span class="nm">Familiar</span><span class="ds">half · coming along</span></span><span class="count">5</span></div>
+            <div class="tier"><span class="glyph g-strong">◕</span><span class="txt"><span class="nm">Strong</span><span class="ds">three-quarter · nearly there</span></span><span class="count">4</span></div>
+            <div class="tier"><span class="glyph g-mastered">●</span><span class="txt"><span class="nm">Mastered</span><span class="ds">full · resting easy</span></span><span class="count">2</span></div>
+          </div>
+        </div>
+
+        <!-- EXTRA STATE: gentle end-of-session / rest panel -->
+        <div class="rest">
+          <div class="moon">🌙</div>
+          <div class="t">Nice — that’s enough for now</div>
+          <div class="s">Your words will be here whenever you drift back.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

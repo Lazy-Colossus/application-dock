@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hotaru — Word Detail + Shared Notes</title>
+<style>
+/* ============================================================
+   EXPERIENCE.md governs:
+     IA: Word detail, Notes (shared + private)
+     Component Patterns: word header, familiarity ICON (distinct from category pills), category pills along card bottom edge w/ CSS-toggle overflow, attributed shared note, add-note input, shared/private toggle
+     Flow: cooperative notes — discover a partner's mnemonic (UJ-3 Dani finds Jake's note); add a note
+   Palette inherited verbatim from direction-forest-fireflies-c (LOCKED).
+   Firefly dimming: the .whead header card carries a translucent moss backdrop above the z-index:4
+   firefly layer, so fireflies behind the card read ~half as bright; over the plain field they stay full.
+   ============================================================ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+  background: radial-gradient(130% 90% at 50% 6%, #343721 0%, #292d1a 45%, #1a1d10 100%);
+  color: #ece1c8;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  padding: 28px 16px 56px;
+}
+
+.lab { text-align:center; color:#a3b178; font-size:12px; letter-spacing:.14em; text-transform:uppercase; margin-bottom:4px; }
+.personality { text-align:center; color:#bcd58a; font-size:14px; font-style:italic; margin-bottom:22px; }
+
+.stage { display:flex; flex-wrap:wrap; gap:30px; justify-content:center; align-items:flex-start; }
+
+.phone {
+  position:relative; width:340px; height:720px; background:#15170c;
+  border-radius:42px; padding:12px; box-shadow:0 32px 70px rgba(0,0,0,.7), inset 0 0 0 2px #343721;
+}
+.screen {
+  position:relative; width:100%; height:100%; border-radius:32px; overflow:hidden;
+  background: radial-gradient(150% 75% at 50% 100%, #383d23 0%, #292d1a 46%, #181b0e 100%);
+  display:flex; flex-direction:column;
+}
+.screen-label { position:absolute; top:8px; left:0; right:0; text-align:center; font-size:10px; letter-spacing:.12em; color:rgba(163,177,120,.6); text-transform:uppercase; z-index:9; }
+
+/* Fireflies wander on looping organic paths, each with a soft glow halo (#fff0a8).
+   Inner .dot blinks; halo = blurred low-opacity ::after. Reduced motion = static dim dots. */
+.firefly { position:absolute; z-index:4; width:7px; height:7px; pointer-events:none; }
+.firefly .dot { position:absolute; inset:0; border-radius:50%;
+  background: radial-gradient(circle, #fffce0 0%, #fff0a8 40%, rgba(255,240,168,0) 72%); }
+.firefly .dot::after { content:""; position:absolute; left:50%; top:50%; width:22px; height:22px;
+  transform:translate(-50%,-50%); border-radius:50%; filter:blur(5px);
+  background: radial-gradient(circle, rgba(255,240,168,.45) 0%, rgba(255,240,168,0) 70%); }
+.ff1 { left:30%; top:24%; animation: fly1 24s ease-in-out infinite; }
+.ff2 { left:70%; top:54%; animation: fly2 29s ease-in-out infinite .6s; }
+.ff3 { left:46%; top:78%; animation: fly3 21s ease-in-out infinite 1.2s; }
+.ff1 .dot { animation: blink 3.4s ease-in-out infinite; }
+.ff2 .dot { animation: blink 4.1s ease-in-out infinite .6s; }
+.ff3 .dot { animation: blink 3.0s ease-in-out infinite 1.2s; }
+@keyframes blink { 0%,100%{opacity:.12; transform:scale(.82);} 50%{opacity:.9; transform:scale(1.08);} 75%{opacity:.34;} }
+@keyframes fly1 { 0%{transform:translate(0,0);} 20%{transform:translate(70px,-46px);} 40%{transform:translate(128px,30px);} 60%{transform:translate(64px,96px);} 80%{transform:translate(-34px,52px);} 100%{transform:translate(0,0);} }
+@keyframes fly2 { 0%{transform:translate(0,0);} 22%{transform:translate(-92px,54px);} 45%{transform:translate(-150px,-30px);} 68%{transform:translate(-58px,-92px);} 86%{transform:translate(28px,-34px);} 100%{transform:translate(0,0);} }
+@keyframes fly3 { 0%{transform:translate(0,0);} 25%{transform:translate(58px,82px);} 50%{transform:translate(-44px,128px);} 72%{transform:translate(-104px,40px);} 88%{transform:translate(-40px,-44px);} 100%{transform:translate(0,0);} }
+@media (prefers-reduced-motion: reduce) {
+  .firefly, .firefly .dot { animation:none !important; opacity:.5; transform:none !important; }
+  .firefly .dot::after { opacity:.4; }
+}
+
+.appbar { padding:30px 22px 8px; display:flex; align-items:center; justify-content:space-between; z-index:6; position:relative; }
+.brand { display:flex; align-items:center; gap:8px; }
+.brand .back { font-size:18px; color:#c6cd9a; cursor:pointer; }
+.brand .name { font-size:17px; font-weight:600; letter-spacing:.04em; }
+.avatar { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:#22260f; box-shadow:0 4px 12px rgba(0,0,0,.4); border:2px solid rgba(246,239,218,.35); }
+.av-dani { background:#eebf86; }
+
+.content { position:relative; z-index:5; flex:1; padding:6px 22px 20px; display:flex; flex-direction:column; overflow-y:auto; }
+
+/* word header — translucent moss backdrop ABOVE the z-index:4 firefly layer, so any firefly behind
+   the header card reads ~half as bright; over the plain field they stay full */
+.whead { position:relative; z-index:1; text-align:center; margin:18px 0 6px; padding:22px 14px 14px; border-radius:18px;
+  background: linear-gradient(165deg, rgba(45,49,28,.5), rgba(38,42,24,.42)), linear-gradient(165deg, rgba(246,239,218,.10), rgba(236,225,200,.06));
+  -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+  border:1px solid rgba(140,175,93,.34); box-shadow: inset 0 1px 0 rgba(255,255,255,.10); }
+.whead .jp { font-size:48px; font-weight:600; color:#bcd58a; line-height:1.05; text-shadow:0 2px 20px rgba(0,0,0,.45); }
+.whead .reading { font-size:17px; color:#c6cd9a; margin-top:6px; }
+.whead .meaning { font-size:15px; color:#a8cc6e; margin-top:8px; font-style:italic; }
+
+/* familiarity = a distinct glowing ICON (centred under meaning), NOT a category pill */
+.whead .fam-ic { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:12px; font-size:12px; color:#c6cd9a; }
+.whead .fam-ic .fi { /* familiarity icon — placeholder, final icon set TBD (Strong = bright filled droplet-glow) */
+  font-size:18px; line-height:1; color:#a6c87e; filter:drop-shadow(0 0 7px rgba(166,200,126,.85)); }
+
+/* category/topic/lesson pills — TINY, in a row along the card's BOTTOM EDGE; overflow collapses into
+   a 🏷 + "＋N" chip with a pure-CSS checkbox-hack expand toggle (no JS) */
+.cat-toggle { position:absolute; opacity:0; width:0; height:0; pointer-events:none; }
+.whead .tags { display:flex; gap:5px; justify-content:center; margin-top:14px; padding-top:12px;
+  border-top:1px solid rgba(140,175,93,.22); flex-wrap:wrap; align-items:center; }
+.tagpill { flex:0 0 auto; font-size:9px; letter-spacing:.02em; color:#cdd6a3; background:rgba(140,175,93,.16);
+  border:1px solid rgba(140,175,93,.34); padding:2px 8px; border-radius:999px; white-space:nowrap; }
+.tagpill.cat-extra { display:none; }
+.cat-more { flex:0 0 auto; display:inline-flex; align-items:center; gap:3px; cursor:pointer;
+  font-size:9px; color:#e3ecc4; background:rgba(140,175,93,.3); border:1px solid rgba(140,175,93,.55);
+  padding:2px 8px; border-radius:999px; white-space:nowrap; user-select:none; }
+.cat-more .collapse { display:none; }
+.cat-toggle:checked ~ .whead .tags .cat-extra { display:inline-block; }
+.cat-toggle:checked ~ .whead .tags .cat-more .expand { display:none; }
+.cat-toggle:checked ~ .whead .tags .cat-more .collapse { display:inline; }
+
+.sec-tag { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#a8cc6e; margin:22px 2px 10px; }
+
+/* notes */
+.note { display:flex; gap:9px; align-items:flex-start; background:rgba(140,175,93,.18); border-left:3px solid #8caf5d; border-radius:10px; padding:12px 13px; margin-bottom:10px; font-size:13px; color:#dfe7c2; line-height:1.5; }
+.note.private { background:rgba(224,178,122,.14); border-left-color:#eebf86; }
+.note .body { flex:1; }
+.note .who { font-weight:700; color:#a8cc6e; }
+.note.private .who { color:#e0b27a; }
+/* private-only lock tag — shared notes carry no badge (shared is the implicit default) */
+.note .lock { font-size:10px; color:#e0b27a; margin-top:5px; display:inline-flex; align-items:center; gap:4px; }
+
+/* inline "＋ Add note" affordance shown in the main Notes section */
+.add-note-cta { display:flex; align-items:center; gap:8px; width:100%; text-align:left; cursor:pointer;
+  background:rgba(246,239,218,.05); border:1px dashed rgba(140,175,93,.4); border-radius:12px;
+  padding:12px 14px; color:#a8cc6e; font-size:13px; font-weight:600; }
+.add-note-cta .plus { font-size:16px; line-height:1; }
+.add-note-cta .hint { color:#8c8666; font-weight:400; font-size:11px; margin-left:auto; }
+
+/* add-note (Section B) */
+.add-note { background:rgba(246,239,218,.06); border:1px solid rgba(140,175,93,.32); border-radius:14px; padding:12px; }
+.add-note textarea { width:100%; background:transparent; border:none; resize:none; color:#f6efda; font-size:14px; font-family:inherit; min-height:54px; }
+.add-note textarea::placeholder { color:rgba(198,205,154,.5); }
+.add-note .row { display:flex; align-items:center; gap:8px; margin-top:10px; }
+.scope-toggle { display:flex; gap:6px; background:rgba(0,0,0,.18); border-radius:999px; padding:4px; flex:1; }
+.scope-toggle .sb { flex:1; text-align:center; padding:7px 4px; border-radius:999px; font-size:12px; color:#c6cd9a; cursor:pointer; }
+.scope-toggle .sb.on { background:rgba(140,175,93,.32); color:#f6efda; font-weight:600; }
+.post { background:#8caf5d; color:#22260f; border:none; padding:9px 18px; border-radius:999px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 6px 16px rgba(93,125,56,.5); }
+
+.caption { text-align:center; color:#a3b178; font-size:12px; margin-top:12px; max-width:340px; }
+.col { display:flex; flex-direction:column; align-items:center; }
+</style>
+</head>
+<body>
+  <div class="lab">Hotaru · Key Screen · Word Detail + Shared Notes</div>
+  <div class="personality">The cooperative heart — Dani opens 約束 and finds the mnemonic Jake left behind.</div>
+
+  <div class="stage">
+
+    <!-- SECTION A — word detail with shared note discovered -->
+    <div class="col">
+      <div class="phone">
+        <div class="screen">
+          <div class="screen-label">A · Word detail · shared note</div>
+          <span class="firefly ff1"><span class="dot"></span></span><span class="firefly ff2"><span class="dot"></span></span><span class="firefly ff3"><span class="dot"></span></span>
+
+          <div class="appbar">
+            <div class="brand"><span class="back">←</span><span class="name">Word</span></div>
+            <span class="avatar av-dani">D</span>
+          </div>
+
+          <div class="content">
+            <input class="cat-toggle" type="checkbox" id="cat-more-detail" />
+            <div class="whead">
+              <div class="jp">約束</div>
+              <div class="reading">やくそく</div>
+              <div class="meaning">promise · a thing pledged</div>
+              <!-- familiarity icon — placeholder, final icon set TBD (Strong = bright filled droplet-glow) -->
+              <div class="fam-ic"><span class="fi">◉</span> Strong</div>
+              <!-- category/lesson pills along the card's bottom edge; overflow collapses behind a pure-CSS toggle -->
+              <div class="tags">
+                <span class="tagpill">Noun</span>
+                <span class="tagpill">Genki · L2</span>
+                <span class="tagpill cat-extra">Manga words</span>
+                <span class="tagpill cat-extra">Everyday</span>
+                <label class="cat-more" for="cat-more-detail">
+                  <span class="ic">🏷</span><span class="expand">＋2</span><span class="collapse">− less</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="sec-tag">Notes</div>
+
+            <div class="note">
+              <span>🌿</span>
+              <div class="body">
+                <span class="who">Jake:</span> yak + soku → I promise to feed the yak 🐂
+              </div>
+            </div>
+
+            <div class="note private">
+              <span>🔒</span>
+              <div class="body">
+                <span class="who">You:</span> comes up a lot in the drama we're watching
+                <div class="lock">🔒 Private</div>
+              </div>
+            </div>
+
+            <button class="add-note-cta"><span class="plus">＋</span> Add note<span class="hint">shared by default</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="caption">A — 約束 detail: POS, lesson tag, familiarity glyph; Jake's note (shared, no badge — shared is implicit) plus the viewer's 🔒 private note, with an inline ＋ Add note affordance.</div>
+    </div>
+
+    <!-- SECTION B — add-note input with shared/private toggle -->
+    <div class="col">
+      <div class="phone">
+        <div class="screen">
+          <div class="screen-label">B · Add a note · scope toggle</div>
+          <span class="firefly ff2" style="top:30%"><span class="dot"></span></span><span class="firefly ff3" style="top:66%"><span class="dot"></span></span><span class="firefly ff1" style="top:46%"><span class="dot"></span></span>
+
+          <div class="appbar">
+            <div class="brand"><span class="back">←</span><span class="name">Word</span></div>
+            <span class="avatar av-dani">D</span>
+          </div>
+
+          <div class="content">
+            <div class="whead" style="padding:16px 14px;">
+              <div class="jp" style="font-size:38px;">約束</div>
+              <div class="reading">やくそく · promise</div>
+            </div>
+
+            <div class="sec-tag">Add a note</div>
+
+            <div class="note">
+              <span>🌿</span>
+              <div class="body">
+                <span class="who">Jake:</span> yak + soku → I promise to feed the yak 🐂
+              </div>
+            </div>
+
+            <div class="add-note">
+              <textarea placeholder="Add your own way of remembering this…"></textarea>
+              <div class="row">
+                <div class="scope-toggle">
+                  <span class="sb on">🌿 Shared</span>
+                  <span class="sb">🔒 Private</span>
+                </div>
+                <button class="post">Add note</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">B — Add-note input with a Shared / Private scope toggle; shared notes become a quiet gift to your partner.</div>
+    </div>
+
+  </div>
+</body>
+</html>
