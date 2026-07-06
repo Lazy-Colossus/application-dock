@@ -30,6 +30,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "Hotaru" },
       },
       {
+        path: "hotaru/library",
+        name: "hotaru-library",
+        component: () => import("@/apps/hotaru/pages/LibraryPage.vue"),
+        meta: { title: "Library" },
+      },
+      {
         path: "archery/setup",
         name: "archery-setup",
         component: () => import("@/apps/archery/pages/SessionSetupPage.vue"),

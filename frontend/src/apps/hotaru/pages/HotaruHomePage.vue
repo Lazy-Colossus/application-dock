@@ -61,7 +61,7 @@ function onPractice(): void {
 }
 
 function onLibrary(): void {
-  // TODO(Story 1.4): navigate to the vocabulary library.
+  void router.push("/hotaru/library");
 }
 </script>
 
