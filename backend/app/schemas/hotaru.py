@@ -70,3 +70,11 @@ class ProgressEntry(BaseModel):
     tier: int = 0
     points: int = 0
     last_reviewed_at: datetime | None = None
+
+
+class PracticeOverview(BaseModel):
+    # Pre-session overview for a scope. `familiarity` is a length-5 list indexed
+    # by tier (0–4). Queue-not-debt: NO due-counts/overdue/next_review_at here.
+    scope: str
+    word_count: int
+    familiarity: list[int]

@@ -54,10 +54,8 @@ onMounted(async () => {
   }
 });
 
-// Placeholder actions — Practice (Epic 2) and Library (Story 1.4+) pages do not
-// exist yet. Wired to real routes in later stories.
 function onPractice(): void {
-  // TODO(Story 2.2): navigate to the practice picker.
+  void router.push("/hotaru/practice");
 }
 
 function onLibrary(): void {

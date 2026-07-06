@@ -1,0 +1,175 @@
+<template>
+  <q-page class="hotaru-app column no-wrap q-pa-md">
+    <div class="practice-title q-mb-md">What shall we practise?</div>
+
+    <!-- Lessons -->
+    <div class="practice-group-label">Lessons</div>
+    <div v-if="lessonScopes.length === 0" class="practice-empty">
+      No lessons yet.
+    </div>
+    <div v-else class="practice-chips row items-center q-gutter-xs q-mb-md">
+      <button
+        v-for="l in lessonScopes"
+        :key="l"
+        class="practice-chip"
+        :class="{ 'practice-chip--active': selected === `lesson:${l}` }"
+        :data-testid="`scope-lesson-${l}`"
+        @click="select(`lesson:${l}`)"
+      >
+        {{ l }}
+      </button>
+    </div>
+
+    <!-- Topics -->
+    <div class="practice-group-label">Topics</div>
+    <div v-if="store.topics.length === 0" class="practice-empty">
+      No topics yet.
+    </div>
+    <div v-else class="practice-chips row items-center q-gutter-xs q-mb-md">
+      <button
+        v-for="t in store.topics"
+        :key="t.id"
+        class="practice-chip"
+        :class="{ 'practice-chip--active': selected === `topic:${t.id}` }"
+        :data-testid="`scope-topic-${t.id}`"
+        @click="select(`topic:${t.id}`)"
+      >
+        {{ t.name }}
+      </button>
+    </div>
+
+    <!-- Overview -->
+    <div
+      v-if="practice.loading"
+      class="practice-state"
+      data-testid="overview-loading"
+    >
+      Loading…
+    </div>
+    <div
+      v-else-if="practice.error"
+      class="practice-state"
+      data-testid="overview-error"
+    >
+      {{ practice.error }}
+    </div>
+    <div
+      v-else-if="practice.overview"
+      class="practice-overview column"
+      data-testid="overview"
+    >
+      <div class="practice-count" data-testid="overview-count">
+        {{ practice.overview.word_count }} words
+      </div>
+      <div
+        v-for="(count, tier) in practice.overview.familiarity"
+        :key="tier"
+        class="practice-tier row items-center justify-between"
+        :data-testid="`tier-${tier}`"
+      >
+        <span>{{ TIER_LABELS[tier] }}</span>
+        <span>{{ count }}</span>
+      </div>
+      <!-- The "Let's practice" launch CTA arrives in Story 2.3 (the drill). -->
+    </div>
+  </q-page>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useHotaruLibraryStore } from "@/apps/hotaru/stores/useHotaruLibraryStore";
+import { useHotaruPracticeStore } from "@/apps/hotaru/stores/useHotaruPracticeStore";
+import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
+import "./../css/hotaru.sass";
+
+// 5-tier familiarity labels (mirrors backend srs.TIER_LABELS). Story 2.6
+// replaces this with the FamiliarityIcon (icon + colour + label).
+const TIER_LABELS = ["New", "Learning", "Familiar", "Strong", "Mastered"];
+
+const store = useHotaruLibraryStore();
+const practice = useHotaruPracticeStore();
+const userStore = useHotaruUserStore();
+const router = useRouter();
+
+const selected = ref<string | null>(null);
+
+// Lessons available as scopes — the empty lesson (un-filed custom words) is not
+// a practisable scope.
+const lessonScopes = computed(() => store.lessons.filter((l) => l !== ""));
+
+function select(scope: string): void {
+  const user = userStore.activeUserId;
+  if (user === null) return;
+  selected.value = scope;
+  void practice.loadOverview(scope, user);
+}
+
+onMounted(async () => {
+  if (userStore.users.length === 0) await userStore.loadUsers();
+  if (userStore.activeUserId === null) {
+    void router.replace("/hotaru/identity");
+    return;
+  }
+  await Promise.all([
+    store.loadWords(userStore.activeUserId),
+    store.loadTopics(),
+  ]);
+});
+</script>
+
+<style scoped lang="sass">
+.practice-title
+  font-size: 22px
+  font-weight: 600
+  color: var(--hotaru-cream)
+
+.practice-group-label
+  font-size: 13px
+  color: var(--hotaru-cream-soft)
+  margin-bottom: 6px
+
+.practice-chips
+  overflow-x: auto
+
+.practice-chip
+  border: 1px solid rgba(140, 175, 93, 0.34)
+  background: rgba(140, 175, 93, 0.12)
+  color: var(--hotaru-cream-soft)
+  border-radius: 9999px
+  padding: 4px 12px
+  font-size: 13px
+  cursor: pointer
+
+.practice-chip--active
+  background: var(--hotaru-bamboo)
+  color: var(--hotaru-bamboo-on)
+  border-color: var(--hotaru-bamboo)
+
+.practice-empty
+  color: var(--hotaru-cream-soft)
+  font-size: 13px
+  margin-bottom: 16px
+
+.practice-state
+  color: var(--hotaru-cream-soft)
+  text-align: center
+  padding: 24px 0
+
+.practice-overview
+  border: 1px solid rgba(140, 175, 93, 0.28)
+  border-radius: 12px
+  padding: 14px
+  margin-top: 8px
+
+.practice-count
+  font-size: 18px
+  font-weight: 600
+  color: var(--hotaru-cream)
+  margin-bottom: 8px
+
+.practice-tier
+  font-size: 14px
+  color: var(--hotaru-cream-soft)
+  padding: 3px 0
+</style>

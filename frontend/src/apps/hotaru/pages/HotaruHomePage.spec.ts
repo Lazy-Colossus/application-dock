@@ -2,15 +2,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, replace } = vi.hoisted(() => ({
+const { getMock, push, replace } = vi.hoisted(() => ({
   getMock: vi.fn(),
+  push: vi.fn(),
   replace: vi.fn(),
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
   api: { get: getMock, post: vi.fn(), put: vi.fn(), del: vi.fn() },
 }));
-vi.mock("vue-router", () => ({ useRouter: () => ({ replace }) }));
+vi.mock("vue-router", () => ({ useRouter: () => ({ push, replace }) }));
 
 import HotaruHomePage from "./HotaruHomePage.vue";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
@@ -24,8 +25,9 @@ const STUBS = {
   "q-page": { template: '<div class="q-page-stub"><slot /></div>' },
   "q-btn": {
     template:
-      "<button :data-testid=\"$attrs['data-testid']\">{{ label }}</button>",
+      "<button :data-testid=\"$attrs['data-testid']\" @click=\"$emit('click')\">{{ label }}</button>",
     props: ["label", "outline", "unelevated", "noCaps"],
+    emits: ["click"],
   },
   "q-menu": { template: "<div><slot /></div>" },
   "q-list": { template: "<div><slot /></div>" },
@@ -41,6 +43,7 @@ beforeEach(() => {
   setActivePinia(createPinia());
   localStorage.clear();
   getMock.mockReset().mockResolvedValue(USERS);
+  push.mockReset();
   replace.mockReset();
 });
 
@@ -81,5 +84,21 @@ describe("HotaruHomePage", () => {
     mount(HotaruHomePage, MOUNT_OPTS);
     await flushPromises();
     expect(useHotaruUserStore().activeUser?.name).toBe("Dani");
+  });
+
+  it("routes to the practice picker when Practice is tapped", async () => {
+    localStorage.setItem("hotaru.activeUser", "dani");
+    const wrapper = mount(HotaruHomePage, MOUNT_OPTS);
+    await flushPromises();
+    await wrapper.find('[data-testid="practice-btn"]').trigger("click");
+    expect(push).toHaveBeenCalledWith("/hotaru/practice");
+  });
+
+  it("routes to the library when Library is tapped", async () => {
+    localStorage.setItem("hotaru.activeUser", "dani");
+    const wrapper = mount(HotaruHomePage, MOUNT_OPTS);
+    await flushPromises();
+    await wrapper.find('[data-testid="library-btn"]').trigger("click");
+    expect(push).toHaveBeenCalledWith("/hotaru/library");
   });
 });

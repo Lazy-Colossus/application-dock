@@ -32,3 +32,11 @@ export interface Topic {
   name: string;
   word_ids: string[];
 }
+
+// Pre-session overview for a scope. `familiarity` is indexed by tier (0–4).
+// Queue-not-debt: no due-counts here.
+export interface PracticeOverview {
+  scope: string;
+  word_count: number;
+  familiarity: number[];
+}

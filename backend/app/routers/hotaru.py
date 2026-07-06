@@ -4,11 +4,12 @@ from app.schemas.hotaru import (
     CreateTopicRequest,
     CreateWordRequest,
     HotaruUser,
+    PracticeOverview,
     Topic,
     UpdateWordRequest,
     Word,
 )
-from app.services import hotaru_vocab_service
+from app.services import hotaru_practice_service, hotaru_vocab_service
 
 router = APIRouter(prefix="/api/hotaru", tags=["hotaru"])
 
@@ -126,3 +127,13 @@ def unassign_word(topic_id: str, word_id: str, user: str) -> None:
         hotaru_vocab_service.unassign_word(topic_id=topic_id, word_id=word_id)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=f"Not found: {exc}.") from exc
+
+
+@router.get("/practice/overview", response_model=PracticeOverview)
+def practice_overview(scope: str, user: str) -> PracticeOverview:
+    if user not in VALID_USER_IDS:
+        raise HTTPException(status_code=404, detail=f"Unknown user {user}.")
+    try:
+        return hotaru_practice_service.overview(scope=scope, user=user)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
