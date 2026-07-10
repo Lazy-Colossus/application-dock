@@ -1,7 +1,13 @@
 <template>
   <div class="word-row row items-center no-wrap" data-testid="word-row">
     <div class="word-row__jp column">
-      <span class="word-row__primary">{{ word.kanji ?? word.reading }}</span>
+      <span
+        class="word-row__primary"
+        :class="
+          word.kanji ? 'word-row__primary--kanji' : 'word-row__primary--kana'
+        "
+        >{{ word.kanji ?? word.reading }}</span
+      >
       <span v-if="word.kanji" class="word-row__reading">{{
         word.reading
       }}</span>
@@ -89,9 +95,19 @@ const showRomaji = ref(false);
   font-size: 20px
   color: var(--hotaru-cream)
 
+// Kanji headwords glow electric blue (cyan); kana (hiragana/katakana) glow
+// warm yellow — whether a kana-only headword or the reading beneath a kanji.
+.word-row__primary--kanji
+  color: var(--hotaru-bamboo)
+  text-shadow: 0 0 10px rgba(56, 240, 230, 0.4)
+
+.word-row__primary--kana
+  color: #ffd24a
+  text-shadow: 0 0 10px rgba(255, 210, 74, 0.4)
+
 .word-row__reading
   font-size: 12px
-  color: var(--hotaru-sage)
+  color: #ffd24a
 
 .word-row__romaji
   font-size: 12px

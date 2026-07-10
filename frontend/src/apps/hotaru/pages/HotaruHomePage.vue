@@ -6,7 +6,7 @@
     </div>
 
     <div class="hotaru-brand text-center q-mb-xl">
-      <div class="hotaru-glyph hotaru-glow">蛍</div>
+      <div class="hotaru-glyph">蛍</div>
       <div class="hotaru-title hotaru-glow">Hotaru</div>
       <div class="hotaru-tagline">
         <template v-if="store.activeUser"
@@ -25,9 +25,9 @@
       @click="onPractice"
     />
     <q-btn
-      class="hotaru-action full-width"
+      class="hotaru-action hotaru-action--secondary full-width"
       label="Library"
-      outline
+      unelevated
       no-caps
       data-testid="library-btn"
       @click="onLibrary"
@@ -72,8 +72,9 @@ function onLibrary(): void {
 .hotaru-glyph
   font-size: 56px
   line-height: 1
-  color: var(--hotaru-lamp-yellow)
-  text-shadow: 0 0 22px rgba(56, 240, 230, 0.7)
+  // The 蛍 logo glows warm lamp-yellow (a firefly against the neon dusk).
+  color: #ffd24a
+  text-shadow: 0 0 26px rgba(255, 210, 74, 0.75), 0 0 10px rgba(255, 224, 130, 0.6)
 
 .hotaru-title
   font-size: 28px
@@ -94,4 +95,11 @@ function onLibrary(): void {
   background: linear-gradient(180deg, var(--hotaru-bamboo-bright), var(--hotaru-bamboo))
   color: var(--hotaru-bamboo-on)
   box-shadow: 0 8px 20px rgba(16, 168, 159, 0.4), 0 0 20px rgba(56, 240, 230, 0.22)
+
+// Secondary: a low-opacity cyan wash so it reads as related to Practice but
+// clearly recedes behind the solid gradient primary.
+.hotaru-action--secondary
+  background: rgba(56, 240, 230, 0.14)
+  color: var(--hotaru-bamboo-bright)
+  border: 1px solid rgba(56, 240, 230, 0.4)
 </style>

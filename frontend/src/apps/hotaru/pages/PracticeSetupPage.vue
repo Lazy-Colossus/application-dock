@@ -70,7 +70,10 @@
         class="practice-tier row items-center justify-between"
         :data-testid="`tier-${tier}`"
       >
-        <span>{{ TIER_LABELS[tier] }}</span>
+        <span class="tier-label row items-center">
+          <span class="tier-glyph" :class="`tier-glyph--${tier}`" />
+          {{ TIER_LABELS[tier] }}
+        </span>
         <span>{{ count }}</span>
       </div>
       <!-- The "Let's practice" launch CTA arrives in Story 2.3 (the drill). -->
@@ -87,8 +90,9 @@ import { useHotaruPracticeStore } from "@/apps/hotaru/stores/useHotaruPracticeSt
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
 import "./../css/hotaru.sass";
 
-// 5-tier familiarity labels (mirrors backend srs.TIER_LABELS). Story 2.6
-// replaces this with the FamiliarityIcon (icon + colour + label).
+// 5-tier familiarity ramp — labels + glyphs matching the Drill design's legend
+// (colour lives in CSS via the --hotaru-fam-* tokens). Story 2.6 formalises
+// this as a shared FamiliarityIcon (icon + colour + label).
 const TIER_LABELS = ["New", "Learning", "Familiar", "Strong", "Mastered"];
 
 const store = useHotaruLibraryStore();
@@ -177,4 +181,43 @@ onMounted(async () => {
   font-size: 14px
   color: var(--hotaru-cream-soft)
   padding: 3px 0
+
+.tier-label
+  gap: 10px
+
+// Familiarity ramp icon — a uniform CSS circle with a per-tier fill fraction
+// (0/25/50/75/100%), coloured + glowing in the tier hue (matches the Drill
+// legend). CSS-drawn so all five are exactly the same size, unlike the mixed
+// Unicode circle glyphs.
+.tier-glyph
+  flex: none
+  width: 13px
+  height: 13px
+  border-radius: 50%
+  border: 1.5px solid currentColor
+  background: conic-gradient(currentColor var(--fill), transparent var(--fill))
+
+.tier-glyph--0
+  color: var(--hotaru-fam-1)
+  --fill: 0%
+
+.tier-glyph--1
+  color: var(--hotaru-fam-2)
+  --fill: 25%
+  filter: drop-shadow(0 0 5px var(--hotaru-fam-2))
+
+.tier-glyph--2
+  color: var(--hotaru-fam-3)
+  --fill: 50%
+  filter: drop-shadow(0 0 5px var(--hotaru-fam-3))
+
+.tier-glyph--3
+  color: var(--hotaru-fam-4)
+  --fill: 75%
+  filter: drop-shadow(0 0 5px var(--hotaru-fam-4))
+
+.tier-glyph--4
+  color: var(--hotaru-fam-5)
+  --fill: 100%
+  filter: drop-shadow(0 0 5px var(--hotaru-fam-5))
 </style>

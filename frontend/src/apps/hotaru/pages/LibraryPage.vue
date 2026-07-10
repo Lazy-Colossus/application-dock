@@ -292,6 +292,8 @@ async function onCreateTopic(name: string): Promise<void> {
   font-size: 13px
   cursor: pointer
 
+// Level-2 subsections are smaller and read violet when active — a calm step
+// down from the primary-cyan level-1 sections (tertiary accent = subordinate).
 .library-tab--sub
   font-size: 12px
   padding: 3px 10px
@@ -301,6 +303,12 @@ async function onCreateTopic(name: string): Promise<void> {
   color: var(--hotaru-bamboo-on)
   border-color: var(--hotaru-bamboo)
   box-shadow: 0 0 14px rgba(56, 240, 230, 0.35)
+
+.library-tab--sub.library-tab--active
+  background: var(--hotaru-fam-2)
+  color: #140a2e
+  border-color: var(--hotaru-fam-2)
+  box-shadow: 0 0 14px rgba(155, 107, 255, 0.45)
 
 .library-list
   padding: 2px 14px

@@ -7,18 +7,24 @@
 
     <form class="column q-gutter-sm" @submit.prevent="onSubmit">
       <label class="addword-field">
-        <span class="addword-label">Katakana/Hiragana *</span>
+        <span class="addword-label"
+          >Katakana/Hiragana <span class="addword-req">*</span></span
+        >
         <input
           v-model="reading"
-          class="addword-input"
+          class="addword-input addword-input--jp"
+          placeholder="ねこ"
           data-testid="field-reading"
         />
       </label>
       <label class="addword-field">
-        <span class="addword-label">Meaning *</span>
+        <span class="addword-label"
+          >Meaning <span class="addword-req">*</span></span
+        >
         <input
           v-model="meaning"
           class="addword-input"
+          placeholder="cat"
           data-testid="field-meaning"
         />
       </label>
@@ -26,7 +32,8 @@
         <span class="addword-label">Kanji</span>
         <input
           v-model="kanji"
-          class="addword-input"
+          class="addword-input addword-input--jp"
+          placeholder="猫"
           data-testid="field-kanji"
         />
       </label>
@@ -35,12 +42,18 @@
         <input
           v-model="romaji"
           class="addword-input"
+          placeholder="neko"
           data-testid="field-romaji"
         />
       </label>
       <label class="addword-field">
         <span class="addword-label">Part of speech</span>
-        <input v-model="pos" class="addword-input" data-testid="field-pos" />
+        <input
+          v-model="pos"
+          class="addword-input"
+          placeholder="noun"
+          data-testid="field-pos"
+        />
       </label>
 
       <div class="row items-center q-gutter-sm q-mt-xs">
@@ -296,6 +309,10 @@ async function onSubmit(): Promise<void> {
   font-size: 13px
   color: var(--hotaru-cream-soft)
 
+// Required-field marker.
+.addword-req
+  color: var(--hotaru-bamboo)
+
 .addword-input
   background: rgba(20, 18, 52, 0.55)
   border: 1px solid rgba(155, 107, 255, 0.30)
@@ -303,6 +320,20 @@ async function onSubmit(): Promise<void> {
   padding: 10px
   color: var(--hotaru-cream)
   font-size: 15px
+  transition: border-color 0.15s ease, box-shadow 0.15s ease
+
+// Neon focus feedback — the active field lights up cyan.
+.addword-input:focus
+  outline: none
+  border-color: var(--hotaru-bamboo)
+  box-shadow: 0 0 0 1px rgba(56, 240, 230, 0.4), 0 0 14px rgba(56, 240, 230, 0.22)
+
+.addword-input::placeholder
+  color: var(--hotaru-sage)
+
+// Japanese fields get larger glyphs for legibility while typing.
+.addword-input--jp
+  font-size: 18px
 
 // Visibility buttons — icon + label, each with its own accent colour.
 .addword-vis
@@ -326,12 +357,12 @@ async function onSubmit(): Promise<void> {
 
 .addword-vis--private
   border: 1px solid rgba(255, 206, 92, 0.5)
-  color: var(--hotaru-amber-private, #e0b27a)
+  color: var(--hotaru-amber-private)
 
 .addword-vis--private-on
-  background: var(--hotaru-amber-private, #e0b27a)
-  color: #22260f
-  border-color: var(--hotaru-amber-private, #e0b27a)
+  background: var(--hotaru-amber-private)
+  color: #2c2200
+  border-color: var(--hotaru-amber-private)
 
 // "Add to a lesson" — a modest bordered block.
 .addword-lesson-box
@@ -358,6 +389,7 @@ async function onSubmit(): Promise<void> {
 .addword-submit
   height: 52px
   border-radius: 12px
-  background: var(--hotaru-bamboo)
+  background: linear-gradient(180deg, var(--hotaru-bamboo-bright), var(--hotaru-bamboo))
   color: var(--hotaru-bamboo-on)
+  box-shadow: 0 8px 20px rgba(16, 168, 159, 0.4), 0 0 20px rgba(56, 240, 230, 0.22)
 </style>
