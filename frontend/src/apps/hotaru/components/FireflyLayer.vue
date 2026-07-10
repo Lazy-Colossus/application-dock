@@ -18,8 +18,8 @@ interface Firefly {
 
 const COUNT = 22;
 
-// Amber (firefly), cyan (primary), magenta — the Neon Yūgure motion palette.
-const COLOURS = ["255, 206, 92", "56, 240, 230", "255, 92, 200"];
+// Amber (firefly), cyan (primary), violet — the Neon Yūgure motion palette.
+const COLOURS = ["255, 206, 92", "56, 240, 230", "155, 107, 255"];
 
 const fireflies = ref<Firefly[]>(
   Array.from({ length: COUNT }, (_, id) => {
