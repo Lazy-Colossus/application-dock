@@ -79,7 +79,7 @@ const showRomaji = ref(false);
 <style scoped lang="sass">
 .word-row
   padding: 12px 4px
-  border-bottom: 1px solid rgba(140, 175, 93, 0.18)
+  border-bottom: 1px solid rgba(155, 107, 255, 0.16)
   gap: 14px
 
 .word-row__jp
@@ -115,7 +115,7 @@ const showRomaji = ref(false);
   width: 28px
   height: 28px
   border-radius: 9999px
-  border: 1px solid rgba(140, 175, 93, 0.34)
+  border: 1px solid rgba(155, 107, 255, 0.30)
   background: transparent
   color: var(--hotaru-sage)
   font-size: 13px

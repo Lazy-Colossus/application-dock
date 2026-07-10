@@ -297,8 +297,8 @@ async function onSubmit(): Promise<void> {
   color: var(--hotaru-cream-soft)
 
 .addword-input
-  background: rgba(246, 239, 218, 0.06)
-  border: 1px solid rgba(140, 175, 93, 0.34)
+  background: rgba(20, 18, 52, 0.55)
+  border: 1px solid rgba(155, 107, 255, 0.30)
   border-radius: 10px
   padding: 10px
   color: var(--hotaru-cream)
@@ -316,7 +316,7 @@ async function onSubmit(): Promise<void> {
   background: transparent
 
 .addword-vis--shared
-  border: 1px solid rgba(140, 175, 93, 0.45)
+  border: 1px solid rgba(155, 107, 255, 0.30)
   color: var(--hotaru-bamboo-bright)
 
 .addword-vis--shared-on
@@ -325,7 +325,7 @@ async function onSubmit(): Promise<void> {
   border-color: var(--hotaru-bamboo)
 
 .addword-vis--private
-  border: 1px solid rgba(224, 178, 122, 0.5)
+  border: 1px solid rgba(255, 206, 92, 0.5)
   color: var(--hotaru-amber-private, #e0b27a)
 
 .addword-vis--private-on
@@ -335,7 +335,7 @@ async function onSubmit(): Promise<void> {
 
 // "Add to a lesson" — a modest bordered block.
 .addword-lesson-box
-  border: 1px solid rgba(140, 175, 93, 0.28)
+  border: 1px solid rgba(155, 107, 255, 0.28)
   border-radius: 10px
   padding: 10px
 

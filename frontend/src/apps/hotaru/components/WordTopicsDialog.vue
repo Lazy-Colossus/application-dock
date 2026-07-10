@@ -90,7 +90,7 @@ function onCreate(): void {
 .wt-dialog
   background: var(--hotaru-surface, #22260f)
   color: var(--hotaru-cream)
-  border: 1px solid rgba(140, 175, 93, 0.34)
+  border: 1px solid rgba(155, 107, 255, 0.30)
   border-radius: 14px
   padding: 18px
   min-width: 280px
@@ -115,8 +115,8 @@ function onCreate(): void {
   font-size: 14px
 
 .wt-input
-  background: rgba(246, 239, 218, 0.06)
-  border: 1px solid rgba(140, 175, 93, 0.34)
+  background: rgba(20, 18, 52, 0.55)
+  border: 1px solid rgba(155, 107, 255, 0.30)
   border-radius: 10px
   padding: 8px
   color: var(--hotaru-cream)

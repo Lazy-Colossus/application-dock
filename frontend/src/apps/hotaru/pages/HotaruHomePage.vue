@@ -73,7 +73,7 @@ function onLibrary(): void {
   font-size: 56px
   line-height: 1
   color: var(--hotaru-lamp-yellow)
-  text-shadow: 0 0 22px rgba(255, 206, 74, 0.6)
+  text-shadow: 0 0 22px rgba(56, 240, 230, 0.7)
 
 .hotaru-title
   font-size: 28px
@@ -93,5 +93,5 @@ function onLibrary(): void {
 .hotaru-action--primary
   background: linear-gradient(180deg, var(--hotaru-bamboo-bright), var(--hotaru-bamboo))
   color: var(--hotaru-bamboo-on)
-  box-shadow: 0 8px 20px rgba(93, 125, 56, 0.35), 0 0 20px rgba(168, 204, 110, 0.22)
+  box-shadow: 0 8px 20px rgba(16, 168, 159, 0.4), 0 0 20px rgba(56, 240, 230, 0.22)
 </style>

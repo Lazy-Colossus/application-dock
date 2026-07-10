@@ -284,8 +284,8 @@ async function onCreateTopic(name: string): Promise<void> {
   overflow-x: auto
 
 .library-tab
-  border: 1px solid rgba(140, 175, 93, 0.34)
-  background: rgba(140, 175, 93, 0.12)
+  border: 1px solid rgba(155, 107, 255, 0.30)
+  background: rgba(155, 107, 255, 0.12)
   color: var(--hotaru-cream-soft)
   border-radius: 9999px
   padding: 4px 12px
@@ -300,7 +300,7 @@ async function onCreateTopic(name: string): Promise<void> {
   background: var(--hotaru-bamboo)
   color: var(--hotaru-bamboo-on)
   border-color: var(--hotaru-bamboo)
-  box-shadow: 0 0 14px rgba(168, 204, 110, 0.35)
+  box-shadow: 0 0 14px rgba(56, 240, 230, 0.35)
 
 .library-list
   padding: 2px 14px
@@ -320,5 +320,5 @@ async function onCreateTopic(name: string): Promise<void> {
   bottom: 20px
   background: var(--hotaru-bamboo)
   color: var(--hotaru-bamboo-on)
-  box-shadow: 0 8px 22px rgba(93, 125, 56, 0.4), 0 0 20px rgba(168, 204, 110, 0.3)
+  box-shadow: 0 8px 22px rgba(16, 168, 159, 0.45), 0 0 20px rgba(56, 240, 230, 0.30)
 </style>
