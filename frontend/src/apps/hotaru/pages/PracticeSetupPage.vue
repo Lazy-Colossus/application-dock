@@ -121,9 +121,18 @@ function select(scope: string): void {
   void practice.loadOverview(scope, user);
 }
 
+// Friendly name for the chosen scope, passed to the drill so it can show
+// "what we're practising" (the picker knows lesson codes / topic names).
+function scopeLabel(scope: string): string {
+  const [kind, value] = scope.split(":");
+  if (kind === "topic") return store.topicById(value)?.name ?? value;
+  return value;
+}
+
 function startDrill(): void {
   if (selected.value === null) return;
-  void router.push(`/hotaru/drill?scope=${encodeURIComponent(selected.value)}`);
+  const q = `scope=${encodeURIComponent(selected.value)}&label=${encodeURIComponent(scopeLabel(selected.value))}`;
+  void router.push(`/hotaru/drill?${q}`);
 }
 
 onMounted(async () => {

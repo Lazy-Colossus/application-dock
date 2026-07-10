@@ -49,6 +49,7 @@ let queue: { word: Word }[] = [];
 
 const STUBS = {
   "q-page": { template: "<div><slot /></div>" },
+  "q-icon": { template: "<i />" },
   "q-btn": {
     template:
       "<button :data-testid=\"$attrs['data-testid']\" @click=\"$emit('click')\">{{ label }}</button>",
@@ -114,6 +115,50 @@ describe("DrillPage", () => {
     await wrapper.find('[data-testid="next-btn"]').trigger("click");
     expect(wrapper.find('[data-testid="drill-done"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="flashcard"]').exists()).toBe(false);
+  });
+
+  it("shows the scope label passed by the picker above the card", async () => {
+    routeQuery.value = { scope: "topic:t1", label: "Food" };
+    const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    expect(wrapper.find('[data-testid="drill-scope"]').text()).toContain(
+      "Food",
+    );
+  });
+
+  it("toggles furigana on the prompt (kanji word only)", async () => {
+    const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    // Off by default — no furigana on the (kanji) first card.
+    expect(wrapper.find('[data-testid="card-furigana"]').exists()).toBe(false);
+    await wrapper.find('[data-testid="reading-aid-toggle"]').trigger("click");
+    expect(wrapper.find('[data-testid="card-furigana"]').text()).toBe(
+      "だいがく",
+    );
+  });
+
+  it("hides the aid on the prompt for a kana-only word", async () => {
+    queue = [{ word: word("g1", null, "ありがとう", "thanks") }];
+    const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    // Nothing to reveal — the kana is already the headword.
+    expect(wrapper.find('[data-testid="reading-aid-toggle"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("toggles romaji on the reveal step", async () => {
+    const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="reveal-btn"]').trigger("click");
+    // Romaji hidden by default on reveal.
+    expect(wrapper.find('[data-testid="card-answer"]').text()).not.toContain(
+      "romaji",
+    );
+    await wrapper.find('[data-testid="reading-aid-toggle"]').trigger("click");
+    expect(wrapper.find('[data-testid="card-answer"]').text()).toContain(
+      "romaji",
+    );
   });
 
   it("shows the empty state when the scope has no words", async () => {

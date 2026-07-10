@@ -107,7 +107,9 @@ describe("PracticeSetupPage", () => {
     await wrapper.find('[data-testid="scope-lesson-L2"]').trigger("click");
     await flushPromises();
     await wrapper.find('[data-testid="start-drill"]').trigger("click");
-    expect(push).toHaveBeenCalledWith("/hotaru/drill?scope=lesson%3AL2");
+    expect(push).toHaveBeenCalledWith(
+      "/hotaru/drill?scope=lesson%3AL2&label=L2",
+    );
   });
 
   it("redirects to identity when no active user is set", async () => {

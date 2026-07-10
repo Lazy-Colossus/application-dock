@@ -49,4 +49,28 @@ describe("Flashcard", () => {
       "ありがとう",
     );
   });
+
+  it("shows lesson + part-of-speech pills only on the reveal side", () => {
+    const hidden = mount(Flashcard, {
+      props: { word: word(), revealed: false },
+    });
+    expect(hidden.find('[data-testid="card-pills"]').exists()).toBe(false);
+    const shown = mount(Flashcard, {
+      props: { word: word(), revealed: true },
+    });
+    const pills = shown.find('[data-testid="card-pills"]');
+    expect(pills.text()).toContain("L1");
+    expect(pills.text()).toContain("noun");
+  });
+
+  it("shows furigana above a kanji headword when showReading is on", () => {
+    const wrapper = mount(Flashcard, {
+      props: { word: word(), revealed: false, showReading: true },
+    });
+    // The kana reading is visible on the prompt even before reveal.
+    expect(wrapper.find('[data-testid="card-furigana"]').text()).toBe(
+      "だいがく",
+    );
+    expect(wrapper.find('[data-testid="card-answer"]').exists()).toBe(false);
+  });
 });
