@@ -1,5 +1,6 @@
 <template>
   <q-page class="hotaru-app column no-wrap q-pa-md">
+    <FireflyLayer />
     <!-- Level 1: sections (each textbook source + Custom words) -->
     <div class="library-tabs row items-center q-gutter-xs q-mb-sm">
       <button
@@ -56,7 +57,11 @@
     >
       No words here yet.
     </div>
-    <div v-else class="library-list column" data-testid="library-list">
+    <div
+      v-else
+      class="library-list hotaru-panel column"
+      data-testid="library-list"
+    >
       <WordRow
         v-for="word in visibleWords"
         :key="word.id"
@@ -94,6 +99,7 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
+import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
 import WordRow from "@/apps/hotaru/components/WordRow.vue";
 import WordTopicsDialog from "@/apps/hotaru/components/WordTopicsDialog.vue";
 import { useHotaruLibraryStore } from "@/apps/hotaru/stores/useHotaruLibraryStore";
@@ -294,6 +300,14 @@ async function onCreateTopic(name: string): Promise<void> {
   background: var(--hotaru-bamboo)
   color: var(--hotaru-bamboo-on)
   border-color: var(--hotaru-bamboo)
+  box-shadow: 0 0 14px rgba(168, 204, 110, 0.35)
+
+.library-list
+  padding: 2px 14px
+
+// Rows already divide with a hairline; drop the last one inside the panel.
+.library-list :deep(.word-row:last-child)
+  border-bottom: none
 
 .library-state
   color: var(--hotaru-cream-soft)
@@ -306,4 +320,5 @@ async function onCreateTopic(name: string): Promise<void> {
   bottom: 20px
   background: var(--hotaru-bamboo)
   color: var(--hotaru-bamboo-on)
+  box-shadow: 0 8px 22px rgba(93, 125, 56, 0.4), 0 0 20px rgba(168, 204, 110, 0.3)
 </style>

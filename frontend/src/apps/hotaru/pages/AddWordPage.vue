@@ -1,6 +1,7 @@
 <template>
   <q-page class="hotaru-app column no-wrap q-pa-md">
-    <div class="addword-title q-mb-md">
+    <FireflyLayer />
+    <div class="addword-title hotaru-glow q-mb-md">
       {{ isEdit ? "Edit word" : "Add a word" }}
     </div>
 
@@ -66,7 +67,7 @@
         </button>
       </div>
 
-      <div class="addword-lesson-box q-mt-sm">
+      <div class="addword-lesson-box hotaru-panel q-mt-sm">
         <label class="addword-lesson-head row items-center">
           <input
             v-model="addToLesson"
@@ -126,6 +127,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
 import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router";
+import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
 import { useHotaruLibraryStore } from "@/apps/hotaru/stores/useHotaruLibraryStore";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
 import type { Visibility } from "@/apps/hotaru/types";

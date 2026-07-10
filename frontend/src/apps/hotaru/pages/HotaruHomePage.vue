@@ -1,12 +1,13 @@
 <template>
   <q-page class="hotaru-app column no-wrap q-pa-md">
+    <FireflyLayer />
     <div class="hotaru-topbar row items-center justify-end">
       <AvatarSwitcher />
     </div>
 
     <div class="hotaru-brand text-center q-mb-xl">
-      <div class="hotaru-glyph">蛍</div>
-      <div class="hotaru-title">Hotaru</div>
+      <div class="hotaru-glyph hotaru-glow">蛍</div>
+      <div class="hotaru-title hotaru-glow">Hotaru</div>
       <div class="hotaru-tagline">
         <template v-if="store.activeUser"
           >Welcome back, {{ store.activeUser.name }}</template
@@ -16,7 +17,7 @@
     </div>
 
     <q-btn
-      class="hotaru-action full-width q-mb-md"
+      class="hotaru-action hotaru-action--primary full-width q-mb-md"
       label="Practice"
       unelevated
       no-caps
@@ -38,6 +39,7 @@
 import { onMounted } from "vue";
 import { useRouter } from "vue-router";
 import AvatarSwitcher from "@/apps/hotaru/components/AvatarSwitcher.vue";
+import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
 import "./../css/hotaru.sass";
 
@@ -85,5 +87,11 @@ function onLibrary(): void {
 
 .hotaru-action
   height: 56px
-  border-radius: 12px
+  border-radius: 14px
+  font-size: 16px
+
+.hotaru-action--primary
+  background: linear-gradient(180deg, var(--hotaru-bamboo-bright), var(--hotaru-bamboo))
+  color: var(--hotaru-bamboo-on)
+  box-shadow: 0 8px 20px rgba(93, 125, 56, 0.35), 0 0 20px rgba(168, 204, 110, 0.22)
 </style>

@@ -32,7 +32,29 @@
   --hotaru-fam-4: #a6c87e
   --hotaru-fam-5: #7aa44d
 
-  // Full-bleed twilight field for the app surface.
+  // Full-bleed twilight field for the app surface. `isolation` gives the page
+  // its own stacking context so the FireflyLayer (z-index -1) sits between this
+  // gradient and the page content — fireflies drift behind, glowing through the
+  // translucent panels.
+  position: relative
+  isolation: isolate
   min-height: 100%
   background: radial-gradient(120% 100% at 50% 0%, var(--hotaru-field-glow), var(--hotaru-field) 45%, var(--hotaru-field-low))
   color: var(--hotaru-cream)
+
+// --- Shared atmosphere helpers (global — hotaru.sass is imported as a plain
+// stylesheet, so these classes are usable in any Hotaru page template) --------
+
+// Frosted washi panel: translucent + blur so fireflies shimmer through at
+// reduced brightness, with a soft warm glow and depth shadow.
+.hotaru-panel
+  background: rgba(41, 45, 26, 0.55)
+  backdrop-filter: blur(6px)
+  -webkit-backdrop-filter: blur(6px)
+  border: 1px solid rgba(140, 175, 93, 0.26)
+  border-radius: 16px
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.32), 0 0 26px rgba(255, 210, 74, 0.06), inset 0 1px 0 rgba(246, 239, 218, 0.05)
+
+// Warm lamp-yellow text glow for headings / brand.
+.hotaru-glow
+  text-shadow: 0 0 18px rgba(255, 210, 74, 0.35), 0 0 4px rgba(255, 240, 168, 0.4)

@@ -1,6 +1,9 @@
 <template>
   <q-page class="hotaru-app column no-wrap q-pa-md">
-    <div class="practice-title q-mb-md">What shall we practise?</div>
+    <FireflyLayer />
+    <div class="practice-title hotaru-glow q-mb-md">
+      What shall we practise?
+    </div>
 
     <!-- Lessons -->
     <div class="practice-group-label">Lessons</div>
@@ -55,7 +58,7 @@
     </div>
     <div
       v-else-if="practice.overview"
-      class="practice-overview column"
+      class="practice-overview hotaru-panel column"
       data-testid="overview"
     >
       <div class="practice-count" data-testid="overview-count">
@@ -78,6 +81,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
 import { useHotaruLibraryStore } from "@/apps/hotaru/stores/useHotaruLibraryStore";
 import { useHotaruPracticeStore } from "@/apps/hotaru/stores/useHotaruPracticeStore";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
@@ -145,6 +149,7 @@ onMounted(async () => {
   background: var(--hotaru-bamboo)
   color: var(--hotaru-bamboo-on)
   border-color: var(--hotaru-bamboo)
+  box-shadow: 0 0 14px rgba(168, 204, 110, 0.35)
 
 .practice-empty
   color: var(--hotaru-cream-soft)
