@@ -398,6 +398,28 @@ So that the session feels complete.
 **When** the summary shows
 **Then** it reports words practised and how many remain in scope, reflects updated familiarity, and shows **no** streak or due-count (FR-17, FR-18).
 
+### Story 2.8: Study a scope (browse, no grading)
+
+_Added 2026-07-06 — not from an original FR. A calm, pressure-free companion to the graded drill: sometimes you just want to read through the words, not be tested. Reuses the picker's scope selection._
+
+As a learner,
+I want to browse a lesson or topic's words one at a time with everything on the card,
+So that I can study freely without being graded.
+
+**Acceptance Criteria:**
+
+**Given** the pre-session picker with a chosen scope
+**When** I choose **Study** (alongside **Practice**)
+**Then** I enter a browse flow over that scope's words (`GET /api/hotaru/practice/study?scope=&user=`) — **all** the scope's words in natural (lesson/list) order, no SRS weighting and no session cap.
+
+**Given** a study card
+**When** it shows
+**Then** a single card presents **all** the word's info at once (Japanese headword, reading, romaji, meaning, part of speech) in the neon card style (kanji cyan / kana lamp-yellow) — there is **no** prompt→reveal and **no** grade; **"Next word"** simply advances to the next card.
+
+**Given** the last card
+**When** I advance past it
+**Then** the study session ends cleanly (a "that's all" state with a way back), with no penalty, streak, or due-count. An empty scope shows a graceful empty state.
+
 ## Epic 3: Cooperative Notes
 
 Dani and Jake can leave each other memory hacks on any word — shared or private — and discover their partner's tips, including mid-drill.
