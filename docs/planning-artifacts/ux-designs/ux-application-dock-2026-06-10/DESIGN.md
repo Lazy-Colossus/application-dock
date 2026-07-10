@@ -41,6 +41,8 @@ colors:
   violet: '#9b6bff'
   # --- Firefly amber (motion layer + strong tier + private/aging) ---
   amber: '#ffce5c'
+  # --- Lamp-yellow: the 蛍 brand logo glow + kana (hiragana/katakana) glyphs ---
+  lamp-yellow: '#ffd24a'
   # --- Familiarity ramp (5 tiers, new → mastered). Colour is NEVER the sole signal. ---
   fam-1-new: '#5a5a86'         # muted grey-violet (hollow ring ○)
   fam-2-learning: '#9b6bff'    # violet (◔)
@@ -186,11 +188,21 @@ components:
     bg: '{colors.cyan}'
     text: '{colors.cyan-on}'
     glow: '0 8px 22px rgba(0,0,0,.5), 0 0 20px rgba(56,240,230,.4)'
+  library-tabs:
+    z: 1
+    radius: '{rounded.full}'
+    section-active: '{colors.cyan} fill, {colors.cyan-on} ink, glow 0 0 14px rgba(56,240,230,.35)'
+    section-idle: 'violet-tint pill — rgba(155,107,255,.12) fill, rgba(155,107,255,.30) border, {colors.ink-mid} text'
+    subsection-active: '{colors.violet} fill, #140a2e ink, glow 0 0 14px rgba(155,107,255,.45)'
+    subsection-idle: 'the violet-tint idle pill, smaller (12px)'
+    note: 'Two-level library filter nav. Level-1 sections = cyan (primary). Level-2 subsections = violet (tertiary → subordinate) and smaller, to encode hierarchy. Both fully rounded.'
   word-row:
     pad-y: '{spacing.row-pad-y}'
     divider: '1px solid rgba(155,107,255,.16)'
     jp: '{typography.jp-row}'
-    jp-color: '{colors.ink-hi}'
+    jp-kanji-color: '{colors.cyan} + text-glow rgba(56,240,230,.4)'      # kanji headword
+    jp-kana-color: '{colors.lamp-yellow} + text-glow rgba(255,210,74,.4)' # kana-only headword
+    reading-color: '{colors.lamp-yellow}'                                 # the hiragana reading line
     en-color: '{colors.ink-mid}'
     private-mark: '🔒 {colors.amber-private}'
   note-callout:
@@ -235,6 +247,8 @@ The palette is a saturated evening neon over a deep indigo dark. It is layered: 
 - **Magenta (SECONDARY)** — `magenta #ff5cc8`: the reading line on the drill card, the Mastered tier, the Incorrect grade edge, and "aging / drifting back" marks.
 - **Violet (TERTIARY)** — `violet #9b6bff`: panel edges, shared-note accent, the Learning tier, chip fills, category pills.
 - **Amber** — `amber #ffce5c`: the literal firefly glow (motion layer), the Strong tier, the Close grade edge, and the private/aging accent (`amber-private`, same hue). Never a chrome fill.
+- **Lamp-yellow** — `lamp-yellow #ffd24a`, a warm glowing yellow (a firefly against the neon dusk): the **蛍 brand logo** glow and **kana** (hiragana/katakana) glyphs in the word list. Distinct from the cooler `amber`; reserved for the logo + kana, not chrome.
+- **Kanji vs kana colour split** — in the word list, **kanji** headwords glow **cyan** (`#38f0e6`) and **kana** glyphs glow **lamp-yellow** (`#ffd24a`) — both the kana-only headword and the hiragana reading line. This mirrors the drill card (Japanese = cyan) while giving kana its own warm read.
 - **Familiarity ramp** — five fixed hues, new→mastered: `fam-1-new #5a5a86` grey-violet · `fam-2-learning #9b6bff` violet · `fam-3-familiar #38f0e6` cyan · `fam-4-strong #ffce5c` amber · `fam-5-mastered #ff5cc8` magenta. Reused for the grade buttons (Incorrect=magenta, Close=amber, Correct=cyan) and per-user avatar fills (Dani=violet, Jake=amber). **Colour is never the only signal** — always paired with an icon and a text label.
 
 Avoid: any colour outside these families; using cyan for chrome unrelated to the primary-accent role while *also* using it for the practiced word in the same view without the word clearly reading brightest; using firefly amber as a solid UI fill; using a familiarity hue without its icon + label.
@@ -296,7 +310,8 @@ Illustrated primarily by [`mockups/drill-and-picker.html`](mockups/drill-and-pic
 - **Grade buttons** — three equal-width buttons in a `9px`-gap row over a faint `rgba(255,255,255,.04)` fill, each with a neon edge + glow and a coloured label: **Incorrect** (magenta) · **Close** (amber) · **Correct** (cyan), `rounded/grade` 14px. **No subtext** — single word each. (Order/placement is EXPERIENCE.md's call.)
 - **CTA button** — fully-round pill with a **cyan gradient** (`cyan → cyan-bright`), `cyan-on` ink, and a cyan glow (`0 0 32px rgba(56,240,230,.65)`); trailing **✦** spark (e.g. "Let's practice ✦", "Begin ✦"). The FAB is a round cyan button with the same glow.
 - **Top-bar avatar / switcher** — 38px circular `QAvatar`, fully round, light ring (`2px rgba(241,240,255,.20)`), filled with a familiarity-ramp hue per user (Dani = violet, Jake = amber; decorative, not semantic). Tapping opens a `field-raise`-solid `QMenu` popover listing **Switch user** + **Settings**. See [`mockups/home.html`](mockups/home.html).
-- **Word row** (`.wrow`) — library list item: Japanese (24px, `ink-hi`) with small reading beneath, English meaning (`ink-mid`), a familiarity icon at the end, hairline violet divider between rows. Private words carry a `🔒` amber mark (shared shows none). See [`mockups/library.html`](mockups/library.html).
+- **Library filter tabs** — a two-level filter nav above the word list. **Level-1 sections** (textbook sources · Custom · Topics) are cyan pills — solid cyan with a cyan glow when active. **Level-2 subsections** (lessons, or shared/private, or topic names) are **violet** pills, and smaller: violet is the tertiary accent, so it reads as subordinate to the cyan parent, and the size step reinforces the hierarchy. Idle pills of both levels share the quiet violet-tint outline. See [`mockups/library.html`](mockups/library.html).
+- **Word row** (`.wrow`) — library list item: the Japanese headword (24px) with a small reading beneath, English meaning (`ink-mid`), a familiarity icon at the end, hairline violet divider between rows. The Japanese is **colour-split**: a **kanji** headword glows **cyan** (`#38f0e6`), while **kana** — a kana-only headword or the hiragana reading line — glows **lamp-yellow** (`#ffd24a`). Private words carry a `🔒` amber mark (shared shows none). See [`mockups/library.html`](mockups/library.html).
 - **Glass panel** (`.reveal` / `.whead` / `.action` / `.list`) — the generic translucent content surface from Elevation: `rounded/field-panel` 20px, `blur(16px)`, violet border, inset highlight, at z:1 above the firefly layer so fireflies behind it bloom dimmer.
 - **Firefly layer** — a few **amber / cyan / magenta** CSS dots at **z:4**, each a solid coloured core with a soft bloom (`box-shadow`), drifting on long looping paths (9–20s) with a scale+opacity bloom pulse — a touch brighter and denser than the forest identity. Renders **behind all content panels**; full over the plain field, dimmer through glass. **`prefers-reduced-motion` → static dim dots** (opacity .4, no travel).
 
@@ -309,6 +324,8 @@ Supporting components in the mocks (inherit Quasar mechanics, brand-tinted): not
 | Reserve **cyan `#38f0e6` + glow** for the primary accent and, brightest of all, the **practiced Japanese word** | Scatter cyan glow so widely that the practiced word no longer reads as the brightest thing |
 | Use **cyan** primary, **magenta** + **violet** secondary/tertiary as specified | Introduce a colour outside the neon families, or use amber as a solid chrome fill |
 | Render the familiarity ramp as **colour + distinct icon + text label** | Rely on colour alone, or reuse the category-pill style for familiarity |
+| Colour Japanese by script in lists: **kanji cyan, kana lamp-yellow** | Colour kana cyan, or paint a whole row one colour |
+| Keep library **level-1 sections cyan, level-2 subsections violet** (smaller) | Make subsections louder than sections, or reuse cyan for both levels |
 | Keep **familiarity icon ≠ category pill** — different shape, placement, purpose | Style familiarity as a pill, or scatter category pills as familiarity signals |
 | Keep grade buttons to single words: **Incorrect / Close / Correct** | Add per-grade subtext or a fourth grade |
 | Keep fireflies **sparse-ish, slow, behind panels**, multi-colour, with a reduced-motion fallback | Make them dense/fast/strobing, place them above content, or omit the static fallback |
