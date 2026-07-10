@@ -2,7 +2,7 @@
 title: "Hotaru — Experience (EXPERIENCE.md)"
 status: final
 created: 2026-06-10
-updated: 2026-06-12
+updated: 2026-07-06
 sources:
   - ../../prds/prd-application-dock-2026-06-10/prd.md
   - ../../briefs/brief-application-dock-2026-06-10/brief.md
@@ -20,7 +20,7 @@ inherits_ui_system: "Vue 3 + Quasar v2 (Material-based)"
 - **Form factor:** mobile web only — **phone viewport**. Single-column, **full-bleed** screens (no floating-card-in-frame). No wider-screen or desktop layouts; couch and bus use are both on the phone.
 - **UI system:** **Vue 3 + Quasar v2** (Material-based), inherited from the Application Dock platform. `DESIGN.md` extends Quasar tokens; this spine specifies only the behavioural delta. The sibling app (Archery Score Counter) is the Quasar precedent to match for platform consistency.
 - **Lives inside the shell:** Hotaru is one app card on the Dock landing page, under its own route, following the platform's "adding a new app" conventions (FR-1). Identity, persistence, and the single HTTP boundary follow platform conventions.
-- **Visual reference:** `DESIGN.md` owns the locked **forest-fireflies-c** world — warm moss green-brown twilight field, bamboo-green primary accent, beige/washi surfaces, warm firefly-amber glow, sparse drifting CSS fireflies, full-bleed layout. This document does not restate visuals; it references tokens by name.
+- **Visual reference:** `DESIGN.md` owns the locked **Neon Yūgure** world — deep-indigo dusk field, **cyan** primary accent (magenta/violet secondary), violet **glass** panels, amber/cyan/magenta drifting CSS fireflies, the practiced word glowing cyan, full-bleed layout. (This supersedes the earlier forest-twilight skin, kept as a backup — see `DESIGN.md` Appendix.) This document does not restate visuals; it references tokens by name.
 
 ## Information Architecture
 
@@ -154,4 +154,4 @@ Named-protagonist flows mirroring the PRD's UJ IDs verbatim.
 - **FR-9 Genki seeding** is an offline pipeline, explicitly out-of-app (PRD §6.2). It has no dedicated UI surface; it surfaces only as preloaded Lessons in Library/picker. Noted, not a screen.
 - **Settings surface** (reached from the avatar menu) is referenced but not specified — PRD gives it no FRs beyond the menu entry; left as a stub for v1 (consistent with platform; Phase II "✨ improve" affordance, PRD §10, would live near Word detail and is intentionally absent in v1).
 - **Persisted practice preferences** are explicitly out of scope (PRD §6.2) — Direction/Scoring are per-session, reflected in the Direction-toggle rule.
-- **Token names** are reconciled against the locked `DESIGN.md`: `{colors.lamp-yellow}`, `{colors.bamboo}`, `{colors.fam-1-new}`–`{colors.fam-5-mastered}`, `{colors.firefly}`, the drill-card glows `{components.drill-card.ambient-glow}` / `{components.drill-card.jp-glow}`, and avatar fills `{components.avatar.bg-jake}` / `{components.avatar.bg-dani}` all resolve against `DESIGN.md`.
+- **Token names** are reconciled against the locked `DESIGN.md`: `{colors.lamp-yellow}`, `{colors.cyan}`, `{colors.fam-1-new}`–`{colors.fam-5-mastered}`, `{colors.firefly}`, the drill-card glows `{components.drill-card.ambient-glow}` / `{components.drill-card.jp-glow}`, and avatar fills `{components.avatar.bg-jake}` / `{components.avatar.bg-dani}` all resolve against `DESIGN.md`.
