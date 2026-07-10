@@ -78,3 +78,10 @@ class PracticeOverview(BaseModel):
     scope: str
     word_count: int
     familiarity: list[int]
+
+
+class QueueItem(BaseModel):
+    # One drill card. A thin wrapper so later stories can attach per-card data
+    # (Epic 3 adds notes) without changing the endpoint shape. Queue-not-debt:
+    # carries NO due/overdue/next_review_at — "due" only orders the queue.
+    word: Word

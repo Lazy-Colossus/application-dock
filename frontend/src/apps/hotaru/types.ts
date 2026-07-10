@@ -40,3 +40,8 @@ export interface PracticeOverview {
   word_count: number;
   familiarity: number[];
 }
+
+// One drill card. Thin wrapper (Epic 3 will attach notes); no due-debt.
+export interface QueueItem {
+  word: Word;
+}

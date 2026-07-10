@@ -7,10 +7,19 @@ due-count/overdue/next_review_at.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from app.repositories import progress_repo
-from app.schemas.hotaru import PracticeOverview, Word
-from app.services import hotaru_vocab_service
+from app.schemas.hotaru import DrillCap, PracticeOverview, ProgressEntry, QueueItem, Word
+from app.services import hotaru_vocab_service, srs
 from app.services.srs import MAX_TIER
+
+# Calm session bound — the queue is soft-capped to this many cards (tunable).
+DEFAULT_SESSION_SIZE = 20
+
+# Sentinel "most-due" instant for never-reviewed words, so they sort ahead of
+# any word that has an actual due time.
+_EPOCH = datetime.min.replace(tzinfo=UTC)
 
 
 def _words_for_scope(scope: str, user: str) -> list[Word]:
@@ -40,3 +49,33 @@ def overview(scope: str, user: str) -> PracticeOverview:
         entry = progress.get(w.id)
         familiarity[entry.tier if entry else 0] += 1
     return PracticeOverview(scope=scope, word_count=len(words), familiarity=familiarity)
+
+
+def build_queue(
+    scope: str,
+    user: str,
+    direction: DrillCap = "r2m",
+    now: datetime | None = None,
+    limit: int = DEFAULT_SESSION_SIZE,
+) -> list[QueueItem]:
+    """Build an ordered, soft-capped drill queue for a scope.
+
+    Words are filtered to those whose `drill_caps` include `direction`, then
+    ordered most-worth-reviewing first (weakest tier first, then most-due), and
+    the first `limit` are returned. "Due" only orders the queue — it never
+    leaves the API (queue-not-debt).
+
+    `now` is injected here (defaulting to the current UTC time) so the pure
+    `srs` engine stays clock-free; tests pass a fixed `now`.
+    """
+    now = now or datetime.now(UTC)
+    words = [w for w in _words_for_scope(scope, user) if direction in w.drill_caps]
+    progress = progress_repo.read_progress(user)
+
+    def sort_key(w: Word) -> tuple[int, int, datetime, str]:
+        entry = progress.get(w.id) or ProgressEntry()
+        due_first = 0 if srs.is_due(entry, now) else 1
+        return (entry.tier, due_first, srs.due_at(entry) or _EPOCH, w.id)
+
+    ordered = sorted(words, key=sort_key)
+    return [QueueItem(word=w) for w in ordered[:limit]]

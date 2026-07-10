@@ -76,7 +76,15 @@
         </span>
         <span>{{ count }}</span>
       </div>
-      <!-- The "Let's practice" launch CTA arrives in Story 2.3 (the drill). -->
+
+      <q-btn
+        class="practice-start full-width q-mt-md"
+        label="Let's practice ✦"
+        unelevated
+        no-caps
+        data-testid="start-drill"
+        @click="startDrill"
+      />
     </div>
   </q-page>
 </template>
@@ -111,6 +119,11 @@ function select(scope: string): void {
   if (user === null) return;
   selected.value = scope;
   void practice.loadOverview(scope, user);
+}
+
+function startDrill(): void {
+  if (selected.value === null) return;
+  void router.push(`/hotaru/drill?scope=${encodeURIComponent(selected.value)}`);
 }
 
 onMounted(async () => {
@@ -181,6 +194,13 @@ onMounted(async () => {
   font-size: 14px
   color: var(--hotaru-cream-soft)
   padding: 3px 0
+
+.practice-start
+  height: 52px
+  border-radius: 14px
+  background: linear-gradient(180deg, var(--hotaru-bamboo-bright), var(--hotaru-bamboo))
+  color: var(--hotaru-bamboo-on)
+  box-shadow: 0 8px 20px rgba(16, 168, 159, 0.4), 0 0 20px rgba(56, 240, 230, 0.22)
 
 .tier-label
   gap: 10px

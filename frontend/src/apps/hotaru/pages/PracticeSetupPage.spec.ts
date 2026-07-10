@@ -47,7 +47,15 @@ const OVERVIEW = {
   familiarity: [2, 1, 0, 0, 0],
 };
 
-const STUBS = { "q-page": { template: "<div><slot /></div>" } };
+const STUBS = {
+  "q-page": { template: "<div><slot /></div>" },
+  "q-btn": {
+    template:
+      "<button :data-testid=\"$attrs['data-testid']\" @click=\"$emit('click')\">{{ label }}</button>",
+    props: ["label", "unelevated", "noCaps"],
+    emits: ["click"],
+  },
+};
 
 beforeEach(() => {
   setActivePinia(createPinia());
@@ -89,6 +97,17 @@ describe("PracticeSetupPage", () => {
     expect(wrapper.find('[data-testid="tier-0"]').text()).toContain("New");
     expect(wrapper.find('[data-testid="tier-0"]').text()).toContain("2");
     expect(wrapper.find('[data-testid="tier-1"]').text()).toContain("1");
+  });
+
+  it("launches the drill for the selected scope via the CTA", async () => {
+    const wrapper = mount(PracticeSetupPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    // No CTA until a scope is chosen.
+    expect(wrapper.find('[data-testid="start-drill"]').exists()).toBe(false);
+    await wrapper.find('[data-testid="scope-lesson-L2"]').trigger("click");
+    await flushPromises();
+    await wrapper.find('[data-testid="start-drill"]').trigger("click");
+    expect(push).toHaveBeenCalledWith("/hotaru/drill?scope=lesson%3AL2");
   });
 
   it("redirects to identity when no active user is set", async () => {

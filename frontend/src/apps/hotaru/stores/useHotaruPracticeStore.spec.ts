@@ -38,4 +38,24 @@ describe("useHotaruPracticeStore", () => {
     expect(store.error).toBe("Invalid scope 'bogus'.");
     expect(store.loading).toBe(false);
   });
+
+  it("loads the queue from the scope+direction endpoint", async () => {
+    const items = [{ word: { id: "a" } }, { word: { id: "b" } }];
+    getMock.mockResolvedValueOnce(items);
+    const store = useHotaruPracticeStore();
+    await store.loadQueue("lesson:L2", "dani");
+    expect(getMock).toHaveBeenCalledWith(
+      "/hotaru/practice/queue?scope=lesson%3AL2&user=dani&direction=r2m",
+    );
+    expect(store.queue.map((i) => i.word.id)).toEqual(["a", "b"]);
+    expect(store.error).toBeNull();
+  });
+
+  it("loadQueue surfaces errors", async () => {
+    getMock.mockRejectedValueOnce({ detail: "Invalid scope 'x'." });
+    const store = useHotaruPracticeStore();
+    await store.loadQueue("x", "dani");
+    expect(store.error).toBe("Invalid scope 'x'.");
+    expect(store.loading).toBe(false);
+  });
 });

@@ -3,8 +3,10 @@ from fastapi import APIRouter, HTTPException
 from app.schemas.hotaru import (
     CreateTopicRequest,
     CreateWordRequest,
+    DrillCap,
     HotaruUser,
     PracticeOverview,
+    QueueItem,
     Topic,
     UpdateWordRequest,
     Word,
@@ -135,5 +137,15 @@ def practice_overview(scope: str, user: str) -> PracticeOverview:
         raise HTTPException(status_code=404, detail=f"Unknown user {user}.")
     try:
         return hotaru_practice_service.overview(scope=scope, user=user)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/practice/queue", response_model=list[QueueItem])
+def practice_queue(scope: str, user: str, direction: DrillCap = "r2m") -> list[QueueItem]:
+    if user not in VALID_USER_IDS:
+        raise HTTPException(status_code=404, detail=f"Unknown user {user}.")
+    try:
+        return hotaru_practice_service.build_queue(scope=scope, user=user, direction=direction)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

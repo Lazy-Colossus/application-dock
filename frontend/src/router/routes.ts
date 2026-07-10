@@ -42,6 +42,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "Practice" },
       },
       {
+        path: "hotaru/drill",
+        name: "hotaru-drill",
+        component: () => import("@/apps/hotaru/pages/DrillPage.vue"),
+        meta: { title: "Practice" },
+      },
+      {
         path: "hotaru/add-word",
         name: "hotaru-add-word",
         component: () => import("@/apps/hotaru/pages/AddWordPage.vue"),
