@@ -3,6 +3,7 @@ import { defineStore } from "pinia";
 import { api } from "@/composables/useApi";
 import type {
   DrillCap,
+  GradeItem,
   PracticeOverview,
   QueueItem,
 } from "@/apps/hotaru/types";
@@ -49,5 +50,33 @@ export const useHotaruPracticeStore = defineStore("hotaruPractice", () => {
     }
   }
 
-  return { overview, queue, loading, error, loadOverview, loadQueue };
+  // Background batch grade sync — best-effort. Returns whether it succeeded so
+  // the caller can re-queue on failure. Deliberately touches NEITHER `loading`
+  // NOR the shared `error`: an optimistic background sync must never block or
+  // hijack the drill UI (which reads `error` for real page-level failures).
+  async function submitGrades(
+    user: string,
+    grades: GradeItem[],
+  ): Promise<boolean> {
+    if (grades.length === 0) return true;
+    try {
+      await api.post(
+        `/hotaru/practice/grades?user=${encodeURIComponent(user)}`,
+        grades as unknown as Record<string, unknown>[],
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  return {
+    overview,
+    queue,
+    loading,
+    error,
+    loadOverview,
+    loadQueue,
+    submitGrades,
+  };
 });

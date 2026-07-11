@@ -4,8 +4,10 @@ from app.schemas.hotaru import (
     CreateTopicRequest,
     CreateWordRequest,
     DrillCap,
+    GradeItem,
     HotaruUser,
     PracticeOverview,
+    ProgressEntry,
     QueueItem,
     Topic,
     UpdateWordRequest,
@@ -149,3 +151,10 @@ def practice_queue(scope: str, user: str, direction: DrillCap = "r2m") -> list[Q
         return hotaru_practice_service.build_queue(scope=scope, user=user, direction=direction)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/practice/grades", response_model=dict[str, ProgressEntry])
+def practice_grades(grades: list[GradeItem], user: str) -> dict[str, ProgressEntry]:
+    if user not in VALID_USER_IDS:
+        raise HTTPException(status_code=404, detail=f"Unknown user {user}.")
+    return hotaru_practice_service.apply_grades(user=user, grades=grades)

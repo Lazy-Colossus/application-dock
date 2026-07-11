@@ -1,12 +1,14 @@
 import { ref, computed, type Ref } from "vue";
-import type { QueueItem } from "@/apps/hotaru/types";
+import type { DrillGrade, GradeItem, QueueItem } from "@/apps/hotaru/types";
 
-// The prompt → reveal → advance state machine for a drill session, over a queue
-// the store owns. Pure in-session state — no API calls. Story 2.5 will extend
-// `next()` into "grade then advance" with optimistic sync.
+// The prompt → reveal → grade → advance state machine for a drill session, over
+// a queue the store owns. Pure in-session state — no API calls; the page owns
+// syncing the buffered `pending` grades.
 export function useDrill(queue: Ref<QueueItem[]>) {
   const index = ref(0);
   const revealed = ref(false);
+  // Grades recorded this session, buffered for a background batch sync.
+  const pending = ref<GradeItem[]>([]);
 
   const total = computed(() => queue.value.length);
   const finished = computed(() => index.value >= queue.value.length);
@@ -28,6 +30,14 @@ export function useDrill(queue: Ref<QueueItem[]>) {
     revealed.value = false;
   }
 
+  // Record a grade for the current card and advance immediately (optimistic).
+  function grade(g: DrillGrade): void {
+    const item = current.value;
+    if (!item) return;
+    pending.value.push({ word_id: item.word.id, grade: g });
+    next();
+  }
+
   return {
     index,
     total,
@@ -35,7 +45,9 @@ export function useDrill(queue: Ref<QueueItem[]>) {
     current,
     finished,
     progress,
+    pending,
     reveal,
     next,
+    grade,
   };
 }

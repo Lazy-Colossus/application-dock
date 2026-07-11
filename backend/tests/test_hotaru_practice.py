@@ -164,3 +164,61 @@ def test_queue_unknown_user_is_404() -> None:
 
 def test_queue_invalid_direction_is_422() -> None:
     assert _queue("lesson:L2", direction="bogus").status_code == 422
+
+
+# --- grades ----------------------------------------------------------------
+
+
+def _grade(grades: list[dict], user: str = "dani"):
+    return client.post("/api/hotaru/practice/grades", params={"user": user}, json=grades)
+
+
+def test_grade_correct_advances_a_new_word() -> None:
+    wid = _make_word({"reading": "ねこ", "meaning": "cat"})
+    r = _grade([{"word_id": wid, "grade": "correct"}])
+    assert r.status_code == 200
+    # New word (tier 0, threshold 1) → Correct advances to Learning (tier 1).
+    assert r.json()[wid]["tier"] == 1
+    # Persisted, with a review timestamp.
+    entry = progress_repo.get_entry("dani", wid)
+    assert entry is not None and entry.tier == 1 and entry.last_reviewed_at is not None
+
+
+def test_grade_incorrect_drops_a_tier() -> None:
+    wid = _make_word({"reading": "いぬ", "meaning": "dog"})
+    progress_repo.set_entry("dani", wid, ProgressEntry(tier=3, points=2, last_reviewed_at=NOW))
+    r = _grade([{"word_id": wid, "grade": "incorrect"}])
+    assert r.json()[wid]["tier"] == 2
+    assert r.json()[wid]["points"] == 0
+
+
+def test_grade_batch_applies_all() -> None:
+    a = _make_word({"reading": "あ", "meaning": "a"})
+    b = _make_word({"reading": "い", "meaning": "i"})
+    r = _grade([{"word_id": a, "grade": "correct"}, {"word_id": b, "grade": "close"}])
+    body = r.json()
+    assert set(body.keys()) == {a, b}
+    assert progress_repo.get_entry("dani", a).tier == 1  # correct → advance
+    # A reviewed word is never New: even Close graduates a first exposure.
+    assert progress_repo.get_entry("dani", b).tier == 1
+
+
+def test_grades_are_scoped_to_the_user() -> None:
+    wid = _make_word({"reading": "ねこ", "meaning": "cat"})
+    _grade([{"word_id": wid, "grade": "correct"}], user="dani")
+    assert progress_repo.get_entry("dani", wid) is not None
+    assert progress_repo.read_progress("jake") == {}
+
+
+def test_grade_response_has_no_due_debt() -> None:
+    wid = _make_word({"reading": "ねこ", "meaning": "cat"})
+    entry = _grade([{"word_id": wid, "grade": "correct"}]).json()[wid]
+    assert set(entry.keys()) == {"tier", "points", "last_reviewed_at"}
+
+
+def test_grade_unknown_user_is_404() -> None:
+    assert _grade([{"word_id": "x", "grade": "correct"}], user="ghost").status_code == 404
+
+
+def test_grade_invalid_value_is_422() -> None:
+    assert _grade([{"word_id": "x", "grade": "bogus"}]).status_code == 422

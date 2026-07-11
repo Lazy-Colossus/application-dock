@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock } = vi.hoisted(() => ({ getMock: vi.fn() }));
+const { getMock, postMock } = vi.hoisted(() => ({
+  getMock: vi.fn(),
+  postMock: vi.fn(),
+}));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
-  api: { get: getMock, post: vi.fn(), put: vi.fn(), del: vi.fn() },
+  api: { get: getMock, post: postMock, put: vi.fn(), del: vi.fn() },
 }));
 
 import { useHotaruPracticeStore } from "./useHotaruPracticeStore";
@@ -12,6 +15,7 @@ import { useHotaruPracticeStore } from "./useHotaruPracticeStore";
 beforeEach(() => {
   setActivePinia(createPinia());
   getMock.mockReset();
+  postMock.mockReset().mockResolvedValue({});
 });
 
 describe("useHotaruPracticeStore", () => {
@@ -57,5 +61,33 @@ describe("useHotaruPracticeStore", () => {
     await store.loadQueue("x", "dani");
     expect(store.error).toBe("Invalid scope 'x'.");
     expect(store.loading).toBe(false);
+  });
+
+  it("submitGrades posts the batch without touching loading", async () => {
+    const store = useHotaruPracticeStore();
+    const grades = [{ word_id: "a", grade: "correct" as const }];
+    await store.submitGrades("dani", grades);
+    expect(postMock).toHaveBeenCalledWith(
+      "/hotaru/practice/grades?user=dani",
+      grades,
+    );
+    expect(store.loading).toBe(false);
+  });
+
+  it("submitGrades is a no-op for an empty batch", async () => {
+    const store = useHotaruPracticeStore();
+    await store.submitGrades("dani", []);
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it("submitGrades is best-effort: returns false on failure, never touches shared error", async () => {
+    postMock.mockRejectedValueOnce({ detail: "boom" });
+    const store = useHotaruPracticeStore();
+    const ok = await store.submitGrades("dani", [
+      { word_id: "a", grade: "close" as const },
+    ]);
+    expect(ok).toBe(false);
+    // A background sync failure must not hijack the drill/picker page error.
+    expect(store.error).toBeNull();
   });
 });

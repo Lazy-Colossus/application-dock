@@ -45,3 +45,11 @@ export interface PracticeOverview {
 export interface QueueItem {
   word: Word;
 }
+
+// A self-grade on a drilled card.
+export type DrillGrade = "correct" | "close" | "incorrect";
+
+export interface GradeItem {
+  word_id: string;
+  grade: DrillGrade;
+}

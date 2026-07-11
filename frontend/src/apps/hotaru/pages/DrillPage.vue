@@ -86,28 +86,22 @@
         data-testid="reveal-btn"
         @click="reveal"
       />
-      <q-btn
-        v-else
-        class="drill-btn full-width q-mt-md"
-        label="Next"
-        unelevated
-        no-caps
-        data-testid="next-btn"
-        @click="next"
-      />
+      <GradeButtons v-else class="q-mt-md" @grade="onGrade" />
     </template>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { storeToRefs } from "pinia";
 import { useRoute, useRouter } from "vue-router";
 import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
 import Flashcard from "@/apps/hotaru/components/Flashcard.vue";
+import GradeButtons from "@/apps/hotaru/components/GradeButtons.vue";
 import { useDrill } from "@/apps/hotaru/composables/useDrill";
 import { useHotaruPracticeStore } from "@/apps/hotaru/stores/useHotaruPracticeStore";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
+import type { DrillGrade } from "@/apps/hotaru/types";
 import "./../css/hotaru.sass";
 
 const store = useHotaruPracticeStore();
@@ -116,8 +110,50 @@ const router = useRouter();
 const route = useRoute();
 
 const { queue } = storeToRefs(store);
-const { index, total, finished, current, revealed, progress, reveal, next } =
-  useDrill(queue);
+const {
+  index,
+  total,
+  finished,
+  current,
+  revealed,
+  progress,
+  pending,
+  reveal,
+  grade,
+} = useDrill(queue);
+
+// The user this session belongs to (captured at mount) — grades are always
+// attributed to them, even if the active user changes mid-session.
+let drillUser = "";
+let flushing = false;
+
+// Drain the buffered grades to the server, one batch at a time. Serialised via
+// `flushing` so syncs never overlap (preserving grade order); called after every
+// grade so progress survives a mid-session close, plus on end/unmount/switch as
+// a safety net. Fire-and-forget — the UI never waits on it (optimistic).
+async function flushGrades(): Promise<void> {
+  if (!drillUser || flushing) return;
+  flushing = true;
+  try {
+    while (pending.value.length > 0) {
+      const batch = pending.value.splice(0);
+      const ok = await store.submitGrades(drillUser, batch);
+      if (!ok) {
+        // Re-queue for the next flush (next grade / finish / unmount) and stop
+        // draining — never tight-loop on a persistent failure.
+        pending.value.unshift(...batch);
+        break;
+      }
+    }
+  } finally {
+    flushing = false;
+  }
+}
+
+function onGrade(g: DrillGrade): void {
+  grade(g);
+  void flushGrades();
+}
 
 // Per-session reveal aids: furigana (kana above kanji, on the prompt) and
 // romaji (on the reveal). One "eye" button toggles whichever fits the step.
@@ -166,6 +202,7 @@ onMounted(async () => {
     void router.replace("/hotaru/identity");
     return;
   }
+  drillUser = userStore.activeUserId;
   const scope = typeof route.query.scope === "string" ? route.query.scope : "";
   if (!scope) {
     // No scope chosen — send the learner back to the picker.
@@ -174,6 +211,25 @@ onMounted(async () => {
   }
   await store.loadQueue(scope, userStore.activeUserId);
 });
+
+// Safety-net syncs: when the session ends and when leaving the page.
+watch(finished, (done) => {
+  if (done) void flushGrades();
+});
+onBeforeUnmount(() => {
+  void flushGrades();
+});
+
+// User-switch = hard boundary: flush the prior user's grades, discard the queue.
+watch(
+  () => userStore.activeUserId,
+  (now) => {
+    if (drillUser && now !== drillUser) {
+      void flushGrades();
+      void router.replace("/hotaru");
+    }
+  },
+);
 </script>
 
 <style scoped lang="sass">

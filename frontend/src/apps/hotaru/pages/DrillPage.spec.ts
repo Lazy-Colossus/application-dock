@@ -2,15 +2,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, push, replace, routeQuery } = vi.hoisted(() => ({
+const { getMock, postMock, push, replace, routeQuery } = vi.hoisted(() => ({
   getMock: vi.fn(),
+  postMock: vi.fn(),
   push: vi.fn(),
   replace: vi.fn(),
   routeQuery: { value: { scope: "lesson:L2" } as Record<string, string> },
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
-  api: { get: getMock, post: vi.fn(), put: vi.fn(), del: vi.fn() },
+  api: { get: getMock, post: postMock, put: vi.fn(), del: vi.fn() },
 }));
 vi.mock("vue-router", () => ({
   useRouter: () => ({ push, replace }),
@@ -72,6 +73,7 @@ beforeEach(() => {
       ? Promise.resolve(USERS)
       : Promise.resolve(queue),
   );
+  postMock.mockReset().mockResolvedValue({});
   push.mockReset();
   replace.mockReset();
 });
@@ -91,14 +93,16 @@ describe("DrillPage", () => {
     );
   });
 
-  it("reveals then advances to the next card", async () => {
+  it("reveals then grades to advance to the next card", async () => {
     const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
     await flushPromises();
     await wrapper.find('[data-testid="reveal-btn"]').trigger("click");
     expect(wrapper.find('[data-testid="card-answer"]').text()).toContain(
       "university",
     );
-    await wrapper.find('[data-testid="next-btn"]').trigger("click");
+    // Grade buttons replace the plain "Next".
+    expect(wrapper.find('[data-testid="next-btn"]').exists()).toBe(false);
+    await wrapper.find('[data-testid="grade-correct"]').trigger("click");
     expect(wrapper.find('[data-testid="card-prompt"]').text()).toBe(
       "ありがとう",
     );
@@ -107,14 +111,32 @@ describe("DrillPage", () => {
     );
   });
 
-  it("reaches a clean end when the queue is exhausted", async () => {
+  it("syncs each grade in the background mid-session", async () => {
+    const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    // Grade the first of two cards — it syncs immediately, before the end.
+    await wrapper.find('[data-testid="reveal-btn"]').trigger("click");
+    await wrapper.find('[data-testid="grade-correct"]').trigger("click");
+    await flushPromises();
+    expect(postMock).toHaveBeenCalledWith("/hotaru/practice/grades?user=dani", [
+      { word_id: "g1", grade: "correct" },
+    ]);
+    // Still mid-session (second card showing), not the done state.
+    expect(wrapper.find('[data-testid="flashcard"]').exists()).toBe(true);
+  });
+
+  it("reaches a clean end and flushes a grade batch", async () => {
     queue = [{ word: word("g1", "猫", "ねこ", "cat") }];
     const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
     await flushPromises();
     await wrapper.find('[data-testid="reveal-btn"]').trigger("click");
-    await wrapper.find('[data-testid="next-btn"]').trigger("click");
+    await wrapper.find('[data-testid="grade-close"]').trigger("click");
+    await flushPromises();
     expect(wrapper.find('[data-testid="drill-done"]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid="flashcard"]').exists()).toBe(false);
+    // The batch synced in the background to the grades endpoint.
+    expect(postMock).toHaveBeenCalledWith("/hotaru/practice/grades?user=dani", [
+      { word_id: "g1", grade: "close" },
+    ]);
   });
 
   it("shows the scope label passed by the picker above the card", async () => {

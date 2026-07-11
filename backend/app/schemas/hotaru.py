@@ -85,3 +85,9 @@ class QueueItem(BaseModel):
     # (Epic 3 adds notes) without changing the endpoint shape. Queue-not-debt:
     # carries NO due/overdue/next_review_at — "due" only orders the queue.
     word: Word
+
+
+class GradeItem(BaseModel):
+    # One graded card in a batch submission.
+    word_id: str
+    grade: Grade

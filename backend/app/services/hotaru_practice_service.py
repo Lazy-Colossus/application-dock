@@ -10,7 +10,14 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from app.repositories import progress_repo
-from app.schemas.hotaru import DrillCap, PracticeOverview, ProgressEntry, QueueItem, Word
+from app.schemas.hotaru import (
+    DrillCap,
+    GradeItem,
+    PracticeOverview,
+    ProgressEntry,
+    QueueItem,
+    Word,
+)
 from app.services import hotaru_vocab_service, srs
 from app.services.srs import MAX_TIER
 
@@ -79,3 +86,27 @@ def build_queue(
 
     ordered = sorted(words, key=sort_key)
     return [QueueItem(word=w) for w in ordered[:limit]]
+
+
+def apply_grades(
+    user: str,
+    grades: list[GradeItem],
+    now: datetime | None = None,
+) -> dict[str, ProgressEntry]:
+    """Apply a batch of grades to the user's progress via the pure SRS engine.
+
+    Read-modify-write the user's progress map once. Grades apply in order, so a
+    repeated word builds on its earlier result. `now` is injected here (default
+    current UTC) so `srs` stays clock-free. Returns just the updated entries;
+    `ProgressEntry` has no due field, so nothing debt-like leaves the API.
+    """
+    now = now or datetime.now(UTC)
+    progress = progress_repo.read_progress(user)
+    updated: dict[str, ProgressEntry] = {}
+    for item in grades:
+        entry = progress.get(item.word_id) or ProgressEntry()
+        entry = srs.next_review(entry, item.grade, now)
+        progress[item.word_id] = entry
+        updated[item.word_id] = entry
+    progress_repo.write_progress(user, progress)
+    return updated

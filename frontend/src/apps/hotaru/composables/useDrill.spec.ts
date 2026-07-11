@@ -63,4 +63,18 @@ describe("useDrill", () => {
     expect(d.finished.value).toBe(true);
     expect(d.current.value).toBeNull();
   });
+
+  it("grade() buffers the grade for the current card and advances", () => {
+    const d = useDrill(queueOf("a", "b"));
+    d.grade("correct");
+    expect(d.pending.value).toEqual([{ word_id: "a", grade: "correct" }]);
+    expect(d.current.value?.word.id).toBe("b");
+    expect(d.revealed.value).toBe(false);
+    d.grade("incorrect");
+    expect(d.pending.value).toEqual([
+      { word_id: "a", grade: "correct" },
+      { word_id: "b", grade: "incorrect" },
+    ]);
+    expect(d.finished.value).toBe(true);
+  });
 });
