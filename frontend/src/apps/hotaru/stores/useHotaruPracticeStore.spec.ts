@@ -43,6 +43,33 @@ describe("useHotaruPracticeStore", () => {
     expect(store.loading).toBe(false);
   });
 
+  it("fetchOverview returns the overview without touching loading/error", async () => {
+    const overview = {
+      scope: "lesson:L2",
+      word_count: 4,
+      familiarity: [1, 1, 1, 1, 0],
+    };
+    getMock.mockResolvedValueOnce(overview);
+    const store = useHotaruPracticeStore();
+    const ov = await store.fetchOverview("lesson:L2", "dani");
+    expect(getMock).toHaveBeenCalledWith(
+      "/hotaru/practice/overview?scope=lesson%3AL2&user=dani",
+    );
+    expect(ov).toEqual(overview);
+    // Best-effort getter — does not become the picker's `overview` state.
+    expect(store.overview).toBeNull();
+    expect(store.loading).toBe(false);
+    expect(store.error).toBeNull();
+  });
+
+  it("fetchOverview returns null on failure without setting error", async () => {
+    getMock.mockRejectedValueOnce(new Error("boom"));
+    const store = useHotaruPracticeStore();
+    const ov = await store.fetchOverview("lesson:L2", "dani");
+    expect(ov).toBeNull();
+    expect(store.error).toBeNull();
+  });
+
   it("loads the queue from the scope+direction endpoint", async () => {
     const items = [{ word: { id: "a" } }, { word: { id: "b" } }];
     getMock.mockResolvedValueOnce(items);

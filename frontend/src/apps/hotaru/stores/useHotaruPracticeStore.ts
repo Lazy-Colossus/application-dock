@@ -56,6 +56,24 @@ export const useHotaruPracticeStore = defineStore("hotaruPractice", () => {
     }
   }
 
+  // Best-effort read of a scope's overview (word count + familiarity), for the
+  // post-session summary. Returns the parsed overview or null on failure, and
+  // touches NEITHER `loading` NOR the shared `error` (like `submitGrades`): the
+  // finished drill must never be blanked by a page-level spinner/error, and
+  // `overview` above is the picker's own state.
+  async function fetchOverview(
+    scope: string,
+    user: string,
+  ): Promise<PracticeOverview | null> {
+    try {
+      return await api.get<PracticeOverview>(
+        `/hotaru/practice/overview?scope=${encodeURIComponent(scope)}&user=${encodeURIComponent(user)}`,
+      );
+    } catch {
+      return null;
+    }
+  }
+
   // Background batch grade sync — best-effort. Returns whether it succeeded so
   // the caller can re-queue on failure. Deliberately touches NEITHER `loading`
   // NOR the shared `error`: an optimistic background sync must never block or
@@ -83,6 +101,7 @@ export const useHotaruPracticeStore = defineStore("hotaruPractice", () => {
     error,
     clearOverview,
     loadOverview,
+    fetchOverview,
     loadQueue,
     submitGrades,
   };

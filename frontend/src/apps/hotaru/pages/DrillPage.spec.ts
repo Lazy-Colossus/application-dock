@@ -48,6 +48,12 @@ function word(
 
 let queue: { word: Word }[] = [];
 
+const OVERVIEW = {
+  scope: "lesson:L2",
+  word_count: 5,
+  familiarity: [3, 2, 0, 0, 0],
+};
+
 const STUBS = {
   "q-page": { template: "<div><slot /></div>" },
   "q-icon": { template: "<i />" },
@@ -68,11 +74,12 @@ beforeEach(() => {
     { word: word("g2", null, "ありがとう", "thanks") },
   ];
   getMock.mockReset();
-  getMock.mockImplementation((path: string) =>
-    path.startsWith("/hotaru/users")
-      ? Promise.resolve(USERS)
-      : Promise.resolve(queue),
-  );
+  getMock.mockImplementation((path: string) => {
+    if (path.startsWith("/hotaru/users")) return Promise.resolve(USERS);
+    if (path.startsWith("/hotaru/practice/overview"))
+      return Promise.resolve(OVERVIEW);
+    return Promise.resolve(queue);
+  });
   postMock.mockReset().mockResolvedValue({});
   push.mockReset();
   replace.mockReset();
@@ -245,6 +252,62 @@ describe("DrillPage", () => {
     expect(postMock).toHaveBeenCalledWith("/hotaru/practice/grades?user=dani", [
       { word_id: "g1", grade: "close" },
     ]);
+  });
+
+  it("ends with a recap: practised count, remaining-in-scope, updated familiarity", async () => {
+    const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    // Grade both cards to reach the end.
+    await wrapper.find('[data-testid="reveal-btn"]').trigger("click");
+    await wrapper.find('[data-testid="grade-correct"]').trigger("click");
+    await wrapper.find('[data-testid="reveal-btn"]').trigger("click");
+    await wrapper.find('[data-testid="grade-correct"]').trigger("click");
+    await flushPromises();
+    expect(wrapper.find('[data-testid="drill-done"]').exists()).toBe(true);
+    // Practised 2; scope has 5 → 3 remain.
+    expect(wrapper.find('[data-testid="summary-practised"]').text()).toContain(
+      "2",
+    );
+    expect(getMock).toHaveBeenCalledWith(
+      "/hotaru/practice/overview?scope=lesson%3AL2&user=dani",
+    );
+    expect(wrapper.find('[data-testid="summary-remaining"]').text()).toContain(
+      "3",
+    );
+    // Updated familiarity distribution rendered (New = 3, Learning = 2).
+    expect(wrapper.find('[data-testid="summary-tier-0"]').text()).toContain(
+      "New",
+    );
+    expect(wrapper.find('[data-testid="summary-tier-0"]').text()).toContain(
+      "3",
+    );
+    expect(wrapper.find('[data-testid="summary-tier-1"]').text()).toContain(
+      "2",
+    );
+  });
+
+  it("degrades gracefully when the summary stats fetch fails", async () => {
+    queue = [{ word: word("g1", "猫", "ねこ", "cat") }];
+    getMock.mockImplementation((path: string) => {
+      if (path.startsWith("/hotaru/users")) return Promise.resolve(USERS);
+      if (path.startsWith("/hotaru/practice/overview"))
+        return Promise.reject(new Error("stats down"));
+      return Promise.resolve(queue);
+    });
+    const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="reveal-btn"]').trigger("click");
+    await wrapper.find('[data-testid="grade-correct"]').trigger("click");
+    await flushPromises();
+    // Still shows the recap with the practised count — no page-level error.
+    expect(wrapper.find('[data-testid="drill-done"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="summary-practised"]').text()).toContain(
+      "1",
+    );
+    expect(wrapper.find('[data-testid="summary-remaining"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('[data-testid="drill-error"]').exists()).toBe(false);
   });
 
   it("shows the empty state when the scope has no words", async () => {

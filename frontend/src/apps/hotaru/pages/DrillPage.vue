@@ -26,14 +26,47 @@
       />
     </div>
 
-    <!-- Clean end. -->
+    <!-- Clean end — a calm recap. -->
     <div
       v-else-if="finished"
       class="drill-state column flex-center"
       data-testid="drill-done"
     >
       <div class="drill-done__glyph">蛍</div>
-      <div>Session complete.</div>
+      <div class="drill-done__title">Session complete.</div>
+
+      <div class="drill-summary hotaru-panel column">
+        <div class="drill-summary__practised" data-testid="summary-practised">
+          Practised {{ practised }} {{ practised === 1 ? "word" : "words" }}
+        </div>
+        <div
+          v-if="summaryLoading && !summary"
+          class="drill-summary__hint"
+          data-testid="summary-loading"
+        >
+          Tallying…
+        </div>
+        <template v-else-if="summary">
+          <div class="drill-summary__hint" data-testid="summary-remaining">
+            {{ remaining }} more in {{ scopeLabel }}
+          </div>
+          <div
+            class="drill-summary__fam column"
+            data-testid="summary-familiarity"
+          >
+            <div
+              v-for="(count, tier) in summary.familiarity"
+              :key="tier"
+              class="drill-summary__tier row items-center justify-between"
+              :data-testid="`summary-tier-${tier}`"
+            >
+              <FamiliarityIcon :tier="tier" show-label />
+              <span>{{ count }}</span>
+            </div>
+          </div>
+        </template>
+      </div>
+
       <q-btn
         class="drill-btn q-mt-md"
         label="Back to practice"
@@ -130,11 +163,12 @@ import { storeToRefs } from "pinia";
 import { useRoute, useRouter } from "vue-router";
 import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
 import Flashcard from "@/apps/hotaru/components/Flashcard.vue";
+import FamiliarityIcon from "@/apps/hotaru/components/FamiliarityIcon.vue";
 import GradeButtons from "@/apps/hotaru/components/GradeButtons.vue";
 import { useDrill } from "@/apps/hotaru/composables/useDrill";
 import { useHotaruPracticeStore } from "@/apps/hotaru/stores/useHotaruPracticeStore";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
-import type { DrillGrade } from "@/apps/hotaru/types";
+import type { DrillGrade, PracticeOverview } from "@/apps/hotaru/types";
 import "./../css/hotaru.sass";
 
 const store = useHotaruPracticeStore();
@@ -158,29 +192,32 @@ const {
 // The user this session belongs to (captured at mount) — grades are always
 // attributed to them, even if the active user changes mid-session.
 let drillUser = "";
-let flushing = false;
+// Serialised background drain of buffered grades. Concurrent callers await the
+// SAME in-flight drain (not an early return), so the post-session summary can
+// `await flushGrades()` and be sure every grade has actually synced before it
+// reads updated stats. Optimistic elsewhere — grading never waits on it.
+let flushPromise: Promise<void> | null = null;
 
-// Drain the buffered grades to the server, one batch at a time. Serialised via
-// `flushing` so syncs never overlap (preserving grade order); called after every
-// grade so progress survives a mid-session close, plus on end/unmount/switch as
-// a safety net. Fire-and-forget — the UI never waits on it (optimistic).
-async function flushGrades(): Promise<void> {
-  if (!drillUser || flushing) return;
-  flushing = true;
-  try {
-    while (pending.value.length > 0) {
-      const batch = pending.value.splice(0);
-      const ok = await store.submitGrades(drillUser, batch);
-      if (!ok) {
-        // Re-queue for the next flush (next grade / finish / unmount) and stop
-        // draining — never tight-loop on a persistent failure.
-        pending.value.unshift(...batch);
-        break;
+function flushGrades(): Promise<void> {
+  if (!drillUser) return Promise.resolve();
+  if (flushPromise) return flushPromise;
+  flushPromise = (async () => {
+    try {
+      while (pending.value.length > 0) {
+        const batch = pending.value.splice(0);
+        const ok = await store.submitGrades(drillUser, batch);
+        if (!ok) {
+          // Re-queue for the next flush (next grade / finish / unmount) and stop
+          // draining — never tight-loop on a persistent failure.
+          pending.value.unshift(...batch);
+          break;
+        }
       }
+    } finally {
+      flushPromise = null;
     }
-  } finally {
-    flushing = false;
-  }
+  })();
+  return flushPromise;
 }
 
 // Direction (JP→EN r2m / EN→JP m2r) and scoring mode come from the picker via
@@ -219,8 +256,20 @@ function submitTyped(): void {
   }
 }
 
+// Session recap: count grades through the single choke-point (both self-grade
+// and typed-Correct route here), and the scope stats fetched once we finish.
+const practised = ref(0);
+const summary = ref<PracticeOverview | null>(null);
+const summaryLoading = ref(false);
+const remaining = computed(() =>
+  summary.value
+    ? Math.max(0, summary.value.word_count - practised.value)
+    : null,
+);
+
 function onGrade(g: DrillGrade): void {
   grade(g);
+  practised.value += 1;
   typedAnswer.value = "";
   void flushGrades();
 }
@@ -290,9 +339,21 @@ onMounted(async () => {
   await store.loadQueue(scope, userStore.activeUserId, direction.value);
 });
 
-// Safety-net syncs: when the session ends and when leaving the page.
-watch(finished, (done) => {
-  if (done) void flushGrades();
+// On a clean end: sync every grade, THEN read the scope's updated stats for the
+// summary (best-effort — a failed/slow fetch just leaves the practised count).
+watch(finished, async (done) => {
+  if (!done) return;
+  summaryLoading.value = true;
+  try {
+    await flushGrades();
+    const scope =
+      typeof route.query.scope === "string" ? route.query.scope : "";
+    if (scope && drillUser) {
+      summary.value = await store.fetchOverview(scope, drillUser);
+    }
+  } finally {
+    summaryLoading.value = false;
+  }
 });
 onBeforeUnmount(() => {
   void flushGrades();
@@ -323,6 +384,32 @@ watch(
   color: var(--hotaru-lamp-yellow, #ffd24a)
   text-shadow: 0 0 26px rgba(255, 210, 74, 0.7)
   margin-bottom: 8px
+
+.drill-done__title
+  font-size: 16px
+  color: var(--hotaru-cream)
+
+.drill-summary
+  align-self: stretch
+  gap: 6px
+  margin-top: 16px
+  padding: 16px
+  text-align: left
+
+.drill-summary__practised
+  font-size: 18px
+  font-weight: 600
+  color: var(--hotaru-cream)
+
+.drill-summary__hint
+  font-size: 13px
+  color: var(--hotaru-cream-soft)
+  margin-bottom: 4px
+
+.drill-summary__tier
+  font-size: 14px
+  color: var(--hotaru-cream-soft)
+  padding: 3px 0
 
 .drill-glyph
   color: var(--hotaru-bamboo)
