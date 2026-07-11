@@ -187,6 +187,66 @@ describe("DrillPage", () => {
     );
   });
 
+  it("EN→JP: requests the m2r queue and prompts with the English meaning", async () => {
+    routeQuery.value = { scope: "lesson:L2", direction: "m2r" };
+    const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    expect(getMock).toHaveBeenCalledWith(
+      "/hotaru/practice/queue?scope=lesson%3AL2&user=dani&direction=m2r",
+    );
+    expect(wrapper.find('[data-testid="card-prompt"]').text()).toBe(
+      "university",
+    );
+  });
+
+  it("flips direction per-session without refetching the queue", async () => {
+    const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    expect(wrapper.find('[data-testid="card-prompt"]').text()).toBe("大学");
+    await wrapper.find('[data-testid="direction-toggle"]').trigger("click");
+    // Same card, now shown EN→JP (English prompt) — no second queue fetch.
+    expect(wrapper.find('[data-testid="card-prompt"]').text()).toBe(
+      "university",
+    );
+    const queueCalls = getMock.mock.calls.filter((c) =>
+      String(c[0]).startsWith("/hotaru/practice/queue"),
+    );
+    expect(queueCalls).toHaveLength(1);
+  });
+
+  it("typed mode: an exact reading match records Correct and advances", async () => {
+    routeQuery.value = { scope: "lesson:L2", direction: "m2r", mode: "typed" };
+    const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    // Typed UI replaces the Reveal button.
+    expect(wrapper.find('[data-testid="reveal-btn"]').exists()).toBe(false);
+    await wrapper.find('[data-testid="typed-input"]').setValue("だいがく");
+    await wrapper.find('[data-testid="typed-submit"]').trigger("click");
+    await flushPromises();
+    expect(postMock).toHaveBeenCalledWith("/hotaru/practice/grades?user=dani", [
+      { word_id: "g1", grade: "correct" },
+    ]);
+    // Advanced to the next card's English prompt.
+    expect(wrapper.find('[data-testid="card-prompt"]').text()).toBe("thanks");
+  });
+
+  it("typed mode: a miss reveals the Japanese and self-grade records the choice", async () => {
+    routeQuery.value = { scope: "lesson:L2", direction: "m2r", mode: "typed" };
+    const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="typed-input"]').setValue("wrong");
+    await wrapper.find('[data-testid="typed-submit"]').trigger("click");
+    // The answer is revealed (Japanese) with the self-grade buttons.
+    expect(wrapper.find('[data-testid="card-answer"]').text()).toContain(
+      "大学",
+    );
+    await wrapper.find('[data-testid="grade-close"]').trigger("click");
+    await flushPromises();
+    expect(postMock).toHaveBeenCalledWith("/hotaru/practice/grades?user=dani", [
+      { word_id: "g1", grade: "close" },
+    ]);
+  });
+
   it("shows the empty state when the scope has no words", async () => {
     queue = [];
     const wrapper = mount(DrillPage, { global: { stubs: STUBS } });

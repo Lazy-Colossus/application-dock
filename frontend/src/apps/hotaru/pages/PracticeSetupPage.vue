@@ -81,6 +81,54 @@
         <span>{{ count }}</span>
       </div>
 
+      <!-- Direction + scoring choices — only for a chosen scope (the all-words
+           summary stays CTA-free; Quick Practice will own it in 2.9). -->
+      <div v-if="selected !== null" class="practice-opts column q-mt-md">
+        <div class="practice-opt row items-center justify-between">
+          <span class="practice-opt__label">Direction</span>
+          <div class="practice-seg row no-wrap">
+            <button
+              class="practice-seg__btn"
+              :class="{ 'practice-seg__btn--on': direction === 'r2m' }"
+              data-testid="dir-r2m"
+              @click="setDirection('r2m')"
+            >
+              JP → EN
+            </button>
+            <button
+              class="practice-seg__btn"
+              :class="{ 'practice-seg__btn--on': direction === 'm2r' }"
+              data-testid="dir-m2r"
+              @click="setDirection('m2r')"
+            >
+              EN → JP
+            </button>
+          </div>
+        </div>
+        <div class="practice-opt row items-center justify-between">
+          <span class="practice-opt__label">Scoring</span>
+          <div class="practice-seg row no-wrap">
+            <button
+              class="practice-seg__btn"
+              :class="{ 'practice-seg__btn--on': mode === 'self' }"
+              data-testid="mode-self"
+              @click="mode = 'self'"
+            >
+              Self-grade
+            </button>
+            <button
+              class="practice-seg__btn"
+              :class="{ 'practice-seg__btn--on': mode === 'typed' }"
+              :disabled="direction === 'r2m'"
+              data-testid="mode-typed"
+              @click="mode = 'typed'"
+            >
+              Typed
+            </button>
+          </div>
+        </div>
+      </div>
+
       <q-btn
         v-if="selected !== null"
         class="practice-start full-width q-mt-md"
@@ -112,6 +160,18 @@ const route = useRoute();
 
 const selected = ref<string | null>(null);
 
+// Practice-your-way choices (Story 2.4): recognition vs production, and how to
+// score. Typed scoring is EN→JP-only, so JP→EN forces it back to self-grade.
+type Direction = "r2m" | "m2r";
+type ScoringMode = "self" | "typed";
+const direction = ref<Direction>("r2m");
+const mode = ref<ScoringMode>("self");
+
+function setDirection(d: Direction): void {
+  direction.value = d;
+  if (d === "r2m") mode.value = "self";
+}
+
 // Lessons available as scopes — the empty lesson (un-filed custom words) is not
 // a practisable scope.
 const lessonScopes = computed(() => store.lessons.filter((l) => l !== ""));
@@ -133,7 +193,10 @@ function scopeLabel(scope: string): string {
 
 function startDrill(): void {
   if (selected.value === null) return;
-  const q = `scope=${encodeURIComponent(selected.value)}&label=${encodeURIComponent(scopeLabel(selected.value))}`;
+  const q =
+    `scope=${encodeURIComponent(selected.value)}` +
+    `&label=${encodeURIComponent(scopeLabel(selected.value))}` +
+    `&direction=${direction.value}&mode=${mode.value}`;
   void router.push(`/hotaru/drill?${q}`);
 }
 
@@ -222,6 +285,35 @@ onMounted(async () => {
   font-size: 14px
   color: var(--hotaru-cream-soft)
   padding: 3px 0
+
+.practice-opts
+  gap: 10px
+
+.practice-opt__label
+  font-size: 13px
+  color: var(--hotaru-cream-soft)
+
+// Compact segmented control (mobile-first) — a rounded track with two pills.
+.practice-seg
+  border: 1px solid rgba(155, 107, 255, 0.30)
+  border-radius: 9999px
+  overflow: hidden
+
+.practice-seg__btn
+  border: none
+  background: transparent
+  color: var(--hotaru-cream-soft)
+  padding: 5px 14px
+  font-size: 13px
+  cursor: pointer
+
+.practice-seg__btn--on
+  background: var(--hotaru-bamboo)
+  color: var(--hotaru-bamboo-on)
+
+.practice-seg__btn:disabled
+  color: var(--hotaru-sage)
+  cursor: not-allowed
 
 .practice-start
   height: 52px

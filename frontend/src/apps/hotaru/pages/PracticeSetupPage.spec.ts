@@ -127,8 +127,52 @@ describe("PracticeSetupPage", () => {
     await wrapper.find('[data-testid="scope-lesson-L2"]').trigger("click");
     await flushPromises();
     await wrapper.find('[data-testid="start-drill"]').trigger("click");
+    // Defaults: JP→EN recognition, self-grade.
     expect(push).toHaveBeenCalledWith(
-      "/hotaru/drill?scope=lesson%3AL2&label=L2",
+      "/hotaru/drill?scope=lesson%3AL2&label=L2&direction=r2m&mode=self",
+    );
+  });
+
+  it("offers direction & scoring toggles; Typed is EN→JP-only", async () => {
+    const wrapper = mount(PracticeSetupPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="scope-lesson-L2"]').trigger("click");
+    await flushPromises();
+    // Default JP→EN → Typed disabled.
+    expect(
+      wrapper.find('[data-testid="mode-typed"]').attributes("disabled"),
+    ).toBeDefined();
+    // Switch to EN→JP → Typed becomes selectable.
+    await wrapper.find('[data-testid="dir-m2r"]').trigger("click");
+    expect(
+      wrapper.find('[data-testid="mode-typed"]').attributes("disabled"),
+    ).toBeUndefined();
+  });
+
+  it("launches an EN→JP typed drill with the chosen options", async () => {
+    const wrapper = mount(PracticeSetupPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="scope-lesson-L2"]').trigger("click");
+    await flushPromises();
+    await wrapper.find('[data-testid="dir-m2r"]').trigger("click");
+    await wrapper.find('[data-testid="mode-typed"]').trigger("click");
+    await wrapper.find('[data-testid="start-drill"]').trigger("click");
+    expect(push).toHaveBeenCalledWith(
+      "/hotaru/drill?scope=lesson%3AL2&label=L2&direction=m2r&mode=typed",
+    );
+  });
+
+  it("resets scoring to self-grade when switching back to JP→EN", async () => {
+    const wrapper = mount(PracticeSetupPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="scope-lesson-L2"]').trigger("click");
+    await flushPromises();
+    await wrapper.find('[data-testid="dir-m2r"]').trigger("click");
+    await wrapper.find('[data-testid="mode-typed"]').trigger("click");
+    await wrapper.find('[data-testid="dir-r2m"]').trigger("click");
+    await wrapper.find('[data-testid="start-drill"]').trigger("click");
+    expect(push).toHaveBeenCalledWith(
+      "/hotaru/drill?scope=lesson%3AL2&label=L2&direction=r2m&mode=self",
     );
   });
 

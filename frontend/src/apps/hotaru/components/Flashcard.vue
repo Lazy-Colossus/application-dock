@@ -2,34 +2,57 @@
   <div class="flashcard hotaru-panel" data-testid="flashcard">
     <!-- Centred content — stays centred whether or not the card is revealed. -->
     <div class="flashcard__body column flex-center">
-      <!-- Furigana aid: kana above a kanji headword when the learner opts in. -->
-      <div
-        v-if="word.kanji && showReading"
-        class="flashcard__furigana"
-        data-testid="card-furigana"
-      >
-        {{ word.reading }}
-      </div>
-
-      <!-- The practiced Japanese word, brightest on the card, glowing cyan. -->
-      <div class="flashcard__jp" data-testid="card-prompt">
-        {{ word.kanji ?? word.reading }}
-      </div>
-
-      <!-- Reveal side. -->
-      <div
-        v-if="revealed"
-        class="flashcard__answer column flex-center"
-        data-testid="card-answer"
-      >
-        <div v-if="word.kanji && !showReading" class="flashcard__reading">
+      <!-- JP→EN (recognition): Japanese prompt → reveal the meaning. -->
+      <template v-if="direction === 'r2m'">
+        <!-- Furigana aid: kana above a kanji headword when the learner opts in. -->
+        <div
+          v-if="word.kanji && showReading"
+          class="flashcard__furigana"
+          data-testid="card-furigana"
+        >
           {{ word.reading }}
         </div>
-        <div v-if="word.romaji && showRomaji" class="flashcard__romaji">
-          {{ word.romaji }}
+
+        <!-- The practiced Japanese word, brightest on the card, glowing cyan. -->
+        <div class="flashcard__jp" data-testid="card-prompt">
+          {{ word.kanji ?? word.reading }}
         </div>
-        <div class="flashcard__meaning">{{ word.meaning }}</div>
-      </div>
+
+        <div
+          v-if="revealed"
+          class="flashcard__answer column flex-center"
+          data-testid="card-answer"
+        >
+          <div v-if="word.kanji && !showReading" class="flashcard__reading">
+            {{ word.reading }}
+          </div>
+          <div v-if="word.romaji && showRomaji" class="flashcard__romaji">
+            {{ word.romaji }}
+          </div>
+          <div class="flashcard__meaning">{{ word.meaning }}</div>
+        </div>
+      </template>
+
+      <!-- EN→JP (production): English prompt → reveal the Japanese to produce. -->
+      <template v-else>
+        <div class="flashcard__prompt-en" data-testid="card-prompt">
+          {{ word.meaning }}
+        </div>
+
+        <div
+          v-if="revealed"
+          class="flashcard__answer column flex-center"
+          data-testid="card-answer"
+        >
+          <div class="flashcard__jp">{{ word.kanji ?? word.reading }}</div>
+          <div v-if="word.kanji" class="flashcard__reading">
+            {{ word.reading }}
+          </div>
+          <div v-if="word.romaji && showRomaji" class="flashcard__romaji">
+            {{ word.romaji }}
+          </div>
+        </div>
+      </template>
     </div>
 
     <!-- Info pills lined along the card's bottom edge (reveal side). -->
@@ -51,10 +74,12 @@ withDefaults(
   defineProps<{
     word: Word;
     revealed: boolean;
+    // "r2m" = JP→EN (Japanese prompt); "m2r" = EN→JP (English prompt, produce JP).
+    direction?: "r2m" | "m2r";
     showReading?: boolean;
     showRomaji?: boolean;
   }>(),
-  { showReading: false, showRomaji: false },
+  { direction: "r2m", showReading: false, showRomaji: false },
 );
 </script>
 
@@ -90,6 +115,15 @@ withDefaults(
   line-height: 1.1
   color: var(--hotaru-bamboo)
   text-shadow: 0 0 32px rgba(56, 240, 230, 0.6), 0 0 16px rgba(56, 240, 230, 0.5)
+
+// English prompt (EN→JP production): a clear, calm headword — not the cyan JP
+// glow, which is reserved for the Japanese being recalled.
+.flashcard__prompt-en
+  font-size: 34px
+  font-weight: 600
+  line-height: 1.2
+  text-align: center
+  color: var(--hotaru-cream)
 
 .flashcard__answer
   gap: 6px

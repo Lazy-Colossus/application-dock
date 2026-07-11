@@ -179,6 +179,21 @@ def test_queue_direction_k2r_excludes_kana_only_words() -> None:
     assert kanji_w in r2m and kana_w in r2m
 
 
+def test_queue_direction_m2r_includes_every_word() -> None:
+    # EN→JP (production) — every word carries m2r (reading + meaning always),
+    # so the direction toggle drops nothing, and the response stays debt-free.
+    tid = _create_topic("Q-m2r")
+    kanji_w = _make_word({"reading": "ねこ", "kanji": "猫", "meaning": "cat"})
+    kana_w = _make_word({"reading": "あ", "meaning": "a"})
+    _assign(tid, kanji_w)
+    _assign(tid, kana_w)
+    r = _queue(f"topic:{tid}", direction="m2r")
+    assert r.status_code == 200
+    ids = [it["word"]["id"] for it in r.json()]
+    assert kanji_w in ids and kana_w in ids
+    assert all(set(it.keys()) == {"word"} for it in r.json())
+
+
 def test_queue_carries_no_due_debt() -> None:
     tid = _create_topic("Q-debt")
     _assign(tid, _make_word({"reading": "ねこ", "meaning": "cat"}))

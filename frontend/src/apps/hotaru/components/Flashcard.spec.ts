@@ -73,4 +73,27 @@ describe("Flashcard", () => {
     );
     expect(wrapper.find('[data-testid="card-answer"]').exists()).toBe(false);
   });
+
+  it("EN→JP: prompts with the English meaning, hides the Japanese until reveal", () => {
+    const wrapper = mount(Flashcard, {
+      props: { word: word(), revealed: false, direction: "m2r" },
+    });
+    expect(wrapper.find('[data-testid="card-prompt"]').text()).toBe(
+      "university",
+    );
+    expect(wrapper.find('[data-testid="card-answer"]').exists()).toBe(false);
+    // No furigana on an English prompt.
+    expect(wrapper.find('[data-testid="card-furigana"]').exists()).toBe(false);
+  });
+
+  it("EN→JP: reveals the Japanese (headword + reading) to produce", () => {
+    const wrapper = mount(Flashcard, {
+      props: { word: word(), revealed: true, direction: "m2r" },
+    });
+    const answer = wrapper.find('[data-testid="card-answer"]');
+    expect(answer.text()).toContain("大学");
+    expect(answer.text()).toContain("だいがく");
+    // The meaning is the prompt in this direction, not repeated in the answer.
+    expect(answer.text()).not.toContain("university");
+  });
 });

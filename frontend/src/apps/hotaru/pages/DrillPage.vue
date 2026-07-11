@@ -56,7 +56,14 @@
         </div>
       </div>
 
-      <div class="drill-tools row justify-end q-mb-sm">
+      <div class="drill-tools row items-center justify-between q-mb-sm">
+        <button
+          class="drill-dir"
+          data-testid="direction-toggle"
+          @click="toggleDirection"
+        >
+          {{ direction === "r2m" ? "JP → EN" : "EN → JP" }}
+        </button>
         <button
           v-if="aidAvailable"
           class="drill-aid"
@@ -74,20 +81,44 @@
         <Flashcard
           :word="current.word"
           :revealed="revealed"
+          :direction="direction"
           :show-reading="showReading"
           :show-romaji="showRomaji"
         />
       </div>
 
-      <q-btn
-        v-if="!revealed"
-        class="drill-btn full-width q-mt-md"
-        label="Reveal"
-        unelevated
-        no-caps
-        data-testid="reveal-btn"
-        @click="reveal"
-      />
+      <template v-if="!revealed">
+        <!-- Typed mode (EN→JP only): produce the reading, exact match = Correct. -->
+        <div v-if="typing" class="drill-typed row no-wrap q-mt-md">
+          <input
+            v-model="typedAnswer"
+            class="drill-typed__input col"
+            type="text"
+            placeholder="Type the reading…"
+            autocapitalize="off"
+            autocomplete="off"
+            data-testid="typed-input"
+            @keyup.enter="submitTyped"
+          />
+          <q-btn
+            class="drill-typed__go"
+            label="Check"
+            unelevated
+            no-caps
+            data-testid="typed-submit"
+            @click="submitTyped"
+          />
+        </div>
+        <q-btn
+          v-else
+          class="drill-btn full-width"
+          label="Reveal"
+          unelevated
+          no-caps
+          data-testid="reveal-btn"
+          @click="reveal"
+        />
+      </template>
       <GradeButtons v-else class="q-mt-md" @grade="onGrade" />
     </template>
   </q-page>
@@ -152,8 +183,45 @@ async function flushGrades(): Promise<void> {
   }
 }
 
+// Direction (JP→EN r2m / EN→JP m2r) and scoring mode come from the picker via
+// the route query; direction can also be flipped per-session on the drill.
+type Direction = "r2m" | "m2r";
+const initialDir: Direction = route.query.direction === "m2r" ? "m2r" : "r2m";
+const direction = ref<Direction>(initialDir);
+const mode = ref<"self" | "typed">(
+  route.query.mode === "typed" && initialDir === "m2r" ? "typed" : "self",
+);
+
+// Typed mode is EN→JP-only: an English prompt with a kana input.
+const typing = computed(
+  () => mode.value === "typed" && direction.value === "m2r",
+);
+const typedAnswer = ref("");
+
+function toggleDirection(): void {
+  direction.value = direction.value === "r2m" ? "m2r" : "r2m";
+  // Typed is EN→JP-only, and the aid state belongs to the old sides.
+  if (direction.value === "r2m") mode.value = "self";
+  showReading.value = false;
+  showRomaji.value = false;
+  typedAnswer.value = "";
+}
+
+// Typed submit: an exact kana match is Correct (no reveal); a miss falls through
+// to the normal reveal → self-grade path.
+function submitTyped(): void {
+  const w = current.value?.word;
+  if (!w) return;
+  if (typedAnswer.value.trim() === w.reading) {
+    onGrade("correct");
+  } else {
+    reveal();
+  }
+}
+
 function onGrade(g: DrillGrade): void {
   grade(g);
+  typedAnswer.value = "";
   void flushGrades();
 }
 
@@ -162,13 +230,14 @@ function onGrade(g: DrillGrade): void {
 const showReading = ref(false);
 const showRomaji = ref(false);
 
-// The aid only makes sense when the card has something to reveal: furigana
-// needs a kanji headword (a kana-only word already shows its kana); romaji
-// needs a romaji value.
+// The aid tracks whichever side shows Japanese: romaji on the reveal (either
+// direction), and furigana only on a Japanese *prompt* (JP→EN with kanji — the
+// EN→JP prompt is English, so no furigana there).
 const aidAvailable = computed(() => {
   const w = current.value?.word;
   if (!w) return false;
-  return revealed.value ? !!w.romaji : !!w.kanji;
+  if (revealed.value) return !!w.romaji;
+  return direction.value === "r2m" ? !!w.kanji : false;
 });
 const aidOn = computed(() =>
   revealed.value ? showRomaji.value : showReading.value,
@@ -218,7 +287,7 @@ onMounted(async () => {
     void router.replace("/hotaru/practice");
     return;
   }
-  await store.loadQueue(scope, userStore.activeUserId);
+  await store.loadQueue(scope, userStore.activeUserId, direction.value);
 });
 
 // Safety-net syncs: when the session ends and when leaving the page.
@@ -319,4 +388,40 @@ watch(
   background: linear-gradient(180deg, var(--hotaru-bamboo-bright), var(--hotaru-bamboo))
   color: var(--hotaru-bamboo-on)
   box-shadow: 0 8px 20px rgba(16, 168, 159, 0.4), 0 0 20px rgba(56, 240, 230, 0.22)
+
+// Per-session direction toggle — a quiet cyan-outlined pill on the tools row.
+.drill-dir
+  border: 1px solid rgba(56, 240, 230, 0.4)
+  background: rgba(56, 240, 230, 0.08)
+  color: var(--hotaru-cream-soft)
+  border-radius: 9999px
+  padding: 4px 12px
+  font-size: 12px
+  cursor: pointer
+
+// Typed-mode answer row: kana input + a compact Check button.
+.drill-typed
+  gap: 10px
+
+.drill-typed__input
+  height: 52px
+  border-radius: 14px
+  border: 1px solid rgba(56, 240, 230, 0.35)
+  background: var(--hotaru-input-bg, rgba(4, 6, 15, 0.5))
+  color: var(--hotaru-cream)
+  font-size: 20px
+  padding: 0 16px
+  outline: none
+
+.drill-typed__input:focus
+  border-color: var(--hotaru-bamboo)
+  box-shadow: 0 0 14px rgba(56, 240, 230, 0.28)
+
+.drill-typed__go
+  flex: none
+  height: 52px
+  border-radius: 14px
+  padding: 0 20px
+  background: linear-gradient(180deg, var(--hotaru-bamboo-bright), var(--hotaru-bamboo))
+  color: var(--hotaru-bamboo-on)
 </style>
