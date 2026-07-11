@@ -43,13 +43,20 @@ export const useHotaruPracticeStore = defineStore("hotaruPractice", () => {
     scope: string,
     user: string,
     direction: DrillCap = "r2m",
+    filters?: { tiers?: number[]; lessons?: string[]; limit?: number },
   ): Promise<void> {
     loading.value = true;
     error.value = null;
     try {
-      queue.value = await api.get<QueueItem[]>(
-        `/hotaru/practice/queue?scope=${encodeURIComponent(scope)}&user=${encodeURIComponent(user)}&direction=${direction}`,
-      );
+      let url = `/hotaru/practice/queue?scope=${encodeURIComponent(scope)}&user=${encodeURIComponent(user)}&direction=${direction}`;
+      // Quick Practice filters (Story 2.9) — omitted entirely when unset so a
+      // normal scoped drill hits the exact same URL as before. `limit` may be 0
+      // ("All" / no cap), so check for undefined, not falsiness.
+      if (filters?.tiers?.length) url += `&tiers=${filters.tiers.join(",")}`;
+      if (filters?.lessons?.length)
+        url += `&lessons=${filters.lessons.map(encodeURIComponent).join(",")}`;
+      if (filters?.limit !== undefined) url += `&limit=${filters.limit}`;
+      queue.value = await api.get<QueueItem[]>(url);
     } catch (e) {
       error.value =
         (e as { detail?: string }).detail ??

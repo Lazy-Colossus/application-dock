@@ -336,7 +336,23 @@ onMounted(async () => {
     void router.replace("/hotaru/practice");
     return;
   }
-  await store.loadQueue(scope, userStore.activeUserId, direction.value);
+  // Quick Practice (Story 2.9) passes optional familiarity/lesson filters via
+  // the query; a normal scoped drill has neither, so loadQueue is unchanged.
+  const q = route.query;
+  const tiers =
+    typeof q.tiers === "string" && q.tiers
+      ? q.tiers.split(",").map(Number)
+      : undefined;
+  const lessons =
+    typeof q.lessons === "string" && q.lessons
+      ? q.lessons.split(",")
+      : undefined;
+  const limit = typeof q.limit === "string" ? Number(q.limit) : undefined;
+  await store.loadQueue(scope, userStore.activeUserId, direction.value, {
+    tiers,
+    lessons,
+    limit,
+  });
 });
 
 // On a clean end: sync every grade, THEN read the scope's updated stats for the

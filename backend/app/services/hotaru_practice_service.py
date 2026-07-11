@@ -84,6 +84,8 @@ def build_queue(
     direction: DrillCap = "r2m",
     now: datetime | None = None,
     limit: int = DEFAULT_SESSION_SIZE,
+    lessons: list[str] | None = None,
+    tiers: list[int] | None = None,
 ) -> list[QueueItem]:
     """Build an ordered, soft-capped drill queue for a scope.
 
@@ -92,6 +94,11 @@ def build_queue(
     the first `limit` are returned. "Due" only orders the queue — it never
     leaves the API (queue-not-debt).
 
+    Optional `lessons`/`tiers` narrow the set further (Quick Practice, Story
+    2.9): keep only words in those lessons and/or at those familiarity tiers (an
+    unreviewed word counts as tier 0). Both default `None` (no extra filtering),
+    so a normal scoped drill is unaffected.
+
     `now` is injected here (defaulting to the current UTC time) so the pure
     `srs` engine stays clock-free; tests pass a fixed `now`.
     """
@@ -99,13 +106,22 @@ def build_queue(
     words = [w for w in _words_for_scope(scope, user) if direction in w.drill_caps]
     progress = progress_repo.read_progress(user)
 
+    if lessons:
+        allowed = set(lessons)
+        words = [w for w in words if w.lesson in allowed]
+    if tiers is not None:
+        wanted = set(tiers)
+        words = [w for w in words if (progress[w.id].tier if w.id in progress else 0) in wanted]
+
     def sort_key(w: Word) -> tuple[int, int, datetime, str]:
         entry = progress.get(w.id) or ProgressEntry()
         due_first = 0 if srs.is_due(entry, now) else 1
         return (entry.tier, due_first, srs.due_at(entry) or _EPOCH, w.id)
 
     ordered = sorted(words, key=sort_key)
-    return [QueueItem(word=w) for w in ordered[:limit]]
+    # limit <= 0 means "no cap" (Quick Practice's "All"); otherwise soft-cap.
+    capped = ordered if limit <= 0 else ordered[:limit]
+    return [QueueItem(word=w) for w in capped]
 
 
 def apply_grades(

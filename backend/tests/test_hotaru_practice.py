@@ -243,6 +243,90 @@ def test_queue_direction_m2r_includes_every_word() -> None:
     assert all(set(it.keys()) == {"word"} for it in r.json())
 
 
+def test_queue_tiers_filter_keeps_only_matching_familiarity() -> None:
+    # Quick Practice: filter the whole list by familiarity tier.
+    learning = _make_word({"reading": "まなぶ", "meaning": "learn", "lesson": "L2"})
+    strong = _make_word({"reading": "つよい", "meaning": "strong", "lesson": "L2"})
+    _make_word({"reading": "あたらしい", "meaning": "new", "lesson": "L2"})  # tier 0 (New)
+    progress_repo.set_entry("dani", learning, ProgressEntry(tier=1, points=0, last_reviewed_at=NOW))
+    progress_repo.set_entry("dani", strong, ProgressEntry(tier=3, points=0, last_reviewed_at=NOW))
+    r = client.get(
+        "/api/hotaru/practice/queue",
+        params={"scope": "all", "user": "dani", "tiers": "1,3"},
+    )
+    assert r.status_code == 200
+    ids = [it["word"]["id"] for it in r.json()]
+    assert learning in ids and strong in ids
+    # The unreviewed (tier 0) word is excluded by tiers=1,3.
+    assert all(it["word"]["meaning"] != "new" for it in r.json())
+
+
+def test_queue_lessons_filter_unions_selected_lessons() -> None:
+    a = _make_word({"reading": "あ", "meaning": "a", "lesson": "L2"})
+    b = _make_word({"reading": "い", "meaning": "i", "lesson": "L4"})
+    _make_word({"reading": "う", "meaning": "u", "lesson": "L9"})  # excluded
+    items = client.get(
+        "/api/hotaru/practice/queue",
+        params={"scope": "all", "user": "dani", "lessons": "L2,L4"},
+    ).json()
+    ids = [it["word"]["id"] for it in items]
+    assert a in ids and b in ids
+    # Only L2/L4 words are present — the L9 word is excluded.
+    assert {it["word"]["lesson"] for it in items} <= {"L2", "L4"}
+
+
+def test_queue_tiers_and_lessons_combine() -> None:
+    hit = _make_word({"reading": "かち", "meaning": "hit", "lesson": "L2"})
+    _make_word({"reading": "みす", "meaning": "miss-lesson", "lesson": "L5"})  # wrong lesson
+    other = _make_word({"reading": "みす2", "meaning": "miss-tier", "lesson": "L2"})  # wrong tier
+    progress_repo.set_entry("dani", hit, ProgressEntry(tier=2, points=0, last_reviewed_at=NOW))
+    progress_repo.set_entry("dani", other, ProgressEntry(tier=4, points=0, last_reviewed_at=NOW))
+    ids = [
+        it["word"]["id"]
+        for it in client.get(
+            "/api/hotaru/practice/queue",
+            params={"scope": "all", "user": "dani", "tiers": "2", "lessons": "L2"},
+        ).json()
+    ]
+    assert hit in ids
+    assert other not in ids
+
+
+def test_queue_limit_overrides_soft_cap() -> None:
+    tid = _create_topic("Q-limit")
+    for i in range(10):
+        _assign(tid, _make_word({"reading": f"か{i}", "meaning": f"m{i}"}))
+    # An explicit limit caps below the natural count…
+    r5 = client.get(
+        "/api/hotaru/practice/queue",
+        params={"scope": f"topic:{tid}", "user": "dani", "limit": 5},
+    )
+    assert len(r5.json()) == 5
+    # …and limit=0 means "All" (no cap).
+    r0 = client.get(
+        "/api/hotaru/practice/queue",
+        params={"scope": f"topic:{tid}", "user": "dani", "limit": 0},
+    )
+    assert len(r0.json()) == 10
+
+
+def test_queue_bad_tier_value_is_422() -> None:
+    assert (
+        client.get(
+            "/api/hotaru/practice/queue",
+            params={"scope": "all", "user": "dani", "tiers": "9"},
+        ).status_code
+        == 422
+    )
+    assert (
+        client.get(
+            "/api/hotaru/practice/queue",
+            params={"scope": "all", "user": "dani", "tiers": "x"},
+        ).status_code
+        == 422
+    )
+
+
 def test_queue_carries_no_due_debt() -> None:
     tid = _create_topic("Q-debt")
     _assign(tid, _make_word({"reading": "ねこ", "meaning": "cat"}))

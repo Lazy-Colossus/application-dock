@@ -377,6 +377,9 @@ async function onSubmit(): Promise<void> {
 .addword-lesson-check
   width: 16px
   height: 16px
+  // Tint the native checkbox to the theme (else it renders the browser/OS
+  // default accent — the stray green).
+  accent-color: var(--hotaru-bamboo)
 
 .addword-lesson-label
   font-size: 14px

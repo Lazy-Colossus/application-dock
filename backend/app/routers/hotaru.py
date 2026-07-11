@@ -160,12 +160,41 @@ def practice_familiarity(user: str) -> dict[str, int]:
     return hotaru_practice_service.familiarity_map(user=user)
 
 
+def _parse_tiers(raw: str) -> list[int]:
+    """Parse a comma-separated tier list (Quick Practice). Raises ValueError on a
+    non-integer or out-of-range (0–4) value, mapped to 422 by the caller."""
+    tiers: list[int] = []
+    for part in raw.split(","):
+        try:
+            tier = int(part)
+        except ValueError as exc:
+            raise ValueError(f"Invalid tier {part!r}.") from exc
+        if not 0 <= tier <= 4:
+            raise ValueError(f"Tier {tier} out of range 0-4.")
+        tiers.append(tier)
+    return tiers
+
+
 @router.get("/practice/queue", response_model=list[QueueItem])
-def practice_queue(scope: str, user: str, direction: DrillCap = "r2m") -> list[QueueItem]:
+def practice_queue(
+    scope: str,
+    user: str,
+    direction: DrillCap = "r2m",
+    tiers: str | None = None,
+    lessons: str | None = None,
+    limit: int = hotaru_practice_service.DEFAULT_SESSION_SIZE,
+) -> list[QueueItem]:
     if user not in VALID_USER_IDS:
         raise HTTPException(status_code=404, detail=f"Unknown user {user}.")
     try:
-        return hotaru_practice_service.build_queue(scope=scope, user=user, direction=direction)
+        return hotaru_practice_service.build_queue(
+            scope=scope,
+            user=user,
+            direction=direction,
+            limit=limit,
+            lessons=lessons.split(",") if lessons else None,
+            tiers=_parse_tiers(tiers) if tiers else None,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 

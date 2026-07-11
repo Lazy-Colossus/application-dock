@@ -310,6 +310,21 @@ describe("DrillPage", () => {
     expect(wrapper.find('[data-testid="drill-error"]').exists()).toBe(false);
   });
 
+  it("Quick Practice: threads tiers/lessons filters from the query into the queue", async () => {
+    routeQuery.value = {
+      scope: "all",
+      tiers: "0,1,2",
+      lessons: "L2,L4",
+      direction: "r2m",
+      limit: "30",
+    };
+    mount(DrillPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    expect(getMock).toHaveBeenCalledWith(
+      "/hotaru/practice/queue?scope=all&user=dani&direction=r2m&tiers=0,1,2&lessons=L2,L4&limit=30",
+    );
+  });
+
   it("shows the empty state when the scope has no words", async () => {
     queue = [];
     const wrapper = mount(DrillPage, { global: { stubs: STUBS } });

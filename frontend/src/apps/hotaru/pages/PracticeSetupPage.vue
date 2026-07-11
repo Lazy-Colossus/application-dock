@@ -81,8 +81,80 @@
         <span>{{ count }}</span>
       </div>
 
+      <!-- Quick Practice: build a session from the whole list by preset. -->
+      <div v-if="selected === null" class="quick column" data-testid="quick">
+        <div class="quick__title">Quick practice</div>
+
+        <div class="practice-group-label">Familiarity</div>
+        <div class="practice-chips row items-center q-gutter-xs q-mb-sm">
+          <button
+            v-for="p in FAMILIARITY_PRESETS"
+            :key="p.key"
+            class="practice-chip"
+            :class="{ 'practice-chip--active': quickPreset === p.key }"
+            :data-testid="`quick-fam-${p.key}`"
+            @click="quickPreset = p.key"
+          >
+            {{ p.label }}
+          </button>
+        </div>
+
+        <div class="practice-group-label">Lessons</div>
+        <div
+          v-if="lessonScopes.length"
+          class="practice-chips row items-center q-gutter-xs q-mb-sm"
+        >
+          <button
+            v-for="l in lessonScopes"
+            :key="l"
+            class="practice-chip"
+            :class="{ 'practice-chip--active': quickLessons.includes(l) }"
+            :data-testid="`quick-lesson-${l}`"
+            @click="toggleQuickLesson(l)"
+          >
+            {{ l }}
+          </button>
+        </div>
+
+        <div class="practice-group-label">Words per session</div>
+        <div class="practice-chips row items-center q-gutter-xs q-mb-sm">
+          <button
+            v-for="opt in COUNT_OPTIONS"
+            :key="opt.value"
+            class="practice-chip"
+            :class="{ 'practice-chip--active': countValue === opt.value }"
+            :data-testid="`count-opt-${opt.value}`"
+            @click="countValue = opt.value"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
+
+        <div class="quick__count" data-testid="quick-count">
+          {{ quickSessionCount }}
+          {{ quickSessionCount === 1 ? "word" : "words" }}
+        </div>
+        <div
+          v-if="quickCount === 0"
+          class="quick__empty"
+          data-testid="quick-empty"
+        >
+          Nothing matches — try another preset.
+        </div>
+
+        <q-btn
+          class="practice-start full-width q-mt-sm"
+          label="Quick practice ✦"
+          unelevated
+          no-caps
+          :disable="quickCount === 0"
+          data-testid="start-quick"
+          @click="startQuick"
+        />
+      </div>
+
       <!-- Direction + scoring choices — only for a chosen scope (the all-words
-           summary stays CTA-free; Quick Practice will own it in 2.9). -->
+           summary stays CTA-free; Quick Practice owns it). -->
       <div v-if="selected !== null" class="practice-opts column q-mt-md">
         <div class="practice-opt row items-center justify-between">
           <span class="practice-opt__label">Direction</span>
@@ -155,7 +227,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
 import FamiliarityIcon from "@/apps/hotaru/components/FamiliarityIcon.vue";
@@ -188,9 +260,136 @@ function setDirection(d: Direction): void {
 // a practisable scope.
 const lessonScopes = computed(() => store.lessons.filter((l) => l !== ""));
 
+// --- Quick Practice (Story 2.9): build a session from the whole list -------
+// Each familiarity preset maps to a tier set (null = any tier). New = tier 0.
+const FAMILIARITY_PRESETS: {
+  key: string;
+  label: string;
+  tiers: number[] | null;
+}[] = [
+  { key: "new", label: "New", tiers: [0] },
+  { key: "seen", label: "Seen once", tiers: [1, 2, 3, 4] },
+  { key: "learning", label: "Learning", tiers: [1] },
+  { key: "familiar", label: "Familiar", tiers: [2] },
+  { key: "strong", label: "Strong", tiers: [3] },
+  { key: "mastered", label: "Mastered", tiers: [4] },
+  { key: "all", label: "All", tiers: null },
+];
+
+const quickPreset = ref("new");
+const quickLessons = ref<string[]>([]);
+
+function toggleQuickLesson(lesson: string): void {
+  const i = quickLessons.value.indexOf(lesson);
+  if (i >= 0) quickLessons.value.splice(i, 1);
+  else quickLessons.value.push(lesson);
+}
+
+// Words-per-session options — "All" (0 = no cap) + fixed sizes. Default All.
+const COUNT_OPTIONS: { label: string; value: number }[] = [
+  { label: "All", value: 0 },
+  { label: "5", value: 5 },
+  { label: "10", value: 10 },
+  { label: "20", value: 20 },
+  { label: "30", value: 30 },
+  { label: "50", value: 50 },
+  { label: "100", value: 100 },
+];
+const countValue = ref(0);
+
+const quickTiers = computed<number[] | null>(
+  () =>
+    FAMILIARITY_PRESETS.find((p) => p.key === quickPreset.value)?.tiers ?? null,
+);
+
+// Live match count from the words + familiarity the picker already holds — an
+// instant preview; the launched queue is the server's authoritative set.
+// How many words match the familiarity + lesson filters (drives the empty state).
+const quickCount = computed(
+  () =>
+    store.words.filter((w) => {
+      if (quickLessons.value.length && !quickLessons.value.includes(w.lesson))
+        return false;
+      const tiers = quickTiers.value;
+      if (tiers && !tiers.includes(store.familiarityTier(w.id))) return false;
+      return true;
+    }).length,
+);
+
+// The actual session size = matches capped by the words-per-session choice
+// (0 = All, no cap). This is what the preview shows.
+const quickSessionCount = computed(() =>
+  countValue.value > 0
+    ? Math.min(quickCount.value, countValue.value)
+    : quickCount.value,
+);
+
+function startQuick(): void {
+  if (quickCount.value === 0) return;
+  const parts = [
+    "scope=all",
+    `label=${encodeURIComponent("Quick practice")}`,
+    "direction=r2m",
+    "mode=self",
+  ];
+  const tiers = quickTiers.value;
+  if (tiers) parts.push(`tiers=${tiers.join(",")}`);
+  if (quickLessons.value.length)
+    parts.push(
+      `lessons=${quickLessons.value.map(encodeURIComponent).join(",")}`,
+    );
+  // Words-per-session: 0 = All (no cap) on the backend.
+  parts.push(`limit=${countValue.value}`);
+  void router.push(`/hotaru/drill?${parts.join("&")}`);
+}
+
+// Remember the preset per user (client-side, like the active user itself).
+function quickKey(user: string): string {
+  return `hotaru.quick.${user}`;
+}
+watch(
+  [quickPreset, quickLessons],
+  () => {
+    const user = userStore.activeUserId;
+    if (user === null) return;
+    localStorage.setItem(
+      quickKey(user),
+      JSON.stringify({
+        preset: quickPreset.value,
+        lessons: quickLessons.value,
+      }),
+    );
+  },
+  { deep: true },
+);
+
+function restoreQuickPreset(user: string): void {
+  const raw = localStorage.getItem(quickKey(user));
+  if (!raw) return;
+  try {
+    const saved = JSON.parse(raw) as { preset?: string; lessons?: string[] };
+    if (
+      typeof saved.preset === "string" &&
+      FAMILIARITY_PRESETS.some((p) => p.key === saved.preset)
+    ) {
+      quickPreset.value = saved.preset;
+    }
+    if (Array.isArray(saved.lessons)) quickLessons.value = saved.lessons;
+  } catch {
+    // Ignore malformed saved state — fall back to defaults.
+  }
+}
+
 function select(scope: string): void {
   const user = userStore.activeUserId;
   if (user === null) return;
+  // Clicking the active scope again closes it — back to the all-words summary
+  // and Quick Practice.
+  if (selected.value === scope) {
+    selected.value = null;
+    void practice.loadOverview("all", user);
+    return;
+  }
   selected.value = scope;
   void practice.loadOverview(scope, user);
 }
@@ -227,7 +426,9 @@ onMounted(async () => {
   await Promise.all([
     store.loadWords(userStore.activeUserId),
     store.loadTopics(),
+    store.loadFamiliarity(userStore.activeUserId),
   ]);
+  restoreQuickPreset(userStore.activeUserId);
   // Drop any stale overview from a previous visit. If we arrived back from a
   // drill (?scope=), re-select that scope so its freshly-updated stats load.
   // Otherwise show the at-a-glance stats across all words (no scope selected).
@@ -303,6 +504,28 @@ onMounted(async () => {
   font-size: 14px
   color: var(--hotaru-cream-soft)
   padding: 3px 0
+
+// Quick Practice panel — sits under the all-words stats, separated by a rule.
+.quick
+  margin-top: 14px
+  padding-top: 14px
+  border-top: 1px solid rgba(155, 107, 255, 0.22)
+
+.quick__title
+  font-size: 15px
+  font-weight: 600
+  color: var(--hotaru-cream)
+  margin-bottom: 8px
+
+.quick__count
+  font-size: 14px
+  color: var(--hotaru-cream-soft)
+  margin-top: 2px
+
+.quick__empty
+  font-size: 13px
+  color: var(--hotaru-sage)
+  margin-top: 4px
 
 .practice-opts
   gap: 10px

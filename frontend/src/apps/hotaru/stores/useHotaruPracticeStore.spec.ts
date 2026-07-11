@@ -82,6 +82,28 @@ describe("useHotaruPracticeStore", () => {
     expect(store.error).toBeNull();
   });
 
+  it("loadQueue appends Quick Practice filters when given", async () => {
+    getMock.mockResolvedValueOnce([]);
+    const store = useHotaruPracticeStore();
+    await store.loadQueue("all", "dani", "r2m", {
+      tiers: [0, 1, 2],
+      lessons: ["L1", "L2"],
+      limit: 30,
+    });
+    expect(getMock).toHaveBeenCalledWith(
+      "/hotaru/practice/queue?scope=all&user=dani&direction=r2m&tiers=0,1,2&lessons=L1,L2&limit=30",
+    );
+  });
+
+  it("loadQueue appends limit=0 (All) — omits it only when undefined", async () => {
+    getMock.mockResolvedValueOnce([]);
+    const store = useHotaruPracticeStore();
+    await store.loadQueue("all", "dani", "r2m", { limit: 0 });
+    expect(getMock).toHaveBeenCalledWith(
+      "/hotaru/practice/queue?scope=all&user=dani&direction=r2m&limit=0",
+    );
+  });
+
   it("loadQueue surfaces errors", async () => {
     getMock.mockRejectedValueOnce({ detail: "Invalid scope 'x'." });
     const store = useHotaruPracticeStore();
