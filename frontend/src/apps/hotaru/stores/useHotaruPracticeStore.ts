@@ -6,11 +6,14 @@ import type {
   GradeItem,
   PracticeOverview,
   QueueItem,
+  Word,
 } from "@/apps/hotaru/types";
 
 export const useHotaruPracticeStore = defineStore("hotaruPractice", () => {
   const overview = ref<PracticeOverview | null>(null);
   const queue = ref<QueueItem[]>([]);
+  // Every word in a scope, natural order, for the un-graded Study browse (2.8).
+  const study = ref<Word[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -74,6 +77,24 @@ export const useHotaruPracticeStore = defineStore("hotaruPractice", () => {
     }
   }
 
+  // Study list for a scope — every word, natural order, no cap (mirrors
+  // loadQueue but returns Word[] and applies no SRS ordering).
+  async function loadStudy(scope: string, user: string): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      study.value = await api.get<Word[]>(
+        `/hotaru/practice/study?scope=${encodeURIComponent(scope)}&user=${encodeURIComponent(user)}`,
+      );
+    } catch (e) {
+      error.value =
+        (e as { detail?: string }).detail ??
+        (e instanceof Error ? e.message : String(e));
+    } finally {
+      loading.value = false;
+    }
+  }
+
   // Background batch grade sync — best-effort. Returns whether it succeeded so
   // the caller can re-queue on failure. Deliberately touches NEITHER `loading`
   // NOR the shared `error`: an optimistic background sync must never block or
@@ -97,12 +118,14 @@ export const useHotaruPracticeStore = defineStore("hotaruPractice", () => {
   return {
     overview,
     queue,
+    study,
     loading,
     error,
     clearOverview,
     loadOverview,
     fetchOverview,
     loadQueue,
+    loadStudy,
     submitGrades,
   };
 });

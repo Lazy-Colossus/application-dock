@@ -129,15 +129,27 @@
         </div>
       </div>
 
-      <q-btn
+      <div
         v-if="selected !== null"
-        class="practice-start full-width q-mt-md"
-        label="Let's practice ✦"
-        unelevated
-        no-caps
-        data-testid="start-drill"
-        @click="startDrill"
-      />
+        class="practice-cta row no-wrap q-gutter-sm q-mt-md"
+      >
+        <q-btn
+          class="practice-study col"
+          label="Study"
+          unelevated
+          no-caps
+          data-testid="start-study"
+          @click="startStudy"
+        />
+        <q-btn
+          class="practice-start col"
+          label="Let's practice ✦"
+          unelevated
+          no-caps
+          data-testid="start-drill"
+          @click="startDrill"
+        />
+      </div>
     </div>
   </q-page>
 </template>
@@ -198,6 +210,12 @@ function startDrill(): void {
     `&label=${encodeURIComponent(scopeLabel(selected.value))}` +
     `&direction=${direction.value}&mode=${mode.value}`;
   void router.push(`/hotaru/drill?${q}`);
+}
+
+// Study is the un-graded browse — just carry the scope, no direction/mode.
+function startStudy(): void {
+  if (selected.value === null) return;
+  void router.push(`/hotaru/study?scope=${encodeURIComponent(selected.value)}`);
 }
 
 onMounted(async () => {
@@ -321,4 +339,12 @@ onMounted(async () => {
   background: linear-gradient(180deg, var(--hotaru-bamboo-bright), var(--hotaru-bamboo))
   color: var(--hotaru-bamboo-on)
   box-shadow: 0 8px 20px rgba(16, 168, 159, 0.4), 0 0 20px rgba(56, 240, 230, 0.22)
+
+// Study is the calm sibling — a low-opacity cyan wash so Practice stays primary.
+.practice-study
+  height: 52px
+  border-radius: 14px
+  border: 1px solid rgba(56, 240, 230, 0.4)
+  background: rgba(56, 240, 230, 0.10)
+  color: var(--hotaru-cream)
 </style>

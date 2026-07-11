@@ -133,6 +133,55 @@ def test_familiarity_map_unknown_user_is_404() -> None:
     assert _familiarity(user="ghost").status_code == 404
 
 
+# --- study (browse, no grading) --------------------------------------------
+
+
+def _study(scope: str, user: str = "dani"):
+    return client.get("/api/hotaru/practice/study", params={"scope": scope, "user": user})
+
+
+def test_study_returns_all_words_uncapped() -> None:
+    tid = _create_topic("S-all")
+    for i in range(25):
+        _assign(tid, _make_word({"reading": f"かな{i}", "meaning": f"m{i}"}))
+    r = _study(f"topic:{tid}")
+    assert r.status_code == 200
+    # The key difference from the queue: NOT soft-capped at 20.
+    assert len(r.json()) == 25
+
+
+def test_study_preserves_natural_order() -> None:
+    tid = _create_topic("S-order")
+    ids = [_make_word({"reading": f"よ{i}", "meaning": f"m{i}"}) for i in range(3)]
+    for wid in ids:
+        _assign(tid, wid)
+    got = [w["id"] for w in _study(f"topic:{tid}").json()]
+    # Natural (assembly) order — no SRS reordering.
+    assert got == ids
+
+
+def test_study_private_word_only_for_owner() -> None:
+    tid = _create_topic("S-priv")
+    priv = _make_word(
+        {"reading": "ひみつ", "meaning": "secret", "visibility": "private"}, user="dani"
+    )
+    _assign(tid, priv, user="dani")
+    assert priv in [w["id"] for w in _study(f"topic:{tid}", user="dani").json()]
+    assert priv not in [w["id"] for w in _study(f"topic:{tid}", user="jake").json()]
+
+
+def test_study_empty_scope_is_empty_list() -> None:
+    assert _study("lesson:L99").json() == []
+
+
+def test_study_malformed_scope_is_422() -> None:
+    assert _study("bogus").status_code == 422
+
+
+def test_study_unknown_user_is_404() -> None:
+    assert _study("lesson:L2", user="ghost").status_code == 404
+
+
 # --- queue -----------------------------------------------------------------
 
 

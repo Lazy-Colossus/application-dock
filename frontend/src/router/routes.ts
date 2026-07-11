@@ -48,6 +48,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "Practice" },
       },
       {
+        path: "hotaru/study",
+        name: "hotaru-study",
+        component: () => import("@/apps/hotaru/pages/StudyPage.vue"),
+        meta: { title: "Study" },
+      },
+      {
         path: "hotaru/add-word",
         name: "hotaru-add-word",
         component: () => import("@/apps/hotaru/pages/AddWordPage.vue"),

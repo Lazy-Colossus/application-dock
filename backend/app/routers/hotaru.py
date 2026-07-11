@@ -143,6 +143,16 @@ def practice_overview(scope: str, user: str) -> PracticeOverview:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+@router.get("/practice/study", response_model=list[Word])
+def practice_study(scope: str, user: str) -> list[Word]:
+    if user not in VALID_USER_IDS:
+        raise HTTPException(status_code=404, detail=f"Unknown user {user}.")
+    try:
+        return hotaru_practice_service.study_words(scope=scope, user=user)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
 @router.get("/practice/familiarity", response_model=dict[str, int])
 def practice_familiarity(user: str) -> dict[str, int]:
     if user not in VALID_USER_IDS:

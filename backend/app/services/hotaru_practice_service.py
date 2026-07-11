@@ -60,6 +60,14 @@ def overview(scope: str, user: str) -> PracticeOverview:
     return PracticeOverview(scope=scope, word_count=len(words), familiarity=familiarity)
 
 
+def study_words(scope: str, user: str) -> list[Word]:
+    """Every word in a scope, in natural (lesson/list) order — for the un-graded
+    Study browse. No SRS weighting, no session cap (the deliberate difference
+    from `build_queue`). Privacy is inherited from the scope resolution. Raises
+    ValueError on a malformed scope."""
+    return _words_for_scope(scope, user)
+
+
 def familiarity_map(user: str) -> dict[str, int]:
     """The active user's per-word familiarity tier, for surfacing on the library.
 

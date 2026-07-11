@@ -133,6 +133,17 @@ describe("PracticeSetupPage", () => {
     );
   });
 
+  it("offers a Study CTA for the selected scope that routes to the browse flow", async () => {
+    const wrapper = mount(PracticeSetupPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    // No Study CTA in the all-words summary.
+    expect(wrapper.find('[data-testid="start-study"]').exists()).toBe(false);
+    await wrapper.find('[data-testid="scope-lesson-L2"]').trigger("click");
+    await flushPromises();
+    await wrapper.find('[data-testid="start-study"]').trigger("click");
+    expect(push).toHaveBeenCalledWith("/hotaru/study?scope=lesson%3AL2");
+  });
+
   it("offers direction & scoring toggles; Typed is EN→JP-only", async () => {
     const wrapper = mount(PracticeSetupPage, { global: { stubs: STUBS } });
     await flushPromises();

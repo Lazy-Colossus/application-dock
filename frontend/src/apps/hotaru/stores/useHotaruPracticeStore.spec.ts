@@ -90,6 +90,26 @@ describe("useHotaruPracticeStore", () => {
     expect(store.loading).toBe(false);
   });
 
+  it("loadStudy fetches the scope's full word list into `study`", async () => {
+    const words = [{ id: "a" }, { id: "b" }, { id: "c" }];
+    getMock.mockResolvedValueOnce(words);
+    const store = useHotaruPracticeStore();
+    await store.loadStudy("lesson:L2", "dani");
+    expect(getMock).toHaveBeenCalledWith(
+      "/hotaru/practice/study?scope=lesson%3AL2&user=dani",
+    );
+    expect(store.study.map((w) => w.id)).toEqual(["a", "b", "c"]);
+    expect(store.error).toBeNull();
+  });
+
+  it("loadStudy surfaces errors", async () => {
+    getMock.mockRejectedValueOnce({ detail: "Invalid scope 'x'." });
+    const store = useHotaruPracticeStore();
+    await store.loadStudy("x", "dani");
+    expect(store.error).toBe("Invalid scope 'x'.");
+    expect(store.loading).toBe(false);
+  });
+
   it("submitGrades posts the batch without touching loading", async () => {
     const store = useHotaruPracticeStore();
     const grades = [{ word_id: "a", grade: "correct" as const }];
