@@ -51,9 +51,29 @@ def test_incorrect_drops_one_tier_and_resets_points() -> None:
     assert (result.tier, result.points) == (2, 0)
 
 
-def test_incorrect_at_new_floors_at_zero() -> None:
+# --- next_review: "a reviewed word is never New" (floors at Learning) -------
+
+
+def test_incorrect_at_learning_floors_at_learning() -> None:
+    # A lapse drops toward Learning but never back to New.
+    result = srs.next_review(entry(tier=1, points=0), "incorrect", NOW)
+    assert (result.tier, result.points) == (1, 0)
+
+
+def test_incorrect_at_familiar_drops_to_learning() -> None:
+    result = srs.next_review(entry(tier=2, points=0), "incorrect", NOW)
+    assert result.tier == 1
+
+
+def test_close_on_new_graduates_to_learning() -> None:
+    # First exposure — even a Close — leaves New (a review is never New).
+    result = srs.next_review(entry(tier=0, points=0), "close", NOW)
+    assert (result.tier, result.points) == (1, 0)
+
+
+def test_incorrect_on_new_graduates_to_learning() -> None:
     result = srs.next_review(entry(tier=0, points=0), "incorrect", NOW)
-    assert (result.tier, result.points) == (0, 0)
+    assert (result.tier, result.points) == (1, 0)
 
 
 # --- next_review: shared behaviour -----------------------------------------

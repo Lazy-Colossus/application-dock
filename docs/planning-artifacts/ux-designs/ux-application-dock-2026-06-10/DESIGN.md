@@ -147,7 +147,7 @@ components:
     reading-glow: '0 0 16px rgba(255,92,200,.5)'
     meaning-color: '{colors.ink-mid}'
   familiarity-icon:
-    note: 'DISTINCT icon per tier (NOT a pill). Icon set is PLACEHOLDER/TBD (mock uses ○◔◑◕●). Colour + icon + text label always together — colour is never the sole signal.'
+    note: 'DISTINCT icon per tier (NOT a pill). Icon set is PLACEHOLDER/TBD (mock uses ○◔◑◕●). Colour + icon + text label always together — colour is never the sole signal. "New" (tier 1 here) means NEVER STUDIED; once a word is reviewed (any grade) it is at least Learning — a lapse floors at Learning, never back to New.'
     size: 16px              # 17px in library rows, 18px in word-detail header
     glow: 'drop-shadow(0 0 8px <tier-color>) — new tier is an unglowing hollow ring'
     tier-1: '{colors.fam-1-new}'
@@ -249,7 +249,7 @@ The palette is a saturated evening neon over a deep indigo dark. It is layered: 
 - **Amber** — `amber #ffce5c`: the literal firefly glow (motion layer), the Strong tier, the Close grade edge, and the private/aging accent (`amber-private`, same hue). Never a chrome fill.
 - **Lamp-yellow** — `lamp-yellow #ffd24a`, a warm glowing yellow (a firefly against the neon dusk): the **蛍 brand logo** glow and **kana** (hiragana/katakana) glyphs in the word list. Distinct from the cooler `amber`; reserved for the logo + kana, not chrome.
 - **Kanji vs kana colour split** — in the word list, **kanji** headwords glow **cyan** (`#38f0e6`) and **kana** glyphs glow **lamp-yellow** (`#ffd24a`) — both the kana-only headword and the hiragana reading line. This mirrors the drill card (Japanese = cyan) while giving kana its own warm read.
-- **Familiarity ramp** — five fixed hues, new→mastered: `fam-1-new #5a5a86` grey-violet · `fam-2-learning #9b6bff` violet · `fam-3-familiar #38f0e6` cyan · `fam-4-strong #ffce5c` amber · `fam-5-mastered #ff5cc8` magenta. Reused for the grade buttons (Incorrect=magenta, Close=amber, Correct=cyan) and per-user avatar fills (Dani=violet, Jake=amber). **Colour is never the only signal** — always paired with an icon and a text label.
+- **Familiarity ramp** — five fixed hues, new→mastered: `fam-1-new #5a5a86` grey-violet · `fam-2-learning #9b6bff` violet · `fam-3-familiar #38f0e6` cyan · `fam-4-strong #ffce5c` amber · `fam-5-mastered #ff5cc8` magenta. Reused for the grade buttons (Incorrect=magenta, Close=amber, Correct=cyan) and per-user avatar fills (Dani=violet, Jake=amber). **Colour is never the only signal** — always paired with an icon and a text label. **"New" means never studied** (`last_reviewed_at` unset): the moment a word is reviewed — whatever the grade — it becomes at least **Learning**, and a lapse floors at Learning rather than returning to New. So the New bucket is "words you haven't started", never "words you keep failing".
 
 Avoid: any colour outside these families; using cyan for chrome unrelated to the primary-accent role while *also* using it for the practiced word in the same view without the word clearly reading brightest; using firefly amber as a solid UI fill; using a familiarity hue without its icon + label.
 

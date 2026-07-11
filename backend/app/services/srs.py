@@ -42,8 +42,14 @@ def next_review(state: ProgressEntry, grade: Grade, now: datetime) -> ProgressEn
     """Return the updated state after a grade. Pure — does not mutate `state`.
 
     Correct: +1 point; on reaching the tier's threshold, +1 tier and reset
-    points (Mastered holds). Close: holds. Incorrect: drop one tier (floor New),
-    reset points. `last_reviewed_at` is set to the injected `now`.
+    points (Mastered holds). Close: holds. Incorrect: drop one tier, reset
+    points. `last_reviewed_at` is set to the injected `now`.
+
+    Tier 0 (New) means "never studied": since this function is only ever called
+    on a review, its result floors at Learning (tier 1). So a first exposure —
+    whatever the grade — graduates New → Learning, and a lapse (Incorrect) drops
+    toward Learning but never back to New. (Standard SRS: New = novelty, not the
+    bottom of mastery.)
     """
     tier, points = state.tier, state.points
 
@@ -56,9 +62,12 @@ def next_review(state: ProgressEntry, grade: Grade, now: datetime) -> ProgressEn
                 tier += 1
                 points = 0
     elif grade == "incorrect":
-        tier = max(0, tier - 1)
+        tier -= 1
         points = 0
     # "close" holds tier and points unchanged.
+
+    # A reviewed word is never New (tier 0) — floor at Learning.
+    tier = max(1, tier)
 
     return ProgressEntry(tier=tier, points=points, last_reviewed_at=now)
 
