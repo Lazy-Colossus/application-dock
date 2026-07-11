@@ -91,7 +91,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
 import { useHotaruLibraryStore } from "@/apps/hotaru/stores/useHotaruLibraryStore";
 import { useHotaruPracticeStore } from "@/apps/hotaru/stores/useHotaruPracticeStore";
@@ -107,6 +107,7 @@ const store = useHotaruLibraryStore();
 const practice = useHotaruPracticeStore();
 const userStore = useHotaruUserStore();
 const router = useRouter();
+const route = useRoute();
 
 const selected = ref<string | null>(null);
 
@@ -145,6 +146,11 @@ onMounted(async () => {
     store.loadWords(userStore.activeUserId),
     store.loadTopics(),
   ]);
+  // Drop any stale overview from a previous visit. If we arrived back from a
+  // drill (?scope=), re-select that scope so its freshly-updated stats load.
+  practice.clearOverview();
+  const scope = route.query.scope;
+  if (typeof scope === "string" && scope) select(scope);
 });
 </script>
 

@@ -137,6 +137,10 @@ describe("DrillPage", () => {
     expect(postMock).toHaveBeenCalledWith("/hotaru/practice/grades?user=dani", [
       { word_id: "g1", grade: "close" },
     ]);
+    // "Back to practice" returns to the picker carrying the scope, so it shows
+    // the just-updated stats.
+    await wrapper.find('[data-testid="drill-done-btn"]').trigger("click");
+    expect(push).toHaveBeenCalledWith("/hotaru/practice?scope=lesson%3AL2");
   });
 
   it("shows the scope label passed by the picker above the card", async () => {

@@ -2,16 +2,20 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, push, replace } = vi.hoisted(() => ({
+const { getMock, push, replace, routeQuery } = vi.hoisted(() => ({
   getMock: vi.fn(),
   push: vi.fn(),
   replace: vi.fn(),
+  routeQuery: { value: {} as Record<string, string> },
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
   api: { get: getMock, post: vi.fn(), put: vi.fn(), del: vi.fn() },
 }));
-vi.mock("vue-router", () => ({ useRouter: () => ({ push, replace }) }));
+vi.mock("vue-router", () => ({
+  useRouter: () => ({ push, replace }),
+  useRoute: () => ({ query: routeQuery.value }),
+}));
 
 import PracticeSetupPage from "./PracticeSetupPage.vue";
 import type { Word } from "@/apps/hotaru/types";
@@ -68,6 +72,7 @@ beforeEach(() => {
       return Promise.resolve(OVERVIEW);
     return Promise.resolve(WORDS);
   });
+  routeQuery.value = {};
   push.mockReset();
   replace.mockReset();
 });
@@ -110,6 +115,18 @@ describe("PracticeSetupPage", () => {
     expect(push).toHaveBeenCalledWith(
       "/hotaru/drill?scope=lesson%3AL2&label=L2",
     );
+  });
+
+  it("auto-loads the overview for a scope passed back from the drill", async () => {
+    routeQuery.value = { scope: "lesson:L2" };
+    const wrapper = mount(PracticeSetupPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    // Returned from a drill → the scope's (freshly-updated) stats load without
+    // the user re-tapping the chip.
+    expect(getMock).toHaveBeenCalledWith(
+      "/hotaru/practice/overview?scope=lesson%3AL2&user=dani",
+    );
+    expect(wrapper.find('[data-testid="overview"]').exists()).toBe(true);
   });
 
   it("redirects to identity when no active user is set", async () => {

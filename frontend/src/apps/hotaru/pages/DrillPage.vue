@@ -18,10 +18,11 @@
       <div>Nothing to practise here yet.</div>
       <q-btn
         class="drill-btn q-mt-md"
-        label="Back to library"
+        label="Back to practice"
         unelevated
         no-caps
-        @click="toLibrary"
+        data-testid="drill-empty-btn"
+        @click="backToPicker"
       />
     </div>
 
@@ -35,10 +36,11 @@
       <div>Session complete.</div>
       <q-btn
         class="drill-btn q-mt-md"
-        label="Back to library"
+        label="Back to practice"
         unelevated
         no-caps
-        @click="toLibrary"
+        data-testid="drill-done-btn"
+        @click="backToPicker"
       />
     </div>
 
@@ -192,8 +194,15 @@ const fillPct = computed(() =>
     : Math.round((Math.min(index.value + 1, total.value) / total.value) * 100),
 );
 
-function toLibrary(): void {
-  void router.push("/hotaru/library");
+// Return to the picker, carrying the scope so it re-loads that scope's stats
+// (now updated by this session's grades).
+function backToPicker(): void {
+  const scope = typeof route.query.scope === "string" ? route.query.scope : "";
+  void router.push(
+    scope
+      ? `/hotaru/practice?scope=${encodeURIComponent(scope)}`
+      : "/hotaru/practice",
+  );
 }
 
 onMounted(async () => {

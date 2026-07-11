@@ -14,6 +14,12 @@ export const useHotaruPracticeStore = defineStore("hotaruPractice", () => {
   const loading = ref(false);
   const error = ref<string | null>(null);
 
+  // Drop any cached overview so a returning picker never shows stale, pre-drill
+  // stats before a fresh selection re-fetches.
+  function clearOverview(): void {
+    overview.value = null;
+  }
+
   async function loadOverview(scope: string, user: string): Promise<void> {
     loading.value = true;
     error.value = null;
@@ -75,6 +81,7 @@ export const useHotaruPracticeStore = defineStore("hotaruPractice", () => {
     queue,
     loading,
     error,
+    clearOverview,
     loadOverview,
     loadQueue,
     submitGrades,
