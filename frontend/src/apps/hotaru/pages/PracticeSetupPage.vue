@@ -61,6 +61,13 @@
       class="practice-overview hotaru-panel column"
       data-testid="overview"
     >
+      <div
+        v-if="selected === null"
+        class="practice-overview__all"
+        data-testid="overview-all"
+      >
+        All words
+      </div>
       <div class="practice-count" data-testid="overview-count">
         {{ practice.overview.word_count }} words
       </div>
@@ -70,14 +77,12 @@
         class="practice-tier row items-center justify-between"
         :data-testid="`tier-${tier}`"
       >
-        <span class="tier-label row items-center">
-          <span class="tier-glyph" :class="`tier-glyph--${tier}`" />
-          {{ TIER_LABELS[tier] }}
-        </span>
+        <FamiliarityIcon :tier="tier" show-label />
         <span>{{ count }}</span>
       </div>
 
       <q-btn
+        v-if="selected !== null"
         class="practice-start full-width q-mt-md"
         label="Let's practice ✦"
         unelevated
@@ -93,15 +98,11 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
+import FamiliarityIcon from "@/apps/hotaru/components/FamiliarityIcon.vue";
 import { useHotaruLibraryStore } from "@/apps/hotaru/stores/useHotaruLibraryStore";
 import { useHotaruPracticeStore } from "@/apps/hotaru/stores/useHotaruPracticeStore";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
 import "./../css/hotaru.sass";
-
-// 5-tier familiarity ramp — labels + glyphs matching the Drill design's legend
-// (colour lives in CSS via the --hotaru-fam-* tokens). Story 2.6 formalises
-// this as a shared FamiliarityIcon (icon + colour + label).
-const TIER_LABELS = ["New", "Learning", "Familiar", "Strong", "Mastered"];
 
 const store = useHotaruLibraryStore();
 const practice = useHotaruPracticeStore();
@@ -148,9 +149,14 @@ onMounted(async () => {
   ]);
   // Drop any stale overview from a previous visit. If we arrived back from a
   // drill (?scope=), re-select that scope so its freshly-updated stats load.
+  // Otherwise show the at-a-glance stats across all words (no scope selected).
   practice.clearOverview();
   const scope = route.query.scope;
-  if (typeof scope === "string" && scope) select(scope);
+  if (typeof scope === "string" && scope) {
+    select(scope);
+  } else {
+    void practice.loadOverview("all", userStore.activeUserId);
+  }
 });
 </script>
 
@@ -199,6 +205,13 @@ onMounted(async () => {
   padding: 14px
   margin-top: 8px
 
+.practice-overview__all
+  font-size: 12px
+  letter-spacing: 0.08em
+  text-transform: uppercase
+  color: var(--hotaru-cream-soft)
+  margin-bottom: 2px
+
 .practice-count
   font-size: 18px
   font-weight: 600
@@ -216,43 +229,4 @@ onMounted(async () => {
   background: linear-gradient(180deg, var(--hotaru-bamboo-bright), var(--hotaru-bamboo))
   color: var(--hotaru-bamboo-on)
   box-shadow: 0 8px 20px rgba(16, 168, 159, 0.4), 0 0 20px rgba(56, 240, 230, 0.22)
-
-.tier-label
-  gap: 10px
-
-// Familiarity ramp icon — a uniform CSS circle with a per-tier fill fraction
-// (0/25/50/75/100%), coloured + glowing in the tier hue (matches the Drill
-// legend). CSS-drawn so all five are exactly the same size, unlike the mixed
-// Unicode circle glyphs.
-.tier-glyph
-  flex: none
-  width: 13px
-  height: 13px
-  border-radius: 50%
-  border: 1.5px solid currentColor
-  background: conic-gradient(currentColor var(--fill), transparent var(--fill))
-
-.tier-glyph--0
-  color: var(--hotaru-fam-1)
-  --fill: 0%
-
-.tier-glyph--1
-  color: var(--hotaru-fam-2)
-  --fill: 25%
-  filter: drop-shadow(0 0 5px var(--hotaru-fam-2))
-
-.tier-glyph--2
-  color: var(--hotaru-fam-3)
-  --fill: 50%
-  filter: drop-shadow(0 0 5px var(--hotaru-fam-3))
-
-.tier-glyph--3
-  color: var(--hotaru-fam-4)
-  --fill: 75%
-  filter: drop-shadow(0 0 5px var(--hotaru-fam-4))
-
-.tier-glyph--4
-  color: var(--hotaru-fam-5)
-  --fill: 100%
-  filter: drop-shadow(0 0 5px var(--hotaru-fam-5))
 </style>

@@ -30,8 +30,10 @@ _EPOCH = datetime.min.replace(tzinfo=UTC)
 
 
 def _words_for_scope(scope: str, user: str) -> list[Word]:
-    """Resolve a `lesson:{lesson}` or `topic:{id}` scope to the active user's
-    visible words. Raises ValueError on a malformed scope."""
+    """Resolve an `all`, `lesson:{lesson}`, or `topic:{id}` scope to the active
+    user's visible words. Raises ValueError on a malformed scope."""
+    if scope == "all":
+        return hotaru_vocab_service.list_words(user=user)
     kind, sep, value = scope.partition(":")
     if not sep:
         raise ValueError(f"Invalid scope {scope!r}.")
@@ -56,6 +58,16 @@ def overview(scope: str, user: str) -> PracticeOverview:
         entry = progress.get(w.id)
         familiarity[entry.tier if entry else 0] += 1
     return PracticeOverview(scope=scope, word_count=len(words), familiarity=familiarity)
+
+
+def familiarity_map(user: str) -> dict[str, int]:
+    """The active user's per-word familiarity tier, for surfacing on the library.
+
+    Only reviewed words appear; a word absent from the map is New (tier 0),
+    resolved client-side. Tiers are familiarity, not due-debt, so nothing
+    debt-like leaves the API.
+    """
+    return {word_id: entry.tier for word_id, entry in progress_repo.read_progress(user).items()}
 
 
 def build_queue(

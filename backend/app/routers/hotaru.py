@@ -143,6 +143,13 @@ def practice_overview(scope: str, user: str) -> PracticeOverview:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+@router.get("/practice/familiarity", response_model=dict[str, int])
+def practice_familiarity(user: str) -> dict[str, int]:
+    if user not in VALID_USER_IDS:
+        raise HTTPException(status_code=404, detail=f"Unknown user {user}.")
+    return hotaru_practice_service.familiarity_map(user=user)
+
+
 @router.get("/practice/queue", response_model=list[QueueItem])
 def practice_queue(scope: str, user: str, direction: DrillCap = "r2m") -> list[QueueItem]:
     if user not in VALID_USER_IDS:

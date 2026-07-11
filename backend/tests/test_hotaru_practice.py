@@ -54,6 +54,16 @@ def test_familiarity_distribution_reflects_progress() -> None:
     assert len(fam) == 5
 
 
+def test_overview_all_scope_counts_every_visible_word() -> None:
+    _make_word({"reading": "ねこ", "meaning": "cat", "source": "genki_3", "lesson": "L2"})
+    _make_word({"reading": "いぬ", "meaning": "dog", "source": "genki_3", "lesson": "L3"})
+    body = _overview("all").json()
+    # Spans lessons — the aggregate is at least the two we just added.
+    assert body["scope"] == "all"
+    assert body["word_count"] >= 2
+    assert sum(body["familiarity"]) == body["word_count"]
+
+
 def test_overview_response_carries_no_due_debt() -> None:
     _make_word({"reading": "ねこ", "meaning": "cat", "source": "genki_3", "lesson": "L2"})
     body = _overview("lesson:L2").json()
@@ -83,6 +93,44 @@ def test_malformed_scope_is_422() -> None:
 
 def test_unknown_user_is_404() -> None:
     assert _overview("lesson:L2", user="ghost").status_code == 404
+
+
+# --- familiarity map -------------------------------------------------------
+
+
+def _familiarity(user: str = "dani"):
+    return client.get("/api/hotaru/practice/familiarity", params={"user": user})
+
+
+def test_familiarity_map_reflects_progress() -> None:
+    reviewed = _make_word({"reading": "あ", "meaning": "a"})
+    _make_word({"reading": "い", "meaning": "i"})  # unreviewed → absent from the map
+    progress_repo.set_entry("dani", reviewed, ProgressEntry(tier=2, points=1, last_reviewed_at=NOW))
+    body = _familiarity().json()
+    assert body[reviewed] == 2
+
+
+def test_familiarity_map_omits_unreviewed_words() -> None:
+    unseen = _make_word({"reading": "う", "meaning": "u"})
+    assert unseen not in _familiarity().json()
+
+
+def test_familiarity_map_is_a_flat_tier_map_no_debt() -> None:
+    wid = _make_word({"reading": "え", "meaning": "e"})
+    progress_repo.set_entry("dani", wid, ProgressEntry(tier=1, points=0, last_reviewed_at=NOW))
+    body = _familiarity().json()
+    assert body == {wid: 1}  # {word_id: int}, nothing due/overdue/next_review_at
+
+
+def test_familiarity_map_is_per_user() -> None:
+    wid = _make_word({"reading": "お", "meaning": "o"}, user="dani")
+    progress_repo.set_entry("dani", wid, ProgressEntry(tier=3, points=0, last_reviewed_at=NOW))
+    assert _familiarity(user="dani").json() == {wid: 3}
+    assert _familiarity(user="jake").json() == {}
+
+
+def test_familiarity_map_unknown_user_is_404() -> None:
+    assert _familiarity(user="ghost").status_code == 404
 
 
 # --- queue -----------------------------------------------------------------

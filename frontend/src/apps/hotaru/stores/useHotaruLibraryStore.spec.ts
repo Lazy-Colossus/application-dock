@@ -256,6 +256,25 @@ describe("useHotaruLibraryStore", () => {
     expect(store.error).toBe("Not found: t-x.");
   });
 
+  it("loads the per-user familiarity map; familiarityTier defaults absent words to New", async () => {
+    getMock.mockResolvedValueOnce({ a: 3 });
+    const store = useHotaruLibraryStore();
+    await store.loadFamiliarity("dani");
+    expect(getMock).toHaveBeenCalledWith(
+      "/hotaru/practice/familiarity?user=dani",
+    );
+    expect(store.familiarityTier("a")).toBe(3);
+    expect(store.familiarityTier("unseen")).toBe(0); // absent → New
+  });
+
+  it("familiarity load is best-effort: a failure leaves an empty map, no error", async () => {
+    getMock.mockRejectedValueOnce(new Error("boom"));
+    const store = useHotaruLibraryStore();
+    await store.loadFamiliarity("dani");
+    expect(store.familiarityTier("a")).toBe(0);
+    expect(store.error).toBeNull();
+  });
+
   it("topicsForWord and wordsForTopic intersect membership with loaded data", async () => {
     getMock.mockResolvedValueOnce([word("a", "L1"), word("b", "L2")]); // words
     getMock.mockResolvedValueOnce([topic("t1", "Food", ["a"])]); // topics

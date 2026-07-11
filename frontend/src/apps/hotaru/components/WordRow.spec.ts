@@ -42,35 +42,56 @@ describe("WordRow", () => {
     expect(wrapper.find(".word-row__reading").exists()).toBe(false);
   });
 
-  it("hides romaji by default and reveals it per-row on toggle", async () => {
-    const wrapper = mount(WordRow, { props: { word: word() } });
-    expect(wrapper.find('[data-testid="romaji"]').exists()).toBe(false);
-
-    await wrapper.find('[data-testid="romaji-toggle"]').trigger("click");
-    expect(wrapper.find('[data-testid="romaji"]').text()).toBe("daigaku");
-
-    await wrapper.find('[data-testid="romaji-toggle"]').trigger("click");
-    expect(wrapper.find('[data-testid="romaji"]').exists()).toBe(false);
-  });
-
   const STUBS = { "q-icon": { template: "<i />" } };
 
-  it("hides edit/delete affordances unless editable", () => {
+  it("reveals romaji from the actions menu", async () => {
     const wrapper = mount(WordRow, {
       props: { word: word() },
       global: { stubs: STUBS },
     });
+    expect(wrapper.find('[data-testid="romaji"]').exists()).toBe(false);
+    // Toggle lives behind the ⋮ menu now.
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
+    await wrapper.find('[data-testid="romaji-toggle"]').trigger("click");
+    expect(wrapper.find('[data-testid="romaji"]').text()).toBe("daigaku");
+
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
+    await wrapper.find('[data-testid="romaji-toggle"]').trigger("click");
+    expect(wrapper.find('[data-testid="romaji"]').exists()).toBe(false);
+  });
+
+  it("keeps the menu closed by default (only ⋮ shows)", () => {
+    const wrapper = mount(WordRow, {
+      props: { word: word(), editable: true },
+      global: { stubs: STUBS },
+    });
+    expect(wrapper.find('[data-testid="row-menu"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="edit-word"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="manage-topics"]').exists()).toBe(false);
+  });
+
+  it("hides edit/delete in the menu unless editable", async () => {
+    const wrapper = mount(WordRow, {
+      props: { word: word() },
+      global: { stubs: STUBS },
+    });
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
+    // Topics is available on every row; edit/delete only when editable.
+    expect(wrapper.find('[data-testid="manage-topics"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="edit-word"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="delete-word"]').exists()).toBe(false);
   });
 
-  it("emits edit and delete with the word when editable", async () => {
+  it("emits edit and delete from the menu when editable", async () => {
     const w = word();
     const wrapper = mount(WordRow, {
       props: { word: w, editable: true },
       global: { stubs: STUBS },
     });
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
     await wrapper.find('[data-testid="edit-word"]').trigger("click");
+    // Choosing an action closes the menu — reopen for the next one.
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
     await wrapper.find('[data-testid="delete-word"]').trigger("click");
     expect(wrapper.emitted("edit")?.[0]).toEqual([w]);
     expect(wrapper.emitted("delete")?.[0]).toEqual([w]);
@@ -102,13 +123,33 @@ describe("WordRow", () => {
     expect(wrapper.find('[data-testid="private-mark"]').exists()).toBe(true);
   });
 
-  it("emits topics with the word from the manage-topics affordance", async () => {
+  it("shows a familiarity indicator reflecting the tier prop", () => {
+    const wrapper = mount(WordRow, {
+      props: { word: word(), tier: 3 },
+      global: { stubs: STUBS },
+    });
+    const icon = wrapper.find('[data-testid="familiarity-icon"]');
+    expect(icon.exists()).toBe(true);
+    expect(icon.attributes("aria-label")).toBe("Strong");
+  });
+
+  it("defaults to New when no tier is given (unreviewed word)", () => {
+    const wrapper = mount(WordRow, {
+      props: { word: word() },
+      global: { stubs: STUBS },
+    });
+    expect(
+      wrapper.find('[data-testid="familiarity-icon"]').attributes("aria-label"),
+    ).toBe("New");
+  });
+
+  it("emits topics from the menu (shown on every row, even non-editable)", async () => {
     const w = word();
     const wrapper = mount(WordRow, {
       props: { word: w },
       global: { stubs: STUBS },
     });
-    // Shown on all rows (topics span the master list), even when not editable.
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
     await wrapper.find('[data-testid="manage-topics"]').trigger("click");
     expect(wrapper.emitted("topics")?.[0]).toEqual([w]);
   });

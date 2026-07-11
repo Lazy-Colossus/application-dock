@@ -67,6 +67,7 @@
         :key="word.id"
         :word="word"
         :editable="editable"
+        :tier="store.familiarityTier(word.id)"
         @edit="onEdit"
         @delete="onDelete"
         @topics="onManageTopics"
@@ -217,6 +218,7 @@ onMounted(async () => {
   await Promise.all([
     store.loadWords(userStore.activeUserId),
     store.loadTopics(),
+    store.loadFamiliarity(userStore.activeUserId),
   ]);
   if (activeSection.value !== null) {
     // Returning to the library — restore where the user was.

@@ -45,6 +45,9 @@ function sortLessons(values: string[]): string[] {
 export const useHotaruLibraryStore = defineStore("hotaruLibrary", () => {
   const words = ref<Word[]>([]);
   const topics = ref<Topic[]>([]);
+  // The active user's per-word familiarity tier. Only reviewed words appear;
+  // an absent word is New (tier 0), resolved by `familiarityTier`.
+  const familiarity = ref<Record<string, number>>({});
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -105,6 +108,23 @@ export const useHotaruLibraryStore = defineStore("hotaruLibrary", () => {
     } finally {
       loading.value = false;
     }
+  }
+
+  // The active user's per-word familiarity, for the icon on each library row.
+  // Best-effort context: a load failure leaves rows reading New rather than
+  // blocking the library, so it doesn't touch the shared `error`.
+  async function loadFamiliarity(user: string): Promise<void> {
+    try {
+      familiarity.value = await api.get<Record<string, number>>(
+        `/hotaru/practice/familiarity?user=${encodeURIComponent(user)}`,
+      );
+    } catch {
+      familiarity.value = {};
+    }
+  }
+
+  function familiarityTier(wordId: string): number {
+    return familiarity.value[wordId] ?? 0;
   }
 
   async function createWord(
@@ -294,11 +314,14 @@ export const useHotaruLibraryStore = defineStore("hotaruLibrary", () => {
   return {
     words,
     topics,
+    familiarity,
     loading,
     error,
     activeSection,
     activeSubsection,
     lessons,
+    loadFamiliarity,
+    familiarityTier,
     wordsByLesson,
     textbookSources,
     lessonsForSource,

@@ -74,6 +74,8 @@ beforeEach(() => {
   getMock.mockImplementation((path: string) => {
     if (path.startsWith("/hotaru/users")) return Promise.resolve(USERS);
     if (path.startsWith("/hotaru/topics")) return Promise.resolve(topics);
+    if (path.startsWith("/hotaru/practice/familiarity"))
+      return Promise.resolve({ g1: 4 });
     return Promise.resolve(WORDS);
   });
   delMock.mockReset().mockResolvedValue(undefined);
@@ -90,6 +92,18 @@ describe("LibraryPage (two-level)", () => {
     );
     // Default: Genki → G → shows "thanks"
     expect(wrapper.text()).toContain("thanks");
+  });
+
+  it("loads familiarity and shows each word's tier on its row", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    expect(getMock).toHaveBeenCalledWith(
+      "/hotaru/practice/familiarity?user=dani",
+    );
+    // Default view (Genki → G) shows g1, whose tier is 4 (Mastered).
+    expect(
+      wrapper.find('[data-testid="familiarity-icon"]').attributes("aria-label"),
+    ).toBe("Mastered");
   });
 
   it("navigates section → subsection to Custom → Private", async () => {
@@ -131,14 +145,16 @@ describe("LibraryPage (two-level)", () => {
     expect(push).toHaveBeenCalledWith("/hotaru/add-word");
   });
 
-  it("shows edit/delete affordances for Custom words but not textbook words", async () => {
+  it("shows edit/delete in the row menu for Custom words but not textbook words", async () => {
     const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
     await flushPromises();
-    // Textbook section (default) → no delete affordance.
+    // Textbook section (default) → open the row menu → no delete.
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
     expect(wrapper.find('[data-testid="delete-word"]').exists()).toBe(false);
-    // Custom → Shared → editable.
+    // Custom → Shared → open the row menu → editable.
     await wrapper.find('[data-testid="section-__custom__"]').trigger("click");
     await wrapper.find('[data-testid="sub-shared"]').trigger("click");
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
     expect(wrapper.find('[data-testid="delete-word"]').exists()).toBe(true);
   });
 
@@ -158,6 +174,7 @@ describe("LibraryPage (two-level)", () => {
     await flushPromises();
     await wrapper.find('[data-testid="section-__custom__"]').trigger("click");
     await wrapper.find('[data-testid="sub-shared"]').trigger("click");
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
     await wrapper.find('[data-testid="edit-word"]').trigger("click");
     expect(push).toHaveBeenCalledWith("/hotaru/words/cs/edit");
   });
@@ -168,6 +185,7 @@ describe("LibraryPage (two-level)", () => {
     await flushPromises();
     await wrapper.find('[data-testid="section-__custom__"]').trigger("click");
     await wrapper.find('[data-testid="sub-shared"]').trigger("click");
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
     await wrapper.find('[data-testid="delete-word"]').trigger("click");
     await flushPromises();
     expect(confirm).toHaveBeenCalled();
@@ -181,6 +199,7 @@ describe("LibraryPage (two-level)", () => {
     await flushPromises();
     await wrapper.find('[data-testid="section-__custom__"]').trigger("click");
     await wrapper.find('[data-testid="sub-shared"]').trigger("click");
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
     await wrapper.find('[data-testid="delete-word"]').trigger("click");
     await flushPromises();
     expect(delMock).not.toHaveBeenCalled();

@@ -87,6 +87,21 @@ describe("PracticeSetupPage", () => {
     expect(wrapper.find('[data-testid="scope-lesson-"]').exists()).toBe(false);
   });
 
+  it("shows all-words stats by default, with no practice CTA until a scope is picked", async () => {
+    const wrapper = mount(PracticeSetupPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    // The aggregate loads for the `all` scope on entry.
+    expect(getMock).toHaveBeenCalledWith(
+      "/hotaru/practice/overview?scope=all&user=dani",
+    );
+    expect(wrapper.find('[data-testid="overview-all"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="overview-count"]').text()).toContain(
+      "3",
+    );
+    // No CTA in the ambient all-words summary.
+    expect(wrapper.find('[data-testid="start-drill"]').exists()).toBe(false);
+  });
+
   it("loads and renders the overview when a scope is selected", async () => {
     const wrapper = mount(PracticeSetupPage, { global: { stubs: STUBS } });
     await flushPromises();
