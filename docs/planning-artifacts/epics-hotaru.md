@@ -274,6 +274,28 @@ So that I can fix mistakes and remove words I no longer want.
 
 **Given** any attempt to edit or delete a seeded word or another user's private word, when made, then it is rejected (403/404) — the seed is never mutated.
 
+### Story 1.9: Bulk actions on library words
+
+_Added 2026-07-11 — not from an original FR. As the library grows (seed + custom + topics), one-at-a-time management is tedious; batch operations make curation practical. Builds on 1.6/1.7/1.8._
+
+As a learner,
+I want to select several words in the library and act on them at once,
+So that I can organize and clean up vocabulary without repeating the same action word by word.
+
+**Acceptance Criteria:**
+
+**Given** the library list, **when** I enter a selection mode (a "Select" affordance / long-press), **then** I can multi-select words via checkboxes, see a running count of what's selected, and clearing/leaving selection mode drops the selection. Mobile-first: selection and the batch-action bar work one-handed on a narrow screen.
+
+**Given** a multi-selection, **when** I choose **Assign to topic** / **Remove from topic**, **then** the chosen topic membership is applied to every selected word in one batch (reusing the topic assign/unassign endpoints), respecting per-word visibility (FR-6, FR-7).
+
+**Given** a multi-selection of **custom** words, **when** I choose **Change lesson**, **then** their `lesson` updates in place (via the existing word-update path); seeded (textbook) words are read-only and are excluded from the change (seed read-only per 1.8).
+
+**Given** a multi-selection of custom words, **when** I choose **Delete**, **then** I confirm once for the whole batch and each deletable word is removed (private words only by their owner); seeded words cannot be deleted (403/404 per 1.8).
+
+**Given** a batch where some words are ineligible (seeded, or another user's private word), **when** the action runs, **then** it applies to the eligible words and the UI clearly reports what was skipped and why — no partial silent failures.
+
+_Implementation note: reuse the existing per-word endpoints (looped client-side) or add a small batch endpoint — either way keep the 3-layer backend and queue-not-debt conventions; no new debt/streak surfaces._
+
 ## Epic 2: Drilling & Spaced Repetition
 
 Dani and Jake can practise a chosen scope Anki-style — in either direction, with their preferred scoring — and watch each word's familiarity firm up, calm and debt-free.
@@ -419,6 +441,44 @@ So that I can study freely without being graded.
 **Given** the last card
 **When** I advance past it
 **Then** the study session ends cleanly (a "that's all" state with a way back), with no penalty, streak, or due-count. An empty scope shows a graceful empty state.
+
+### Story 2.9: Quick Practice (presets across the whole library)
+
+_Added 2026-07-11 — extends FR-10 (which scopes a session to exactly one Lesson or Topic). Quick Practice builds a session from the **whole** visible list using familiarity/level presets instead of a single scope. Depends on 2.1/2.6 (familiarity) and reuses the 2.3/2.5 drill flow unchanged._
+
+As a learner,
+I want a "Quick Practice" option when I haven't picked a lesson or topic,
+So that I can start a focused session drawn from my whole vocabulary using presets, without hand-picking a scope.
+
+**Acceptance Criteria:**
+
+**Given** the Practice screen with **no** Lesson/Topic selected (the all-words view), **when** it renders, **then** a **Quick Practice** affordance offers preset ways to build a session from the whole (visible, privacy-correct) list — sitting alongside the all-words stats, not replacing per-scope practice (FR-10 extension).
+
+**Given** Quick Practice, **when** I choose a **familiarity** preset, **then** I can practise e.g. *seen at least once*, *only Learning / Familiar / Strong / Mastered*, or *needs work* (weaker tiers) — sourced across all lessons/topics for the active user (FR-19, FR-20, FR-21).
+
+**Given** Quick Practice, **when** I choose a **lesson/level** preset, **then** I can combine several lessons and/or restrict to certain levels (e.g. "Lessons 1–5", "L3 + L7") and practise the union (FR-5, FR-10 extension).
+
+**Given** a built Quick Practice queue, **when** it is assembled (practice queue/overview endpoints extended with preset params — e.g. familiarity tiers, a lesson set), **then** it obeys the same rules as a scoped drill: SRS weighting (weakest/due first), `drill_caps` direction filter, session soft-cap (default 20), and **no** due-debt in the response (FR-12, FR-18, FR-19, NFR-5).
+
+**Given** the active user's presets, **when** I return to Quick Practice, **then** my last-used preset is remembered (persisted per user) so re-entry is genuinely quick; a preset matching no words shows a calm empty state ("nothing to practise here yet"), never an error.
+
+### Story 2.10: Filter the library by familiarity (and jump there from practice stats)
+
+_Added 2026-07-11 — depends on the familiarity model/display (2.1, 2.6) and the pre-session stats (2.2). Turns the read-only familiarity signal into a navigational filter. Its primary deliverable is a **Library** filter, placed in Epic 2 because it needs Epic-2 familiarity data + the practice stats it links from._
+
+As a learner,
+I want to filter the library by familiarity and jump straight to a familiarity group from my practice stats,
+So that I can find and act on exactly the words at a given level (e.g. everything I've mastered, or everything still New).
+
+**Acceptance Criteria:**
+
+**Given** the library, **when** I apply a **familiarity filter** (one or more of the 5 tiers), **then** the list shows only the active user's words at those tiers, combinable with the existing Lesson/Topic/Custom navigation, using the per-word familiarity already available (`GET /api/hotaru/practice/familiarity`) (FR-21, UX-DR3). Mobile-first: a compact tier control reusing `FamiliarityIcon`, not a wide toolbar.
+
+**Given** the Practice pre-session stats table — the all-words view **or** a selected Lesson/Topic — **when** I tap a familiarity group/row, **then** I'm navigated to the Library with that tier filter pre-applied **and** the originating scope respected: no scope → the whole library; a selected Lesson/Topic → that lesson/topic pre-selected (FR-11, FR-21). Deep-linked via route query (e.g. `/hotaru/library?tier=4&scope=lesson:L2`).
+
+**Given** a familiarity filter yields no words, **when** the list renders, **then** it shows a calm empty state and the filter can be cleared to return to the full view.
+
+**Given** an active filter, **when** familiarity has changed (e.g. after a session), **then** reopening/refreshing the library reflects the updated tiers (familiarity is read fresh, never stale).
 
 ## Epic 3: Cooperative Notes
 
