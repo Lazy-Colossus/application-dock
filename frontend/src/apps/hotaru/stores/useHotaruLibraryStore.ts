@@ -311,6 +311,135 @@ export const useHotaruLibraryStore = defineStore("hotaruLibrary", () => {
     }
   }
 
+  // --- Bulk actions (Story 1.9) --------------------------------------------
+  // Best-effort batches over the existing per-word endpoints: loop the API
+  // directly (so we refresh once at the end, not per item), catch per item, and
+  // return {ok, failed} so the caller can summarise. Like submitGrades, these
+  // don't hijack the shared `error` — a seeded/foreign word simply counts as
+  // failed (its 403/404 is expected, not a page error).
+  interface BulkResult {
+    ok: number;
+    failed: number;
+  }
+
+  async function bulkAssignTopic(
+    topicId: string,
+    wordIds: string[],
+    user: string,
+  ): Promise<BulkResult> {
+    loading.value = true;
+    let ok = 0;
+    let failed = 0;
+    try {
+      for (const id of wordIds) {
+        try {
+          await api.post(
+            `/hotaru/topics/${encodeURIComponent(topicId)}/words/${encodeURIComponent(id)}?user=${encodeURIComponent(user)}`,
+          );
+          ok += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+      await loadTopics();
+      return { ok, failed };
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function bulkUnassignTopic(
+    topicId: string,
+    wordIds: string[],
+    user: string,
+  ): Promise<BulkResult> {
+    loading.value = true;
+    let ok = 0;
+    let failed = 0;
+    try {
+      for (const id of wordIds) {
+        try {
+          await api.del(
+            `/hotaru/topics/${encodeURIComponent(topicId)}/words/${encodeURIComponent(id)}?user=${encodeURIComponent(user)}`,
+          );
+          ok += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+      await loadTopics();
+      return { ok, failed };
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function bulkChangeLesson(
+    lesson: string,
+    wordIds: string[],
+    user: string,
+  ): Promise<BulkResult> {
+    loading.value = true;
+    let ok = 0;
+    let failed = 0;
+    try {
+      for (const id of wordIds) {
+        const word = wordById(id);
+        if (!word) {
+          failed += 1;
+          continue;
+        }
+        const payload: UpdateWordInput = {
+          reading: word.reading,
+          meaning: word.meaning,
+          kanji: word.kanji,
+          romaji: word.romaji,
+          pos: word.pos,
+          visibility: word.visibility,
+          lesson,
+        };
+        try {
+          await api.put<Word>(
+            `/hotaru/words/${encodeURIComponent(id)}?user=${encodeURIComponent(user)}`,
+            payload as unknown as Record<string, unknown>,
+          );
+          ok += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+      await loadWords(user);
+      return { ok, failed };
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function bulkDelete(
+    wordIds: string[],
+    user: string,
+  ): Promise<BulkResult> {
+    loading.value = true;
+    let ok = 0;
+    let failed = 0;
+    try {
+      for (const id of wordIds) {
+        try {
+          await api.del(
+            `/hotaru/words/${encodeURIComponent(id)}?user=${encodeURIComponent(user)}`,
+          );
+          ok += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+      await loadWords(user);
+      return { ok, failed };
+    } finally {
+      loading.value = false;
+    }
+  }
+
   return {
     words,
     topics,
@@ -339,5 +468,9 @@ export const useHotaruLibraryStore = defineStore("hotaruLibrary", () => {
     createTopic,
     assignWord,
     unassignWord,
+    bulkAssignTopic,
+    bulkUnassignTopic,
+    bulkChangeLesson,
+    bulkDelete,
   };
 });

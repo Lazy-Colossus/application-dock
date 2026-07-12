@@ -1,5 +1,19 @@
 <template>
-  <div class="word-row row items-center no-wrap" data-testid="word-row">
+  <div
+    class="word-row row items-center no-wrap"
+    :class="{ 'word-row--selectable': selectable }"
+    data-testid="word-row"
+    @click="onRowClick"
+  >
+    <input
+      v-if="selectable"
+      type="checkbox"
+      class="word-row__check"
+      :checked="selected"
+      tabindex="-1"
+      aria-label="Select word"
+      data-testid="row-select"
+    />
     <div class="word-row__jp column">
       <span
         class="word-row__primary"
@@ -27,7 +41,7 @@
       <q-icon name="lock" size="17px" />
     </span>
 
-    <div class="word-row__menu-wrap">
+    <div v-if="!selectable" class="word-row__menu-wrap">
       <button
         class="word-row__action"
         aria-label="Word actions"
@@ -94,16 +108,30 @@ import FamiliarityIcon from "@/apps/hotaru/components/FamiliarityIcon.vue";
 import type { Word } from "@/apps/hotaru/types";
 
 // `tier` defaults to 0 (New) — an unreviewed word, or before familiarity loads.
+// `selectable` puts the row into bulk-select mode (checkbox, no ⋮ menu).
 const props = withDefaults(
-  defineProps<{ word: Word; editable?: boolean; tier?: number }>(),
-  { editable: false, tier: 0 },
+  defineProps<{
+    word: Word;
+    editable?: boolean;
+    tier?: number;
+    selectable?: boolean;
+    selected?: boolean;
+  }>(),
+  { editable: false, tier: 0, selectable: false, selected: false },
 );
 
 const emit = defineEmits<{
   edit: [word: Word];
   delete: [word: Word];
   topics: [word: Word];
+  "toggle-select": [word: Word];
 }>();
+
+// In select mode the whole row toggles selection (the checkbox is a bound
+// indicator — see the pointer-events rule).
+function onRowClick(): void {
+  if (props.selectable) emit("toggle-select", props.word);
+}
 
 // Per-row romaji visibility (off by default) and the actions overflow menu.
 const showRomaji = ref(false);
@@ -129,6 +157,17 @@ function run(action: "edit" | "delete" | "topics"): void {
   padding: 12px 4px
   border-bottom: 1px solid rgba(155, 107, 255, 0.16)
   gap: 10px
+
+.word-row--selectable
+  cursor: pointer
+
+// Bound indicator only — clicks fall through to the row so the whole row toggles.
+.word-row__check
+  flex: none
+  width: 18px
+  height: 18px
+  accent-color: var(--hotaru-bamboo)
+  pointer-events: none
 
 // Fixed-width JP column so the meaning always starts at the same x — long
 // headwords wrap within the column instead of shoving the rest of the row.

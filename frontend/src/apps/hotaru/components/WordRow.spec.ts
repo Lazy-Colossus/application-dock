@@ -143,6 +143,33 @@ describe("WordRow", () => {
     ).toBe("New");
   });
 
+  it("shows a checkbox and hides the ⋮ menu in select mode", () => {
+    const wrapper = mount(WordRow, {
+      props: { word: word(), selectable: true, editable: true },
+      global: { stubs: STUBS },
+    });
+    expect(wrapper.find('[data-testid="row-select"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="row-menu"]').exists()).toBe(false);
+  });
+
+  it("emits toggle-select with the word when the row is clicked in select mode", async () => {
+    const w = word();
+    const wrapper = mount(WordRow, {
+      props: { word: w, selectable: true },
+      global: { stubs: STUBS },
+    });
+    await wrapper.find('[data-testid="word-row"]').trigger("click");
+    expect(wrapper.emitted("toggle-select")?.[0]).toEqual([w]);
+  });
+
+  it("has no checkbox when not selectable", () => {
+    const wrapper = mount(WordRow, {
+      props: { word: word() },
+      global: { stubs: STUBS },
+    });
+    expect(wrapper.find('[data-testid="row-select"]').exists()).toBe(false);
+  });
+
   it("emits topics from the menu (shown on every row, even non-editable)", async () => {
     const w = word();
     const wrapper = mount(WordRow, {

@@ -29,6 +29,23 @@
       </button>
     </div>
 
+    <!-- Select-mode toolbar. -->
+    <div class="library-toolbar row items-center justify-between q-mb-sm">
+      <button
+        class="library-select-toggle"
+        data-testid="select-toggle"
+        @click="toggleSelectMode"
+      >
+        {{ selectMode ? "Cancel" : "Select" }}
+      </button>
+      <span
+        v-if="bulkResult"
+        class="library-bulk-result"
+        data-testid="bulk-result"
+        >{{ bulkResult }}</span
+      >
+    </div>
+
     <div
       v-if="store.loading"
       class="library-state"
@@ -68,13 +85,29 @@
         :word="word"
         :editable="editable"
         :tier="store.familiarityTier(word.id)"
+        :selectable="selectMode"
+        :selected="selectedIds.has(word.id)"
         @edit="onEdit"
         @delete="onDelete"
         @topics="onManageTopics"
+        @toggle-select="onToggleSelect"
       />
     </div>
 
+    <BulkActionsBar
+      v-if="selectMode"
+      :count="selectedIds.size"
+      :editable="editable"
+      :in-topic="section === TOPICS"
+      @add-topic="bulkTopicOpen = true"
+      @remove-topic="onBulkRemoveTopic"
+      @change-lesson="onBulkChangeLesson"
+      @delete="onBulkDelete"
+      @done="exitSelect"
+    />
+
     <q-btn
+      v-if="!selectMode"
       class="library-add"
       round
       unelevated
@@ -82,6 +115,14 @@
       aria-label="Add word"
       data-testid="add-word-fab"
       @click="onAdd"
+    />
+
+    <BulkTopicDialog
+      v-model="bulkTopicOpen"
+      :topics="store.topics"
+      :count="selectedIds.size"
+      @pick="onBulkPickTopic"
+      @create="onBulkCreateTopic"
     />
 
     <WordTopicsDialog
@@ -103,6 +144,8 @@ import { useRouter } from "vue-router";
 import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
 import WordRow from "@/apps/hotaru/components/WordRow.vue";
 import WordTopicsDialog from "@/apps/hotaru/components/WordTopicsDialog.vue";
+import BulkActionsBar from "@/apps/hotaru/components/BulkActionsBar.vue";
+import BulkTopicDialog from "@/apps/hotaru/components/BulkTopicDialog.vue";
 import { useHotaruLibraryStore } from "@/apps/hotaru/stores/useHotaruLibraryStore";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
 import type { Visibility, Word } from "@/apps/hotaru/types";
@@ -204,9 +247,11 @@ function ensureValidSelection(): void {
 }
 
 // Persist every selection change so we can restore it after navigating away.
+// Changing the view also drops any bulk selection (keeps eligibility simple).
 watch([section, subsection], ([s, sub]) => {
   activeSection.value = s;
   activeSubsection.value = sub;
+  selectedIds.value = new Set();
 });
 
 onMounted(async () => {
@@ -248,6 +293,96 @@ async function onDelete(word: Word): Promise<void> {
   if (!window.confirm(`Delete "${word.meaning}"? This can't be undone.`))
     return;
   await store.deleteWord(word.id, user);
+}
+
+// --- Bulk actions (Story 1.9) -----------------------------------------------
+
+const selectMode = ref(false);
+const selectedIds = ref<Set<string>>(new Set());
+const bulkResult = ref<string | null>(null);
+const bulkTopicOpen = ref(false);
+
+function toggleSelectMode(): void {
+  selectMode.value = !selectMode.value;
+  selectedIds.value = new Set();
+  if (selectMode.value) bulkResult.value = null;
+}
+
+function onToggleSelect(word: Word): void {
+  const next = new Set(selectedIds.value);
+  if (next.has(word.id)) next.delete(word.id);
+  else next.add(word.id);
+  selectedIds.value = next;
+}
+
+function exitSelect(): void {
+  selectMode.value = false;
+  selectedIds.value = new Set();
+}
+
+function summarize(verb: string, ok: number, failed: number): void {
+  bulkResult.value =
+    failed > 0 ? `${verb} ${ok} · skipped ${failed}` : `${verb} ${ok}`;
+}
+
+async function onBulkDelete(): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null) return;
+  const ids = [...selectedIds.value];
+  if (ids.length === 0) return;
+  if (!window.confirm(`Delete ${ids.length} word(s)? This can't be undone.`))
+    return;
+  summarize("Deleted", ...resultTuple(await store.bulkDelete(ids, user)));
+  exitSelect();
+}
+
+async function onBulkChangeLesson(): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null) return;
+  const ids = [...selectedIds.value];
+  if (ids.length === 0) return;
+  const lesson = window.prompt("Lesson code (e.g. L5):");
+  if (lesson === null) return; // cancelled
+  summarize(
+    "Updated",
+    ...resultTuple(await store.bulkChangeLesson(lesson.trim(), ids, user)),
+  );
+  exitSelect();
+}
+
+async function onBulkPickTopic(topicId: string): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null) return;
+  const ids = [...selectedIds.value];
+  bulkTopicOpen.value = false;
+  if (ids.length === 0) return;
+  summarize(
+    "Added",
+    ...resultTuple(await store.bulkAssignTopic(topicId, ids, user)),
+  );
+  exitSelect();
+}
+
+async function onBulkCreateTopic(name: string): Promise<void> {
+  const created = await store.createTopic(name);
+  if (created) await onBulkPickTopic(created.id);
+}
+
+async function onBulkRemoveTopic(): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null) return;
+  const ids = [...selectedIds.value];
+  if (ids.length === 0) return;
+  // In the Topics view the current subsection IS the topic id.
+  summarize(
+    "Removed",
+    ...resultTuple(await store.bulkUnassignTopic(subsection.value, ids, user)),
+  );
+  exitSelect();
+}
+
+function resultTuple(r: { ok: number; failed: number }): [number, number] {
+  return [r.ok, r.failed];
 }
 
 // --- Topic assignment dialog ------------------------------------------------
@@ -318,6 +453,22 @@ async function onCreateTopic(name: string): Promise<void> {
 // Rows already divide with a hairline; drop the last one inside the panel.
 .library-list :deep(.word-row:last-child)
   border-bottom: none
+
+.library-toolbar
+  min-height: 28px
+
+.library-select-toggle
+  border: 1px solid rgba(56, 240, 230, 0.4)
+  background: rgba(56, 240, 230, 0.10)
+  color: var(--hotaru-cream-soft)
+  border-radius: 9999px
+  padding: 3px 14px
+  font-size: 13px
+  cursor: pointer
+
+.library-bulk-result
+  font-size: 13px
+  color: var(--hotaru-bamboo)
 
 .library-state
   color: var(--hotaru-cream-soft)

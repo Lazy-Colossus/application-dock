@@ -2,15 +2,19 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, delMock, push, replace } = vi.hoisted(() => ({
-  getMock: vi.fn(),
-  delMock: vi.fn(),
-  push: vi.fn(),
-  replace: vi.fn(),
-}));
+const { getMock, postMock, putMock, delMock, push, replace } = vi.hoisted(
+  () => ({
+    getMock: vi.fn(),
+    postMock: vi.fn(),
+    putMock: vi.fn(),
+    delMock: vi.fn(),
+    push: vi.fn(),
+    replace: vi.fn(),
+  }),
+);
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
-  api: { get: getMock, post: vi.fn(), put: vi.fn(), del: delMock },
+  api: { get: getMock, post: postMock, put: putMock, del: delMock },
 }));
 vi.mock("vue-router", () => ({ useRouter: () => ({ push, replace }) }));
 
@@ -45,6 +49,7 @@ function word(
 
 const STUBS = {
   "q-page": { template: "<div><slot /></div>" },
+  "q-dialog": { template: "<div><slot /></div>" },
   "q-icon": { template: "<i />" },
   "q-btn": {
     template:
@@ -79,6 +84,8 @@ beforeEach(() => {
     return Promise.resolve(WORDS);
   });
   delMock.mockReset().mockResolvedValue(undefined);
+  postMock.mockReset().mockResolvedValue({});
+  putMock.mockReset().mockResolvedValue({});
   push.mockReset();
 });
 
@@ -224,5 +231,80 @@ describe("LibraryPage (two-level)", () => {
     expect(wrapper.find('[data-testid="library-empty"]').text()).toContain(
       "No topics yet",
     );
+  });
+
+  // --- bulk actions (Story 1.9) ---------------------------------------------
+
+  async function enterCustomSelect(wrapper: ReturnType<typeof mount>) {
+    await wrapper.find('[data-testid="section-__custom__"]').trigger("click");
+    await wrapper.find('[data-testid="sub-shared"]').trigger("click");
+    await wrapper.find('[data-testid="select-toggle"]').trigger("click");
+    // Select the one shared custom word ("cs").
+    await wrapper.find('[data-testid="word-row"]').trigger("click");
+  }
+
+  it("enters select mode: checkboxes appear, the FAB hides, count tracks", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    expect(wrapper.find('[data-testid="add-word-fab"]').exists()).toBe(true);
+    await wrapper.find('[data-testid="select-toggle"]').trigger("click");
+    expect(wrapper.find('[data-testid="row-select"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="add-word-fab"]').exists()).toBe(false);
+    await wrapper.find('[data-testid="word-row"]').trigger("click");
+    expect(wrapper.find('[data-testid="bulk-bar"]').text()).toContain("1");
+  });
+
+  it("bulk-deletes the selected custom words after one confirm", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await enterCustomSelect(wrapper);
+    await wrapper.find('[data-testid="bulk-delete"]').trigger("click");
+    await flushPromises();
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(delMock).toHaveBeenCalledWith("/hotaru/words/cs?user=dani");
+    expect(wrapper.find('[data-testid="bulk-result"]').text()).toContain(
+      "Deleted 1",
+    );
+    confirm.mockRestore();
+  });
+
+  it("bulk-adds the selection to a picked topic", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await enterCustomSelect(wrapper);
+    await wrapper.find('[data-testid="bulk-add-topic"]').trigger("click");
+    await wrapper.find('[data-testid="bulk-topic-pick-t1"]').trigger("click");
+    await flushPromises();
+    expect(postMock).toHaveBeenCalledWith(
+      "/hotaru/topics/t1/words/cs?user=dani",
+    );
+    expect(wrapper.find('[data-testid="bulk-result"]').text()).toContain(
+      "Added 1",
+    );
+  });
+
+  it("bulk-changes the lesson via a prompt", async () => {
+    const prompt = vi.spyOn(window, "prompt").mockReturnValue("L5");
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await enterCustomSelect(wrapper);
+    await wrapper.find('[data-testid="bulk-change-lesson"]').trigger("click");
+    await flushPromises();
+    expect(putMock).toHaveBeenCalledWith(
+      "/hotaru/words/cs?user=dani",
+      expect.objectContaining({ lesson: "L5" }),
+    );
+    prompt.mockRestore();
+  });
+
+  it("clears the selection when the section changes", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await enterCustomSelect(wrapper);
+    expect(wrapper.find('[data-testid="bulk-bar"]').text()).toContain("1");
+    // Switch section → selection cleared (bar still in select mode, count 0).
+    await wrapper.find('[data-testid="section-genki_3"]').trigger("click");
+    expect(wrapper.find('[data-testid="bulk-bar"]').text()).toContain("0");
   });
 });
