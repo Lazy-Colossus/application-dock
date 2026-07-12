@@ -130,16 +130,13 @@
           </button>
         </div>
 
-        <div class="quick__count" data-testid="quick-count">
+        <div
+          class="quick__count"
+          :class="{ 'quick__count--empty': quickSessionCount === 0 }"
+          data-testid="quick-count"
+        >
           {{ quickSessionCount }}
           {{ quickSessionCount === 1 ? "word" : "words" }}
-        </div>
-        <div
-          v-if="quickCount === 0"
-          class="quick__empty"
-          data-testid="quick-empty"
-        >
-          Nothing matches — try another preset.
         </div>
 
         <q-btn
@@ -522,10 +519,9 @@ onMounted(async () => {
   color: var(--hotaru-cream-soft)
   margin-top: 2px
 
-.quick__empty
-  font-size: 13px
-  color: var(--hotaru-sage)
-  margin-top: 4px
+// Zero matches → magenta, signalling the (disabled) CTA won't start anything.
+.quick__count--empty
+  color: var(--hotaru-fam-5)
 
 .practice-opts
   gap: 10px

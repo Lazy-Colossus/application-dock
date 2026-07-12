@@ -170,6 +170,21 @@ describe("WordRow", () => {
     expect(wrapper.find('[data-testid="row-select"]').exists()).toBe(false);
   });
 
+  it("copies a readable form of the word to the clipboard from the menu", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+    const wrapper = mount(WordRow, {
+      props: { word: word() },
+      global: { stubs: STUBS },
+    });
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
+    await wrapper.find('[data-testid="copy-word"]').trigger("click");
+    expect(writeText).toHaveBeenCalledWith("大学（だいがく）— university");
+  });
+
   it("emits topics from the menu (shown on every row, even non-editable)", async () => {
     const w = word();
     const wrapper = mount(WordRow, {

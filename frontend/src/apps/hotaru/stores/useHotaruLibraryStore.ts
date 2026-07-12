@@ -97,6 +97,12 @@ export const useHotaruLibraryStore = defineStore("hotaruLibrary", () => {
     );
   }
 
+  // All user-added words regardless of visibility (the Custom "All" view).
+  function allCustomWords(userIds: string[]): Word[] {
+    const set = new Set(userIds);
+    return words.value.filter((w) => set.has(w.source));
+  }
+
   async function loadWords(user?: string | null): Promise<void> {
     loading.value = true;
     error.value = null;
@@ -456,6 +462,7 @@ export const useHotaruLibraryStore = defineStore("hotaruLibrary", () => {
     lessonsForSource,
     wordsBySourceLesson,
     customWords,
+    allCustomWords,
     wordById,
     topicById,
     topicsForWord,

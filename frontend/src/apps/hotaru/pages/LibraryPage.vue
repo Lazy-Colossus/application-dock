@@ -187,6 +187,7 @@ const subsection = ref<string>("shared");
 const subsections = computed<Tab[]>(() => {
   if (section.value === CUSTOM) {
     return [
+      { key: "all", label: "All" },
       { key: "shared", label: "Shared" },
       { key: "private", label: "Private" },
     ];
@@ -201,6 +202,8 @@ const subsections = computed<Tab[]>(() => {
 
 const visibleWords = computed(() => {
   if (section.value === CUSTOM) {
+    // "All" (the default) shows every custom word; Shared/Private filter it.
+    if (subsection.value === "all") return store.allCustomWords(userIds.value);
     return store.customWords(userIds.value, subsection.value as Visibility);
   }
   if (section.value === TOPICS) {
@@ -213,7 +216,7 @@ const visibleWords = computed(() => {
 const editable = computed(() => section.value === CUSTOM);
 
 function subsectionKeys(key: string): string[] {
-  if (key === CUSTOM) return ["shared"];
+  if (key === CUSTOM) return ["all", "shared", "private"];
   if (key === TOPICS) return store.topics.map((t) => t.id);
   return store.lessonsForSource(key);
 }
@@ -415,10 +418,15 @@ async function onCreateTopic(name: string): Promise<void> {
 .library-sections
   gap: 8px
 
-.library-tabs
-  overflow-x: auto
+// Only the section-row tabs grow to fill the row width. (Scoping `flex: 1` to
+// this row matters: the level-2 subsection tabs are a direct child of the
+// column page, where `flex: 1` would stretch them vertically — the gap bug.)
+.library-sections .library-tabs
   flex: 1
   min-width: 0
+
+.library-tabs
+  overflow-x: auto
 
 .library-tab
   border: 1px solid rgba(155, 107, 255, 0.30)

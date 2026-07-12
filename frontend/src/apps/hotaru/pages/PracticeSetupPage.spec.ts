@@ -236,15 +236,23 @@ describe("PracticeSetupPage", () => {
     expect(wrapper.find('[data-testid="quick"]').exists()).toBe(false);
   });
 
-  it("Quick Practice count reflects the preset; an empty match disables launch", async () => {
+  it("Quick Practice count reflects the preset; an empty match shows 0 (magenta) and won't launch", async () => {
     const wrapper = mount(PracticeSetupPage, { global: { stubs: STUBS } });
     await flushPromises();
-    // Default 'needs-work' [0,1,2]; both mock words are unreviewed (tier 0) → 2.
+    // Default 'New' [0]; both mock words are unreviewed (tier 0) → 2.
     expect(wrapper.find('[data-testid="quick-count"]').text()).toContain("2");
-    expect(wrapper.find('[data-testid="quick-empty"]').exists()).toBe(false);
-    // 'Mastered' [4] matches nothing here → empty note shows.
+    expect(wrapper.find('[data-testid="quick-count"]').classes()).not.toContain(
+      "quick__count--empty",
+    );
+    // 'Mastered' [4] matches nothing → "0 words" in the magenta empty style…
     await wrapper.find('[data-testid="quick-fam-mastered"]').trigger("click");
-    expect(wrapper.find('[data-testid="quick-empty"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="quick-count"]').text()).toContain("0");
+    expect(wrapper.find('[data-testid="quick-count"]').classes()).toContain(
+      "quick__count--empty",
+    );
+    // …and launching is a no-op (button disabled / guarded).
+    await wrapper.find('[data-testid="start-quick"]').trigger("click");
+    expect(push).not.toHaveBeenCalled();
   });
 
   it("launches Quick Practice with the preset filters (default New, All words)", async () => {

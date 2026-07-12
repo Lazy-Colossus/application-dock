@@ -122,6 +122,16 @@ describe("LibraryPage (two-level)", () => {
     expect(wrapper.text()).not.toContain("my shared word");
   });
 
+  it("Custom words default to All — both shared and private shown", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="section-__custom__"]').trigger("click");
+    expect(wrapper.find('[data-testid="sub-all"]').exists()).toBe(true);
+    // Default subsection is "All" → both custom words are listed.
+    expect(wrapper.text()).toContain("my shared word");
+    expect(wrapper.text()).toContain("my private word");
+  });
+
   it("Custom → Shared shows only shared custom words", async () => {
     const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
     await flushPromises();

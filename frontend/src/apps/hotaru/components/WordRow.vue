@@ -30,7 +30,8 @@
       }}</span>
     </div>
     <div class="word-row__meaning col">{{ word.meaning }}</div>
-    <FamiliarityIcon :tier="tier" class="word-row__fam" />
+    <!-- Private mark sits before the familiarity circle so the circles line up
+         in a column even in a mixed shared/private list. -->
     <span
       v-if="word.visibility === 'private'"
       class="word-row__private"
@@ -40,6 +41,7 @@
     >
       <q-icon name="lock" size="17px" />
     </span>
+    <FamiliarityIcon :tier="tier" class="word-row__fam" />
 
     <div v-if="!selectable" class="word-row__menu-wrap">
       <button
@@ -66,6 +68,15 @@
               size="16px"
             />
             {{ showRomaji ? "Hide romaji" : "Show romaji" }}
+          </button>
+          <button
+            class="word-row__menu-item"
+            role="menuitem"
+            data-testid="copy-word"
+            @click="copyWord"
+          >
+            <q-icon name="content_copy" size="16px" />
+            Copy
           </button>
           <button
             class="word-row__menu-item"
@@ -139,6 +150,16 @@ const menuOpen = ref(false);
 
 function toggleRomaji(): void {
   showRomaji.value = !showRomaji.value;
+  menuOpen.value = false;
+}
+
+// Copy a readable form of the word to the clipboard.
+function copyWord(): void {
+  const w = props.word;
+  const text = w.kanji
+    ? `${w.kanji}（${w.reading}）— ${w.meaning}`
+    : `${w.reading} — ${w.meaning}`;
+  void navigator.clipboard?.writeText(text)?.catch(() => {});
   menuOpen.value = false;
 }
 

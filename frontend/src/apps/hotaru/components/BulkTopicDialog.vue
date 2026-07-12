@@ -80,7 +80,7 @@ function onCreate(): void {
 <style scoped lang="sass">
 .bt-dialog
   background: rgba(20, 18, 52, 0.98)
-  color: var(--hotaru-cream)
+  color: #f1f0ff
   border: 1px solid rgba(155, 107, 255, 0.30)
   border-radius: 14px
   padding: 18px
@@ -92,7 +92,7 @@ function onCreate(): void {
   margin-bottom: 10px
 
 .bt-empty
-  color: var(--hotaru-cream-soft)
+  color: #b3aede
   font-size: 13px
 
 .bt-row
@@ -104,7 +104,7 @@ function onCreate(): void {
   border: none
   border-radius: 8px
   background: transparent
-  color: var(--hotaru-cream)
+  color: #f1f0ff
   font-size: 14px
   text-align: left
   cursor: pointer
@@ -117,6 +117,6 @@ function onCreate(): void {
   border: 1px solid rgba(155, 107, 255, 0.30)
   border-radius: 10px
   padding: 8px
-  color: var(--hotaru-cream)
+  color: #f1f0ff
   font-size: 14px
 </style>
