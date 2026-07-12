@@ -21,5 +21,19 @@ export default route(function (/* { store, ssrContext } */) {
     history: createHistory(process.env.VUE_ROUTER_BASE)
   });
 
+  Router.beforeEach(async (to) => {
+    const { useAuthStore } = await import('@/stores/useAuthStore');
+    const auth = useAuthStore();
+
+    await auth.restoreSession();
+
+    if (to.meta.requiresAuth && !auth.isAuthenticated) {
+      return { path: '/login', query: { redirect: to.fullPath } };
+    }
+    if (to.path === '/login' && auth.isAuthenticated) {
+      return { path: '/' };
+    }
+  });
+
   return Router;
 });

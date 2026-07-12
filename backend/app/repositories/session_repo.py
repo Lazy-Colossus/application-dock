@@ -36,7 +36,7 @@ _SESSION_LABEL_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})(?:-(\d+))?$")
 logger = logging.getLogger(__name__)
 
 
-def _atomic_write_json(path: Path, payload: dict[str, object] | list[str]) -> None:
+def _atomic_write_json(path: Path, payload: dict[str, object] | list[object]) -> None:
     # `os.replace` is atomic on POSIX (best-effort on Windows). If the process
     # is killed between writing .tmp and the rename, the previous file at
     # `path` (if any) remains intact and uncorrupted.

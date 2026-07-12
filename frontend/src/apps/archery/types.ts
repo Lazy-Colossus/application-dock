@@ -16,12 +16,18 @@ export interface SessionData {
   targets: TargetScores[];
 }
 
+export interface ArcherScore {
+  name: string;
+  score: number;
+}
+
 export interface SessionSummary {
   label: string;
   name: string;
   archer_count: number;
   winner: string;
   winning_score: number;
+  top_archers: ArcherScore[];
 }
 
 export interface InProgressSummary {

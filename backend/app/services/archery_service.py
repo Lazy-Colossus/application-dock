@@ -13,6 +13,7 @@ from app.repositories import session_repo
 from app.schemas.session import (
     TARGET_NUMBER_MAX,
     TARGET_NUMBER_MIN,
+    ArcherScore,
     InProgressSummary,
     SessionData,
     SessionSummary,
@@ -74,7 +75,7 @@ def _materialise_targets(session: SessionData) -> list[TargetScores]:
             shots = prior.scores.get(archer) if prior else None
             first = shots[0] if shots else None
             second = shots[1] if shots else None
-            scores[archer] = [first or 0, second or 0]
+            scores[archer] = [0 if first is None else first, 0 if second is None else second]
         materialised.append(TargetScores(number=number, scores=scores, confirmed=True))
     return materialised
 
@@ -118,7 +119,7 @@ def list_in_progress_summaries() -> list[InProgressSummary]:
             label=s.label,
             name=s.name,
             date=s.date,
-            confirmed_targets=len(s.targets),
+            confirmed_targets=sum(1 for t in s.targets if t.confirmed),
         )
         for s in session_repo.list_in_progress()
     ]
@@ -180,7 +181,7 @@ def _archer_total(s: SessionData, archer: str) -> int:
     for t in s.targets:
         shots = t.scores.get(archer)
         if shots:
-            total += (shots[0] or 0) + (shots[1] or 0)
+            total += (0 if shots[0] is None else shots[0]) + (0 if shots[1] is None else shots[1])
     return total
 
 
@@ -193,12 +194,14 @@ def _summarise(s: SessionData) -> SessionSummary:
     totals = [(a, _archer_total(s, a)) for a in s.archers]
     totals.sort(key=lambda x: (-x[1], x[0].casefold()))
     winner_name, winner_score = totals[0] if totals else ("", 0)
+    top_archers = [ArcherScore(name=a, score=sc) for a, sc in totals[:3]]
     return SessionSummary(
         label=s.label,
         name=s.name,
         archer_count=len(s.archers),
         winner=winner_name,
         winning_score=winner_score,
+        top_archers=top_archers,
     )
 
 
@@ -228,25 +231,26 @@ def list_recurring_players() -> list[str]:
 
 
 def add_recurring_player(name: str) -> list[str]:
-    """Add a player to the recurring list (trimmed, de-duplicated).
+    """Add a player to the recurring list (trimmed, lowercased, de-duplicated).
 
     Raises:
         ValueError: if the name is empty after trimming.
     """
-    trimmed = name.strip()
-    if not trimmed:
+    normalised = name.strip().lower()
+    if not normalised:
         raise ValueError("player name must be non-empty")
     players = session_repo.read_recurring_players()
-    if trimmed not in players:
-        players.append(trimmed)
+    if normalised not in players:
+        players.append(normalised)
         session_repo.write_recurring_players(players)
     return players
 
 
 def remove_recurring_player(name: str) -> list[str]:
     """Remove a player from the recurring list. Idempotent."""
+    normalised = name.strip().lower()
     players = session_repo.read_recurring_players()
-    if name in players:
-        players = [p for p in players if p != name]
+    if normalised in players:
+        players = [p for p in players if p != normalised]
         session_repo.write_recurring_players(players)
     return players

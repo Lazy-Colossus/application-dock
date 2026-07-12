@@ -52,16 +52,26 @@ def test_read_recurring_players_tolerates_corrupt_file(tmp_path: Path) -> None:
 
 
 def test_add_player_new() -> None:
-    assert archery_service.add_recurring_player("Alice") == ["Alice"]
+    assert archery_service.add_recurring_player("Alice") == ["alice"]
 
 
 def test_add_player_trims() -> None:
-    assert archery_service.add_recurring_player("  Alice  ") == ["Alice"]
+    assert archery_service.add_recurring_player("  Alice  ") == ["alice"]
+
+
+def test_add_player_lowercases() -> None:
+    assert archery_service.add_recurring_player("JOHN SMITH") == ["john smith"]
 
 
 def test_add_player_duplicate_is_noop() -> None:
     archery_service.add_recurring_player("Alice")
-    assert archery_service.add_recurring_player("Alice") == ["Alice"]
+    assert archery_service.add_recurring_player("Alice") == ["alice"]
+
+
+def test_add_player_case_insensitive_duplicate() -> None:
+    archery_service.add_recurring_player("Alice")
+    assert archery_service.add_recurring_player("alice") == ["alice"]
+    assert archery_service.add_recurring_player("ALICE") == ["alice"]
 
 
 def test_add_player_empty_raises() -> None:
@@ -72,12 +82,17 @@ def test_add_player_empty_raises() -> None:
 def test_remove_player_present() -> None:
     archery_service.add_recurring_player("Alice")
     archery_service.add_recurring_player("Bob")
-    assert archery_service.remove_recurring_player("Alice") == ["Bob"]
+    assert archery_service.remove_recurring_player("alice") == ["bob"]
+
+
+def test_remove_player_case_insensitive() -> None:
+    archery_service.add_recurring_player("Alice")
+    assert archery_service.remove_recurring_player("ALICE") == []
 
 
 def test_remove_player_absent_is_idempotent() -> None:
     archery_service.add_recurring_player("Alice")
-    assert archery_service.remove_recurring_player("Ghost") == ["Alice"]
+    assert archery_service.remove_recurring_player("ghost") == ["alice"]
 
 
 # ── API ──────────────────────────────────────────────────────────────────────
@@ -92,7 +107,7 @@ def test_get_players_returns_array() -> None:
 def test_post_player_adds_and_returns_list() -> None:
     resp = client.post("/api/archery/players", json={"name": "Alice"})
     assert resp.status_code == 200
-    assert resp.json() == ["Alice"]
+    assert resp.json() == ["alice"]
 
 
 def test_post_player_empty_422() -> None:
@@ -104,19 +119,33 @@ def test_post_player_duplicate_noop_success() -> None:
     client.post("/api/archery/players", json={"name": "Alice"})
     resp = client.post("/api/archery/players", json={"name": "Alice"})
     assert resp.status_code == 200
-    assert resp.json() == ["Alice"]
+    assert resp.json() == ["alice"]
+
+
+def test_post_player_case_insensitive_duplicate() -> None:
+    client.post("/api/archery/players", json={"name": "Alice"})
+    resp = client.post("/api/archery/players", json={"name": "ALICE"})
+    assert resp.status_code == 200
+    assert resp.json() == ["alice"]
 
 
 def test_delete_player_removes() -> None:
     client.post("/api/archery/players", json={"name": "Alice"})
     client.post("/api/archery/players", json={"name": "Bob"})
-    resp = client.delete("/api/archery/players/Alice")
+    resp = client.delete("/api/archery/players/alice")
     assert resp.status_code == 200
-    assert resp.json() == ["Bob"]
+    assert resp.json() == ["bob"]
+
+
+def test_delete_player_case_insensitive() -> None:
+    client.post("/api/archery/players", json={"name": "Alice"})
+    resp = client.delete("/api/archery/players/ALICE")
+    assert resp.status_code == 200
+    assert resp.json() == []
 
 
 def test_delete_player_absent_idempotent() -> None:
-    resp = client.delete("/api/archery/players/Ghost")
+    resp = client.delete("/api/archery/players/ghost")
     assert resp.status_code == 200
     assert resp.json() == []
 
@@ -124,4 +153,4 @@ def test_delete_player_absent_idempotent() -> None:
 def test_players_persist_to_disk(tmp_path: Path) -> None:
     client.post("/api/archery/players", json={"name": "Alice"})
     raw = json.loads((tmp_path / "_recurring_players.json").read_text())
-    assert raw == ["Alice"]
+    assert raw == ["alice"]

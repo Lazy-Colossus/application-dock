@@ -103,7 +103,7 @@ class SessionData(BaseModel):
         for name in value:
             if not isinstance(name, str) or name == "":
                 raise ValueError("archer names must be non-empty strings")
-        if len(set(value)) != len(value):
+        if len({v.lower() for v in value}) != len(value):
             raise ValueError("archer names must be unique within a session")
         return value
 
@@ -162,7 +162,7 @@ class CreateSessionRequest(BaseModel):
         for name in value:
             if not isinstance(name, str) or name == "":
                 raise ValueError("archer names must be non-empty strings")
-        if len(set(value)) != len(value):
+        if len({v.lower() for v in value}) != len(value):
             raise ValueError("archer names must be unique")
         return value
 
@@ -182,7 +182,16 @@ class AddPlayerRequest(BaseModel):
     def _non_empty(cls, value: str) -> str:
         if value == "":
             raise ValueError("player name must be non-empty")
+        if "/" in value:
+            raise ValueError("player name must not contain '/'")
         return value
+
+
+class ArcherScore(BaseModel):
+    """Name + total score for one archer in a session summary (Story 9.1)."""
+
+    name: str
+    score: int
 
 
 class SessionSummary(BaseModel):
@@ -191,6 +200,7 @@ class SessionSummary(BaseModel):
     Winner + winning_score are computed by `archery_service.py`, not the
     schema. Tie-breaking rule (alphabetical, case-insensitive) is enforced
     in the service per Story 4.1 v0.2.
+    top_archers holds up to 3 ranked archers (Story 9.1); winner == top_archers[0].
     """
 
     label: str
@@ -198,6 +208,7 @@ class SessionSummary(BaseModel):
     archer_count: int
     winner: str
     winning_score: int
+    top_archers: list[ArcherScore]
 
 
 class InProgressSummary(BaseModel):

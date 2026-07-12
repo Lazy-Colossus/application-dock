@@ -101,6 +101,12 @@ def test_session_rejects_duplicate_archer_names() -> None:
     assert "unique" in str(exc.value)
 
 
+def test_session_rejects_case_variant_duplicate_archer_names() -> None:
+    with pytest.raises(ValidationError) as exc:
+        _make_session(archers=["Alice", "alice"])
+    assert "unique" in str(exc.value)
+
+
 def test_session_rejects_empty_archer_name() -> None:
     with pytest.raises(ValidationError) as exc:
         _make_session(archers=["Alice", ""])
@@ -236,6 +242,11 @@ def test_create_session_request_rejects_duplicates() -> None:
         CreateSessionRequest(archers=["Alice", "Alice"])
 
 
+def test_create_session_request_rejects_case_variant_duplicates() -> None:
+    with pytest.raises(ValidationError):
+        CreateSessionRequest(archers=["Alice", "alice"])
+
+
 # ─── SessionSummary ──────────────────────────────────────────────────────────
 
 
@@ -246,6 +257,7 @@ def test_session_summary_shape() -> None:
         archer_count=3,
         winner="Jamie",
         winning_score=284,
+        top_archers=[{"name": "Jamie", "score": 284}],
     )
     assert summary.model_dump() == {
         "label": "2026-05-21",
@@ -253,4 +265,5 @@ def test_session_summary_shape() -> None:
         "archer_count": 3,
         "winner": "Jamie",
         "winning_score": 284,
+        "top_archers": [{"name": "Jamie", "score": 284}],
     }

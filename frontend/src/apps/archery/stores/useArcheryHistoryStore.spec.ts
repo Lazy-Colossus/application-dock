@@ -16,14 +16,15 @@ vi.mock('@/composables/useApi', () => ({
   api: { get: vi.fn() }
 }));
 
-import { api } from '@/composables/useApi';
+import { api, ApiError } from '@/composables/useApi';
 
 const SUMMARY: SessionSummary = {
   label: '2026-05-29',
   name: '2026-05-29',
   archer_count: 2,
   winner: 'Alice',
-  winning_score: 324
+  winning_score: 324,
+  top_archers: [{ name: 'Alice', score: 324 }]
 };
 
 const SESSION: SessionData = {
@@ -76,8 +77,7 @@ describe('useArcheryHistoryStore — loadDetail', () => {
   });
 
   it('sets detailError on 404 with friendly message', async () => {
-    const err = Object.assign(new Error('404'), { status: 404 });
-    vi.mocked(api.get).mockRejectedValueOnce(err);
+    vi.mocked(api.get).mockRejectedValueOnce(new ApiError(404, 'Not found'));
     const store = useArcheryHistoryStore();
     await store.loadDetail('2026-05-29');
     expect(store.detailError).toContain('not found');

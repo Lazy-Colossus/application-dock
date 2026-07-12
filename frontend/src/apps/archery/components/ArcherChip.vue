@@ -37,6 +37,7 @@ const emit = defineEmits<{
 .archer-chip__name
   color: var(--color-ink-primary, #F0F0F0)
   flex: 1
+  text-transform: capitalize
 
 .archer-chip__remove
   color: var(--color-ink-secondary, #9E9E9E)

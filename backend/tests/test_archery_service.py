@@ -91,3 +91,78 @@ def test_archer_total_treats_null_and_missing_as_zero() -> None:
     )
     assert archery_service._archer_total(session, "Alice") == 11
     assert archery_service._archer_total(session, "Bob") == 18
+
+
+# ─── Story 9.1: _summarise top_archers ──────────────────────────────────────
+
+_BASE_SESSION_KWARGS = dict(
+    label=BASE,
+    name=BASE,
+    date=BASE,
+    created="2026-05-29T10:00:00Z",
+    status="finalised",
+)
+
+
+def _make_session(archers: list[str], targets: list[dict]):  # type: ignore[return]
+    from app.schemas.session import SessionData
+
+    return SessionData(**_BASE_SESSION_KWARGS, archers=archers, targets=targets)
+
+
+def test_summarise_top_archers_order() -> None:
+    session = _make_session(
+        ["Alice", "Bob", "Charlie"],
+        [{"number": 1, "scores": {"Alice": [11, 11], "Bob": [10, 10], "Charlie": [8, 8]}}],
+    )
+    summary = archery_service._summarise(session)
+    assert [a.name for a in summary.top_archers] == ["Alice", "Bob", "Charlie"]
+    assert [a.score for a in summary.top_archers] == [22, 20, 16]
+
+
+def test_summarise_top_archers_capped_at_three() -> None:
+    session = _make_session(
+        ["Alice", "Bob", "Charlie", "Diana"],
+        [
+            {
+                "number": 1,
+                "scores": {
+                    "Alice": [11, 11],
+                    "Bob": [10, 10],
+                    "Charlie": [8, 8],
+                    "Diana": [5, 5],
+                },
+            }
+        ],
+    )
+    summary = archery_service._summarise(session)
+    assert len(summary.top_archers) == 3
+
+
+def test_summarise_top_archers_two_archers() -> None:
+    session = _make_session(
+        ["Alice", "Bob"],
+        [{"number": 1, "scores": {"Alice": [10, 10], "Bob": [8, 8]}}],
+    )
+    summary = archery_service._summarise(session)
+    assert len(summary.top_archers) == 2
+
+
+def test_summarise_winner_equals_top_archers_first() -> None:
+    session = _make_session(
+        ["Alice", "Bob", "Charlie"],
+        [{"number": 1, "scores": {"Alice": [11, 11], "Bob": [10, 10], "Charlie": [8, 8]}}],
+    )
+    summary = archery_service._summarise(session)
+    assert summary.winner == summary.top_archers[0].name
+    assert summary.winning_score == summary.top_archers[0].score
+
+
+def test_summarise_top_archers_tiebreak() -> None:
+    # All tied — alphabetical, case-insensitive
+    session = _make_session(
+        ["Charlie", "alice", "Bob"],
+        [{"number": 1, "scores": {"Charlie": [5, 5], "alice": [5, 5], "Bob": [5, 5]}}],
+    )
+    summary = archery_service._summarise(session)
+    assert [a.name for a in summary.top_archers] == ["alice", "Bob", "Charlie"]

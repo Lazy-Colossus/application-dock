@@ -1,6 +1,8 @@
 <template>
-  <q-bottom-sheet
+  <q-dialog
     v-model="store.scoreEntryOpen"
+    position="bottom"
+    full-width
     :no-backdrop-dismiss="true"
     :transition-show="prefersReducedMotion ? 'none' : undefined"
     :transition-hide="prefersReducedMotion ? 'none' : undefined"
@@ -83,7 +85,7 @@
         @click="onConfirm"
       />
     </div>
-  </q-bottom-sheet>
+  </q-dialog>
 </template>
 
 <script setup lang="ts">
@@ -203,10 +205,9 @@ async function onClose(): Promise<void> {
   const target: TargetScores = { number: n, scores, confirmed: false };
   try {
     await store.saveTarget(target);
-  } catch {
-    // error surfaced via store.error on ScoringBoardPage
-  } finally {
     store.closeTarget();
+  } catch {
+    // error surfaced via store.error on ScoringBoardPage; entries kept, drawer stays open
   }
 }
 </script>

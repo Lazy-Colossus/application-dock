@@ -16,6 +16,27 @@
           {{ pageTitle }}
         </q-toolbar-title>
         <q-btn
+          v-if="authStore.isAuthenticated"
+          flat
+          round
+          dense
+          icon="logout"
+          color="grey-5"
+          aria-label="Log out"
+          @click="handleLogout"
+        />
+        <q-btn
+          v-if="isHome"
+          flat
+          round
+          dense
+          icon="settings"
+          color="primary"
+          aria-label="Open settings"
+          to="/settings"
+        />
+        <q-btn
+          v-else
           flat
           round
           dense
@@ -34,17 +55,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 const route = useRoute();
 const router = useRouter();
+const authStore = useAuthStore();
 
 const showBack = computed(() => route.path !== "/");
 
 // Inside the Hotaru app the shell bar adopts Hotaru's dusk field so the header
 // reads as part of the app, not a foreign grey chrome strip.
 const inHotaru = computed(() => route.path.startsWith("/hotaru"));
+const isHome = computed(() => route.path === '/');
 
 const pageTitle = computed(() => {
   const t = route.meta?.title;
@@ -57,6 +81,11 @@ function goBack(): void {
   } else {
     void router.push("/");
   }
+}
+
+function handleLogout(): void {
+  authStore.logout();
+  void router.push('/login');
 }
 </script>
 

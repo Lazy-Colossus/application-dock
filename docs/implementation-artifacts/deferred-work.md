@@ -1,5 +1,28 @@
 # Deferred Work
 
+## Deferred from: code review of 1.5.jwt-authentication pass 2 (2026-06-18)
+
+- No test validates 7-day expiry claim in JWT — `test_login_success` checks only token presence; low risk, `jose.jwt.decode` validates `exp` at runtime [`backend/tests/test_auth.py:48–56`]
+- `restoreSession` retries `GET /auth/me` on every navigation when a non-401 error occurs — 401 path is safe (logout clears token); non-401 errors retry each nav; acceptable for self-hosted LAN [`frontend/src/stores/useAuthStore.ts`]
+- `_atomic_write_json` imported as private underscore-prefixed symbol from `session_repo` — P8 dedup fix; extract to shared `core/utils.py` when touching repositories again [`backend/app/repositories/auth_repo.py:14`]
+- `conftest.py` exact `== "test_auth.py"` match would include a future `test_auth_helpers.py` in auth bypass — proper fix is a pytest marker; low probability currently [`backend/tests/conftest.py:16`]
+
+## Deferred from: code review of 1.5.jwt-authentication (2026-06-18)
+
+- JWT token stored in `localStorage` — XSS-accessible; documented design decision ("acceptable for self-hosted personal use") [`frontend/src/stores/useAuthStore.ts:13`]
+- `isAuthenticated` based on token presence, not expiry/signature validity — by design; server 401s handle the expiry path [`frontend/src/stores/useAuthStore.ts:18`]
+- Cross-tab logout not reflected in current tab's Pinia store — `localStorage` is not watched for changes; out of scope for this story
+- World-readable tmp file permissions in `_atomic_write_json` — pre-existing in session_repo too; security hardening out of scope [`backend/app/repositories/auth_repo.py:29`]
+- AC5: no setup-script round-trip integration test — functional coverage via auth_repo unit paths; setup-script integration test is nice-to-have
+- No minimum password length/entropy validation — setup script validates non-empty; login schema correctly returns 401; out of scope
+- Concurrent 401 responses trigger multiple `logout()` calls — harmless (logout is idempotent); same root cause as the login-loop patch item
+
+## Deferred from: code review of 9.1.history-subtext-top-3-archers (2026-06-12)
+
+- All-zero finalised session renders as `Alice 0 · Bob 0 · Charlie 0` with no "no scores recorded" hint — pre-existing (Story 7.1 materialises unentered shots as 0); subtext line now makes this more visible than before
+- Pre-existing name-validation gaps now newly visible in the prominent subtext: names containing `·`, `,`, embedded newline, or zero-width space corrupt the rendered list. Only `/` is currently rejected (and only by `AddPlayerRequest`, not `CreateSessionRequest`/`SessionData`) — broader name-validation hardening is out of scope for 9.1
+- Aria-label pluralisation says `"1 archers"` for single-archer sessions — pre-existing string template, predates 9.1
+
 ## Deferred from: code review of 1.1 & 1.2 (2026-06-03)
 
 - conftest.py import ordering fragile — works correctly under current pytest structure, risk only if tests are reorganised to import `app.main` at module level outside of `backend/tests/`
@@ -20,3 +43,29 @@
 
 - Unsaved-changes guard (`AddWordPage` `onBeforeRouteLeave`) has no test coverage — the spec mocks it to a no-op. Low risk; add a route-guard test if the guard grows.
 - No runtime guard for corrupt/missing JSON (the shipped seed or a writable `vocab_shared.json`/`words_private.json`) — an unparseable file surfaces as a 500. Matches the existing platform pattern (archery `session_repo` uses bare `json.loads`); worth a platform-wide hardening pass rather than a Hotaru-only fix.
+## Deferred from: code review of archery Chunk A (2026-06-10)
+
+- `_migrate_legacy_in_progress` TOCTOU — both `read_in_progress` and `list_in_progress` call it with no lock; a corrupt legacy file could leave an orphaned legacy file after successful migration [`session_repo.py:115–126`] (story 6.1)
+- `_pick_finalise_label` ignores in-progress labels — concurrent finalisation of two same-day sessions where a finalised file already exists can assign the same label to both; second write silently clobbers first [`archery_service.py:47–59`] (story 6.1)
+- `update_in_progress` check-then-write TOCTOU — concurrent `DELETE` between existence check and write silently recreates a discarded session [`archery_service.py:137–141`] (story 7.1)
+- `read_session`/`read_in_progress` do not catch `ValidationError` — corrupt-but-valid-JSON file returns 500 instead of 404; `list_*` functions handle this correctly [`session_repo.py:57–67, :140–147`] (stories 2.1/6.1)
+
+## Deferred from: code review of archery Chunk B (2026-06-10)
+
+- `discardAllInProgress` / `onConflictDelete` partial-failure navigation patched in Chunk C — residual: if all DELETEs succeed but the error flag was set by something else, the gate may still block navigation (negligible risk given single-process LAN server) [`frontend/src/apps/archery/pages/ArcheryHomePage.vue`]
+- `ResultsTable.vue` renders `[null, null]` shots as "0 / 0" rather than "—" — a partially-saved unconfirmed target shows the same display as two real zero scores; visually indistinguishable but consistent with the total-treats-null-as-0 domain rule [`frontend/src/apps/archery/components/ResultsTable.vue:25`]
+- `loadHistory` in `useArcheryHistoryStore` uses `e.message` rather than `messageFrom(e)` — misses the `ApiError.detail` field; list error banner shows the full "404: Not Found" status string instead of the backend's detail message [`frontend/src/apps/archery/stores/useArcheryHistoryStore.ts:22–24`]
+- Single shared `loading` ref in `useArcherySessionStore` covers all async operations — a background `discardAllInProgress` call disables the `ScoreEntryPanel` confirm button; separate loading flags per concern would improve UX [`frontend/src/apps/archery/stores/useArcherySessionStore.ts`]
+
+## Deferred from: code review of 8.4.pick-recurring-players-in-setup (2026-06-11)
+
+- `pickPlayer` failure sets `inputError` on typed input, not the picker — unreachable in practice (names come from `availablePlayers`); pre-existing design constraint [`SessionSetupPage.vue:addName`]
+- `recurringStore.error` not surfaced in `SessionSetupPage` — `loadPlayers` failure shows "No recurring players" instead of an error banner; UX hardening out of story scope [`SessionSetupPage.vue`]
+- No loading indicator on picker while `loadPlayers` in flight — transient false "No recurring players" display; UX polish [`SessionSetupPage.vue`]
+- `RecurringPlayersPage` local duplicate check uses `store.players.includes(name.toLowerCase())` (strict match) rather than case-insensitive `.some()` — misses legacy mixed-case entries; backend deduplication handles it correctly [`RecurringPlayersPage.vue:83`]
+
+## Deferred from: code review of archery Chunk C (2026-06-10)
+
+- `today` constant in `ArcheryHomePage` is captured at component construction — if the page stays mounted past midnight the `todaysInProgress` computed uses a stale date; low risk on LAN session context [`frontend/src/apps/archery/pages/ArcheryHomePage.vue:98`]
+- `resumeLabel` rethrows on failure but is called via `void resumeLabel(...)` in `onResume` — rejection is silently dropped; `store.error` is now surfaced by the P8 error banner so the user sees the failure, but the `void` swallows any further error propagation [`frontend/src/apps/archery/pages/ArcheryHomePage.vue:135`]
+- `route.params.label` in `HistoryDetailPage` is cast with `as string` without an array-element guard — if the router ever supplies an array param (e.g. `/archery/history/a/b`), the cast passes a string array to the API silently [`frontend/src/apps/archery/pages/HistoryDetailPage.vue`]

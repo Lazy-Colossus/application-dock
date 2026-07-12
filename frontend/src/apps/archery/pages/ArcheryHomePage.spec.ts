@@ -24,7 +24,8 @@ const router = createRouter({
     { path: '/archery', component: ArcheryHomePage },
     { path: '/archery/setup', component: { template: '<div />' } },
     { path: '/archery/scoring', component: { template: '<div />' } },
-    { path: '/archery/history', component: { template: '<div />' } }
+    { path: '/archery/history', component: { template: '<div />' } },
+    { path: '/archery/players', component: { template: '<div />' } }
   ]
 });
 
@@ -71,6 +72,14 @@ describe('ArcheryHomePage', () => {
     expect(wrapper.find('[data-testid="new-session-btn"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="history-btn"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="resume-btn"]').exists()).toBe(false);
+  });
+
+  it('renders Manage Players button and navigates to /archery/players', async () => {
+    const pushSpy = vi.spyOn(router, 'push');
+    const { wrapper } = mountPage([]);
+    expect(wrapper.find('[data-testid="manage-players-btn"]').exists()).toBe(true);
+    await wrapper.find('[data-testid="manage-players-btn"]').trigger('click');
+    expect(pushSpy).toHaveBeenCalledWith('/archery/players');
   });
 
   it('shows Resume when a session is in progress today', () => {

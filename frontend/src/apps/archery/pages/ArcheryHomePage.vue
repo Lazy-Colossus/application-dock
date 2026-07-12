@@ -29,6 +29,20 @@
       data-testid="history-btn"
       @click="router.push('/archery/history')"
     />
+    <q-btn
+      class="full-width"
+      label="Manage Players"
+      flat
+      no-caps
+      style="height: 44px; border-radius: 8px; color: var(--color-ink-secondary, #9e9e9e)"
+      data-testid="manage-players-btn"
+      @click="router.push('/archery/players')"
+    />
+
+    <!-- Error banner (resume/discard failures) -->
+    <q-banner v-if="store.error" dense rounded class="bg-negative text-white q-mb-sm">
+      {{ store.error }}
+    </q-banner>
 
     <!-- New Session conflict popup (FR-6.4) -->
     <q-dialog v-model="conflictOpen">
@@ -127,7 +141,7 @@ function onConflictLeave() {
 async function onConflictDelete() {
   await store.discardAllInProgress();
   conflictOpen.value = false;
-  goToSetup();
+  if (!store.error) goToSetup();
 }
 
 function onResume() {
