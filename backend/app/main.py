@@ -4,7 +4,7 @@ from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.routers import archery, auth, shell
+from app.routers import archery, auth, shell, hotaru
 
 app = FastAPI(title="Application Dock")
 
@@ -19,6 +19,7 @@ def health() -> dict[str, str]:
 app.include_router(api_router)
 app.include_router(auth.router)
 app.include_router(shell.router)
+app.include_router(hotaru.router)
 app.include_router(archery.router)
 
 

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<!--
+  Hotaru — Design Direction: "Yukimi Lantern"
+  Rationale: The same dark mossy-green forest, but the ambient stone lantern is an accurate
+  yukimi-dōrō ("snow-viewing"): low and broad, a wide umbrella roof resting on short curved
+  legs as if near water, with a broad fire box glowing warm amber. It sits low-right, casting
+  light up into the playful-zen scene; pure-CSS fireflies drift, beige + bamboo accents stay legible.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hotaru — Yukimi Direction</title>
+<style>
+  /* ---- PALETTE (documented hex) ----
+     Forest background deep:   #14201a  (dark mossy green-brown)
+     Forest background mid:    #1d2c22
+     Forest background near:   #25372a
+     Moss fleck:               #3a5238 / #4f7a3a
+     Beige (primary text/UI):  #ece3cf
+     Beige dim:                #b8b09a
+     Bamboo green accent:      #7fae5a
+     Bamboo green deep:        #4f7a3a
+     Lantern stone:            #5b5e52 / #6a6d5e / shadow #3c4039
+     Lantern fire (amber out): #fff2c8 / #ffcf7a / #ff9e3d
+     Familiarity ramp (pastel new→mastered):
+       rose #f4b8c4 · peach #f6cba4 · yellow-green #e3e2a0 · light-green #bfe0a8 · bamboo #8fc06a
+     Grades: correct #8fc06a · close #f6cba4 · incorrect #e7a3a6 (soft)
+  */
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0c130f;
+    color: #ece3cf;
+    display: flex; flex-wrap: wrap; gap: 28px;
+    justify-content: center;
+    padding: 32px 16px 64px;
+    min-height: 100vh;
+  }
+
+  .personality {
+    width: 100%; text-align: center; color: #b8b09a;
+    font-size: 13px; letter-spacing: 0.04em; margin-bottom: 4px;
+  }
+  .personality b { color: #8fc06a; }
+
+  .col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .col-label { font-size: 12px; color: #b8b09a; letter-spacing: 0.06em; text-transform: uppercase; }
+
+  .phone {
+    position: relative;
+    width: 320px; height: 660px;
+    border-radius: 38px;
+    background: radial-gradient(120% 90% at 80% 100%, #25372a 0%, #1d2c22 40%, #14201a 100%);
+    box-shadow: 0 0 0 10px #1a1f1a, 0 18px 50px rgba(0,0,0,0.6);
+    overflow: hidden; isolation: isolate;
+  }
+  .phone::after {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      radial-gradient(2px 2px at 70% 82%, #3a5238 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 40% 90%, #3a5238 50%, transparent 51%),
+      radial-gradient(2px 2px at 22% 74%, #46603f 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 88% 64%, #3a5238 50%, transparent 51%);
+    opacity: 0.5; pointer-events: none; z-index: 0;
+  }
+
+  /* ---- YUKIMI LANTERN (low, broad, lower-right) ---- */
+  .lantern {
+    position: absolute;
+    right: -10px; bottom: 0;
+    width: 200px; height: 200px;
+    z-index: 1; pointer-events: none; opacity: 0.93;
+  }
+  .lantern-glow {
+    position: absolute;
+    right: 10px; bottom: 70px;
+    width: 230px; height: 200px;
+    background: radial-gradient(circle, rgba(255,158,61,0.40) 0%, rgba(255,158,61,0.15) 38%, transparent 70%);
+    z-index: 1; pointer-events: none;
+    animation: flicker 4.5s ease-in-out infinite;
+  }
+  @keyframes flicker {
+    0%,100% { opacity: 0.85; transform: scale(1); }
+    45%     { opacity: 1;    transform: scale(1.04); }
+    70%     { opacity: 0.78; transform: scale(0.99); }
+  }
+  .fire-window { animation: emberpulse 4.5s ease-in-out infinite; }
+  @keyframes emberpulse { 0%,100%{opacity:0.9;} 50%{opacity:1;} }
+
+  /* lantern-type caption tag, sits beside the lantern silhouette */
+  .lantern-caption {
+    position: absolute;
+    z-index: 2;
+    font-size: 11px; letter-spacing: 0.08em;
+    color: #cdbfa0;  /* #cdbfa0 — dim beige, reads on dark forest */
+    background: rgba(20,32,26,0.55);  /* #14201a @ 0.55 */
+    border: 1px solid rgba(127,174,90,0.35);
+    padding: 3px 9px; border-radius: 999px;
+    pointer-events: none;
+  }
+
+  /* ---- FIREFLIES ---- */
+  .firefly {
+    position: absolute; width: 4px; height: 4px; border-radius: 50%;
+    background: #ffe9a8; box-shadow: 0 0 6px 2px rgba(255,213,122,0.8);
+    z-index: 2; pointer-events: none;
+  }
+  .ff1 { right: 22%; bottom: 38%; animation: drift1 9s ease-in-out infinite, glow 2.4s ease-in-out infinite; }
+  .ff2 { right: 34%; bottom: 26%; animation: drift2 11s ease-in-out infinite, glow 3.1s ease-in-out infinite; }
+  .ff3 { right: 14%; bottom: 30%; animation: drift3 13s ease-in-out infinite, glow 2.7s ease-in-out infinite; }
+  .ff4 { right: 44%; bottom: 18%; animation: drift1 10s ease-in-out infinite 1s, glow 2.2s ease-in-out infinite; }
+  @keyframes drift1 { 0%,100%{transform:translate(0,0);} 50%{transform:translate(-22px,-34px);} }
+  @keyframes drift2 { 0%,100%{transform:translate(0,0);} 50%{transform:translate(18px,-44px);} }
+  @keyframes drift3 { 0%,100%{transform:translate(0,0);} 50%{transform:translate(-28px,-24px);} }
+  @keyframes glow { 0%,100%{opacity:0.25;} 50%{opacity:1;} }
+
+  .ui {
+    position: relative; z-index: 3; height: 100%;
+    display: flex; flex-direction: column; padding: 20px 18px;
+  }
+  .appbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .appname { font-size: 19px; letter-spacing: 0.02em; }
+  .appname .kanji { color: #8fc06a; font-size: 21px; }
+  .progress {
+    font-size: 13px; color: #b8b09a;
+    background: rgba(236,227,207,0.08); padding: 4px 10px; border-radius: 999px;
+  }
+  .subtitle { font-size: 12px; color: #b8b09a; margin-bottom: 18px; letter-spacing: 0.04em; }
+
+  /* Frosted-glass beige: alpha dropped to ~0.80 (from 0.97) so the broad yukimi
+     silhouette + amber glow read THROUGH; backdrop blur keeps text crisp. Card no
+     longer flex-fills, so the lower third stays open for the lantern + fireflies. */
+  .card {
+    background: linear-gradient(160deg, rgba(236,227,207,0.82), rgba(232,222,197,0.76));
+    -webkit-backdrop-filter: blur(7px);
+    backdrop-filter: blur(7px);
+    color: #2b2f26; border-radius: 22px; padding: 22px 20px 20px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.42);
+    border: 1px solid rgba(255,255,255,0.18);  /* #ffffff @ 0.18 — frosted rim */
+    display: flex; flex-direction: column;
+  }
+  .card-top { display: flex; align-items: center; justify-content: space-between; }
+  .dir-pill {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    color: #4f7a3a; background: rgba(127,174,90,0.18);
+    padding: 3px 9px; border-radius: 6px;
+  }
+  .fam-dot { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: #6a6f5e; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; background: #f6cba4; display: inline-block; }
+
+  .prompt-label { font-size: 11px; color: #8a8f7c; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 26px; }
+  .prompt { font-size: 30px; font-weight: 600; color: #2b2f26; margin-top: 4px; }
+
+  .reveal-block { margin-top: 22px; text-align: center; }
+  .jp {
+    font-size: 46px;
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", "MS Mincho", serif;
+    color: #2b2f26; line-height: 1.1;
+  }
+  .reading { font-size: 18px; color: #4f7a3a; margin-top: 6px; }
+  .meaning { font-size: 15px; color: #6a6f5e; margin-top: 2px; }
+  .show-hint { text-align: center; font-size: 12px; color: #8a8f7c; margin-top: 8px; letter-spacing: 0.05em; }
+  .show-hint s { text-decoration: line-through; opacity: 0.6; }
+
+  .note {
+    margin-top: 16px; background: rgba(127,174,90,0.12);
+    border-left: 3px solid #8fc06a; border-radius: 8px;
+    padding: 9px 11px; font-size: 12.5px; color: #3f5b30; line-height: 1.4;
+  }
+  .note b { color: #4f7a3a; }
+
+  .grades { display: flex; gap: 8px; margin-top: auto; padding-top: 18px; }
+  .grade { flex: 1; text-align: center; padding: 11px 4px; border-radius: 12px; font-size: 13px; font-weight: 600; border: 1px solid transparent; }
+  .g-correct   { background: rgba(143,192,106,0.22); color: #3f6e28; border-color: rgba(143,192,106,0.5); }
+  .g-close     { background: rgba(246,203,164,0.30); color: #9a6a2e; border-color: rgba(246,203,164,0.6); }
+  .g-incorrect { background: rgba(231,163,166,0.28); color: #9a4347; border-color: rgba(231,163,166,0.55); }
+</style>
+</head>
+<body>
+  <div class="personality">Personality label: <b>Yukimi-dōrō</b> — low &amp; broad “snow-viewing” lantern; wide umbrella roof on short curved legs, broad fire box glowing, sitting low as if near water.</div>
+
+  <div class="col">
+    <div class="col-label">Hero — Practice Session (revealed)</div>
+    <div class="phone">
+      <div class="lantern-glow"></div>
+
+      <!-- caption identifies the lantern type on the hero -->
+      <div class="lantern-caption" style="right:14px; bottom:170px;">Yukimi-dōrō</div>
+
+      <!-- Accurate yukimi-dōrō: wide umbrella roof, broad fire box, short curved legs -->
+      <svg class="lantern" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="stoneY" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#5b5e52"/>
+            <stop offset="0.5" stop-color="#6a6d5e"/>
+            <stop offset="1" stop-color="#3c4039"/>
+          </linearGradient>
+          <radialGradient id="fireY" cx="0.5" cy="0.45" r="0.65">
+            <stop offset="0" stop-color="#fff2c8"/>
+            <stop offset="0.5" stop-color="#ffcf7a"/>
+            <stop offset="1" stop-color="#ff9e3d"/>
+          </radialGradient>
+        </defs>
+
+        <!-- Hōju (small finial) -->
+        <path d="M100 18 C105 18 106 26 100 30 C94 26 95 18 100 18 Z" fill="url(#stoneY)"/>
+
+        <!-- Kasa (WIDE umbrella roof) with upturned warabide corners -->
+        <path d="M100 30
+                 C150 36 188 64 190 84
+                 C188 88 184 88 180 84
+                 L20 84
+                 C16 88 12 88 10 84
+                 C12 64 50 36 100 30 Z" fill="url(#stoneY)"/>
+        <!-- upturned roof corners -->
+        <path d="M12 84 C2 82 2 92 12 92" fill="none" stroke="#5b5e52" stroke-width="6" stroke-linecap="round"/>
+        <path d="M188 84 C198 82 198 92 188 92" fill="none" stroke="#5b5e52" stroke-width="6" stroke-linecap="round"/>
+        <!-- subtle roof ridge lines -->
+        <path d="M100 32 L100 82 M55 78 L100 40 M145 78 L100 40" stroke="#4b4e44" stroke-width="1.5" fill="none" opacity="0.6"/>
+
+        <!-- Hibukuro (BROAD fire box) GLOWING -->
+        <rect x="48" y="88" width="104" height="58" rx="6" fill="#43463d"/>
+        <rect x="56" y="94" width="88" height="46" rx="5" fill="url(#fireY)" class="fire-window"/>
+        <!-- carved sun (circle) + moon (crescent) windows -->
+        <circle cx="78" cy="117" r="11" fill="#43463d"/>
+        <path d="M126 105 a12 12 0 1 0 0 24 a9 9 0 1 1 0 -24 Z" fill="#43463d"/>
+        <!-- center rib -->
+        <rect x="98" y="94" width="4" height="46" fill="#43463d"/>
+
+        <!-- Chūdai (platform under fire box, slim) -->
+        <rect x="52" y="146" width="96" height="9" rx="3" fill="url(#stoneY)"/>
+
+        <!-- THREE short CURVED legs (signature of yukimi-dōrō) -->
+        <path d="M62 155 C50 168 48 184 60 192 L72 192 C66 182 66 168 76 155 Z" fill="url(#stoneY)"/>
+        <path d="M100 155 C96 170 96 184 100 192 L108 192 C104 182 104 168 108 155 Z" fill="url(#stoneY)"/>
+        <path d="M138 155 C150 168 152 184 140 192 L128 192 C134 182 134 168 124 155 Z" fill="url(#stoneY)"/>
+
+        <!-- ground / water-edge shadow -->
+        <ellipse cx="100" cy="194" rx="64" ry="7" fill="#3c4039" opacity="0.7"/>
+
+        <!-- moss flecks on stone -->
+        <circle cx="40" cy="80" r="3" fill="#4f7a3a" opacity="0.55"/>
+        <circle cx="160" cy="78" r="2.5" fill="#4f7a3a" opacity="0.5"/>
+        <circle cx="60" cy="188" r="2.5" fill="#4f7a3a" opacity="0.5"/>
+        <circle cx="142" cy="150" r="2" fill="#4f7a3a" opacity="0.45"/>
+      </svg>
+
+      <span class="firefly ff1"></span>
+      <span class="firefly ff2"></span>
+      <span class="firefly ff3"></span>
+      <span class="firefly ff4"></span>
+
+      <div class="ui">
+        <div class="appbar">
+          <div class="appname"><span class="kanji">蛍</span> Hotaru</div>
+          <div class="progress">7 / 20</div>
+        </div>
+        <div class="subtitle">Genki · Lesson 2</div>
+
+        <div class="card">
+          <div class="card-top">
+            <span class="dir-pill">EN → JP</span>
+            <span class="fam-dot"><span class="dot"></span> learning</span>
+          </div>
+
+          <div class="prompt-label">Prompt</div>
+          <div class="prompt">promise</div>
+
+          <div class="reveal-block">
+            <div class="jp">約束</div>
+            <div class="reading">やくそく</div>
+            <div class="meaning">promise</div>
+          </div>
+          <div class="show-hint"><s>Show</s> revealed</div>
+
+          <div class="note">
+            <b>Jake’s note:</b> yak + soku → I promise to feed the yak 🐃
+          </div>
+
+          <div class="grades">
+            <div class="grade g-incorrect">Incorrect</div>
+            <div class="grade g-close">Close</div>
+            <div class="grade g-correct">Correct</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECONDARY + STATE column -->
+  <div class="col">
+    <div class="col-label">Secondary — Pre-session picker</div>
+    <div class="phone">
+      <!-- calmer screen: the broad lantern is the hero motif, enlarged & centered low -->
+      <div class="lantern-glow" style="right:auto; left:50%; transform:translateX(-50%); bottom:70px; width:300px; height:240px;"></div>
+
+      <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"
+           style="position:absolute; left:50%; transform:translateX(-50%); bottom:6px; width:240px; height:auto; z-index:1; opacity:0.95;">
+        <defs>
+          <linearGradient id="stoneYp" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#5b5e52"/><stop offset="0.5" stop-color="#6a6d5e"/><stop offset="1" stop-color="#3c4039"/>
+          </linearGradient>
+          <radialGradient id="fireYp" cx="0.5" cy="0.45" r="0.65">
+            <stop offset="0" stop-color="#fff2c8"/><stop offset="0.5" stop-color="#ffcf7a"/><stop offset="1" stop-color="#ff9e3d"/>
+          </radialGradient>
+        </defs>
+        <path d="M100 18 C105 18 106 26 100 30 C94 26 95 18 100 18 Z" fill="url(#stoneYp)"/>
+        <path d="M100 30 C150 36 188 64 190 84 C188 88 184 88 180 84 L20 84 C16 88 12 88 10 84 C12 64 50 36 100 30 Z" fill="url(#stoneYp)"/>
+        <path d="M12 84 C2 82 2 92 12 92" fill="none" stroke="#5b5e52" stroke-width="6" stroke-linecap="round"/>
+        <path d="M188 84 C198 82 198 92 188 92" fill="none" stroke="#5b5e52" stroke-width="6" stroke-linecap="round"/>
+        <path d="M100 32 L100 82 M55 78 L100 40 M145 78 L100 40" stroke="#4b4e44" stroke-width="1.5" fill="none" opacity="0.6"/>
+        <rect x="48" y="88" width="104" height="58" rx="6" fill="#43463d"/>
+        <rect x="56" y="94" width="88" height="46" rx="5" fill="url(#fireYp)" class="fire-window"/>
+        <circle cx="78" cy="117" r="11" fill="#43463d"/>
+        <path d="M126 105 a12 12 0 1 0 0 24 a9 9 0 1 1 0 -24 Z" fill="#43463d"/>
+        <rect x="98" y="94" width="4" height="46" fill="#43463d"/>
+        <rect x="52" y="146" width="96" height="9" rx="3" fill="url(#stoneYp)"/>
+        <path d="M62 155 C50 168 48 184 60 192 L72 192 C66 182 66 168 76 155 Z" fill="url(#stoneYp)"/>
+        <path d="M100 155 C96 170 96 184 100 192 L108 192 C104 182 104 168 108 155 Z" fill="url(#stoneYp)"/>
+        <path d="M138 155 C150 168 152 184 140 192 L128 192 C134 182 134 168 124 155 Z" fill="url(#stoneYp)"/>
+        <ellipse cx="100" cy="194" rx="64" ry="7" fill="#3c4039" opacity="0.7"/>
+        <circle cx="40" cy="80" r="3" fill="#4f7a3a" opacity="0.55"/>
+        <circle cx="160" cy="78" r="2.5" fill="#4f7a3a" opacity="0.5"/>
+        <circle cx="60" cy="188" r="2.5" fill="#4f7a3a" opacity="0.5"/>
+        <circle cx="142" cy="150" r="2" fill="#4f7a3a" opacity="0.45"/>
+      </svg>
+
+      <span class="firefly ff1" style="bottom:50%;"></span>
+      <span class="firefly ff2"></span>
+      <span class="firefly ff3" style="right:70%;"></span>
+
+      <div class="ui">
+        <div class="appbar">
+          <div class="appname"><span class="kanji">蛍</span> Hotaru</div>
+        </div>
+
+        <div style="background:linear-gradient(160deg,rgba(236,227,207,0.97),rgba(232,222,197,0.94));color:#2b2f26;border-radius:22px;padding:20px;box-shadow:0 12px 30px rgba(0,0,0,0.42);">
+          <div style="font-size:12px;color:#8a8f7c;letter-spacing:0.1em;text-transform:uppercase;">Ready when you are</div>
+          <div style="font-size:24px;font-weight:600;margin-top:6px;">Genki · Lesson 2</div>
+          <div style="font-size:13px;color:#6a6f5e;margin-top:4px;">20 words in this set</div>
+
+          <div style="margin-top:20px;font-size:12px;color:#8a8f7c;letter-spacing:0.08em;text-transform:uppercase;">Familiarity</div>
+
+          <!-- 5-tier pastel ramp legend -->
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:9px;font-size:13.5px;">
+            <div style="display:flex;align-items:center;gap:11px;"><span style="font-size:18px;color:#f4b8c4;">○</span><span style="color:#3f4438;">New</span></div>
+            <div style="display:flex;align-items:center;gap:11px;"><span style="font-size:18px;color:#f6cba4;">◔</span><span style="color:#3f4438;">Seen</span></div>
+            <div style="display:flex;align-items:center;gap:11px;"><span style="font-size:18px;color:#e3e2a0;">◑</span><span style="color:#3f4438;">Learning</span></div>
+            <div style="display:flex;align-items:center;gap:11px;"><span style="font-size:18px;color:#bfe0a8;">◕</span><span style="color:#3f4438;">Familiar</span></div>
+            <div style="display:flex;align-items:center;gap:11px;"><span style="font-size:18px;color:#8fc06a;">●</span><span style="color:#3f4438;">Mastered</span></div>
+          </div>
+
+          <button style="margin-top:22px;width:100%;border:none;background:#4f7a3a;color:#ece3cf;font-size:15px;font-weight:600;padding:13px;border-radius:13px;letter-spacing:0.03em;">Begin a gentle session</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-label" style="margin-top:6px;">State — Aging / weak-word row</div>
+    <div class="phone" style="height:360px;">
+      <!-- calmer state: broad lantern stands clearly low-right as the hero motif -->
+      <div class="lantern-glow" style="right:-20px; bottom:0; width:240px; height:200px;"></div>
+
+      <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"
+           style="position:absolute; right:-12px; bottom:-4px; width:180px; height:auto; z-index:1; opacity:0.95;">
+        <defs>
+          <linearGradient id="stoneYr" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#5b5e52"/><stop offset="0.5" stop-color="#6a6d5e"/><stop offset="1" stop-color="#3c4039"/>
+          </linearGradient>
+          <radialGradient id="fireYr" cx="0.5" cy="0.45" r="0.65">
+            <stop offset="0" stop-color="#fff2c8"/><stop offset="0.5" stop-color="#ffcf7a"/><stop offset="1" stop-color="#ff9e3d"/>
+          </radialGradient>
+        </defs>
+        <path d="M100 18 C105 18 106 26 100 30 C94 26 95 18 100 18 Z" fill="url(#stoneYr)"/>
+        <path d="M100 30 C150 36 188 64 190 84 C188 88 184 88 180 84 L20 84 C16 88 12 88 10 84 C12 64 50 36 100 30 Z" fill="url(#stoneYr)"/>
+        <path d="M12 84 C2 82 2 92 12 92" fill="none" stroke="#5b5e52" stroke-width="6" stroke-linecap="round"/>
+        <path d="M188 84 C198 82 198 92 188 92" fill="none" stroke="#5b5e52" stroke-width="6" stroke-linecap="round"/>
+        <path d="M100 32 L100 82 M55 78 L100 40 M145 78 L100 40" stroke="#4b4e44" stroke-width="1.5" fill="none" opacity="0.6"/>
+        <rect x="48" y="88" width="104" height="58" rx="6" fill="#43463d"/>
+        <rect x="56" y="94" width="88" height="46" rx="5" fill="url(#fireYr)" class="fire-window"/>
+        <circle cx="78" cy="117" r="11" fill="#43463d"/>
+        <path d="M126 105 a12 12 0 1 0 0 24 a9 9 0 1 1 0 -24 Z" fill="#43463d"/>
+        <rect x="98" y="94" width="4" height="46" fill="#43463d"/>
+        <rect x="52" y="146" width="96" height="9" rx="3" fill="url(#stoneYr)"/>
+        <path d="M62 155 C50 168 48 184 60 192 L72 192 C66 182 66 168 76 155 Z" fill="url(#stoneYr)"/>
+        <path d="M100 155 C96 170 96 184 100 192 L108 192 C104 182 104 168 108 155 Z" fill="url(#stoneYr)"/>
+        <path d="M138 155 C150 168 152 184 140 192 L128 192 C134 182 134 168 124 155 Z" fill="url(#stoneYr)"/>
+        <ellipse cx="100" cy="194" rx="64" ry="7" fill="#3c4039" opacity="0.7"/>
+      </svg>
+
+      <span class="firefly ff2" style="bottom:55%;"></span>
+      <span class="firefly ff4" style="right:60%;"></span>
+      <div class="ui">
+        <div class="appbar">
+          <div class="appname"><span class="kanji">蛍</span> Hotaru</div>
+        </div>
+        <div style="font-size:12px;color:#b8b09a;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:12px;">A few words drifting back</div>
+
+        <div style="display:flex;align-items:center;gap:12px;background:rgba(236,227,207,0.96);border-radius:14px;padding:12px 14px;margin-bottom:9px;">
+          <span style="width:12px;height:12px;border-radius:50%;background:#e3e2a0;flex:none;"></span>
+          <div style="flex:1;">
+            <div style="font-family:'Hiragino Mincho ProN','Yu Mincho',serif;font-size:19px;color:#2b2f26;">約束</div>
+            <div style="font-size:12px;color:#6a6f5e;">promise · slipping from familiar</div>
+          </div>
+          <span style="font-size:11px;color:#9a6a2e;background:rgba(246,203,164,0.4);padding:3px 8px;border-radius:6px;">revisit soon</span>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;background:rgba(236,227,207,0.96);border-radius:14px;padding:12px 14px;">
+          <span style="width:12px;height:12px;border-radius:50%;background:#f6cba4;flex:none;"></span>
+          <div style="flex:1;">
+            <div style="font-family:'Hiragino Mincho ProN','Yu Mincho',serif;font-size:19px;color:#2b2f26;">図書館</div>
+            <div style="font-size:12px;color:#6a6f5e;">library · seen once</div>
+          </div>
+          <span style="font-size:11px;color:#9a6a2e;background:rgba(246,203,164,0.4);padding:3px 8px;border-radius:6px;">revisit soon</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

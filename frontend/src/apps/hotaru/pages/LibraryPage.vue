@@ -1,0 +1,334 @@
+<template>
+  <q-page class="hotaru-app column no-wrap q-pa-md">
+    <FireflyLayer />
+    <!-- Level 1: sections (each textbook source + Custom words) -->
+    <div class="library-tabs row items-center q-gutter-xs q-mb-sm">
+      <button
+        v-for="s in sections"
+        :key="s.key"
+        class="library-tab"
+        :class="{ 'library-tab--active': s.key === section }"
+        :data-testid="`section-${s.key}`"
+        @click="selectSection(s.key)"
+      >
+        {{ s.label }}
+      </button>
+    </div>
+
+    <!-- Level 2: subsections (lessons, or Shared/Private) -->
+    <div class="library-tabs row items-center q-gutter-xs q-mb-md">
+      <button
+        v-for="sub in subsections"
+        :key="sub.key"
+        class="library-tab library-tab--sub"
+        :class="{ 'library-tab--active': sub.key === subsection }"
+        :data-testid="`sub-${sub.key}`"
+        @click="subsection = sub.key"
+      >
+        {{ sub.label }}
+      </button>
+    </div>
+
+    <div
+      v-if="store.loading"
+      class="library-state"
+      data-testid="library-loading"
+    >
+      Loading…
+    </div>
+    <div
+      v-else-if="store.error"
+      class="library-state"
+      data-testid="library-error"
+    >
+      {{ store.error }}
+    </div>
+    <div
+      v-else-if="section === TOPICS && store.topics.length === 0"
+      class="library-state"
+      data-testid="library-empty"
+    >
+      No topics yet — add words to a topic from any row.
+    </div>
+    <div
+      v-else-if="visibleWords.length === 0"
+      class="library-state"
+      data-testid="library-empty"
+    >
+      No words here yet.
+    </div>
+    <div
+      v-else
+      class="library-list hotaru-panel column"
+      data-testid="library-list"
+    >
+      <WordRow
+        v-for="word in visibleWords"
+        :key="word.id"
+        :word="word"
+        :editable="editable"
+        :tier="store.familiarityTier(word.id)"
+        @edit="onEdit"
+        @delete="onDelete"
+        @topics="onManageTopics"
+      />
+    </div>
+
+    <q-btn
+      class="library-add"
+      round
+      unelevated
+      icon="add"
+      aria-label="Add word"
+      data-testid="add-word-fab"
+      @click="onAdd"
+    />
+
+    <WordTopicsDialog
+      v-if="topicsWord"
+      v-model="topicsDialogOpen"
+      :word="topicsWord"
+      :topics="store.topics"
+      @assign="onAssign"
+      @unassign="onUnassign"
+      @create="onCreateTopic"
+    />
+  </q-page>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from "vue";
+import { storeToRefs } from "pinia";
+import { useRouter } from "vue-router";
+import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
+import WordRow from "@/apps/hotaru/components/WordRow.vue";
+import WordTopicsDialog from "@/apps/hotaru/components/WordTopicsDialog.vue";
+import { useHotaruLibraryStore } from "@/apps/hotaru/stores/useHotaruLibraryStore";
+import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
+import type { Visibility, Word } from "@/apps/hotaru/types";
+import "./../css/hotaru.sass";
+
+const store = useHotaruLibraryStore();
+const userStore = useHotaruUserStore();
+const router = useRouter();
+
+// The last-viewed selection lives in the store so it survives navigating to the
+// Add-word page and back.
+const { activeSection, activeSubsection } = storeToRefs(store);
+
+const CUSTOM = "__custom__";
+const TOPICS = "__topics__";
+
+function prettifySource(source: string): string {
+  return source
+    .split("_")
+    .map((t) => t.charAt(0).toUpperCase() + t.slice(1))
+    .join(" ");
+}
+
+const userIds = computed(() => userStore.users.map((u) => u.id));
+
+interface Tab {
+  key: string;
+  label: string;
+}
+
+const sections = computed<Tab[]>(() => {
+  const textbook = store
+    .textbookSources(userIds.value)
+    .map((s) => ({ key: s, label: prettifySource(s) }));
+  return [
+    ...textbook,
+    { key: CUSTOM, label: "Custom words" },
+    { key: TOPICS, label: "Topics" },
+  ];
+});
+
+const section = ref<string>(CUSTOM);
+const subsection = ref<string>("shared");
+
+const subsections = computed<Tab[]>(() => {
+  if (section.value === CUSTOM) {
+    return [
+      { key: "shared", label: "Shared" },
+      { key: "private", label: "Private" },
+    ];
+  }
+  if (section.value === TOPICS) {
+    return store.topics.map((t) => ({ key: t.id, label: t.name }));
+  }
+  return store
+    .lessonsForSource(section.value)
+    .map((l) => ({ key: l, label: l }));
+});
+
+const visibleWords = computed(() => {
+  if (section.value === CUSTOM) {
+    return store.customWords(userIds.value, subsection.value as Visibility);
+  }
+  if (section.value === TOPICS) {
+    return store.wordsForTopic(subsection.value);
+  }
+  return store.wordsBySourceLesson(section.value, subsection.value);
+});
+
+// Only user-added Custom words are editable — textbook words are read-only seed.
+const editable = computed(() => section.value === CUSTOM);
+
+function subsectionKeys(key: string): string[] {
+  if (key === CUSTOM) return ["shared"];
+  if (key === TOPICS) return store.topics.map((t) => t.id);
+  return store.lessonsForSource(key);
+}
+
+function selectSection(key: string): void {
+  section.value = key;
+  subsection.value = subsectionKeys(key)[0] ?? "shared";
+}
+
+// Fall back to a valid selection if the remembered one no longer exists (e.g.
+// data changed since it was stored).
+function ensureValidSelection(): void {
+  const keys = sections.value.map((s) => s.key);
+  if (!keys.includes(section.value)) {
+    const firstTextbook = sections.value.find(
+      (s) => s.key !== CUSTOM && s.key !== TOPICS,
+    );
+    selectSection(firstTextbook ? firstTextbook.key : CUSTOM);
+    return;
+  }
+  const subKeys = subsections.value.map((s) => s.key);
+  if (!subKeys.includes(subsection.value)) {
+    subsection.value = subKeys[0] ?? "shared";
+  }
+}
+
+// Persist every selection change so we can restore it after navigating away.
+watch([section, subsection], ([s, sub]) => {
+  activeSection.value = s;
+  activeSubsection.value = sub;
+});
+
+onMounted(async () => {
+  if (userStore.users.length === 0) await userStore.loadUsers();
+  if (userStore.activeUserId === null) {
+    void router.replace("/hotaru/identity");
+    return;
+  }
+  await Promise.all([
+    store.loadWords(userStore.activeUserId),
+    store.loadTopics(),
+    store.loadFamiliarity(userStore.activeUserId),
+  ]);
+  if (activeSection.value !== null) {
+    // Returning to the library — restore where the user was.
+    section.value = activeSection.value;
+    subsection.value = activeSubsection.value ?? "shared";
+    ensureValidSelection();
+  } else {
+    // First visit — default to the first textbook section.
+    const firstTextbook = sections.value.find(
+      (s) => s.key !== CUSTOM && s.key !== TOPICS,
+    );
+    selectSection(firstTextbook ? firstTextbook.key : CUSTOM);
+  }
+});
+
+function onAdd(): void {
+  void router.push("/hotaru/add-word");
+}
+
+function onEdit(word: Word): void {
+  void router.push(`/hotaru/words/${word.id}/edit`);
+}
+
+async function onDelete(word: Word): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null) return;
+  if (!window.confirm(`Delete "${word.meaning}"? This can't be undone.`))
+    return;
+  await store.deleteWord(word.id, user);
+}
+
+// --- Topic assignment dialog ------------------------------------------------
+
+const topicsWord = ref<Word | null>(null);
+const topicsDialogOpen = ref(false);
+
+function onManageTopics(word: Word): void {
+  topicsWord.value = word;
+  topicsDialogOpen.value = true;
+}
+
+async function onAssign(topicId: string, wordId: string): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null) return;
+  await store.assignWord(topicId, wordId, user);
+}
+
+async function onUnassign(topicId: string, wordId: string): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null) return;
+  await store.unassignWord(topicId, wordId, user);
+}
+
+// Create a topic, then immediately add the current word to it.
+async function onCreateTopic(name: string): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null || topicsWord.value === null) return;
+  const created = await store.createTopic(name);
+  if (created) await store.assignWord(created.id, topicsWord.value.id, user);
+}
+</script>
+
+<style scoped lang="sass">
+.library-tabs
+  overflow-x: auto
+
+.library-tab
+  border: 1px solid rgba(155, 107, 255, 0.30)
+  background: rgba(155, 107, 255, 0.12)
+  color: var(--hotaru-cream-soft)
+  border-radius: 9999px
+  padding: 4px 12px
+  font-size: 13px
+  cursor: pointer
+
+// Level-2 subsections are smaller and read violet when active — a calm step
+// down from the primary-cyan level-1 sections (tertiary accent = subordinate).
+.library-tab--sub
+  font-size: 12px
+  padding: 3px 10px
+
+.library-tab--active
+  background: var(--hotaru-bamboo)
+  color: var(--hotaru-bamboo-on)
+  border-color: var(--hotaru-bamboo)
+  box-shadow: 0 0 14px rgba(56, 240, 230, 0.35)
+
+.library-tab--sub.library-tab--active
+  background: var(--hotaru-fam-2)
+  color: #140a2e
+  border-color: var(--hotaru-fam-2)
+  box-shadow: 0 0 14px rgba(155, 107, 255, 0.45)
+
+.library-list
+  padding: 2px 14px
+
+// Rows already divide with a hairline; drop the last one inside the panel.
+.library-list :deep(.word-row:last-child)
+  border-bottom: none
+
+.library-state
+  color: var(--hotaru-cream-soft)
+  text-align: center
+  padding: 32px 0
+
+.library-add
+  position: fixed
+  right: 20px
+  bottom: 20px
+  background: var(--hotaru-bamboo)
+  color: var(--hotaru-bamboo-on)
+  box-shadow: 0 8px 22px rgba(16, 168, 159, 0.45), 0 0 20px rgba(56, 240, 230, 0.30)
+</style>

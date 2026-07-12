@@ -1,6 +1,6 @@
 <template>
   <q-layout view="hHh lpR fFf">
-    <q-header class="app-bar">
+    <q-header class="app-bar" :class="{ 'app-bar--hotaru': inHotaru }">
       <q-toolbar>
         <q-btn
           v-if="showBack"
@@ -63,19 +63,23 @@ const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 
-const showBack = computed(() => route.path !== '/');
+const showBack = computed(() => route.path !== "/");
+
+// Inside the Hotaru app the shell bar adopts Hotaru's dusk field so the header
+// reads as part of the app, not a foreign grey chrome strip.
+const inHotaru = computed(() => route.path.startsWith("/hotaru"));
 const isHome = computed(() => route.path === '/');
 
 const pageTitle = computed(() => {
   const t = route.meta?.title;
-  return typeof t === 'string' ? t : '';
+  return typeof t === "string" ? t : "";
 });
 
 function goBack(): void {
   if (window.history.length > 1) {
     router.back();
   } else {
-    void router.push('/');
+    void router.push("/");
   }
 }
 
@@ -94,4 +98,12 @@ function handleLogout(): void {
   color: #F0F0F0
   font-weight: 700
   font-size: 18px
+
+// Neon Yūgure: continue the top of Hotaru's radial dusk field (glow → field)
+// into the header so the bar blends with the page beneath it.
+.app-bar--hotaru
+  background: linear-gradient(180deg, #16103c 0%, #0b0a26 100%)
+
+.app-bar--hotaru .app-bar__title
+  color: #f1f0ff
 </style>

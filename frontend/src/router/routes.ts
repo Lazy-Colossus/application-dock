@@ -1,4 +1,4 @@
-import type { RouteRecordRaw } from 'vue-router';
+import type { RouteRecordRaw } from "vue-router";
 
 const routes: RouteRecordRaw[] = [
   {
@@ -63,6 +63,54 @@ const routes: RouteRecordRaw[] = [
         name: 'archery-history-detail',
         component: () => import('@/apps/archery/pages/HistoryDetailPage.vue'),
         meta: { title: 'Session', requiresAuth: true }
+      },
+      {
+        path: "hotaru",
+        name: "hotaru-home",
+        component: () => import("@/apps/hotaru/pages/HotaruHomePage.vue"),
+        meta: { title: "Hotaru" },
+      },
+      {
+        path: "hotaru/identity",
+        name: "hotaru-identity",
+        component: () => import("@/apps/hotaru/pages/IdentityPage.vue"),
+        meta: { title: "Hotaru" },
+      },
+      {
+        path: "hotaru/library",
+        name: "hotaru-library",
+        component: () => import("@/apps/hotaru/pages/LibraryPage.vue"),
+        meta: { title: "Library" },
+      },
+      {
+        path: "hotaru/practice",
+        name: "hotaru-practice",
+        component: () => import("@/apps/hotaru/pages/PracticeSetupPage.vue"),
+        meta: { title: "Practice" },
+      },
+      {
+        path: "hotaru/drill",
+        name: "hotaru-drill",
+        component: () => import("@/apps/hotaru/pages/DrillPage.vue"),
+        meta: { title: "Practice" },
+      },
+      {
+        path: "hotaru/study",
+        name: "hotaru-study",
+        component: () => import("@/apps/hotaru/pages/StudyPage.vue"),
+        meta: { title: "Study" },
+      },
+      {
+        path: "hotaru/add-word",
+        name: "hotaru-add-word",
+        component: () => import("@/apps/hotaru/pages/AddWordPage.vue"),
+        meta: { title: "Add word" },
+      },
+      {
+        path: "hotaru/words/:id/edit",
+        name: "hotaru-edit-word",
+        component: () => import("@/apps/hotaru/pages/AddWordPage.vue"),
+        meta: { title: "Edit word" },
       }
     ]
   },

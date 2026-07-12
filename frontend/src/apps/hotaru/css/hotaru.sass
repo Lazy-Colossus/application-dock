@@ -1,0 +1,72 @@
+// Hotaru "Neon Yūgure" (夕暮れ / dusk) theme — SCOPED to the Hotaru app only.
+// Applied via the `.hotaru-app` root class so the shell landing page and the
+// Archery app keep the global Carbon theme untouched.
+//
+// A darker indigo dusk field lit by saturated neon — electric cyan (primary),
+// hot magenta, neon violet — with violet-tinted glass panels and brighter,
+// multi-colour fireflies. Token *names* are inherited from the earlier
+// forest-twilight theme (kept stable so page styles need no renaming); only
+// their *values* changed. The forest look is preserved in git (commit
+// "forest-twilight atmospheric pass") as a backup.
+// Token values from ux-designs/.../.working/direction-neon-yugure.html.
+
+.hotaru-app
+  // Field (deep indigo dusk)
+  --hotaru-field: #0a0a24
+  --hotaru-field-low: #04060f
+  --hotaru-field-glow: #1a1148
+  // Glassy violet surfaces
+  --hotaru-surface: #11132e
+  --hotaru-surface-hi: #1a1a3a
+  // Ink (text on the dark field)
+  --hotaru-cream: #f1f0ff
+  --hotaru-cream-soft: #b3aede
+  --hotaru-sage: #6f6aa0
+  // Cyan — primary neon accent (brand, CTAs, active state, the practiced word)
+  --hotaru-bamboo: #38f0e6
+  --hotaru-bamboo-bright: #7ff7ee
+  --hotaru-bamboo-deep: #10a89f
+  --hotaru-bamboo-on: #03121a
+  // Firefly amber (motion layer) + the practiced word glows cyan in neon
+  --hotaru-firefly: #ffce5c
+  --hotaru-lamp-yellow: #38f0e6
+  // Private/aging accent (warm amber, distinct from the neon accents)
+  --hotaru-amber-private: #ffce5c
+  // Familiarity ramp (5 tiers, new -> mastered)
+  --hotaru-fam-1: #5a5a86
+  --hotaru-fam-2: #9b6bff
+  --hotaru-fam-3: #38f0e6
+  --hotaru-fam-4: #ffce5c
+  --hotaru-fam-5: #ff5cc8
+  // Recurring accent lines/fills (violet), centralised so a future re-theme is
+  // a one-file change.
+  --hotaru-line: rgba(155, 107, 255, 0.30)
+  --hotaru-line-soft: rgba(155, 107, 255, 0.16)
+  --hotaru-fill: rgba(155, 107, 255, 0.12)
+  --hotaru-input-bg: rgba(20, 18, 52, 0.55)
+
+  // Full-bleed dusk field. `isolation` gives the page its own stacking context
+  // so the FireflyLayer (z-index -1) sits between this gradient and the content
+  // — fireflies drift behind, blooming through the glass panels.
+  position: relative
+  isolation: isolate
+  min-height: 100%
+  background: radial-gradient(130% 80% at 50% -5%, var(--hotaru-field-glow) 0%, var(--hotaru-field) 45%, var(--hotaru-field-low) 100%)
+  color: var(--hotaru-cream)
+
+// --- Shared atmosphere helpers (global — hotaru.sass is imported as a plain
+// stylesheet, so these classes are usable in any Hotaru page template) --------
+
+// Violet-tinted glass panel: translucent + heavy blur so fireflies bloom
+// through, with a neon violet edge glow and depth shadow.
+.hotaru-panel
+  background: var(--hotaru-input-bg)
+  backdrop-filter: blur(16px)
+  -webkit-backdrop-filter: blur(16px)
+  border: 1px solid rgba(155, 107, 255, 0.28)
+  border-radius: 20px
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 18px 44px rgba(0, 0, 0, 0.55), 0 0 40px rgba(155, 107, 255, 0.12)
+
+// Electric cyan text glow for headings / brand.
+.hotaru-glow
+  text-shadow: 0 0 16px rgba(56, 240, 230, 0.6), 0 0 6px rgba(56, 240, 230, 0.5)

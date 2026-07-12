@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hotaru — Add Word</title>
+<style>
+/* ============================================================
+   EXPERIENCE.md governs:
+     IA: Add word (low-friction manual entry)
+     Component Patterns: form fields (required vs optional), shared/private toggle, lesson/topic assignment
+     Flow: add an off-textbook word (UJ-2 Dani adds "manga" / personal word)
+   Palette inherited verbatim from direction-forest-fireflies-c (LOCKED).
+   Firefly dimming: form fields/toggle carry a translucent moss backdrop above the z-index:4 firefly
+   layer, so fireflies behind a field read ~half as bright; over the plain field they stay full.
+   ============================================================ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+  background: radial-gradient(130% 90% at 50% 6%, #343721 0%, #292d1a 45%, #1a1d10 100%);
+  color: #ece1c8;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  padding: 28px 16px 56px;
+}
+
+.lab { text-align:center; color:#a3b178; font-size:12px; letter-spacing:.14em; text-transform:uppercase; margin-bottom:4px; }
+.personality { text-align:center; color:#bcd58a; font-size:14px; font-style:italic; margin-bottom:22px; }
+
+.stage { display:flex; flex-wrap:wrap; gap:30px; justify-content:center; align-items:flex-start; }
+
+.phone {
+  position:relative; width:340px; height:720px; background:#15170c;
+  border-radius:42px; padding:12px; box-shadow:0 32px 70px rgba(0,0,0,.7), inset 0 0 0 2px #343721;
+}
+.screen {
+  position:relative; width:100%; height:100%; border-radius:32px; overflow:hidden;
+  background: radial-gradient(150% 75% at 50% 100%, #383d23 0%, #292d1a 46%, #181b0e 100%);
+  display:flex; flex-direction:column;
+}
+.screen-label { position:absolute; top:8px; left:0; right:0; text-align:center; font-size:10px; letter-spacing:.12em; color:rgba(163,177,120,.6); text-transform:uppercase; z-index:9; }
+
+/* Fireflies wander on looping organic paths, each with a soft glow halo (#fff0a8).
+   Inner .dot blinks; halo = blurred low-opacity ::after. Reduced motion = static dim dots. */
+.firefly { position:absolute; z-index:4; width:7px; height:7px; pointer-events:none; }
+.firefly .dot { position:absolute; inset:0; border-radius:50%;
+  background: radial-gradient(circle, #fffce0 0%, #fff0a8 40%, rgba(255,240,168,0) 72%); }
+.firefly .dot::after { content:""; position:absolute; left:50%; top:50%; width:22px; height:22px;
+  transform:translate(-50%,-50%); border-radius:50%; filter:blur(5px);
+  background: radial-gradient(circle, rgba(255,240,168,.45) 0%, rgba(255,240,168,0) 70%); }
+.ff1 { left:30%; top:22%; animation: fly1 24s ease-in-out infinite; }
+.ff2 { left:72%; top:60%; animation: fly2 29s ease-in-out infinite .6s; }
+.ff3 { left:24%; top:74%; animation: fly3 21s ease-in-out infinite 1.2s; }
+.ff1 .dot { animation: blink 3.4s ease-in-out infinite; }
+.ff2 .dot { animation: blink 4.1s ease-in-out infinite .6s; }
+.ff3 .dot { animation: blink 3.0s ease-in-out infinite 1.2s; }
+@keyframes blink { 0%,100%{opacity:.12; transform:scale(.82);} 50%{opacity:.9; transform:scale(1.08);} 75%{opacity:.34;} }
+@keyframes fly1 { 0%{transform:translate(0,0);} 20%{transform:translate(70px,-46px);} 40%{transform:translate(128px,30px);} 60%{transform:translate(64px,96px);} 80%{transform:translate(-34px,52px);} 100%{transform:translate(0,0);} }
+@keyframes fly2 { 0%{transform:translate(0,0);} 22%{transform:translate(-92px,54px);} 45%{transform:translate(-150px,-30px);} 68%{transform:translate(-58px,-92px);} 86%{transform:translate(28px,-34px);} 100%{transform:translate(0,0);} }
+@keyframes fly3 { 0%{transform:translate(0,0);} 25%{transform:translate(58px,82px);} 50%{transform:translate(-44px,128px);} 72%{transform:translate(-104px,40px);} 88%{transform:translate(-40px,-44px);} 100%{transform:translate(0,0);} }
+@media (prefers-reduced-motion: reduce) {
+  .firefly, .firefly .dot { animation:none !important; opacity:.5; transform:none !important; }
+  .firefly .dot::after { opacity:.4; }
+}
+
+.appbar { padding:30px 22px 8px; display:flex; align-items:center; justify-content:space-between; z-index:6; position:relative; }
+.brand { display:flex; align-items:center; gap:8px; }
+.brand .back { font-size:18px; color:#c6cd9a; cursor:pointer; }
+.brand .name { font-size:17px; font-weight:600; letter-spacing:.04em; }
+.avatar { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:#22260f; box-shadow:0 4px 12px rgba(0,0,0,.4); border:2px solid rgba(246,239,218,.35); }
+.av-dani { background:#eebf86; }
+
+.content { position:relative; z-index:5; flex:1; padding:6px 20px 20px; display:flex; flex-direction:column; overflow-y:auto; }
+
+.aw-title { font-size:21px; font-weight:600; color:#f6efda; margin:8px 2px 2px; }
+.aw-sub { font-size:12px; color:#c6cd9a; margin:0 2px 16px; }
+
+.sec-tag { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#a8cc6e; margin:18px 2px 8px; display:flex; align-items:center; gap:6px; }
+.sec-tag.opt { color:#8c8666; }
+
+.field { margin-bottom:13px; }
+.field label { display:block; font-size:12px; color:#c6cd9a; margin:0 2px 5px; }
+.field label .req { color:#a6c87e; font-weight:700; }
+/* inputs/selects carry a translucent moss backdrop ABOVE the z-index:4 firefly layer, so any firefly
+   behind a field reads ~half as bright; over the plain field fireflies stay full */
+.input, .select {
+  position:relative; z-index:1; width:100%;
+  background:linear-gradient(rgba(45,49,28,.5), rgba(45,49,28,.5)), rgba(246,239,218,.08);
+  -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px);
+  border:1px solid rgba(140,175,93,.34); border-radius:12px;
+  padding:12px 14px; color:#f6efda; font-size:15px; }
+.input.jp { font-size:22px; }
+.input::placeholder { color:rgba(198,205,154,.45); }
+.field.required .input { border-color:rgba(140,175,93,.55); background:rgba(140,175,93,.10); }
+
+.select { color:#ece1c8; }
+
+/* shared / private toggle */
+.toggle { position:relative; z-index:1; display:flex; gap:8px;
+  background:linear-gradient(rgba(45,49,28,.5), rgba(45,49,28,.5)), rgba(246,239,218,.06);
+  -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px);
+  border:1px solid rgba(140,175,93,.28); border-radius:14px; padding:5px; }
+.toggle .opt-btn { flex:1; text-align:center; padding:11px 6px; border-radius:10px; font-size:13px; color:#c6cd9a; cursor:pointer; }
+.toggle .opt-btn .sm { display:block; font-size:10px; opacity:.7; margin-top:2px; }
+.toggle .opt-btn.on { background:rgba(140,175,93,.30); color:#f6efda; font-weight:600; box-shadow:inset 0 1px 0 rgba(255,255,255,.1); }
+
+.save { margin-top:20px; background:#8caf5d; color:#22260f; border:none; padding:14px; border-radius:999px; font-size:15px; font-weight:600; letter-spacing:.03em; cursor:pointer; box-shadow:0 10px 24px rgba(93,125,56,.55); }
+.calm-foot { text-align:center; color:rgba(236,225,200,.55); font-size:11px; margin-top:12px; }
+
+.caption { text-align:center; color:#a3b178; font-size:12px; margin-top:12px; max-width:340px; }
+.col { display:flex; flex-direction:column; align-items:center; }
+</style>
+</head>
+<body>
+  <div class="lab">Hotaru · Key Screen · Add Word</div>
+  <div class="personality">Caught a word in the wild? Add it in a moment — three things needed, the rest whenever you like.</div>
+
+  <div class="stage">
+
+    <div class="col">
+      <div class="phone">
+        <div class="screen">
+          <div class="screen-label">Add word · Dani (manga word)</div>
+          <span class="firefly ff1"><span class="dot"></span></span><span class="firefly ff2"><span class="dot"></span></span><span class="firefly ff3"><span class="dot"></span></span>
+
+          <div class="appbar">
+            <div class="brand"><span class="back">←</span><span class="name">Add a word</span></div>
+            <span class="avatar av-dani">D</span>
+          </div>
+
+          <div class="content">
+            <div class="aw-title">Add a word</div>
+            <div class="aw-sub">Just the essentials — you can fill in the rest later.</div>
+
+            <div class="sec-tag">Needed</div>
+
+            <div class="field required">
+              <label>Japanese form <span class="req">·</span></label>
+              <input class="input jp" type="text" value="約束" />
+            </div>
+            <div class="field required">
+              <label>Reading / kana</label>
+              <input class="input jp" type="text" value="やくそく" />
+            </div>
+            <div class="field required">
+              <label>English meaning <span class="req">required</span></label>
+              <input class="input" type="text" value="promise" />
+            </div>
+
+            <div class="sec-tag opt">Optional — add anytime</div>
+
+            <div class="field">
+              <label>Part of speech</label>
+              <select class="select">
+                <option>Noun</option>
+                <option>Verb</option>
+                <option>Adjective</option>
+                <option>Expression</option>
+                <option selected>Not sure yet</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Lesson or topic</label>
+              <select class="select">
+                <option>No set yet</option>
+                <option>Genki · Lesson 1</option>
+                <option selected>Genki · Lesson 2</option>
+                <option>Topic: Manga words</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Who can see this word</label>
+              <div class="toggle">
+                <span class="opt-btn on">🌿 Shared<span class="sm">You and your partner</span></span>
+                <span class="opt-btn">🔒 Private<span class="sm">Just you</span></span>
+              </div>
+            </div>
+
+            <button class="save">Save word</button>
+            <div class="calm-foot">It'll quietly join your list as ○ New 🌙</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">Add word — 3 clear required fields (highlighted), optional fields below, gentle Shared/Private toggle. Calm, quick entry for UJ-2.</div>
+    </div>
+
+  </div>
+</body>
+</html>

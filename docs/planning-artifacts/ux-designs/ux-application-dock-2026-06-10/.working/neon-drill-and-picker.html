@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hotaru — Neon Yūgure · Drill & Picker</title>
+<!--
+  Neon Yūgure (夕暮れ, "dusk") reference — two phone frames:
+    FRAME 1  HERO · Drill flashcard (revealed, EN → JP)
+    FRAME 2  SECONDARY · Pick a session (pre-session overview)
+  Built on direction-neon-yugure.html (palette, phone frame, fireflies) and polished;
+  drill category pills + aging "drifting back" row structure borrowed from the forest mockup.
+-->
+<style>
+  /* ── PALETTE ───────────────────────────────────────────────────────────
+     Field  radial-gradient(130% 80% at 50% -5%, #1a1148, #0a0a24 45%, #04060f)
+     Glass  rgba(20,18,52,0.55) + blur(16px)   Border rgba(155,107,255,.28)
+     Ink    #f1f0ff / #b3aede / #6f6aa0
+     Cyan   #38f0e6 (PRIMARY, practiced word) · Magenta #ff5cc8 (reading)
+     Violet #9b6bff · Amber #ffce5c
+     Familiarity ramp: New ○ #5a5a86 (unglowing) · Learning ◔ #9b6bff ·
+                       Familiar ◑ #38f0e6 · Strong ◕ #ffce5c · Mastered ● #ff5cc8
+     Radius 20px panels · 14px grade buttons · 9999px CTA/pills
+     ──────────────────────────────────────────────────────────────────── */
+  :root{
+    --night-0:#04060f; --night-1:#090b1e; --night-2:#11132e;
+    --glass:rgba(20,18,52,0.55);
+    --cyan:#38f0e6; --magenta:#ff5cc8; --violet:#9b6bff; --amber:#ffce5c;
+    --ink-hi:#f1f0ff; --ink-mid:#b3aede; --ink-lo:#6f6aa0;
+    --t-new:#5a5a86; --t-learning:#9b6bff; --t-familiar:#38f0e6;
+    --t-strong:#ffce5c; --t-mastered:#ff5cc8;
+    --r:20px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:radial-gradient(130% 80% at 50% -5%,#1a1148 0%,#0a0a24 45%,var(--night-0) 100%);
+    min-height:100vh;color:var(--ink-hi);
+    display:flex;flex-direction:column;align-items:center;gap:14px;
+    padding:34px 16px 60px;
+  }
+  .tagline{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan);
+    text-shadow:0 0 14px rgba(56,240,230,.6)}
+  .personality{font-size:12px;color:var(--ink-mid);text-align:center;max-width:760px;line-height:1.5}
+  .stage{display:flex;flex-wrap:wrap;gap:34px;justify-content:center;align-items:flex-start}
+
+  /* ── phone frame ───────────────────────────────────────────────────── */
+  .phone{
+    position:relative;width:360px;height:740px;border-radius:42px;
+    background:linear-gradient(170deg,var(--night-1),#06061a);
+    border:1px solid rgba(155,107,255,.25);
+    box-shadow:0 0 0 9px #030310,0 24px 70px rgba(0,0,0,.8),
+               0 0 70px rgba(155,107,255,.16),0 0 40px rgba(56,240,230,.1);
+    overflow:hidden;
+  }
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);
+    width:120px;height:26px;background:#030310;border-radius:14px;z-index:30}
+  .screen{position:absolute;inset:0;padding:46px 18px 18px;display:flex;flex-direction:column;overflow:hidden}
+  .label-pill{position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+    background:var(--magenta);color:#2c0020;font-size:11px;font-weight:700;
+    padding:4px 12px;border-radius:999px;letter-spacing:.04em;z-index:40;white-space:nowrap;
+    box-shadow:0 0 20px rgba(255,92,200,.6)}
+
+  /* ── fireflies (pure CSS) ─────────────────────────────────────────── */
+  .ff{position:absolute;width:7px;height:7px;border-radius:50%;
+    background:radial-gradient(circle,var(--amber) 0%,rgba(255,206,92,.5) 38%,transparent 70%);
+    filter:blur(.2px);pointer-events:none;z-index:5;opacity:0}
+  .ff.cyan{background:radial-gradient(circle,var(--cyan) 0%,rgba(56,240,230,.45) 40%,transparent 70%)}
+  .ff.mag{background:radial-gradient(circle,var(--magenta) 0%,rgba(255,92,200,.45) 40%,transparent 70%)}
+  .ff1{top:60%;left:12%;animation:drift1 13s ease-in-out infinite,glow 3s ease-in-out infinite}
+  .ff2{top:28%;left:76%;animation:drift2 16s ease-in-out infinite,glow 3.8s ease-in-out infinite .5s}
+  .ff3{top:80%;left:58%;animation:drift3 15s ease-in-out infinite,glow 3.4s ease-in-out infinite 1s}
+  .ff4{top:18%;left:28%;animation:drift1 18s ease-in-out infinite reverse,glow 4.4s ease-in-out infinite .2s}
+  .ff5{top:48%;left:86%;animation:drift2 14s ease-in-out infinite,glow 4s ease-in-out infinite 1.6s}
+  .ff6{top:70%;left:40%;animation:drift3 17s ease-in-out infinite reverse,glow 3.2s ease-in-out infinite 2.2s}
+  .ff7{top:38%;left:50%;animation:drift1 12s ease-in-out infinite,glow 2.8s ease-in-out infinite .9s}
+  @keyframes drift1{0%{transform:translate(0,0)}25%{transform:translate(28px,-34px)}50%{transform:translate(10px,-60px)}75%{transform:translate(-26px,-28px)}100%{transform:translate(0,0)}}
+  @keyframes drift2{0%{transform:translate(0,0)}33%{transform:translate(-34px,26px)}66%{transform:translate(20px,46px)}100%{transform:translate(0,0)}}
+  @keyframes drift3{0%{transform:translate(0,0)}40%{transform:translate(28px,22px)}80%{transform:translate(-20px,-26px)}100%{transform:translate(0,0)}}
+  @keyframes glow{0%,100%{opacity:.18;transform:scale(.65)}50%{opacity:1;transform:scale(1.4)}}
+  @media (prefers-reduced-motion: reduce){
+    .ff{animation:none !important;opacity:.5;transform:none !important}
+  }
+
+  /* ── shared bits ───────────────────────────────────────────────────── */
+  .topbar{display:flex;align-items:center;justify-content:space-between;z-index:10;margin-bottom:14px}
+  .brand{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;letter-spacing:.02em}
+  .brand .kanji{font-size:22px;color:var(--cyan);text-shadow:0 0 16px rgba(56,240,230,.8)}
+  .progress{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-mid);font-variant-numeric:tabular-nums}
+  .progress .bar{width:54px;height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+  .progress .bar i{display:block;height:100%;width:35%;border-radius:3px;
+    background:linear-gradient(90deg,var(--cyan),var(--magenta));box-shadow:0 0 12px rgba(56,240,230,.8)}
+
+  /* ── DRILL card — dual cyan + violet ambient glow ─────────────────── */
+  .card{position:relative;z-index:10;flex:1;border-radius:var(--r);
+    background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border:1px solid rgba(155,107,255,.28);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 18px 44px rgba(0,0,0,.55),
+               0 0 44px rgba(56,240,230,.14),0 0 60px rgba(155,107,255,.16);
+    padding:20px 18px;display:flex;flex-direction:column}
+  /* dimmer firefly layer over the card */
+  .card::before{content:"";position:absolute;inset:0;border-radius:var(--r);
+    background:rgba(9,11,30,.28);pointer-events:none}
+  .card > *{position:relative;z-index:1}
+  .card-top{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--ink-lo);letter-spacing:.06em}
+  .fam{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-mid)}
+  .dot{width:11px;height:11px;border-radius:50%;display:inline-block;
+    background:var(--t-learning);box-shadow:0 0 12px rgba(155,107,255,.9)}
+  .mode{font-size:11px;color:var(--ink-lo);text-transform:uppercase;letter-spacing:.1em}
+
+  .prompt-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px}
+  .prompt-lab{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-lo)}
+  .prompt{font-size:34px;font-weight:700;color:var(--ink-hi)}
+  .jp{font-size:48px;font-weight:700;color:var(--cyan);
+    text-shadow:0 0 34px rgba(56,240,230,.75),0 0 16px rgba(56,240,230,.6);line-height:1.1;margin-top:6px}
+  .reading{font-size:20px;color:var(--magenta);text-shadow:0 0 16px rgba(255,92,200,.55);margin-top:2px}
+  .meaning{font-size:14px;color:var(--ink-mid);margin-top:2px}
+
+  /* category pills along the card's BOTTOM edge + ＋N overflow toggle (pure-CSS) */
+  .cat-toggle{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
+  .catbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:16px;padding-top:13px;
+    border-top:1px solid rgba(155,107,255,.2)}
+  .catpill{flex:0 0 auto;font-size:9px;letter-spacing:.02em;color:var(--ink-mid);
+    background:rgba(155,107,255,.12);border:1px solid rgba(155,107,255,.3);
+    padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .cat-extra{display:none}
+  .cat-more{flex:0 0 auto;display:inline-flex;align-items:center;gap:3px;cursor:pointer;
+    font-size:9px;color:var(--violet);background:rgba(155,107,255,.2);border:1px solid rgba(155,107,255,.5);
+    padding:3px 9px;border-radius:999px;white-space:nowrap;user-select:none}
+  .cat-more .collapse{display:none}
+  .cat-toggle:checked ~ .catbar .cat-extra{display:inline-block}
+  .cat-toggle:checked ~ .catbar .cat-more .expand{display:none}
+  .cat-toggle:checked ~ .catbar .cat-more .collapse{display:inline}
+
+  .grades{display:flex;gap:9px;margin-top:14px;z-index:10}
+  .grade{flex:1;border-radius:14px;padding:15px 6px;text-align:center;font-size:13.5px;font-weight:700;cursor:pointer;
+    border:1px solid rgba(155,107,255,.25);background:rgba(255,255,255,.04);color:var(--ink-hi)}
+  .grade.incorrect{border-color:rgba(255,92,200,.6);box-shadow:0 0 22px rgba(255,92,200,.24);color:var(--magenta)}
+  .grade.close{border-color:rgba(255,206,92,.62);box-shadow:0 0 22px rgba(255,206,92,.24);color:var(--amber)}
+  .grade.correct{border-color:rgba(56,240,230,.62);box-shadow:0 0 22px rgba(56,240,230,.24);color:var(--cyan)}
+
+  /* ── PICKER ─────────────────────────────────────────────────────────── */
+  .sec-head{z-index:10;margin-bottom:16px}
+  .sec-head h2{font-size:21px;font-weight:700}
+  .sec-head p{font-size:13px;color:var(--ink-mid);margin-top:4px;line-height:1.45}
+
+  .scope-card{z-index:10;border-radius:var(--r);background:var(--glass);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border:1px solid rgba(155,107,255,.28);padding:18px;display:flex;flex-direction:column;gap:4px;margin-bottom:16px;
+    box-shadow:0 14px 36px rgba(0,0,0,.5),0 0 36px rgba(255,92,200,.1)}
+  .scope-card .src{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--magenta);
+    text-shadow:0 0 12px rgba(255,92,200,.5)}
+  .scope-card .name{font-size:22px;font-weight:700}
+  .scope-card .meta{font-size:13px;color:var(--ink-mid)}
+  .startbtn{margin-top:12px;align-self:flex-start;padding:12px 28px;border:none;border-radius:999px;
+    font-size:14px;font-weight:700;color:#03121a;background:linear-gradient(90deg,var(--cyan),#7ff7ee);
+    box-shadow:0 0 30px rgba(56,240,230,.65);cursor:pointer}
+
+  .legend{z-index:10;border-radius:var(--r);background:rgba(9,11,30,.65);
+    border:1px solid rgba(155,107,255,.2);padding:16px}
+  .legend h3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-lo);margin-bottom:13px}
+  .ramp{display:flex;flex-direction:column;gap:12px}
+  .tier{display:flex;align-items:center;gap:11px}
+  .tier .glyph{width:22px;height:22px;border-radius:50%;flex:none;display:grid;place-items:center;
+    font-size:12px;font-weight:700;color:var(--night-0)}
+  .tier .txt{flex:1}
+  .tier .txt .nm{font-size:13px;font-weight:600;display:block}
+  .tier .txt .ds{font-size:11px;color:var(--ink-lo)}
+  .tier .count{font-size:12px;color:var(--ink-mid);font-variant-numeric:tabular-nums}
+  .g-new{background:transparent;border:2px solid var(--t-new);color:var(--t-new)}
+  .g-learning{background:var(--t-learning);box-shadow:0 0 12px rgba(155,107,255,.6)}
+  .g-familiar{background:var(--t-familiar);box-shadow:0 0 12px rgba(56,240,230,.6)}
+  .g-strong{background:var(--t-strong);box-shadow:0 0 12px rgba(255,206,92,.6)}
+  .g-mastered{background:var(--t-mastered);box-shadow:0 0 16px rgba(255,92,200,.8)}
+
+  /* aging / "drifting back" row */
+  .weak{margin-top:16px;z-index:10;border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:11px;
+    background:rgba(255,92,200,.07);border:1px dashed rgba(255,92,200,.35)}
+  .weak .dot{background:transparent;box-shadow:none;border:2px solid var(--ink-lo)}
+  .weak .w-txt{flex:1}
+  .weak .w-jp{font-size:16px;font-weight:600;color:var(--ink-hi)}
+  .weak .w-en{font-size:11px;color:var(--ink-lo)}
+  .weak .w-tag{font-size:10px;color:var(--magenta);letter-spacing:.06em;white-space:nowrap;
+    text-shadow:0 0 10px rgba(255,92,200,.5)}
+</style>
+</head>
+<body>
+  <div class="tagline">Hotaru · Neon Yūgure 夕暮れ</div>
+  <div class="personality">The evening-neon end — darker dusk field, saturated cyan/magenta/violet bloom and drifting fireflies. Nightlife sparkle, still calm beneath. Drill flashcard (revealed) beside the pre-session picker.</div>
+
+  <div class="stage">
+
+    <!-- ════ FRAME 1 · HERO — Drill flashcard, revealed (EN → JP) ════ -->
+    <div class="phone">
+      <div class="label-pill">HERO · Drill — flashcard</div>
+      <div class="notch"></div>
+      <span class="ff ff1"></span><span class="ff cyan ff2"></span><span class="ff mag ff3"></span>
+      <span class="ff cyan ff4"></span><span class="ff ff5"></span><span class="ff mag ff6"></span><span class="ff ff7"></span>
+      <div class="screen">
+        <div class="topbar">
+          <div class="brand"><span class="kanji">蛍</span> Hotaru</div>
+          <div class="progress">7 / 20 <span class="bar"><i></i></span></div>
+        </div>
+
+        <div class="card">
+          <div class="card-top">
+            <span class="fam"><span class="dot"></span> learning</span>
+            <span class="mode">EN → JP</span>
+          </div>
+
+          <div class="prompt-wrap">
+            <div class="prompt-lab">prompt</div>
+            <div class="prompt">promise</div>
+            <div class="jp">約束</div>
+            <div class="reading">やくそく</div>
+            <div class="meaning">promise</div>
+          </div>
+
+          <input class="cat-toggle" type="checkbox" id="cat-more-drill" />
+          <div class="catbar">
+            <span class="catpill">Noun</span>
+            <span class="catpill">Genki · L2</span>
+            <span class="catpill cat-extra">Everyday</span>
+            <span class="catpill cat-extra">Manga words</span>
+            <label class="cat-more" for="cat-more-drill">
+              <span class="expand">＋2</span><span class="collapse">− less</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="grades">
+          <div class="grade incorrect">Incorrect</div>
+          <div class="grade close">Close</div>
+          <div class="grade correct">Correct</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ FRAME 2 · SECONDARY — pre-session picker ════ -->
+    <div class="phone">
+      <div class="label-pill">SECONDARY · Pick a session</div>
+      <div class="notch"></div>
+      <span class="ff cyan ff1"></span><span class="ff mag ff2"></span><span class="ff ff5"></span><span class="ff cyan ff7"></span>
+      <div class="screen">
+        <div class="topbar">
+          <div class="brand"><span class="kanji">蛍</span> Hotaru</div>
+        </div>
+        <div class="sec-head">
+          <h2>What shall we practise?</h2>
+          <p>The night’s yours — pick a set and we’ll light it up together.</p>
+        </div>
+
+        <div class="scope-card">
+          <span class="src">Genki</span>
+          <span class="name">Lesson 2</span>
+          <span class="meta">24 words</span>
+          <button class="startbtn">Let’s practice ✦</button>
+        </div>
+
+        <div class="legend">
+          <h3>Familiarity</h3>
+          <div class="ramp">
+            <div class="tier"><span class="glyph g-new">○</span><span class="txt"><span class="nm">New</span><span class="ds">not yet seen</span></span><span class="count">6</span></div>
+            <div class="tier"><span class="glyph g-learning">◔</span><span class="txt"><span class="nm">Learning</span><span class="ds">just starting</span></span><span class="count">7</span></div>
+            <div class="tier"><span class="glyph g-familiar">◑</span><span class="txt"><span class="nm">Familiar</span><span class="ds">coming along</span></span><span class="count">5</span></div>
+            <div class="tier"><span class="glyph g-strong">◕</span><span class="txt"><span class="nm">Strong</span><span class="ds">nearly there</span></span><span class="count">4</span></div>
+            <div class="tier"><span class="glyph g-mastered">●</span><span class="txt"><span class="nm">Mastered</span><span class="ds">resting easy</span></span><span class="count">2</span></div>
+          </div>
+        </div>
+
+        <div class="weak">
+          <span class="dot"></span>
+          <div class="w-txt"><div class="w-jp">学生 · がくせい</div><div class="w-en">student</div></div>
+          <span class="w-tag">drifting back ↺</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

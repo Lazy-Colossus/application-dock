@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hotaru — Word Detail + Notes · Neon Yūgure</title>
+<!--
+  Neon Yūgure (夕暮れ, "dusk") restyle of the Word detail + shared/private Notes screen.
+  Layout & content mirrored from the forest word-notes mockup; palette swapped to
+  the locked Neon Yūgure identity (cyan / magenta / violet / amber neon over a
+  darker dusk field). Fireflies drift behind; header panel carries a violet dimmer
+  above the firefly layer so sparks read ~half as bright behind glass.
+-->
+<style>
+  :root{
+    --night-0:#04060f; --night-1:#090b1e; --night-2:#11132e;
+    --glass:rgba(20,18,52,0.55);
+    --cyan:#38f0e6; --magenta:#ff5cc8; --violet:#9b6bff; --amber:#ffce5c;
+    --ink-hi:#f1f0ff; --ink-mid:#b3aede; --ink-lo:#6f6aa0;
+    --r:20px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:radial-gradient(130% 80% at 50% -5%,#1a1148 0%,#0a0a24 45%,var(--night-0) 100%);
+    min-height:100vh;color:var(--ink-hi);-webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;align-items:center;gap:14px;
+    padding:34px 16px 60px;
+  }
+  .tagline{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan);
+    text-shadow:0 0 14px rgba(56,240,230,.6)}
+  .personality{font-size:12px;color:var(--ink-mid);text-align:center;max-width:520px;line-height:1.5}
+
+  /* ── phone frame ───────────────────────────────────────────────────── */
+  .phone{
+    position:relative;width:360px;height:740px;border-radius:42px;
+    background:linear-gradient(170deg,var(--night-1),#06061a);
+    border:1px solid rgba(155,107,255,.25);
+    box-shadow:0 0 0 9px #030310,0 24px 70px rgba(0,0,0,.8),
+               0 0 70px rgba(155,107,255,.16),0 0 40px rgba(56,240,230,.1);
+    overflow:hidden;
+  }
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);
+    width:120px;height:26px;background:#030310;border-radius:14px;z-index:30}
+  .label-pill{position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+    background:var(--magenta);color:#2c0020;font-size:11px;font-weight:700;
+    padding:4px 12px;border-radius:9999px;letter-spacing:.04em;z-index:40;white-space:nowrap;
+    box-shadow:0 0 20px rgba(255,92,200,.6)}
+  .screen{position:absolute;inset:0;padding:46px 0 0;display:flex;flex-direction:column;overflow:hidden}
+
+  /* ── fireflies (pure CSS) ──────────────────────────────────────────── */
+  .ff{position:absolute;width:7px;height:7px;border-radius:50%;
+    background:radial-gradient(circle,var(--amber) 0%,rgba(255,206,92,.5) 38%,transparent 70%);
+    filter:blur(.2px);pointer-events:none;z-index:5;opacity:0}
+  .ff.cyan{background:radial-gradient(circle,var(--cyan) 0%,rgba(56,240,230,.45) 40%,transparent 70%)}
+  .ff.mag{background:radial-gradient(circle,var(--magenta) 0%,rgba(255,92,200,.45) 40%,transparent 70%)}
+  .ff1{top:60%;left:12%;animation:drift1 13s ease-in-out infinite,glow 3s ease-in-out infinite}
+  .ff2{top:28%;left:76%;animation:drift2 16s ease-in-out infinite,glow 3.8s ease-in-out infinite .5s}
+  .ff3{top:80%;left:58%;animation:drift3 15s ease-in-out infinite,glow 3.4s ease-in-out infinite 1s}
+  .ff4{top:18%;left:28%;animation:drift1 18s ease-in-out infinite reverse,glow 4.4s ease-in-out infinite .2s}
+  .ff5{top:48%;left:86%;animation:drift2 14s ease-in-out infinite,glow 4s ease-in-out infinite 1.6s}
+  .ff6{top:70%;left:40%;animation:drift3 17s ease-in-out infinite reverse,glow 3.2s ease-in-out infinite 2.2s}
+  .ff7{top:38%;left:50%;animation:drift1 12s ease-in-out infinite,glow 2.8s ease-in-out infinite .9s}
+  @keyframes drift1{0%{transform:translate(0,0)}25%{transform:translate(28px,-34px)}50%{transform:translate(10px,-60px)}75%{transform:translate(-26px,-28px)}100%{transform:translate(0,0)}}
+  @keyframes drift2{0%{transform:translate(0,0)}33%{transform:translate(-34px,26px)}66%{transform:translate(20px,46px)}100%{transform:translate(0,0)}}
+  @keyframes drift3{0%{transform:translate(0,0)}40%{transform:translate(28px,22px)}80%{transform:translate(-20px,-26px)}100%{transform:translate(0,0)}}
+  @keyframes glow{0%,100%{opacity:.18;transform:scale(.65)}50%{opacity:1;transform:scale(1.4)}}
+  @media (prefers-reduced-motion: reduce){
+    .ff{animation:none !important;opacity:.42 !important;transform:none !important}
+  }
+
+  /* ── top bar ───────────────────────────────────────────────────────── */
+  .topbar{display:flex;align-items:center;justify-content:space-between;z-index:10;padding:0 18px 12px}
+  .brand{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;letter-spacing:.02em}
+  .brand .kanji{font-size:22px;color:var(--cyan);text-shadow:0 0 16px rgba(56,240,230,.8)}
+  .avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:700;
+    color:#1a0f2e;background:linear-gradient(135deg,var(--amber),#ffe29a);
+    box-shadow:0 0 18px rgba(255,206,92,.5)}
+
+  /* ── scroll body ───────────────────────────────────────────────────── */
+  .content{position:relative;z-index:10;flex:1;padding:6px 18px 18px;display:flex;flex-direction:column;overflow-y:auto}
+
+  /* ── word header glass panel ──────────────────────────────────────────
+     Header carries a violet-tinted glass fill ABOVE the z-index:5 firefly
+     layer, so fireflies behind it read ~half as bright. */
+  .whead{position:relative;z-index:1;text-align:center;margin:8px 0 4px;padding:20px 16px 14px;border-radius:var(--r);
+    background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border:1px solid rgba(155,107,255,.28);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 18px 44px rgba(0,0,0,.55),0 0 40px rgba(155,107,255,.12)}
+  .whead .fam{position:absolute;top:14px;right:14px;display:inline-flex;align-items:center;gap:6px;
+    font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--cyan);
+    background:rgba(56,240,230,.12);border:1px solid rgba(56,240,230,.4);
+    padding:4px 10px;border-radius:9999px;box-shadow:0 0 16px rgba(56,240,230,.22)}
+  .whead .fam .fi{font-size:15px;line-height:1;filter:drop-shadow(0 0 8px rgba(56,240,230,.9))}
+  .whead .jp{font-size:48px;font-weight:700;color:var(--cyan);line-height:1.05;
+    text-shadow:0 0 30px rgba(56,240,230,.6),0 0 14px rgba(56,240,230,.5)}
+  .whead .reading{font-size:18px;color:var(--magenta);margin-top:6px;text-shadow:0 0 16px rgba(255,92,200,.5)}
+  .whead .meaning{font-size:14px;color:var(--ink-mid);margin-top:8px}
+  .whead .pos{display:inline-block;margin-top:10px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--violet);background:rgba(155,107,255,.14);border:1px solid rgba(155,107,255,.42);
+    padding:3px 10px;border-radius:9999px}
+  .whead .tags{display:flex;gap:6px;justify-content:center;margin-top:14px;padding-top:12px;
+    border-top:1px solid rgba(155,107,255,.22);flex-wrap:wrap}
+  .tagpill{font-size:9px;letter-spacing:.02em;color:var(--ink-mid);background:rgba(155,107,255,.14);
+    border:1px solid rgba(155,107,255,.34);padding:3px 9px;border-radius:9999px;white-space:nowrap}
+
+  .sec-tag{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan);margin:22px 2px 12px;
+    text-shadow:0 0 12px rgba(56,240,230,.4)}
+
+  /* ── note callouts ────────────────────────────────────────────────── */
+  .note{display:flex;gap:10px;align-items:flex-start;border-radius:14px;padding:12px 14px;margin-bottom:10px;
+    font-size:13px;line-height:1.5;color:var(--ink-mid);
+    background:rgba(155,107,255,.10);border:1px solid rgba(155,107,255,.32)}
+  .note .ic{font-size:15px;line-height:1.3}
+  .note .body{flex:1}
+  .note .who{font-weight:700;color:var(--violet);text-shadow:0 0 12px rgba(155,107,255,.6)}
+  /* private note — amber tint + amber border; only the private note carries a lock badge */
+  .note.private{background:rgba(255,206,92,.10);border-color:rgba(255,206,92,.42)}
+  .note.private .who{color:var(--amber);text-shadow:0 0 12px rgba(255,206,92,.5)}
+  .note .lock{margin-top:6px;display:inline-flex;align-items:center;gap:4px;font-size:10px;
+    letter-spacing:.04em;color:var(--amber)}
+
+  /* ── add-a-note affordance ────────────────────────────────────────── */
+  .add-note{margin-top:6px;background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border:1px solid rgba(155,107,255,.28);border-radius:var(--r);padding:12px 12px 12px;
+    box-shadow:0 14px 36px rgba(0,0,0,.5)}
+  .add-note .field{display:flex;align-items:center;gap:8px}
+  .add-note input{flex:1;background:rgba(0,0,0,.22);border:1px solid rgba(155,107,255,.24);border-radius:9999px;
+    padding:11px 15px;color:var(--ink-hi);font-size:13px;font-family:inherit}
+  .add-note input::placeholder{color:rgba(179,174,222,.55)}
+  .add-note input:focus{outline:none;border-color:rgba(56,240,230,.55);box-shadow:0 0 16px rgba(56,240,230,.2)}
+  .send{flex:none;width:42px;height:42px;border-radius:50%;border:none;cursor:pointer;font-size:16px;
+    color:#03121a;background:linear-gradient(135deg,var(--cyan),#7ff7ee);
+    box-shadow:0 0 26px rgba(56,240,230,.65);display:grid;place-items:center}
+  .add-note .scope{margin-top:9px;font-size:10px;color:var(--ink-lo);display:flex;align-items:center;gap:6px}
+  .add-note .scope b{color:var(--violet);font-weight:600}
+</style>
+</head>
+<body>
+  <div class="tagline">Hotaru · Neon Yūgure 夕暮れ</div>
+  <div class="personality">Word detail with cooperative notes — Dani opens 約束 and finds the mnemonic Jake left glowing behind.</div>
+
+  <div class="phone">
+    <div class="label-pill">TERTIARY · Word + Notes</div>
+    <div class="notch"></div>
+    <span class="ff ff1"></span><span class="ff cyan ff2"></span><span class="ff mag ff3"></span>
+    <span class="ff cyan ff4"></span><span class="ff ff5"></span><span class="ff mag ff6"></span><span class="ff ff7"></span>
+
+    <div class="screen">
+      <div class="topbar">
+        <div class="brand"><span class="kanji">蛍</span> Hotaru</div>
+        <span class="avatar">D</span>
+      </div>
+
+      <div class="content">
+        <div class="whead">
+          <!-- familiarity: distinct icon + colour + label (Familiar ◑ cyan) -->
+          <div class="fam"><span class="fi">◑</span> Familiar</div>
+          <div class="jp">約束</div>
+          <div class="reading">やくそく</div>
+          <div class="meaning">promise · a thing pledged</div>
+          <span class="pos">Noun</span>
+          <div class="tags">
+            <span class="tagpill">Genki · L2</span>
+            <span class="tagpill">Everyday</span>
+            <span class="tagpill">Drama words</span>
+          </div>
+        </div>
+
+        <div class="sec-tag">Notes</div>
+
+        <!-- shared note (implicit default) — violet, no badge -->
+        <div class="note">
+          <span class="ic">🦊</span>
+          <div class="body">
+            <span class="who">Jake:</span> yak + soku → I promise to feed the yak 🐂
+          </div>
+        </div>
+
+        <!-- private note — amber tint, amber lock only -->
+        <div class="note private">
+          <span class="ic">🔒</span>
+          <div class="body">
+            <span class="who">Dani:</span> comes up a lot in the drama we're watching
+            <div class="lock">🔒 Private</div>
+          </div>
+        </div>
+
+        <!-- add a note — shared by default -->
+        <div class="add-note">
+          <div class="field">
+            <input type="text" placeholder="Add your own way of remembering this…" />
+            <button class="send" aria-label="Add note">➤</button>
+          </div>
+          <div class="scope">✦ Posting as <b>Shared</b> — visible to your partner</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

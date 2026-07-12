@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hotaru — Firefly Midnight</title>
+<!--
+  DIRECTION: Firefly Midnight  (the balanced centre of the Hotaru vision)
+  RATIONALE: A deep midnight-indigo field carries the serenity; a single warm
+  bioluminescent firefly-amber is the primary playful accent, balanced by one cool
+  soft-teal secondary. Glassy soft cards, a handful of gently drifting + slowly
+  pulsing fireflies — serene base, playful glow, neither too sparse nor too neon.
+-->
+<style>
+  /* ── PALETTE (hex documented) ──────────────────────────────────────────
+     Field / base:
+       --night-0   #070b1c  deepest midnight (page backdrop)
+       --night-1   #0d1530  midnight indigo (frame)
+       --night-2   #16203f  raised surface
+       --glass     rgba(28,40,78,0.55) glassy card fill
+     Accents:
+       --amber     #ffcf6b  firefly-amber  (PRIMARY warm glow)
+       --amber-dim #c9954a  amber low
+       --teal      #6fe6d6  soft teal      (SECONDARY cool accent)
+     Ink:
+       --ink-hi    #eef3ff  high-emphasis text
+       --ink-mid   #aeb9da  secondary text
+       --ink-lo    #6f7aa3  tertiary / hints
+     Familiarity ramp (5 tiers, never colour-only — paired w/ shape + label):
+       new       #5b6790  (○ hollow ring)
+       learning  #6fa8ff  (◔ quarter)
+       familiar  #6fe6d6  (◑ half)
+       strong    #ffcf6b  (◕ three-quarter)
+       mastered  #ffb0e6  (● full)
+     ──────────────────────────────────────────────────────────────────── */
+  :root{
+    --night-0:#070b1c; --night-1:#0d1530; --night-2:#16203f;
+    --glass:rgba(28,40,78,0.55);
+    --amber:#ffcf6b; --amber-dim:#c9954a; --teal:#6fe6d6;
+    --ink-hi:#eef3ff; --ink-mid:#aeb9da; --ink-lo:#6f7aa3;
+    --t-new:#5b6790; --t-learning:#6fa8ff; --t-familiar:#6fe6d6;
+    --t-strong:#ffcf6b; --t-mastered:#ffb0e6;
+    --r:20px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:radial-gradient(120% 90% at 50% -10%,#101a3c 0%,var(--night-0) 55%,#04060f 100%);
+    min-height:100vh;color:var(--ink-hi);
+    display:flex;flex-direction:column;align-items:center;gap:14px;
+    padding:34px 16px 60px;
+  }
+  .tagline{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);opacity:.85}
+  .personality{font-size:12px;color:var(--ink-mid);text-align:center;max-width:760px;line-height:1.5}
+  .stage{display:flex;flex-wrap:wrap;gap:26px;justify-content:center;align-items:flex-start}
+
+  /* ── phone frame ───────────────────────────────────────────────────── */
+  .phone{
+    position:relative;width:360px;height:740px;border-radius:42px;
+    background:linear-gradient(170deg,var(--night-1),#0a1126);
+    border:1px solid rgba(120,140,210,.18);
+    box-shadow:0 0 0 9px #05070f,0 24px 70px rgba(0,0,0,.7),
+               0 0 60px rgba(255,207,107,.06);
+    overflow:hidden;
+  }
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);
+    width:120px;height:26px;background:#05070f;border-radius:14px;z-index:30}
+  .screen{position:absolute;inset:0;padding:46px 18px 18px;display:flex;flex-direction:column;overflow:hidden}
+  .label-pill{position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+    background:var(--amber);color:#2a1c00;font-size:11px;font-weight:700;
+    padding:4px 12px;border-radius:999px;letter-spacing:.04em;z-index:40;white-space:nowrap;
+    box-shadow:0 0 18px rgba(255,207,107,.5)}
+
+  /* ── fireflies (pure CSS) ──────────────────────────────────────────── */
+  .ff{position:absolute;width:6px;height:6px;border-radius:50%;
+    background:radial-gradient(circle,var(--amber) 0%,rgba(255,207,107,.5) 40%,transparent 70%);
+    filter:blur(.3px);pointer-events:none;z-index:5;opacity:0}
+  .ff.teal{background:radial-gradient(circle,var(--teal) 0%,rgba(111,230,214,.45) 40%,transparent 70%)}
+  .ff1{top:62%;left:14%;animation:drift1 14s ease-in-out infinite,glow 3.4s ease-in-out infinite}
+  .ff2{top:30%;left:74%;animation:drift2 18s ease-in-out infinite,glow 4.2s ease-in-out infinite .6s}
+  .ff3{top:78%;left:60%;animation:drift3 16s ease-in-out infinite,glow 3.8s ease-in-out infinite 1.2s}
+  .ff4{top:20%;left:30%;animation:drift1 20s ease-in-out infinite reverse,glow 5s ease-in-out infinite .3s}
+  .ff5{top:50%;left:84%;animation:drift2 15s ease-in-out infinite,glow 4.6s ease-in-out infinite 2s}
+  @keyframes drift1{0%{transform:translate(0,0)}25%{transform:translate(26px,-30px)}50%{transform:translate(8px,-56px)}75%{transform:translate(-22px,-24px)}100%{transform:translate(0,0)}}
+  @keyframes drift2{0%{transform:translate(0,0)}33%{transform:translate(-30px,22px)}66%{transform:translate(18px,40px)}100%{transform:translate(0,0)}}
+  @keyframes drift3{0%{transform:translate(0,0)}40%{transform:translate(24px,18px)}80%{transform:translate(-16px,-22px)}100%{transform:translate(0,0)}}
+  @keyframes glow{0%,100%{opacity:.15;transform:scale(.7)}50%{opacity:.95;transform:scale(1.25)}}
+
+  /* ── shared bits ───────────────────────────────────────────────────── */
+  .topbar{display:flex;align-items:center;justify-content:space-between;z-index:10;margin-bottom:14px}
+  .brand{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;letter-spacing:.02em}
+  .brand .kanji{font-size:22px;color:var(--amber);text-shadow:0 0 14px rgba(255,207,107,.6)}
+  .progress{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-mid)}
+  .progress .bar{width:54px;height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+  .progress .bar i{display:block;height:100%;width:35%;border-radius:3px;
+    background:linear-gradient(90deg,var(--amber),var(--teal));box-shadow:0 0 10px rgba(255,207,107,.6)}
+
+  /* card */
+  .card{position:relative;z-index:10;flex:1;border-radius:var(--r);
+    background:var(--glass);backdrop-filter:blur(14px);
+    border:1px solid rgba(140,160,230,.16);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 18px 40px rgba(0,0,0,.45);
+    padding:20px 18px;display:flex;flex-direction:column}
+  .card-top{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--ink-lo);letter-spacing:.06em}
+  .fam{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-mid)}
+  .dot{width:11px;height:11px;border-radius:50%;display:inline-block;position:relative;
+    background:var(--t-learning);box-shadow:0 0 10px rgba(111,168,255,.7)}
+  .mode{font-size:11px;color:var(--ink-lo);text-transform:uppercase;letter-spacing:.1em}
+
+  .prompt-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px}
+  .prompt-lab{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-lo)}
+  .prompt{font-size:34px;font-weight:700;color:var(--ink-hi)}
+  .jp{font-size:46px;font-weight:700;color:var(--amber);text-shadow:0 0 26px rgba(255,207,107,.45);line-height:1.1}
+  .reading{font-size:20px;color:var(--teal);margin-top:2px}
+  .meaning{font-size:14px;color:var(--ink-mid)}
+
+  .showbtn{align-self:center;margin-top:8px;padding:11px 30px;border:none;border-radius:999px;
+    font-size:15px;font-weight:600;color:#2a1c00;cursor:pointer;
+    background:linear-gradient(90deg,var(--amber),#ffe1a0);
+    box-shadow:0 0 26px rgba(255,207,107,.55)}
+
+  .note{margin-top:14px;border-radius:14px;padding:11px 13px;font-size:12.5px;line-height:1.45;
+    background:rgba(111,230,214,.08);border:1px solid rgba(111,230,214,.22);color:var(--ink-mid)}
+  .note b{color:var(--teal);font-weight:600}
+
+  .grades{display:flex;gap:9px;margin-top:14px;z-index:10}
+  .grade{flex:1;border-radius:14px;padding:13px 6px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;
+    border:1px solid rgba(140,160,230,.2);background:rgba(255,255,255,.04);color:var(--ink-hi)}
+  .grade small{display:block;font-size:10px;font-weight:400;color:var(--ink-lo);margin-top:3px;letter-spacing:.04em}
+  .grade.correct{border-color:rgba(111,230,214,.5);box-shadow:0 0 18px rgba(111,230,214,.18)}
+  .grade.correct b{color:var(--teal)}
+  .grade.close{border-color:rgba(255,207,107,.5);box-shadow:0 0 18px rgba(255,207,107,.18)}
+  .grade.close b{color:var(--amber)}
+  .grade.incorrect{border-color:rgba(255,176,230,.4)}
+  .grade.incorrect b{color:var(--t-mastered)}
+
+  /* secondary screen */
+  .sec-head{z-index:10;margin-bottom:14px}
+  .sec-head h2{font-size:20px;font-weight:700}
+  .sec-head p{font-size:13px;color:var(--ink-mid);margin-top:3px}
+  .lesson-card{z-index:10;border-radius:var(--r);background:var(--glass);backdrop-filter:blur(14px);
+    border:1px solid rgba(140,160,230,.16);padding:18px;display:flex;flex-direction:column;gap:4px;margin-bottom:14px;
+    box-shadow:0 14px 34px rgba(0,0,0,.4)}
+  .lesson-card .src{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber)}
+  .lesson-card .name{font-size:22px;font-weight:700}
+  .lesson-card .meta{font-size:13px;color:var(--ink-mid)}
+  .startbtn{margin-top:12px;align-self:flex-start;padding:11px 26px;border:none;border-radius:999px;
+    font-size:14px;font-weight:600;color:#2a1c00;background:linear-gradient(90deg,var(--amber),#ffe1a0);
+    box-shadow:0 0 24px rgba(255,207,107,.5);cursor:pointer}
+
+  .legend{z-index:10;border-radius:var(--r);background:rgba(13,21,48,.6);
+    border:1px solid rgba(140,160,230,.14);padding:16px}
+  .legend h3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-lo);margin-bottom:12px}
+  .ramp{display:flex;flex-direction:column;gap:11px}
+  .tier{display:flex;align-items:center;gap:11px}
+  .tier .glyph{width:22px;height:22px;border-radius:50%;flex:none;display:grid;place-items:center;
+    font-size:12px;font-weight:700;color:var(--night-0)}
+  .tier .txt{flex:1}
+  .tier .txt .nm{font-size:13px;font-weight:600}
+  .tier .txt .ds{font-size:11px;color:var(--ink-lo)}
+  .tier .count{font-size:12px;color:var(--ink-mid)}
+  /* tier glyphs use shape (ring/fill char) + colour, never colour alone */
+  .g-new{background:transparent;border:2px solid var(--t-new);color:var(--t-new)}
+  .g-learning{background:var(--t-learning)}
+  .g-familiar{background:var(--t-familiar)}
+  .g-strong{background:var(--t-strong)}
+  .g-mastered{background:var(--t-mastered);box-shadow:0 0 14px rgba(255,176,230,.6)}
+
+  .weak{margin-top:14px;z-index:10;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;
+    background:rgba(255,176,230,.06);border:1px dashed rgba(255,176,230,.3)}
+  .weak .dot{background:var(--t-new);box-shadow:none;border:2px solid var(--ink-lo)}
+  .weak .w-txt{flex:1}
+  .weak .w-jp{font-size:16px;font-weight:600;color:var(--ink-hi)}
+  .weak .w-en{font-size:11px;color:var(--ink-lo)}
+  .weak .w-tag{font-size:10px;color:var(--amber);letter-spacing:.06em}
+</style>
+</head>
+<body>
+  <div class="tagline">Hotaru · Firefly Midnight</div>
+  <div class="personality">Serene midnight base, one warm firefly-amber glow + a cool teal companion — the balanced centre of the vision. Calm to read, playful to watch.</div>
+
+  <div class="stage">
+    <!-- ════ HERO: Practice Session flashcard (drill) — revealed state ════ -->
+    <div class="phone">
+      <div class="label-pill">HERO · Practice Session — flashcard</div>
+      <div class="notch"></div>
+      <span class="ff ff1"></span><span class="ff teal ff2"></span>
+      <span class="ff ff3"></span><span class="ff teal ff4"></span><span class="ff ff5"></span>
+      <div class="screen">
+        <div class="topbar">
+          <div class="brand"><span class="kanji">蛍</span> Hotaru</div>
+          <div class="progress">7 / 20 <span class="bar"><i></i></span></div>
+        </div>
+
+        <div class="card">
+          <div class="card-top">
+            <span class="fam"><span class="dot"></span> learning</span>
+            <span class="mode">EN → JP</span>
+          </div>
+
+          <div class="prompt-wrap">
+            <div class="prompt-lab">prompt</div>
+            <div class="prompt">promise</div>
+            <div class="jp">約束</div>
+            <div class="reading">やくそく</div>
+            <div class="meaning">promise</div>
+            <button class="showbtn">Show ✦</button>
+          </div>
+
+          <div class="note">🦊 <b>Jake’s note:</b> “yak + soku → I promise to feed the yak.”</div>
+        </div>
+
+        <div class="grades">
+          <div class="grade correct"><b>Correct</b><small>I knew it</small></div>
+          <div class="grade close"><b>Close</b><small>almost</small></div>
+          <div class="grade incorrect"><b>Incorrect</b><small>show again</small></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ SECONDARY: pre-session overview / picker ════ -->
+    <div class="phone">
+      <div class="label-pill">SECONDARY · Pick a session</div>
+      <div class="notch"></div>
+      <span class="ff teal ff1"></span><span class="ff ff2"></span><span class="ff ff5"></span>
+      <div class="screen">
+        <div class="topbar">
+          <div class="brand"><span class="kanji">蛍</span> Hotaru</div>
+        </div>
+        <div class="sec-head">
+          <h2>What would you like to do?</h2>
+          <p>No rush — pick a set and we’ll drift through it together.</p>
+        </div>
+
+        <div class="lesson-card">
+          <span class="src">Genki</span>
+          <span class="name">Lesson 2</span>
+          <span class="meta">24 words · last seen 3 days ago</span>
+          <button class="startbtn">Begin ✦</button>
+        </div>
+
+        <div class="legend">
+          <h3>Familiarity</h3>
+          <div class="ramp">
+            <div class="tier"><span class="glyph g-new">○</span><span class="txt"><span class="nm">New</span><span class="ds">ring · not yet seen</span></span><span class="count">6</span></div>
+            <div class="tier"><span class="glyph g-learning">◔</span><span class="txt"><span class="nm">Learning</span><span class="ds">quarter · just starting</span></span><span class="count">7</span></div>
+            <div class="tier"><span class="glyph g-familiar">◑</span><span class="txt"><span class="nm">Familiar</span><span class="ds">half · coming along</span></span><span class="count">5</span></div>
+            <div class="tier"><span class="glyph g-strong">◕</span><span class="txt"><span class="nm">Strong</span><span class="ds">three-quarter · nearly there</span></span><span class="count">4</span></div>
+            <div class="tier"><span class="glyph g-mastered">●</span><span class="txt"><span class="nm">Mastered</span><span class="ds">full · resting easy</span></span><span class="count">2</span></div>
+          </div>
+        </div>
+
+        <!-- EXTRA STATE: aging / weak word row -->
+        <div class="weak">
+          <span class="dot"></span>
+          <div class="w-txt"><div class="w-jp">学生 · がくせい</div><div class="w-en">student</div></div>
+          <span class="w-tag">drifting back ↺</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hotaru — Home / Identity</title>
+<style>
+/* ============================================================
+   EXPERIENCE.md governs:
+     IA: Home / identity, top bar, user switching
+     Component Patterns: app brand, user avatar, avatar menu, primary action tiles
+     Flow: "Who's studying?" entry → app home (UJ-1 multi-user shared device)
+   Palette inherited verbatim from direction-forest-fireflies-c (LOCKED).
+   Firefly dimming: action tiles carry a translucent moss backdrop above the z-index:4 firefly layer,
+   so fireflies behind a tile read ~half as bright; over the plain field they stay full.
+   ============================================================ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+  background: radial-gradient(130% 90% at 50% 6%, #343721 0%, #292d1a 45%, #1a1d10 100%);
+  color: #ece1c8;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  padding: 28px 16px 56px;
+}
+
+.lab { text-align:center; color:#a3b178; font-size:12px; letter-spacing:.14em; text-transform:uppercase; margin-bottom:4px; }
+.personality { text-align:center; color:#bcd58a; font-size:14px; font-style:italic; margin-bottom:22px; }
+
+.stage { display:flex; flex-wrap:wrap; gap:30px; justify-content:center; align-items:flex-start; }
+
+.phone {
+  position:relative; width:340px; height:720px; background:#15170c;
+  border-radius:42px; padding:12px; box-shadow:0 32px 70px rgba(0,0,0,.7), inset 0 0 0 2px #343721;
+}
+.screen {
+  position:relative; width:100%; height:100%; border-radius:32px; overflow:hidden;
+  background: radial-gradient(150% 75% at 50% 100%, #383d23 0%, #292d1a 46%, #181b0e 100%);
+  display:flex; flex-direction:column;
+}
+.screen-label { position:absolute; top:8px; left:0; right:0; text-align:center; font-size:10px; letter-spacing:.12em; color:rgba(163,177,120,.6); text-transform:uppercase; z-index:9; }
+
+/* ---- Fireflies: wander on looping organic paths, each with a soft glow halo (#fff0a8). ----
+   Travel = .firefly anim; inner .dot blinks; halo = blurred low-opacity ::after.
+   Reduced motion = static dim dots, no travel. */
+.firefly { position:absolute; z-index:4; width:7px; height:7px; pointer-events:none; }
+.firefly .dot { position:absolute; inset:0; border-radius:50%;
+  background: radial-gradient(circle, #fffce0 0%, #fff0a8 40%, rgba(255,240,168,0) 72%); }
+.firefly .dot::after { content:""; position:absolute; left:50%; top:50%; width:22px; height:22px;
+  transform:translate(-50%,-50%); border-radius:50%; filter:blur(5px);
+  background: radial-gradient(circle, rgba(255,240,168,.45) 0%, rgba(255,240,168,0) 70%); }
+.ff1 { left:30%; top:30%; animation: fly1 24s ease-in-out infinite; }
+.ff2 { left:68%; top:46%; animation: fly2 29s ease-in-out infinite .6s; }
+.ff3 { left:48%; top:66%; animation: fly3 21s ease-in-out infinite 1.2s; }
+.ff4 { left:22%; top:58%; animation: fly4 27s ease-in-out infinite .3s; }
+.ff5 { left:74%; top:70%; animation: fly5 31s ease-in-out infinite .9s; }
+.ff1 .dot { animation: blink 3.4s ease-in-out infinite; }
+.ff2 .dot { animation: blink 4.1s ease-in-out infinite .6s; }
+.ff3 .dot { animation: blink 3.0s ease-in-out infinite 1.2s; }
+.ff4 .dot { animation: blink 4.4s ease-in-out infinite .3s; }
+.ff5 .dot { animation: blink 3.7s ease-in-out infinite .9s; }
+@keyframes blink { 0%,100%{opacity:.12; transform:scale(.82);} 50%{opacity:.9; transform:scale(1.08);} 75%{opacity:.34;} }
+@keyframes fly1 { 0%{transform:translate(0,0);} 20%{transform:translate(70px,-46px);} 40%{transform:translate(128px,30px);} 60%{transform:translate(64px,96px);} 80%{transform:translate(-34px,52px);} 100%{transform:translate(0,0);} }
+@keyframes fly2 { 0%{transform:translate(0,0);} 22%{transform:translate(-92px,54px);} 45%{transform:translate(-150px,-30px);} 68%{transform:translate(-58px,-92px);} 86%{transform:translate(28px,-34px);} 100%{transform:translate(0,0);} }
+@keyframes fly3 { 0%{transform:translate(0,0);} 25%{transform:translate(58px,82px);} 50%{transform:translate(-44px,128px);} 72%{transform:translate(-104px,40px);} 88%{transform:translate(-40px,-44px);} 100%{transform:translate(0,0);} }
+@keyframes fly4 { 0%{transform:translate(0,0);} 18%{transform:translate(96px,40px);} 40%{transform:translate(150px,-46px);} 64%{transform:translate(70px,-110px);} 84%{transform:translate(-30px,-50px);} 100%{transform:translate(0,0);} }
+@keyframes fly5 { 0%{transform:translate(0,0);} 24%{transform:translate(-70px,-60px);} 48%{transform:translate(-132px,18px);} 70%{transform:translate(-78px,90px);} 88%{transform:translate(14px,52px);} 100%{transform:translate(0,0);} }
+@media (prefers-reduced-motion: reduce) {
+  .firefly, .firefly .dot { animation:none !important; opacity:.5; transform:none !important; }
+  .firefly .dot::after { opacity:.4; }
+}
+
+/* ---- Top bar (post-selection) ---- */
+.appbar { padding:30px 22px 8px; display:flex; align-items:center; justify-content:space-between; z-index:6; position:relative; }
+.brand { display:flex; align-items:center; gap:8px; }
+.brand .glyph { font-size:22px; filter:drop-shadow(0 0 12px rgba(140,175,93,.7)); }
+.brand .name { font-size:17px; font-weight:600; letter-spacing:.04em; }
+
+.avatar { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:#22260f; box-shadow:0 4px 12px rgba(0,0,0,.4); border:2px solid rgba(246,239,218,.35); cursor:pointer; }
+.av-jake { background:#a6c87e; }
+.av-dani { background:#eebf86; }
+
+.content { position:relative; z-index:5; flex:1; padding:6px 24px 22px; display:flex; flex-direction:column; }
+
+/* ---- Section A: Who's studying ---- */
+.welcome { text-align:center; margin-top:64px; }
+.welcome .glyph { font-size:54px; display:block; filter:drop-shadow(0 0 22px rgba(140,175,93,.7)); }
+.welcome .name { font-size:24px; font-weight:600; letter-spacing:.05em; margin-top:8px; color:#f6efda; }
+.welcome .ask { font-size:15px; color:#c6cd9a; margin-top:30px; }
+.who-choices { display:flex; gap:26px; justify-content:center; margin-top:26px; }
+.who { display:flex; flex-direction:column; align-items:center; gap:10px; background:none; border:none; cursor:pointer; }
+.who .ring { width:84px; height:84px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:700; color:#22260f; box-shadow:0 8px 22px rgba(0,0,0,.45); border:3px solid rgba(246,239,218,.4); }
+.who .lab2 { font-size:15px; color:#ece1c8; font-weight:500; }
+.welcome-foot { text-align:center; color:rgba(236,225,200,.55); font-size:11px; margin-top:auto; padding-top:16px; }
+
+/* ---- Section B: Home body + actions ---- */
+.greet { margin:18px 2px 22px; }
+.greet .hi { font-size:22px; font-weight:600; color:#f6efda; }
+.greet .sub { font-size:13px; color:#c6cd9a; margin-top:4px; }
+
+.actions { display:flex; flex-direction:column; gap:16px; }
+/* action tiles carry a translucent moss backdrop ABOVE the z-index:4 firefly layer, so any firefly
+   behind a tile reads ~half as bright; over the plain field fireflies stay full */
+.action { position:relative; z-index:1; display:flex; align-items:center; gap:16px; padding:20px 18px; border-radius:18px; text-align:left;
+  background: linear-gradient(165deg, rgba(45,49,28,.5), rgba(38,42,24,.42)), linear-gradient(165deg, rgba(246,239,218,.10), rgba(236,225,200,.06));
+  -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px);
+  border:1px solid rgba(140,175,93,.34); cursor:pointer; color:#ece1c8;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.10); }
+.action.primary { background: linear-gradient(165deg, rgba(45,49,28,.5), rgba(38,42,24,.42)), linear-gradient(165deg, rgba(140,175,93,.34), rgba(140,175,93,.2)); border-color:rgba(140,175,93,.6); }
+.action .ico { font-size:28px; flex-shrink:0; filter:drop-shadow(0 0 10px rgba(140,175,93,.4)); }
+.action .txt .t { font-size:16px; font-weight:600; color:#f6efda; }
+.action .txt .d { font-size:12px; color:#c6cd9a; margin-top:3px; }
+.action .arr { margin-left:auto; color:#a8cc6e; font-size:18px; }
+
+.calm-footer { text-align:center; color:rgba(236,225,200,.55); font-size:11px; margin-top:auto; padding-top:16px; }
+
+/* ---- Avatar menu (open) ---- */
+.menu { position:absolute; top:66px; right:18px; z-index:8; width:188px; background:#f6efda; border-radius:14px; padding:6px; box-shadow:0 18px 40px rgba(0,0,0,.6); }
+.menu::before { content:""; position:absolute; top:-7px; right:18px; width:14px; height:14px; background:#f6efda; transform:rotate(45deg); }
+.menu .mhead { font-size:11px; color:#6b6249; padding:8px 12px 6px; letter-spacing:.04em; }
+.menu .mitem { display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:9px; color:#34301f; font-size:14px; cursor:pointer; }
+.menu .mitem:hover { background:rgba(140,175,93,.18); }
+.menu .mitem .mav { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#22260f; }
+.menu .mitem .mi { width:26px; text-align:center; font-size:16px; }
+.menu .mdiv { height:1px; background:rgba(107,98,73,.22); margin:4px 6px; }
+
+.caption { text-align:center; color:#a3b178; font-size:12px; margin-top:12px; max-width:340px; }
+.col { display:flex; flex-direction:column; align-items:center; }
+</style>
+</head>
+<body>
+  <div class="lab">Hotaru · Key Screen · Home / Identity</div>
+  <div class="personality">Who's studying? — a calm shared-device entry, then the gentle home with the avatar menu open.</div>
+
+  <div class="stage">
+
+    <!-- SECTION A — Who's studying -->
+    <div class="col">
+      <div class="phone">
+        <div class="screen">
+          <div class="screen-label">A · Who's studying?</div>
+          <span class="firefly ff1"><span class="dot"></span></span><span class="firefly ff2"><span class="dot"></span></span><span class="firefly ff3"><span class="dot"></span></span>
+          <span class="firefly ff4"><span class="dot"></span></span><span class="firefly ff5"><span class="dot"></span></span>
+
+          <div class="content">
+            <div class="welcome">
+              <span class="glyph">蛍</span>
+              <div class="name">Hotaru</div>
+              <div class="ask">Who's studying tonight?</div>
+              <div class="who-choices">
+                <button class="who">
+                  <span class="ring av-dani">D</span>
+                  <span class="lab2">Dani</span>
+                </button>
+                <button class="who">
+                  <span class="ring av-jake">J</span>
+                  <span class="lab2">Jake</span>
+                </button>
+              </div>
+            </div>
+            <div class="welcome-foot">Tap your name — no rush, the fireflies will wait 🌙</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">A — Calm identity picker. Two soft avatar circles, no photos, no pressure.</div>
+    </div>
+
+    <!-- SECTION B — Home after selecting Jake, avatar menu open -->
+    <div class="col">
+      <div class="phone">
+        <div class="screen">
+          <div class="screen-label">B · Home (Jake) · menu open</div>
+          <span class="firefly ff2" style="top:24%"><span class="dot"></span></span><span class="firefly ff5" style="top:64%"><span class="dot"></span></span><span class="firefly ff1" style="top:44%"><span class="dot"></span></span>
+
+          <div class="appbar">
+            <div class="brand"><span class="glyph">蛍</span><span class="name">Hotaru</span></div>
+            <span class="avatar av-jake">J</span>
+          </div>
+
+          <!-- avatar menu open -->
+          <div class="menu">
+            <div class="mhead">Signed in as Jake</div>
+            <div class="mitem"><span class="mav av-dani">D</span> Switch to Dani</div>
+            <div class="mdiv"></div>
+            <div class="mitem"><span class="mi">⚙️</span> Settings</div>
+          </div>
+
+          <div class="content">
+            <div class="greet">
+              <div class="hi">Evening, Jake</div>
+              <div class="sub">Whenever you're ready — pick where to begin.</div>
+            </div>
+
+            <div class="actions">
+              <button class="action primary">
+                <span class="ico">🌿</span>
+                <span class="txt"><span class="t">Practice</span><span class="d">Drill the words you're learning</span></span>
+                <span class="arr">→</span>
+              </button>
+              <button class="action">
+                <span class="ico">📖</span>
+                <span class="txt"><span class="t">Library</span><span class="d">Browse and tend your shared word list</span></span>
+                <span class="arr">→</span>
+              </button>
+            </div>
+
+            <div class="calm-footer">Little and often — that's how the light grows 🌙</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">B — Home for Jake; avatar top-right, menu open: Switch to Dani · Settings. Primary actions Practice & Library.</div>
+    </div>
+
+  </div>
+</body>
+</html>

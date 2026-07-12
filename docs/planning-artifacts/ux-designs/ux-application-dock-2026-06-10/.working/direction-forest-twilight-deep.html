@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<!--
+  RATIONALE — direction-forest-twilight-deep
+  The playful / deeper-dusk end of the forest-lantern vision: a darker mossy green-brown field
+  with warm beige cards floating on it, a stronger amber lantern bloom, more fireflies and a
+  touch more sparkle. It bridges toward an evening mood while staying inside the same calm
+  forest world — the most alive and atmospheric of the three siblings.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hotaru — Forest Twilight Deep</title>
+<style>
+/* ============================================================
+   PALETTE — direction-forest-twilight-deep (playful / deeper dusk)
+   Field / page bg     #232b1d  deep green-brown twilight ground
+   Field low           #171d12  shadowed forest floor
+   Phone frame         #12160d  near-black bezel
+   Surface beige       #ece1c8  warm sand card (floats on dark)
+   Surface beige hi    #f6efda  raised washi panel
+   Surface beige lo    #ddcfb0  recessed sand
+   Ink (text)          #34301f  warm dark bark
+   Ink soft            #6b6249  muted bark
+   Bamboo green        #82a455  vivid bamboo accent
+   Bamboo deep         #5d7d38  pressed / strong
+   Moss line           #6f7e52  hairlines on dark
+   Lantern amber       #ffb84d  strong stone-lantern glow core
+   Lantern amber soft  #ffd98a  big amber bloom
+   Firefly             #fff0a8  bright firefly dot
+   Stone grey          #7c786b  lantern stone body
+   --- Familiarity ramp (pastel red -> orange -> green) ---
+   Tier1 new           #e4a59e  soft pastel rose/coral
+   Tier2 learning      #eebf86  warm peach/amber
+   Tier3 familiar      #d2d088  soft yellow-green
+   Tier4 strong        #a6c87e  light green
+   Tier5 mastered      #7aa44d  fuller bamboo green
+   ============================================================ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+  background: radial-gradient(130% 90% at 50% 6%, #2b341f 0%, #232b1d 45%, #171d12 100%);
+  color: #ece1c8;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  padding: 28px 16px 56px;
+}
+
+.lab { text-align:center; color:#9fae7e; font-size:12px; letter-spacing:.14em; text-transform:uppercase; margin-bottom:4px; }
+.personality { text-align:center; color:#ffd98a; font-size:14px; font-style:italic; margin-bottom:22px; text-shadow:0 0 18px rgba(255,184,77,.45); }
+
+.stage { display:flex; flex-wrap:wrap; gap:30px; justify-content:center; align-items:flex-start; }
+
+.phone {
+  position:relative; width:340px; height:720px; background:#12160d;
+  border-radius:42px; padding:12px; box-shadow:0 32px 70px rgba(0,0,0,.7), inset 0 0 0 2px #2a331e;
+}
+.screen {
+  position:relative; width:100%; height:100%; border-radius:32px; overflow:hidden;
+  background: radial-gradient(150% 70% at 50% 100%, #2e3a22 0%, #232b1d 45%, #161c10 100%);
+  display:flex; flex-direction:column;
+}
+.screen-label { position:absolute; top:8px; left:0; right:0; text-align:center; font-size:10px; letter-spacing:.12em; color:rgba(159,174,126,.6); text-transform:uppercase; z-index:6; }
+
+.appbar { padding:26px 20px 10px; display:flex; align-items:center; justify-content:space-between; color:#ece1c8; z-index:5; }
+.brand { display:flex; align-items:center; gap:8px; }
+.brand .glyph { font-size:22px; filter:drop-shadow(0 0 12px rgba(255,184,77,.7)); }
+.brand .name { font-size:17px; font-weight:600; letter-spacing:.04em; }
+.progress { font-size:13px; color:#c4ce9f; font-variant-numeric:tabular-nums; }
+
+/* ---- Lantern (strong bloom) ---- */
+.lantern { position:absolute; z-index:1; pointer-events:none; width:46px; }
+.lantern .roof { width:46px; height:16px; background:linear-gradient(#7c786b,#4c4a40); border-radius:50% 50% 6px 6px / 100% 100% 6px 6px; position:relative; }
+.lantern .roof::after { content:""; position:absolute; top:-5px; left:50%; transform:translateX(-50%); width:8px; height:8px; border-radius:50%; background:#5e5c50; }
+.lantern .light {
+  width:30px; height:22px; margin:1px auto; border-radius:5px;
+  background: radial-gradient(circle at 50% 55%, #ffe9b0, #ffb84d 58%, #c47a22 100%);
+  box-shadow: 0 0 34px 14px rgba(255,184,77,.6);
+  animation: lanternPulse 4.5s ease-in-out infinite;
+}
+.lantern .body { width:30px; height:16px; margin:0 auto; background:linear-gradient(#7c786b,#4c4a40); border-radius:0 0 6px 6px; }
+.lantern .base { width:22px; height:8px; margin:0 auto; background:#4c4a40; border-radius:0 0 5px 5px; }
+.lantern.moss .body::before { content:""; display:block; width:11px; height:8px; margin-left:3px; background:#82a455; border-radius:40% 60% 50% 50%; opacity:.8; }
+.lantern.l-left { left:14px; top:78px; transform:scale(.88); }
+.lantern.l-right { right:16px; bottom:92px; }
+
+@keyframes lanternPulse {
+  0%,100% { box-shadow:0 0 28px 10px rgba(255,184,77,.5); filter:brightness(1); }
+  50%     { box-shadow:0 0 46px 20px rgba(255,217,138,.85); filter:brightness(1.18); }
+}
+
+/* ---- Fireflies (more + sparkle) ---- */
+.firefly { position:absolute; z-index:4; width:7px; height:7px; border-radius:50%;
+  background: radial-gradient(circle, #fffce0 0%, #fff0a8 40%, rgba(255,240,168,0) 72%); pointer-events:none; }
+.ff1 { left:28%; top:28%; animation: fly1 13s ease-in-out infinite, blink 2.2s ease-in-out infinite; }
+.ff2 { left:66%; top:42%; animation: fly2 16s ease-in-out infinite, blink 2.9s ease-in-out infinite .5s; }
+.ff3 { left:46%; top:64%; animation: fly3 11s ease-in-out infinite, blink 1.8s ease-in-out infinite 1s; }
+.ff4 { left:20%; top:54%; animation: fly2 18s ease-in-out infinite, blink 3.2s ease-in-out infinite .2s; }
+.ff5 { left:74%; top:66%; animation: fly1 15s ease-in-out infinite, blink 2.5s ease-in-out infinite .8s; }
+.ff6 { left:54%; top:22%; animation: fly3 17s ease-in-out infinite, blink 3.6s ease-in-out infinite 1.4s; }
+
+@keyframes blink { 0%,100%{opacity:.12; transform:scale(.8);} 45%{opacity:1; transform:scale(1.15);} 70%{opacity:.4;} }
+@keyframes fly1 { 0%{transform:translate(0,0);} 25%{transform:translate(45px,-34px);} 50%{transform:translate(78px,22px);} 75%{transform:translate(24px,54px);} 100%{transform:translate(0,0);} }
+@keyframes fly2 { 0%{transform:translate(0,0);} 30%{transform:translate(-56px,34px);} 60%{transform:translate(-24px,-46px);} 100%{transform:translate(0,0);} }
+@keyframes fly3 { 0%{transform:translate(0,0);} 33%{transform:translate(34px,46px);} 66%{transform:translate(-46px,12px);} 100%{transform:translate(0,0);} }
+
+.content { position:relative; z-index:5; flex:1; padding:4px 18px 18px; display:flex; flex-direction:column; }
+
+.card {
+  background: linear-gradient(165deg, #f6efda, #ece1c8);
+  border-radius:22px; padding:22px 20px;
+  box-shadow:0 18px 40px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.6);
+  margin-top:6px; position:relative;
+}
+.card .toprow { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.dirpill { font-size:11px; letter-spacing:.08em; color:#6b6249; background:#ddcfb0; padding:4px 10px; border-radius:999px; font-weight:600; }
+.famdot { display:flex; align-items:center; gap:6px; font-size:11px; color:#6b6249; }
+.famdot .dot { width:12px; height:12px; border-radius:50%; background:#eebf86; box-shadow:0 0 0 2px rgba(0,0,0,.05); }
+
+.prompt-label { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#82a455; text-align:center; }
+.prompt { font-size:30px; font-weight:600; color:#34301f; text-align:center; margin:8px 0 4px; }
+
+.reveal { margin:14px 0 10px; padding:16px 12px; border-radius:16px; background:#fbf6e8; border:1px solid #ddcfb0; text-align:center; }
+.reveal .jp { font-size:38px; font-weight:600; color:#5d7d38; line-height:1.1; }
+.reveal .reading { font-size:16px; color:#6b6249; margin-top:4px; }
+.reveal .meaning { font-size:14px; color:#82a455; margin-top:6px; font-style:italic; }
+
+.note { display:flex; gap:8px; align-items:flex-start; background:#eef2e0; border-left:3px solid #82a455; border-radius:10px; padding:10px 12px; margin:4px 0 2px; font-size:12.5px; color:#4c5832; line-height:1.45; }
+.note .who { font-weight:700; color:#5d7d38; }
+
+.grades { display:flex; gap:8px; margin-top:16px; }
+.grade { flex:1; text-align:center; padding:12px 4px; border-radius:14px; font-size:13px; font-weight:600; border:none; cursor:pointer; color:#34301f; }
+.grade small { display:block; font-size:10px; font-weight:500; opacity:.7; margin-top:2px; }
+.g-correct { background:#a6c87e; } .g-close { background:#eebf86; } .g-incorrect { background:#e4a59e; }
+
+.showbtn { margin:16px auto 0; display:block; background:#82a455; color:#f6efda; border:none; padding:12px 34px; border-radius:999px; font-size:14px; font-weight:600; letter-spacing:.04em; cursor:pointer; box-shadow:0 8px 20px rgba(93,125,56,.55); }
+
+.calm-footer { text-align:center; color:rgba(236,225,200,.55); font-size:11px; margin-top:auto; padding-top:14px; }
+
+.ov-head { color:#ece1c8; padding:4px 2px 12px; }
+.ov-head .lesson { font-size:20px; font-weight:600; }
+.ov-head .count { font-size:13px; color:#c4ce9f; margin-top:2px; }
+
+.ramp { background:linear-gradient(165deg, #f6efda, #ece1c8); border-radius:20px; padding:16px; box-shadow:0 16px 34px rgba(0,0,0,.45); }
+.ramp h3 { font-size:13px; color:#6b6249; margin-bottom:12px; font-weight:600; }
+.tier { display:flex; align-items:center; gap:10px; }
+.tier .swatch { width:22px; height:22px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; color:#34301f; flex-shrink:0; }
+.tier .tlabel { font-size:13px; color:#34301f; flex:1; }
+.tier .tn { font-size:12px; color:#82a455; font-variant-numeric:tabular-nums; }
+.bar { height:6px; border-radius:999px; margin-top:5px; }
+.t1 { background:#e4a59e; } .t2 { background:#eebf86; } .t3 { background:#d2d088; } .t4 { background:#a6c87e; } .t5 { background:#7aa44d; }
+
+.statecard { background:linear-gradient(165deg, #f6efda, #ece1c8); border-radius:20px; padding:18px; box-shadow:0 16px 34px rgba(0,0,0,.45); }
+.aging-row { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid #ddcfb0; }
+.aging-row:last-child { border-bottom:none; }
+.aging-row .jp { font-size:22px; color:#34301f; }
+.aging-row .meta { flex:1; }
+.aging-row .meta .en { font-size:12px; color:#6b6249; }
+.aging-row .meta .age { font-size:11px; color:#c2812f; }
+.aging-row .pip { width:14px; height:14px; border-radius:50%; }
+
+.empty { text-align:center; padding:60px 16px; color:#ece1c8; }
+.empty .moon { font-size:46px; display:block; margin-bottom:12px; filter:drop-shadow(0 0 20px rgba(255,217,138,.6)); }
+.empty .h { font-size:17px; font-weight:600; }
+.empty .s { font-size:13px; color:#c4ce9f; margin-top:8px; line-height:1.5; }
+
+.caption { text-align:center; color:#9fae7e; font-size:12px; margin-top:12px; max-width:340px; }
+.col { display:flex; flex-direction:column; align-items:center; }
+</style>
+</head>
+<body>
+  <div class="lab">Hotaru · Design Direction 3 of 3</div>
+  <div class="personality">Forest Twilight Deep — playful deeper dusk: dark mossy field, warm beige cards afloat, strong amber lantern bloom, more fireflies &amp; sparkle.</div>
+
+  <div class="stage">
+
+    <!-- HERO -->
+    <div class="col">
+      <div class="phone">
+        <div class="screen">
+          <div class="screen-label">Hero · Practice drill</div>
+          <div class="lantern moss l-left"><div class="roof"></div><div class="light"></div><div class="body"></div><div class="base"></div></div>
+          <div class="lantern moss l-right"><div class="roof"></div><div class="light"></div><div class="body"></div><div class="base"></div></div>
+          <span class="firefly ff1"></span><span class="firefly ff2"></span><span class="firefly ff3"></span>
+          <span class="firefly ff4"></span><span class="firefly ff5"></span><span class="firefly ff6"></span>
+
+          <div class="appbar">
+            <div class="brand"><span class="glyph">蛍</span><span class="name">Hotaru</span></div>
+            <div class="progress">7 / 20</div>
+          </div>
+
+          <div class="content">
+            <div class="card">
+              <div class="toprow">
+                <span class="dirpill">EN → JP</span>
+                <span class="famdot"><span class="dot"></span> ◔ Learning</span>
+              </div>
+              <div class="prompt-label">Produce</div>
+              <div class="prompt">promise</div>
+
+              <div class="reveal">
+                <div class="jp">約束</div>
+                <div class="reading">やくそく</div>
+                <div class="meaning">promise · a thing pledged</div>
+              </div>
+
+              <div class="note"><span>🌿</span><span><span class="who">Jake:</span> yak + soku → I promise to feed the yak 🐂</span></div>
+
+              <div class="grades">
+                <button class="grade g-incorrect">Incorrect<small>see again soon</small></button>
+                <button class="grade g-close">Close<small>almost</small></button>
+                <button class="grade g-correct">Correct<small>nice</small></button>
+              </div>
+            </div>
+            <div class="calm-footer">Take your time — the night is patient 🌙</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">HERO — Practice Session flashcard, revealed state.</div>
+    </div>
+
+    <!-- SECONDARY -->
+    <div class="col">
+      <div class="phone">
+        <div class="screen">
+          <div class="screen-label">Secondary · Session picker</div>
+          <div class="lantern moss l-right" style="bottom:118px"><div class="roof"></div><div class="light"></div><div class="body"></div><div class="base"></div></div>
+          <span class="firefly ff2" style="top:24%"></span><span class="firefly ff5" style="top:70%"></span><span class="firefly ff1" style="top:50%"></span>
+
+          <div class="appbar"><div class="brand"><span class="glyph">蛍</span><span class="name">Hotaru</span></div></div>
+
+          <div class="content">
+            <div class="ov-head">
+              <div class="lesson">Genki · Lesson 2</div>
+              <div class="count">42 words in this set</div>
+            </div>
+            <div class="ramp">
+              <h3>How well you know these</h3>
+              <div class="tier"><span class="swatch t1">○</span><span class="tlabel">New</span><span class="tn">9</span></div>
+              <div class="bar t1" style="width:60%"></div>
+              <div class="tier" style="margin-top:9px"><span class="swatch t2">◔</span><span class="tlabel">Learning</span><span class="tn">11</span></div>
+              <div class="bar t2" style="width:73%"></div>
+              <div class="tier" style="margin-top:9px"><span class="swatch t3">◑</span><span class="tlabel">Familiar</span><span class="tn">8</span></div>
+              <div class="bar t3" style="width:53%"></div>
+              <div class="tier" style="margin-top:9px"><span class="swatch t4">◕</span><span class="tlabel">Strong</span><span class="tn">7</span></div>
+              <div class="bar t4" style="width:46%"></div>
+              <div class="tier" style="margin-top:9px"><span class="swatch t5">●</span><span class="tlabel">Mastered</span><span class="tn">7</span></div>
+              <div class="bar t5" style="width:46%"></div>
+              <button class="showbtn">Begin a calm round →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">SECONDARY — Genki Lesson 2 overview + 5-tier pastel familiarity ramp.</div>
+    </div>
+
+    <!-- TERTIARY -->
+    <div class="col">
+      <div class="phone">
+        <div class="screen">
+          <div class="screen-label">State · Aging words + session end</div>
+          <div class="lantern moss l-left" style="top:62px"><div class="roof"></div><div class="light"></div><div class="body"></div><div class="base"></div></div>
+          <span class="firefly ff1" style="top:18%"></span><span class="firefly ff4" style="top:48%"></span><span class="firefly ff6" style="top:72%"></span>
+
+          <div class="appbar"><div class="brand"><span class="glyph">蛍</span><span class="name">Hotaru</span></div></div>
+
+          <div class="content">
+            <div class="statecard">
+              <h3 style="font-size:13px;color:#6b6249;margin-bottom:6px;font-weight:600;">Worth a gentle revisit</h3>
+              <div class="aging-row"><span class="jp">時間</span><span class="meta"><div class="en">time</div><div class="age">resting 18 days · softening</div></span><span class="pip t2"></span></div>
+              <div class="aging-row"><span class="jp">大丈夫</span><span class="meta"><div class="en">okay / alright</div><div class="age">resting 24 days · softening</div></span><span class="pip t1"></span></div>
+              <div class="aging-row"><span class="jp">約束</span><span class="meta"><div class="en">promise</div><div class="age">resting 11 days · steady</div></span><span class="pip t3"></span></div>
+            </div>
+
+            <div class="empty">
+              <span class="moon">🌙</span>
+              <div class="h">Nice — that's enough for now</div>
+              <div class="s">You met 20 words tonight. The lanterns stay lit; the fireflies will keep your place.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">STATE — aging-word rows + calm session-end.</div>
+    </div>
+
+  </div>
+</body>
+</html>

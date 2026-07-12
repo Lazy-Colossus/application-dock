@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hotaru — Add a word (Neon Yūgure)</title>
+<style>
+  /* ── Neon Yūgure palette (locked) ─────────────────────────────────────
+       Field   radial dusk 1a1148 → 0a0a24 → 04060f
+       Glass   rgba(20,18,52,.55) + blur(16px), border rgba(155,107,255,.28)
+       Ink     #f1f0ff / #b3aede / #6f6aa0
+       Cyan    #38f0e6 (PRIMARY) · bright #7ff7ee · on #03121a
+       Magenta #ff5cc8 · Violet #9b6bff · Firefly amber #ffce5c
+     ──────────────────────────────────────────────────────────────────── */
+  :root{
+    --night-0:#04060f; --night-1:#090b1e;
+    --glass:rgba(20,18,52,.55);
+    --cyan:#38f0e6; --cyan-bright:#7ff7ee; --cyan-on:#03121a;
+    --magenta:#ff5cc8; --violet:#9b6bff; --amber:#ffce5c;
+    --ink-hi:#f1f0ff; --ink-mid:#b3aede; --ink-lo:#6f6aa0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:radial-gradient(130% 80% at 50% -5%,#1a1148 0%,#0a0a24 45%,var(--night-0) 100%);
+    min-height:100vh;color:var(--ink-hi);
+    display:flex;justify-content:center;align-items:flex-start;
+    padding:34px 16px 60px;
+  }
+
+  /* ── phone frame ───────────────────────────────────────────────────── */
+  .phone{
+    position:relative;width:360px;height:740px;border-radius:42px;
+    background:linear-gradient(170deg,var(--night-1),#06061a);
+    border:1px solid rgba(155,107,255,.25);
+    box-shadow:0 0 0 9px #030310,0 24px 70px rgba(0,0,0,.8),
+               0 0 70px rgba(155,107,255,.16),0 0 40px rgba(56,240,230,.1);
+    overflow:hidden;
+  }
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);
+    width:120px;height:26px;background:#030310;border-radius:14px;z-index:30}
+  .label-pill{position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+    background:var(--magenta);color:#2c0020;font-size:11px;font-weight:700;
+    padding:4px 12px;border-radius:9999px;letter-spacing:.04em;z-index:40;white-space:nowrap;
+    box-shadow:0 0 20px rgba(255,92,200,.6)}
+  .screen{position:absolute;inset:0;padding:46px 18px 18px;display:flex;flex-direction:column;overflow:hidden}
+
+  /* ── fireflies (pure CSS) — dimmer here, they sit behind the form ───── */
+  .ff{position:absolute;width:7px;height:7px;border-radius:50%;
+    background:radial-gradient(circle,var(--amber) 0%,rgba(255,206,92,.5) 38%,transparent 70%);
+    filter:blur(.2px);pointer-events:none;z-index:2;opacity:0}
+  .ff.cyan{background:radial-gradient(circle,var(--cyan) 0%,rgba(56,240,230,.45) 40%,transparent 70%)}
+  .ff.mag{background:radial-gradient(circle,var(--magenta) 0%,rgba(255,92,200,.45) 40%,transparent 70%)}
+  .ff1{top:60%;left:12%;animation:drift1 13s ease-in-out infinite,glowdim 3s ease-in-out infinite}
+  .ff2{top:24%;left:78%;animation:drift2 16s ease-in-out infinite,glowdim 3.8s ease-in-out infinite .5s}
+  .ff3{top:82%;left:60%;animation:drift3 15s ease-in-out infinite,glowdim 3.4s ease-in-out infinite 1s}
+  .ff4{top:16%;left:26%;animation:drift1 18s ease-in-out infinite reverse,glowdim 4.4s ease-in-out infinite .2s}
+  .ff5{top:50%;left:88%;animation:drift2 14s ease-in-out infinite,glowdim 4s ease-in-out infinite 1.6s}
+  @keyframes drift1{0%{transform:translate(0,0)}25%{transform:translate(28px,-34px)}50%{transform:translate(10px,-60px)}75%{transform:translate(-26px,-28px)}100%{transform:translate(0,0)}}
+  @keyframes drift2{0%{transform:translate(0,0)}33%{transform:translate(-34px,26px)}66%{transform:translate(20px,46px)}100%{transform:translate(0,0)}}
+  @keyframes drift3{0%{transform:translate(0,0)}40%{transform:translate(28px,22px)}80%{transform:translate(-20px,-26px)}100%{transform:translate(0,0)}}
+  /* dimmer than the direction sheet — these live behind form panels */
+  @keyframes glowdim{0%,100%{opacity:.1;transform:scale(.6)}50%{opacity:.55;transform:scale(1.15)}}
+  @media (prefers-reduced-motion: reduce){
+    .ff{animation:none !important;opacity:.28;transform:none !important}
+  }
+
+  /* ── top bar ───────────────────────────────────────────────────────── */
+  .topbar{display:flex;align-items:center;gap:8px;z-index:10;margin-bottom:12px}
+  .brand{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;letter-spacing:.02em}
+  .brand .kanji{font-size:22px;color:var(--cyan);text-shadow:0 0 16px rgba(56,240,230,.8)}
+
+  /* ── scroll area ───────────────────────────────────────────────────── */
+  .content{position:relative;z-index:10;flex:1;display:flex;flex-direction:column;overflow-y:auto}
+  .content::-webkit-scrollbar{width:0}
+
+  .title{font-size:24px;font-weight:700;color:var(--cyan);
+    text-shadow:0 0 22px rgba(56,240,230,.55),0 0 8px rgba(56,240,230,.4);margin:2px 2px 4px}
+  .subtitle{font-size:12.5px;color:var(--ink-mid);margin:0 2px 16px;line-height:1.4}
+
+  /* ── labelled fields ───────────────────────────────────────────────── */
+  .field{margin-bottom:13px}
+  .field label{display:block;font-size:12px;color:var(--ink-mid);margin:0 2px 6px}
+  .field label .req{color:var(--cyan);font-weight:700}
+  .input,.select{
+    width:100%;background:rgba(20,18,52,.55);
+    -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+    border:1px solid rgba(155,107,255,.30);border-radius:12px;
+    padding:12px 14px;color:var(--ink-hi);font-size:15px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+  .input.jp{font-size:22px}
+  .input::placeholder{color:rgba(179,174,222,.4)}
+  .input:focus,.select:focus{outline:none;border-color:rgba(56,240,230,.6);
+    box-shadow:0 0 0 3px rgba(56,240,230,.14),0 0 18px rgba(56,240,230,.18)}
+  .select{color:var(--ink-hi);appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%239b6bff' stroke-width='1.6' stroke-linecap='round'/></svg>");
+    background-repeat:no-repeat;background-position:right 14px center;padding-right:34px}
+
+  /* ── visibility toggle ─────────────────────────────────────────────── */
+  .vis-label{font-size:12px;color:var(--ink-mid);margin:2px 2px 6px}
+  .visibility{display:flex;gap:9px;margin-bottom:15px}
+  .pill{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+    padding:11px 6px;border-radius:9999px;font-size:13px;font-weight:600;cursor:pointer;
+    border:1px solid rgba(155,107,255,.30);background:rgba(20,18,52,.55);color:var(--ink-mid)}
+  .pill .ic{font-size:15px;line-height:1}
+  .pill .sm{font-size:9.5px;font-weight:400;color:var(--ink-lo);letter-spacing:.02em}
+  .pill.on-cyan{border:none;color:var(--cyan-on);
+    background:linear-gradient(90deg,var(--cyan),var(--cyan-bright));
+    box-shadow:0 0 26px rgba(56,240,230,.6)}
+  .pill.on-cyan .sm{color:rgba(3,18,26,.75)}
+
+  /* ── add-to-a-lesson box (expanded) ────────────────────────────────── */
+  .lesson-box{border-radius:20px;background:var(--glass);
+    -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+    border:1px solid rgba(155,107,255,.28);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 12px 30px rgba(0,0,0,.4),0 0 30px rgba(155,107,255,.1);
+    padding:16px;margin-bottom:6px}
+  .check-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .check{width:20px;height:20px;flex:none;border-radius:6px;display:grid;place-items:center;
+    background:linear-gradient(90deg,var(--cyan),var(--cyan-bright));color:var(--cyan-on);
+    font-size:13px;font-weight:800;box-shadow:0 0 16px rgba(56,240,230,.55)}
+  .check-row .cl{font-size:14px;font-weight:600;color:var(--ink-hi)}
+
+  /* ── primary CTA ───────────────────────────────────────────────────── */
+  .add-btn{margin-top:18px;width:100%;padding:14px;border:none;border-radius:9999px;
+    font-size:15px;font-weight:700;letter-spacing:.02em;cursor:pointer;color:var(--cyan-on);
+    background:linear-gradient(90deg,var(--cyan),var(--cyan-bright));
+    box-shadow:0 0 34px rgba(56,240,230,.7),0 8px 20px rgba(0,0,0,.4)}
+  .foot{text-align:center;color:var(--ink-lo);font-size:11px;margin-top:12px}
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="label-pill">SECONDARY · Add a word</div>
+    <div class="notch"></div>
+
+    <span class="ff ff1"></span>
+    <span class="ff cyan ff2"></span>
+    <span class="ff mag ff3"></span>
+    <span class="ff cyan ff4"></span>
+    <span class="ff ff5"></span>
+
+    <div class="screen">
+      <div class="topbar">
+        <div class="brand"><span class="kanji">蛍</span> Hotaru</div>
+      </div>
+
+      <div class="content">
+        <div class="title">Add a word</div>
+        <div class="subtitle">Just the essentials — you can fill in the rest whenever you like.</div>
+
+        <div class="field">
+          <label>Katakana/Hiragana <span class="req">*</span></label>
+          <input class="input jp" type="text" value="やくそく" />
+        </div>
+
+        <div class="field">
+          <label>Meaning <span class="req">*</span></label>
+          <input class="input" type="text" value="promise" />
+        </div>
+
+        <div class="field">
+          <label>Kanji</label>
+          <input class="input jp" type="text" value="約束" />
+        </div>
+
+        <div class="field">
+          <label>Romaji</label>
+          <input class="input" type="text" placeholder="yakusoku" />
+        </div>
+
+        <div class="field">
+          <label>Part of speech</label>
+          <select class="select">
+            <option>Noun</option>
+            <option>Verb</option>
+            <option>Adjective</option>
+            <option>Expression</option>
+            <option selected>Not sure yet</option>
+          </select>
+        </div>
+
+        <div class="vis-label">Visibility</div>
+        <div class="visibility">
+          <span class="pill on-cyan"><span class="ic">👥</span>Shared<span class="sm">You &amp; your partner</span></span>
+          <span class="pill"><span class="ic">🔒</span>Private<span class="sm">Just you</span></span>
+        </div>
+
+        <div class="lesson-box">
+          <div class="check-row">
+            <span class="check">✓</span>
+            <span class="cl">Add to a lesson</span>
+          </div>
+          <div class="field">
+            <label>Source</label>
+            <select class="select">
+              <option selected>Genki</option>
+              <option>Minna no Nihongo</option>
+              <option>Personal · Manga words</option>
+            </select>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>Lesson</label>
+            <select class="select">
+              <option>Lesson 1</option>
+              <option selected>Lesson 2</option>
+              <option>Lesson 3</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="add-btn">Add word</button>
+        <div class="foot">It'll quietly join your list as ○ New 🌙</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

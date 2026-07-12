@@ -26,6 +26,12 @@ _APPS: list[AppDescriptor] = [
         icon="sports_score",
         route="/archery",
     ),
+    AppDescriptor(
+        id="hotaru",
+        label="Hotaru",
+        icon="school",
+        route="/hotaru",
+    ),
 ]
 
 
