@@ -235,23 +235,31 @@ describe("LibraryPage (two-level)", () => {
 
   // --- bulk actions (Story 1.9) ---------------------------------------------
 
+  function openActions(wrapper: ReturnType<typeof mount>) {
+    return wrapper.find('[data-testid="library-actions"]').trigger("click");
+  }
+
+  // Custom → Shared, enter select mode from the ⋮ menu, select the one word.
   async function enterCustomSelect(wrapper: ReturnType<typeof mount>) {
     await wrapper.find('[data-testid="section-__custom__"]').trigger("click");
     await wrapper.find('[data-testid="sub-shared"]').trigger("click");
-    await wrapper.find('[data-testid="select-toggle"]').trigger("click");
-    // Select the one shared custom word ("cs").
-    await wrapper.find('[data-testid="word-row"]').trigger("click");
+    await openActions(wrapper);
+    await wrapper.find('[data-testid="action-select"]').trigger("click");
+    await wrapper.find('[data-testid="word-row"]').trigger("click"); // select "cs"
   }
 
-  it("enters select mode: checkboxes appear, the FAB hides, count tracks", async () => {
+  it("enters select mode from the ⋮ menu: checkboxes appear, the FAB hides, count tracks", async () => {
     const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
     await flushPromises();
     expect(wrapper.find('[data-testid="add-word-fab"]').exists()).toBe(true);
-    await wrapper.find('[data-testid="select-toggle"]').trigger("click");
+    await openActions(wrapper);
+    await wrapper.find('[data-testid="action-select"]').trigger("click");
     expect(wrapper.find('[data-testid="row-select"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="add-word-fab"]').exists()).toBe(false);
     await wrapper.find('[data-testid="word-row"]').trigger("click");
-    expect(wrapper.find('[data-testid="bulk-bar"]').text()).toContain("1");
+    // The count shows in the ⋮ menu.
+    await openActions(wrapper);
+    expect(wrapper.text()).toContain("1 selected");
   });
 
   it("bulk-deletes the selected custom words after one confirm", async () => {
@@ -259,6 +267,7 @@ describe("LibraryPage (two-level)", () => {
     const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
     await flushPromises();
     await enterCustomSelect(wrapper);
+    await openActions(wrapper);
     await wrapper.find('[data-testid="bulk-delete"]').trigger("click");
     await flushPromises();
     expect(confirm).toHaveBeenCalledTimes(1);
@@ -273,6 +282,7 @@ describe("LibraryPage (two-level)", () => {
     const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
     await flushPromises();
     await enterCustomSelect(wrapper);
+    await openActions(wrapper);
     await wrapper.find('[data-testid="bulk-add-topic"]').trigger("click");
     await wrapper.find('[data-testid="bulk-topic-pick-t1"]').trigger("click");
     await flushPromises();
@@ -289,6 +299,7 @@ describe("LibraryPage (two-level)", () => {
     const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
     await flushPromises();
     await enterCustomSelect(wrapper);
+    await openActions(wrapper);
     await wrapper.find('[data-testid="bulk-change-lesson"]').trigger("click");
     await flushPromises();
     expect(putMock).toHaveBeenCalledWith(
@@ -302,9 +313,9 @@ describe("LibraryPage (two-level)", () => {
     const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
     await flushPromises();
     await enterCustomSelect(wrapper);
-    expect(wrapper.find('[data-testid="bulk-bar"]').text()).toContain("1");
-    // Switch section → selection cleared (bar still in select mode, count 0).
+    // Switch section → selection cleared (still in select mode, count 0).
     await wrapper.find('[data-testid="section-genki_3"]').trigger("click");
-    expect(wrapper.find('[data-testid="bulk-bar"]').text()).toContain("0");
+    await openActions(wrapper);
+    expect(wrapper.text()).toContain("0 selected");
   });
 });

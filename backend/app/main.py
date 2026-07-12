@@ -4,7 +4,7 @@ from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.routers import archery, auth, shell, hotaru
+from app.routers import archery, auth, hotaru, shell
 
 app = FastAPI(title="Application Dock")
 

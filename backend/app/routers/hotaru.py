@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.dependencies import get_current_user
 from app.schemas.hotaru import (
     CreateTopicRequest,
     CreateWordRequest,
@@ -15,7 +16,13 @@ from app.schemas.hotaru import (
 )
 from app.services import hotaru_practice_service, hotaru_vocab_service
 
-router = APIRouter(prefix="/api/hotaru", tags=["hotaru"])
+# Every Hotaru endpoint sits behind a valid login (like archery/shell). The
+# per-learner `user=dani|jake` query param is a separate, in-app concept.
+router = APIRouter(
+    prefix="/api/hotaru",
+    tags=["hotaru"],
+    dependencies=[Depends(get_current_user)],
+)
 
 # The two canonical, hardcoded users (no auth — household app). This is the single
 # source of truth: the frontend renders identity from it, and later stories validate

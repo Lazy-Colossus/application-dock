@@ -1,18 +1,32 @@
 <template>
   <q-page class="hotaru-app column no-wrap q-pa-md">
     <FireflyLayer />
-    <!-- Level 1: sections (each textbook source + Custom words) -->
-    <div class="library-tabs row items-center q-gutter-xs q-mb-sm">
-      <button
-        v-for="s in sections"
-        :key="s.key"
-        class="library-tab"
-        :class="{ 'library-tab--active': s.key === section }"
-        :data-testid="`section-${s.key}`"
-        @click="selectSection(s.key)"
-      >
-        {{ s.label }}
-      </button>
+    <!-- Level 1: sections (each textbook source + Custom words) + actions menu -->
+    <div class="library-sections row items-center no-wrap q-mb-sm">
+      <div class="library-tabs row items-center q-gutter-xs">
+        <button
+          v-for="s in sections"
+          :key="s.key"
+          class="library-tab"
+          :class="{ 'library-tab--active': s.key === section }"
+          :data-testid="`section-${s.key}`"
+          @click="selectSection(s.key)"
+        >
+          {{ s.label }}
+        </button>
+      </div>
+      <LibraryActionsMenu
+        :select-mode="selectMode"
+        :count="selectedIds.size"
+        :editable="editable"
+        :in-topic="section === TOPICS"
+        @select="startSelect"
+        @add-topic="bulkTopicOpen = true"
+        @remove-topic="onBulkRemoveTopic"
+        @change-lesson="onBulkChangeLesson"
+        @delete="onBulkDelete"
+        @cancel="exitSelect"
+      />
     </div>
 
     <!-- Level 2: subsections (lessons, or Shared/Private) -->
@@ -29,21 +43,13 @@
       </button>
     </div>
 
-    <!-- Select-mode toolbar. -->
-    <div class="library-toolbar row items-center justify-between q-mb-sm">
-      <button
-        class="library-select-toggle"
-        data-testid="select-toggle"
-        @click="toggleSelectMode"
-      >
-        {{ selectMode ? "Cancel" : "Select" }}
-      </button>
-      <span
-        v-if="bulkResult"
-        class="library-bulk-result"
-        data-testid="bulk-result"
-        >{{ bulkResult }}</span
-      >
+    <!-- Transient result of the last bulk action. -->
+    <div
+      v-if="bulkResult"
+      class="library-bulk-result q-mb-sm"
+      data-testid="bulk-result"
+    >
+      {{ bulkResult }}
     </div>
 
     <div
@@ -94,18 +100,6 @@
       />
     </div>
 
-    <BulkActionsBar
-      v-if="selectMode"
-      :count="selectedIds.size"
-      :editable="editable"
-      :in-topic="section === TOPICS"
-      @add-topic="bulkTopicOpen = true"
-      @remove-topic="onBulkRemoveTopic"
-      @change-lesson="onBulkChangeLesson"
-      @delete="onBulkDelete"
-      @done="exitSelect"
-    />
-
     <q-btn
       v-if="!selectMode"
       class="library-add"
@@ -144,7 +138,7 @@ import { useRouter } from "vue-router";
 import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
 import WordRow from "@/apps/hotaru/components/WordRow.vue";
 import WordTopicsDialog from "@/apps/hotaru/components/WordTopicsDialog.vue";
-import BulkActionsBar from "@/apps/hotaru/components/BulkActionsBar.vue";
+import LibraryActionsMenu from "@/apps/hotaru/components/LibraryActionsMenu.vue";
 import BulkTopicDialog from "@/apps/hotaru/components/BulkTopicDialog.vue";
 import { useHotaruLibraryStore } from "@/apps/hotaru/stores/useHotaruLibraryStore";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
@@ -302,10 +296,10 @@ const selectedIds = ref<Set<string>>(new Set());
 const bulkResult = ref<string | null>(null);
 const bulkTopicOpen = ref(false);
 
-function toggleSelectMode(): void {
-  selectMode.value = !selectMode.value;
+function startSelect(): void {
+  selectMode.value = true;
   selectedIds.value = new Set();
-  if (selectMode.value) bulkResult.value = null;
+  bulkResult.value = null;
 }
 
 function onToggleSelect(word: Word): void {
@@ -417,8 +411,14 @@ async function onCreateTopic(name: string): Promise<void> {
 </script>
 
 <style scoped lang="sass">
+// Section row: the scrollable tabs take the space, the ⋮ actions menu pins right.
+.library-sections
+  gap: 8px
+
 .library-tabs
   overflow-x: auto
+  flex: 1
+  min-width: 0
 
 .library-tab
   border: 1px solid rgba(155, 107, 255, 0.30)
@@ -453,18 +453,6 @@ async function onCreateTopic(name: string): Promise<void> {
 // Rows already divide with a hairline; drop the last one inside the panel.
 .library-list :deep(.word-row:last-child)
   border-bottom: none
-
-.library-toolbar
-  min-height: 28px
-
-.library-select-toggle
-  border: 1px solid rgba(56, 240, 230, 0.4)
-  background: rgba(56, 240, 230, 0.10)
-  color: var(--hotaru-cream-soft)
-  border-radius: 9999px
-  padding: 3px 14px
-  font-size: 13px
-  cursor: pointer
 
 .library-bulk-result
   font-size: 13px

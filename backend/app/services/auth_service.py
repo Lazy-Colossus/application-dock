@@ -10,7 +10,6 @@ from jose import JWTError, jwt
 from app.core.config import settings
 from app.repositories import auth_repo
 
-
 _TMP_PASSWORD = "tmp123"
 
 
@@ -63,9 +62,7 @@ def verify_login(username: str, password: str) -> bool:
 def create_access_token(username: str) -> str:
     """Return a signed JWT for the given username."""
     if not settings.jwt_secret_key:
-        raise RuntimeError(
-            "JWT_SECRET_KEY is not configured. Set it before issuing tokens."
-        )
+        raise RuntimeError("JWT_SECRET_KEY is not configured. Set it before issuing tokens.")
     expire = datetime.now(UTC) + timedelta(days=settings.jwt_expire_days)
     payload = {"sub": username, "exp": expire}
     return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)

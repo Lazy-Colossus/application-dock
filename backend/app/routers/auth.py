@@ -1,7 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.dependencies import get_current_user
-from app.schemas.auth import ChangePasswordRequest, CreateUserRequest, LoginRequest, TokenResponse, UsersResponse
+from app.schemas.auth import (
+    ChangePasswordRequest,
+    CreateUserRequest,
+    LoginRequest,
+    TokenResponse,
+    UsersResponse,
+)
 from app.services import auth_service
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
