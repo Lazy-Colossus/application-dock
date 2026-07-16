@@ -53,3 +53,14 @@ export interface GradeItem {
   word_id: string;
   grade: DrillGrade;
 }
+
+// A cooperative memory note on a word. `author` is a user id; a private note is
+// only ever returned to its author (path-privacy, NFR-2).
+export interface Note {
+  id: string;
+  word_id: string;
+  author: string;
+  text: string;
+  visibility: Visibility;
+  created_at: string;
+}

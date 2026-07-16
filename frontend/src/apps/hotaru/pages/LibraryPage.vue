@@ -96,6 +96,7 @@
         @edit="onEdit"
         @delete="onDelete"
         @topics="onManageTopics"
+        @notes="onManageNotes"
         @toggle-select="onToggleSelect"
       />
     </div>
@@ -128,6 +129,17 @@
       @unassign="onUnassign"
       @create="onCreateTopic"
     />
+
+    <WordNotesDialog
+      v-if="notesWord"
+      v-model="notesDialogOpen"
+      :word="notesWord"
+      :notes="notesStore.notesFor(notesWord.id)"
+      :users="userStore.users"
+      :active-user="userStore.activeUserId ?? undefined"
+      @add="onAddNote"
+      @flip="onFlipNote"
+    />
   </q-page>
 </template>
 
@@ -138,14 +150,17 @@ import { useRouter } from "vue-router";
 import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
 import WordRow from "@/apps/hotaru/components/WordRow.vue";
 import WordTopicsDialog from "@/apps/hotaru/components/WordTopicsDialog.vue";
+import WordNotesDialog from "@/apps/hotaru/components/WordNotesDialog.vue";
 import LibraryActionsMenu from "@/apps/hotaru/components/LibraryActionsMenu.vue";
 import BulkTopicDialog from "@/apps/hotaru/components/BulkTopicDialog.vue";
 import { useHotaruLibraryStore } from "@/apps/hotaru/stores/useHotaruLibraryStore";
+import { useHotaruNotesStore } from "@/apps/hotaru/stores/useHotaruNotesStore";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
 import type { Visibility, Word } from "@/apps/hotaru/types";
 import "./../css/hotaru.sass";
 
 const store = useHotaruLibraryStore();
+const notesStore = useHotaruNotesStore();
 const userStore = useHotaruUserStore();
 const router = useRouter();
 
@@ -390,6 +405,34 @@ const topicsDialogOpen = ref(false);
 function onManageTopics(word: Word): void {
   topicsWord.value = word;
   topicsDialogOpen.value = true;
+}
+
+// --- Notes dialog (Story 3.1) -----------------------------------------------
+
+const notesWord = ref<Word | null>(null);
+const notesDialogOpen = ref(false);
+
+function onManageNotes(word: Word): void {
+  const user = userStore.activeUserId;
+  if (user === null) return;
+  notesWord.value = word;
+  notesDialogOpen.value = true;
+  void notesStore.loadNotes(word.id, user);
+}
+
+async function onAddNote(text: string, visibility: Visibility): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null || notesWord.value === null) return;
+  await notesStore.addNote(notesWord.value.id, { text, visibility }, user);
+}
+
+async function onFlipNote(
+  noteId: string,
+  visibility: Visibility,
+): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null || notesWord.value === null) return;
+  await notesStore.setVisibility(notesWord.value.id, noteId, visibility, user);
 }
 
 async function onAssign(topicId: string, wordId: string): Promise<void> {

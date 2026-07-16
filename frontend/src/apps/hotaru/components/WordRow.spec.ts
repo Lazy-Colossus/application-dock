@@ -170,6 +170,17 @@ describe("WordRow", () => {
     expect(wrapper.find('[data-testid="row-select"]').exists()).toBe(false);
   });
 
+  it("emits notes from the menu (shown on every row)", async () => {
+    const w = word();
+    const wrapper = mount(WordRow, {
+      props: { word: w },
+      global: { stubs: STUBS },
+    });
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
+    await wrapper.find('[data-testid="manage-notes"]').trigger("click");
+    expect(wrapper.emitted("notes")?.[0]).toEqual([w]);
+  });
+
   it("copies a readable form of the word to the clipboard from the menu", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {

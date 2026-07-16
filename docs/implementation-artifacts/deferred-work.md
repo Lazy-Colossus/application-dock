@@ -1,5 +1,14 @@
 # Deferred Work
 
+## Deferred from: code review of 3.2.set-and-change-a-note-s-visibility (Hotaru Epic 3) — 2026-07-16
+
+- Concurrent read-modify-write race on `notes_shared.json` (and per-user private files) — `add`/`set_visibility` do `read_* → write_*` with no lock; two overlapping writers can drop a write. Inherent to the JSON-no-DB architecture (same pattern in `vocab_repo`/`progress_repo`); low risk at 2-user household scale [`backend/app/repositories/notes_repo.py`]
+- Per-learner `user` query-param is not tied to the JWT principal — an authenticated user could pass `?user=<other>` on any Hotaru endpoint. App-wide, matches the documented no-auth/trusted-two-user design (NFR-3); privacy is a path boundary, not a security boundary. Revisit if the trust model changes [`backend/app/routers/hotaru.py`]
+- No word-existence validation on the notes endpoints, and `delete_word` does not cascade-delete a word's notes — orphaned notes (incl. private) accumulate for deleted/nonexistent words. Scope addition beyond 3.2; candidate follow-up story (the "404 vs allow orphans" + cascade behavior is a product call) [`backend/app/services/notes_service.py`, `backend/app/routers/hotaru.py`]
+- Note-length count differs frontend vs backend for astral-plane characters (JS UTF-16 code units vs Python code points) — only ever over-blocks client-side; a ~150-astral-kanji note the backend accepts is rejected in the UI [`frontend/src/apps/hotaru/components/WordNotesDialog.vue`]
+- `MAX_NOTE_LENGTH = 300` duplicated across Python (`notes_service.py`) and TS (`WordNotesDialog.vue`) — no clean cross-language share; commented "keep in sync", tested both sides, backend authoritative
+- Double type-assertion `payload as unknown as Record<string, unknown>` in `addNote` — pre-existing 3.1 code, unchanged by 3.2 [`frontend/src/apps/hotaru/stores/useHotaruNotesStore.ts`]
+
 ## Deferred from: code review of 1.5.jwt-authentication pass 2 (2026-06-18)
 
 - No test validates 7-day expiry claim in JWT — `test_login_success` checks only token presence; low risk, `jose.jwt.decode` validates `exp` at runtime [`backend/tests/test_auth.py:48–56`]

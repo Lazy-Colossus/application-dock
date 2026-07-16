@@ -81,6 +81,15 @@
           <button
             class="word-row__menu-item"
             role="menuitem"
+            data-testid="manage-notes"
+            @click="run('notes')"
+          >
+            <q-icon name="edit_note" size="16px" />
+            Notes
+          </button>
+          <button
+            class="word-row__menu-item"
+            role="menuitem"
             data-testid="manage-topics"
             @click="run('topics')"
           >
@@ -135,6 +144,7 @@ const emit = defineEmits<{
   edit: [word: Word];
   delete: [word: Word];
   topics: [word: Word];
+  notes: [word: Word];
   "toggle-select": [word: Word];
 }>();
 
@@ -165,9 +175,10 @@ function copyWord(): void {
 
 // Emit an action and close the menu — the row keeps only status (familiarity,
 // private) visible; everything actionable lives behind the ⋮ button.
-function run(action: "edit" | "delete" | "topics"): void {
+function run(action: "edit" | "delete" | "topics" | "notes"): void {
   if (action === "edit") emit("edit", props.word);
   else if (action === "delete") emit("delete", props.word);
+  else if (action === "notes") emit("notes", props.word);
   else emit("topics", props.word);
   menuOpen.value = false;
 }

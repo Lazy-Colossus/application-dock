@@ -2,19 +2,22 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.dependencies import get_current_user
 from app.schemas.hotaru import (
+    CreateNoteRequest,
     CreateTopicRequest,
     CreateWordRequest,
     DrillCap,
     GradeItem,
     HotaruUser,
+    Note,
     PracticeOverview,
     ProgressEntry,
     QueueItem,
     Topic,
+    UpdateNoteRequest,
     UpdateWordRequest,
     Word,
 )
-from app.services import hotaru_practice_service, hotaru_vocab_service
+from app.services import hotaru_practice_service, hotaru_vocab_service, notes_service
 
 # Every Hotaru endpoint sits behind a valid login (like archery/shell). The
 # per-learner `user=dani|jake` query param is a separate, in-app concept.
@@ -105,6 +108,42 @@ def delete_word(word_id: str, user: str) -> None:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=f"Word {word_id} not found.") from exc
+
+
+@router.get("/words/{word_id}/notes", response_model=list[Note])
+def list_notes(word_id: str, user: str) -> list[Note]:
+    if user not in VALID_USER_IDS:
+        raise HTTPException(status_code=404, detail=f"Unknown user {user}.")
+    return notes_service.list_for_word(word_id=word_id, user=user)
+
+
+@router.post("/words/{word_id}/notes", response_model=Note, status_code=201)
+def create_note(word_id: str, req: CreateNoteRequest, user: str) -> Note:
+    if user not in VALID_USER_IDS:
+        raise HTTPException(status_code=404, detail=f"Unknown user {user}.")
+    try:
+        return notes_service.create_note(
+            word_id=word_id,
+            author=user,
+            text=req.text,
+            visibility=req.visibility,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.patch("/notes/{note_id}", response_model=Note)
+def update_note(note_id: str, req: UpdateNoteRequest, user: str) -> Note:
+    if user not in VALID_USER_IDS:
+        raise HTTPException(status_code=404, detail=f"Unknown user {user}.")
+    try:
+        return notes_service.set_note_visibility(
+            note_id=note_id, user=user, visibility=req.visibility
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=f"Note {note_id} not found.") from exc
 
 
 @router.get("/topics", response_model=list[Topic])

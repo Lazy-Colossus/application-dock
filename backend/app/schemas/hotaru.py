@@ -91,3 +91,25 @@ class GradeItem(BaseModel):
     # One graded card in a batch submission.
     word_id: str
     grade: Grade
+
+
+class Note(BaseModel):
+    # A cooperative memory note on a word. A shared note lives in
+    # notes_shared.json (both users see it); a private note lives under its
+    # author's directory and is never read for anyone else (NFR-2).
+    id: str
+    word_id: str
+    author: str
+    text: str
+    visibility: Visibility
+    created_at: datetime
+
+
+class CreateNoteRequest(BaseModel):
+    text: str
+    visibility: Visibility = "shared"
+
+
+class UpdateNoteRequest(BaseModel):
+    # The flip target — explicit, no default (the caller states where it goes).
+    visibility: Visibility

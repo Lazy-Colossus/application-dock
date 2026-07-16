@@ -2,19 +2,25 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, postMock, putMock, delMock, push, replace } = vi.hoisted(
-  () => ({
+const { getMock, postMock, putMock, patchMock, delMock, push, replace } =
+  vi.hoisted(() => ({
     getMock: vi.fn(),
     postMock: vi.fn(),
     putMock: vi.fn(),
+    patchMock: vi.fn(),
     delMock: vi.fn(),
     push: vi.fn(),
     replace: vi.fn(),
-  }),
-);
+  }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
-  api: { get: getMock, post: postMock, put: putMock, del: delMock },
+  api: {
+    get: getMock,
+    post: postMock,
+    put: putMock,
+    patch: patchMock,
+    del: delMock,
+  },
 }));
 vi.mock("vue-router", () => ({ useRouter: () => ({ push, replace }) }));
 
@@ -81,11 +87,13 @@ beforeEach(() => {
     if (path.startsWith("/hotaru/topics")) return Promise.resolve(topics);
     if (path.startsWith("/hotaru/practice/familiarity"))
       return Promise.resolve({ g1: 4 });
+    if (path.includes("/notes")) return Promise.resolve([]); // word notes
     return Promise.resolve(WORDS);
   });
   delMock.mockReset().mockResolvedValue(undefined);
   postMock.mockReset().mockResolvedValue({});
   putMock.mockReset().mockResolvedValue({});
+  patchMock.mockReset().mockResolvedValue({});
   push.mockReset();
 });
 
@@ -221,6 +229,57 @@ describe("LibraryPage (two-level)", () => {
     await flushPromises();
     expect(delMock).not.toHaveBeenCalled();
     confirm.mockRestore();
+  });
+
+  it("opens the Notes dialog from a word's ⋮ menu, loads notes, and adds one", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
+    await wrapper.find('[data-testid="manage-notes"]').trigger("click");
+    await flushPromises();
+    expect(wrapper.find('[data-testid="notes-dialog"]').exists()).toBe(true);
+    expect(getMock).toHaveBeenCalledWith(
+      expect.stringContaining("/notes?user=dani"),
+    );
+    // Add a note → posts to the word's notes endpoint.
+    await wrapper.find('[data-testid="note-text-input"]').setValue("a tip");
+    await wrapper.find('[data-testid="note-add"]').trigger("click");
+    await flushPromises();
+    expect(postMock).toHaveBeenCalledWith(
+      expect.stringContaining("/notes?user=dani"),
+      { text: "a tip", visibility: "shared" },
+    );
+  });
+
+  it("flips a note's visibility from the Notes dialog", async () => {
+    getMock.mockImplementation((path: string) => {
+      if (path.startsWith("/hotaru/users")) return Promise.resolve(USERS);
+      if (path.startsWith("/hotaru/topics")) return Promise.resolve(topics);
+      if (path.startsWith("/hotaru/practice/familiarity"))
+        return Promise.resolve({ g1: 4 });
+      if (path.includes("/notes"))
+        return Promise.resolve([
+          {
+            id: "n1",
+            word_id: "g1",
+            author: "dani",
+            text: "my tip",
+            visibility: "shared",
+            created_at: "2026-01-01T00:00:00Z",
+          },
+        ]);
+      return Promise.resolve(WORDS);
+    });
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
+    await wrapper.find('[data-testid="manage-notes"]').trigger("click");
+    await flushPromises();
+    await wrapper.find('[data-testid="note-flip"]').trigger("click");
+    await flushPromises();
+    expect(patchMock).toHaveBeenCalledWith("/hotaru/notes/n1?user=dani", {
+      visibility: "private",
+    });
   });
 
   it("Topics section lists the selected topic's words", async () => {
