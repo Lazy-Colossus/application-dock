@@ -44,6 +44,11 @@ export interface PracticeOverview {
 // One drill card. Thin wrapper (Epic 3 will attach notes); no due-debt.
 export interface QueueItem {
   word: Word;
+  // Shared notes + the active user's own private notes for this card
+  // (privacy-filtered server-side, Story 3.3) — rendered on reveal. Always
+  // present from the drill queue; optional because Study mode reuses the drill
+  // sequencer over plain words with no notes.
+  notes?: Note[];
 }
 
 // A self-grade on a drilled card.

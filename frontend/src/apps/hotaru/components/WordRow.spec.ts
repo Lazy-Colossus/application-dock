@@ -206,4 +206,47 @@ describe("WordRow", () => {
     await wrapper.find('[data-testid="manage-topics"]').trigger("click");
     expect(wrapper.emitted("topics")?.[0]).toEqual([w]);
   });
+
+  it("emits toggle-expand when the row body is tapped (normal mode)", async () => {
+    const w = word();
+    const wrapper = mount(WordRow, {
+      props: { word: w },
+      global: { stubs: STUBS },
+    });
+    await wrapper.find('[data-testid="word-row"]').trigger("click");
+    expect(wrapper.emitted("toggle-expand")?.[0]).toEqual([w]);
+    // A disclosure chevron is present in normal mode.
+    expect(wrapper.find('[data-testid="row-chevron"]').exists()).toBe(true);
+  });
+
+  it("marks the chevron open when expanded", () => {
+    const wrapper = mount(WordRow, {
+      props: { word: word(), expanded: true },
+      global: { stubs: STUBS },
+    });
+    expect(wrapper.find('[data-testid="row-chevron"]').classes()).toContain(
+      "word-row__chevron--open",
+    );
+  });
+
+  it("does NOT expand when the ⋮ menu is used (click.stop)", async () => {
+    const wrapper = mount(WordRow, {
+      props: { word: word() },
+      global: { stubs: STUBS },
+    });
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
+    expect(wrapper.emitted("toggle-expand")).toBeUndefined();
+  });
+
+  it("in select mode a tap selects (not expands) and shows no chevron", async () => {
+    const w = word();
+    const wrapper = mount(WordRow, {
+      props: { word: w, selectable: true },
+      global: { stubs: STUBS },
+    });
+    await wrapper.find('[data-testid="word-row"]').trigger("click");
+    expect(wrapper.emitted("toggle-select")?.[0]).toEqual([w]);
+    expect(wrapper.emitted("toggle-expand")).toBeUndefined();
+    expect(wrapper.find('[data-testid="row-chevron"]').exists()).toBe(false);
+  });
 });

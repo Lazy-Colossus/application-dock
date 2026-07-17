@@ -1,5 +1,12 @@
 # Deferred Work
 
+## Deferred from: code review of 3.3 + 3.4 + 3.5 (Hotaru Epic 3) — 2026-07-16
+
+- Inline expand-load failure is indistinguishable from "no notes" — `LibraryPage.onToggleExpand` fires `void notesStore.loadNotes(...)` and ignores rejection; `WordRowDetails` shows "No notes yet" whenever the list is empty. A failed load looks noteless (user might add a duplicate). Clean fix needs per-word load/error state — `notesStore.error` is a global singleton, so it can't be attributed to one panel today [`frontend/src/apps/hotaru/pages/LibraryPage.vue`, `WordRowDetails.vue`]
+- `notes_service.notes_for_words` re-implements the shared+own-private filter/sort rather than sharing a helper with `list_for_word` — behavior-equivalent and correctly batched, maintainability drift only [`backend/app/services/notes_service.py`]
+- Note-length gate counts UTF-16 units (`String.length`) while the backend counts code points — the composer over-counts astral characters (emoji/rare kanji), over-blocking text the backend would accept. Now lives in `NoteComposer` after the 3.5 extraction (same item as the 3.2 deferral) [`frontend/src/apps/hotaru/components/NoteComposer.vue`]
+- Drill Flashcard can render the drill-owner's private note for one frame on a mid-drill user switch — the guard watch calls `router.replace` (async) so the card re-renders once with the new `activeUser` before navigating away; transient, and the note author/persistence are now pinned to `drillUser` [`frontend/src/apps/hotaru/pages/DrillPage.vue`]
+
 ## Deferred from: code review of 3.2.set-and-change-a-note-s-visibility (Hotaru Epic 3) — 2026-07-16
 
 - Concurrent read-modify-write race on `notes_shared.json` (and per-user private files) — `add`/`set_visibility` do `read_* → write_*` with no lock; two overlapping writers can drop a write. Inherent to the JSON-no-DB architecture (same pattern in `vocab_repo`/`progress_repo`); low risk at 2-user household scale [`backend/app/repositories/notes_repo.py`]

@@ -1,7 +1,28 @@
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import Flashcard from "./Flashcard.vue";
-import type { Word } from "@/apps/hotaru/types";
+import type { HotaruUser, Note, Word } from "@/apps/hotaru/types";
+
+const USERS: HotaruUser[] = [
+  { id: "dani", name: "Dani" },
+  { id: "jake", name: "Jake" },
+];
+
+function note(
+  id: string,
+  text: string,
+  visibility = "shared",
+  author = "jake",
+): Note {
+  return {
+    id,
+    word_id: "genki_3-L1-0001",
+    author,
+    text,
+    visibility: visibility as Note["visibility"],
+    created_at: "2026-01-01T00:00:00Z",
+  };
+}
 
 function word(overrides: Partial<Word> = {}): Word {
   return {
@@ -95,5 +116,43 @@ describe("Flashcard", () => {
     expect(answer.text()).toContain("だいがく");
     // The meaning is the prompt in this direction, not repeated in the answer.
     expect(answer.text()).not.toContain("university");
+  });
+
+  it("shows notes only on reveal, never on the prompt (no answer spoiler)", () => {
+    const props = {
+      word: word(),
+      notes: [note("n1", "looks like a gate", "shared", "jake")],
+      users: USERS,
+      activeUser: "dani",
+    };
+    const hidden = mount(Flashcard, { props: { ...props, revealed: false } });
+    expect(hidden.find('[data-testid="card-notes"]').exists()).toBe(false);
+    const shown = mount(Flashcard, { props: { ...props, revealed: true } });
+    const notes = shown.find('[data-testid="card-notes"]');
+    expect(notes.exists()).toBe(true);
+    expect(notes.text()).toContain("looks like a gate");
+    expect(notes.text()).toContain("Jake"); // partner's shared note, attributed
+  });
+
+  it("attributes my own note to 'You' and marks a private note with the lock", () => {
+    const wrapper = mount(Flashcard, {
+      props: {
+        word: word(),
+        revealed: true,
+        notes: [note("n1", "my hook", "private", "dani")],
+        users: USERS,
+        activeUser: "dani",
+      },
+    });
+    const card = wrapper.find('[data-testid="card-note"]');
+    expect(card.text()).toContain("You");
+    expect(card.find(".flashcard__note-lock").exists()).toBe(true);
+  });
+
+  it("renders no notes block when the card has none", () => {
+    const wrapper = mount(Flashcard, {
+      props: { word: word(), revealed: true, notes: [] },
+    });
+    expect(wrapper.find('[data-testid="card-notes"]').exists()).toBe(false);
   });
 });

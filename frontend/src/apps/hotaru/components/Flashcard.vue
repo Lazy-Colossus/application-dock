@@ -55,6 +55,32 @@
       </template>
     </div>
 
+    <!-- Partner's shared notes + my own private notes, revealed with the answer
+         so a tip lands right when I need it (Story 3.3). Never on the prompt. -->
+    <div
+      v-if="revealed && notes.length"
+      class="flashcard__notes column"
+      data-testid="card-notes"
+    >
+      <div
+        v-for="n in notes"
+        :key="n.id"
+        class="flashcard__note"
+        data-testid="card-note"
+      >
+        <span class="flashcard__note-who">
+          <q-icon
+            v-if="n.visibility === 'private'"
+            name="lock"
+            size="12px"
+            class="flashcard__note-lock"
+          />
+          {{ displayName(n) }}
+        </span>
+        <span class="flashcard__note-text">{{ n.text }}</span>
+      </div>
+    </div>
+
     <!-- Info pills lined along the card's bottom edge (reveal side). -->
     <div
       v-if="revealed && (word.lesson || word.pos)"
@@ -68,9 +94,10 @@
 </template>
 
 <script setup lang="ts">
-import type { Word } from "@/apps/hotaru/types";
+import type { HotaruUser, Note, Word } from "@/apps/hotaru/types";
+import { useNoteDisplay } from "@/apps/hotaru/composables/useNoteDisplay";
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     word: Word;
     revealed: boolean;
@@ -78,8 +105,24 @@ withDefaults(
     direction?: "r2m" | "m2r";
     showReading?: boolean;
     showRomaji?: boolean;
+    // The word's notes (shared + my own private), shown on reveal (Story 3.3).
+    notes?: Note[];
+    users?: HotaruUser[];
+    activeUser?: string;
   }>(),
-  { direction: "r2m", showReading: false, showRomaji: false },
+  {
+    direction: "r2m",
+    showReading: false,
+    showRomaji: false,
+    notes: () => [],
+    users: () => [],
+    activeUser: undefined,
+  },
+);
+
+const { displayName } = useNoteDisplay(
+  () => props.users,
+  () => props.activeUser,
 );
 </script>
 
@@ -142,6 +185,35 @@ withDefaults(
 
 .flashcard__meaning
   font-size: 20px
+  color: var(--hotaru-cream-soft)
+
+// Notes strip on the reveal side — calm and compact so it never dominates the
+// word. Bottom margin clears the absolutely-positioned pills row.
+.flashcard__notes
+  gap: 6px
+  margin: 6px 2px 34px
+  padding-top: 10px
+  border-top: 1px solid rgba(155, 107, 255, 0.18)
+  max-height: 26vh
+  overflow-y: auto
+  text-align: left
+
+.flashcard__note
+  font-size: 13px
+  line-height: 1.35
+
+.flashcard__note-who
+  display: inline-flex
+  align-items: center
+  gap: 3px
+  font-weight: 600
+  color: var(--hotaru-sage)
+  margin-right: 6px
+
+.flashcard__note-lock
+  color: var(--hotaru-amber-private)
+
+.flashcard__note-text
   color: var(--hotaru-cream-soft)
 
 // Tiny category-style pills, bottom-left, with a hairline rule above.

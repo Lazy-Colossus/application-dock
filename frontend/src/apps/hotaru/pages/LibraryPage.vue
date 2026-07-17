@@ -85,20 +85,32 @@
       class="library-list hotaru-panel column"
       data-testid="library-list"
     >
-      <WordRow
-        v-for="word in visibleWords"
-        :key="word.id"
-        :word="word"
-        :editable="editable"
-        :tier="store.familiarityTier(word.id)"
-        :selectable="selectMode"
-        :selected="selectedIds.has(word.id)"
-        @edit="onEdit"
-        @delete="onDelete"
-        @topics="onManageTopics"
-        @notes="onManageNotes"
-        @toggle-select="onToggleSelect"
-      />
+      <template v-for="word in visibleWords" :key="word.id">
+        <WordRow
+          :word="word"
+          :editable="editable"
+          :tier="store.familiarityTier(word.id)"
+          :selectable="selectMode"
+          :selected="selectedIds.has(word.id)"
+          :expanded="expandedId === word.id"
+          @edit="onEdit"
+          @delete="onDelete"
+          @topics="onManageTopics"
+          @notes="onManageNotes"
+          @toggle-select="onToggleSelect"
+          @toggle-expand="onToggleExpand"
+        />
+        <WordRowDetails
+          v-if="expandedId === word.id && !selectMode"
+          :word="word"
+          :topics="store.topics"
+          :notes="notesStore.notesFor(word.id)"
+          :users="userStore.users"
+          :active-user="userStore.activeUserId ?? undefined"
+          @manage-topics="onManageTopics"
+          @manage-notes="onManageNotes"
+        />
+      </template>
     </div>
 
     <q-btn
@@ -149,6 +161,7 @@ import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
 import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
 import WordRow from "@/apps/hotaru/components/WordRow.vue";
+import WordRowDetails from "@/apps/hotaru/components/WordRowDetails.vue";
 import WordTopicsDialog from "@/apps/hotaru/components/WordTopicsDialog.vue";
 import WordNotesDialog from "@/apps/hotaru/components/WordNotesDialog.vue";
 import LibraryActionsMenu from "@/apps/hotaru/components/LibraryActionsMenu.vue";
@@ -264,6 +277,7 @@ watch([section, subsection], ([s, sub]) => {
   activeSection.value = s;
   activeSubsection.value = sub;
   selectedIds.value = new Set();
+  expandedId.value = null; // collapse any open row when the view changes
 });
 
 onMounted(async () => {
@@ -318,6 +332,7 @@ function startSelect(): void {
   selectMode.value = true;
   selectedIds.value = new Set();
   bulkResult.value = null;
+  expandedId.value = null; // no inline panel left open under the select UI
 }
 
 function onToggleSelect(word: Word): void {
@@ -454,6 +469,38 @@ async function onCreateTopic(name: string): Promise<void> {
   const created = await store.createTopic(name);
   if (created) await store.assignWord(created.id, topicsWord.value.id, user);
 }
+
+// --- Inline expandable row (Story 3.5) --------------------------------------
+// Single-open: expanding one row collapses the others. On expand, lazy-load the
+// word's notes so the panel can show them (topics are already loaded).
+const expandedId = ref<string | null>(null);
+
+// A user switch re-scopes everything (NFR-2, the hard rule): collapse any open
+// row so a cached private note can't render to the new user, and reload the
+// list/familiarity for the new user. Notes reload on the next expand.
+watch(
+  () => userStore.activeUserId,
+  (u) => {
+    if (u === null) return;
+    expandedId.value = null;
+    void store.loadWords(u);
+    void store.loadFamiliarity(u);
+  },
+);
+
+function onToggleExpand(word: Word): void {
+  if (expandedId.value === word.id) {
+    expandedId.value = null;
+    return;
+  }
+  expandedId.value = word.id;
+  const user = userStore.activeUserId;
+  if (user !== null) void notesStore.loadNotes(word.id, user);
+}
+
+// The inline panel is a read view — its ＋Topic / ＋Note buttons open the
+// existing dialogs (onManageTopics / onManageNotes) for all editing. The
+// dialogs mutate the stores, so the panel reflects the change reactively.
 </script>
 
 <style scoped lang="sass">

@@ -43,7 +43,21 @@
     </span>
     <FamiliarityIcon :tier="tier" class="word-row__fam" />
 
-    <div v-if="!selectable" class="word-row__menu-wrap">
+    <!-- Disclosure indicator — the whole row body toggles expand (Story 3.5). -->
+    <span
+      v-if="!selectable"
+      class="word-row__chevron"
+      :class="{ 'word-row__chevron--open': expanded }"
+      data-testid="row-chevron"
+    >
+      <q-icon
+        :name="expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
+        size="20px"
+      />
+    </span>
+
+    <!-- @click.stop so the actions menu never toggles the row's expand. -->
+    <div v-if="!selectable" class="word-row__menu-wrap" @click.stop>
       <button
         class="word-row__action"
         aria-label="Word actions"
@@ -136,8 +150,15 @@ const props = withDefaults(
     tier?: number;
     selectable?: boolean;
     selected?: boolean;
+    expanded?: boolean;
   }>(),
-  { editable: false, tier: 0, selectable: false, selected: false },
+  {
+    editable: false,
+    tier: 0,
+    selectable: false,
+    selected: false,
+    expanded: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -146,12 +167,15 @@ const emit = defineEmits<{
   topics: [word: Word];
   notes: [word: Word];
   "toggle-select": [word: Word];
+  "toggle-expand": [word: Word];
 }>();
 
-// In select mode the whole row toggles selection (the checkbox is a bound
-// indicator — see the pointer-events rule).
+// Select mode: the whole row toggles selection (the checkbox is a bound
+// indicator). Normal mode: tapping the row body toggles the inline details
+// panel (Story 3.5); the ⋮ menu is @click.stop so it never triggers this.
 function onRowClick(): void {
   if (props.selectable) emit("toggle-select", props.word);
+  else emit("toggle-expand", props.word);
 }
 
 // Per-row romaji visibility (off by default) and the actions overflow menu.
@@ -189,9 +213,17 @@ function run(action: "edit" | "delete" | "topics" | "notes"): void {
   padding: 12px 4px
   border-bottom: 1px solid rgba(155, 107, 255, 0.16)
   gap: 10px
+  cursor: pointer
 
 .word-row--selectable
   cursor: pointer
+
+// Disclosure chevron — a quiet status glyph; the whole row is the toggle.
+.word-row__chevron
+  flex: none
+  display: inline-flex
+  align-items: center
+  color: var(--hotaru-sage)
 
 // Bound indicator only — clicks fall through to the row so the whole row toggles.
 .word-row__check

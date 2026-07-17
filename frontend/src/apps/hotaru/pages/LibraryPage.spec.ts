@@ -25,6 +25,7 @@ vi.mock("@/composables/useApi", () => ({
 vi.mock("vue-router", () => ({ useRouter: () => ({ push, replace }) }));
 
 import LibraryPage from "./LibraryPage.vue";
+import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
 import type { Word } from "@/apps/hotaru/types";
 
 const USERS = [
@@ -280,6 +281,54 @@ describe("LibraryPage (two-level)", () => {
     expect(patchMock).toHaveBeenCalledWith("/hotaru/notes/n1?user=dani", {
       visibility: "private",
     });
+  });
+
+  it("expands a row inline; its buttons open the topics/notes dialogs (Story 3.5)", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    // Not expanded until the row body is tapped.
+    expect(wrapper.find('[data-testid="row-details"]').exists()).toBe(false);
+    await wrapper.find('[data-testid="word-row"]').trigger("click");
+    await flushPromises();
+    const panel = wrapper.find('[data-testid="row-details"]');
+    expect(panel.exists()).toBe(true);
+    // The expanded word's notes were loaded (default view = Genki → G → g1).
+    expect(getMock).toHaveBeenCalledWith(
+      expect.stringContaining("/words/g1/notes?user=dani"),
+    );
+    // Assigned topic shown; no inline text inputs (editing is via the dialogs).
+    expect(panel.find('[data-testid="row-topic-t1"]').exists()).toBe(true);
+    expect(panel.find("textarea").exists()).toBe(false);
+    expect(panel.find("input").exists()).toBe(false);
+    // ＋Note opens the notes dialog for the word.
+    await wrapper.find('[data-testid="row-add-note"]').trigger("click");
+    expect(wrapper.find('[data-testid="notes-dialog"]').exists()).toBe(true);
+  });
+
+  it("collapses an expanded row when entering select mode (3.5 AC-6)", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="word-row"]').trigger("click");
+    await flushPromises();
+    expect(wrapper.find('[data-testid="row-details"]').exists()).toBe(true);
+    await openActions(wrapper);
+    await wrapper.find('[data-testid="action-select"]').trigger("click");
+    expect(wrapper.find('[data-testid="row-details"]').exists()).toBe(false);
+  });
+
+  it("collapses + re-scopes the library when the active user switches (NFR-2)", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="word-row"]').trigger("click");
+    await flushPromises();
+    expect(wrapper.find('[data-testid="row-details"]').exists()).toBe(true);
+    getMock.mockClear();
+    // Switch profile in-page (AvatarSwitcher just calls setActiveUser).
+    useHotaruUserStore().setActiveUser("jake");
+    await flushPromises();
+    // Panel collapsed (no stale private note) and the list reloaded for jake.
+    expect(wrapper.find('[data-testid="row-details"]').exists()).toBe(false);
+    expect(getMock).toHaveBeenCalledWith(expect.stringContaining("user=jake"));
   });
 
   it("Topics section lists the selected topic's words", async () => {

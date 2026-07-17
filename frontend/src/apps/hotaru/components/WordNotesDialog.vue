@@ -68,65 +68,11 @@
       <!-- Add a note. -->
       <div class="wn-add column q-mt-md">
         <div class="wn-add__label">Add a note</div>
-        <textarea
-          v-model="text"
-          class="wn-input wn-input--area"
-          :class="{ 'wn-input--error': overLimit }"
-          rows="2"
-          placeholder="Add a note…"
-          aria-describedby="wn-note-error"
-          data-testid="note-text-input"
-          @keydown.enter.meta.prevent="onAdd"
-          @keydown.enter.ctrl.prevent="onAdd"
+        <NoteComposer
+          v-model:text="text"
+          v-model:visibility="visibility"
+          @add="onAdd"
         />
-        <div class="wn-count row items-center justify-between q-mt-xs">
-          <span
-            id="wn-note-error"
-            class="wn-count__error"
-            role="alert"
-            aria-live="polite"
-          >
-            <span v-if="overLimit" data-testid="note-error">
-              Note must be {{ MAX_NOTE_LENGTH }} characters or fewer.
-            </span>
-          </span>
-          <span
-            v-if="showCount"
-            class="wn-count__num"
-            :class="overLimit ? 'wn-count__num--error' : 'wn-count__num--near'"
-            data-testid="note-count"
-          >
-            {{ trimmedLength }}/{{ MAX_NOTE_LENGTH }}
-          </span>
-        </div>
-        <div class="wn-add__row row items-center justify-between q-mt-sm">
-          <div class="wn-vis row no-wrap">
-            <button
-              class="wn-vis__btn"
-              :class="{ 'wn-vis__btn--shared-on': visibility === 'shared' }"
-              data-testid="note-vis-shared"
-              @click="visibility = 'shared'"
-            >
-              Shared
-            </button>
-            <button
-              class="wn-vis__btn"
-              :class="{ 'wn-vis__btn--private-on': visibility === 'private' }"
-              data-testid="note-vis-private"
-              @click="visibility = 'private'"
-            >
-              <q-icon name="lock" size="13px" /> Private
-            </button>
-          </div>
-          <q-btn
-            label="Add"
-            no-caps
-            unelevated
-            :disable="!text.trim() || overLimit"
-            data-testid="note-add"
-            @click="onAdd"
-          />
-        </div>
       </div>
 
       <div class="row justify-end q-mt-md">
@@ -145,6 +91,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import type { HotaruUser, Note, Visibility, Word } from "@/apps/hotaru/types";
+import { useNoteDisplay } from "@/apps/hotaru/composables/useNoteDisplay";
+import NoteComposer from "@/apps/hotaru/components/NoteComposer.vue";
 
 const props = defineProps<{
   word: Word;
@@ -156,12 +104,10 @@ const props = defineProps<{
   activeUser?: string;
 }>();
 
-// Per-user identity hue, reused from the avatar system (DESIGN.md: Dani=violet,
-// Jake=amber). Distinct from the lock, which signals privacy, not identity.
-const AUTHOR_COLORS: Record<string, string> = {
-  dani: "#9b6bff",
-  jake: "#ffce5c",
-};
+const { displayName, authorInitial, authorColor, formatTime } = useNoteDisplay(
+  () => props.users,
+  () => props.activeUser,
+);
 
 const emit = defineEmits<{
   "update:modelValue": [value: boolean];
@@ -169,58 +115,11 @@ const emit = defineEmits<{
   flip: [noteId: string, visibility: Visibility];
 }>();
 
-// Keep in sync with notes_service.MAX_NOTE_LENGTH (backend enforces the same).
-const MAX_NOTE_LENGTH = 300;
-
 const text = ref("");
 const visibility = ref<Visibility>("shared");
 
-// Count the trimmed length everywhere — it's what the backend validates, so the
-// readout, the warn threshold, and the over-limit gate all agree (trailing
-// whitespace never makes the counter and the gate disagree).
-const trimmedLength = computed(() => text.value.trim().length);
-const overLimit = computed(() => trimmedLength.value > MAX_NOTE_LENGTH);
-
-// Stay quiet until the last stretch — a running tally from keystroke one reads
-// as pressure; the count only matters as you approach the cap.
-const COUNT_WARN_AT = MAX_NOTE_LENGTH - 40;
-const showCount = computed(() => trimmedLength.value >= COUNT_WARN_AT);
-
 // Newest first for reading (the API returns oldest→newest).
 const ordered = computed(() => [...props.notes].reverse());
-
-function authorName(id: string): string {
-  return props.users.find((u) => u.id === id)?.name ?? id;
-}
-
-// The active user sees their own notes attributed to "You"; the initial + hue
-// still come from the real author so the identity colour stays consistent.
-function displayName(n: Note): string {
-  return n.author === props.activeUser ? "You" : authorName(n.author);
-}
-
-function authorInitial(id: string): string {
-  return ((authorName(id) ?? "")[0] ?? "?").toUpperCase();
-}
-
-function authorColor(id: string): string {
-  return AUTHOR_COLORS[id] ?? "#7c78b8";
-}
-
-// A whisper-quiet relative time — informational, never a countdown/debt.
-function formatTime(iso: string): string {
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "";
-  const secs = Math.max(0, (Date.now() - then) / 1000);
-  if (secs < 60) return "just now";
-  if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
-  if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`;
-  if (secs < 7 * 86400) return `${Math.floor(secs / 86400)}d ago`;
-  return new Date(then).toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-  });
-}
 
 function resetDraft(): void {
   text.value = "";
@@ -238,10 +137,9 @@ watch(
 );
 watch(() => props.word.id, resetDraft);
 
-function onAdd(): void {
-  const value = text.value.trim();
-  if (!value || overLimit.value) return;
-  emit("add", value, visibility.value);
+// NoteComposer validates (non-empty, ≤300); it only emits when valid.
+function onAdd(value: string, vis: Visibility): void {
+  emit("add", value, vis);
   resetDraft();
 }
 </script>
@@ -377,71 +275,4 @@ function onAdd(): void {
   text-transform: uppercase
   color: #8f88c9
   margin-bottom: 6px
-
-.wn-input
-  background: rgba(4, 6, 15, 0.5)
-  border: 1px solid rgba(155, 107, 255, 0.30)
-  border-radius: 10px
-  padding: 10px
-  color: #f1f0ff
-  font-size: 14px
-  outline: none
-
-.wn-input:focus
-  border-color: #38f0e6
-  box-shadow: 0 0 0 1px rgba(56, 240, 230, 0.4)
-
-// A note is a thought, not a label — give it room (2 rows, grows to a cap).
-.wn-input--area
-  width: 100%
-  resize: vertical
-  min-height: 46px
-  max-height: 140px
-  font-family: inherit
-  line-height: 1.4
-
-.wn-input--error, .wn-input--error:focus
-  border-color: #ff6b8a
-  box-shadow: 0 0 0 1px rgba(255, 107, 138, 0.4)
-
-.wn-count
-  min-height: 16px
-
-.wn-count__num
-  font-size: 11px
-  color: #b3aede
-
-// Amber as you near the cap, red once over — a gentle ramp, not an alarm.
-.wn-count__num--near
-  color: #ffce5c
-
-.wn-count__num--error
-  color: #ff6b8a
-
-.wn-count__error
-  font-size: 12px
-  color: #ff6b8a
-
-.wn-vis
-  border: 1px solid rgba(155, 107, 255, 0.30)
-  border-radius: 9999px
-  overflow: hidden
-
-.wn-vis__btn
-  border: none
-  background: transparent
-  color: #b3aede
-  padding: 5px 12px
-  font-size: 13px
-  cursor: pointer
-
-// Selected states carry the palette's meaning: shared = violet (the implicit,
-// tertiary accent), private = amber (with the lock) — never the cyan CTA hue.
-.wn-vis__btn--shared-on
-  background: #9b6bff
-  color: #0b0620
-
-.wn-vis__btn--private-on
-  background: #ffce5c
-  color: #2a1e00
 </style>

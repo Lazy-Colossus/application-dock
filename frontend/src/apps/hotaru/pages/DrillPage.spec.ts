@@ -19,7 +19,7 @@ vi.mock("vue-router", () => ({
 }));
 
 import DrillPage from "./DrillPage.vue";
-import type { Word } from "@/apps/hotaru/types";
+import type { Note, Word } from "@/apps/hotaru/types";
 
 const USERS = [
   { id: "dani", name: "Dani" },
@@ -46,7 +46,7 @@ function word(
   };
 }
 
-let queue: { word: Word }[] = [];
+let queue: { word: Word; notes?: Note[] }[] = [];
 
 const OVERVIEW = {
   scope: "lesson:L2",
@@ -57,10 +57,16 @@ const OVERVIEW = {
 const STUBS = {
   "q-page": { template: "<div><slot /></div>" },
   "q-icon": { template: "<i />" },
+  // Renders its body only when open, so we can assert the mid-drill dialog
+  // opens/closes (WordNotesDialog itself is the real child under test).
+  "q-dialog": {
+    props: ["modelValue"],
+    template: "<div v-if='modelValue'><slot /></div>",
+  },
   "q-btn": {
     template:
-      "<button :data-testid=\"$attrs['data-testid']\" @click=\"$emit('click')\">{{ label }}</button>",
-    props: ["label", "unelevated", "noCaps"],
+      '<button :data-testid="$attrs[\'data-testid\']" :disabled="disable" @click="$emit(\'click\')">{{ label }}</button>',
+    props: ["label", "unelevated", "noCaps", "flat", "disable"],
     emits: ["click"],
   },
 };
@@ -97,6 +103,106 @@ describe("DrillPage", () => {
     expect(wrapper.find('[data-testid="card-answer"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="drill-progress"]').text()).toContain(
       "1 / 2",
+    );
+  });
+
+  it("shows the card's notes (delivered with the queue) on reveal", async () => {
+    queue = [
+      {
+        word: word("g1", "大学", "だいがく", "university"),
+        notes: [
+          {
+            id: "n1",
+            word_id: "g1",
+            author: "jake",
+            text: "looks like a gate",
+            visibility: "shared",
+            created_at: "2026-01-01T00:00:00Z",
+          },
+        ],
+      },
+    ];
+    const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    // Hidden before reveal (no answer spoiler).
+    expect(wrapper.find('[data-testid="card-notes"]').exists()).toBe(false);
+    await wrapper.find('[data-testid="reveal-btn"]').trigger("click");
+    const notes = wrapper.find('[data-testid="card-notes"]');
+    expect(notes.exists()).toBe(true);
+    expect(notes.text()).toContain("looks like a gate");
+    expect(notes.text()).toContain("Jake");
+  });
+
+  it("marks the note button when the current card has a note, clears it on advance", async () => {
+    queue = [
+      {
+        word: word("g1", "大学", "だいがく", "university"),
+        notes: [
+          {
+            id: "n1",
+            word_id: "g1",
+            author: "jake",
+            text: "gate hook",
+            visibility: "shared",
+            created_at: "2026-01-01T00:00:00Z",
+          },
+        ],
+      },
+      { word: word("g2", null, "ありがとう", "thanks") }, // no notes
+    ];
+    const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    // First card has a note → the button shows the "has note" state.
+    expect(wrapper.find('[data-testid="drill-add-note"]').classes()).toContain(
+      "drill-note--has",
+    );
+    // Advance to the note-less card → the indicator clears.
+    await wrapper.find('[data-testid="reveal-btn"]').trigger("click");
+    await wrapper.find('[data-testid="grade-correct"]').trigger("click");
+    expect(
+      wrapper.find('[data-testid="drill-add-note"]').classes(),
+    ).not.toContain("drill-note--has");
+  });
+
+  it("attaches a note mid-drill without losing place (Story 3.4)", async () => {
+    const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    // Dialog closed until the note affordance is used.
+    expect(wrapper.find('[data-testid="notes-dialog"]').exists()).toBe(false);
+    await wrapper.find('[data-testid="drill-add-note"]').trigger("click");
+    expect(wrapper.find('[data-testid="notes-dialog"]').exists()).toBe(true);
+
+    // The POST returns the created note.
+    postMock.mockResolvedValueOnce({
+      id: "n9",
+      word_id: "g1",
+      author: "dani",
+      text: "gate hook",
+      visibility: "shared",
+      created_at: "2026-01-02T00:00:00Z",
+    });
+    await wrapper.find('[data-testid="note-text-input"]').setValue("gate hook");
+    await wrapper.find('[data-testid="note-add"]').trigger("click");
+    await flushPromises();
+
+    // Persisted to the CURRENT word's notes endpoint, no drill advance.
+    expect(postMock).toHaveBeenCalledWith("/hotaru/words/g1/notes?user=dani", {
+      text: "gate hook",
+      visibility: "shared",
+    });
+    expect(wrapper.find('[data-testid="drill-progress"]').text()).toContain(
+      "1 / 2",
+    );
+    // No grade was recorded (place preserved).
+    expect(
+      postMock.mock.calls.some((c) =>
+        String(c[0]).startsWith("/hotaru/practice/grades"),
+      ),
+    ).toBe(false);
+    // The new note now shows on the card (on reveal, per 3.3).
+    await wrapper.find('[data-testid="reveal-btn"]').trigger("click");
+    expect(wrapper.find('[data-testid="card-notes"]').text()).toContain(
+      "gate hook",
     );
   });
 

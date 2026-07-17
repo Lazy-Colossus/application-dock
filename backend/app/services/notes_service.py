@@ -7,6 +7,7 @@ user's private notes (they aren't even read — NFR-2, path boundary).
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -22,6 +23,20 @@ def list_for_word(word_id: str, user: str) -> list[Note]:
     notes = [n for n in notes_repo.read_shared() if n.word_id == word_id]
     notes += [n for n in notes_repo.read_private(user) if n.word_id == word_id]
     return sorted(notes, key=lambda n: n.created_at)
+
+
+def notes_for_words(word_ids: Iterable[str], user: str) -> dict[str, list[Note]]:
+    """Batched `list_for_word` for many words (the drill queue): shared + the
+    user's own private, grouped by `word_id`, oldest-first. Reads each file ONCE
+    rather than per word (NFR-6). Words with no visible notes are absent from the
+    map (callers default to []). Another user's private file is never read."""
+    wanted = set(word_ids)
+    visible = [n for n in notes_repo.read_shared() if n.word_id in wanted]
+    visible += [n for n in notes_repo.read_private(user) if n.word_id in wanted]
+    grouped: dict[str, list[Note]] = {}
+    for note in sorted(visible, key=lambda n: n.created_at):
+        grouped.setdefault(note.word_id, []).append(note)
+    return grouped
 
 
 def create_note(

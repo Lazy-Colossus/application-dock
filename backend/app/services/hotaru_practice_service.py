@@ -18,7 +18,7 @@ from app.schemas.hotaru import (
     QueueItem,
     Word,
 )
-from app.services import hotaru_vocab_service, srs
+from app.services import hotaru_vocab_service, notes_service, srs
 from app.services.srs import MAX_TIER
 
 # Calm session bound — the queue is soft-capped to this many cards (tunable).
@@ -121,7 +121,11 @@ def build_queue(
     ordered = sorted(words, key=sort_key)
     # limit <= 0 means "no cap" (Quick Practice's "All"); otherwise soft-cap.
     capped = ordered if limit <= 0 else ordered[:limit]
-    return [QueueItem(word=w) for w in capped]
+    # Attach each card's privacy-filtered notes (shared + this user's own private)
+    # so the drill renders them without a second fetch (Story 3.3, FR-24). Batched
+    # over just the capped words — one read of each notes file, not one per card.
+    notes_map = notes_service.notes_for_words([w.id for w in capped], user)
+    return [QueueItem(word=w, notes=notes_map.get(w.id, [])) for w in capped]
 
 
 def apply_grades(

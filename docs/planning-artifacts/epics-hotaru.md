@@ -543,3 +543,23 @@ So that I can capture a hack the moment it strikes.
 **Given** an active drill
 **When** I add a note to the current word
 **Then** I can write it and set shared/private inline, it persists (per Story 3.1/3.2), and the drill resumes without losing my place (FR-16).
+
+### Story 3.5: Expandable library rows — topics & notes inline
+
+_Added 2026-07-16 — not from an original FR. A UX composition over Epic 3 (notes, FR-22/24) and topics (FR-6/7): a library row expands in place to show a word's topics and notes and add new ones, instead of opening a separate ⋮ dialog for each. Frontend-only (reuses the 3.1 notes and 1.7 topic endpoints/stores); coexists with the ⋮ dialogs._
+
+As a learner,
+I want to expand a word's row in the library to see its topics and notes and add new ones inline,
+So that I can review and enrich a word's context without opening a separate dialog for each.
+
+**Acceptance Criteria:**
+
+**Given** the library list
+**When** I tap a row's expand affordance (a disclosure control, not the ⋮ menu)
+**Then** the row expands in place to show the word's topics (as pills) and its notes (privacy-filtered: shared + my own private, attributed, 🔒 on private), and collapses again on tap — calm, mobile-first, Neon-themed, respecting `prefers-reduced-motion`.
+
+**Given** an expanded row
+**When** I assign/create a topic or add a note (text + Shared/Private, honouring the 300-char note limit)
+**Then** it persists via the existing topic and notes endpoints/stores and the inline lists update — matching the ⋮ dialogs' behaviour, which remain available (no regression), and staying inert in bulk-select mode.
+
+_New design for the expanded row is agreed in-story (a gated first task) with the user, then implemented._

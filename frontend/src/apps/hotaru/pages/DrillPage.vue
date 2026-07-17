@@ -97,17 +97,41 @@
         >
           {{ direction === "r2m" ? "JP → EN" : "EN → JP" }}
         </button>
-        <button
-          v-if="aidAvailable"
-          class="drill-aid"
-          :class="{ 'drill-aid--on': aidOn }"
-          :aria-pressed="aidOn"
-          data-testid="reading-aid-toggle"
-          @click="toggleAid"
-        >
-          <q-icon :name="aidOn ? 'visibility' : 'visibility_off'" size="16px" />
-          <span>{{ revealed ? "Romaji" : "ふりがな" }}</span>
-        </button>
+        <div class="row items-center no-wrap">
+          <button
+            v-if="aidAvailable"
+            class="drill-aid"
+            :class="{ 'drill-aid--on': aidOn }"
+            :aria-pressed="aidOn"
+            data-testid="reading-aid-toggle"
+            @click="toggleAid"
+          >
+            <q-icon
+              :name="aidOn ? 'visibility' : 'visibility_off'"
+              size="16px"
+            />
+            <span>{{ revealed ? "Romaji" : "ふりがな" }}</span>
+          </button>
+          <!-- Story 3.4: jot a note mid-drill. The button also signals whether
+               this word already has a note (presence only — no spoiler): filled
+               violet when a tip lives here, quiet outline otherwise. -->
+          <button
+            class="drill-note q-ml-sm"
+            :class="{ 'drill-note--has': hasNote }"
+            :aria-label="
+              hasNote ? 'This word has a note — view or add' : 'Add a note'
+            "
+            :title="hasNote ? 'Notes' : 'Add a note'"
+            data-testid="drill-add-note"
+            @click="notesDialogOpen = true"
+          >
+            <q-icon
+              :name="hasNote ? 'chat_bubble' : 'chat_bubble_outline'"
+              size="15px"
+            />
+            <span class="drill-note__label">Note</span>
+          </button>
+        </div>
       </div>
 
       <div class="drill-cardwrap col column">
@@ -117,6 +141,9 @@
           :direction="direction"
           :show-reading="showReading"
           :show-romaji="showRomaji"
+          :notes="current.notes"
+          :users="userStore.users"
+          :active-user="userStore.activeUserId ?? undefined"
         />
       </div>
 
@@ -153,6 +180,18 @@
         />
       </template>
       <GradeButtons v-else class="q-mt-md" @grade="onGrade" />
+
+      <!-- Mid-drill notes (Story 3.4): teleported overlay — the card behind
+           stays put, so closing resumes the same card. -->
+      <WordNotesDialog
+        v-model="notesDialogOpen"
+        :word="current.word"
+        :notes="current.notes ?? []"
+        :users="userStore.users"
+        :active-user="userStore.activeUserId ?? undefined"
+        @add="onDrillAddNote"
+        @flip="onDrillFlipNote"
+      />
     </template>
   </q-page>
 </template>
@@ -165,13 +204,20 @@ import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
 import Flashcard from "@/apps/hotaru/components/Flashcard.vue";
 import FamiliarityIcon from "@/apps/hotaru/components/FamiliarityIcon.vue";
 import GradeButtons from "@/apps/hotaru/components/GradeButtons.vue";
+import WordNotesDialog from "@/apps/hotaru/components/WordNotesDialog.vue";
 import { useDrill } from "@/apps/hotaru/composables/useDrill";
 import { useHotaruPracticeStore } from "@/apps/hotaru/stores/useHotaruPracticeStore";
+import { useHotaruNotesStore } from "@/apps/hotaru/stores/useHotaruNotesStore";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
-import type { DrillGrade, PracticeOverview } from "@/apps/hotaru/types";
+import type {
+  DrillGrade,
+  PracticeOverview,
+  Visibility,
+} from "@/apps/hotaru/types";
 import "./../css/hotaru.sass";
 
 const store = useHotaruPracticeStore();
+const notesStore = useHotaruNotesStore();
 const userStore = useHotaruUserStore();
 const router = useRouter();
 const route = useRoute();
@@ -188,6 +234,49 @@ const {
   reveal,
   grade,
 } = useDrill(queue);
+
+// Mid-drill notes (Story 3.4): open the shared WordNotesDialog over the current
+// card. The dialog teleports to <body>, so the drill state below is untouched —
+// closing returns to the same card. New notes are merged onto the current queue
+// item so the card + dialog reflect them without a re-fetch.
+const notesDialogOpen = ref(false);
+
+// The current card's note presence — already on the queue payload (Story 3.3),
+// so the mid-drill button can signal "a tip lives here" with no extra fetch.
+const hasNote = computed(() => (current.value?.notes?.length ?? 0) > 0);
+
+async function onDrillAddNote(
+  text: string,
+  visibility: Visibility,
+): Promise<void> {
+  const item = current.value;
+  // Attribute to the session owner (like grades), not the live active user —
+  // the session belongs to whoever started it (a switch redirects away anyway).
+  if (!item || !drillUser) return;
+  const created = await notesStore.addNote(
+    item.word.id,
+    { text, visibility },
+    drillUser,
+  );
+  if (created) item.notes = [...(item.notes ?? []), created];
+}
+
+async function onDrillFlipNote(
+  noteId: string,
+  visibility: Visibility,
+): Promise<void> {
+  const item = current.value;
+  if (!item || !drillUser) return;
+  const updated = await notesStore.setVisibility(
+    item.word.id,
+    noteId,
+    visibility,
+    drillUser,
+  );
+  if (updated) {
+    item.notes = (item.notes ?? []).map((n) => (n.id === noteId ? updated : n));
+  }
+}
 
 // The user this session belongs to (captured at mount) — grades are always
 // attributed to them, even if the active user changes mid-session.
@@ -481,6 +570,31 @@ watch(
   color: #2c0020
   border-color: var(--hotaru-fam-5)
   box-shadow: 0 0 12px rgba(255, 92, 200, 0.4)
+
+// Mid-drill note button — a quiet violet-outlined pill on the tools row when
+// the word has no note; fills solid violet with a soft glow when a note exists
+// (presence signal, not the content — no answer spoiler).
+.drill-note
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  gap: 5px
+  border: 1px solid rgba(155, 107, 255, 0.4)
+  background: rgba(155, 107, 255, 0.10)
+  color: var(--hotaru-cream-soft)
+  border-radius: 9999px
+  padding: 4px 12px
+  font-size: 12px
+  cursor: pointer
+
+.drill-note__label
+  line-height: 1
+
+.drill-note--has
+  background: var(--hotaru-fam-2, #9b6bff)
+  border-color: var(--hotaru-fam-2, #9b6bff)
+  color: #0b0620
+  box-shadow: 0 0 14px rgba(155, 107, 255, 0.5)
 
 .drill-cardwrap
   display: flex

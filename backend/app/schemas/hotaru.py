@@ -80,19 +80,6 @@ class PracticeOverview(BaseModel):
     familiarity: list[int]
 
 
-class QueueItem(BaseModel):
-    # One drill card. A thin wrapper so later stories can attach per-card data
-    # (Epic 3 adds notes) without changing the endpoint shape. Queue-not-debt:
-    # carries NO due/overdue/next_review_at — "due" only orders the queue.
-    word: Word
-
-
-class GradeItem(BaseModel):
-    # One graded card in a batch submission.
-    word_id: str
-    grade: Grade
-
-
 class Note(BaseModel):
     # A cooperative memory note on a word. A shared note lives in
     # notes_shared.json (both users see it); a private note lives under its
@@ -103,6 +90,21 @@ class Note(BaseModel):
     text: str
     visibility: Visibility
     created_at: datetime
+
+
+class QueueItem(BaseModel):
+    # One drill card. `notes` carries the word's shared notes + the active user's
+    # own private notes (privacy-filtered server-side, Story 3.3) so the drill
+    # renders them without a second fetch. Queue-not-debt: still NO
+    # due/overdue/next_review_at — "due" only orders the queue.
+    word: Word
+    notes: list[Note] = []
+
+
+class GradeItem(BaseModel):
+    # One graded card in a batch submission.
+    word_id: str
+    grade: Grade
 
 
 class CreateNoteRequest(BaseModel):
