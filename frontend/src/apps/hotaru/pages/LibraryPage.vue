@@ -93,6 +93,7 @@
           :selectable="selectMode"
           :selected="selectedIds.has(word.id)"
           :expanded="expandedId === word.id"
+          :has-note="notesStore.hasNote(word.id)"
           @edit="onEdit"
           @delete="onDelete"
           @topics="onManageTopics"
@@ -292,6 +293,7 @@ onMounted(async () => {
     store.loadWords(userStore.activeUserId),
     store.loadTopics(),
     store.loadFamiliarity(userStore.activeUserId),
+    notesStore.loadPresence(userStore.activeUserId),
   ]);
   if (activeSection.value !== null) {
     // Returning to the library — restore where the user was.
@@ -499,6 +501,7 @@ watch(
     expandedId.value = null;
     void store.loadWords(u);
     void store.loadFamiliarity(u);
+    void notesStore.loadPresence(u);
   },
 );
 

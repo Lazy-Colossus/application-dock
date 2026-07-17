@@ -159,6 +159,23 @@ describe("useHotaruNotesStore", () => {
     expect(store.notesFor("w1").map((n) => n.id)).toEqual(["n2"]);
   });
 
+  it("loadPresence populates the has-note set", async () => {
+    getMock.mockResolvedValueOnce(["w1", "w3"]);
+    const store = useHotaruNotesStore();
+    await store.loadPresence("dani");
+    expect(getMock).toHaveBeenCalledWith("/hotaru/notes/presence?user=dani");
+    expect(store.hasNote("w1")).toBe(true);
+    expect(store.hasNote("w2")).toBe(false);
+  });
+
+  it("addNote lights the word's presence indicator", async () => {
+    postMock.mockResolvedValueOnce(note("n1", "tip"));
+    const store = useHotaruNotesStore();
+    expect(store.hasNote("w1")).toBe(false);
+    await store.addNote("w1", { text: "tip", visibility: "shared" }, "dani");
+    expect(store.hasNote("w1")).toBe(true);
+  });
+
   it("deleteNote returns false and sets error on failure", async () => {
     getMock.mockResolvedValueOnce([note("n1", "a")]);
     const store = useHotaruNotesStore();

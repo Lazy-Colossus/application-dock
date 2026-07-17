@@ -132,6 +132,14 @@ def create_note(word_id: str, req: CreateNoteRequest, user: str) -> Note:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+@router.get("/notes/presence", response_model=list[str])
+def notes_presence(user: str) -> list[str]:
+    """Word ids that have a note visible to `user` — for the library indicator."""
+    if user not in VALID_USER_IDS:
+        raise HTTPException(status_code=404, detail=f"Unknown user {user}.")
+    return notes_service.words_with_notes(user)
+
+
 @router.patch("/notes/{note_id}", response_model=Note)
 def update_note(note_id: str, req: UpdateNoteRequest, user: str) -> Note:
     if user not in VALID_USER_IDS:

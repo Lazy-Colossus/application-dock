@@ -207,6 +207,19 @@ describe("WordRow", () => {
     expect(wrapper.emitted("topics")?.[0]).toEqual([w]);
   });
 
+  it("shows a note cue only when the word has a note", () => {
+    const without = mount(WordRow, {
+      props: { word: word() },
+      global: { stubs: STUBS },
+    });
+    expect(without.find('[data-testid="row-has-note"]').exists()).toBe(false);
+    const withNote = mount(WordRow, {
+      props: { word: word(), hasNote: true },
+      global: { stubs: STUBS },
+    });
+    expect(withNote.find('[data-testid="row-has-note"]').exists()).toBe(true);
+  });
+
   it("emits toggle-expand when the row body is tapped (normal mode)", async () => {
     const w = word();
     const wrapper = mount(WordRow, {

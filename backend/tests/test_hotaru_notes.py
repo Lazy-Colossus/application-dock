@@ -37,6 +37,10 @@ def _delete(note_id: str, user: str = "dani"):
     return client.delete(f"/api/hotaru/notes/{note_id}", params={"user": user})
 
 
+def _presence(user: str = "dani"):
+    return client.get("/api/hotaru/notes/presence", params={"user": user})
+
+
 def test_add_note_persists_with_author_and_appears_in_list() -> None:
     r = _add("w1", "mnemonic: looks like a gate", user="dani")
     assert r.status_code == 201
@@ -234,6 +238,20 @@ def test_delete_unknown_or_unknown_user_is_404() -> None:
     note = _add("wd4", "x", user="dani").json()
     assert _delete("n-nope", user="dani").status_code == 404
     assert _delete(note["id"], user="ghost").status_code == 404
+
+
+def test_notes_presence_lists_only_words_visible_to_the_user() -> None:
+    _add("wp1", "shared", visibility="shared", user="dani")
+    _add("wp2", "dani private", visibility="private", user="dani")
+    _add("wp3", "jake private", visibility="private", user="jake")
+    dani = _presence("dani").json()
+    assert "wp1" in dani and "wp2" in dani and "wp3" not in dani  # NFR-2
+    jake = _presence("jake").json()
+    assert "wp1" in jake and "wp3" in jake and "wp2" not in jake
+
+
+def test_notes_presence_unknown_user_is_404() -> None:
+    assert _presence("ghost").status_code == 404
 
 
 def test_deleting_a_word_cascades_its_notes() -> None:

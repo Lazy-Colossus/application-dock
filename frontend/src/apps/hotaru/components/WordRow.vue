@@ -41,6 +41,16 @@
     >
       <q-icon name="lock" size="17px" />
     </span>
+    <!-- Quiet violet cue that a note lives on this word (presence only). -->
+    <span
+      v-if="hasNote"
+      class="word-row__note"
+      aria-label="Has a note"
+      title="Has a note"
+      data-testid="row-has-note"
+    >
+      <q-icon name="chat_bubble" size="14px" />
+    </span>
     <FamiliarityIcon :tier="tier" class="word-row__fam" />
 
     <!-- Disclosure indicator — the whole row body toggles expand (Story 3.5). -->
@@ -151,6 +161,7 @@ const props = withDefaults(
     selectable?: boolean;
     selected?: boolean;
     expanded?: boolean;
+    hasNote?: boolean;
   }>(),
   {
     editable: false,
@@ -158,6 +169,7 @@ const props = withDefaults(
     selectable: false,
     selected: false,
     expanded: false,
+    hasNote: false,
   },
 );
 
@@ -273,6 +285,13 @@ function run(action: "edit" | "delete" | "topics" | "notes"): void {
   color: var(--hotaru-cream-soft)
   min-width: 0
   overflow-wrap: break-word
+
+// Note-present cue — violet (the shared-note accent), presence only, no count.
+.word-row__note
+  flex: none
+  display: inline-flex
+  align-items: center
+  color: var(--hotaru-fam-2)
 
 .word-row__fam
   flex: none

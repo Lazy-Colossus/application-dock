@@ -88,6 +88,8 @@ beforeEach(() => {
     if (path.startsWith("/hotaru/topics")) return Promise.resolve(topics);
     if (path.startsWith("/hotaru/practice/familiarity"))
       return Promise.resolve({ g1: 4 });
+    if (path.startsWith("/hotaru/notes/presence"))
+      return Promise.resolve(["g1"]); // g1 has a note
     if (path.includes("/notes")) return Promise.resolve([]); // word notes
     return Promise.resolve(WORDS);
   });
@@ -108,6 +110,14 @@ describe("LibraryPage (two-level)", () => {
     );
     // Default: Genki → G → shows "thanks"
     expect(wrapper.text()).toContain("thanks");
+  });
+
+  it("shows the note cue on a word that has notes (presence)", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    expect(getMock).toHaveBeenCalledWith("/hotaru/notes/presence?user=dani");
+    // Default view (Genki → G) shows g1, which has a note.
+    expect(wrapper.find('[data-testid="row-has-note"]').exists()).toBe(true);
   });
 
   it("loads familiarity and shows each word's tier on its row", async () => {

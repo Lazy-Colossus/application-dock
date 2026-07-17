@@ -99,6 +99,15 @@ def update_note(
     return note
 
 
+def words_with_notes(user: str) -> list[str]:
+    """Word ids that have at least one note visible to `user` (shared + the
+    user's own private) — powers the library's 'has a note' indicator. Reads
+    each file once; never touches the partner's private file (NFR-2)."""
+    ids = {n.word_id for n in notes_repo.read_shared()}
+    ids |= {n.word_id for n in notes_repo.read_private(user)}
+    return sorted(ids)
+
+
 def remove_word_notes(word_id: str) -> None:
     """Cascade: drop every note for a word (shared + all users' private) when the
     word is deleted, so no orphaned notes remain."""
