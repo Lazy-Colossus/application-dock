@@ -211,8 +211,8 @@ def practice_overview(scope: str, user: str) -> PracticeOverview:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
-@router.get("/practice/study", response_model=list[Word])
-def practice_study(scope: str, user: str) -> list[Word]:
+@router.get("/practice/study", response_model=list[QueueItem])
+def practice_study(scope: str, user: str) -> list[QueueItem]:
     if user not in VALID_USER_IDS:
         raise HTTPException(status_code=404, detail=f"Unknown user {user}.")
     try:

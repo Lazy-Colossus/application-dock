@@ -56,7 +56,12 @@
       </div>
 
       <div class="study-cardwrap col column">
-        <StudyCard :word="current.word" />
+        <StudyCard
+          :word="current.word"
+          :notes="current.notes ?? []"
+          :users="userStore.users"
+          :active-user="userStore.activeUserId ?? undefined"
+        />
       </div>
 
       <q-btn
@@ -80,7 +85,6 @@ import StudyCard from "@/apps/hotaru/components/StudyCard.vue";
 import { useDrill } from "@/apps/hotaru/composables/useDrill";
 import { useHotaruPracticeStore } from "@/apps/hotaru/stores/useHotaruPracticeStore";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
-import type { QueueItem } from "@/apps/hotaru/types";
 import "./../css/hotaru.sass";
 
 const store = useHotaruPracticeStore();
@@ -88,13 +92,10 @@ const userStore = useHotaruUserStore();
 const router = useRouter();
 const route = useRoute();
 
+// The study list is QueueItem[] (word + notes) — reuse the drill's sequence
+// machine directly; reveal/grade go unused here (Study is browse-only).
 const { study } = storeToRefs(store);
-// Reuse the drill's sequence machine over the study words; reveal/grade go
-// unused here — Study is browse-only.
-const studyItems = computed<QueueItem[]>(() =>
-  study.value.map((w) => ({ word: w })),
-);
-const { total, finished, current, progress, next } = useDrill(studyItems);
+const { total, finished, current, progress, next } = useDrill(study);
 
 // Friendly "what we're studying" label, derived from the scope for deep links.
 const scopeLabel = computed(() => {

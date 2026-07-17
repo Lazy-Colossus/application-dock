@@ -155,7 +155,7 @@ def test_study_preserves_natural_order() -> None:
     ids = [_make_word({"reading": f"よ{i}", "meaning": f"m{i}"}) for i in range(3)]
     for wid in ids:
         _assign(tid, wid)
-    got = [w["id"] for w in _study(f"topic:{tid}").json()]
+    got = [it["word"]["id"] for it in _study(f"topic:{tid}").json()]
     # Natural (assembly) order — no SRS reordering.
     assert got == ids
 
@@ -166,8 +166,21 @@ def test_study_private_word_only_for_owner() -> None:
         {"reading": "ひみつ", "meaning": "secret", "visibility": "private"}, user="dani"
     )
     _assign(tid, priv, user="dani")
-    assert priv in [w["id"] for w in _study(f"topic:{tid}", user="dani").json()]
-    assert priv not in [w["id"] for w in _study(f"topic:{tid}", user="jake").json()]
+    assert priv in [it["word"]["id"] for it in _study(f"topic:{tid}", user="dani").json()]
+    assert priv not in [it["word"]["id"] for it in _study(f"topic:{tid}", user="jake").json()]
+
+
+def test_study_cards_carry_notes() -> None:
+    tid = _create_topic("S-notes")
+    w = _make_word({"reading": "ねこ", "meaning": "cat"})
+    _assign(tid, w)
+    client.post(
+        f"/api/hotaru/words/{w}/notes",
+        params={"user": "dani"},
+        json={"text": "looks like a cat", "visibility": "shared"},
+    )
+    item = next(it for it in _study(f"topic:{tid}").json() if it["word"]["id"] == w)
+    assert [n["text"] for n in item["notes"]] == ["looks like a cat"]
 
 
 def test_study_empty_scope_is_empty_list() -> None:

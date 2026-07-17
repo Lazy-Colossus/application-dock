@@ -60,12 +60,15 @@ def overview(scope: str, user: str) -> PracticeOverview:
     return PracticeOverview(scope=scope, word_count=len(words), familiarity=familiarity)
 
 
-def study_words(scope: str, user: str) -> list[Word]:
+def study_words(scope: str, user: str) -> list[QueueItem]:
     """Every word in a scope, in natural (lesson/list) order — for the un-graded
     Study browse. No SRS weighting, no session cap (the deliberate difference
-    from `build_queue`). Privacy is inherited from the scope resolution. Raises
-    ValueError on a malformed scope."""
-    return _words_for_scope(scope, user)
+    from `build_queue`). Each card carries its notes (shared + own private, like
+    the drill queue) so tips show while browsing. Privacy is inherited from the
+    scope resolution. Raises ValueError on a malformed scope."""
+    words = _words_for_scope(scope, user)
+    notes_map = notes_service.notes_for_words([w.id for w in words], user)
+    return [QueueItem(word=w, notes=notes_map.get(w.id, [])) for w in words]
 
 
 def familiarity_map(user: str) -> dict[str, int]:

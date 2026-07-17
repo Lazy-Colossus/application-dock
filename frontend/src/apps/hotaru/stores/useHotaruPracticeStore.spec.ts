@@ -112,15 +112,19 @@ describe("useHotaruPracticeStore", () => {
     expect(store.loading).toBe(false);
   });
 
-  it("loadStudy fetches the scope's full word list into `study`", async () => {
-    const words = [{ id: "a" }, { id: "b" }, { id: "c" }];
-    getMock.mockResolvedValueOnce(words);
+  it("loadStudy fetches the scope's full list (word + notes) into `study`", async () => {
+    const items = [
+      { word: { id: "a" }, notes: [] },
+      { word: { id: "b" }, notes: [] },
+      { word: { id: "c" }, notes: [] },
+    ];
+    getMock.mockResolvedValueOnce(items);
     const store = useHotaruPracticeStore();
     await store.loadStudy("lesson:L2", "dani");
     expect(getMock).toHaveBeenCalledWith(
       "/hotaru/practice/study?scope=lesson%3AL2&user=dani",
     );
-    expect(store.study.map((w) => w.id)).toEqual(["a", "b", "c"]);
+    expect(store.study.map((it) => it.word.id)).toEqual(["a", "b", "c"]);
     expect(store.error).toBeNull();
   });
 

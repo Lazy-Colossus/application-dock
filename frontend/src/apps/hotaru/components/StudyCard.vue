@@ -19,6 +19,31 @@
 
     <div class="study-card__meaning">{{ word.meaning }}</div>
 
+    <!-- Notes on this word (shared + my own private) — shown inline, no reveal. -->
+    <div
+      v-if="notes.length"
+      class="study-card__notes column"
+      data-testid="study-notes"
+    >
+      <div
+        v-for="n in notes"
+        :key="n.id"
+        class="study-card__note"
+        data-testid="study-note"
+      >
+        <span class="study-card__note-who">
+          <q-icon
+            v-if="n.visibility === 'private'"
+            name="lock"
+            size="12px"
+            class="study-card__note-lock"
+          />
+          {{ displayName(n) }}
+        </span>
+        <span class="study-card__note-text">{{ n.text }}</span>
+      </div>
+    </div>
+
     <!-- Info pills (lesson + part of speech) along the bottom edge. -->
     <div
       v-if="word.lesson || word.pos"
@@ -32,9 +57,23 @@
 </template>
 
 <script setup lang="ts">
-import type { Word } from "@/apps/hotaru/types";
+import type { HotaruUser, Note, Word } from "@/apps/hotaru/types";
+import { useNoteDisplay } from "@/apps/hotaru/composables/useNoteDisplay";
 
-defineProps<{ word: Word }>();
+const props = withDefaults(
+  defineProps<{
+    word: Word;
+    notes?: Note[];
+    users?: HotaruUser[];
+    activeUser?: string;
+  }>(),
+  { notes: () => [], users: () => [], activeUser: undefined },
+);
+
+const { displayName } = useNoteDisplay(
+  () => props.users,
+  () => props.activeUser,
+);
 </script>
 
 <style scoped lang="sass">
@@ -77,6 +116,34 @@ defineProps<{ word: Word }>();
 
 .study-card__meaning
   font-size: 20px
+  color: var(--hotaru-cream-soft)
+
+// Notes strip — calm and compact; bottom margin clears the absolute pills row.
+.study-card__notes
+  gap: 6px
+  margin: 4px 2px 34px
+  padding-top: 10px
+  border-top: 1px solid rgba(155, 107, 255, 0.18)
+  max-height: 26vh
+  overflow-y: auto
+  text-align: left
+
+.study-card__note
+  font-size: 13px
+  line-height: 1.35
+
+.study-card__note-who
+  display: inline-flex
+  align-items: center
+  gap: 3px
+  font-weight: 600
+  color: var(--hotaru-sage)
+  margin-right: 6px
+
+.study-card__note-lock
+  color: var(--hotaru-amber-private)
+
+.study-card__note-text
   color: var(--hotaru-cream-soft)
 
 .study-card__pills
