@@ -99,6 +99,12 @@ def update_note(
     return note
 
 
+def remove_word_notes(word_id: str) -> None:
+    """Cascade: drop every note for a word (shared + all users' private) when the
+    word is deleted, so no orphaned notes remain."""
+    notes_repo.remove_for_word(word_id)
+
+
 def delete_note(note_id: str, user: str) -> None:
     """Delete a note the caller authored. Raises FileNotFoundError (not visible
     to `user`) / PermissionError (not the author)."""

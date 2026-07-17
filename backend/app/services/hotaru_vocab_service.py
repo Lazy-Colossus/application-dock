@@ -9,6 +9,7 @@ from uuid import uuid4
 
 from app.repositories import topic_repo, vocab_repo
 from app.schemas.hotaru import DrillCap, Topic, Visibility, Word
+from app.services import notes_service
 
 
 def _drill_caps(kanji: str | None) -> list[DrillCap]:
@@ -118,9 +119,11 @@ def _locate(user: str, word_id: str) -> tuple[Word, str]:
 
 
 def delete_word(user: str, word_id: str) -> None:
-    """Delete a user-added word. Raises PermissionError (seed) / FileNotFoundError."""
+    """Delete a user-added word. Raises PermissionError (seed) / FileNotFoundError.
+    Cascades to the word's notes so none are left orphaned."""
     _, location = _locate(user, word_id)
     vocab_repo.remove_word(user, word_id, location)
+    notes_service.remove_word_notes(word_id)
 
 
 def update_word(

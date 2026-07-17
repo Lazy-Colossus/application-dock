@@ -234,3 +234,23 @@ def test_delete_unknown_or_unknown_user_is_404() -> None:
     note = _add("wd4", "x", user="dani").json()
     assert _delete("n-nope", user="dani").status_code == 404
     assert _delete(note["id"], user="ghost").status_code == 404
+
+
+def test_deleting_a_word_cascades_its_notes() -> None:
+    # A real custom (deletable) shared word with notes from both users.
+    wid = client.post(
+        "/api/hotaru/words",
+        params={"user": "dani"},
+        json={"reading": "いぬ", "meaning": "dog", "visibility": "shared"},
+    ).json()["id"]
+    _add(wid, "dani shared", visibility="shared", user="dani")
+    _add(wid, "dani private", visibility="private", user="dani")
+    _add(wid, "jake private", visibility="private", user="jake")
+    assert len(_list(wid, user="dani").json()) == 2  # shared + own private
+
+    r = client.delete(f"/api/hotaru/words/{wid}", params={"user": "dani"})
+    assert r.status_code == 204
+
+    # Every note for the word is gone — shared and BOTH users' private (no orphans).
+    assert _list(wid, user="dani").json() == []
+    assert _list(wid, user="jake").json() == []

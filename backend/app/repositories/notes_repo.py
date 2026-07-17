@@ -111,3 +111,27 @@ def remove(note_id: str, user: str) -> None:
         write_shared([n for n in shared if n.id != note_id])
         return
     write_private(user, [n for n in read_private(user) if n.id != note_id])
+
+
+def remove_for_word(word_id: str) -> None:
+    """Purge every note for a word across the shared file AND all users' private
+    files — for when the word itself is deleted, so no orphaned notes (incl.
+    private ones) linger. This is the one notes-repo operation that touches other
+    users' private files; it only ever REMOVES, never reads them into a response
+    (so NFR-2's read-boundary is intact). Writes a file only if it changed."""
+    shared = read_shared()
+    kept = [n for n in shared if n.word_id != word_id]
+    if len(kept) != len(shared):
+        write_shared(kept)
+
+    users_dir = _HOTARU_DIR / "users"
+    if not users_dir.is_dir():
+        return
+    for user_dir in users_dir.iterdir():
+        if not user_dir.is_dir():
+            continue
+        user = user_dir.name
+        notes = read_private(user)
+        remaining = [n for n in notes if n.word_id != word_id]
+        if len(remaining) != len(notes):
+            write_private(user, remaining)
