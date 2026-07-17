@@ -283,6 +283,57 @@ describe("LibraryPage (two-level)", () => {
     });
   });
 
+  it("edits and deletes a note from the Notes dialog (Story 3.6)", async () => {
+    getMock.mockImplementation((path: string) => {
+      if (path.startsWith("/hotaru/users")) return Promise.resolve(USERS);
+      if (path.startsWith("/hotaru/topics")) return Promise.resolve(topics);
+      if (path.startsWith("/hotaru/practice/familiarity"))
+        return Promise.resolve({ g1: 4 });
+      if (path.includes("/notes"))
+        return Promise.resolve([
+          {
+            id: "n1",
+            word_id: "g1",
+            author: "dani",
+            text: "my tip",
+            visibility: "shared",
+            created_at: "2026-01-01T00:00:00Z",
+          },
+        ]);
+      return Promise.resolve(WORDS);
+    });
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
+    await wrapper.find('[data-testid="manage-notes"]').trigger("click");
+    await flushPromises();
+
+    // Edit → PATCH { text } for the note (returns the edited note so the row
+    // keeps its author and the Delete control stays available).
+    patchMock.mockResolvedValueOnce({
+      id: "n1",
+      word_id: "g1",
+      author: "dani",
+      text: "fixed tip",
+      visibility: "shared",
+      created_at: "2026-01-01T00:00:00Z",
+    });
+    await wrapper.find('[data-testid="note-edit"]').trigger("click");
+    await wrapper.find('[data-testid="note-edit-input"]').setValue("fixed tip");
+    await wrapper.find('[data-testid="note-edit-save"]').trigger("click");
+    await flushPromises();
+    expect(patchMock).toHaveBeenCalledWith("/hotaru/notes/n1?user=dani", {
+      text: "fixed tip",
+    });
+
+    // Delete (confirmed) → DELETE the note.
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    await wrapper.find('[data-testid="note-delete"]').trigger("click");
+    await flushPromises();
+    expect(delMock).toHaveBeenCalledWith("/hotaru/notes/n1?user=dani");
+    confirm.mockRestore();
+  });
+
   it("expands a row inline; its buttons open the topics/notes dialogs (Story 3.5)", async () => {
     const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
     await flushPromises();

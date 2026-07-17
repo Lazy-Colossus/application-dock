@@ -65,7 +65,46 @@ def create_note(
     return note
 
 
-def set_note_visibility(note_id: str, user: str, visibility: Visibility) -> Note:
-    """Flip a note between shared and the author's private file. Raises
-    FileNotFoundError (not visible to `user`) / PermissionError (not the author)."""
-    return notes_repo.set_visibility(note_id=note_id, user=user, visibility=visibility)
+def update_note(
+    note_id: str,
+    user: str,
+    text: str | None = None,
+    visibility: Visibility | None = None,
+) -> Note:
+    """Edit a note's text and/or flip its visibility (Story 3.6). Author-only.
+
+    Reuses the aggregate's primitives rather than re-deriving the move: a text
+    edit is an in-place `replace` (same file); a visibility change delegates to
+    `set_visibility` (the crash-safe move), which re-reads the just-edited note.
+    Raises FileNotFoundError (not visible to `user`), PermissionError (not the
+    author), ValueError (empty/oversize text → 422)."""
+    note = notes_repo.find(note_id, user)
+    if note is None:
+        raise FileNotFoundError(note_id)
+    if note.author != user:
+        raise PermissionError(f"Note {note_id} is not yours to change.")
+
+    if text is not None:
+        cleaned = text.strip()
+        if not cleaned:
+            raise ValueError("Note text must not be empty.")
+        if len(cleaned) > MAX_NOTE_LENGTH:
+            raise ValueError(f"Note must be {MAX_NOTE_LENGTH} characters or fewer.")
+        note = note.model_copy(update={"text": cleaned})
+        notes_repo.replace(note)
+
+    if visibility is not None:
+        # Moves the (possibly just-edited) note; a no-op if already that visibility.
+        return notes_repo.set_visibility(note_id=note_id, user=user, visibility=visibility)
+    return note
+
+
+def delete_note(note_id: str, user: str) -> None:
+    """Delete a note the caller authored. Raises FileNotFoundError (not visible
+    to `user`) / PermissionError (not the author)."""
+    note = notes_repo.find(note_id, user)
+    if note is None:
+        raise FileNotFoundError(note_id)
+    if note.author != user:
+        raise PermissionError(f"Note {note_id} is not yours to delete.")
+    notes_repo.remove(note_id, user)

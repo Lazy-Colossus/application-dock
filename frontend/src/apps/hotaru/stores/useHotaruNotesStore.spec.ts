@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, postMock, patchMock } = vi.hoisted(() => ({
+const { getMock, postMock, patchMock, delMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
   postMock: vi.fn(),
   patchMock: vi.fn(),
+  delMock: vi.fn(),
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
@@ -13,7 +14,7 @@ vi.mock("@/composables/useApi", () => ({
     post: postMock,
     put: vi.fn(),
     patch: patchMock,
-    del: vi.fn(),
+    del: delMock,
   },
 }));
 
@@ -40,6 +41,7 @@ beforeEach(() => {
   getMock.mockReset();
   postMock.mockReset();
   patchMock.mockReset();
+  delMock.mockReset();
 });
 
 describe("useHotaruNotesStore", () => {
@@ -116,5 +118,59 @@ describe("useHotaruNotesStore", () => {
     const result = await store.setVisibility("w1", "n1", "private", "jake");
     expect(result).toBeNull();
     expect(store.error).toBe("Note n1 is not yours to change.");
+  });
+
+  it("editNote patches the text and replaces the note in place", async () => {
+    getMock.mockResolvedValueOnce([note("n1", "old"), note("n2", "keep")]);
+    const store = useHotaruNotesStore();
+    await store.loadNotes("w1", "dani");
+
+    patchMock.mockResolvedValueOnce(note("n1", "new text"));
+    const result = await store.editNote("w1", "n1", "new text", "dani");
+
+    expect(patchMock).toHaveBeenCalledWith("/hotaru/notes/n1?user=dani", {
+      text: "new text",
+    });
+    expect(result?.text).toBe("new text");
+    expect(store.notesFor("w1").map((n) => [n.id, n.text])).toEqual([
+      ["n1", "new text"],
+      ["n2", "keep"],
+    ]);
+  });
+
+  it("editNote surfaces ApiError.detail and returns null", async () => {
+    patchMock.mockRejectedValueOnce({ detail: "Note must not be empty." });
+    const store = useHotaruNotesStore();
+    const result = await store.editNote("w1", "n1", "", "dani");
+    expect(result).toBeNull();
+    expect(store.error).toBe("Note must not be empty.");
+  });
+
+  it("deleteNote deletes and drops the note from state", async () => {
+    getMock.mockResolvedValueOnce([note("n1", "a"), note("n2", "b")]);
+    const store = useHotaruNotesStore();
+    await store.loadNotes("w1", "dani");
+
+    delMock.mockResolvedValueOnce(undefined);
+    const ok = await store.deleteNote("w1", "n1", "dani");
+
+    expect(delMock).toHaveBeenCalledWith("/hotaru/notes/n1?user=dani");
+    expect(ok).toBe(true);
+    expect(store.notesFor("w1").map((n) => n.id)).toEqual(["n2"]);
+  });
+
+  it("deleteNote returns false and sets error on failure", async () => {
+    getMock.mockResolvedValueOnce([note("n1", "a")]);
+    const store = useHotaruNotesStore();
+    await store.loadNotes("w1", "dani");
+
+    delMock.mockRejectedValueOnce({
+      detail: "Note n1 is not yours to delete.",
+    });
+    const ok = await store.deleteNote("w1", "n1", "jake");
+    expect(ok).toBe(false);
+    expect(store.error).toBe("Note n1 is not yours to delete.");
+    // State untouched on failure.
+    expect(store.notesFor("w1").map((n) => n.id)).toEqual(["n1"]);
   });
 });

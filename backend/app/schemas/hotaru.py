@@ -113,5 +113,7 @@ class CreateNoteRequest(BaseModel):
 
 
 class UpdateNoteRequest(BaseModel):
-    # The flip target — explicit, no default (the caller states where it goes).
-    visibility: Visibility
+    # A note update: edit the text, flip the visibility, or both. Both optional
+    # (Story 3.6) — a `{visibility}`-only body is the Story 3.2 flip unchanged.
+    text: str | None = None
+    visibility: Visibility | None = None

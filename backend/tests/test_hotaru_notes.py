@@ -25,6 +25,18 @@ def _flip(note_id: str, visibility: str, user: str = "dani"):
     )
 
 
+def _edit(note_id: str, text: str, user: str = "dani"):
+    return client.patch(
+        f"/api/hotaru/notes/{note_id}",
+        params={"user": user},
+        json={"text": text},
+    )
+
+
+def _delete(note_id: str, user: str = "dani"):
+    return client.delete(f"/api/hotaru/notes/{note_id}", params={"user": user})
+
+
 def test_add_note_persists_with_author_and_appears_in_list() -> None:
     r = _add("w1", "mnemonic: looks like a gate", user="dani")
     assert r.status_code == 201
@@ -138,3 +150,87 @@ def test_flip_unknown_note_is_404() -> None:
 def test_flip_unknown_user_is_404() -> None:
     note = _add("wf6", "x", user="dani").json()
     assert _flip(note["id"], "private", user="ghost").status_code == 404
+
+
+# --- Story 3.6: edit text + delete --------------------------------------------
+
+
+def test_edit_note_text_in_place_preserves_identity() -> None:
+    note = _add("we1", "gate hook", visibility="shared", user="dani").json()
+    r = _edit(note["id"], "looks like a gate 門", user="dani")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["text"] == "looks like a gate 門"
+    # Identity + visibility + created_at preserved; still shared, still one note.
+    assert body["id"] == note["id"] and body["created_at"] == note["created_at"]
+    assert body["visibility"] == "shared"
+    listed = _list("we1", user="jake").json()  # visible to both, edited
+    assert [n["text"] for n in listed] == ["looks like a gate 門"]
+
+
+def test_edit_trims_and_rejects_empty_or_oversize() -> None:
+    note = _add("we2", "ok", user="dani").json()
+    assert _edit(note["id"], "   ", user="dani").status_code == 422
+    assert _edit(note["id"], "x" * 301, user="dani").status_code == 422
+    # A valid edit with surrounding whitespace is trimmed.
+    assert _edit(note["id"], "  trimmed  ", user="dani").json()["text"] == "trimmed"
+
+
+def test_edit_and_flip_compose_in_one_patch() -> None:
+    note = _add("we3", "shared tip", visibility="shared", user="dani").json()
+    r = client.patch(
+        f"/api/hotaru/notes/{note['id']}",
+        params={"user": "dani"},
+        json={"text": "now private", "visibility": "private"},
+    )
+    assert r.status_code == 200
+    assert r.json()["text"] == "now private" and r.json()["visibility"] == "private"
+    # Moved to Dani's private file → gone for Jake.
+    assert _list("we3", user="jake").json() == []
+    dani = _list("we3", user="dani").json()
+    assert [(n["text"], n["visibility"]) for n in dani] == [("now private", "private")]
+
+
+def test_edit_with_same_visibility_edits_in_place_without_duplicating() -> None:
+    note = _add("we3b", "orig", visibility="shared", user="dani").json()
+    r = client.patch(
+        f"/api/hotaru/notes/{note['id']}",
+        params={"user": "dani"},
+        json={"text": "edited", "visibility": "shared"},  # visibility unchanged
+    )
+    assert r.status_code == 200
+    assert r.json()["text"] == "edited" and r.json()["visibility"] == "shared"
+    # Still exactly one note — the same-visibility "move" is an idempotent no-op.
+    assert [n["text"] for n in _list("we3b", user="dani").json()] == ["edited"]
+
+
+def test_edit_non_author_is_403_and_unknown_is_404() -> None:
+    note = _add("we4", "dani's shared", visibility="shared", user="dani").json()
+    assert _edit(note["id"], "hijack", user="jake").status_code == 403
+    assert _edit("n-nope", "x", user="dani").status_code == 404
+
+
+def test_delete_own_note_removes_it() -> None:
+    a = _add("wd1", "first", user="dani").json()
+    _add("wd1", "second", user="dani")
+    assert _delete(a["id"], user="dani").status_code == 204
+    assert [n["text"] for n in _list("wd1", user="dani").json()] == ["second"]
+
+
+def test_delete_non_author_shared_note_is_403() -> None:
+    note = _add("wd2", "dani's shared", visibility="shared", user="dani").json()
+    assert _delete(note["id"], user="jake").status_code == 403
+    assert len(_list("wd2", user="jake").json()) == 1  # untouched
+
+
+def test_delete_partners_private_note_is_404() -> None:
+    note = _add("wd3", "dani secret", visibility="private", user="dani").json()
+    # Jake never reads Dani's private file → not found, not 403 (NFR-2).
+    assert _delete(note["id"], user="jake").status_code == 404
+    assert len(_list("wd3", user="dani").json()) == 1  # still there for Dani
+
+
+def test_delete_unknown_or_unknown_user_is_404() -> None:
+    note = _add("wd4", "x", user="dani").json()
+    assert _delete("n-nope", user="dani").status_code == 404
+    assert _delete(note["id"], user="ghost").status_code == 404

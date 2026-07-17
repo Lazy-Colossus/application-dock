@@ -89,6 +89,68 @@ export const useHotaruNotesStore = defineStore("hotaruNotes", () => {
     }
   }
 
+  async function editNote(
+    wordId: string,
+    noteId: string,
+    text: string,
+    user: string,
+  ): Promise<Note | null> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const updated = await api.patch<Note>(
+        `/hotaru/notes/${encodeURIComponent(noteId)}?user=${encodeURIComponent(user)}`,
+        { text },
+      );
+      // Only reflect into a word that's actually loaded — otherwise we'd write a
+      // bogus [] for a word whose notes live elsewhere (e.g. the drill queue).
+      if (wordId in notesByWord.value) {
+        notesByWord.value = {
+          ...notesByWord.value,
+          [wordId]: notesFor(wordId).map((n) =>
+            n.id === noteId ? updated : n,
+          ),
+        };
+      }
+      return updated;
+    } catch (e) {
+      error.value =
+        (e as { detail?: string }).detail ??
+        (e instanceof Error ? e.message : String(e));
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function deleteNote(
+    wordId: string,
+    noteId: string,
+    user: string,
+  ): Promise<boolean> {
+    loading.value = true;
+    error.value = null;
+    try {
+      await api.del(
+        `/hotaru/notes/${encodeURIComponent(noteId)}?user=${encodeURIComponent(user)}`,
+      );
+      if (wordId in notesByWord.value) {
+        notesByWord.value = {
+          ...notesByWord.value,
+          [wordId]: notesFor(wordId).filter((n) => n.id !== noteId),
+        };
+      }
+      return true;
+    } catch (e) {
+      error.value =
+        (e as { detail?: string }).detail ??
+        (e instanceof Error ? e.message : String(e));
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   return {
     notesByWord,
     loading,
@@ -97,5 +159,7 @@ export const useHotaruNotesStore = defineStore("hotaruNotes", () => {
     loadNotes,
     addNote,
     setVisibility,
+    editNote,
+    deleteNote,
   };
 });

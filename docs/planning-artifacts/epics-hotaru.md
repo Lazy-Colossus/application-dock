@@ -563,3 +563,23 @@ So that I can review and enrich a word's context without opening a separate dial
 **Then** it persists via the existing topic and notes endpoints/stores and the inline lists update — matching the ⋮ dialogs' behaviour, which remain available (no regression), and staying inert in bulk-select mode.
 
 _New design for the expanded row is agreed in-story (a gated first task) with the user, then implemented._
+
+### Story 3.6: Edit or delete a note
+
+_Added 2026-07-17 — not from an original FR. Completes the note lifecycle: 3.1 add, 3.1/3.3 view, 3.2 flip visibility — but a note's text couldn't be corrected and a note couldn't be removed. Author-only, reusing the 3.2 privacy/move machinery; surfaces in the library dialog, the drill, and the inline row (all reuse `WordNotesDialog`)._
+
+As a learner,
+I want to fix the wording of a note I wrote, or remove one I no longer want,
+So that our shared tips stay accurate and uncluttered.
+
+**Acceptance Criteria:**
+
+**Given** a note I authored
+**When** I edit its text (`PATCH /api/hotaru/notes/{id}` with `{text}`) or delete it (`DELETE /api/hotaru/notes/{id}`)
+**Then** the text updates in place (id/author/visibility/created_at preserved) or the note is removed — text validated like create (trimmed, non-empty, ≤300); the extended PATCH still flips visibility (3.2) when given `{visibility}`, and edit+flip compose.
+
+**Given** a note I did not author (or a partner's private note, or an unknown id)
+**When** I try to edit or delete it
+**Then** it is rejected — 403 for a partner's shared note, 404 for an invisible/unknown note (NFR-2), with no change.
+
+_Edit/Delete affordances live on the author's own notes in `WordNotesDialog`, so they appear wherever notes do (library, drill, inline row)._

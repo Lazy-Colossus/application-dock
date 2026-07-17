@@ -7,7 +7,7 @@
       rows="2"
       :placeholder="placeholder"
       aria-describedby="nc-error"
-      data-testid="note-text-input"
+      :data-testid="inputTestid"
       @input="emit('update:text', ($event.target as HTMLTextAreaElement).value)"
       @keydown.enter.meta.prevent="onAdd"
       @keydown.enter.ctrl.prevent="onAdd"
@@ -32,8 +32,11 @@
         {{ trimmedLength }}/{{ MAX_NOTE_LENGTH }}
       </span>
     </div>
-    <div class="nc-row row items-center justify-between q-mt-sm">
-      <div class="nc-vis row no-wrap">
+    <div
+      class="nc-row row items-center q-mt-sm"
+      :class="showVisibility ? 'justify-between' : 'justify-end'"
+    >
+      <div v-if="showVisibility" class="nc-vis row no-wrap">
         <button
           class="nc-vis__btn"
           :class="{ 'nc-vis__btn--shared-on': visibility === 'shared' }"
@@ -52,11 +55,11 @@
         </button>
       </div>
       <q-btn
-        label="Add"
+        :label="submitLabel"
         no-caps
         unelevated
         :disable="!canAdd"
-        data-testid="note-add"
+        :data-testid="submitTestid"
         @click="onAdd"
       />
     </div>
@@ -78,8 +81,22 @@ const props = withDefaults(
     text: string;
     visibility: Visibility;
     placeholder?: string;
+    // Edit mode (Story 3.6): hide the Shared/Private toggle and relabel the
+    // action button (the visibility isn't being changed, just the text).
+    showVisibility?: boolean;
+    submitLabel?: string;
+    // Overridable so an inline edit instance doesn't collide test-ids with the
+    // add composer rendered on the same screen.
+    inputTestid?: string;
+    submitTestid?: string;
   }>(),
-  { placeholder: "Add a note…" },
+  {
+    placeholder: "Add a note…",
+    showVisibility: true,
+    submitLabel: "Add",
+    inputTestid: "note-text-input",
+    submitTestid: "note-add",
+  },
 );
 
 const emit = defineEmits<{

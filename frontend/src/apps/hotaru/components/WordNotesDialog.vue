@@ -42,26 +42,62 @@
               >
                 <q-icon name="lock" size="13px" />
               </span>
-              <!-- Only the author can flip visibility (server enforces it too). -->
-              <button
-                v-if="n.author === activeUser"
-                class="wn-note__flip"
-                data-testid="note-flip"
-                @click="
-                  emit(
-                    'flip',
-                    n.id,
-                    n.visibility === 'private' ? 'shared' : 'private',
-                  )
-                "
-              >
-                {{
-                  n.visibility === "private" ? "Make shared" : "Make private"
-                }}
-              </button>
+              <!-- The author can flip visibility, edit the text, or delete
+                   (the server enforces author-only too). -->
+              <template v-if="n.author === activeUser && editingId !== n.id">
+                <button
+                  class="wn-note__act"
+                  data-testid="note-flip"
+                  @click="
+                    emit(
+                      'flip',
+                      n.id,
+                      n.visibility === 'private' ? 'shared' : 'private',
+                    )
+                  "
+                >
+                  {{
+                    n.visibility === "private" ? "Make shared" : "Make private"
+                  }}
+                </button>
+                <button
+                  class="wn-note__act"
+                  data-testid="note-edit"
+                  @click="startEdit(n)"
+                >
+                  Edit
+                </button>
+                <button
+                  class="wn-note__act wn-note__act--danger"
+                  data-testid="note-delete"
+                  @click="onDelete(n)"
+                >
+                  Delete
+                </button>
+              </template>
             </span>
           </div>
-          <div class="wn-note__text">{{ n.text }}</div>
+          <div v-if="editingId === n.id" class="wn-note__edit">
+            <NoteComposer
+              :text="editText"
+              :visibility="n.visibility"
+              :show-visibility="false"
+              submit-label="Save"
+              placeholder="Edit note…"
+              input-testid="note-edit-input"
+              submit-testid="note-edit-save"
+              @update:text="editText = $event"
+              @add="(t) => onEditSave(n.id, t)"
+            />
+            <button
+              class="wn-note__act"
+              data-testid="note-edit-cancel"
+              @click="editingId = null"
+            >
+              Cancel
+            </button>
+          </div>
+          <div v-else class="wn-note__text">{{ n.text }}</div>
         </div>
       </div>
 
@@ -113,6 +149,8 @@ const emit = defineEmits<{
   "update:modelValue": [value: boolean];
   add: [text: string, visibility: Visibility];
   flip: [noteId: string, visibility: Visibility];
+  edit: [noteId: string, text: string];
+  delete: [noteId: string];
 }>();
 
 const text = ref("");
@@ -124,6 +162,10 @@ const ordered = computed(() => [...props.notes].reverse());
 function resetDraft(): void {
   text.value = "";
   visibility.value = "shared";
+  // Also drop any in-progress inline edit, so a note isn't left stuck in edit
+  // mode (with its controls hidden) when the dialog reopens or the word changes.
+  editingId.value = null;
+  editText.value = "";
 }
 
 // The dialog stays mounted across words (LibraryPage swaps the `word` prop and
@@ -141,6 +183,24 @@ watch(() => props.word.id, resetDraft);
 function onAdd(value: string, vis: Visibility): void {
   emit("add", value, vis);
   resetDraft();
+}
+
+// Edit / delete a note the active user authored (Story 3.6).
+const editingId = ref<string | null>(null);
+const editText = ref("");
+
+function startEdit(n: Note): void {
+  editingId.value = n.id;
+  editText.value = n.text;
+}
+
+function onEditSave(noteId: string, text: string): void {
+  emit("edit", noteId, text);
+  editingId.value = null;
+}
+
+function onDelete(n: Note): void {
+  if (window.confirm("Delete this note?")) emit("delete", n.id);
 }
 </script>
 
@@ -246,8 +306,8 @@ function onAdd(value: string, vis: Visibility): void {
   align-items: center
   color: #ffce5c
 
-// Quiet text button — the author's visibility flip; violet, underlined on hover.
-.wn-note__flip
+// Quiet text buttons — the author's flip / edit / delete actions.
+.wn-note__act
   border: none
   background: transparent
   padding: 0
@@ -255,8 +315,17 @@ function onAdd(value: string, vis: Visibility): void {
   color: #b19bff
   cursor: pointer
 
-.wn-note__flip:hover
+.wn-note__act:hover
   text-decoration: underline
+
+.wn-note__act--danger
+  color: #ff6b8a
+
+.wn-note__edit
+  display: flex
+  flex-direction: column
+  gap: 4px
+  margin-top: 4px
 
 .wn-note__text
   font-size: 14px

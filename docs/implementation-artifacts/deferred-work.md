@@ -1,5 +1,13 @@
 # Deferred Work
 
+## Deferred from: code review of 3.6.edit-or-delete-a-note (Hotaru Epic 3) — 2026-07-17
+
+- Inline note editor collapses on Save regardless of whether the PATCH succeeded — on validation/permission/network failure the typed edit is lost from the field and only a store-level `error` is set. A clean fix needs the parent to signal success back to the dialog; deferred [`frontend/src/apps/hotaru/components/WordNotesDialog.vue` onEditSave]
+- Mid-drill edit/delete are attributed to the captured `drillUser` while the dialog's Edit/Delete controls are gated on the live `activeUser` — after a mid-drill user switch they diverge and a click 403/404s silently. Transient only: the user-switch watcher redirects out of the drill (queue discarded), so the window is a sub-frame [`frontend/src/apps/hotaru/pages/DrillPage.vue`]
+- `notes_repo.remove`/`replace` are imperfect on a crash-duplicated note (a note left in BOTH files by an interrupted Story 3.2 move): `remove` deletes only the shared copy; `replace` rewrites only the file matching `note.visibility`. Depends on a prior interrupted move (rare); inherent to the JSON-no-DB store [`backend/app/repositories/notes_repo.py`]
+- Note-length count differs frontend vs backend for astral characters (JS UTF-16 units vs Python code points) — now lives in `NoteComposer`; only ever over-blocks client-side (same item recurring from 3.2/3.3–3.5) [`frontend/src/apps/hotaru/components/NoteComposer.vue`]
+- Concurrent read-modify-write on `notes_shared.json` (two users / two devices) can lose an edit or delete — last-write-wins on the whole file; inherent to the JSON store, widened by edit/delete [`backend/app/repositories/notes_repo.py`]
+
 ## Deferred from: code review of 3.3 + 3.4 + 3.5 (Hotaru Epic 3) — 2026-07-16
 
 - Inline expand-load failure is indistinguishable from "no notes" — `LibraryPage.onToggleExpand` fires `void notesStore.loadNotes(...)` and ignores rejection; `WordRowDetails` shows "No notes yet" whenever the list is empty. A failed load looks noteless (user might add a duplicate). Clean fix needs per-word load/error state — `notesStore.error` is a global singleton, so it can't be attributed to one panel today [`frontend/src/apps/hotaru/pages/LibraryPage.vue`, `WordRowDetails.vue`]

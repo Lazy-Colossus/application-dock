@@ -164,6 +164,41 @@ describe("DrillPage", () => {
     ).not.toContain("drill-note--has");
   });
 
+  it("deletes a note mid-drill and clears the card's presence cue (Story 3.6)", async () => {
+    queue = [
+      {
+        word: word("g1", "大学", "だいがく", "university"),
+        notes: [
+          {
+            id: "n1",
+            word_id: "g1",
+            author: "dani", // the drill user → Delete control shows
+            text: "gate hook",
+            visibility: "shared",
+            created_at: "2026-01-01T00:00:00Z",
+          },
+        ],
+      },
+    ];
+    const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    expect(wrapper.find('[data-testid="drill-add-note"]').classes()).toContain(
+      "drill-note--has",
+    );
+    await wrapper.find('[data-testid="drill-add-note"]').trigger("click");
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    await wrapper.find('[data-testid="note-delete"]').trigger("click");
+    await flushPromises();
+    // Removed from the live queue item → the presence cue clears, no advance.
+    expect(
+      wrapper.find('[data-testid="drill-add-note"]').classes(),
+    ).not.toContain("drill-note--has");
+    expect(wrapper.find('[data-testid="drill-progress"]').text()).toContain(
+      "1 / 1",
+    );
+    confirm.mockRestore();
+  });
+
   it("attaches a note mid-drill without losing place (Story 3.4)", async () => {
     const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
     await flushPromises();

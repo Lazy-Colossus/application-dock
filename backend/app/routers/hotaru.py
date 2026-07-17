@@ -137,9 +137,23 @@ def update_note(note_id: str, req: UpdateNoteRequest, user: str) -> Note:
     if user not in VALID_USER_IDS:
         raise HTTPException(status_code=404, detail=f"Unknown user {user}.")
     try:
-        return notes_service.set_note_visibility(
-            note_id=note_id, user=user, visibility=req.visibility
+        return notes_service.update_note(
+            note_id=note_id, user=user, text=req.text, visibility=req.visibility
         )
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=f"Note {note_id} not found.") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.delete("/notes/{note_id}", status_code=204)
+def delete_note(note_id: str, user: str) -> None:
+    if user not in VALID_USER_IDS:
+        raise HTTPException(status_code=404, detail=f"Unknown user {user}.")
+    try:
+        notes_service.delete_note(note_id=note_id, user=user)
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     except FileNotFoundError as exc:

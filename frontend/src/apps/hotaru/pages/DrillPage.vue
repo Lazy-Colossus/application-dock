@@ -191,6 +191,8 @@
         :active-user="userStore.activeUserId ?? undefined"
         @add="onDrillAddNote"
         @flip="onDrillFlipNote"
+        @edit="onDrillEditNote"
+        @delete="onDrillDeleteNote"
       />
     </template>
   </q-page>
@@ -276,6 +278,27 @@ async function onDrillFlipNote(
   if (updated) {
     item.notes = (item.notes ?? []).map((n) => (n.id === noteId ? updated : n));
   }
+}
+
+async function onDrillEditNote(noteId: string, text: string): Promise<void> {
+  const item = current.value;
+  if (!item || !drillUser) return;
+  const updated = await notesStore.editNote(
+    item.word.id,
+    noteId,
+    text,
+    drillUser,
+  );
+  if (updated) {
+    item.notes = (item.notes ?? []).map((n) => (n.id === noteId ? updated : n));
+  }
+}
+
+async function onDrillDeleteNote(noteId: string): Promise<void> {
+  const item = current.value;
+  if (!item || !drillUser) return;
+  const ok = await notesStore.deleteNote(item.word.id, noteId, drillUser);
+  if (ok) item.notes = (item.notes ?? []).filter((n) => n.id !== noteId);
 }
 
 // The user this session belongs to (captured at mount) — grades are always

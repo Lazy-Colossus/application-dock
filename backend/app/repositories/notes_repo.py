@@ -89,3 +89,25 @@ def set_visibility(note_id: str, user: str, visibility: Visibility) -> Note:
     else:
         write_private(user, [n for n in read_private(user) if n.id != note_id])
     return moved
+
+
+def replace(note: Note) -> None:
+    """Rewrite a note (matched by id) in place in the file its visibility
+    dictates. For a text edit that doesn't change which file holds it."""
+    if note.visibility == "shared":
+        write_shared([note if n.id == note.id else n for n in read_shared()])
+    else:
+        write_private(
+            note.author, [note if n.id == note.id else n for n in read_private(note.author)]
+        )
+
+
+def remove(note_id: str, user: str) -> None:
+    """Delete a note from wherever the caller can see it — the shared file if it's
+    there, else the caller's own private file. Never the partner's private file
+    (NFR-2). The note lives in exactly one file, so this is unambiguous."""
+    shared = read_shared()
+    if any(n.id == note_id for n in shared):
+        write_shared([n for n in shared if n.id != note_id])
+        return
+    write_private(user, [n for n in read_private(user) if n.id != note_id])

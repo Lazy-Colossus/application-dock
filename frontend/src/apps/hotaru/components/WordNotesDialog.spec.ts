@@ -128,6 +128,60 @@ describe("WordNotesDialog", () => {
     expect(wrapper.emitted("flip")?.[0]).toEqual(["n1", "private"]);
   });
 
+  it("shows Edit/Delete only on the active user's own notes", () => {
+    const wrapper = mountDialog(
+      [
+        note("n1", "mine", "shared", "dani"),
+        note("n2", "jake's", "shared", "jake"),
+      ],
+      "dani",
+    );
+    const items = wrapper.findAll('[data-testid="note-item"]');
+    // Newest first: n2 (Jake's — no controls), then n1 (mine — edit + delete).
+    expect(items[0].find('[data-testid="note-edit"]').exists()).toBe(false);
+    expect(items[0].find('[data-testid="note-delete"]').exists()).toBe(false);
+    expect(items[1].find('[data-testid="note-edit"]').exists()).toBe(true);
+    expect(items[1].find('[data-testid="note-delete"]').exists()).toBe(true);
+  });
+
+  it("edits a note: Edit opens an inline field, Save emits edit", async () => {
+    const wrapper = mountDialog(
+      [note("n1", "old text", "shared", "dani")],
+      "dani",
+    );
+    await wrapper.find('[data-testid="note-edit"]').trigger("click");
+    const input = wrapper.find('[data-testid="note-edit-input"]');
+    expect(input.exists()).toBe(true);
+    await input.setValue("new text");
+    await wrapper.find('[data-testid="note-edit-save"]').trigger("click");
+    expect(wrapper.emitted("edit")?.[0]).toEqual(["n1", "new text"]);
+  });
+
+  it("deletes a note only after confirmation", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const wrapper = mountDialog([note("n1", "mine", "shared", "dani")], "dani");
+    await wrapper.find('[data-testid="note-delete"]').trigger("click");
+    expect(wrapper.emitted("delete")).toBeUndefined(); // declined
+    confirm.mockReturnValue(true);
+    await wrapper.find('[data-testid="note-delete"]').trigger("click");
+    expect(wrapper.emitted("delete")?.[0]).toEqual(["n1"]);
+    confirm.mockRestore();
+  });
+
+  it("drops an in-progress inline edit when the word changes", async () => {
+    const wrapper = mountDialog([note("n1", "old", "shared", "dani")], "dani");
+    await wrapper.find('[data-testid="note-edit"]').trigger("click");
+    expect(wrapper.find('[data-testid="note-edit-input"]').exists()).toBe(true);
+    // Reopening the dialog for a different word must not leave a note stuck open.
+    await wrapper.setProps({
+      word: { ...word(), id: "w2", kanji: "犬", reading: "いぬ" },
+    });
+    expect(wrapper.find('[data-testid="note-edit-input"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('[data-testid="note-edit"]').exists()).toBe(true);
+  });
+
   it("renders a timestamp on each note", () => {
     const wrapper = mountDialog([note("n1", "gate", "shared", "jake")]);
     const time = wrapper.find('[data-testid="note-time"]');

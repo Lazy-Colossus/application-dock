@@ -151,6 +151,8 @@
       :active-user="userStore.activeUserId ?? undefined"
       @add="onAddNote"
       @flip="onFlipNote"
+      @edit="onEditNote"
+      @delete="onDeleteNote"
     />
   </q-page>
 </template>
@@ -448,6 +450,18 @@ async function onFlipNote(
   const user = userStore.activeUserId;
   if (user === null || notesWord.value === null) return;
   await notesStore.setVisibility(notesWord.value.id, noteId, visibility, user);
+}
+
+async function onEditNote(noteId: string, text: string): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null || notesWord.value === null) return;
+  await notesStore.editNote(notesWord.value.id, noteId, text, user);
+}
+
+async function onDeleteNote(noteId: string): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null || notesWord.value === null) return;
+  await notesStore.deleteNote(notesWord.value.id, noteId, user);
 }
 
 async function onAssign(topicId: string, wordId: string): Promise<void> {
