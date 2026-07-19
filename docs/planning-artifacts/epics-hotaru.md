@@ -494,6 +494,20 @@ So that I can fairly judge whether I was Correct, Close, or Incorrect.
 **When** the answer reveals
 **Then** my submitted text shows beneath the (unchanged, still-prominent) answer as a quiet "you wrote" line — no diff/highlight; an empty submission reads "you wrote —"; self-grade mode / an exact match show no such line.
 
+### Story 2.12: Direction & Scoring on Quick Practice
+
+_Added 2026-07-19 — refines Quick Practice (2.9), which always launched JP→EN self-grade. Surface the existing Direction (JP→EN / EN→JP) and Scoring (Self-grade / Typed) controls on the Quick Practice flow too._
+
+As a learner using Quick Practice,
+I want to choose direction and scoring the same way I can for a lesson or topic,
+So that a whole-library session isn't locked to JP→EN self-grade.
+
+**Acceptance Criteria:**
+
+**Given** the Quick Practice view
+**When** it renders
+**Then** the Direction + Scoring segmented controls are present (the same as for a chosen scope), Typed stays EN→JP-only, and starting the session launches the drill with the chosen `direction`/`mode` (not hardcoded `r2m`/`self`); the scoped picker is unchanged. Frontend-only.
+
 ## Epic 3: Cooperative Notes
 
 Dani and Jake can leave each other memory hacks on any word — shared or private — and discover their partner's tips, including mid-drill.

@@ -190,6 +190,41 @@ describe("PracticeSetupPage", () => {
     );
   });
 
+  it("shows Direction & Scoring controls in the Quick Practice view (Story 2.12)", async () => {
+    const wrapper = mount(PracticeSetupPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    // No scope selected → the Quick Practice view.
+    expect(wrapper.find('[data-testid="quick"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="dir-r2m"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="dir-m2r"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="mode-self"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="mode-typed"]').exists()).toBe(true);
+  });
+
+  it("launches Quick Practice with the chosen direction & scoring (Story 2.12)", async () => {
+    const wrapper = mount(PracticeSetupPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="dir-m2r"]').trigger("click");
+    await wrapper.find('[data-testid="mode-typed"]').trigger("click");
+    await wrapper.find('[data-testid="start-quick"]').trigger("click");
+    const url = String(push.mock.calls.at(-1)?.[0]);
+    expect(url).toContain("scope=all");
+    expect(url).toContain("direction=m2r");
+    expect(url).toContain("mode=typed");
+  });
+
+  it("Quick Practice forces self-grade back on JP→EN (Story 2.12)", async () => {
+    const wrapper = mount(PracticeSetupPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="dir-m2r"]').trigger("click");
+    await wrapper.find('[data-testid="mode-typed"]').trigger("click");
+    await wrapper.find('[data-testid="dir-r2m"]').trigger("click"); // back to JP→EN
+    await wrapper.find('[data-testid="start-quick"]').trigger("click");
+    const url = String(push.mock.calls.at(-1)?.[0]);
+    expect(url).toContain("direction=r2m");
+    expect(url).toContain("mode=self");
+  });
+
   it("auto-loads the overview for a scope passed back from the drill", async () => {
     routeQuery.value = { scope: "lesson:L2" };
     const wrapper = mount(PracticeSetupPage, { global: { stubs: STUBS } });

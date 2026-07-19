@@ -138,21 +138,11 @@
           {{ quickSessionCount }}
           {{ quickSessionCount === 1 ? "word" : "words" }}
         </div>
-
-        <q-btn
-          class="practice-start full-width q-mt-sm"
-          label="Quick practice ✦"
-          unelevated
-          no-caps
-          :disable="quickCount === 0"
-          data-testid="start-quick"
-          @click="startQuick"
-        />
       </div>
 
-      <!-- Direction + scoring choices — only for a chosen scope (the all-words
-           summary stays CTA-free; Quick Practice owns it). -->
-      <div v-if="selected !== null" class="practice-opts column q-mt-md">
+      <!-- Direction + scoring — for both a chosen scope and Quick Practice
+           (Story 2.12). Reuses the shared direction/mode state + setDirection. -->
+      <div class="practice-opts column q-mt-md">
         <div class="practice-opt row items-center justify-between">
           <span class="practice-opt__label">Direction</span>
           <div class="practice-seg row no-wrap">
@@ -197,6 +187,17 @@
           </div>
         </div>
       </div>
+
+      <q-btn
+        v-if="selected === null"
+        class="practice-start full-width q-mt-md"
+        label="Quick practice ✦"
+        unelevated
+        no-caps
+        :disable="quickCount === 0"
+        data-testid="start-quick"
+        @click="startQuick"
+      />
 
       <div
         v-if="selected !== null"
@@ -326,8 +327,8 @@ function startQuick(): void {
   const parts = [
     "scope=all",
     `label=${encodeURIComponent("Quick practice")}`,
-    "direction=r2m",
-    "mode=self",
+    `direction=${direction.value}`,
+    `mode=${mode.value}`,
   ];
   const tiers = quickTiers.value;
   if (tiers) parts.push(`tiers=${tiers.join(",")}`);
