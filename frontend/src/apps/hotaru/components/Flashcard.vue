@@ -14,7 +14,11 @@
         </div>
 
         <!-- The practiced Japanese word, brightest on the card, glowing cyan. -->
-        <div class="flashcard__jp" data-testid="card-prompt">
+        <div
+          class="flashcard__jp"
+          :class="{ 'flashcard__jp--kana': !word.kanji }"
+          data-testid="card-prompt"
+        >
           {{ word.kanji ?? word.reading }}
         </div>
 
@@ -44,7 +48,12 @@
           class="flashcard__answer column flex-center"
           data-testid="card-answer"
         >
-          <div class="flashcard__jp">{{ word.kanji ?? word.reading }}</div>
+          <div
+            class="flashcard__jp"
+            :class="{ 'flashcard__jp--kana': !word.kanji }"
+          >
+            {{ word.kanji ?? word.reading }}
+          </div>
           <div v-if="word.kanji" class="flashcard__reading">
             {{ word.reading }}
           </div>
@@ -177,6 +186,11 @@ const { displayName } = useNoteDisplay(
   color: var(--hotaru-bamboo)
   text-shadow: 0 0 32px rgba(56, 240, 230, 0.6), 0 0 16px rgba(56, 240, 230, 0.5)
 
+// Kana-only headwords run longer than a compact kanji — size them down a step
+// so they don't overwhelm the card.
+.flashcard__jp--kana
+  font-size: 44px
+
 // English prompt (EN→JP production): a clear, calm headword — not the cyan JP
 // glow, which is reserved for the Japanese being recalled.
 .flashcard__prompt-en
@@ -212,16 +226,16 @@ const { displayName } = useNoteDisplay(
   display: flex
   align-items: baseline
   gap: 8px
-  font-size: 15px
 
 .flashcard__submitted-label
-  font-size: 10px
+  font-size: 11px
   font-weight: 600
   letter-spacing: 0.14em
   text-transform: uppercase
   color: var(--hotaru-sage)
 
 .flashcard__submitted-text
+  font-size: 20px
   color: var(--hotaru-cream-soft)
 
 // Notes strip on the reveal side — calm and compact so it never dominates the

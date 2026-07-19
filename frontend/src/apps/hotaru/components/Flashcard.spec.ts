@@ -66,8 +66,18 @@ describe("Flashcard", () => {
         revealed: false,
       },
     });
-    expect(wrapper.find('[data-testid="card-prompt"]').text()).toBe(
-      "ありがとう",
+    const prompt = wrapper.find('[data-testid="card-prompt"]');
+    expect(prompt.text()).toBe("ありがとう");
+    // Kana-only headwords render a step smaller (they run longer than kanji).
+    expect(prompt.classes()).toContain("flashcard__jp--kana");
+  });
+
+  it("keeps a kanji headword at full size (no kana modifier)", () => {
+    const wrapper = mount(Flashcard, {
+      props: { word: word(), revealed: false },
+    });
+    expect(wrapper.find('[data-testid="card-prompt"]').classes()).not.toContain(
+      "flashcard__jp--kana",
     );
   });
 
