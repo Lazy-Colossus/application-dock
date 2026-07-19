@@ -480,6 +480,20 @@ So that I can find and act on exactly the words at a given level (e.g. everythin
 
 **Given** an active filter, **when** familiarity has changed (e.g. after a session), **then** reopening/refreshing the library reflects the updated tiers (familiarity is read fresh, never stale).
 
+### Story 2.11: Show my typed answer on self-grade
+
+_Added 2026-07-19 — refines FR-14 (typed scoring). On a typed-mode miss the answer reveals for self-grade, but the learner couldn't see what they typed. Design agreed in the UX decision-log (2026-07-19): keep the answer as-is; show the submitted answer as a quiet muted line beneath it (diff-highlight variants rejected)._
+
+As a learner drilling in typed mode,
+I want to see what I typed next to the correct answer when I miss,
+So that I can fairly judge whether I was Correct, Close, or Incorrect.
+
+**Acceptance Criteria:**
+
+**Given** typed mode (EN→JP) and a non-exact submission
+**When** the answer reveals
+**Then** my submitted text shows beneath the (unchanged, still-prominent) answer as a quiet "you wrote" line — no diff/highlight; an empty submission reads "you wrote —"; self-grade mode / an exact match show no such line.
+
 ## Epic 3: Cooperative Notes
 
 Dani and Jake can leave each other memory hacks on any word — shared or private — and discover their partner's tips, including mid-drill.
