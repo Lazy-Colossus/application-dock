@@ -144,6 +144,7 @@
           :notes="current.notes"
           :users="userStore.users"
           :active-user="userStore.activeUserId ?? undefined"
+          :submitted="typing ? typedAnswer : null"
         />
       </div>
 

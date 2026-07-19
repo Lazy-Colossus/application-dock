@@ -118,6 +118,48 @@ describe("Flashcard", () => {
     expect(answer.text()).not.toContain("university");
   });
 
+  it("shows the typed answer under the reveal when submitted is provided", () => {
+    const wrapper = mount(Flashcard, {
+      props: {
+        word: word(),
+        revealed: true,
+        direction: "m2r",
+        submitted: "いぬう",
+      },
+    });
+    const sub = wrapper.find('[data-testid="card-submitted"]');
+    expect(sub.exists()).toBe(true);
+    expect(sub.text()).toContain("you wrote");
+    expect(sub.text()).toContain("いぬう");
+  });
+
+  it("shows an em-dash for an empty submission", () => {
+    const wrapper = mount(Flashcard, {
+      props: { word: word(), revealed: true, direction: "m2r", submitted: "" },
+    });
+    expect(wrapper.find('[data-testid="card-submitted"]').text()).toContain(
+      "—",
+    );
+  });
+
+  it("shows no submitted line when null (self-grade) or before reveal", () => {
+    const selfGrade = mount(Flashcard, {
+      props: { word: word(), revealed: true, direction: "m2r" }, // submitted defaults null
+    });
+    expect(selfGrade.find('[data-testid="card-submitted"]').exists()).toBe(
+      false,
+    );
+    const hidden = mount(Flashcard, {
+      props: {
+        word: word(),
+        revealed: false,
+        direction: "m2r",
+        submitted: "いぬ",
+      },
+    });
+    expect(hidden.find('[data-testid="card-submitted"]').exists()).toBe(false);
+  });
+
   it("shows notes only on reveal, never on the prompt (no answer spoiler)", () => {
     const props = {
       word: word(),

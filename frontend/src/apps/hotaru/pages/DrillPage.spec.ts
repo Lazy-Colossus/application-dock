@@ -248,6 +248,8 @@ describe("DrillPage", () => {
     expect(wrapper.find('[data-testid="card-answer"]').text()).toContain(
       "university",
     );
+    // Self-grade mode → no "you wrote" line (nothing was typed).
+    expect(wrapper.find('[data-testid="card-submitted"]').exists()).toBe(false);
     // Grade buttons replace the plain "Next".
     expect(wrapper.find('[data-testid="next-btn"]').exists()).toBe(false);
     await wrapper.find('[data-testid="grade-correct"]').trigger("click");
@@ -388,6 +390,10 @@ describe("DrillPage", () => {
     expect(wrapper.find('[data-testid="card-answer"]').text()).toContain(
       "大学",
     );
+    // And the learner's submitted answer is shown for self-evaluation (2.11).
+    const submitted = wrapper.find('[data-testid="card-submitted"]');
+    expect(submitted.exists()).toBe(true);
+    expect(submitted.text()).toContain("wrong");
     await wrapper.find('[data-testid="grade-close"]').trigger("click");
     await flushPromises();
     expect(postMock).toHaveBeenCalledWith("/hotaru/practice/grades?user=dani", [

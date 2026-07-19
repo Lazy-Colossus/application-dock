@@ -51,6 +51,20 @@
           <div v-if="word.romaji && showRomaji" class="flashcard__romaji">
             {{ word.romaji }}
           </div>
+
+          <!-- What the learner typed (Story 2.11) — quiet, under the answer, so
+               a near-miss can be self-graded fairly. Only in typed mode; `null`
+               means self-grade / JP→EN (nothing submitted). -->
+          <div
+            v-if="submitted !== null"
+            class="flashcard__submitted"
+            data-testid="card-submitted"
+          >
+            <span class="flashcard__submitted-label">you wrote</span>
+            <span class="flashcard__submitted-text">{{
+              submitted || "—"
+            }}</span>
+          </div>
         </div>
       </template>
     </div>
@@ -109,6 +123,9 @@ const props = withDefaults(
     notes?: Note[];
     users?: HotaruUser[];
     activeUser?: string;
+    // The learner's typed answer, shown under the reveal (Story 2.11). `null` =
+    // nothing submitted (self-grade / JP→EN); `""` = typed nothing → em-dash.
+    submitted?: string | null;
   }>(),
   {
     direction: "r2m",
@@ -117,6 +134,7 @@ const props = withDefaults(
     notes: () => [],
     users: () => [],
     activeUser: undefined,
+    submitted: null,
   },
 );
 
@@ -185,6 +203,25 @@ const { displayName } = useNoteDisplay(
 
 .flashcard__meaning
   font-size: 20px
+  color: var(--hotaru-cream-soft)
+
+// The learner's typed attempt — deliberately quiet + subordinate to the answer
+// above it (a reference, not a competitor). No highlight, no verdict colour.
+.flashcard__submitted
+  margin-top: 10px
+  display: flex
+  align-items: baseline
+  gap: 8px
+  font-size: 15px
+
+.flashcard__submitted-label
+  font-size: 10px
+  font-weight: 600
+  letter-spacing: 0.14em
+  text-transform: uppercase
+  color: var(--hotaru-sage)
+
+.flashcard__submitted-text
   color: var(--hotaru-cream-soft)
 
 // Notes strip on the reveal side — calm and compact so it never dominates the
