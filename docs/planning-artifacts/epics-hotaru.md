@@ -508,6 +508,20 @@ So that a whole-library session isn't locked to JP→EN self-grade.
 **When** it renders
 **Then** the Direction + Scoring segmented controls are present (the same as for a chosen scope), Typed stays EN→JP-only, and starting the session launches the drill with the chosen `direction`/`mode` (not hardcoded `r2m`/`self`); the scoped picker is unchanged. Frontend-only.
 
+### Story 2.13: Calm the Practice setup screen (collapsed accordion)
+
+_Added 2026-07-19 — the setup screen grows too tall once Lessons/Topics become full browsable lists. Redesign it as one calm accordion (Sally's Design 1 of the whole-screen comparison): an ambient familiarity ramp, a collapsible Quick Practice card that opens its settings inline before Start, and Lessons/Topics as collapsible lists of scope rows — one region open at a time._
+
+As a learner opening Practice on my phone,
+I want the setup screen to stay short and calm even when my Lessons and Topics lists are long,
+So that choosing what to practise never means scrolling past a wall of controls.
+
+**Acceptance Criteria:**
+
+**Given** the Practice setup screen
+**When** it renders
+**Then** whole-library familiarity shows as one compact ramp; Quick Practice is a collapsible card that opens its settings (presets/count/direction/scoring) inline with a Start button (nothing launches unseen); Lessons and Topics are collapsible lists of scope rows (mini-ramp + label + count), one region open at a time; selecting a row opens an inline Study/Practice drawer. Launch behaviour and Quick logic are unchanged; familiarity stats are computed client-side (no per-scope `overview` call). Frontend-only.
+
 ## Epic 3: Cooperative Notes
 
 Dani and Jake can leave each other memory hacks on any word — shared or private — and discover their partner's tips, including mid-drill.

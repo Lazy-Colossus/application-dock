@@ -5,222 +5,272 @@
       What shall we practise?
     </div>
 
-    <!-- Lessons -->
-    <div class="practice-group-label">Lessons</div>
-    <div v-if="lessonScopes.length === 0" class="practice-empty">
-      No lessons yet.
-    </div>
-    <div v-else class="practice-chips row items-center q-gutter-xs q-mb-md">
-      <button
-        v-for="l in lessonScopes"
-        :key="l"
-        class="practice-chip"
-        :class="{ 'practice-chip--active': selected === `lesson:${l}` }"
-        :data-testid="`scope-lesson-${l}`"
-        @click="select(`lesson:${l}`)"
-      >
-        {{ l }}
-      </button>
-    </div>
-
-    <!-- Topics -->
-    <div class="practice-group-label">Topics</div>
-    <div v-if="store.topics.length === 0" class="practice-empty">
-      No topics yet.
-    </div>
-    <div v-else class="practice-chips row items-center q-gutter-xs q-mb-md">
-      <button
-        v-for="t in store.topics"
-        :key="t.id"
-        class="practice-chip"
-        :class="{ 'practice-chip--active': selected === `topic:${t.id}` }"
-        :data-testid="`scope-topic-${t.id}`"
-        @click="select(`topic:${t.id}`)"
-      >
-        {{ t.name }}
-      </button>
-    </div>
-
-    <!-- Overview -->
-    <div
-      v-if="practice.loading"
-      class="practice-state"
-      data-testid="overview-loading"
-    >
+    <div v-if="loading" class="practice-state" data-testid="overview-loading">
       Loading…
     </div>
-    <div
-      v-else-if="practice.error"
-      class="practice-state"
-      data-testid="overview-error"
-    >
-      {{ practice.error }}
-    </div>
-    <div
-      v-else-if="practice.overview"
-      class="practice-overview hotaru-panel column"
-      data-testid="overview"
-    >
-      <div
-        v-if="selected === null"
-        class="practice-overview__all"
-        data-testid="overview-all"
+
+    <template v-else>
+      <!-- Ambient familiarity across the whole library — one compact ramp -->
+      <div class="practice-ramp" data-testid="library-ramp">
+        <div class="practice-ramp__bar">
+          <span
+            v-for="(count, tier) in allTiers"
+            :key="tier"
+            class="practice-ramp__seg"
+            :class="`fam-seg--${tier}`"
+            :style="segStyle(count, allCount)"
+          />
+        </div>
+        <div class="practice-ramp__cap" data-testid="overview-count">
+          <span>
+            <b>{{ allCount }}</b> {{ allCount === 1 ? "word" : "words" }}
+            <template v-if="allCount"> · mostly {{ allDominant }}</template>
+          </span>
+        </div>
+      </div>
+
+      <!-- Lessons -->
+      <button
+        class="practice-sec practice-sec--lessons"
+        :class="{ 'is-open': openSection === 'lessons' }"
+        data-testid="section-lessons"
+        @click="toggleSection('lessons')"
       >
-        All words
+        <span class="practice-sec__icon" aria-hidden="true">
+          <ScopeIcon kind="lessons" />
+        </span>
+        <span class="practice-sec__title">Lessons</span>
+        <span class="practice-sec__count">{{ lessonScopes.length }}</span>
+        <span class="practice-chev">›</span>
+      </button>
+      <div v-show="openSection === 'lessons'" class="practice-secbody">
+        <div v-if="lessonScopes.length === 0" class="practice-empty">
+          No lessons yet.
+        </div>
+        <template v-for="l in lessonScopes" :key="l">
+          <button
+            class="practice-row practice-row--lessons"
+            :class="{ 'practice-row--on': selected === `lesson:${l}` }"
+            :data-testid="`scope-lesson-${l}`"
+            @click="select(`lesson:${l}`)"
+          >
+            <span class="practice-row__badge" aria-hidden="true">
+              <ScopeIcon kind="lessons" />
+            </span>
+            <span class="practice-row__name">{{ l }}</span>
+            <span class="practice-row__mini">
+              <span
+                v-for="(count, tier) in tiersOf(lessonWords(l))"
+                :key="tier"
+                :class="`fam-seg--${tier}`"
+                :style="segStyle(count, lessonWords(l).length)"
+              />
+            </span>
+            <span class="practice-row__count">{{ lessonWords(l).length }}</span>
+            <span class="practice-row__chev">›</span>
+          </button>
+          <div
+            v-if="selected === `lesson:${l}` && openSection === 'lessons'"
+            class="practice-drawer"
+            data-testid="scope-actions"
+          >
+            <PracticeDirectionScoring
+              v-model:direction="direction"
+              v-model:mode="mode"
+            />
+            <div class="practice-cta row no-wrap q-gutter-sm">
+              <q-btn
+                class="practice-study col"
+                label="Study"
+                unelevated
+                no-caps
+                data-testid="start-study"
+                @click="startStudy"
+              />
+              <q-btn
+                class="practice-start col"
+                label="Let's practice ✦"
+                unelevated
+                no-caps
+                data-testid="start-drill"
+                @click="startDrill"
+              />
+            </div>
+          </div>
+        </template>
       </div>
-      <div class="practice-count" data-testid="overview-count">
-        {{ practice.overview.word_count }} words
-      </div>
-      <div
-        v-for="(count, tier) in practice.overview.familiarity"
-        :key="tier"
-        class="practice-tier row items-center justify-between"
-        :data-testid="`tier-${tier}`"
+
+      <!-- Topics -->
+      <button
+        class="practice-sec practice-sec--topics"
+        :class="{ 'is-open': openSection === 'topics' }"
+        data-testid="section-topics"
+        @click="toggleSection('topics')"
       >
-        <FamiliarityIcon :tier="tier" show-label />
-        <span>{{ count }}</span>
+        <span class="practice-sec__icon" aria-hidden="true">
+          <ScopeIcon kind="topics" />
+        </span>
+        <span class="practice-sec__title">Topics</span>
+        <span class="practice-sec__count">{{ store.topics.length }}</span>
+        <span class="practice-chev">›</span>
+      </button>
+      <div v-show="openSection === 'topics'" class="practice-secbody">
+        <div v-if="store.topics.length === 0" class="practice-empty">
+          No topics yet.
+        </div>
+        <template v-for="t in store.topics" :key="t.id">
+          <button
+            class="practice-row practice-row--topics"
+            :class="{ 'practice-row--on': selected === `topic:${t.id}` }"
+            :data-testid="`scope-topic-${t.id}`"
+            @click="select(`topic:${t.id}`)"
+          >
+            <span class="practice-row__badge" aria-hidden="true">
+              <ScopeIcon kind="topics" />
+            </span>
+            <span class="practice-row__name">{{ t.name }}</span>
+            <span class="practice-row__mini">
+              <span
+                v-for="(count, tier) in tiersOf(topicWords(t))"
+                :key="tier"
+                :class="`fam-seg--${tier}`"
+                :style="segStyle(count, topicWords(t).length)"
+              />
+            </span>
+            <span class="practice-row__count">{{ topicWords(t).length }}</span>
+            <span class="practice-row__chev">›</span>
+          </button>
+          <div
+            v-if="selected === `topic:${t.id}` && openSection === 'topics'"
+            class="practice-drawer"
+            data-testid="scope-actions"
+          >
+            <PracticeDirectionScoring
+              v-model:direction="direction"
+              v-model:mode="mode"
+            />
+            <div class="practice-cta row no-wrap q-gutter-sm">
+              <q-btn
+                class="practice-study col"
+                label="Study"
+                unelevated
+                no-caps
+                data-testid="start-study"
+                @click="startStudy"
+              />
+              <q-btn
+                class="practice-start col"
+                label="Let's practice ✦"
+                unelevated
+                no-caps
+                data-testid="start-drill"
+                @click="startDrill"
+              />
+            </div>
+          </div>
+        </template>
       </div>
 
-      <!-- Quick Practice: build a session from the whole list by preset. -->
-      <div v-if="selected === null" class="quick column" data-testid="quick">
-        <div class="quick__title">Quick practice</div>
-
-        <div class="practice-group-label">Familiarity</div>
-        <div class="practice-chips row items-center q-gutter-xs q-mb-sm">
-          <button
-            v-for="p in FAMILIARITY_PRESETS"
-            :key="p.key"
-            class="practice-chip"
-            :class="{ 'practice-chip--active': quickPreset === p.key }"
-            :data-testid="`quick-fam-${p.key}`"
-            @click="quickPreset = p.key"
-          >
-            {{ p.label }}
-          </button>
-        </div>
-
-        <div class="practice-group-label">Lessons</div>
-        <div
-          v-if="lessonScopes.length"
-          class="practice-chips row items-center q-gutter-xs q-mb-sm"
+      <!-- Quick Practice — expanded by default; tap the header to collapse.
+           Nothing launches unseen: settings are open, then Start. -->
+      <div
+        class="practice-qcard"
+        :class="{ 'is-open': openSection === 'quick' }"
+        data-testid="quick"
+      >
+        <button
+          class="practice-qcard__head"
+          data-testid="quick-toggle"
+          @click="toggleSection('quick')"
         >
-          <button
-            v-for="l in lessonScopes"
-            :key="l"
-            class="practice-chip"
-            :class="{ 'practice-chip--active': quickLessons.includes(l) }"
-            :data-testid="`quick-lesson-${l}`"
-            @click="toggleQuickLesson(l)"
-          >
-            {{ l }}
-          </button>
-        </div>
-
-        <div class="practice-group-label">Words per session</div>
-        <div class="practice-chips row items-center q-gutter-xs q-mb-sm">
-          <button
-            v-for="opt in COUNT_OPTIONS"
-            :key="opt.value"
-            class="practice-chip"
-            :class="{ 'practice-chip--active': countValue === opt.value }"
-            :data-testid="`count-opt-${opt.value}`"
-            @click="countValue = opt.value"
-          >
-            {{ opt.label }}
-          </button>
-        </div>
+          <span class="practice-qcard__icon" aria-hidden="true">
+            <ScopeIcon kind="quick" />
+          </span>
+          <span class="practice-qcard__meta">
+            <span class="practice-qcard__title">Quick practice</span>
+            <span class="practice-qcard__sub">{{ quickSummary }}</span>
+          </span>
+          <span class="practice-chev">›</span>
+        </button>
 
         <div
-          class="quick__count"
-          :class="{ 'quick__count--empty': quickSessionCount === 0 }"
-          data-testid="quick-count"
+          v-if="openSection === 'quick'"
+          class="practice-qcard__body column"
+          data-testid="quick-body"
         >
-          {{ quickSessionCount }}
-          {{ quickSessionCount === 1 ? "word" : "words" }}
-        </div>
-      </div>
-
-      <!-- Direction + scoring — for both a chosen scope and Quick Practice
-           (Story 2.12). Reuses the shared direction/mode state + setDirection. -->
-      <div class="practice-opts column q-mt-md">
-        <div class="practice-opt row items-center justify-between">
-          <span class="practice-opt__label">Direction</span>
-          <div class="practice-seg row no-wrap">
+          <div class="practice-group-label">Familiarity</div>
+          <div class="practice-chips row items-center q-gutter-xs q-mb-sm">
             <button
-              class="practice-seg__btn"
-              :class="{ 'practice-seg__btn--on': direction === 'r2m' }"
-              data-testid="dir-r2m"
-              @click="setDirection('r2m')"
+              v-for="p in FAMILIARITY_PRESETS"
+              :key="p.key"
+              class="practice-chip"
+              :class="{ 'practice-chip--active': quickPreset === p.key }"
+              :data-testid="`quick-fam-${p.key}`"
+              @click="quickPreset = p.key"
             >
-              JP → EN
-            </button>
-            <button
-              class="practice-seg__btn"
-              :class="{ 'practice-seg__btn--on': direction === 'm2r' }"
-              data-testid="dir-m2r"
-              @click="setDirection('m2r')"
-            >
-              EN → JP
+              {{ p.label }}
             </button>
           </div>
-        </div>
-        <div class="practice-opt row items-center justify-between">
-          <span class="practice-opt__label">Scoring</span>
-          <div class="practice-seg row no-wrap">
+
+          <div v-if="lessonScopes.length" class="practice-group-label">
+            Lessons
+          </div>
+          <div
+            v-if="lessonScopes.length"
+            class="practice-chips row items-center q-gutter-xs q-mb-sm"
+          >
             <button
-              class="practice-seg__btn"
-              :class="{ 'practice-seg__btn--on': mode === 'self' }"
-              data-testid="mode-self"
-              @click="mode = 'self'"
+              v-for="l in lessonScopes"
+              :key="l"
+              class="practice-chip"
+              :class="{ 'practice-chip--active': quickLessons.includes(l) }"
+              :data-testid="`quick-lesson-${l}`"
+              @click="toggleQuickLesson(l)"
             >
-              Self-grade
-            </button>
-            <button
-              class="practice-seg__btn"
-              :class="{ 'practice-seg__btn--on': mode === 'typed' }"
-              :disabled="direction === 'r2m'"
-              data-testid="mode-typed"
-              @click="mode = 'typed'"
-            >
-              Typed
+              {{ l }}
             </button>
           </div>
+
+          <div class="practice-group-label">Words per session</div>
+          <div class="practice-chips row items-center q-gutter-xs q-mb-sm">
+            <button
+              v-for="opt in COUNT_OPTIONS"
+              :key="opt.value"
+              class="practice-chip"
+              :class="{ 'practice-chip--active': countValue === opt.value }"
+              :data-testid="`count-opt-${opt.value}`"
+              @click="countValue = opt.value"
+            >
+              {{ opt.label }}
+            </button>
+          </div>
+
+          <div
+            class="quick__count q-mb-sm"
+            :class="{ 'quick__count--empty': quickSessionCount === 0 }"
+            data-testid="quick-count"
+          >
+            {{ quickSessionCount }}
+            {{ quickSessionCount === 1 ? "word" : "words" }}
+          </div>
+
+          <PracticeDirectionScoring
+            v-model:direction="direction"
+            v-model:mode="mode"
+          />
+
+          <q-btn
+            class="practice-start full-width q-mt-md"
+            label="Start ✦"
+            unelevated
+            no-caps
+            :disable="quickCount === 0"
+            data-testid="start-quick"
+            @click="startQuick"
+          />
         </div>
       </div>
-
-      <q-btn
-        v-if="selected === null"
-        class="practice-start full-width q-mt-md"
-        label="Quick practice ✦"
-        unelevated
-        no-caps
-        :disable="quickCount === 0"
-        data-testid="start-quick"
-        @click="startQuick"
-      />
-
-      <div
-        v-if="selected !== null"
-        class="practice-cta row no-wrap q-gutter-sm q-mt-md"
-      >
-        <q-btn
-          class="practice-study col"
-          label="Study"
-          unelevated
-          no-caps
-          data-testid="start-study"
-          @click="startStudy"
-        />
-        <q-btn
-          class="practice-start col"
-          label="Let's practice ✦"
-          unelevated
-          no-caps
-          data-testid="start-drill"
-          @click="startDrill"
-        />
-      </div>
-    </div>
+    </template>
   </q-page>
 </template>
 
@@ -228,35 +278,86 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
-import FamiliarityIcon from "@/apps/hotaru/components/FamiliarityIcon.vue";
+import PracticeDirectionScoring from "@/apps/hotaru/components/PracticeDirectionScoring.vue";
+import ScopeIcon from "@/apps/hotaru/components/ScopeIcon.vue";
 import { useHotaruLibraryStore } from "@/apps/hotaru/stores/useHotaruLibraryStore";
-import { useHotaruPracticeStore } from "@/apps/hotaru/stores/useHotaruPracticeStore";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
+import type { Word, Topic } from "@/apps/hotaru/types";
 import "./../css/hotaru.sass";
 
 const store = useHotaruLibraryStore();
-const practice = useHotaruPracticeStore();
 const userStore = useHotaruUserStore();
 const router = useRouter();
 const route = useRoute();
 
+const loading = ref(true);
 const selected = ref<string | null>(null);
+
+// The screen is one accordion: Lessons / Topics / Quick, one region open at a
+// time (calm-is-the-manner — never two expanded walls at once). Quick Practice
+// is the primary action, so it starts expanded.
+type Section = "quick" | "lessons" | "topics";
+const openSection = ref<Section | null>("quick");
+
+function toggleSection(s: Section): void {
+  openSection.value = openSection.value === s ? null : s;
+}
 
 // Practice-your-way choices (Story 2.4): recognition vs production, and how to
 // score. Typed scoring is EN→JP-only, so JP→EN forces it back to self-grade.
+// Shared by Quick Practice and a chosen scope — but only one Direction/Scoring
+// control is ever mounted at a time (openSection gates them), so their testids
+// never collide.
 type Direction = "r2m" | "m2r";
 type ScoringMode = "self" | "typed";
 const direction = ref<Direction>("r2m");
 const mode = ref<ScoringMode>("self");
 
-function setDirection(d: Direction): void {
-  direction.value = d;
-  if (d === "r2m") mode.value = "self";
-}
-
 // Lessons available as scopes — the empty lesson (un-filed custom words) is not
 // a practisable scope.
 const lessonScopes = computed(() => store.lessons.filter((l) => l !== ""));
+
+// --- Familiarity aggregation (client-side) --------------------------------
+// The page already holds every word + all familiarity; aggregating locally lets
+// the all-words ramp and a selected scope's stats coexist, and drops the async
+// per-scope `overview` call. The same source the Quick count uses.
+const TIER_LABELS = ["New", "Learning", "Familiar", "Strong", "Mastered"];
+
+function tiersOf(words: Word[]): number[] {
+  const t = [0, 0, 0, 0, 0];
+  for (const w of words) {
+    const tier = Math.min(4, Math.max(0, store.familiarityTier(w.id)));
+    t[tier] += 1;
+  }
+  return t;
+}
+
+function dominant(tiers: number[]): string {
+  let best = 0;
+  let idx = 0;
+  tiers.forEach((count, i) => {
+    if (count > best) {
+      best = count;
+      idx = i;
+    }
+  });
+  return TIER_LABELS[idx];
+}
+
+function segStyle(count: number, total: number): { width: string } {
+  return { width: total > 0 ? `${(count / total) * 100}%` : "0%" };
+}
+
+const allTiers = computed(() => tiersOf(store.words));
+const allCount = computed(() => store.words.length);
+const allDominant = computed(() => dominant(allTiers.value));
+
+function lessonWords(l: string): Word[] {
+  return store.words.filter((w) => w.lesson === l);
+}
+function topicWords(t: Topic): Word[] {
+  return store.words.filter((w) => t.word_ids.includes(w.id));
+}
 
 // --- Quick Practice (Story 2.9): build a session from the whole list -------
 // Each familiarity preset maps to a tier set (null = any tier). New = tier 0.
@@ -302,7 +403,6 @@ const quickTiers = computed<number[] | null>(
 
 // Live match count from the words + familiarity the picker already holds — an
 // instant preview; the launched queue is the server's authoritative set.
-// How many words match the familiarity + lesson filters (drives the empty state).
 const quickCount = computed(
   () =>
     store.words.filter((w) => {
@@ -321,6 +421,17 @@ const quickSessionCount = computed(() =>
     ? Math.min(quickCount.value, countValue.value)
     : quickCount.value,
 );
+
+// Collapsed-card one-liner: what tapping Start would launch.
+const quickSummary = computed(() => {
+  const preset =
+    FAMILIARITY_PRESETS.find((p) => p.key === quickPreset.value)?.label ?? "";
+  const dir = direction.value === "r2m" ? "JP→EN" : "EN→JP";
+  const scoring = mode.value === "self" ? "self-grade" : "typed";
+  const count =
+    countValue.value > 0 ? `${countValue.value} words` : "all words";
+  return `${preset} · ${dir} · ${scoring} · ${count}`;
+});
 
 function startQuick(): void {
   if (quickCount.value === 0) return;
@@ -381,15 +492,14 @@ function restoreQuickPreset(user: string): void {
 function select(scope: string): void {
   const user = userStore.activeUserId;
   if (user === null) return;
-  // Clicking the active scope again closes it — back to the all-words summary
-  // and Quick Practice.
+  // Tapping the open row again closes its drawer; otherwise open the scope's
+  // section and select it.
   if (selected.value === scope) {
     selected.value = null;
-    void practice.loadOverview("all", user);
     return;
   }
   selected.value = scope;
-  void practice.loadOverview(scope, user);
+  openSection.value = scope.startsWith("topic:") ? "topics" : "lessons";
 }
 
 // Friendly name for the chosen scope, passed to the drill so it can show
@@ -427,15 +537,17 @@ onMounted(async () => {
     store.loadFamiliarity(userStore.activeUserId),
   ]);
   restoreQuickPreset(userStore.activeUserId);
-  // Drop any stale overview from a previous visit. If we arrived back from a
-  // drill (?scope=), re-select that scope so its freshly-updated stats load.
-  // Otherwise show the at-a-glance stats across all words (no scope selected).
-  practice.clearOverview();
+  loading.value = false;
+  // If we arrived back from a *scoped* drill (?scope=lesson:… / topic:…),
+  // re-open that scope so its freshly-reloaded stats are in view without
+  // re-tapping the row. A Quick session returns ?scope=all — that's not a row,
+  // so we ignore it and leave Quick Practice expanded (the default).
   const scope = route.query.scope;
-  if (typeof scope === "string" && scope) {
+  if (
+    typeof scope === "string" &&
+    (scope.startsWith("lesson:") || scope.startsWith("topic:"))
+  ) {
     select(scope);
-  } else {
-    void practice.loadOverview("all", userStore.activeUserId);
   }
 });
 </script>
@@ -445,6 +557,278 @@ onMounted(async () => {
   font-size: 22px
   font-weight: 600
   color: var(--hotaru-cream)
+
+.practice-state
+  color: var(--hotaru-cream-soft)
+  text-align: center
+  padding: 24px 0
+
+// Ambient familiarity across the whole library — a single compact ramp bar.
+.practice-ramp
+  display: flex
+  flex-direction: column
+  gap: 6px
+  margin-bottom: 14px
+
+.practice-ramp__bar
+  display: flex
+  height: 10px
+  border-radius: 6px
+  overflow: hidden
+  border: 1px solid rgba(155, 107, 255, 0.16)
+
+.practice-ramp__seg
+  height: 100%
+
+.practice-ramp__cap
+  font-size: 12px
+  color: var(--hotaru-sage)
+
+.practice-ramp__cap b
+  color: var(--hotaru-cream-soft)
+  font-weight: 600
+
+// Tier fills, tiers 0..4 → --hotaru-fam-1..5 (matches FamiliarityIcon).
+.fam-seg--0
+  background: var(--hotaru-fam-1)
+.fam-seg--1
+  background: var(--hotaru-fam-2)
+.fam-seg--2
+  background: var(--hotaru-fam-3)
+.fam-seg--3
+  background: var(--hotaru-fam-4)
+.fam-seg--4
+  background: var(--hotaru-fam-5)
+
+// Chevron rotates when its region is open.
+.practice-chev
+  color: var(--hotaru-sage)
+  font-size: 14px
+  transition: transform 0.2s ease
+
+.practice-qcard.is-open .practice-chev, .practice-sec.is-open .practice-chev
+  transform: rotate(90deg)
+
+// Quick Practice — primary action; a collapsible cyan-edged card.
+.practice-qcard
+  border: 1px solid rgba(56, 240, 230, 0.4)
+  border-radius: 14px
+  background: rgba(56, 240, 230, 0.06)
+  margin-bottom: 12px
+
+.practice-qcard__head
+  width: 100%
+  display: flex
+  align-items: center
+  gap: 10px
+  padding: 12px 14px
+  background: transparent
+  border: none
+  cursor: pointer
+  text-align: left
+
+.practice-qcard__icon
+  width: 30px
+  height: 30px
+  flex: none
+  display: grid
+  place-items: center
+  border-radius: 9px
+  color: var(--hotaru-bamboo-on)
+  background: linear-gradient(160deg, #6ff5ec, var(--hotaru-bamboo))
+  box-shadow: 0 0 12px rgba(56, 240, 230, 0.45)
+
+.practice-qcard__meta
+  flex: 1
+  min-width: 0
+  display: flex
+  flex-direction: column
+
+.practice-qcard__title
+  font-size: 15px
+  font-weight: 600
+  color: var(--hotaru-cream)
+
+.practice-qcard__sub
+  font-size: 12px
+  color: var(--hotaru-sage)
+  margin-top: 2px
+
+.practice-qcard__body
+  padding: 0 14px 14px
+
+// Section headers (Lessons / Topics) — a hued glyph badge + a count pill; the
+// hue distinguishes the two families (violet = lessons, magenta = topics).
+.practice-sec
+  width: 100%
+  display: flex
+  align-items: center
+  gap: 10px
+  padding: 10px 13px
+  margin-bottom: 8px
+  border: 1px solid rgba(155, 107, 255, 0.28)
+  border-radius: 12px
+  background: linear-gradient(180deg, rgba(155, 107, 255, 0.10), rgba(155, 107, 255, 0.02))
+  cursor: pointer
+  color: var(--hotaru-cream)
+  transition: border-color 0.18s ease, box-shadow 0.18s ease
+
+.practice-sec:hover
+  border-color: rgba(155, 107, 255, 0.5)
+
+.practice-sec.is-open
+  box-shadow: 0 0 18px rgba(155, 107, 255, 0.18)
+
+.practice-sec__icon
+  width: 30px
+  height: 30px
+  flex: none
+  display: grid
+  place-items: center
+  border-radius: 9px
+  color: #0b0620
+  background: linear-gradient(160deg, var(--hotaru-fam-2), #6f45d6)
+  box-shadow: 0 0 12px rgba(155, 107, 255, 0.4)
+
+.practice-sec__title
+  flex: 1
+  text-align: left
+  font-size: 14px
+  font-weight: 600
+
+.practice-sec__count
+  font-size: 11px
+  font-weight: 600
+  color: var(--hotaru-cream-soft)
+  background: rgba(155, 107, 255, 0.18)
+  border-radius: 9999px
+  padding: 1px 8px
+  font-variant-numeric: tabular-nums
+
+// Topics wear the magenta accent.
+.practice-sec--topics
+  border-color: rgba(255, 92, 200, 0.26)
+  background: linear-gradient(180deg, rgba(255, 92, 200, 0.10), rgba(255, 92, 200, 0.02))
+
+.practice-sec--topics:hover
+  border-color: rgba(255, 92, 200, 0.5)
+
+.practice-sec--topics.is-open
+  box-shadow: 0 0 18px rgba(255, 92, 200, 0.18)
+
+.practice-sec--topics .practice-sec__icon
+  background: linear-gradient(160deg, var(--hotaru-fam-5), #c23d97)
+  box-shadow: 0 0 12px rgba(255, 92, 200, 0.4)
+
+.practice-sec--topics .practice-sec__count
+  background: rgba(255, 92, 200, 0.18)
+
+.practice-secbody
+  display: flex
+  flex-direction: column
+  gap: 6px
+  margin-bottom: 12px
+
+// A scope row — badge + label + mini-ramp + count pill.
+.practice-row
+  width: 100%
+  display: flex
+  align-items: center
+  gap: 10px
+  padding: 8px 10px
+  border: 1px solid rgba(155, 107, 255, 0.14)
+  border-radius: 10px
+  background: rgba(20, 18, 52, 0.45)
+  cursor: pointer
+  color: var(--hotaru-cream)
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.12s ease
+
+.practice-row:hover
+  transform: translateY(-1px)
+  border-color: rgba(155, 107, 255, 0.4)
+
+.practice-row:hover .practice-row__chev
+  transform: translateX(2px)
+
+.practice-row--on
+  border-color: var(--hotaru-bamboo)
+  background: rgba(56, 240, 230, 0.09)
+  box-shadow: 0 0 16px rgba(56, 240, 230, 0.20)
+
+.practice-row__badge
+  width: 26px
+  height: 26px
+  flex: none
+  display: grid
+  place-items: center
+  border-radius: 8px
+  font-size: 11px
+  color: var(--hotaru-fam-2)
+  background: rgba(155, 107, 255, 0.14)
+  border: 1px solid rgba(155, 107, 255, 0.28)
+
+.practice-row--topics .practice-row__badge
+  color: var(--hotaru-fam-5)
+  background: rgba(255, 92, 200, 0.12)
+  border-color: rgba(255, 92, 200, 0.28)
+
+// Crafted glyphs sit a touch smaller than their badge.
+.practice-sec__icon .scope-icon, .practice-qcard__icon .scope-icon
+  width: 18px
+  height: 18px
+
+.practice-row__badge .scope-icon
+  width: 16px
+  height: 16px
+
+.practice-row__name
+  flex: 1
+  min-width: 0
+  font-size: 13px
+  font-weight: 500
+  text-align: left
+  white-space: nowrap
+  overflow: hidden
+  text-overflow: ellipsis
+
+.practice-row__mini
+  display: flex
+  width: 40px
+  height: 6px
+  border-radius: 3px
+  overflow: hidden
+  flex: none
+  background: rgba(255, 255, 255, 0.05)
+  box-shadow: inset 0 0 0 1px rgba(155, 107, 255, 0.12)
+
+.practice-row__mini span
+  height: 100%
+
+.practice-row__count
+  font-size: 11px
+  color: var(--hotaru-cream-soft)
+  background: rgba(255, 255, 255, 0.05)
+  border-radius: 9999px
+  padding: 1px 7px
+  font-variant-numeric: tabular-nums
+
+.practice-row__chev
+  color: var(--hotaru-sage)
+  font-size: 13px
+  transition: transform 0.16s ease
+
+@media (prefers-reduced-motion: reduce)
+  .practice-sec, .practice-row, .practice-row__chev, .practice-chev
+    transition: none
+  .practice-row:hover
+    transform: none
+
+// The per-row actions drawer.
+.practice-drawer
+  display: flex
+  flex-direction: column
+  gap: 12px
+  padding: 10px 4px 6px
 
 .practice-group-label
   font-size: 13px
@@ -472,86 +856,14 @@ onMounted(async () => {
 .practice-empty
   color: var(--hotaru-cream-soft)
   font-size: 13px
-  margin-bottom: 16px
-
-.practice-state
-  color: var(--hotaru-cream-soft)
-  text-align: center
-  padding: 24px 0
-
-.practice-overview
-  border: 1px solid rgba(155, 107, 255, 0.28)
-  border-radius: 12px
-  padding: 14px
-  margin-top: 8px
-
-.practice-overview__all
-  font-size: 12px
-  letter-spacing: 0.08em
-  text-transform: uppercase
-  color: var(--hotaru-cream-soft)
-  margin-bottom: 2px
-
-.practice-count
-  font-size: 18px
-  font-weight: 600
-  color: var(--hotaru-cream)
-  margin-bottom: 8px
-
-.practice-tier
-  font-size: 14px
-  color: var(--hotaru-cream-soft)
-  padding: 3px 0
-
-// Quick Practice panel — sits under the all-words stats, separated by a rule.
-.quick
-  margin-top: 14px
-  padding-top: 14px
-  border-top: 1px solid rgba(155, 107, 255, 0.22)
-
-.quick__title
-  font-size: 15px
-  font-weight: 600
-  color: var(--hotaru-cream)
-  margin-bottom: 8px
 
 .quick__count
   font-size: 14px
   color: var(--hotaru-cream-soft)
-  margin-top: 2px
 
 // Zero matches → magenta, signalling the (disabled) CTA won't start anything.
 .quick__count--empty
   color: var(--hotaru-fam-5)
-
-.practice-opts
-  gap: 10px
-
-.practice-opt__label
-  font-size: 13px
-  color: var(--hotaru-cream-soft)
-
-// Compact segmented control (mobile-first) — a rounded track with two pills.
-.practice-seg
-  border: 1px solid rgba(155, 107, 255, 0.30)
-  border-radius: 9999px
-  overflow: hidden
-
-.practice-seg__btn
-  border: none
-  background: transparent
-  color: var(--hotaru-cream-soft)
-  padding: 5px 14px
-  font-size: 13px
-  cursor: pointer
-
-.practice-seg__btn--on
-  background: var(--hotaru-bamboo)
-  color: var(--hotaru-bamboo-on)
-
-.practice-seg__btn:disabled
-  color: var(--hotaru-sage)
-  cursor: not-allowed
 
 .practice-start
   height: 52px
