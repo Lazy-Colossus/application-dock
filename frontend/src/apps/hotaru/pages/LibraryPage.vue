@@ -85,6 +85,9 @@
       class="library-list hotaru-panel column"
       data-testid="library-list"
     >
+      <div class="library-count" data-testid="library-count">
+        Words: {{ visibleWords.length }}
+      </div>
       <template v-for="word in visibleWords" :key="word.id">
         <WordRow
           :word="word"
@@ -564,6 +567,14 @@ function onToggleExpand(word: Word): void {
 
 .library-list
   padding: 2px 14px
+
+// At-a-glance count for the current section — quiet, upper-right of the list.
+.library-count
+  align-self: flex-end
+  font-size: 12px
+  color: var(--hotaru-sage)
+  padding: 6px 0 2px
+  font-variant-numeric: tabular-nums
 
 // Rows already divide with a hairline; drop the last one inside the panel.
 .library-list :deep(.word-row:last-child)

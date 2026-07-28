@@ -151,6 +151,20 @@ describe("LibraryPage (two-level)", () => {
     expect(wrapper.text()).toContain("my private word");
   });
 
+  it("shows the word count for the current section", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    // Default view (Genki → G) has a single word.
+    expect(wrapper.find('[data-testid="library-count"]').text()).toContain(
+      "Words: 1",
+    );
+    // Custom → All lists both custom words.
+    await wrapper.find('[data-testid="section-__custom__"]').trigger("click");
+    expect(wrapper.find('[data-testid="library-count"]').text()).toContain(
+      "Words: 2",
+    );
+  });
+
   it("Custom → Shared shows only shared custom words", async () => {
     const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
     await flushPromises();
