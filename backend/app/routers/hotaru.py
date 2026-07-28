@@ -27,12 +27,13 @@ router = APIRouter(
     dependencies=[Depends(get_current_user)],
 )
 
-# The two canonical, hardcoded users (no auth — household app). This is the single
+# The canonical, hardcoded users (no auth — household app). This is the single
 # source of truth: the frontend renders identity from it, and later stories validate
 # the `user` query param on user-scoped endpoints against these ids.
 _USERS: list[HotaruUser] = [
     HotaruUser(id="dani", name="Dani"),
     HotaruUser(id="jake", name="Jake"),
+    HotaruUser(id="jim", name="Jim"),
 ]
 
 VALID_USER_IDS: frozenset[str] = frozenset(u.id for u in _USERS)
