@@ -1,10 +1,12 @@
 import type { HotaruUser, Note } from "@/apps/hotaru/types";
 
 // Per-user identity hue, reused from the avatar system (DESIGN.md: Dani=violet,
-// Jake=amber). Identity — distinct from the lock, which signals privacy.
+// Jake=amber, Jim=magenta). Identity — distinct from the lock, which signals
+// privacy.
 const AUTHOR_COLORS: Record<string, string> = {
   dani: "#9b6bff",
   jake: "#ffce5c",
+  jim: "#ff5cc8",
 };
 
 // Shared note-presentation helpers, used by both the notes dialog and the drill
