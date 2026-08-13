@@ -183,6 +183,36 @@ describe("useContextSwitchStore", () => {
     expect(store.activeTodos.map((t) => t.id)).toEqual(["t-9"]);
   });
 
+  it("setGrid PUTs the grid and updates the board locally", async () => {
+    getMock.mockResolvedValue(newList("l-1", "Work"));
+    putMock.mockResolvedValue({
+      ...newList("l-1", "Work"),
+      grid: { columns: 4, rows: 3 },
+    });
+    const store = useContextSwitchStore();
+    await store.fetchList("l-1");
+
+    await store.setGrid("l-1", { columns: 4, rows: 3 });
+
+    expect(putMock).toHaveBeenCalledWith("/context-switch/lists/l-1", {
+      grid: { columns: 4, rows: 3 },
+    });
+    expect(store.currentList?.grid).toEqual({ columns: 4, rows: 3 });
+  });
+
+  it("setGrid leaves the board grid alone when the request fails", async () => {
+    getMock.mockResolvedValue(newList("l-1", "Work"));
+    putMock.mockRejectedValue(new Error("nope"));
+    const store = useContextSwitchStore();
+    await store.fetchList("l-1");
+
+    await expect(
+      store.setGrid("l-1", { columns: 9, rows: 9 }),
+    ).rejects.toThrow();
+    expect(store.currentList?.grid).toEqual({ columns: 3, rows: 2 });
+    expect(store.error).toBeTruthy();
+  });
+
   it("addTodo surfaces the error and rethrows", async () => {
     getMock.mockResolvedValue(newList("l-1", "Work"));
     postMock.mockRejectedValue(new Error("nope"));

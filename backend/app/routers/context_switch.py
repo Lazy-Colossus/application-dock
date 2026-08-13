@@ -50,11 +50,10 @@ def update_list(
 ) -> TodoList:
     # PUT (not PATCH) to match the frontend `useApi` boundary, which exposes
     # get/post/put/del only — consistent with Hotaru's partial-update endpoint.
-    # Story 1.4 updates the name; `grid` joins this endpoint in Story 2.2.
-    if req.name is None:
+    if req.name is None and req.grid is None:
         raise HTTPException(status_code=422, detail="No updatable fields provided")
     try:
-        return service.rename_list(current_user, list_id, req.name)
+        return service.update_list(current_user, list_id, name=req.name, grid=req.grid)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="List not found") from exc
     except ValueError as exc:

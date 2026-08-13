@@ -75,9 +75,10 @@ class CreateListRequest(BaseModel):
 
 
 class UpdateListRequest(BaseModel):
-    # All-optional so later stories add fields (e.g. `grid` in Story 2.2)
-    # without a new endpoint; only provided fields are applied.
+    # All-optional so each story adds a field without a new endpoint;
+    # only provided fields are applied.
     name: str | None = None
+    grid: Grid | None = None
 
 
 class CreateTodoRequest(BaseModel):

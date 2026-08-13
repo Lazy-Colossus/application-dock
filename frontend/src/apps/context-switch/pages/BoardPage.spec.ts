@@ -66,14 +66,23 @@ function makeTodo(overrides: Partial<Todo> = {}): Todo {
   };
 }
 
-function makeList(todos: Todo[] = []): TodoList {
+function makeList(
+  todos: Todo[] = [],
+  grid = { columns: 3, rows: 2 },
+): TodoList {
   return {
     id: "l-42",
     name: "Work",
-    grid: { columns: 3, rows: 2 },
+    grid,
     created_at: "2026-08-13T10:00:00Z",
     todos,
   };
+}
+
+function makeTodos(count: number): Todo[] {
+  return Array.from({ length: count }, (_, i) =>
+    makeTodo({ id: `t-${i + 1}`, header: `Todo ${i + 1}`, order: i }),
+  );
 }
 
 beforeEach(() => {
@@ -143,5 +152,84 @@ describe("BoardPage", () => {
     const wrapper = mount(BoardPage, MOUNT_OPTS);
     await flushPromises();
     expect(wrapper.find('[data-testid="error"]').exists()).toBe(true);
+  });
+
+  // ── grid + pagination (Story 2.2) ───────────────────────────────────────────
+
+  it("lays the board out in the list's column count", async () => {
+    getMock.mockResolvedValue(makeList(makeTodos(2), { columns: 4, rows: 2 }));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+    expect(wrapper.find('[data-testid="board"]').attributes("style")).toContain(
+      "--cs-cols: 4",
+    );
+  });
+
+  it("shows only one page of pills and no pager when everything fits", async () => {
+    getMock.mockResolvedValue(makeList(makeTodos(4), { columns: 2, rows: 2 }));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    expect(wrapper.findAll('[data-testid="pill-header"]')).toHaveLength(4);
+    expect(wrapper.find('[data-testid="pager"]').exists()).toBe(false);
+  });
+
+  it("paginates the overflow and keeps every todo reachable", async () => {
+    getMock.mockResolvedValue(makeList(makeTodos(5), { columns: 2, rows: 2 }));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    const headers = () =>
+      wrapper.findAll('[data-testid="pill-header"]').map((n) => n.text());
+
+    expect(headers()).toEqual(["Todo 1", "Todo 2", "Todo 3", "Todo 4"]);
+    expect(wrapper.find('[data-testid="page-indicator"]').text()).toBe("1 / 2");
+    expect(
+      wrapper.find('[data-testid="page-prev"]').attributes("disabled"),
+    ).toBeDefined();
+
+    await wrapper.find('[data-testid="page-next"]').trigger("click");
+    expect(headers()).toEqual(["Todo 5"]);
+    expect(
+      wrapper.find('[data-testid="page-next"]').attributes("disabled"),
+    ).toBeDefined();
+  });
+
+  it("persists a grid change and re-lays the board", async () => {
+    getMock.mockResolvedValue(makeList(makeTodos(5), { columns: 2, rows: 2 }));
+    putMock.mockResolvedValue(makeList(makeTodos(5), { columns: 5, rows: 2 }));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    const columns = wrapper.find('[data-testid="grid-columns"]');
+    (columns.element as HTMLInputElement).value = "5";
+    await columns.trigger("change");
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith("/context-switch/lists/l-42", {
+      grid: { columns: 5, rows: 2 },
+    });
+    expect(wrapper.find('[data-testid="board"]').attributes("style")).toContain(
+      "--cs-cols: 5",
+    );
+  });
+
+  it("pulls the viewer back when the grid change removes their page", async () => {
+    getMock.mockResolvedValue(makeList(makeTodos(5), { columns: 2, rows: 2 }));
+    putMock.mockResolvedValue(makeList(makeTodos(5), { columns: 5, rows: 2 }));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="page-next"]').trigger("click");
+    expect(wrapper.find('[data-testid="page-indicator"]').text()).toBe("2 / 2");
+
+    // 5 columns x 2 rows fits all five todos on a single page.
+    const columns = wrapper.find('[data-testid="grid-columns"]');
+    (columns.element as HTMLInputElement).value = "5";
+    await columns.trigger("change");
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="pager"]').exists()).toBe(false);
+    expect(wrapper.findAll('[data-testid="pill-header"]')).toHaveLength(5);
   });
 });

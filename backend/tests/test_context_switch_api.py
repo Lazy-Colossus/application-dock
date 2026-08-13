@@ -252,6 +252,75 @@ def test_todos_are_isolated_per_user() -> None:
     assert [t["header"] for t in todos] == ["Secret"]
 
 
+# ── PUT /lists/{id} — grid (Story 2.2) ────────────────────────────────────────
+
+
+def test_grid_defaults_are_within_bounds() -> None:
+    grid = client.get(f"/api/context-switch/lists/{_create('Work')}").json()["grid"]
+    assert grid["columns"] >= 1
+    assert grid["rows"] >= 1
+
+
+def test_set_grid_persists() -> None:
+    list_id = _create("Work")
+    resp = client.put(
+        f"/api/context-switch/lists/{list_id}",
+        json={"grid": {"columns": 4, "rows": 3}},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["grid"] == {"columns": 4, "rows": 3}
+
+    reloaded = client.get(f"/api/context-switch/lists/{list_id}").json()
+    assert reloaded["grid"] == {"columns": 4, "rows": 3}
+
+
+def test_set_grid_leaves_name_alone() -> None:
+    list_id = _create("Work")
+    client.put(f"/api/context-switch/lists/{list_id}", json={"grid": {"columns": 2, "rows": 2}})
+    assert client.get(f"/api/context-switch/lists/{list_id}").json()["name"] == "Work"
+
+
+def test_update_list_can_set_name_and_grid_together() -> None:
+    list_id = _create("Work")
+    resp = client.put(
+        f"/api/context-switch/lists/{list_id}",
+        json={"name": "Renamed", "grid": {"columns": 5, "rows": 1}},
+    )
+    body = resp.json()
+    assert body["name"] == "Renamed"
+    assert body["grid"] == {"columns": 5, "rows": 1}
+
+
+def test_update_list_with_no_fields_rejected() -> None:
+    resp = client.put(f"/api/context-switch/lists/{_create('Work')}", json={})
+    assert resp.status_code == 422
+
+
+@pytest.mark.parametrize(
+    "grid",
+    [
+        {"columns": 0, "rows": 2},
+        {"columns": 2, "rows": 0},
+        {"columns": 99, "rows": 2},
+        {"columns": 2, "rows": 99},
+        {"columns": -1, "rows": -1},
+    ],
+)
+def test_out_of_bounds_grid_rejected(grid: dict[str, int]) -> None:
+    resp = client.put(f"/api/context-switch/lists/{_create('Work')}", json={"grid": grid})
+    assert resp.status_code == 422
+
+
+def test_grid_does_not_limit_how_many_todos_exist() -> None:
+    # "rows" is page height, not a cap — every todo stays reachable.
+    list_id = _create("Work")
+    client.put(f"/api/context-switch/lists/{list_id}", json={"grid": {"columns": 1, "rows": 1}})
+    for header in ("A", "B", "C"):
+        _add_todo(list_id, header)
+    todos = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]
+    assert [t["header"] for t in todos] == ["A", "B", "C"]
+
+
 def test_active_count_reflects_added_todos() -> None:
     list_id = _create("Work")
     _add_todo(list_id, "One")

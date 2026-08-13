@@ -13,7 +13,7 @@ import uuid
 from datetime import UTC, datetime
 
 from app.repositories import context_switch_repo as repo
-from app.schemas.context_switch import ContextSwitchDoc, ListSummary, Todo, TodoList
+from app.schemas.context_switch import ContextSwitchDoc, Grid, ListSummary, Todo, TodoList
 
 
 def _now_iso() -> str:
@@ -34,6 +34,16 @@ def _active_sorted(lst: TodoList) -> list[Todo]:
     return sorted((t for t in lst.todos if t.status == "active"), key=lambda t: t.order)
 
 
+def _board_view(lst: TodoList) -> TodoList:
+    """The list as the board sees it: active todos only, in order.
+
+    Every endpoint returning a `TodoList` goes through this so callers never
+    have to ask whether a given response includes archived todos. The archive
+    gets its own view (Story 2.7).
+    """
+    return lst.model_copy(update={"todos": _active_sorted(lst)})
+
+
 def list_lists(username: str) -> list[ListSummary]:
     """Return summaries (id, name, active todo count) of the user's lists."""
     doc = repo.read_doc(username)
@@ -52,7 +62,7 @@ def create_list(username: str, name: str) -> TodoList:
     new_list = TodoList(id=_new_id("l"), name=clean, created_at=_now_iso(), todos=[])
     doc.lists.append(new_list)
     repo.write_doc(username, doc)
-    return new_list
+    return _board_view(new_list)
 
 
 def _find_list(doc: ContextSwitchDoc, list_id: str) -> TodoList:
@@ -62,17 +72,31 @@ def _find_list(doc: ContextSwitchDoc, list_id: str) -> TodoList:
     raise FileNotFoundError(f"list {list_id} not found")
 
 
-def rename_list(username: str, list_id: str, name: str) -> TodoList:
-    """Rename a list. Raises ValueError on a blank name, FileNotFoundError if absent."""
-    clean = name.strip()
-    if not clean:
-        raise ValueError("List name must not be empty")
+def update_list(
+    username: str,
+    list_id: str,
+    *,
+    name: str | None = None,
+    grid: Grid | None = None,
+) -> TodoList:
+    """Apply the provided fields to a list; absent fields are left alone.
 
+    Raises ValueError on a blank name, FileNotFoundError if the list is absent.
+    """
     doc = repo.read_doc(username)
     lst = _find_list(doc, list_id)
-    lst.name = clean
+
+    if name is not None:
+        clean = name.strip()
+        if not clean:
+            raise ValueError("List name must not be empty")
+        lst.name = clean
+
+    if grid is not None:
+        lst.grid = grid
+
     repo.write_doc(username, doc)
-    return lst
+    return _board_view(lst)
 
 
 def delete_list(username: str, list_id: str) -> None:
@@ -91,8 +115,7 @@ def get_list(username: str, list_id: str) -> TodoList:
     Archived todos are excluded — the archive gets its own view (Story 2.7).
     """
     doc = repo.read_doc(username)
-    lst = _find_list(doc, list_id)
-    return lst.model_copy(update={"todos": _active_sorted(lst)})
+    return _board_view(_find_list(doc, list_id))
 
 
 def add_todo(username: str, list_id: str, header: str, body: str, color: str) -> Todo:

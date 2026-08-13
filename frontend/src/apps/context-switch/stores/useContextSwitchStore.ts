@@ -2,6 +2,7 @@ import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import { api } from "@/composables/useApi";
 import type {
+  Grid,
   ListSummary,
   NewTodo,
   Todo,
@@ -118,6 +119,23 @@ export const useContextSwitchStore = defineStore("contextSwitch", () => {
     }
   }
 
+  async function setGrid(listId: string, grid: Grid): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const updated = await api.put<TodoList>(
+        `/context-switch/lists/${listId}`,
+        { grid },
+      );
+      if (currentList.value) currentList.value.grid = updated.grid;
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   return {
     lists,
     currentList,
@@ -130,5 +148,6 @@ export const useContextSwitchStore = defineStore("contextSwitch", () => {
     deleteList,
     fetchList,
     addTodo,
+    setGrid,
   };
 });
