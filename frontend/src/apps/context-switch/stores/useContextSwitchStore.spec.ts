@@ -352,4 +352,34 @@ describe("useContextSwitchStore", () => {
     expect(store.error).toBeTruthy();
     expect(store.loading).toBe(false);
   });
+
+  // ── archive / close as done (Story 2.6) ──────────────────────────────────────
+
+  it("updateTodo status:archived drops the todo from the active board", async () => {
+    getMock.mockResolvedValue({
+      ...newList("l-1", "Work"),
+      todos: [
+        newTodo("t-1", { header: "Keep", order: 0 }),
+        newTodo("t-2", { header: "Close", order: 1 }),
+      ],
+    });
+    putMock.mockResolvedValue(
+      newTodo("t-2", {
+        header: "Close",
+        order: 1,
+        status: "archived",
+        archived_at: "2026-08-13T12:00:00Z",
+      }),
+    );
+    const store = useContextSwitchStore();
+    await store.fetchList("l-1");
+
+    await store.updateTodo("l-1", "t-2", { status: "archived" });
+
+    expect(putMock).toHaveBeenCalledWith(
+      "/context-switch/lists/l-1/todos/t-2",
+      { status: "archived" },
+    );
+    expect(store.activeTodos.map((t) => t.id)).toEqual(["t-1"]);
+  });
 });

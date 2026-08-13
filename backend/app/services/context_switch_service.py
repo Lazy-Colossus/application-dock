@@ -168,11 +168,14 @@ def update_todo(
     header: str | None = None,
     body: str | None = None,
     color: str | None = None,
+    status: str | None = None,
 ) -> Todo:
     """Apply the provided fields to a todo and bump `updated_at`.
 
-    Absent fields are left alone. Raises ValueError on a blank header,
-    FileNotFoundError if the list or todo is absent.
+    Absent fields are left alone. Setting `status="archived"` stamps
+    `archived_at`; setting it back to `"active"` clears it (no UI does this in
+    v1, but the door is left open — Story 2.6). Raises ValueError on a blank
+    header, FileNotFoundError if the list or todo is absent.
     """
     doc = repo.read_doc(username)
     todo = _find_todo(_find_list(doc, list_id), todo_id)
@@ -188,6 +191,10 @@ def update_todo(
 
     if color is not None:
         todo.color = color
+
+    if status is not None:
+        todo.status = status
+        todo.archived_at = _now_iso() if status == "archived" else None
 
     todo.updated_at = _now_iso()
     repo.write_doc(username, doc)

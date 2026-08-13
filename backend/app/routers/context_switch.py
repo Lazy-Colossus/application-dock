@@ -104,6 +104,7 @@ def update_todo(
             header=req.header,
             body=req.body,
             color=req.color,
+            status=req.status,
         )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Todo not found") from exc

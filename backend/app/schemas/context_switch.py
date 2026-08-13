@@ -88,11 +88,12 @@ class CreateTodoRequest(BaseModel):
 
 
 class UpdateTodoRequest(BaseModel):
-    # The single mutation surface for a todo's fields: header/body/color here,
-    # `status` (archive) in Story 2.6. All-optional — only provided fields apply.
+    # The single mutation surface for a todo's fields: header/body/color and
+    # `status` (archive, Story 2.6). All-optional — only provided fields apply.
     header: str | None = None
     body: str | None = None
     color: str | None = Field(default=None, pattern=HEX_COLOR_PATTERN)
+    status: TodoStatus | None = None
 
 
 class ReorderTodosRequest(BaseModel):

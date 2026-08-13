@@ -632,3 +632,103 @@ def test_add_update_is_scoped_to_own_lists() -> None:
 
     reloaded = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]
     assert reloaded["updates"] == []
+
+
+# ── PATCH status: archive (Story 2.6) ─────────────────────────────────────────
+
+
+def test_archive_sets_status_and_archived_at() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Done thing")
+
+    archived = _edit(list_id, todo["id"], status="archived").json()
+    assert archived["status"] == "archived"
+    assert archived["archived_at"] is not None
+
+
+def test_archived_todo_kept_in_file_not_deleted() -> None:
+    # The record stays on disk (archive is soft) — it just leaves the board.
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Keep me")
+    _edit(list_id, todo["id"], status="archived")
+
+    doc = context_switch_repo.read_doc("test_user")
+    assert [t.id for t in doc.lists[0].todos] == [todo["id"]]
+
+
+def test_archived_todo_absent_from_active_board() -> None:
+    list_id = _create("Work")
+    keep = _add_todo(list_id, "Keep")
+    gone = _add_todo(list_id, "Archive me")
+
+    _edit(list_id, gone["id"], status="archived")
+
+    todos = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]
+    assert [t["header"] for t in todos] == ["Keep"]
+    assert keep["id"] in [t["id"] for t in todos]
+
+
+def test_archived_todo_excluded_from_active_count() -> None:
+    list_id = _create("Work")
+    _add_todo(list_id, "A")
+    gone = _add_todo(list_id, "B")
+    _edit(list_id, gone["id"], status="archived")
+
+    assert client.get("/api/context-switch/lists").json()[0]["active_count"] == 1
+
+
+def test_reactivating_clears_archived_at() -> None:
+    # No UI sets this in v1, but the service must support it (door left open).
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Toggle")
+    _edit(list_id, todo["id"], status="archived")
+
+    reactivated = _edit(list_id, todo["id"], status="active").json()
+    assert reactivated["status"] == "active"
+    assert reactivated["archived_at"] is None
+
+
+def test_archive_persists_across_reload() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Persist")
+    _edit(list_id, todo["id"], status="archived")
+
+    # Active read hides it; the raw doc still carries it as archived.
+    assert client.get(f"/api/context-switch/lists/{list_id}").json()["todos"] == []
+    doc = context_switch_repo.read_doc("test_user")
+    assert doc.lists[0].todos[0].status == "archived"
+
+
+def test_archive_leaves_other_fields_alone() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Header", body="body text", color="#aabbcc")
+    archived = _edit(list_id, todo["id"], status="archived").json()
+    assert archived["header"] == "Header"
+    assert archived["body"] == "body text"
+    assert archived["color"] == "#aabbcc"
+
+
+def test_invalid_status_rejected() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "X")
+    assert _edit(list_id, todo["id"], status="frozen").status_code == 422
+
+
+def test_archive_unknown_todo_404() -> None:
+    list_id = _create("Work")
+    assert _edit(list_id, "t-nope", status="archived").status_code == 404
+
+
+def test_archive_is_scoped_to_own_lists() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Mine")
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert _edit(list_id, todo["id"], status="archived").status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+    assert (
+        client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]["status"] == "active"
+    )

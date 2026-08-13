@@ -44,11 +44,12 @@ export interface NewTodo {
 }
 
 // Body of PUT /lists/{id}/todos/{todo_id} (Story 2.4) — only provided fields
-// are applied. `status` joins it in Story 2.6.
+// are applied. `status: "archived"` closes a todo as done (Story 2.6).
 export interface TodoPatch {
   header?: string;
   body?: string;
   color?: string;
+  status?: TodoStatus;
 }
 
 // Lightweight summary returned by the list-picker endpoint (Story 1.3).

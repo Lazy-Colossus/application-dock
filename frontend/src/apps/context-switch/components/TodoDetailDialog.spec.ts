@@ -199,6 +199,13 @@ describe("TodoDetailDialog", () => {
     expect(wrapper.emitted("save")?.[0]).toEqual([{ color: PRESET_COLORS[0] }]);
   });
 
+  it("emits close-as-done when the close control is clicked", async () => {
+    const wrapper = mountDialog();
+    await wrapper.find('[data-testid="detail-close-done"]').trigger("click");
+    expect(wrapper.emitted("close-as-done")).toBeTruthy();
+    expect(wrapper.emitted("update:modelValue")?.[0]).toEqual([false]);
+  });
+
   it("discards edits on cancel", async () => {
     const wrapper = mountDialog();
     await wrapper.find('[data-testid="detail-header-input"]').setValue("New");

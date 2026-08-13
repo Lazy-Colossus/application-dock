@@ -95,6 +95,7 @@
       :todo="openTodoItem"
       @save="onSave"
       @add-update="onAddUpdate"
+      @close-as-done="onCloseAsDone"
     />
   </q-page>
 </template>
@@ -184,6 +185,18 @@ async function onAddUpdate(text: string): Promise<void> {
   if (openTodoId.value === null) return;
   try {
     await store.addUpdate(listId.value, openTodoId.value, text);
+  } catch {
+    // Surfaced via store.error.
+  }
+}
+
+async function onCloseAsDone(): Promise<void> {
+  if (openTodoId.value === null) return;
+  try {
+    // Archiving drops the todo from activeTodos, so its pill leaves the board.
+    await store.updateTodo(listId.value, openTodoId.value, {
+      status: "archived",
+    });
   } catch {
     // Surfaced via store.error.
   }

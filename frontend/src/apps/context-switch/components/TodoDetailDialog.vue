@@ -68,23 +68,34 @@
         </div>
       </div>
 
-      <div class="row justify-end q-gutter-sm q-mt-md">
+      <div class="row items-center justify-between q-mt-md">
         <q-btn
           flat
           no-caps
-          label="Cancel"
-          data-testid="detail-cancel"
-          @click="close"
+          color="positive"
+          icon="check_circle"
+          label="Close as done"
+          data-testid="detail-close-done"
+          @click="onCloseAsDone"
         />
-        <q-btn
-          unelevated
-          no-caps
-          color="primary"
-          label="Save"
-          :disable="!canSave"
-          data-testid="detail-save"
-          @click="onSave"
-        />
+        <div class="q-gutter-sm">
+          <q-btn
+            flat
+            no-caps
+            label="Cancel"
+            data-testid="detail-cancel"
+            @click="close"
+          />
+          <q-btn
+            unelevated
+            no-caps
+            color="primary"
+            label="Save"
+            :disable="!canSave"
+            data-testid="detail-save"
+            @click="onSave"
+          />
+        </div>
       </div>
     </div>
   </q-dialog>
@@ -101,6 +112,7 @@ const emit = defineEmits<{
   "update:modelValue": [open: boolean];
   save: [patch: TodoPatch];
   "add-update": [text: string];
+  "close-as-done": [];
 }>();
 
 const header = ref("");
@@ -161,6 +173,13 @@ function close(): void {
 function onSave(): void {
   if (!canSave.value) return;
   emit("save", patch.value);
+  close();
+}
+
+// Closing as done archives the todo (Story 2.6); the board removes the pill.
+// No confirm — archiving is soft and recoverable via the archive view (2.7).
+function onCloseAsDone(): void {
+  emit("close-as-done");
   close();
 }
 </script>

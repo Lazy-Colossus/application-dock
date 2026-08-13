@@ -273,6 +273,36 @@ describe("BoardPage", () => {
     expect(wrapper.find('[data-testid="pill-t-1"]').text()).toContain("Todo 1");
   });
 
+  // ── close as done / archive (Story 2.6) ─────────────────────────────────────
+
+  it("closes a todo as done and removes its pill from the board", async () => {
+    getMock.mockResolvedValue(makeList(makeTodos(2)));
+    putMock.mockResolvedValue(
+      makeTodo({
+        id: "t-1",
+        header: "Todo 1",
+        order: 0,
+        status: "archived",
+        archived_at: "2026-08-13T12:00:00Z",
+      }),
+    );
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="pill-t-1"]').trigger("click");
+    await wrapper.find('[data-testid="detail-close-done"]').trigger("click");
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith(
+      "/context-switch/lists/l-42/todos/t-1",
+      { status: "archived" },
+    );
+    expect(wrapper.find('[data-testid="pill-t-1"]').exists()).toBe(false);
+    expect(
+      wrapper.findAll('[data-testid="pill-header"]').map((n) => n.text()),
+    ).toEqual(["Todo 2"]);
+  });
+
   // ── drag reorder (Story 2.3) ────────────────────────────────────────────────
 
   it("posts the new full id order when a pill is dropped on another", async () => {
