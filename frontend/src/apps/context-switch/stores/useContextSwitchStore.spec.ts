@@ -382,4 +382,59 @@ describe("useContextSwitchStore", () => {
     );
     expect(store.activeTodos.map((t) => t.id)).toEqual(["t-1"]);
   });
+
+  // ── archive view + delete (Story 2.7) ────────────────────────────────────────
+
+  it("fetchArchived loads the archived todos for a list", async () => {
+    getMock.mockResolvedValue([
+      newTodo("t-9", { status: "archived", archived_at: "2026-08-13T12:00:00Z" }),
+    ]);
+    const store = useContextSwitchStore();
+
+    await store.fetchArchived("l-1");
+
+    expect(getMock).toHaveBeenCalledWith("/context-switch/lists/l-1/archived");
+    expect(store.archived.map((t) => t.id)).toEqual(["t-9"]);
+    expect(store.loading).toBe(false);
+    expect(store.error).toBeNull();
+  });
+
+  it("fetchArchived surfaces the error and clears the local list", async () => {
+    getMock.mockRejectedValue(new Error("boom"));
+    const store = useContextSwitchStore();
+
+    await store.fetchArchived("l-1");
+
+    expect(store.archived).toEqual([]);
+    expect(store.error).toBeTruthy();
+    expect(store.loading).toBe(false);
+  });
+
+  it("deleteTodo DELETEs and drops the record from the archived list", async () => {
+    getMock.mockResolvedValue([
+      newTodo("t-9", { status: "archived" }),
+      newTodo("t-8", { status: "archived" }),
+    ]);
+    delMock.mockResolvedValue(undefined);
+    const store = useContextSwitchStore();
+    await store.fetchArchived("l-1");
+
+    await store.deleteTodo("l-1", "t-9");
+
+    expect(delMock).toHaveBeenCalledWith("/context-switch/lists/l-1/todos/t-9");
+    expect(store.archived.map((t) => t.id)).toEqual(["t-8"]);
+  });
+
+  it("deleteTodo surfaces the error and keeps the record when rejected", async () => {
+    getMock.mockResolvedValue([newTodo("t-9", { status: "archived" })]);
+    delMock.mockRejectedValue(new Error("nope"));
+    const store = useContextSwitchStore();
+    await store.fetchArchived("l-1");
+
+    await expect(store.deleteTodo("l-1", "t-9")).rejects.toThrow();
+
+    expect(store.archived.map((t) => t.id)).toEqual(["t-9"]);
+    expect(store.error).toBeTruthy();
+    expect(store.loading).toBe(false);
+  });
 });

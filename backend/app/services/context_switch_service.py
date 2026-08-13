@@ -201,6 +201,34 @@ def update_todo(
     return todo
 
 
+def list_archived(username: str, list_id: str) -> list[Todo]:
+    """The list's archived todos, newest-archived first.
+
+    Counterpart to the active board read (`_board_view`): the only endpoint that
+    surfaces archived todos (Story 2.7). Raises FileNotFoundError if the list is
+    absent.
+    """
+    doc = repo.read_doc(username)
+    lst = _find_list(doc, list_id)
+    archived = [t for t in lst.todos if t.status == "archived"]
+    return sorted(archived, key=lambda t: t.archived_at or "", reverse=True)
+
+
+def delete_todo(username: str, list_id: str, todo_id: str) -> None:
+    """Permanently remove a todo from the list. Raises FileNotFoundError if absent.
+
+    Drops the record from the todos array regardless of status; in v1 the UI only
+    ever calls this from the archive view (Story 2.7).
+    """
+    doc = repo.read_doc(username)
+    lst = _find_list(doc, list_id)
+    remaining = [t for t in lst.todos if t.id != todo_id]
+    if len(remaining) == len(lst.todos):
+        raise FileNotFoundError(f"todo {todo_id} not found")
+    lst.todos = remaining
+    repo.write_doc(username, doc)
+
+
 def add_update(username: str, list_id: str, todo_id: str, text: str) -> Todo:
     """Append a timestamped log entry to a todo and return the todo.
 

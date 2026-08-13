@@ -15,6 +15,13 @@
       <div class="row items-center q-gutter-md">
         <GridControl :model-value="grid" @update:model-value="onGrid" />
         <q-btn
+          flat
+          round
+          icon="inventory_2"
+          data-testid="archive-btn"
+          @click="openArchive"
+        />
+        <q-btn
           round
           unelevated
           color="primary"
@@ -97,6 +104,11 @@
       @add-update="onAddUpdate"
       @close-as-done="onCloseAsDone"
     />
+    <ArchiveDrawer
+      v-model="archiveOpen"
+      :archived="store.archived"
+      @delete="onDeleteArchived"
+    />
   </q-page>
 </template>
 
@@ -105,6 +117,7 @@ import { ref, computed, watch, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useContextSwitchStore } from "@/apps/context-switch/stores/useContextSwitchStore";
 import AddTodoDialog from "@/apps/context-switch/components/AddTodoDialog.vue";
+import ArchiveDrawer from "@/apps/context-switch/components/ArchiveDrawer.vue";
 import GridControl from "@/apps/context-switch/components/GridControl.vue";
 import TodoDetailDialog from "@/apps/context-switch/components/TodoDetailDialog.vue";
 import TodoPill from "@/apps/context-switch/components/TodoPill.vue";
@@ -122,6 +135,7 @@ const page = ref(1);
 const draggingId = ref<string | null>(null);
 const detailOpen = ref(false);
 const openTodoId = ref<string | null>(null);
+const archiveOpen = ref(false);
 
 // Track the open todo by id, not by value, so an edit re-renders the dialog
 // from the store's copy rather than a stale snapshot.
@@ -197,6 +211,23 @@ async function onCloseAsDone(): Promise<void> {
     await store.updateTodo(listId.value, openTodoId.value, {
       status: "archived",
     });
+  } catch {
+    // Surfaced via store.error.
+  }
+}
+
+async function openArchive(): Promise<void> {
+  archiveOpen.value = true;
+  try {
+    await store.fetchArchived(listId.value);
+  } catch {
+    // Surfaced via store.error.
+  }
+}
+
+async function onDeleteArchived(todoId: string): Promise<void> {
+  try {
+    await store.deleteTodo(listId.value, todoId);
   } catch {
     // Surfaced via store.error.
   }

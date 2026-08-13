@@ -732,3 +732,120 @@ def test_archive_is_scoped_to_own_lists() -> None:
     assert (
         client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]["status"] == "active"
     )
+
+
+# ── Archive view + delete (Story 2.7) ─────────────────────────────────────────
+
+
+def _archive(list_id: str, todo_id: str) -> None:
+    _edit(list_id, todo_id, status="archived")
+
+
+def _archived(list_id: str):
+    return client.get(f"/api/context-switch/lists/{list_id}/archived")
+
+
+def _delete_todo(list_id: str, todo_id: str):
+    return client.delete(f"/api/context-switch/lists/{list_id}/todos/{todo_id}")
+
+
+def test_archived_read_returns_only_archived_todos() -> None:
+    list_id = _create("Work")
+    _add_todo(list_id, "Active one")
+    gone = _add_todo(list_id, "Done one", body="notes", color="#aabbcc")
+    _archive(list_id, gone["id"])
+
+    resp = _archived(list_id)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert [t["id"] for t in body] == [gone["id"]]
+    assert body[0]["header"] == "Done one"
+    assert body[0]["body"] == "notes"
+    assert body[0]["color"] == "#aabbcc"
+    assert body[0]["archived_at"] is not None
+
+
+def test_archived_read_empty_when_nothing_archived() -> None:
+    list_id = _create("Work")
+    _add_todo(list_id, "Active")
+    assert _archived(list_id).json() == []
+
+
+def test_archived_read_ordered_by_archived_at_desc() -> None:
+    # Set archived_at explicitly so the ordering assertion is deterministic.
+    list_id = _create("Work")
+    older = _add_todo(list_id, "Older")
+    newer = _add_todo(list_id, "Newer")
+
+    doc = context_switch_repo.read_doc("test_user")
+    for todo in doc.lists[0].todos:
+        todo.status = "archived"
+        todo.archived_at = (
+            "2026-08-10T09:00:00+00:00" if todo.id == older["id"] else "2026-08-12T09:00:00+00:00"
+        )
+    context_switch_repo.write_doc("test_user", doc)
+
+    assert [t["id"] for t in _archived(list_id).json()] == [newer["id"], older["id"]]
+
+
+def test_archived_read_unknown_list_404() -> None:
+    assert _archived("l-nope").status_code == 404
+
+
+def test_archived_read_is_scoped_to_own_lists() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Mine")
+    _archive(list_id, todo["id"])
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert _archived(list_id).status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+
+def test_delete_todo_removes_the_record() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Doomed")
+    _archive(list_id, todo["id"])
+
+    assert _delete_todo(list_id, todo["id"]).status_code == 204
+    assert _archived(list_id).json() == []
+    doc = context_switch_repo.read_doc("test_user")
+    assert doc.lists[0].todos == []
+
+
+def test_delete_todo_leaves_active_board_intact() -> None:
+    list_id = _create("Work")
+    keep = _add_todo(list_id, "Keep")
+    gone = _add_todo(list_id, "Archive then delete")
+    _archive(list_id, gone["id"])
+
+    _delete_todo(list_id, gone["id"])
+
+    todos = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]
+    assert [t["id"] for t in todos] == [keep["id"]]
+
+
+def test_delete_unknown_todo_404() -> None:
+    list_id = _create("Work")
+    assert _delete_todo(list_id, "t-nope").status_code == 404
+
+
+def test_delete_todo_in_unknown_list_404() -> None:
+    assert _delete_todo("l-nope", "t-nope").status_code == 404
+
+
+def test_delete_todo_is_scoped_to_own_lists() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Mine")
+    _archive(list_id, todo["id"])
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert _delete_todo(list_id, todo["id"]).status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+    # The owner's archived todo is untouched.
+    assert [t["id"] for t in _archived(list_id).json()] == [todo["id"]]

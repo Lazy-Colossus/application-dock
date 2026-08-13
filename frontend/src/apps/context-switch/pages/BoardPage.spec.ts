@@ -303,6 +303,58 @@ describe("BoardPage", () => {
     ).toEqual(["Todo 2"]);
   });
 
+  // ── archive view + delete (Story 2.7) ───────────────────────────────────────
+
+  it("opens the archive drawer and loads archived todos", async () => {
+    getMock.mockResolvedValueOnce(makeList(makeTodos(1)));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    getMock.mockResolvedValueOnce([
+      makeTodo({
+        id: "t-9",
+        header: "Archived one",
+        status: "archived",
+        archived_at: "2026-08-13T12:00:00Z",
+      }),
+    ]);
+    await wrapper.find('[data-testid="archive-btn"]').trigger("click");
+    await flushPromises();
+
+    expect(getMock).toHaveBeenLastCalledWith(
+      "/context-switch/lists/l-42/archived",
+    );
+    expect(wrapper.find('[data-testid="archived-item-t-9"]').text()).toContain(
+      "Archived one",
+    );
+  });
+
+  it("deletes an archived todo from the drawer", async () => {
+    getMock.mockResolvedValueOnce(makeList(makeTodos(1)));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    getMock.mockResolvedValueOnce([
+      makeTodo({ id: "t-9", header: "Archived one", status: "archived" }),
+    ]);
+    await wrapper.find('[data-testid="archive-btn"]').trigger("click");
+    await flushPromises();
+
+    delMock.mockResolvedValue(undefined);
+    await wrapper.find('[data-testid="archived-delete-t-9"]').trigger("click");
+    await wrapper
+      .find('[data-testid="archived-delete-confirm-t-9"]')
+      .trigger("click");
+    await flushPromises();
+
+    expect(delMock).toHaveBeenCalledWith(
+      "/context-switch/lists/l-42/todos/t-9",
+    );
+    expect(wrapper.find('[data-testid="archived-item-t-9"]').exists()).toBe(
+      false,
+    );
+  });
+
   // ── drag reorder (Story 2.3) ────────────────────────────────────────────────
 
   it("posts the new full id order when a pill is dropped on another", async () => {

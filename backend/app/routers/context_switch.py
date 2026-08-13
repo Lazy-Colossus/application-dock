@@ -112,6 +112,26 @@ def update_todo(
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+@router.get("/lists/{list_id}/archived", response_model=list[Todo])
+def list_archived(list_id: str, current_user: str = Depends(get_current_user)) -> list[Todo]:
+    try:
+        return service.list_archived(current_user, list_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="List not found") from exc
+
+
+@router.delete("/lists/{list_id}/todos/{todo_id}", status_code=204)
+def delete_todo(
+    list_id: str,
+    todo_id: str,
+    current_user: str = Depends(get_current_user),
+) -> None:
+    try:
+        service.delete_todo(current_user, list_id, todo_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Todo not found") from exc
+
+
 @router.post("/lists/{list_id}/todos/{todo_id}/updates", response_model=Todo)
 def add_update(
     list_id: str,

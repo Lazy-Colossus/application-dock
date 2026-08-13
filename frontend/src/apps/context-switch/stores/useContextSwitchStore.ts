@@ -13,6 +13,7 @@ import type {
 export const useContextSwitchStore = defineStore("contextSwitch", () => {
   const lists = ref<ListSummary[]>([]);
   const currentList = ref<TodoList | null>(null);
+  const archived = ref<Todo[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -198,6 +199,37 @@ export const useContextSwitchStore = defineStore("contextSwitch", () => {
     }
   }
 
+  /** Load a list's archived todos for the archive view (Story 2.7). */
+  async function fetchArchived(listId: string): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      archived.value = await api.get<Todo[]>(
+        `/context-switch/lists/${listId}/archived`,
+      );
+    } catch (e) {
+      archived.value = [];
+      error.value = e instanceof Error ? e.message : String(e);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  /** Permanently delete an archived todo; drop it locally on success. */
+  async function deleteTodo(listId: string, todoId: string): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      await api.del(`/context-switch/lists/${listId}/todos/${todoId}`);
+      archived.value = archived.value.filter((t) => t.id !== todoId);
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   async function setGrid(listId: string, grid: Grid): Promise<void> {
     loading.value = true;
     error.value = null;
@@ -218,6 +250,7 @@ export const useContextSwitchStore = defineStore("contextSwitch", () => {
   return {
     lists,
     currentList,
+    archived,
     activeTodos,
     loading,
     error,
@@ -229,6 +262,8 @@ export const useContextSwitchStore = defineStore("contextSwitch", () => {
     addTodo,
     updateTodo,
     addUpdate,
+    fetchArchived,
+    deleteTodo,
     reorderTodos,
     setGrid,
   };
