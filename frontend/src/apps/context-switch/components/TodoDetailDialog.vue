@@ -221,4 +221,10 @@ function onCloseAsDone(): void {
 .cs-update-at
   color: #8A8A8A
   white-space: nowrap
+  flex-shrink: 0
+
+// Wrap a long unbroken update instead of overflowing the dialog.
+.cs-update-text
+  min-width: 0
+  overflow-wrap: anywhere
 </style>

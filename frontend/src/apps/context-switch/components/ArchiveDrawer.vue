@@ -113,9 +113,11 @@ function formatAt(iso: string): string {
   color: #F0F0F0
   border-radius: 14px
   padding: 20px
-  min-width: 360px
+  width: 420px
+  max-width: 90vw
   max-height: 80vh
   overflow-y: auto
+  overflow-x: hidden
 
 .cs-archive-title
   font-size: 16px
@@ -135,6 +137,12 @@ function formatAt(iso: string): string {
   background: #1E1E1E
   padding: 10px 12px
 
+// min-width: 0 lets the text column shrink below its content width so a long
+// unbroken string wraps instead of shoving the trash button off-screen.
+.cs-archive-body
+  min-width: 0
+  overflow-wrap: anywhere
+
 .cs-archive-header
   font-size: 15px
   font-weight: 600
@@ -149,7 +157,9 @@ function formatAt(iso: string): string {
   color: #8A8A8A
   margin-top: 4px
 
+// Keep the delete control at its natural size no matter how long the text is.
 .cs-archive-actions
+  flex-shrink: 0
   display: flex
   align-items: center
   gap: 4px
