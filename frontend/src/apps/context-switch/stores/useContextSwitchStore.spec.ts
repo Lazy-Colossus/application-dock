@@ -183,6 +183,49 @@ describe("useContextSwitchStore", () => {
     expect(store.activeTodos.map((t) => t.id)).toEqual(["t-9"]);
   });
 
+  it("reorderTodos reorders locally before the request resolves", async () => {
+    getMock.mockResolvedValue({
+      ...newList("l-1", "Work"),
+      todos: [newTodo("t-a", { order: 0 }), newTodo("t-b", { order: 1 })],
+    });
+    let resolvePost: () => void = () => {};
+    postMock.mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolvePost = resolve;
+      }),
+    );
+    const store = useContextSwitchStore();
+    await store.fetchList("l-1");
+
+    const pending = store.reorderTodos("l-1", ["t-b", "t-a"]);
+    expect(store.activeTodos.map((t) => t.id)).toEqual(["t-b", "t-a"]);
+
+    resolvePost();
+    await pending;
+
+    expect(postMock).toHaveBeenCalledWith(
+      "/context-switch/lists/l-1/todos/reorder",
+      { ordered_ids: ["t-b", "t-a"] },
+    );
+    expect(store.activeTodos.map((t) => t.id)).toEqual(["t-b", "t-a"]);
+  });
+
+  it("reorderTodos rolls back and rethrows when the request fails", async () => {
+    getMock.mockResolvedValue({
+      ...newList("l-1", "Work"),
+      todos: [newTodo("t-a", { order: 0 }), newTodo("t-b", { order: 1 })],
+    });
+    postMock.mockRejectedValue(new Error("nope"));
+    const store = useContextSwitchStore();
+    await store.fetchList("l-1");
+
+    await expect(store.reorderTodos("l-1", ["t-b", "t-a"])).rejects.toThrow();
+
+    expect(store.activeTodos.map((t) => t.id)).toEqual(["t-a", "t-b"]);
+    expect(store.error).toBeTruthy();
+    expect(store.loading).toBe(false);
+  });
+
   it("setGrid PUTs the grid and updates the board locally", async () => {
     getMock.mockResolvedValue(newList("l-1", "Work"));
     putMock.mockResolvedValue({

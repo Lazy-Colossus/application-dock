@@ -144,3 +144,29 @@ def add_todo(username: str, list_id: str, header: str, body: str, color: str) ->
     lst.todos.append(todo)
     repo.write_doc(username, doc)
     return todo
+
+
+def reorder_todos(username: str, list_id: str, ordered_ids: list[str]) -> TodoList:
+    """Rewrite active todo `order` from a full ordered id sequence.
+
+    `ordered_ids` must be a permutation of the list's current active todo ids —
+    anything else (a duplicate, a gap, an archived or unknown id) raises
+    ValueError before a single field is touched, so a rejected request is
+    never a partial write. Raises FileNotFoundError if the list is absent.
+    """
+    doc = repo.read_doc(username)
+    lst = _find_list(doc, list_id)
+
+    active_ids = {t.id for t in lst.todos if t.status == "active"}
+    if len(ordered_ids) != len(set(ordered_ids)):
+        raise ValueError("ordered_ids must not repeat a todo")
+    if set(ordered_ids) != active_ids:
+        raise ValueError("ordered_ids must list exactly the active todos of this list")
+
+    position = {todo_id: index for index, todo_id in enumerate(ordered_ids)}
+    for todo in lst.todos:
+        if todo.status == "active":
+            todo.order = position[todo.id]
+
+    repo.write_doc(username, doc)
+    return _board_view(lst)

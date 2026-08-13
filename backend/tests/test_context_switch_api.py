@@ -327,3 +327,110 @@ def test_active_count_reflects_added_todos() -> None:
     _add_todo(list_id, "Two")
     summaries = client.get("/api/context-switch/lists").json()
     assert summaries[0]["active_count"] == 2
+
+
+# ── POST /lists/{id}/todos/reorder (Story 2.3) ────────────────────────────────
+
+
+def _headers(list_id: str) -> list[str]:
+    return [t["header"] for t in client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]]
+
+
+def _seed_three() -> tuple[str, list[str]]:
+    list_id = _create("Work")
+    ids = [_add_todo(list_id, header)["id"] for header in ("A", "B", "C")]
+    return list_id, ids
+
+
+def _reorder(list_id: str, ordered_ids: list[str]):
+    return client.post(
+        f"/api/context-switch/lists/{list_id}/todos/reorder",
+        json={"ordered_ids": ordered_ids},
+    )
+
+
+def test_reorder_rewrites_order_and_persists() -> None:
+    list_id, ids = _seed_three()
+    resp = _reorder(list_id, [ids[2], ids[0], ids[1]])
+
+    assert resp.status_code == 200
+    assert [t["header"] for t in resp.json()["todos"]] == ["C", "A", "B"]
+    assert [t["order"] for t in resp.json()["todos"]] == [0, 1, 2]
+    # Survives a reload.
+    assert _headers(list_id) == ["C", "A", "B"]
+
+
+def test_reorder_missing_id_rejected() -> None:
+    list_id, ids = _seed_three()
+    assert _reorder(list_id, ids[:2]).status_code == 422
+    assert _headers(list_id) == ["A", "B", "C"]
+
+
+def test_reorder_extra_id_rejected() -> None:
+    list_id, ids = _seed_three()
+    assert _reorder(list_id, [*ids, "t-ghost"]).status_code == 422
+    assert _headers(list_id) == ["A", "B", "C"]
+
+
+def test_reorder_duplicate_id_rejected() -> None:
+    list_id, ids = _seed_three()
+    assert _reorder(list_id, [ids[0], ids[0], ids[1]]).status_code == 422
+    assert _headers(list_id) == ["A", "B", "C"]
+
+
+def test_reorder_unknown_id_rejected() -> None:
+    list_id, ids = _seed_three()
+    assert _reorder(list_id, [ids[0], ids[1], "t-nope"]).status_code == 422
+    assert _headers(list_id) == ["A", "B", "C"]
+
+
+def test_reorder_id_from_another_list_rejected() -> None:
+    list_id, ids = _seed_three()
+    other_id = _add_todo(_create("Other"), "Elsewhere")["id"]
+    assert _reorder(list_id, [ids[0], ids[1], other_id]).status_code == 422
+    assert _headers(list_id) == ["A", "B", "C"]
+
+
+def test_reorder_referencing_an_archived_todo_rejected() -> None:
+    # Archiving lands in Story 2.6, so flip the status on disk to set this up.
+    list_id, ids = _seed_three()
+    doc = context_switch_repo.read_doc("test_user")
+    archived = next(t for t in doc.lists[0].todos if t.id == ids[1])
+    archived.status = "archived"
+    context_switch_repo.write_doc("test_user", doc)
+
+    assert _headers(list_id) == ["A", "C"]
+    assert _reorder(list_id, ids).status_code == 422
+    assert _headers(list_id) == ["A", "C"]
+
+
+def test_reorder_ignores_archived_todos() -> None:
+    list_id, ids = _seed_three()
+    doc = context_switch_repo.read_doc("test_user")
+    next(t for t in doc.lists[0].todos if t.id == ids[0]).status = "archived"
+    context_switch_repo.write_doc("test_user", doc)
+
+    resp = _reorder(list_id, [ids[2], ids[1]])
+    assert resp.status_code == 200
+    assert _headers(list_id) == ["C", "B"]
+
+
+def test_reorder_unknown_list_404() -> None:
+    assert _reorder("l-nope", []).status_code == 404
+
+
+def test_reorder_of_empty_list_is_a_noop() -> None:
+    list_id = _create("Work")
+    assert _reorder(list_id, []).status_code == 200
+
+
+def test_reorder_is_scoped_to_own_lists() -> None:
+    list_id, ids = _seed_three()
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert _reorder(list_id, ids).status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+    assert _headers(list_id) == ["A", "B", "C"]

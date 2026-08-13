@@ -214,6 +214,73 @@ describe("BoardPage", () => {
     );
   });
 
+  // ── drag reorder (Story 2.3) ────────────────────────────────────────────────
+
+  it("posts the new full id order when a pill is dropped on another", async () => {
+    getMock.mockResolvedValue(makeList(makeTodos(3), { columns: 3, rows: 2 }));
+    postMock.mockResolvedValue(undefined);
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="slot-t-1"]').trigger("dragstart");
+    await wrapper.find('[data-testid="slot-t-3"]').trigger("drop");
+    await flushPromises();
+
+    expect(postMock).toHaveBeenCalledWith(
+      "/context-switch/lists/l-42/todos/reorder",
+      { ordered_ids: ["t-2", "t-3", "t-1"] },
+    );
+    expect(
+      wrapper.findAll('[data-testid="pill-header"]').map((n) => n.text()),
+    ).toEqual(["Todo 2", "Todo 3", "Todo 1"]);
+  });
+
+  it("sends one sequence over all pages, not just the visible one", async () => {
+    // 2x1 grid over 4 todos: page 2 shows todos 3 and 4.
+    getMock.mockResolvedValue(makeList(makeTodos(4), { columns: 2, rows: 1 }));
+    postMock.mockResolvedValue(undefined);
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="page-next"]').trigger("click");
+    await wrapper.find('[data-testid="slot-t-4"]').trigger("dragstart");
+    await wrapper.find('[data-testid="slot-t-3"]').trigger("drop");
+    await flushPromises();
+
+    expect(postMock).toHaveBeenCalledWith(
+      "/context-switch/lists/l-42/todos/reorder",
+      { ordered_ids: ["t-1", "t-2", "t-4", "t-3"] },
+    );
+  });
+
+  it("rolls the order back and shows the error when the reorder is rejected", async () => {
+    getMock.mockResolvedValue(makeList(makeTodos(3), { columns: 3, rows: 2 }));
+    postMock.mockRejectedValue(new Error("rejected"));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="slot-t-1"]').trigger("dragstart");
+    await wrapper.find('[data-testid="slot-t-3"]').trigger("drop");
+    await flushPromises();
+
+    expect(
+      wrapper.findAll('[data-testid="pill-header"]').map((n) => n.text()),
+    ).toEqual(["Todo 1", "Todo 2", "Todo 3"]);
+    expect(wrapper.find('[data-testid="error"]').exists()).toBe(true);
+  });
+
+  it("does not post when a pill is dropped on itself", async () => {
+    getMock.mockResolvedValue(makeList(makeTodos(3), { columns: 3, rows: 2 }));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="slot-t-2"]').trigger("dragstart");
+    await wrapper.find('[data-testid="slot-t-2"]').trigger("drop");
+    await flushPromises();
+
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
   it("pulls the viewer back when the grid change removes their page", async () => {
     getMock.mockResolvedValue(makeList(makeTodos(5), { columns: 2, rows: 2 }));
     putMock.mockResolvedValue(makeList(makeTodos(5), { columns: 5, rows: 2 }));

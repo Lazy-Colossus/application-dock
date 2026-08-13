@@ -85,3 +85,9 @@ class CreateTodoRequest(BaseModel):
     header: str
     body: str = ""
     color: str = Field(default="#ffffff", pattern=HEX_COLOR_PATTERN)
+
+
+class ReorderTodosRequest(BaseModel):
+    # The complete active-todo id sequence, not a from/to pair — the service
+    # can then reject anything that isn't a permutation (Story 2.3).
+    ordered_ids: list[str]

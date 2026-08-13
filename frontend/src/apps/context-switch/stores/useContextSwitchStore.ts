@@ -119,6 +119,37 @@ export const useContextSwitchStore = defineStore("contextSwitch", () => {
     }
   }
 
+  /** Reorder locally first so a drag feels instant; roll back if the POST fails. */
+  async function reorderTodos(
+    listId: string,
+    orderedIds: string[],
+  ): Promise<void> {
+    const previous = new Map(
+      (currentList.value?.todos ?? []).map((t) => [t.id, t.order]),
+    );
+    orderedIds.forEach((id, index) => {
+      const todo = currentList.value?.todos.find((t) => t.id === id);
+      if (todo) todo.order = index;
+    });
+
+    loading.value = true;
+    error.value = null;
+    try {
+      await api.post(`/context-switch/lists/${listId}/todos/reorder`, {
+        ordered_ids: orderedIds,
+      });
+    } catch (e) {
+      for (const todo of currentList.value?.todos ?? []) {
+        const order = previous.get(todo.id);
+        if (order !== undefined) todo.order = order;
+      }
+      error.value = e instanceof Error ? e.message : String(e);
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   async function setGrid(listId: string, grid: Grid): Promise<void> {
     loading.value = true;
     error.value = null;
@@ -148,6 +179,7 @@ export const useContextSwitchStore = defineStore("contextSwitch", () => {
     deleteList,
     fetchList,
     addTodo,
+    reorderTodos,
     setGrid,
   };
 });

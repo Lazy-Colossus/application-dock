@@ -43,7 +43,20 @@
         :style="{ '--cs-cols': grid.columns }"
         data-testid="board"
       >
-        <TodoPill v-for="todo in pageTodos" :key="todo.id" :todo="todo" />
+        <div
+          v-for="todo in pageTodos"
+          :key="todo.id"
+          class="cs-slot"
+          :class="{ 'cs-slot--dragging': draggingId === todo.id }"
+          draggable="true"
+          :data-testid="`slot-${todo.id}`"
+          @dragstart="onDragStart(todo.id, $event)"
+          @dragover.prevent
+          @drop.prevent="onDrop(todo.id)"
+          @dragend="draggingId = null"
+        >
+          <TodoPill :todo="todo" />
+        </div>
       </div>
 
       <div
@@ -87,6 +100,7 @@ import AddTodoDialog from "@/apps/context-switch/components/AddTodoDialog.vue";
 import GridControl from "@/apps/context-switch/components/GridControl.vue";
 import TodoPill from "@/apps/context-switch/components/TodoPill.vue";
 import { DEFAULT_GRID, pageCount, pageSlice } from "@/apps/context-switch/grid";
+import { moveId } from "@/apps/context-switch/reorder";
 import type { Grid, NewTodo } from "@/apps/context-switch/types";
 
 const route = useRoute();
@@ -96,6 +110,7 @@ const store = useContextSwitchStore();
 const listId = computed(() => String(route.params.listId ?? ""));
 const addOpen = ref(false);
 const page = ref(1);
+const draggingId = ref<string | null>(null);
 
 const grid = computed<Grid>(() => store.currentList?.grid ?? DEFAULT_GRID);
 const totalPages = computed(() =>
@@ -134,6 +149,31 @@ async function onGrid(next: Grid): Promise<void> {
     // Surfaced via store.error.
   }
 }
+
+function onDragStart(id: string, event: DragEvent): void {
+  draggingId.value = id;
+  // Firefox only starts a drag once some data is set.
+  event.dataTransfer?.setData("text/plain", id);
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+}
+
+async function onDrop(targetId: string): Promise<void> {
+  const moved = draggingId.value;
+  draggingId.value = null;
+  if (moved === null) return;
+
+  // Reorder over the whole active sequence, not just the visible page, so the
+  // result stays coherent across pages (AC 4).
+  const ids = store.activeTodos.map((t) => t.id);
+  const next = moveId(ids, moved, targetId);
+  if (next === ids) return;
+
+  try {
+    await store.reorderTodos(listId.value, next);
+  } catch {
+    // Optimistic order already rolled back; surfaced via store.error.
+  }
+}
 </script>
 
 <style scoped lang="sass">
@@ -151,4 +191,10 @@ async function onGrid(next: Grid): Promise<void> {
 @media (max-width: 480px)
   .cs-board
     grid-template-columns: 1fr
+
+.cs-slot
+  cursor: grab
+
+.cs-slot--dragging
+  opacity: 0.45
 </style>
