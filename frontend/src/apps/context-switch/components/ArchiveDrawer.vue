@@ -14,53 +14,54 @@
         Nothing archived yet.
       </div>
 
-      <div
-        v-for="todo in archived"
-        v-else
-        :key="todo.id"
-        class="cs-archive-item"
-        :style="{ borderLeftColor: todo.color }"
-        :data-testid="`archived-item-${todo.id}`"
-      >
-        <div class="cs-archive-body">
-          <div class="cs-archive-header">{{ todo.header }}</div>
-          <div v-if="todo.body" class="cs-archive-text">{{ todo.body }}</div>
-          <div v-if="todo.archived_at" class="cs-archive-at">
-            Archived {{ formatAt(todo.archived_at) }}
+      <div v-else class="cs-archive-list">
+        <div
+          v-for="todo in archived"
+          :key="todo.id"
+          class="cs-archive-item"
+          :style="{ borderLeftColor: todo.color }"
+          :data-testid="`archived-item-${todo.id}`"
+        >
+          <div class="cs-archive-body">
+            <div class="cs-archive-header">{{ todo.header }}</div>
+            <div v-if="todo.body" class="cs-archive-text">{{ todo.body }}</div>
+            <div v-if="todo.archived_at" class="cs-archive-at">
+              Archived {{ formatAt(todo.archived_at) }}
+            </div>
           </div>
-        </div>
 
-        <div class="cs-archive-actions">
-          <template v-if="confirmingId === todo.id">
-            <span class="cs-archive-confirm">Delete for good?</span>
+          <div class="cs-archive-actions">
+            <template v-if="confirmingId === todo.id">
+              <span class="cs-archive-confirm">Delete for good?</span>
+              <q-btn
+                flat
+                dense
+                no-caps
+                color="negative"
+                label="Yes"
+                :data-testid="`archived-delete-confirm-${todo.id}`"
+                @click="confirmDelete(todo.id)"
+              />
+              <q-btn
+                flat
+                dense
+                no-caps
+                label="No"
+                :data-testid="`archived-delete-cancel-${todo.id}`"
+                @click="confirmingId = null"
+              />
+            </template>
             <q-btn
+              v-else
               flat
               dense
-              no-caps
+              round
               color="negative"
-              label="Yes"
-              :data-testid="`archived-delete-confirm-${todo.id}`"
-              @click="confirmDelete(todo.id)"
+              icon="delete"
+              :data-testid="`archived-delete-${todo.id}`"
+              @click="confirmingId = todo.id"
             />
-            <q-btn
-              flat
-              dense
-              no-caps
-              label="No"
-              :data-testid="`archived-delete-cancel-${todo.id}`"
-              @click="confirmingId = null"
-            />
-          </template>
-          <q-btn
-            v-else
-            flat
-            dense
-            round
-            color="negative"
-            icon="delete"
-            :data-testid="`archived-delete-${todo.id}`"
-            @click="confirmingId = todo.id"
-          />
+          </div>
         </div>
       </div>
 
@@ -105,6 +106,8 @@ function formatAt(iso: string): string {
 </script>
 
 <style scoped lang="sass">
+// The card itself never scrolls, so its rounded corners stay clean; only the
+// inner list scrolls. overflow: hidden clips the list's corners to the radius.
 .cs-archive
   display: flex
   flex-direction: column
@@ -116,8 +119,7 @@ function formatAt(iso: string): string {
   width: 420px
   max-width: 90vw
   max-height: 80vh
-  overflow-y: auto
-  overflow-x: hidden
+  overflow: hidden
 
 .cs-archive-title
   font-size: 16px
@@ -126,6 +128,28 @@ function formatAt(iso: string): string {
 .cs-archive-empty
   font-size: 13px
   color: #8A8A8A
+
+// Scrollable region between the fixed title and Close button. A thin, themed
+// scrollbar sits inset from the edges so it never clips the card corner.
+.cs-archive-list
+  display: flex
+  flex-direction: column
+  gap: 10px
+  flex: 1 1 auto
+  overflow-y: auto
+  padding-right: 6px
+  scrollbar-width: thin
+  scrollbar-color: #4A4A4A transparent
+
+  &::-webkit-scrollbar
+    width: 8px
+
+  &::-webkit-scrollbar-thumb
+    background: #4A4A4A
+    border-radius: 4px
+
+  &::-webkit-scrollbar-track
+    background: transparent
 
 .cs-archive-item
   display: flex
@@ -137,20 +161,28 @@ function formatAt(iso: string): string {
   background: #1E1E1E
   padding: 10px 12px
 
-// min-width: 0 lets the text column shrink below its content width so a long
-// unbroken string wraps instead of shoving the trash button off-screen.
+// min-width: 0 lets the text column shrink below its content width so the
+// header/body can be truncated with an ellipsis instead of forcing overflow.
 .cs-archive-body
   min-width: 0
-  overflow-wrap: anywhere
 
+// One line, then an ellipsis.
 .cs-archive-header
   font-size: 15px
   font-weight: 600
+  white-space: nowrap
+  overflow: hidden
+  text-overflow: ellipsis
 
+// Clamp to two lines, then an ellipsis (long unbroken strings break first).
 .cs-archive-text
   font-size: 13px
-  white-space: pre-wrap
   color: #C8C8C8
+  overflow: hidden
+  overflow-wrap: anywhere
+  display: -webkit-box
+  -webkit-line-clamp: 2
+  -webkit-box-orient: vertical
 
 .cs-archive-at
   font-size: 12px
