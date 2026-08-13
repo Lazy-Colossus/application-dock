@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.dependencies import get_current_user
 from app.schemas.context_switch import (
+    AddUpdateRequest,
     CreateListRequest,
     CreateTodoRequest,
     ListSummary,
@@ -104,6 +105,21 @@ def update_todo(
             body=req.body,
             color=req.color,
         )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Todo not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/lists/{list_id}/todos/{todo_id}/updates", response_model=Todo)
+def add_update(
+    list_id: str,
+    todo_id: str,
+    req: AddUpdateRequest,
+    current_user: str = Depends(get_current_user),
+) -> Todo:
+    try:
+        return service.add_update(current_user, list_id, todo_id, req.text)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Todo not found") from exc
     except ValueError as exc:

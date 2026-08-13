@@ -306,4 +306,50 @@ describe("useContextSwitchStore", () => {
     expect(store.error).toBeTruthy();
     expect(store.activeTodos).toHaveLength(0);
   });
+
+  // ── updates log (Story 2.5) ──────────────────────────────────────────────────
+
+  it("addUpdate posts the text and replaces the local todo with the response", async () => {
+    getMock.mockResolvedValue({
+      ...newList("l-1", "Work"),
+      todos: [newTodo("t-1", { header: "Task" })],
+    });
+    postMock.mockResolvedValue(
+      newTodo("t-1", {
+        header: "Task",
+        updates: [
+          { id: "u-1", text: "progress", created_at: "2026-08-13T11:00:00Z" },
+        ],
+      }),
+    );
+    const store = useContextSwitchStore();
+    await store.fetchList("l-1");
+
+    await store.addUpdate("l-1", "t-1", "progress");
+
+    expect(postMock).toHaveBeenCalledWith(
+      "/context-switch/lists/l-1/todos/t-1/updates",
+      { text: "progress" },
+    );
+    expect(store.activeTodos[0].updates.map((u) => u.text)).toEqual([
+      "progress",
+    ]);
+    expect(store.loading).toBe(false);
+  });
+
+  it("addUpdate surfaces the error and rethrows without touching the todo", async () => {
+    getMock.mockResolvedValue({
+      ...newList("l-1", "Work"),
+      todos: [newTodo("t-1", { header: "Task" })],
+    });
+    postMock.mockRejectedValue(new Error("nope"));
+    const store = useContextSwitchStore();
+    await store.fetchList("l-1");
+
+    await expect(store.addUpdate("l-1", "t-1", "x")).rejects.toThrow();
+
+    expect(store.activeTodos[0].updates).toHaveLength(0);
+    expect(store.error).toBeTruthy();
+    expect(store.loading).toBe(false);
+  });
 });

@@ -24,7 +24,8 @@
 
       <ColorPicker v-model="color" />
 
-      <!-- The log is written in Story 2.5; until then it is simply empty. -->
+      <!-- Append-only progress log (Story 2.5): existing entries are read-only;
+           the input below appends a new dated entry without touching header/body. -->
       <div class="cs-updates" data-testid="detail-updates">
         <div class="cs-updates-title">Updates</div>
         <div
@@ -41,8 +42,29 @@
           class="cs-update"
           :data-testid="`detail-update-${update.id}`"
         >
-          <span class="cs-update-at">{{ update.created_at }}</span>
+          <span class="cs-update-at">{{ formatAt(update.created_at) }}</span>
           <span class="cs-update-text">{{ update.text }}</span>
+        </div>
+
+        <div class="cs-update-add row items-end q-gutter-sm q-mt-sm">
+          <q-input
+            v-model="updateText"
+            class="col"
+            dense
+            outlined
+            label="Add an update"
+            data-testid="detail-update-input"
+            @keyup.enter="onAddUpdate"
+          />
+          <q-btn
+            unelevated
+            no-caps
+            color="primary"
+            label="Add"
+            :disable="!canAddUpdate"
+            data-testid="detail-update-add"
+            @click="onAddUpdate"
+          />
         </div>
       </div>
 
@@ -78,16 +100,35 @@ const props = defineProps<{ modelValue: boolean; todo: Todo }>();
 const emit = defineEmits<{
   "update:modelValue": [open: boolean];
   save: [patch: TodoPatch];
+  "add-update": [text: string];
 }>();
 
 const header = ref("");
 const body = ref("");
 const color = ref("");
+const updateText = ref("");
+
+const canAddUpdate = computed(() => updateText.value.trim().length > 0);
+
+function onAddUpdate(): void {
+  const text = updateText.value.trim();
+  if (!text) return;
+  emit("add-update", text);
+  updateText.value = "";
+}
+
+// Render raw ISO timestamps as a readable local date-time; fall back to the
+// raw string if it isn't parseable so nothing silently disappears.
+function formatAt(iso: string): string {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? iso : date.toLocaleString();
+}
 
 function seedFromTodo(): void {
   header.value = props.todo.header;
   body.value = props.todo.body;
   color.value = props.todo.color;
+  updateText.value = "";
 }
 
 // Reopening (or opening a different pill) always shows that todo's own values.

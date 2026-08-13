@@ -99,3 +99,9 @@ class ReorderTodosRequest(BaseModel):
     # The complete active-todo id sequence, not a from/to pair — the service
     # can then reject anything that isn't a permutation (Story 2.3).
     ordered_ids: list[str]
+
+
+class AddUpdateRequest(BaseModel):
+    # A single timestamped log entry appended to a todo (Story 2.5). Blank text
+    # is rejected in the service; the entry never touches header/body.
+    text: str

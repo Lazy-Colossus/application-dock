@@ -94,6 +94,7 @@
       v-model="detailOpen"
       :todo="openTodoItem"
       @save="onSave"
+      @add-update="onAddUpdate"
     />
   </q-page>
 </template>
@@ -174,6 +175,15 @@ async function onSave(patch: TodoPatch): Promise<void> {
   if (openTodoId.value === null) return;
   try {
     await store.updateTodo(listId.value, openTodoId.value, patch);
+  } catch {
+    // Surfaced via store.error.
+  }
+}
+
+async function onAddUpdate(text: string): Promise<void> {
+  if (openTodoId.value === null) return;
+  try {
+    await store.addUpdate(listId.value, openTodoId.value, text);
   } catch {
     // Surfaced via store.error.
   }

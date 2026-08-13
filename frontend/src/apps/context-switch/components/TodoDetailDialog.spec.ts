@@ -88,6 +88,70 @@ describe("TodoDetailDialog", () => {
     );
   });
 
+  it("renders updates in chronological order", () => {
+    const wrapper = mountDialog(
+      makeTodo({
+        updates: [
+          { id: "u-1", text: "first", created_at: "2026-08-13T11:00:00Z" },
+          { id: "u-2", text: "second", created_at: "2026-08-13T12:00:00Z" },
+        ],
+      }),
+    );
+    const texts = wrapper
+      .findAll('[data-testid^="detail-update-u-"]')
+      .map((n) => n.text());
+    expect(texts[0]).toContain("first");
+    expect(texts[1]).toContain("second");
+  });
+
+  it("offers no edit/delete affordance on existing update entries (append-only)", () => {
+    const wrapper = mountDialog(
+      makeTodo({
+        updates: [
+          { id: "u-1", text: "logged", created_at: "2026-08-13T11:00:00Z" },
+        ],
+      }),
+    );
+    const entry = wrapper.find('[data-testid="detail-update-u-1"]');
+    expect(entry.find('[data-testid="update-edit-u-1"]').exists()).toBe(false);
+    expect(entry.find('[data-testid="update-delete-u-1"]').exists()).toBe(false);
+  });
+
+  it("keeps the add-update button disabled until text is entered", async () => {
+    const wrapper = mountDialog();
+    expect(
+      wrapper.find('[data-testid="detail-update-add"]').attributes("disabled"),
+    ).toBeDefined();
+
+    await wrapper
+      .find('[data-testid="detail-update-input"]')
+      .setValue("new note");
+    expect(
+      wrapper.find('[data-testid="detail-update-add"]').attributes("disabled"),
+    ).toBeUndefined();
+  });
+
+  it("keeps the add-update button disabled for whitespace-only text", async () => {
+    const wrapper = mountDialog();
+    await wrapper.find('[data-testid="detail-update-input"]').setValue("   ");
+    expect(
+      wrapper.find('[data-testid="detail-update-add"]').attributes("disabled"),
+    ).toBeDefined();
+  });
+
+  it("emits add-update with trimmed text and clears the input", async () => {
+    const wrapper = mountDialog();
+    await wrapper
+      .find('[data-testid="detail-update-input"]')
+      .setValue("  progress  ");
+    await wrapper.find('[data-testid="detail-update-add"]').trigger("click");
+
+    expect(wrapper.emitted("add-update")?.[0]).toEqual(["progress"]);
+    // The dialog stays open (adding an update is not saving/closing).
+    expect(wrapper.emitted("update:modelValue")).toBeUndefined();
+    expect(inputValue(wrapper, "detail-update-input")).toBe("");
+  });
+
   it("keeps save disabled until something actually changes", async () => {
     const wrapper = mountDialog();
     expect(

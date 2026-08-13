@@ -143,6 +143,30 @@ export const useContextSwitchStore = defineStore("contextSwitch", () => {
     }
   }
 
+  /** Append a timestamped log entry; the response carries the todo with the new update. */
+  async function addUpdate(
+    listId: string,
+    todoId: string,
+    text: string,
+  ): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const updated = await api.post<Todo>(
+        `/context-switch/lists/${listId}/todos/${todoId}/updates`,
+        { text },
+      );
+      const todos = currentList.value?.todos ?? [];
+      const index = todos.findIndex((t) => t.id === todoId);
+      if (index !== -1) todos[index] = updated;
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   /** Reorder locally first so a drag feels instant; roll back if the POST fails. */
   async function reorderTodos(
     listId: string,
@@ -204,6 +228,7 @@ export const useContextSwitchStore = defineStore("contextSwitch", () => {
     fetchList,
     addTodo,
     updateTodo,
+    addUpdate,
     reorderTodos,
     setGrid,
   };

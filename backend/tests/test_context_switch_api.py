@@ -538,3 +538,97 @@ def test_reorder_is_scoped_to_own_lists() -> None:
         app.dependency_overrides[get_current_user] = lambda: "test_user"
 
     assert _headers(list_id) == ["A", "B", "C"]
+
+
+# ── POST /lists/{id}/todos/{todo_id}/updates (Story 2.5) ──────────────────────
+
+
+def _add_update(list_id: str, todo_id: str, text: str):
+    return client.post(
+        f"/api/context-switch/lists/{list_id}/todos/{todo_id}/updates",
+        json={"text": text},
+    )
+
+
+def test_add_update_appends_entry_and_keeps_header_body() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Task", body="original body")
+
+    resp = _add_update(list_id, todo["id"], "made progress")
+    assert resp.status_code == 200
+    updated = resp.json()
+
+    # Header and body are untouched — an update never rewrites the original.
+    assert updated["header"] == "Task"
+    assert updated["body"] == "original body"
+
+    assert len(updated["updates"]) == 1
+    entry = updated["updates"][0]
+    assert entry["id"].startswith("u-")
+    assert entry["text"] == "made progress"
+    assert entry["created_at"]
+
+
+def test_add_update_persists() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Task")
+    _add_update(list_id, todo["id"], "logged")
+
+    reloaded = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]
+    assert [u["text"] for u in reloaded["updates"]] == ["logged"]
+
+
+def test_add_update_multiple_preserve_order() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Task")
+    for text in ("first", "second", "third"):
+        _add_update(list_id, todo["id"], text)
+
+    reloaded = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]
+    assert [u["text"] for u in reloaded["updates"]] == ["first", "second", "third"]
+
+
+def test_add_update_trims_text() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Task")
+    entry = _add_update(list_id, todo["id"], "  padded  ").json()["updates"][0]
+    assert entry["text"] == "padded"
+
+
+def test_add_update_blank_text_rejected() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Task")
+    assert _add_update(list_id, todo["id"], "   ").status_code == 422
+    reloaded = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]
+    assert reloaded["updates"] == []
+
+
+def test_add_update_does_not_bump_updated_at() -> None:
+    # An update is a log entry, not an edit of the todo's own fields.
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Task")
+    after = _add_update(list_id, todo["id"], "note").json()
+    assert after["updated_at"] == todo["updated_at"]
+
+
+def test_add_update_unknown_todo_404() -> None:
+    list_id = _create("Work")
+    assert _add_update(list_id, "t-nope", "x").status_code == 404
+
+
+def test_add_update_unknown_list_404() -> None:
+    assert _add_update("l-nope", "t-nope", "x").status_code == 404
+
+
+def test_add_update_is_scoped_to_own_lists() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Mine")
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert _add_update(list_id, todo["id"], "sneaky").status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+    reloaded = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]
+    assert reloaded["updates"] == []

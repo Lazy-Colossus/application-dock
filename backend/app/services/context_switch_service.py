@@ -13,7 +13,14 @@ import uuid
 from datetime import UTC, datetime
 
 from app.repositories import context_switch_repo as repo
-from app.schemas.context_switch import ContextSwitchDoc, Grid, ListSummary, Todo, TodoList
+from app.schemas.context_switch import (
+    ContextSwitchDoc,
+    Grid,
+    ListSummary,
+    Todo,
+    TodoList,
+    TodoUpdate,
+)
 
 
 def _now_iso() -> str:
@@ -183,6 +190,25 @@ def update_todo(
         todo.color = color
 
     todo.updated_at = _now_iso()
+    repo.write_doc(username, doc)
+    return todo
+
+
+def add_update(username: str, list_id: str, todo_id: str, text: str) -> Todo:
+    """Append a timestamped log entry to a todo and return the todo.
+
+    The entry is append-only: it never edits the todo's header/body and does not
+    bump `updated_at` (that field tracks edits to the todo itself). Raises
+    ValueError on blank text, FileNotFoundError if the list or todo is absent.
+    """
+    clean = text.strip()
+    if not clean:
+        raise ValueError("Update text must not be empty")
+
+    doc = repo.read_doc(username)
+    todo = _find_todo(_find_list(doc, list_id), todo_id)
+
+    todo.updates.append(TodoUpdate(id=_new_id("u"), text=clean, created_at=_now_iso()))
     repo.write_doc(username, doc)
     return todo
 
