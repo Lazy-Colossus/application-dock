@@ -36,6 +36,13 @@ export interface TodoList {
   todos: Todo[];
 }
 
+// Body of POST /lists/{id}/todos (Story 2.1).
+export interface NewTodo {
+  header: string;
+  body: string;
+  color: string;
+}
+
 // Lightweight summary returned by the list-picker endpoint (Story 1.3).
 export interface ListSummary {
   id: string;

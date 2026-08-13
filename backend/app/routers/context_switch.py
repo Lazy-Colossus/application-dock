@@ -10,7 +10,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.core.dependencies import get_current_user
 from app.schemas.context_switch import (
     CreateListRequest,
+    CreateTodoRequest,
     ListSummary,
+    Todo,
     TodoList,
     UpdateListRequest,
 )
@@ -30,6 +32,14 @@ def create_list(req: CreateListRequest, current_user: str = Depends(get_current_
         return service.create_list(current_user, req.name)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/lists/{list_id}", response_model=TodoList)
+def get_list(list_id: str, current_user: str = Depends(get_current_user)) -> TodoList:
+    try:
+        return service.get_list(current_user, list_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="List not found") from exc
 
 
 @router.put("/lists/{list_id}", response_model=TodoList)
@@ -57,3 +67,17 @@ def delete_list(list_id: str, current_user: str = Depends(get_current_user)) -> 
         service.delete_list(current_user, list_id)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="List not found") from exc
+
+
+@router.post("/lists/{list_id}/todos", response_model=Todo)
+def add_todo(
+    list_id: str,
+    req: CreateTodoRequest,
+    current_user: str = Depends(get_current_user),
+) -> Todo:
+    try:
+        return service.add_todo(current_user, list_id, req.header, req.body, req.color)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="List not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

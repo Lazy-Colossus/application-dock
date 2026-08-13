@@ -13,7 +13,7 @@ import uuid
 from datetime import UTC, datetime
 
 from app.repositories import context_switch_repo as repo
-from app.schemas.context_switch import ContextSwitchDoc, ListSummary, TodoList
+from app.schemas.context_switch import ContextSwitchDoc, ListSummary, Todo, TodoList
 
 
 def _now_iso() -> str:
@@ -27,6 +27,11 @@ def _new_id(prefix: str) -> str:
 
 def _active_count(lst: TodoList) -> int:
     return sum(1 for todo in lst.todos if todo.status == "active")
+
+
+def _active_sorted(lst: TodoList) -> list[Todo]:
+    """The list's active todos in board order."""
+    return sorted((t for t in lst.todos if t.status == "active"), key=lambda t: t.order)
 
 
 def list_lists(username: str) -> list[ListSummary]:
@@ -78,3 +83,41 @@ def delete_list(username: str, list_id: str) -> None:
         raise FileNotFoundError(f"list {list_id} not found")
     doc.lists = remaining
     repo.write_doc(username, doc)
+
+
+def get_list(username: str, list_id: str) -> TodoList:
+    """Return a list carrying only its active todos, in board order.
+
+    Archived todos are excluded — the archive gets its own view (Story 2.7).
+    """
+    doc = repo.read_doc(username)
+    lst = _find_list(doc, list_id)
+    return lst.model_copy(update={"todos": _active_sorted(lst)})
+
+
+def add_todo(username: str, list_id: str, header: str, body: str, color: str) -> Todo:
+    """Append a new active todo to a list and return it.
+
+    Raises ValueError on a blank header, FileNotFoundError if the list is absent.
+    """
+    clean = header.strip()
+    if not clean:
+        raise ValueError("Todo header must not be empty")
+
+    doc = repo.read_doc(username)
+    lst = _find_list(doc, list_id)
+
+    now = _now_iso()
+    todo = Todo(
+        id=_new_id("t"),
+        header=clean,
+        body=body,
+        color=color,
+        status="active",
+        order=max((t.order for t in lst.todos if t.status == "active"), default=-1) + 1,
+        created_at=now,
+        updated_at=now,
+    )
+    lst.todos.append(todo)
+    repo.write_doc(username, doc)
+    return todo

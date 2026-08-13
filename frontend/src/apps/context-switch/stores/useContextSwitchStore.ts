@@ -1,12 +1,24 @@
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import { api } from "@/composables/useApi";
-import type { ListSummary, TodoList } from "@/apps/context-switch/types";
+import type {
+  ListSummary,
+  NewTodo,
+  Todo,
+  TodoList,
+} from "@/apps/context-switch/types";
 
 export const useContextSwitchStore = defineStore("contextSwitch", () => {
   const lists = ref<ListSummary[]>([]);
+  const currentList = ref<TodoList | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
+
+  const activeTodos = computed<Todo[]>(() =>
+    [...(currentList.value?.todos ?? [])]
+      .filter((t) => t.status === "active")
+      .sort((a, b) => a.order - b.order),
+  );
 
   async function fetchLists(): Promise<void> {
     loading.value = true;
@@ -74,13 +86,49 @@ export const useContextSwitchStore = defineStore("contextSwitch", () => {
     }
   }
 
+  async function fetchList(listId: string): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      currentList.value = await api.get<TodoList>(
+        `/context-switch/lists/${listId}`,
+      );
+    } catch (e) {
+      currentList.value = null;
+      error.value = e instanceof Error ? e.message : String(e);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function addTodo(listId: string, todo: NewTodo): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const created = await api.post<Todo>(
+        `/context-switch/lists/${listId}/todos`,
+        { ...todo },
+      );
+      currentList.value?.todos.push(created);
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   return {
     lists,
+    currentList,
+    activeTodos,
     loading,
     error,
     fetchLists,
     createList,
     renameList,
     deleteList,
+    fetchList,
+    addTodo,
   };
 });

@@ -150,3 +150,111 @@ def test_delete_is_scoped_to_own_lists() -> None:
 
     # The owner's list is untouched.
     assert len(client.get("/api/context-switch/lists").json()) == 1
+
+
+# ── GET /lists/{id} + POST /lists/{id}/todos (Story 2.1) ──────────────────────
+
+
+def _add_todo(list_id: str, header: str, **extra: object) -> dict:
+    body: dict[str, object] = {"header": header, **extra}
+    return client.post(f"/api/context-switch/lists/{list_id}/todos", json=body).json()
+
+
+def test_get_list_returns_list_with_todos() -> None:
+    list_id = _create("Work")
+    resp = client.get(f"/api/context-switch/lists/{list_id}")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["id"] == list_id
+    assert body["name"] == "Work"
+    assert body["todos"] == []
+
+
+def test_get_unknown_list_404() -> None:
+    assert client.get("/api/context-switch/lists/l-nope").status_code == 404
+
+
+def test_add_todo_returns_active_todo() -> None:
+    list_id = _create("Work")
+    resp = client.post(
+        f"/api/context-switch/lists/{list_id}/todos",
+        json={"header": "Ship it", "body": "the thing", "color": "#aabbcc"},
+    )
+    assert resp.status_code == 200
+    todo = resp.json()
+    assert todo["id"].startswith("t-")
+    assert todo["header"] == "Ship it"
+    assert todo["body"] == "the thing"
+    assert todo["color"] == "#aabbcc"
+    assert todo["status"] == "active"
+    assert todo["order"] == 0
+    assert todo["updates"] == []
+    assert todo["archived_at"] is None
+
+
+def test_added_todo_appears_in_get_list() -> None:
+    list_id = _create("Work")
+    _add_todo(list_id, "First")
+    todos = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]
+    assert [t["header"] for t in todos] == ["First"]
+
+
+def test_add_todo_appends_at_end_of_order() -> None:
+    list_id = _create("Work")
+    for header in ("A", "B", "C"):
+        _add_todo(list_id, header)
+    todos = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]
+    assert [t["header"] for t in todos] == ["A", "B", "C"]
+    assert [t["order"] for t in todos] == [0, 1, 2]
+
+
+def test_add_todo_trims_header() -> None:
+    list_id = _create("Work")
+    assert _add_todo(list_id, "  Padded  ")["header"] == "Padded"
+
+
+def test_add_todo_blank_header_rejected() -> None:
+    list_id = _create("Work")
+    resp = client.post(f"/api/context-switch/lists/{list_id}/todos", json={"header": "   "})
+    assert resp.status_code == 422
+
+
+def test_add_todo_empty_body_allowed() -> None:
+    list_id = _create("Work")
+    assert _add_todo(list_id, "No body")["body"] == ""
+
+
+def test_add_todo_invalid_color_rejected() -> None:
+    list_id = _create("Work")
+    resp = client.post(
+        f"/api/context-switch/lists/{list_id}/todos",
+        json={"header": "X", "color": "red"},
+    )
+    assert resp.status_code == 422
+
+
+def test_add_todo_unknown_list_404() -> None:
+    resp = client.post("/api/context-switch/lists/l-nope/todos", json={"header": "X"})
+    assert resp.status_code == 404
+
+
+def test_todos_are_isolated_per_user() -> None:
+    list_id = _create("Mine")
+    _add_todo(list_id, "Secret")
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert client.get(f"/api/context-switch/lists/{list_id}").status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+    todos = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]
+    assert [t["header"] for t in todos] == ["Secret"]
+
+
+def test_active_count_reflects_added_todos() -> None:
+    list_id = _create("Work")
+    _add_todo(list_id, "One")
+    _add_todo(list_id, "Two")
+    summaries = client.get("/api/context-switch/lists").json()
+    assert summaries[0]["active_count"] == 2

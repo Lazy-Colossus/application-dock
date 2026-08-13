@@ -144,9 +144,12 @@ def test_create_user_success(auth_user: None) -> None:
     login_resp = client.post("/api/auth/login", json={"username": "newuser", "password": "tmp123"})
     assert login_resp.status_code == 200
     # Original user still works
-    assert client.post(
-        "/api/auth/login", json={"username": _TEST_USERNAME, "password": _TEST_PASSWORD}
-    ).status_code == 200
+    assert (
+        client.post(
+            "/api/auth/login", json={"username": _TEST_USERNAME, "password": _TEST_PASSWORD}
+        ).status_code
+        == 200
+    )
 
 
 def test_create_user_duplicate(auth_user: None) -> None:
@@ -188,13 +191,19 @@ def test_change_password_success(auth_user: None) -> None:
     assert resp.status_code == 200
     assert resp.json()["detail"] == "Password changed"
     # Old password no longer works
-    assert client.post(
-        "/api/auth/login", json={"username": _TEST_USERNAME, "password": _TEST_PASSWORD}
-    ).status_code == 401
+    assert (
+        client.post(
+            "/api/auth/login", json={"username": _TEST_USERNAME, "password": _TEST_PASSWORD}
+        ).status_code
+        == 401
+    )
     # New password works
-    assert client.post(
-        "/api/auth/login", json={"username": _TEST_USERNAME, "password": "newpass99"}
-    ).status_code == 200
+    assert (
+        client.post(
+            "/api/auth/login", json={"username": _TEST_USERNAME, "password": "newpass99"}
+        ).status_code
+        == 200
+    )
 
 
 def test_change_password_wrong_current(auth_user: None) -> None:

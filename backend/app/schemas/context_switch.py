@@ -18,6 +18,10 @@ TodoStatus = Literal["active", "archived"]
 _GRID_MIN = 1
 _GRID_MAX = 12
 
+# Pill colors are stored as a single `#rrggbb` string; preset swatches and the
+# custom picker both resolve to this one field (Story 2.1).
+HEX_COLOR_PATTERN = r"^#[0-9a-fA-F]{6}$"
+
 
 class Grid(BaseModel):
     columns: int = Field(default=3, ge=_GRID_MIN, le=_GRID_MAX)
@@ -74,3 +78,9 @@ class UpdateListRequest(BaseModel):
     # All-optional so later stories add fields (e.g. `grid` in Story 2.2)
     # without a new endpoint; only provided fields are applied.
     name: str | None = None
+
+
+class CreateTodoRequest(BaseModel):
+    header: str
+    body: str = ""
+    color: str = Field(default="#ffffff", pattern=HEX_COLOR_PATTERN)

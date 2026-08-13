@@ -13,6 +13,7 @@ vi.mock("@/composables/useApi", () => ({
 }));
 
 import { useContextSwitchStore } from "./useContextSwitchStore";
+import type { Todo } from "@/apps/context-switch/types";
 
 function newList(id: string, name: string) {
   return {
@@ -21,6 +22,22 @@ function newList(id: string, name: string) {
     grid: { columns: 3, rows: 2 },
     created_at: "2026-08-13T10:00:00Z",
     todos: [],
+  };
+}
+
+function newTodo(id: string, overrides: Partial<Todo> = {}): Todo {
+  return {
+    id,
+    header: "Todo",
+    body: "",
+    color: "#aecbfa",
+    status: "active",
+    order: 0,
+    created_at: "2026-08-13T10:00:00Z",
+    updated_at: "2026-08-13T10:00:00Z",
+    archived_at: null,
+    updates: [],
+    ...overrides,
   };
 }
 
@@ -104,5 +121,78 @@ describe("useContextSwitchStore", () => {
 
     expect(delMock).toHaveBeenCalledWith("/context-switch/lists/l-1");
     expect(store.lists.some((l) => l.id === "l-1")).toBe(false);
+  });
+
+  // ── board (Story 2.1) ──────────────────────────────────────────────────────
+
+  it("fetchList loads the board list", async () => {
+    getMock.mockResolvedValue(newList("l-1", "Work"));
+    const store = useContextSwitchStore();
+
+    await store.fetchList("l-1");
+
+    expect(getMock).toHaveBeenCalledWith("/context-switch/lists/l-1");
+    expect(store.currentList?.name).toBe("Work");
+    expect(store.loading).toBe(false);
+    expect(store.error).toBeNull();
+  });
+
+  it("fetchList clears the board and surfaces the error on failure", async () => {
+    getMock.mockRejectedValue(new Error("boom"));
+    const store = useContextSwitchStore();
+
+    await store.fetchList("l-1");
+
+    expect(store.currentList).toBeNull();
+    expect(store.error).toBeTruthy();
+    expect(store.loading).toBe(false);
+  });
+
+  it("activeTodos excludes archived todos and sorts by order", async () => {
+    getMock.mockResolvedValue({
+      ...newList("l-1", "Work"),
+      todos: [
+        newTodo("t-b", { order: 1 }),
+        newTodo("t-x", { status: "archived", order: 0 }),
+        newTodo("t-a", { order: 0 }),
+      ],
+    });
+    const store = useContextSwitchStore();
+    await store.fetchList("l-1");
+
+    expect(store.activeTodos.map((t) => t.id)).toEqual(["t-a", "t-b"]);
+  });
+
+  it("addTodo posts the payload and appends the created todo", async () => {
+    getMock.mockResolvedValue(newList("l-1", "Work"));
+    postMock.mockResolvedValue(newTodo("t-9", { header: "Fresh", order: 0 }));
+    const store = useContextSwitchStore();
+    await store.fetchList("l-1");
+
+    await store.addTodo("l-1", {
+      header: "Fresh",
+      body: "",
+      color: "#aecbfa",
+    });
+
+    expect(postMock).toHaveBeenCalledWith("/context-switch/lists/l-1/todos", {
+      header: "Fresh",
+      body: "",
+      color: "#aecbfa",
+    });
+    expect(store.activeTodos.map((t) => t.id)).toEqual(["t-9"]);
+  });
+
+  it("addTodo surfaces the error and rethrows", async () => {
+    getMock.mockResolvedValue(newList("l-1", "Work"));
+    postMock.mockRejectedValue(new Error("nope"));
+    const store = useContextSwitchStore();
+    await store.fetchList("l-1");
+
+    await expect(
+      store.addTodo("l-1", { header: "x", body: "", color: "#ffffff" }),
+    ).rejects.toThrow();
+    expect(store.error).toBeTruthy();
+    expect(store.activeTodos).toHaveLength(0);
   });
 });
