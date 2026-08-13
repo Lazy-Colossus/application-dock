@@ -39,6 +39,21 @@ def test_hotaru_router_is_mounted() -> None:
     assert app is not None
 
 
+def test_list_apps_includes_context_switch() -> None:
+    response = client.get("/api/apps")
+    cs = next((a for a in response.json() if a["id"] == "context-switch"), None)
+    assert cs is not None
+    assert cs["label"] == "Context-Switch"
+    assert cs["icon"] == "swap_horiz"
+    assert cs["route"] == "/context-switch"
+
+
+def test_context_switch_router_is_mounted() -> None:
+    from app.routers import context_switch
+
+    assert context_switch.router.prefix == "/api/context-switch"
+
+
 def test_list_apps_response_is_direct_array_no_envelope() -> None:
     response = client.get("/api/apps")
     body = response.json()

@@ -17,4 +17,12 @@ describe("app registry", () => {
     expect(hotaru?.icon).toBe("school");
     expect(hotaru?.route).toBe("/hotaru");
   });
+
+  it("registers the Context-Switch app (Story 1.1)", () => {
+    const cs = apps.find((a) => a.id === "context-switch");
+    expect(cs).toBeDefined();
+    expect(cs?.label).toBe("Context-Switch");
+    expect(cs?.icon).toBe("swap_horiz");
+    expect(cs?.route).toBe("/context-switch");
+  });
 });
