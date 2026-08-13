@@ -60,12 +60,12 @@ function onCustom(event: Event): void {
   height: 28px
   border-radius: 50%
   border: 2px solid transparent
-  outline: 1px solid rgba(0, 0, 0, 0.18)
+  outline: 1px solid rgba(255, 255, 255, 0.18)
   cursor: pointer
   padding: 0
 
 .cs-swatch--on
-  border-color: #1976d2
+  border-color: #C8960A
   transform: scale(1.12)
 
 .cs-custom
@@ -75,13 +75,13 @@ function onCustom(event: Event): void {
 
 .cs-custom-label
   font-size: 13px
-  color: #5f6368
+  color: #8A8A8A
 
 .cs-custom-input
   width: 42px
   height: 28px
   padding: 0
-  border: 1px solid rgba(0, 0, 0, 0.2)
+  border: 1px solid rgba(255, 255, 255, 0.2)
   border-radius: 6px
   background: none
   cursor: pointer

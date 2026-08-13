@@ -189,7 +189,8 @@ function onCloseAsDone(): void {
   display: flex
   flex-direction: column
   gap: 12px
-  background: #fff
+  background: #242424
+  color: #F0F0F0
   border-radius: 14px
   padding: 20px
   min-width: 340px
@@ -199,7 +200,7 @@ function onCloseAsDone(): void {
   font-weight: 600
 
 .cs-updates
-  border-top: 1px solid rgba(0, 0, 0, 0.12)
+  border-top: 1px solid #2A2A2A
   padding-top: 10px
 
 .cs-updates-title
@@ -209,7 +210,7 @@ function onCloseAsDone(): void {
 
 .cs-updates-empty
   font-size: 13px
-  color: #5f6368
+  color: #8A8A8A
 
 .cs-update
   display: flex
@@ -218,6 +219,6 @@ function onCloseAsDone(): void {
   padding: 2px 0
 
 .cs-update-at
-  color: #5f6368
+  color: #8A8A8A
   white-space: nowrap
 </style>

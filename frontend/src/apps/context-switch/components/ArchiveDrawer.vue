@@ -109,7 +109,8 @@ function formatAt(iso: string): string {
   display: flex
   flex-direction: column
   gap: 10px
-  background: #fff
+  background: #242424
+  color: #F0F0F0
   border-radius: 14px
   padding: 20px
   min-width: 360px
@@ -122,7 +123,7 @@ function formatAt(iso: string): string {
 
 .cs-archive-empty
   font-size: 13px
-  color: #5f6368
+  color: #8A8A8A
 
 .cs-archive-item
   display: flex
@@ -131,7 +132,7 @@ function formatAt(iso: string): string {
   gap: 12px
   border-left: 4px solid transparent
   border-radius: 8px
-  background: #f8f9fa
+  background: #1E1E1E
   padding: 10px 12px
 
 .cs-archive-header
@@ -141,11 +142,11 @@ function formatAt(iso: string): string {
 .cs-archive-text
   font-size: 13px
   white-space: pre-wrap
-  color: #3c4043
+  color: #C8C8C8
 
 .cs-archive-at
   font-size: 12px
-  color: #5f6368
+  color: #8A8A8A
   margin-top: 4px
 
 .cs-archive-actions
@@ -156,5 +157,5 @@ function formatAt(iso: string): string {
 
 .cs-archive-confirm
   font-size: 12px
-  color: #5f6368
+  color: #8A8A8A
 </style>

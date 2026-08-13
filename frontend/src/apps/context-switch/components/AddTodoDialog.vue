@@ -99,7 +99,8 @@ function onSubmit(): void {
   display: flex
   flex-direction: column
   gap: 12px
-  background: #fff
+  background: #242424
+  color: #F0F0F0
   border-radius: 14px
   padding: 20px
   min-width: 320px
