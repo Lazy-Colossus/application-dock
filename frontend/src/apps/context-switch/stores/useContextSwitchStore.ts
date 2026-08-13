@@ -7,6 +7,7 @@ import type {
   NewTodo,
   Todo,
   TodoList,
+  TodoPatch,
 } from "@/apps/context-switch/types";
 
 export const useContextSwitchStore = defineStore("contextSwitch", () => {
@@ -119,6 +120,29 @@ export const useContextSwitchStore = defineStore("contextSwitch", () => {
     }
   }
 
+  async function updateTodo(
+    listId: string,
+    todoId: string,
+    patch: TodoPatch,
+  ): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const updated = await api.put<Todo>(
+        `/context-switch/lists/${listId}/todos/${todoId}`,
+        { ...patch },
+      );
+      const todos = currentList.value?.todos ?? [];
+      const index = todos.findIndex((t) => t.id === todoId);
+      if (index !== -1) todos[index] = updated;
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   /** Reorder locally first so a drag feels instant; roll back if the POST fails. */
   async function reorderTodos(
     listId: string,
@@ -179,6 +203,7 @@ export const useContextSwitchStore = defineStore("contextSwitch", () => {
     deleteList,
     fetchList,
     addTodo,
+    updateTodo,
     reorderTodos,
     setGrid,
   };

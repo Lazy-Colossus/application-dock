@@ -1,8 +1,12 @@
 <template>
   <div
     class="cs-pill"
+    role="button"
+    tabindex="0"
     :style="{ background: todo.color, color: textColor }"
     :data-testid="`pill-${todo.id}`"
+    @click="emit('open')"
+    @keyup.enter="emit('open')"
   >
     <div class="cs-pill-header" data-testid="pill-header">
       {{ todo.header }}
@@ -20,6 +24,8 @@ import type { Todo } from "@/apps/context-switch/types";
 
 const props = defineProps<{ todo: Todo }>();
 
+const emit = defineEmits<{ open: [] }>();
+
 const textColor = computed(() => readableTextColor(props.todo.color));
 </script>
 
@@ -34,6 +40,7 @@ const textColor = computed(() => readableTextColor(props.todo.color));
   border-radius: 22px
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2)
   overflow: hidden
+  cursor: pointer
 
 .cs-pill-header
   font-size: 18px

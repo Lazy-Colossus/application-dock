@@ -146,6 +146,47 @@ def add_todo(username: str, list_id: str, header: str, body: str, color: str) ->
     return todo
 
 
+def _find_todo(lst: TodoList, todo_id: str) -> Todo:
+    for todo in lst.todos:
+        if todo.id == todo_id:
+            return todo
+    raise FileNotFoundError(f"todo {todo_id} not found")
+
+
+def update_todo(
+    username: str,
+    list_id: str,
+    todo_id: str,
+    *,
+    header: str | None = None,
+    body: str | None = None,
+    color: str | None = None,
+) -> Todo:
+    """Apply the provided fields to a todo and bump `updated_at`.
+
+    Absent fields are left alone. Raises ValueError on a blank header,
+    FileNotFoundError if the list or todo is absent.
+    """
+    doc = repo.read_doc(username)
+    todo = _find_todo(_find_list(doc, list_id), todo_id)
+
+    if header is not None:
+        clean = header.strip()
+        if not clean:
+            raise ValueError("Todo header must not be empty")
+        todo.header = clean
+
+    if body is not None:
+        todo.body = body
+
+    if color is not None:
+        todo.color = color
+
+    todo.updated_at = _now_iso()
+    repo.write_doc(username, doc)
+    return todo
+
+
 def reorder_todos(username: str, list_id: str, ordered_ids: list[str]) -> TodoList:
     """Rewrite active todo `order` from a full ordered id sequence.
 

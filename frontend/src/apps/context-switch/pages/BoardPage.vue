@@ -55,7 +55,7 @@
           @drop.prevent="onDrop(todo.id)"
           @dragend="draggingId = null"
         >
-          <TodoPill :todo="todo" />
+          <TodoPill :todo="todo" @open="openTodo(todo.id)" />
         </div>
       </div>
 
@@ -89,6 +89,12 @@
     </template>
 
     <AddTodoDialog v-model="addOpen" @create="onCreate" />
+    <TodoDetailDialog
+      v-if="openTodoItem"
+      v-model="detailOpen"
+      :todo="openTodoItem"
+      @save="onSave"
+    />
   </q-page>
 </template>
 
@@ -98,10 +104,11 @@ import { useRoute, useRouter } from "vue-router";
 import { useContextSwitchStore } from "@/apps/context-switch/stores/useContextSwitchStore";
 import AddTodoDialog from "@/apps/context-switch/components/AddTodoDialog.vue";
 import GridControl from "@/apps/context-switch/components/GridControl.vue";
+import TodoDetailDialog from "@/apps/context-switch/components/TodoDetailDialog.vue";
 import TodoPill from "@/apps/context-switch/components/TodoPill.vue";
 import { DEFAULT_GRID, pageCount, pageSlice } from "@/apps/context-switch/grid";
 import { moveId } from "@/apps/context-switch/reorder";
-import type { Grid, NewTodo } from "@/apps/context-switch/types";
+import type { Grid, NewTodo, TodoPatch } from "@/apps/context-switch/types";
 
 const route = useRoute();
 const router = useRouter();
@@ -111,6 +118,14 @@ const listId = computed(() => String(route.params.listId ?? ""));
 const addOpen = ref(false);
 const page = ref(1);
 const draggingId = ref<string | null>(null);
+const detailOpen = ref(false);
+const openTodoId = ref<string | null>(null);
+
+// Track the open todo by id, not by value, so an edit re-renders the dialog
+// from the store's copy rather than a stale snapshot.
+const openTodoItem = computed(
+  () => store.activeTodos.find((t) => t.id === openTodoId.value) ?? null,
+);
 
 const grid = computed<Grid>(() => store.currentList?.grid ?? DEFAULT_GRID);
 const totalPages = computed(() =>
@@ -145,6 +160,20 @@ async function onCreate(todo: NewTodo): Promise<void> {
 async function onGrid(next: Grid): Promise<void> {
   try {
     await store.setGrid(listId.value, next);
+  } catch {
+    // Surfaced via store.error.
+  }
+}
+
+function openTodo(id: string): void {
+  openTodoId.value = id;
+  detailOpen.value = true;
+}
+
+async function onSave(patch: TodoPatch): Promise<void> {
+  if (openTodoId.value === null) return;
+  try {
+    await store.updateTodo(listId.value, openTodoId.value, patch);
   } catch {
     // Surfaced via store.error.
   }

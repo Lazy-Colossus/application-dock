@@ -57,4 +57,10 @@ describe("TodoPill", () => {
       "color: #ffffff",
     );
   });
+
+  it("emits open when clicked (Story 2.4)", async () => {
+    const wrapper = mount(TodoPill, { props: { todo: makeTodo() } });
+    await wrapper.find('[data-testid="pill-t-1"]').trigger("click");
+    expect(wrapper.emitted("open")).toHaveLength(1);
+  });
 });

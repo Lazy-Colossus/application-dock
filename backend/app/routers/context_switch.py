@@ -16,6 +16,7 @@ from app.schemas.context_switch import (
     Todo,
     TodoList,
     UpdateListRequest,
+    UpdateTodoRequest,
 )
 from app.services import context_switch_service as service
 
@@ -79,6 +80,32 @@ def add_todo(
         return service.add_todo(current_user, list_id, req.header, req.body, req.color)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="List not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.put("/lists/{list_id}/todos/{todo_id}", response_model=Todo)
+def update_todo(
+    list_id: str,
+    todo_id: str,
+    req: UpdateTodoRequest,
+    current_user: str = Depends(get_current_user),
+) -> Todo:
+    # Guard on which fields the client actually sent, so a later story can add
+    # a field to the schema without also having to widen this check.
+    if not req.model_dump(exclude_unset=True):
+        raise HTTPException(status_code=422, detail="No updatable fields provided")
+    try:
+        return service.update_todo(
+            current_user,
+            list_id,
+            todo_id,
+            header=req.header,
+            body=req.body,
+            color=req.color,
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Todo not found") from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 

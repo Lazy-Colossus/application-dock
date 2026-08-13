@@ -183,6 +183,44 @@ describe("useContextSwitchStore", () => {
     expect(store.activeTodos.map((t) => t.id)).toEqual(["t-9"]);
   });
 
+  it("updateTodo PUTs the patch and replaces the local todo", async () => {
+    getMock.mockResolvedValue({
+      ...newList("l-1", "Work"),
+      todos: [newTodo("t-1", { header: "Old", body: "keep" })],
+    });
+    putMock.mockResolvedValue(newTodo("t-1", { header: "New", body: "keep" }));
+    const store = useContextSwitchStore();
+    await store.fetchList("l-1");
+
+    await store.updateTodo("l-1", "t-1", { header: "New" });
+
+    expect(putMock).toHaveBeenCalledWith(
+      "/context-switch/lists/l-1/todos/t-1",
+      { header: "New" },
+    );
+    expect(store.activeTodos[0].header).toBe("New");
+    expect(store.activeTodos[0].body).toBe("keep");
+    expect(store.loading).toBe(false);
+  });
+
+  it("updateTodo leaves the todo alone and rethrows when rejected", async () => {
+    getMock.mockResolvedValue({
+      ...newList("l-1", "Work"),
+      todos: [newTodo("t-1", { header: "Old" })],
+    });
+    putMock.mockRejectedValue(new Error("nope"));
+    const store = useContextSwitchStore();
+    await store.fetchList("l-1");
+
+    await expect(
+      store.updateTodo("l-1", "t-1", { header: "New" }),
+    ).rejects.toThrow();
+
+    expect(store.activeTodos[0].header).toBe("Old");
+    expect(store.error).toBeTruthy();
+    expect(store.loading).toBe(false);
+  });
+
   it("reorderTodos reorders locally before the request resolves", async () => {
     getMock.mockResolvedValue({
       ...newList("l-1", "Work"),

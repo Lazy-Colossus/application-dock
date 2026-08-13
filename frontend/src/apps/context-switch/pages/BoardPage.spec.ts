@@ -214,6 +214,65 @@ describe("BoardPage", () => {
     );
   });
 
+  // ── open + edit (Story 2.4) ─────────────────────────────────────────────────
+
+  it("opens the detail dialog on the clicked todo", async () => {
+    getMock.mockResolvedValue(makeList(makeTodos(2)));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="todo-detail-dialog"]').exists()).toBe(
+      false,
+    );
+
+    await wrapper.find('[data-testid="pill-t-2"]').trigger("click");
+    const header = wrapper.find('[data-testid="detail-header-input"]')
+      .element as HTMLInputElement;
+    expect(header.value).toBe("Todo 2");
+  });
+
+  it("saves an edit and re-renders the pill", async () => {
+    getMock.mockResolvedValue(makeList(makeTodos(2)));
+    putMock.mockResolvedValue(
+      makeTodo({ id: "t-1", header: "Renamed", color: "#202124", order: 0 }),
+    );
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="pill-t-1"]').trigger("click");
+    await wrapper
+      .find('[data-testid="detail-header-input"]')
+      .setValue("Renamed");
+    await wrapper.find('[data-testid="detail-save"]').trigger("click");
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith(
+      "/context-switch/lists/l-42/todos/t-1",
+      { header: "Renamed" },
+    );
+    expect(wrapper.find('[data-testid="pill-t-1"]').text()).toContain(
+      "Renamed",
+    );
+    expect(
+      wrapper.find('[data-testid="pill-t-1"]').attributes("style"),
+    ).toContain("background: #202124");
+  });
+
+  it("surfaces a rejected edit", async () => {
+    getMock.mockResolvedValue(makeList(makeTodos(1)));
+    putMock.mockRejectedValue(new Error("rejected"));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="pill-t-1"]').trigger("click");
+    await wrapper.find('[data-testid="detail-header-input"]').setValue("New");
+    await wrapper.find('[data-testid="detail-save"]').trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="error"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="pill-t-1"]').text()).toContain("Todo 1");
+  });
+
   // ── drag reorder (Story 2.3) ────────────────────────────────────────────────
 
   it("posts the new full id order when a pill is dropped on another", async () => {

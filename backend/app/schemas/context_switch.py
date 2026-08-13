@@ -87,6 +87,14 @@ class CreateTodoRequest(BaseModel):
     color: str = Field(default="#ffffff", pattern=HEX_COLOR_PATTERN)
 
 
+class UpdateTodoRequest(BaseModel):
+    # The single mutation surface for a todo's fields: header/body/color here,
+    # `status` (archive) in Story 2.6. All-optional — only provided fields apply.
+    header: str | None = None
+    body: str | None = None
+    color: str | None = Field(default=None, pattern=HEX_COLOR_PATTERN)
+
+
 class ReorderTodosRequest(BaseModel):
     # The complete active-todo id sequence, not a from/to pair — the service
     # can then reject anything that isn't a permutation (Story 2.3).

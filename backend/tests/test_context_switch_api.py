@@ -329,6 +329,110 @@ def test_active_count_reflects_added_todos() -> None:
     assert summaries[0]["active_count"] == 2
 
 
+# ── PUT /lists/{id}/todos/{todo_id} (Story 2.4) ───────────────────────────────
+
+
+def _edit(list_id: str, todo_id: str, **fields: object):
+    return client.put(f"/api/context-switch/lists/{list_id}/todos/{todo_id}", json=fields)
+
+
+def test_update_todo_changes_only_provided_fields() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Old", body="old body", color="#aabbcc")
+
+    updated = _edit(list_id, todo["id"], header="New").json()
+
+    assert updated["header"] == "New"
+    assert updated["body"] == "old body"
+    assert updated["color"] == "#aabbcc"
+
+
+def test_update_todo_bumps_updated_at_and_keeps_created_at() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Old")
+
+    updated = _edit(list_id, todo["id"], body="fresh").json()
+
+    assert updated["updated_at"] >= todo["updated_at"]
+    assert updated["created_at"] == todo["created_at"]
+
+
+def test_update_todo_persists() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Old")
+    _edit(list_id, todo["id"], header="New", body="text", color="#112233")
+
+    reloaded = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]
+    assert reloaded["header"] == "New"
+    assert reloaded["body"] == "text"
+    assert reloaded["color"] == "#112233"
+
+
+def test_update_todo_trims_header() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Old")
+    assert _edit(list_id, todo["id"], header="  Trimmed  ").json()["header"] == "Trimmed"
+
+
+def test_update_todo_blank_header_rejected() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Keep")
+
+    assert _edit(list_id, todo["id"], header="   ").status_code == 422
+    assert client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]["header"] == "Keep"
+
+
+def test_update_todo_blank_body_allowed() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Header", body="something")
+    assert _edit(list_id, todo["id"], body="").json()["body"] == ""
+
+
+def test_update_todo_invalid_color_rejected() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Header")
+    assert _edit(list_id, todo["id"], color="blue").status_code == 422
+
+
+def test_update_todo_with_no_fields_rejected() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Header")
+    assert _edit(list_id, todo["id"]).status_code == 422
+
+
+def test_update_todo_does_not_change_order_or_status() -> None:
+    list_id = _create("Work")
+    _add_todo(list_id, "A")
+    second = _add_todo(list_id, "B")
+
+    updated = _edit(list_id, second["id"], header="B2").json()
+
+    assert updated["order"] == 1
+    assert updated["status"] == "active"
+
+
+def test_update_unknown_todo_404() -> None:
+    list_id = _create("Work")
+    assert _edit(list_id, "t-nope", header="X").status_code == 404
+
+
+def test_update_todo_in_unknown_list_404() -> None:
+    assert _edit("l-nope", "t-nope", header="X").status_code == 404
+
+
+def test_update_todo_is_scoped_to_own_lists() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Mine")
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert _edit(list_id, todo["id"], header="Yours").status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+    assert client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]["header"] == "Mine"
+
+
 # ── POST /lists/{id}/todos/reorder (Story 2.3) ────────────────────────────────
 
 
