@@ -26,74 +26,23 @@
       />
     </div>
 
-    <!-- Clean end — a calm recap. -->
+    <!-- Clean end — a calm recap. The recap scrolls its own word list, so this
+         block fills the page rather than centring like the other end states. -->
     <div
       v-else-if="finished"
-      class="drill-state column flex-center"
+      class="drill-state drill-state--done column no-wrap items-center"
       data-testid="drill-done"
     >
       <div class="drill-done__glyph">蛍</div>
       <div class="drill-done__title">Session complete.</div>
 
-      <div class="drill-summary hotaru-panel column flex-center">
-        <!-- Session breakdown: a ring split by this session's grade mix. -->
-        <div class="drill-ring" data-testid="summary-ring">
-          <svg
-            class="drill-ring__svg"
-            viewBox="-12 -12 144 144"
-            aria-hidden="true"
-          >
-            <circle class="drill-ring__track" cx="60" cy="60" r="52" />
-            <circle
-              v-for="seg in ringSegments"
-              :key="seg.g"
-              class="drill-ring__seg"
-              cx="60"
-              cy="60"
-              r="52"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="12"
-              :stroke-dasharray="seg.dasharray"
-              :stroke-dashoffset="seg.dashoffset"
-              :style="{ color: seg.color }"
-              transform="rotate(-90 60 60)"
-            />
-          </svg>
-          <div class="drill-ring__center">
-            <div class="drill-ring__count" data-testid="summary-practised">
-              {{ practised }}
-            </div>
-            <div class="drill-ring__label">
-              {{ practised === 1 ? "word" : "words" }}
-            </div>
-          </div>
-          <SessionCelebration />
-        </div>
-
-        <div class="drill-breakdown" data-testid="summary-breakdown">
-          <span class="drill-tally" data-testid="tally-correct">
-            <i class="drill-dot drill-dot--correct" />Correct
-            <b>{{ counts.correct }}</b>
-          </span>
-          <span class="drill-tally" data-testid="tally-close">
-            <i class="drill-dot drill-dot--close" />Close
-            <b>{{ counts.close }}</b>
-          </span>
-          <span class="drill-tally" data-testid="tally-incorrect">
-            <i class="drill-dot drill-dot--incorrect" />Incorrect
-            <b>{{ counts.incorrect }}</b>
-          </span>
-        </div>
-      </div>
-
-      <q-btn
-        class="drill-btn q-mt-md"
-        label="Back to practice"
-        unelevated
-        no-caps
-        data-testid="drill-done-btn"
-        @click="backToPicker"
+      <SessionSummary
+        :results="results"
+        :selected="selectedGrades"
+        @toggle="toggleGrade"
+        @clear="clearGrades"
+        @replay="replaySelection"
+        @close="backToPicker"
       />
     </div>
 
@@ -226,13 +175,17 @@ import { useRoute, useRouter } from "vue-router";
 import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
 import Flashcard from "@/apps/hotaru/components/Flashcard.vue";
 import GradeButtons from "@/apps/hotaru/components/GradeButtons.vue";
-import SessionCelebration from "@/apps/hotaru/components/SessionCelebration.vue";
+import SessionSummary from "@/apps/hotaru/components/SessionSummary.vue";
 import WordNotesDialog from "@/apps/hotaru/components/WordNotesDialog.vue";
 import { useDrill } from "@/apps/hotaru/composables/useDrill";
 import { useHotaruPracticeStore } from "@/apps/hotaru/stores/useHotaruPracticeStore";
 import { useHotaruNotesStore } from "@/apps/hotaru/stores/useHotaruNotesStore";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
-import type { DrillGrade, Visibility } from "@/apps/hotaru/types";
+import type {
+  DrillGrade,
+  SessionResult,
+  Visibility,
+} from "@/apps/hotaru/types";
 import "./../css/hotaru.sass";
 
 const store = useHotaruPracticeStore();
@@ -252,6 +205,7 @@ const {
   pending,
   reveal,
   grade,
+  restart,
 } = useDrill(queue);
 
 // Mid-drill notes (Story 3.4): open the shared WordNotesDialog over the current
@@ -385,53 +339,56 @@ function submitTyped(): void {
   }
 }
 
-// Session recap: count grades through the single choke-point (both self-grade
-// and typed-Correct route here). The tallies feed the breakdown ring.
-const practised = ref(0);
-const counts = ref<Record<DrillGrade, number>>({
-  correct: 0,
-  close: 0,
-  incorrect: 0,
-});
+// Session recap: record every graded card through the single choke-point (both
+// self-grade and typed-Correct route here). `results` is the recap's whole data
+// source — ring, tallies and list all derive from it, so the end screen needs no
+// post-session fetch. A replay appends to it, so re-practised words appear twice
+// with the result each attempt earned.
+const results = ref<SessionResult[]>([]);
+// True once the learner re-runs a selection; makes later grades count as
+// re-practice, which the SRS credits without letting it promote a tier.
+const replaying = ref(false);
 
 function onGrade(g: DrillGrade): void {
-  grade(g);
-  practised.value += 1;
-  counts.value[g] += 1;
+  const word = current.value?.word;
+  grade(g, replaying.value);
+  if (word) results.value.push({ word, grade: g });
   typedAnswer.value = "";
   void flushGrades();
 }
 
-// Breakdown ring — a donut split by this session's grade mix. Built from the
-// local counts, so it draws instantly on finish (no post-session fetch). Fixed
-// hues match the grade buttons: Correct cyan, Close amber, Incorrect magenta.
-const RING_CIRC = 2 * Math.PI * 52; // r=52, centre (60,60)
-const RING_GAP = 7; // arc units left blank between adjacent segments
-const GRADE_COLOR: Record<DrillGrade, string> = {
-  correct: "var(--hotaru-bamboo)",
-  close: "var(--hotaru-amber-private)",
-  incorrect: "var(--hotaru-fam-5)",
-};
-const ringSegments = computed(() => {
-  // Order round the ring so the big Correct arc reads on the left and Incorrect
-  // sits to the right (the tallies below keep the natural Correct→Incorrect order).
-  const order: DrillGrade[] = ["incorrect", "close", "correct"];
-  const present = order.filter((g) => counts.value[g] > 0);
-  const gap = present.length > 1 ? RING_GAP : 0;
-  let acc = 0;
-  return present.map((g) => {
-    const segLen = (counts.value[g] / practised.value) * RING_CIRC;
-    const dash = Math.max(1, segLen - gap);
-    const seg = {
-      g,
-      color: GRADE_COLOR[g],
-      dasharray: `${dash} ${RING_CIRC}`,
-      dashoffset: -(acc + gap / 2),
-    };
-    acc += segLen;
-    return seg;
-  });
-});
+// Recap filters: the tallies are multi-select, and the selection scopes both the
+// list and what the replay button re-drills.
+const selectedGrades = ref<DrillGrade[]>([]);
+function toggleGrade(g: DrillGrade): void {
+  selectedGrades.value = selectedGrades.value.includes(g)
+    ? selectedGrades.value.filter((x) => x !== g)
+    : [...selectedGrades.value, g];
+}
+function clearGrades(): void {
+  selectedGrades.value = [];
+}
+
+// Re-drill the words the recap is currently showing. Every card object is still
+// in memory from the finished session, so this re-seeds the queue locally — no
+// fetch, works offline, and direction/scoring carry over untouched. Words are
+// de-duplicated so a word met twice replays once.
+function replaySelection(): void {
+  const wanted = selectedGrades.value.length
+    ? results.value.filter((r) => selectedGrades.value.includes(r.grade))
+    : results.value;
+  const ids = new Set(wanted.map((r) => r.word.id));
+  const cards = queue.value.filter((item) => ids.has(item.word.id));
+  if (!cards.length) return;
+  queue.value = cards;
+  replaying.value = true;
+  // The replay is its own round, so it earns its own recap. Carrying the old
+  // results over would double-count a re-practised word and leave the ring
+  // showing two contradictory grades for it.
+  results.value = [];
+  selectedGrades.value = [];
+  restart();
+}
 
 // Per-session reveal aids: furigana (kana above kanji, on the prompt) and
 // romaji (on the reveal). One "eye" button toggles whichever fits the step.
@@ -543,6 +500,13 @@ watch(
   flex: 1
   justify-content: center
 
+// The recap owns the remaining height (its list scrolls), so drop the centring
+// padding the loading/empty states use.
+.drill-state--done
+  padding: 12px 0 0
+  justify-content: flex-start
+  min-height: 0
+
 .drill-done__glyph
   font-size: 48px
   color: var(--hotaru-lamp-yellow, #ffd24a)
@@ -564,107 +528,10 @@ watch(
   font-size: 16px
   color: var(--hotaru-cream)
 
-.drill-summary
-  align-self: stretch
-  gap: 14px
-  margin-top: 16px
-  padding: 20px 16px
-
-// Breakdown ring — a donut around the practised count.
-.drill-ring
-  position: relative
-  width: 184px
-  height: 184px
-  display: grid
-  place-items: center
-  animation: cel-bloom 0.7s cubic-bezier(0.2, 0.8, 0.3, 1) both
-
-@keyframes cel-bloom
-  0%
-    transform: scale(0.9)
-    opacity: 0
-  100%
-    transform: scale(1)
-    opacity: 1
-
-.drill-ring__svg
-  width: 100%
-  height: 100%
-  overflow: visible
-
-.drill-ring__track
-  fill: none
-  stroke: rgba(155, 107, 255, 0.14)
-  stroke-width: 12
-
-.drill-ring__seg
-  filter: drop-shadow(0 0 6px currentColor)
-
-.drill-ring__center
-  position: absolute
-  display: flex
-  flex-direction: column
-  align-items: center
-
-.drill-ring__count
-  font-size: 30px
-  font-weight: 700
-  color: var(--hotaru-cream)
-  line-height: 1
-
-.drill-ring__label
-  font-size: 12px
-  color: var(--hotaru-sage)
-  margin-top: 3px
-
-.drill-breakdown
-  display: flex
-  flex-wrap: wrap
-  justify-content: center
-  gap: 6px 16px
-  animation: cel-rise 0.5s ease-out 0.5s both
-
-@keyframes cel-rise
-  0%
-    transform: translateY(6px)
-    opacity: 0
-  100%
-    transform: translateY(0)
-    opacity: 1
-
 // Honour reduced-motion: no entrance animation, just the final state.
 @media (prefers-reduced-motion: reduce)
-  .drill-done__glyph, .drill-ring, .drill-breakdown
+  .drill-done__glyph
     animation: none
-
-.drill-tally
-  display: flex
-  align-items: center
-  gap: 6px
-  font-size: 13px
-  color: var(--hotaru-cream-soft)
-
-.drill-tally b
-  color: var(--hotaru-cream)
-  font-variant-numeric: tabular-nums
-
-.drill-dot
-  width: 9px
-  height: 9px
-  border-radius: 50%
-  display: inline-block
-
-.drill-dot--correct
-  background: var(--hotaru-bamboo)
-  box-shadow: 0 0 8px rgba(56, 240, 230, 0.7)
-
-.drill-dot--close
-  background: var(--hotaru-amber-private)
-  box-shadow: 0 0 8px rgba(255, 206, 92, 0.7)
-
-.drill-dot--incorrect
-  background: var(--hotaru-fam-5)
-  box-shadow: 0 0 8px rgba(255, 92, 200, 0.7)
 
 .drill-glyph
   color: var(--hotaru-bamboo)

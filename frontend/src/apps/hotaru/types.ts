@@ -57,6 +57,15 @@ export type DrillGrade = "correct" | "close" | "incorrect";
 export interface GradeItem {
   word_id: string;
   grade: DrillGrade;
+  // Set when re-practising a word already met earlier in the same session. The
+  // SRS engine credits a replay Correct without letting it promote a tier.
+  replay?: boolean;
+}
+
+// One graded card kept for the end-of-session recap: which word, how it went.
+export interface SessionResult {
+  word: Word;
+  grade: DrillGrade;
 }
 
 // A cooperative memory note on a word. `author` is a user id; a private note is

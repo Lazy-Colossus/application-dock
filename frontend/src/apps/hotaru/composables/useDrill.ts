@@ -31,11 +31,21 @@ export function useDrill(queue: Ref<QueueItem[]>) {
   }
 
   // Record a grade for the current card and advance immediately (optimistic).
-  function grade(g: DrillGrade): void {
+  // `replay` rides along on the buffered item so the server can credit a
+  // re-practice without letting it promote a tier.
+  function grade(g: DrillGrade, replay = false): void {
     const item = current.value;
     if (!item) return;
-    pending.value.push({ word_id: item.word.id, grade: g });
+    pending.value.push({ word_id: item.word.id, grade: g, replay });
     next();
+  }
+
+  // Run the queue again from the top. The caller swaps `queue` first (e.g. to
+  // the subset the learner picked out of the recap); this only resets position.
+  // `pending` is left alone — a buffered grade still needs to reach the server.
+  function restart(): void {
+    index.value = 0;
+    revealed.value = false;
   }
 
   return {
@@ -49,5 +59,6 @@ export function useDrill(queue: Ref<QueueItem[]>) {
     reveal,
     next,
     grade,
+    restart,
   };
 }

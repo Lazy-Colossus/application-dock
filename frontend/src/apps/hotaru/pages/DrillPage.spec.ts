@@ -269,7 +269,7 @@ describe("DrillPage", () => {
     await wrapper.find('[data-testid="grade-correct"]').trigger("click");
     await flushPromises();
     expect(postMock).toHaveBeenCalledWith("/hotaru/practice/grades?user=dani", [
-      { word_id: "g1", grade: "correct" },
+      { word_id: "g1", grade: "correct", replay: false },
     ]);
     // Still mid-session (second card showing), not the done state.
     expect(wrapper.find('[data-testid="flashcard"]').exists()).toBe(true);
@@ -285,7 +285,7 @@ describe("DrillPage", () => {
     expect(wrapper.find('[data-testid="drill-done"]').exists()).toBe(true);
     // The batch synced in the background to the grades endpoint.
     expect(postMock).toHaveBeenCalledWith("/hotaru/practice/grades?user=dani", [
-      { word_id: "g1", grade: "close" },
+      { word_id: "g1", grade: "close", replay: false },
     ]);
     // "Back to practice" returns to the picker carrying the scope, so it shows
     // the just-updated stats.
@@ -374,7 +374,7 @@ describe("DrillPage", () => {
     await wrapper.find('[data-testid="typed-submit"]').trigger("click");
     await flushPromises();
     expect(postMock).toHaveBeenCalledWith("/hotaru/practice/grades?user=dani", [
-      { word_id: "g1", grade: "correct" },
+      { word_id: "g1", grade: "correct", replay: false },
     ]);
     // Advanced to the next card's English prompt.
     expect(wrapper.find('[data-testid="card-prompt"]').text()).toBe("thanks");
@@ -397,11 +397,11 @@ describe("DrillPage", () => {
     await wrapper.find('[data-testid="grade-close"]').trigger("click");
     await flushPromises();
     expect(postMock).toHaveBeenCalledWith("/hotaru/practice/grades?user=dani", [
-      { word_id: "g1", grade: "close" },
+      { word_id: "g1", grade: "close", replay: false },
     ]);
   });
 
-  it("ends with a recap: the breakdown ring + grade tallies", async () => {
+  it("ends with a recap: the breakdown ring, tallies and every word met", async () => {
     const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
     await flushPromises();
     // Grade both cards to reach the end — one Correct, one Close.
@@ -422,7 +422,15 @@ describe("DrillPage", () => {
       "0",
     );
     // Two grades present → two ring segments (no incorrect arc).
-    expect(wrapper.findAll(".drill-ring__seg").length).toBe(2);
+    expect(wrapper.findAll('[data-testid^="ring-seg-"]').length).toBe(2);
+    // Both words listed, each carrying its result as a word (not just a hue).
+    expect(wrapper.findAll('[data-testid^="summary-row-"]').length).toBe(2);
+    expect(wrapper.find('[data-testid="summary-grade-g1"]').text()).toBe(
+      "Correct",
+    );
+    expect(wrapper.find('[data-testid="summary-grade-g2"]').text()).toBe(
+      "Close",
+    );
   });
 
   it("draws a single ring segment for an all-correct session; no post-session fetch", async () => {
@@ -437,12 +445,104 @@ describe("DrillPage", () => {
       "1",
     );
     expect(wrapper.find('[data-testid="tally-correct"]').text()).toContain("1");
-    expect(wrapper.findAll(".drill-ring__seg").length).toBe(1);
+    expect(wrapper.findAll('[data-testid^="ring-seg-"]').length).toBe(1);
     // The recap is built from local counts — it never fetches the scope overview.
     expect(getMock).not.toHaveBeenCalledWith(
       expect.stringContaining("/hotaru/practice/overview"),
     );
     expect(wrapper.find('[data-testid="drill-error"]').exists()).toBe(false);
+  });
+
+  it("selecting a tally narrows the list and re-scopes the replay button", async () => {
+    const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="reveal-btn"]').trigger("click");
+    await wrapper.find('[data-testid="grade-correct"]').trigger("click");
+    await wrapper.find('[data-testid="reveal-btn"]').trigger("click");
+    await wrapper.find('[data-testid="grade-incorrect"]').trigger("click");
+    await flushPromises();
+
+    // Unfiltered: everything listed, and the CTA names no count.
+    expect(wrapper.findAll('[data-testid^="summary-row-"]').length).toBe(2);
+    expect(wrapper.find('[data-testid="summary-replay"]').text()).toContain(
+      "Practice Again",
+    );
+
+    await wrapper.find('[data-testid="tally-incorrect"]').trigger("click");
+    expect(wrapper.findAll('[data-testid^="summary-row-"]').length).toBe(1);
+    expect(wrapper.find('[data-testid="summary-row-g2"]').exists()).toBe(true);
+    // What is shown is what will run.
+    expect(wrapper.find('[data-testid="summary-replay"]').text()).toContain(
+      "Practice these 1 again",
+    );
+
+    // Multi-select is additive, not exclusive.
+    await wrapper.find('[data-testid="tally-correct"]').trigger("click");
+    expect(wrapper.findAll('[data-testid^="summary-row-"]').length).toBe(2);
+    expect(wrapper.find('[data-testid="summary-replay"]').text()).toContain(
+      "Practice these 2 again",
+    );
+
+    // "Show all" clears every selection at once.
+    await wrapper.find('[data-testid="summary-clear"]').trigger("click");
+    expect(wrapper.find('[data-testid="summary-clear"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="summary-replay"]').text()).toContain(
+      "Practice Again",
+    );
+  });
+
+  it("replays the selection from memory and marks those grades as replay", async () => {
+    const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="reveal-btn"]').trigger("click");
+    await wrapper.find('[data-testid="grade-correct"]').trigger("click");
+    await wrapper.find('[data-testid="reveal-btn"]').trigger("click");
+    await wrapper.find('[data-testid="grade-incorrect"]').trigger("click");
+    await flushPromises();
+    getMock.mockClear();
+
+    await wrapper.find('[data-testid="tally-incorrect"]').trigger("click");
+    await wrapper.find('[data-testid="summary-replay"]').trigger("click");
+    await flushPromises();
+
+    // Back in the drill on the one missed card — re-seeded locally, no refetch.
+    expect(wrapper.find('[data-testid="drill-done"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="flashcard"]').text()).toContain(
+      "ありがとう",
+    );
+    expect(getMock).not.toHaveBeenCalledWith(
+      expect.stringContaining("/hotaru/practice/queue"),
+    );
+
+    // The replay's grade is flagged, so the SRS credits it without promoting.
+    await wrapper.find('[data-testid="reveal-btn"]').trigger("click");
+    await wrapper.find('[data-testid="grade-correct"]').trigger("click");
+    await flushPromises();
+    expect(postMock).toHaveBeenCalledWith("/hotaru/practice/grades?user=dani", [
+      { word_id: "g2", grade: "correct", replay: true },
+    ]);
+
+    // The replay is its own round: the recap counts it alone, not 3 words.
+    expect(wrapper.find('[data-testid="summary-practised"]').text()).toContain(
+      "1",
+    );
+  });
+
+  it("a perfect round offers no replay, leaving Close as the way out", async () => {
+    queue = [{ word: word("g1", "猫", "ねこ", "cat") }];
+    const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="reveal-btn"]').trigger("click");
+    await wrapper.find('[data-testid="grade-correct"]').trigger("click");
+    await flushPromises();
+
+    // Nothing selected still replays the whole round, so the CTA is present…
+    expect(wrapper.find('[data-testid="summary-replay"]').exists()).toBe(true);
+    // …but selecting a grade nobody earned leaves nothing to run.
+    await wrapper.find('[data-testid="tally-incorrect"]').trigger("click");
+    expect(wrapper.findAll('[data-testid^="summary-row-"]').length).toBe(0);
+    expect(wrapper.find('[data-testid="summary-replay"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="drill-done-btn"]').exists()).toBe(true);
   });
 
   it("Quick Practice: threads tiers/lessons filters from the query into the queue", async () => {
