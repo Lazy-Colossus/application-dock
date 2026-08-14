@@ -130,9 +130,12 @@ onMounted(async () => {
   flex: 1
   justify-content: center
 
+// The 蛍 logo glows warm lamp-yellow, as on Home. Not the --hotaru-lamp-yellow
+// token: that is aliased to cyan in the neon identity, which would leave a cyan
+// glyph wearing this yellow halo.
 .study-done__glyph
   font-size: 48px
-  color: var(--hotaru-lamp-yellow, #ffd24a)
+  color: #ffd24a
   text-shadow: 0 0 26px rgba(255, 210, 74, 0.7)
   margin-bottom: 8px
 
