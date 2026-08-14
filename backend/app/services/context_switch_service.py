@@ -125,9 +125,17 @@ def get_list(username: str, list_id: str) -> TodoList:
     return _board_view(_find_list(doc, list_id))
 
 
-def add_todo(username: str, list_id: str, header: str, body: str, color: str) -> Todo:
+def add_todo(
+    username: str,
+    list_id: str,
+    header: str,
+    color: str,
+    first_update: str | None = None,
+) -> Todo:
     """Append a new active todo to a list and return it.
 
+    A todo is header + color; its content lives in the append-only updates log
+    (Story 2.8). If `first_update` is non-blank it seeds that log with one entry.
     Raises ValueError on a blank header, FileNotFoundError if the list is absent.
     """
     clean = header.strip()
@@ -141,13 +149,17 @@ def add_todo(username: str, list_id: str, header: str, body: str, color: str) ->
     todo = Todo(
         id=_new_id("t"),
         header=clean,
-        body=body,
         color=color,
         status="active",
         order=max((t.order for t in lst.todos if t.status == "active"), default=-1) + 1,
         created_at=now,
         updated_at=now,
     )
+
+    seed = (first_update or "").strip()
+    if seed:
+        todo.updates.append(TodoUpdate(id=_new_id("u"), text=seed, created_at=now))
+
     lst.todos.append(todo)
     repo.write_doc(username, doc)
     return todo
@@ -166,7 +178,6 @@ def update_todo(
     todo_id: str,
     *,
     header: str | None = None,
-    body: str | None = None,
     color: str | None = None,
     status: str | None = None,
 ) -> Todo:
@@ -185,9 +196,6 @@ def update_todo(
         if not clean:
             raise ValueError("Todo header must not be empty")
         todo.header = clean
-
-    if body is not None:
-        todo.body = body
 
     if color is not None:
         todo.color = color

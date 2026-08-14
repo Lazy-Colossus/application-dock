@@ -29,7 +29,6 @@ function newTodo(id: string, overrides: Partial<Todo> = {}): Todo {
   return {
     id,
     header: "Todo",
-    body: "",
     color: "#aecbfa",
     status: "active",
     order: 0,
@@ -171,14 +170,14 @@ describe("useContextSwitchStore", () => {
 
     await store.addTodo("l-1", {
       header: "Fresh",
-      body: "",
       color: "#aecbfa",
+      update: "kickoff",
     });
 
     expect(postMock).toHaveBeenCalledWith("/context-switch/lists/l-1/todos", {
       header: "Fresh",
-      body: "",
       color: "#aecbfa",
+      update: "kickoff",
     });
     expect(store.activeTodos.map((t) => t.id)).toEqual(["t-9"]);
   });
@@ -186,9 +185,9 @@ describe("useContextSwitchStore", () => {
   it("updateTodo PUTs the patch and replaces the local todo", async () => {
     getMock.mockResolvedValue({
       ...newList("l-1", "Work"),
-      todos: [newTodo("t-1", { header: "Old", body: "keep" })],
+      todos: [newTodo("t-1", { header: "Old", color: "#aabbcc" })],
     });
-    putMock.mockResolvedValue(newTodo("t-1", { header: "New", body: "keep" }));
+    putMock.mockResolvedValue(newTodo("t-1", { header: "New", color: "#aabbcc" }));
     const store = useContextSwitchStore();
     await store.fetchList("l-1");
 
@@ -199,7 +198,7 @@ describe("useContextSwitchStore", () => {
       { header: "New" },
     );
     expect(store.activeTodos[0].header).toBe("New");
-    expect(store.activeTodos[0].body).toBe("keep");
+    expect(store.activeTodos[0].color).toBe("#aabbcc");
     expect(store.loading).toBe(false);
   });
 
@@ -301,7 +300,7 @@ describe("useContextSwitchStore", () => {
     await store.fetchList("l-1");
 
     await expect(
-      store.addTodo("l-1", { header: "x", body: "", color: "#ffffff" }),
+      store.addTodo("l-1", { header: "x", color: "#ffffff" }),
     ).rejects.toThrow();
     expect(store.error).toBeTruthy();
     expect(store.activeTodos).toHaveLength(0);

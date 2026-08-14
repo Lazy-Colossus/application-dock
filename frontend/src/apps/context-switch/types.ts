@@ -13,7 +13,6 @@ export interface TodoUpdate {
 export interface Todo {
   id: string;
   header: string;
-  body: string;
   color: string; // #rrggbb
   status: TodoStatus;
   order: number;
@@ -36,18 +35,19 @@ export interface TodoList {
   todos: Todo[];
 }
 
-// Body of POST /lists/{id}/todos (Story 2.1).
+// Body of POST /lists/{id}/todos (Story 2.1). `update` optionally seeds the
+// log with a first entry (Story 2.8 replaced the old `body` field).
 export interface NewTodo {
   header: string;
-  body: string;
   color: string;
+  update?: string;
 }
 
 // Body of PUT /lists/{id}/todos/{todo_id} (Story 2.4) — only provided fields
 // are applied. `status: "archived"` closes a todo as done (Story 2.6).
+// (`body` was removed in Story 2.8.)
 export interface TodoPatch {
   header?: string;
-  body?: string;
   color?: string;
   status?: TodoStatus;
 }

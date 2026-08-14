@@ -56,7 +56,6 @@ def test_write_read_round_trip() -> None:
                     Todo(
                         id="t-9f8e7d6c",
                         header="Wire up auth",
-                        body="notes",
                         color="#ffcc00",
                         status="active",
                         order=0,

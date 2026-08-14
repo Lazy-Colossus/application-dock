@@ -3,11 +3,14 @@ import { mount } from "@vue/test-utils";
 import TodoPill from "./TodoPill.vue";
 import type { Todo } from "@/apps/context-switch/types";
 
+function update(id: string, text: string) {
+  return { id, text, created_at: "2026-08-13T10:00:00Z" };
+}
+
 function makeTodo(overrides: Partial<Todo> = {}): Todo {
   return {
     id: "t-1",
     header: "Ship it",
-    body: "the thing",
     color: "#ffffff",
     status: "active",
     order: 0,
@@ -20,17 +23,48 @@ function makeTodo(overrides: Partial<Todo> = {}): Todo {
 }
 
 describe("TodoPill", () => {
-  it("renders the header and body", () => {
+  it("renders just the header when there are no updates", () => {
     const wrapper = mount(TodoPill, { props: { todo: makeTodo() } });
     expect(wrapper.find('[data-testid="pill-header"]').text()).toBe("Ship it");
-    expect(wrapper.find('[data-testid="pill-body"]').text()).toBe("the thing");
+    expect(wrapper.find('[data-testid="pill-update-latest"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('[data-testid="pill-update-previous"]').exists()).toBe(
+      false,
+    );
   });
 
-  it("omits the body block when there is no body", () => {
+  it("shows only the latest update when there is one", () => {
     const wrapper = mount(TodoPill, {
-      props: { todo: makeTodo({ body: "" }) },
+      props: { todo: makeTodo({ updates: [update("u-1", "did a thing")] }) },
     });
-    expect(wrapper.find('[data-testid="pill-body"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="pill-update-latest"]').text()).toBe(
+      "did a thing",
+    );
+    expect(wrapper.find('[data-testid="pill-update-previous"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("shows the two most recent updates, newest on top and previous faded", () => {
+    const wrapper = mount(TodoPill, {
+      props: {
+        todo: makeTodo({
+          // Stored oldest→newest; the pill surfaces the last two, newest first.
+          updates: [
+            update("u-1", "oldest"),
+            update("u-2", "middle"),
+            update("u-3", "newest"),
+          ],
+        }),
+      },
+    });
+    expect(wrapper.find('[data-testid="pill-update-latest"]').text()).toBe(
+      "newest",
+    );
+    const previous = wrapper.find('[data-testid="pill-update-previous"]');
+    expect(previous.text()).toBe("middle");
+    expect(previous.classes()).toContain("cs-pill-update--faded");
   });
 
   it("paints the pill in the todo's color", () => {

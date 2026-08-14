@@ -39,18 +39,35 @@ describe("AddTodoDialog", () => {
     expect(submit.attributes("disabled")).toBeUndefined();
   });
 
-  it("emits the trimmed payload with the default color and closes", async () => {
+  it("emits the trimmed header + color (no update) and closes", async () => {
     const wrapper = mountDialog();
     await wrapper
       .find('[data-testid="todo-header-input"]')
       .setValue("  Ship it  ");
-    await wrapper.find('[data-testid="todo-body-input"]').setValue("details");
     await wrapper.find('[data-testid="todo-submit"]').trigger("click");
 
     expect(wrapper.emitted("create")?.[0]).toEqual([
-      { header: "Ship it", body: "details", color: DEFAULT_COLOR },
+      { header: "Ship it", color: DEFAULT_COLOR },
     ]);
     expect(wrapper.emitted("update:modelValue")?.[0]).toEqual([false]);
+  });
+
+  it("includes a trimmed first update when one is typed", async () => {
+    const wrapper = mountDialog();
+    await wrapper.find('[data-testid="todo-header-input"]').setValue("Ship it");
+    await wrapper
+      .find('[data-testid="todo-update-input"]')
+      .setValue("  kicked off  ");
+    await wrapper.find('[data-testid="todo-submit"]').trigger("click");
+
+    expect(wrapper.emitted("create")?.[0]).toEqual([
+      { header: "Ship it", color: DEFAULT_COLOR, update: "kicked off" },
+    ]);
+  });
+
+  it("has no details field", () => {
+    const wrapper = mountDialog();
+    expect(wrapper.find('[data-testid="todo-body-input"]').exists()).toBe(false);
   });
 
   it("emits the color chosen in the picker", async () => {
@@ -62,7 +79,7 @@ describe("AddTodoDialog", () => {
     await wrapper.find('[data-testid="todo-submit"]').trigger("click");
 
     expect(wrapper.emitted("create")?.[0]).toEqual([
-      { header: "X", body: "", color: PRESET_COLORS[3] },
+      { header: "X", color: PRESET_COLORS[3] },
     ]);
   });
 

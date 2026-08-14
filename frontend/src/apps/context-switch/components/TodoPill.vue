@@ -11,8 +11,19 @@
     <div class="cs-pill-header" data-testid="pill-header">
       {{ todo.header }}
     </div>
-    <div v-if="todo.body" class="cs-pill-body" data-testid="pill-body">
-      {{ todo.body }}
+    <div
+      v-if="latestUpdate"
+      class="cs-pill-update"
+      data-testid="pill-update-latest"
+    >
+      {{ latestUpdate.text }}
+    </div>
+    <div
+      v-if="previousUpdate"
+      class="cs-pill-update cs-pill-update--faded"
+      data-testid="pill-update-previous"
+    >
+      {{ previousUpdate.text }}
     </div>
   </div>
 </template>
@@ -27,6 +38,13 @@ const props = defineProps<{ todo: Todo }>();
 const emit = defineEmits<{ open: [] }>();
 
 const textColor = computed(() => readableTextColor(props.todo.color));
+
+// Updates are stored oldest→newest, so the pill surfaces the last two, newest
+// on top (Story 2.8). `previousUpdate` is null unless there are at least two.
+const latestUpdate = computed(() => props.todo.updates.at(-1) ?? null);
+const previousUpdate = computed(() =>
+  props.todo.updates.length >= 2 ? (props.todo.updates.at(-2) ?? null) : null,
+);
 </script>
 
 <style scoped lang="sass">
@@ -47,9 +65,16 @@ const textColor = computed(() => readableTextColor(props.todo.color));
   font-weight: 600
   line-height: 1.25
 
-.cs-pill-body
+.cs-pill-update
   font-size: 14px
   line-height: 1.35
-  white-space: pre-wrap
   overflow: hidden
+  overflow-wrap: anywhere
+  display: -webkit-box
+  -webkit-line-clamp: 2
+  -webkit-box-orient: vertical
+
+.cs-pill-update--faded
+  opacity: 0.5
+  -webkit-line-clamp: 1
 </style>

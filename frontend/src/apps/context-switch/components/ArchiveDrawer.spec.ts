@@ -17,14 +17,15 @@ function makeTodo(overrides: Partial<Todo> = {}): Todo {
   return {
     id: "t-1",
     header: "Done thing",
-    body: "some notes",
     color: "#aecbfa",
     status: "archived",
     order: 0,
     created_at: "2026-08-13T10:00:00Z",
     updated_at: "2026-08-13T10:00:00Z",
     archived_at: "2026-08-13T12:00:00Z",
-    updates: [],
+    updates: [
+      { id: "u-1", text: "some notes", created_at: "2026-08-13T11:00:00Z" },
+    ],
     ...overrides,
   };
 }
@@ -42,7 +43,7 @@ describe("ArchiveDrawer", () => {
     expect(wrapper.find('[data-testid="archived-empty"]').exists()).toBe(true);
   });
 
-  it("lists archived todos with their header, body and archived date", () => {
+  it("lists archived todos with their header, latest update and archived date", () => {
     const wrapper = mountDrawer([makeTodo({ id: "t-7", header: "Shipped" })]);
     const item = wrapper.find('[data-testid="archived-item-t-7"]');
     expect(item.exists()).toBe(true);

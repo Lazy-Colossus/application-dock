@@ -37,7 +37,6 @@ class TodoUpdate(BaseModel):
 class Todo(BaseModel):
     id: str
     header: str
-    body: str = ""
     color: str = "#ffffff"
     status: TodoStatus = "active"
     order: int = 0
@@ -82,16 +81,18 @@ class UpdateListRequest(BaseModel):
 
 
 class CreateTodoRequest(BaseModel):
+    # A todo is header + color; its content lives in the append-only updates log
+    # (Story 2.8 removed the old `body`). An optional first update seeds the log.
     header: str
-    body: str = ""
     color: str = Field(default="#ffffff", pattern=HEX_COLOR_PATTERN)
+    update: str | None = None
 
 
 class UpdateTodoRequest(BaseModel):
-    # The single mutation surface for a todo's fields: header/body/color and
-    # `status` (archive, Story 2.6). All-optional — only provided fields apply.
+    # The single mutation surface for a todo's fields: header/color and `status`
+    # (archive, Story 2.6). All-optional — only provided fields apply. (`body`
+    # was removed in Story 2.8.)
     header: str | None = None
-    body: str | None = None
     color: str | None = Field(default=None, pattern=HEX_COLOR_PATTERN)
     status: TodoStatus | None = None
 

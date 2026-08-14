@@ -13,14 +13,6 @@
         label="Header"
         data-testid="detail-header-input"
       />
-      <q-input
-        v-model="body"
-        dense
-        outlined
-        type="textarea"
-        label="Details"
-        data-testid="detail-body-input"
-      />
 
       <ColorPicker v-model="color" />
 
@@ -116,7 +108,6 @@ const emit = defineEmits<{
 }>();
 
 const header = ref("");
-const body = ref("");
 const color = ref("");
 const updateText = ref("");
 
@@ -138,7 +129,6 @@ function formatAt(iso: string): string {
 
 function seedFromTodo(): void {
   header.value = props.todo.header;
-  body.value = props.todo.body;
   color.value = props.todo.color;
   updateText.value = "";
 }
@@ -157,7 +147,6 @@ const patch = computed<TodoPatch>(() => {
   if (header.value.trim() !== props.todo.header) {
     next.header = header.value.trim();
   }
-  if (body.value !== props.todo.body) next.body = body.value;
   if (color.value !== props.todo.color) next.color = color.value;
   return next;
 });

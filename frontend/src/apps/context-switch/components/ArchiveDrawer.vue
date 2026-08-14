@@ -24,7 +24,9 @@
         >
           <div class="cs-archive-body">
             <div class="cs-archive-header">{{ todo.header }}</div>
-            <div v-if="todo.body" class="cs-archive-text">{{ todo.body }}</div>
+            <div v-if="latestText(todo)" class="cs-archive-text">
+              {{ latestText(todo) }}
+            </div>
             <div v-if="todo.archived_at" class="cs-archive-at">
               Archived {{ formatAt(todo.archived_at) }}
             </div>
@@ -95,6 +97,12 @@ const confirmingId = ref<string | null>(null);
 function confirmDelete(todoId: string): void {
   emit("delete", todoId);
   confirmingId.value = null;
+}
+
+// The archived todo's most recent update stands in for the old body preview
+// (Story 2.8 removed body); empty string when the log is empty.
+function latestText(todo: Todo): string {
+  return todo.updates.at(-1)?.text ?? "";
 }
 
 // Render raw ISO timestamps as a readable local date-time; fall back to the

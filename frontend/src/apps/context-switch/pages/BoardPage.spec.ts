@@ -54,7 +54,6 @@ function makeTodo(overrides: Partial<Todo> = {}): Todo {
   return {
     id: "t-1",
     header: "First",
-    body: "",
     color: "#aecbfa",
     status: "active",
     order: 0,

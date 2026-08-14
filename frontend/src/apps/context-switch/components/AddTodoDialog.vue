@@ -16,12 +16,12 @@
         @keyup.enter="onSubmit"
       />
       <q-input
-        v-model="body"
+        v-model="update"
         dense
         outlined
         type="textarea"
-        label="Details"
-        data-testid="todo-body-input"
+        label="First update (optional)"
+        data-testid="todo-update-input"
       />
 
       <ColorPicker v-model="color" />
@@ -62,7 +62,7 @@ const emit = defineEmits<{
 }>();
 
 const header = ref("");
-const body = ref("");
+const update = ref("");
 const color = ref<string>(DEFAULT_COLOR);
 
 const canSubmit = computed(() => header.value.trim().length > 0);
@@ -73,7 +73,7 @@ watch(
   (open) => {
     if (open) {
       header.value = "";
-      body.value = "";
+      update.value = "";
       color.value = DEFAULT_COLOR;
     }
   },
@@ -85,10 +85,11 @@ function close(): void {
 
 function onSubmit(): void {
   if (!canSubmit.value) return;
+  const seed = update.value.trim();
   emit("create", {
     header: header.value.trim(),
-    body: body.value,
     color: color.value,
+    ...(seed ? { update: seed } : {}),
   });
   close();
 }

@@ -78,7 +78,9 @@ def add_todo(
     current_user: str = Depends(get_current_user),
 ) -> Todo:
     try:
-        return service.add_todo(current_user, list_id, req.header, req.body, req.color)
+        return service.add_todo(
+            current_user, list_id, req.header, req.color, first_update=req.update
+        )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="List not found") from exc
     except ValueError as exc:
@@ -102,7 +104,6 @@ def update_todo(
             list_id,
             todo_id,
             header=req.header,
-            body=req.body,
             color=req.color,
             status=req.status,
         )

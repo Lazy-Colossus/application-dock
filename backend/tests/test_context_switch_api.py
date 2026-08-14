@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -178,13 +179,13 @@ def test_add_todo_returns_active_todo() -> None:
     list_id = _create("Work")
     resp = client.post(
         f"/api/context-switch/lists/{list_id}/todos",
-        json={"header": "Ship it", "body": "the thing", "color": "#aabbcc"},
+        json={"header": "Ship it", "color": "#aabbcc"},
     )
     assert resp.status_code == 200
     todo = resp.json()
     assert todo["id"].startswith("t-")
     assert todo["header"] == "Ship it"
-    assert todo["body"] == "the thing"
+    assert "body" not in todo  # Story 2.8 removed the body field entirely.
     assert todo["color"] == "#aabbcc"
     assert todo["status"] == "active"
     assert todo["order"] == 0
@@ -219,9 +220,40 @@ def test_add_todo_blank_header_rejected() -> None:
     assert resp.status_code == 422
 
 
-def test_add_todo_empty_body_allowed() -> None:
+def test_add_todo_has_no_body_field() -> None:
     list_id = _create("Work")
-    assert _add_todo(list_id, "No body")["body"] == ""
+    assert "body" not in _add_todo(list_id, "No body")
+
+
+def test_add_todo_with_first_update_seeds_the_log() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Task", update="kicked off")
+    assert [u["text"] for u in todo["updates"]] == ["kicked off"]
+    assert todo["updates"][0]["id"].startswith("u-")
+
+
+def test_add_todo_without_first_update_has_empty_log() -> None:
+    list_id = _create("Work")
+    assert _add_todo(list_id, "Task")["updates"] == []
+
+
+def test_add_todo_blank_first_update_is_ignored() -> None:
+    list_id = _create("Work")
+    assert _add_todo(list_id, "Task", update="   ")["updates"] == []
+
+
+def test_legacy_body_on_disk_is_dropped_on_read() -> None:
+    # A pre-2.8 record carries `body`; the model ignores the extra key (AC 5).
+    list_id = _create("Work")
+    _add_todo(list_id, "Legacy")
+    path = context_switch_repo._user_path("test_user")
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw["lists"][0]["todos"][0]["body"] = "legacy notes"
+    path.write_text(json.dumps(raw), encoding="utf-8")
+
+    reloaded = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]
+    assert "body" not in reloaded
+    assert reloaded["header"] == "Legacy"
 
 
 def test_add_todo_invalid_color_rejected() -> None:
@@ -338,12 +370,11 @@ def _edit(list_id: str, todo_id: str, **fields: object):
 
 def test_update_todo_changes_only_provided_fields() -> None:
     list_id = _create("Work")
-    todo = _add_todo(list_id, "Old", body="old body", color="#aabbcc")
+    todo = _add_todo(list_id, "Old", color="#aabbcc")
 
     updated = _edit(list_id, todo["id"], header="New").json()
 
     assert updated["header"] == "New"
-    assert updated["body"] == "old body"
     assert updated["color"] == "#aabbcc"
 
 
@@ -351,7 +382,7 @@ def test_update_todo_bumps_updated_at_and_keeps_created_at() -> None:
     list_id = _create("Work")
     todo = _add_todo(list_id, "Old")
 
-    updated = _edit(list_id, todo["id"], body="fresh").json()
+    updated = _edit(list_id, todo["id"], color="#123456").json()
 
     assert updated["updated_at"] >= todo["updated_at"]
     assert updated["created_at"] == todo["created_at"]
@@ -360,11 +391,10 @@ def test_update_todo_bumps_updated_at_and_keeps_created_at() -> None:
 def test_update_todo_persists() -> None:
     list_id = _create("Work")
     todo = _add_todo(list_id, "Old")
-    _edit(list_id, todo["id"], header="New", body="text", color="#112233")
+    _edit(list_id, todo["id"], header="New", color="#112233")
 
     reloaded = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]
     assert reloaded["header"] == "New"
-    assert reloaded["body"] == "text"
     assert reloaded["color"] == "#112233"
 
 
@@ -382,10 +412,12 @@ def test_update_todo_blank_header_rejected() -> None:
     assert client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]["header"] == "Keep"
 
 
-def test_update_todo_blank_body_allowed() -> None:
+def test_update_todo_body_field_is_gone() -> None:
+    # `body` is no longer a schema field (Story 2.8), so a PUT carrying only
+    # `body` has no recognised fields and is rejected as an empty update.
     list_id = _create("Work")
-    todo = _add_todo(list_id, "Header", body="something")
-    assert _edit(list_id, todo["id"], body="").json()["body"] == ""
+    todo = _add_todo(list_id, "Header")
+    assert _edit(list_id, todo["id"], body="anything").status_code == 422
 
 
 def test_update_todo_invalid_color_rejected() -> None:
@@ -550,17 +582,16 @@ def _add_update(list_id: str, todo_id: str, text: str):
     )
 
 
-def test_add_update_appends_entry_and_keeps_header_body() -> None:
+def test_add_update_appends_entry_and_keeps_header() -> None:
     list_id = _create("Work")
-    todo = _add_todo(list_id, "Task", body="original body")
+    todo = _add_todo(list_id, "Task")
 
     resp = _add_update(list_id, todo["id"], "made progress")
     assert resp.status_code == 200
     updated = resp.json()
 
-    # Header and body are untouched — an update never rewrites the original.
+    # The header is untouched — an update never rewrites the todo itself.
     assert updated["header"] == "Task"
-    assert updated["body"] == "original body"
 
     assert len(updated["updates"]) == 1
     entry = updated["updates"][0]
@@ -701,10 +732,9 @@ def test_archive_persists_across_reload() -> None:
 
 def test_archive_leaves_other_fields_alone() -> None:
     list_id = _create("Work")
-    todo = _add_todo(list_id, "Header", body="body text", color="#aabbcc")
+    todo = _add_todo(list_id, "Header", color="#aabbcc")
     archived = _edit(list_id, todo["id"], status="archived").json()
     assert archived["header"] == "Header"
-    assert archived["body"] == "body text"
     assert archived["color"] == "#aabbcc"
 
 
@@ -752,7 +782,7 @@ def _delete_todo(list_id: str, todo_id: str):
 def test_archived_read_returns_only_archived_todos() -> None:
     list_id = _create("Work")
     _add_todo(list_id, "Active one")
-    gone = _add_todo(list_id, "Done one", body="notes", color="#aabbcc")
+    gone = _add_todo(list_id, "Done one", color="#aabbcc")
     _archive(list_id, gone["id"])
 
     resp = _archived(list_id)
@@ -760,7 +790,6 @@ def test_archived_read_returns_only_archived_todos() -> None:
     body = resp.json()
     assert [t["id"] for t in body] == [gone["id"]]
     assert body[0]["header"] == "Done one"
-    assert body[0]["body"] == "notes"
     assert body[0]["color"] == "#aabbcc"
     assert body[0]["archived_at"] is not None
 

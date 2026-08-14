@@ -24,7 +24,6 @@ function makeTodo(overrides: Partial<Todo> = {}): Todo {
   return {
     id: "t-1",
     header: "Ship it",
-    body: "the thing",
     color: "#aecbfa",
     status: "active",
     order: 0,
@@ -55,10 +54,16 @@ describe("TodoDetailDialog", () => {
   it("opens with the todo's current values", () => {
     const wrapper = mountDialog();
     expect(inputValue(wrapper, "detail-header-input")).toBe("Ship it");
-    expect(inputValue(wrapper, "detail-body-input")).toBe("the thing");
     expect(
       wrapper.find(`[data-testid="swatch-${"#aecbfa".slice(1)}"]`).classes(),
     ).toContain("cs-swatch--on");
+  });
+
+  it("has no details field", () => {
+    const wrapper = mountDialog();
+    expect(wrapper.find('[data-testid="detail-body-input"]').exists()).toBe(
+      false,
+    );
   });
 
   it("shows an empty updates log", () => {
@@ -183,13 +188,6 @@ describe("TodoDetailDialog", () => {
     expect(wrapper.emitted("update:modelValue")?.[0]).toEqual([false]);
   });
 
-  it("allows blanking the body", async () => {
-    const wrapper = mountDialog();
-    await wrapper.find('[data-testid="detail-body-input"]').setValue("");
-    await wrapper.find('[data-testid="detail-save"]').trigger("click");
-    expect(wrapper.emitted("save")?.[0]).toEqual([{ body: "" }]);
-  });
-
   it("emits a color change", async () => {
     const wrapper = mountDialog();
     await wrapper
@@ -218,9 +216,11 @@ describe("TodoDetailDialog", () => {
   it("reseeds when opened on a different todo", async () => {
     const wrapper = mountDialog();
     await wrapper.setProps({
-      todo: makeTodo({ id: "t-2", header: "Other", body: "else" }),
+      todo: makeTodo({ id: "t-2", header: "Other", color: "#f28b82" }),
     });
     expect(inputValue(wrapper, "detail-header-input")).toBe("Other");
-    expect(inputValue(wrapper, "detail-body-input")).toBe("else");
+    expect(
+      wrapper.find(`[data-testid="swatch-${"#f28b82".slice(1)}"]`).classes(),
+    ).toContain("cs-swatch--on");
   });
 });
