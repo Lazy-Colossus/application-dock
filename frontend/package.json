@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "quasar dev",
     "build": "quasar build",
-    "lint": "eslint --ext .js,.ts,.vue ./",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{js,ts,vue,sass,scss,css}\"",
     "test": "vitest run",
     "test:watch": "vitest"

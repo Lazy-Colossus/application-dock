@@ -41,7 +41,7 @@ async function request<T>(
       headers: Object.keys(headers).length > 0 ? headers : undefined,
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
-  } catch (e) {
+  } catch {
     // Network failure — no response at all.
     throw new ApiError(0, "Network error");
   }
