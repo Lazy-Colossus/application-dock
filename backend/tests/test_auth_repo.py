@@ -73,10 +73,12 @@ def test_write_users_read_users_round_trip() -> None:
 
 
 def test_read_user_returns_matching_record() -> None:
-    auth_repo.write_users([
-        auth_repo.UserRecord(username="alice", password_hash="$2b$12$aaa"),
-        auth_repo.UserRecord(username="bob", password_hash="$2b$12$bbb"),
-    ])
+    auth_repo.write_users(
+        [
+            auth_repo.UserRecord(username="alice", password_hash="$2b$12$aaa"),
+            auth_repo.UserRecord(username="bob", password_hash="$2b$12$bbb"),
+        ]
+    )
 
     record = auth_repo.read_user("bob")
 
@@ -86,9 +88,11 @@ def test_read_user_returns_matching_record() -> None:
 
 
 def test_read_user_returns_none_for_unknown_username() -> None:
-    auth_repo.write_users([
-        auth_repo.UserRecord(username="alice", password_hash="$2b$12$aaa"),
-    ])
+    auth_repo.write_users(
+        [
+            auth_repo.UserRecord(username="alice", password_hash="$2b$12$aaa"),
+        ]
+    )
 
     assert auth_repo.read_user("nobody") is None
 
@@ -101,10 +105,12 @@ def test_read_user_returns_none_when_file_absent() -> None:
 
 
 def test_write_user_replaces_existing_username() -> None:
-    auth_repo.write_users([
-        auth_repo.UserRecord(username="alice", password_hash="$2b$12$old"),
-        auth_repo.UserRecord(username="bob", password_hash="$2b$12$bbb"),
-    ])
+    auth_repo.write_users(
+        [
+            auth_repo.UserRecord(username="alice", password_hash="$2b$12$old"),
+            auth_repo.UserRecord(username="bob", password_hash="$2b$12$bbb"),
+        ]
+    )
 
     auth_repo.write_user(auth_repo.UserRecord(username="alice", password_hash="$2b$12$new"))
 
@@ -115,10 +121,12 @@ def test_write_user_replaces_existing_username() -> None:
 
 
 def test_write_user_preserves_other_users() -> None:
-    auth_repo.write_users([
-        auth_repo.UserRecord(username="alice", password_hash="$2b$12$aaa"),
-        auth_repo.UserRecord(username="bob", password_hash="$2b$12$bbb"),
-    ])
+    auth_repo.write_users(
+        [
+            auth_repo.UserRecord(username="alice", password_hash="$2b$12$aaa"),
+            auth_repo.UserRecord(username="bob", password_hash="$2b$12$bbb"),
+        ]
+    )
 
     auth_repo.write_user(auth_repo.UserRecord(username="alice", password_hash="$2b$12$new"))
 
@@ -128,9 +136,11 @@ def test_write_user_preserves_other_users() -> None:
 
 
 def test_write_user_appends_when_username_not_present() -> None:
-    auth_repo.write_users([
-        auth_repo.UserRecord(username="alice", password_hash="$2b$12$aaa"),
-    ])
+    auth_repo.write_users(
+        [
+            auth_repo.UserRecord(username="alice", password_hash="$2b$12$aaa"),
+        ]
+    )
 
     auth_repo.write_user(auth_repo.UserRecord(username="carol", password_hash="$2b$12$ccc"))
 
