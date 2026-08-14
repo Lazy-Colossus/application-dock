@@ -36,63 +36,68 @@
       {{ store.error }}
     </div>
 
-    <div
-      v-if="!store.loading && store.activeTodos.length === 0"
-      class="text-grey-6 q-mt-lg"
-      data-testid="empty-state"
-    >
-      No todos yet — add your first one with the + button.
-    </div>
-
-    <template v-else>
+    <!-- Gate the empty-state and board on a loaded list: a failed load leaves
+         currentList null, so only the error banner above shows — never a
+         misleading "empty list". A mutation error keeps the board visible. -->
+    <template v-if="store.currentList">
       <div
-        class="cs-board q-mt-md"
-        :style="{ '--cs-cols': grid.columns }"
-        data-testid="board"
+        v-if="!store.loading && store.activeTodos.length === 0"
+        class="text-grey-6 q-mt-lg"
+        data-testid="empty-state"
       >
+        No todos yet — add your first one with the + button.
+      </div>
+
+      <template v-else>
         <div
-          v-for="todo in pageTodos"
-          :key="todo.id"
-          class="cs-slot"
-          :class="{ 'cs-slot--dragging': draggingId === todo.id }"
-          draggable="true"
-          :data-testid="`slot-${todo.id}`"
-          @dragstart="onDragStart(todo.id, $event)"
-          @dragover.prevent
-          @drop.prevent="onDrop(todo.id)"
-          @dragend="draggingId = null"
+          class="cs-board q-mt-md"
+          :style="{ '--cs-cols': grid.columns }"
+          data-testid="board"
         >
-          <TodoPill :todo="todo" @open="openTodo(todo.id)" />
+          <div
+            v-for="todo in pageTodos"
+            :key="todo.id"
+            class="cs-slot"
+            :class="{ 'cs-slot--dragging': draggingId === todo.id }"
+            draggable="true"
+            :data-testid="`slot-${todo.id}`"
+            @dragstart="onDragStart(todo.id, $event)"
+            @dragover.prevent
+            @drop.prevent="onDrop(todo.id)"
+            @dragend="draggingId = null"
+          >
+            <TodoPill :todo="todo" @open="openTodo(todo.id)" />
+          </div>
         </div>
-      </div>
 
-      <div
-        v-if="totalPages > 1"
-        class="row items-center justify-center q-gutter-sm q-mt-md"
-        data-testid="pager"
-      >
-        <q-btn
-          flat
-          dense
-          no-caps
-          label="Prev"
-          :disable="page === 1"
-          data-testid="page-prev"
-          @click="page = page - 1"
-        />
-        <span class="text-caption" data-testid="page-indicator">
-          {{ page }} / {{ totalPages }}
-        </span>
-        <q-btn
-          flat
-          dense
-          no-caps
-          label="Next"
-          :disable="page === totalPages"
-          data-testid="page-next"
-          @click="page = page + 1"
-        />
-      </div>
+        <div
+          v-if="totalPages > 1"
+          class="row items-center justify-center q-gutter-sm q-mt-md"
+          data-testid="pager"
+        >
+          <q-btn
+            flat
+            dense
+            no-caps
+            label="Prev"
+            :disable="page === 1"
+            data-testid="page-prev"
+            @click="page = page - 1"
+          />
+          <span class="text-caption" data-testid="page-indicator">
+            {{ page }} / {{ totalPages }}
+          </span>
+          <q-btn
+            flat
+            dense
+            no-caps
+            label="Next"
+            :disable="page === totalPages"
+            data-testid="page-next"
+            @click="page = page + 1"
+          />
+        </div>
+      </template>
     </template>
 
     <AddTodoDialog v-model="addOpen" @create="onCreate" />

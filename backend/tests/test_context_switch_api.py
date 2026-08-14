@@ -123,6 +123,23 @@ def test_rename_unknown_list_404() -> None:
     assert resp.status_code == 404
 
 
+def test_rename_is_scoped_to_own_lists() -> None:
+    list_id = _create("Mine")
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        # Another user cannot rename a list that isn't in their own file;
+        # a real (but not-mine) id is simply "not found".
+        resp = client.put(f"/api/context-switch/lists/{list_id}", json={"name": "Hijacked"})
+        assert resp.status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+    # The owner's list name is untouched.
+    summaries = client.get("/api/context-switch/lists").json()
+    assert summaries[0]["name"] == "Mine"
+
+
 # ── DELETE /lists/{id} (Story 1.4) ────────────────────────────────────────────
 
 

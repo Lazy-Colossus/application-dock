@@ -222,6 +222,13 @@ export const useContextSwitchStore = defineStore("contextSwitch", () => {
     try {
       await api.del(`/context-switch/lists/${listId}/todos/${todoId}`);
       archived.value = archived.value.filter((t) => t.id !== todoId);
+      // Also drop it from the board's local copy so no deleted "ghost" record
+      // lingers in currentList.todos until the next full fetch.
+      if (currentList.value) {
+        currentList.value.todos = currentList.value.todos.filter(
+          (t) => t.id !== todoId,
+        );
+      }
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e);
       throw e;

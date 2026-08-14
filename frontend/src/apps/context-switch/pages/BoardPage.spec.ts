@@ -151,6 +151,9 @@ describe("BoardPage", () => {
     const wrapper = mount(BoardPage, MOUNT_OPTS);
     await flushPromises();
     expect(wrapper.find('[data-testid="error"]').exists()).toBe(true);
+    // A failed load must not also render the "empty list" state or the board.
+    expect(wrapper.find('[data-testid="empty-state"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="board"]').exists()).toBe(false);
   });
 
   // ── grid + pagination (Story 2.2) ───────────────────────────────────────────
