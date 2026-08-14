@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hotaru — Neon Yūgure · Session Summary (expanded)</title>
+<!--
+  Neon Yūgure (夕暮れ) — SESSION SUMMARY, expanded (supersedes Story 2.7's text recap).
+    FRAME 1  DEFAULT · ring left, clickable tallies right, full word list below
+    FRAME 2  FILTERED · "Incorrect" selected — list narrows, CTA re-scopes
+  The tallies are LIVE in this mock (pure-CSS radio hack) — click them in frame 1.
+  Palette + phone frame inherited from mockups/drill-and-picker.html.
+-->
+<style>
+  :root{
+    --night-0:#04060f; --night-1:#090b1e; --night-2:#11132e;
+    --glass:rgba(20,18,52,0.55);
+    --cyan:#38f0e6; --cyan-bright:#7ff7ee; --cyan-on:#03121a;
+    --magenta:#ff5cc8; --violet:#9b6bff; --amber:#ffce5c; --lamp:#ffd24a;
+    --ink-hi:#f1f0ff; --ink-mid:#b3aede; --ink-lo:#6f6aa0;
+    --r:20px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:radial-gradient(130% 80% at 50% -5%,#1a1148 0%,#0a0a24 45%,var(--night-0) 100%);
+    min-height:100vh;color:var(--ink-hi);
+    display:flex;flex-direction:column;align-items:center;gap:14px;
+    padding:34px 16px 60px;
+  }
+  .tagline{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan);
+    text-shadow:0 0 14px rgba(56,240,230,.6)}
+  .personality{font-size:12px;color:var(--ink-mid);text-align:center;max-width:780px;line-height:1.55}
+  .stage{display:flex;flex-wrap:wrap;gap:34px;justify-content:center;align-items:flex-start;margin-top:6px}
+
+  /* ── phone frame ───────────────────────────────────────────────────── */
+  .phone{
+    position:relative;width:360px;height:740px;border-radius:42px;
+    background:linear-gradient(170deg,var(--night-1),#06061a);
+    border:1px solid rgba(155,107,255,.25);
+    box-shadow:0 0 0 9px #030310,0 24px 70px rgba(0,0,0,.8),
+               0 0 70px rgba(155,107,255,.16),0 0 40px rgba(56,240,230,.1);
+    overflow:hidden;
+  }
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);
+    width:120px;height:26px;background:#030310;border-radius:14px;z-index:30}
+  .screen{position:absolute;inset:0;padding:46px 18px 16px;display:flex;flex-direction:column;overflow:hidden}
+  .label-pill{position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+    background:var(--magenta);color:#2c0020;font-size:11px;font-weight:700;
+    padding:4px 12px;border-radius:999px;letter-spacing:.04em;z-index:40;white-space:nowrap;
+    box-shadow:0 0 20px rgba(255,92,200,.6)}
+
+  /* ── fireflies ─────────────────────────────────────────────────────── */
+  .ff{position:absolute;width:7px;height:7px;border-radius:50%;
+    background:radial-gradient(circle,var(--amber) 0%,rgba(255,206,92,.5) 38%,transparent 70%);
+    filter:blur(.2px);pointer-events:none;z-index:5;opacity:0}
+  .ff.cyan{background:radial-gradient(circle,var(--cyan) 0%,rgba(56,240,230,.45) 40%,transparent 70%)}
+  .ff.mag{background:radial-gradient(circle,var(--magenta) 0%,rgba(255,92,200,.45) 40%,transparent 70%)}
+  .ff1{top:60%;left:12%;animation:drift1 13s ease-in-out infinite,glow 3s ease-in-out infinite}
+  .ff2{top:28%;left:76%;animation:drift2 16s ease-in-out infinite,glow 3.8s ease-in-out infinite .5s}
+  .ff3{top:80%;left:58%;animation:drift3 15s ease-in-out infinite,glow 3.4s ease-in-out infinite 1s}
+  .ff4{top:18%;left:28%;animation:drift1 18s ease-in-out infinite reverse,glow 4.4s ease-in-out infinite .2s}
+  .ff5{top:48%;left:86%;animation:drift2 14s ease-in-out infinite,glow 4s ease-in-out infinite 1.6s}
+  @keyframes drift1{0%{transform:translate(0,0)}25%{transform:translate(28px,-34px)}50%{transform:translate(10px,-60px)}75%{transform:translate(-26px,-28px)}100%{transform:translate(0,0)}}
+  @keyframes drift2{0%{transform:translate(0,0)}33%{transform:translate(-34px,26px)}66%{transform:translate(20px,46px)}100%{transform:translate(0,0)}}
+  @keyframes drift3{0%{transform:translate(0,0)}40%{transform:translate(28px,22px)}80%{transform:translate(-20px,-26px)}100%{transform:translate(0,0)}}
+  @keyframes glow{0%,100%{opacity:.18;transform:scale(.65)}50%{opacity:1;transform:scale(1.4)}}
+
+  /* ── top bar ───────────────────────────────────────────────────────── */
+  .topbar{display:flex;align-items:center;justify-content:space-between;z-index:10;margin-bottom:10px}
+  .brand{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;letter-spacing:.02em}
+  .brand .kanji{font-size:22px;color:var(--lamp);text-shadow:0 0 16px rgba(255,210,74,.85)}
+  .scope-tag{font-size:11px;color:var(--ink-lo);letter-spacing:.1em;text-transform:uppercase}
+
+  /* ── HEAD: ring (left) + tallies (right) ───────────────────────────── */
+  .head{position:relative;z-index:10;display:flex;gap:14px;align-items:center;
+    border-radius:var(--r);background:var(--glass);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border:1px solid rgba(155,107,255,.28);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 18px 44px rgba(0,0,0,.55),
+               0 0 44px rgba(56,240,230,.10),0 0 60px rgba(155,107,255,.14);
+    padding:16px 14px;margin-bottom:12px}
+  .head::before{content:"";position:absolute;inset:0;border-radius:var(--r);
+    background:rgba(9,11,30,.28);pointer-events:none}
+  .head > *{position:relative;z-index:1}
+
+  /* ring */
+  .ring{position:relative;width:128px;height:128px;flex:0 0 128px;display:grid;place-items:center;
+    animation:bloom .7s cubic-bezier(.2,.8,.3,1) both}
+  @keyframes bloom{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+  .ring svg{width:100%;height:100%;overflow:visible}
+  .ring .track{fill:none;stroke:rgba(255,255,255,.06);stroke-width:11}
+  .ring .seg{fill:none;stroke-width:11;stroke-linecap:butt;
+    transition:opacity .25s, filter .25s}
+  .seg-correct{stroke:var(--cyan);filter:drop-shadow(0 0 7px rgba(56,240,230,.75))}
+  .seg-close{stroke:var(--amber);filter:drop-shadow(0 0 7px rgba(255,206,92,.7))}
+  .seg-incorrect{stroke:var(--magenta);filter:drop-shadow(0 0 7px rgba(255,92,200,.7))}
+  .ring-center{position:absolute;display:flex;flex-direction:column;align-items:center;line-height:1}
+  .ring-count{font-size:38px;font-weight:700;color:var(--ink-hi);font-variant-numeric:tabular-nums;
+    text-shadow:0 0 20px rgba(241,240,255,.25)}
+  .ring-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-lo);margin-top:4px}
+
+  /* tallies — clickable filter rows */
+  .tallies{flex:1;display:flex;flex-direction:column;gap:7px;min-width:0}
+  .tally{display:flex;align-items:center;gap:8px;width:100%;
+    padding:8px 10px;border-radius:12px;cursor:pointer;
+    background:rgba(255,255,255,.035);border:1px solid transparent;
+    font-size:12px;color:var(--ink-mid);
+    transition:background .18s,border-color .18s,box-shadow .18s,color .18s}
+  .tally:hover{background:rgba(255,255,255,.07)}
+  .tally .pip{width:9px;height:9px;border-radius:50%;flex:0 0 9px}
+  .tally .nm{flex:1;text-align:left;letter-spacing:.02em}
+  .tally .n{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink-hi)}
+  .t-correct   .pip{background:var(--cyan);box-shadow:0 0 10px rgba(56,240,230,.9)}
+  .t-close     .pip{background:var(--amber);box-shadow:0 0 10px rgba(255,206,92,.9)}
+  .t-incorrect .pip{background:var(--magenta);box-shadow:0 0 10px rgba(255,92,200,.9)}
+
+  /* ── filter state line ─────────────────────────────────────────────── */
+  .fline{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;
+    font-size:11px;color:var(--ink-lo);letter-spacing:.1em;text-transform:uppercase;
+    padding:0 4px 8px}
+  .fline .clear{color:var(--cyan);text-transform:none;letter-spacing:.02em;font-size:12px;cursor:pointer;display:none}
+
+  /* ── word list ─────────────────────────────────────────────────────── */
+  .list{position:relative;z-index:10;flex:1;overflow-y:auto;min-height:0;
+    border-radius:var(--r);background:var(--glass);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border:1px solid rgba(155,107,255,.28);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 18px 44px rgba(0,0,0,.5);
+    padding:2px 14px;scrollbar-width:thin;scrollbar-color:rgba(155,107,255,.4) transparent}
+  .list::-webkit-scrollbar{width:5px}
+  .list::-webkit-scrollbar-thumb{background:rgba(155,107,255,.4);border-radius:3px}
+  .wrow{display:flex;align-items:center;gap:10px;padding:11px 2px;
+    border-bottom:1px solid rgba(155,107,255,.16)}
+  .wrow:last-child{border-bottom:none}
+  .wmain{flex:1;min-width:0}
+  .wjp{font-size:21px;line-height:1.15;color:var(--cyan);text-shadow:0 0 12px rgba(56,240,230,.4)}
+  .wjp.kana{color:var(--lamp);text-shadow:0 0 12px rgba(255,210,74,.4)}
+  .wread{font-size:12px;color:var(--lamp);opacity:.85;margin-top:1px}
+  .wen{font-size:12px;color:var(--ink-mid);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* grade mark — TEXT carries the meaning, colour only reinforces (a11y floor) */
+  .gmark{flex:0 0 auto;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+    padding:4px 9px;border-radius:999px;white-space:nowrap}
+  .g-correct{color:var(--cyan);border:1px solid rgba(56,240,230,.5);background:rgba(56,240,230,.08)}
+  .g-close{color:var(--amber);border:1px solid rgba(255,206,92,.55);background:rgba(255,206,92,.08)}
+  .g-incorrect{color:var(--magenta);border:1px solid rgba(255,92,200,.5);background:rgba(255,92,200,.08)}
+
+  /* ── actions ───────────────────────────────────────────────────────── */
+  .actions{position:relative;z-index:10;display:flex;flex-direction:column;gap:9px;padding-top:12px}
+  .cta{border:none;border-radius:999px;padding:13px 18px;font-size:14px;font-weight:700;cursor:pointer;
+    background:linear-gradient(90deg,var(--cyan),var(--cyan-bright));color:var(--cyan-on);
+    box-shadow:0 0 32px rgba(56,240,230,.55)}
+  .ghost{border:1px solid rgba(155,107,255,.42);background:rgba(155,107,255,.10);
+    border-radius:999px;padding:11px 18px;font-size:13px;color:var(--ink-mid);cursor:pointer}
+
+  /* ══ PURE-CSS MULTI-SELECT FILTER (live in frame 1) ════════════════
+     Checkboxes, not radios — any combination of the three is selectable.
+     Uses :has() so rows can match ANY checked tally (an OR, not an AND). */
+  .fstate{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
+
+  /* selected tally gets the neon edge + glow, matching the grade-button language */
+  .screen:has(#c-correct:checked)   .t-correct,
+  .screen:has(#c-close:checked)     .t-close,
+  .screen:has(#c-incorrect:checked) .t-incorrect{background:rgba(255,255,255,.07)}
+  .screen:has(#c-correct:checked)   .t-correct{border-color:rgba(56,240,230,.6);box-shadow:0 0 22px rgba(56,240,230,.22);color:var(--cyan)}
+  .screen:has(#c-close:checked)     .t-close{border-color:rgba(255,206,92,.6);box-shadow:0 0 22px rgba(255,206,92,.22);color:var(--amber)}
+  .screen:has(#c-incorrect:checked) .t-incorrect{border-color:rgba(255,92,200,.55);box-shadow:0 0 22px rgba(255,92,200,.2);color:var(--magenta)}
+
+  /* ring segments dim unless their tally is selected (or nothing is) */
+  .screen:has(.fstate:checked) .ring .seg{opacity:.22;filter:none}
+  .screen:has(#c-correct:checked)   .ring .seg-correct{opacity:1;filter:drop-shadow(0 0 7px rgba(56,240,230,.75))}
+  .screen:has(#c-close:checked)     .ring .seg-close{opacity:1;filter:drop-shadow(0 0 7px rgba(255,206,92,.7))}
+  .screen:has(#c-incorrect:checked) .ring .seg-incorrect{opacity:1;filter:drop-shadow(0 0 7px rgba(255,92,200,.7))}
+
+  /* list — hide everything once any tally is on, then re-show each selected kind */
+  .screen:has(.fstate:checked) .wrow{display:none}
+  .screen:has(#c-correct:checked)   .wrow.r-correct,
+  .screen:has(#c-close:checked)     .wrow.r-close,
+  .screen:has(#c-incorrect:checked) .wrow.r-incorrect{display:flex}
+
+  /* filter-state line + clear affordance */
+  .screen:has(#c-correct:checked)   .lab .l-c,
+  .screen:has(#c-close:checked)     .lab .l-cl,
+  .screen:has(#c-incorrect:checked) .lab .l-i{display:inline}
+  .lab .l-c,.lab .l-cl,.lab .l-i{display:none}
+  .screen:has(.fstate:checked) .clear{display:inline}
+
+  /* CTA re-scopes to the selection — all 8 combinations */
+  .cta span{display:none}
+  .cta .k-none{display:inline}
+  .screen:has(.fstate:checked) .cta .k-none{display:none}
+  .screen:has(#c-correct:checked):not(:has(#c-close:checked)):not(:has(#c-incorrect:checked)) .cta .k-c{display:inline}
+  .screen:has(#c-close:checked):not(:has(#c-correct:checked)):not(:has(#c-incorrect:checked)) .cta .k-cl{display:inline}
+  .screen:has(#c-incorrect:checked):not(:has(#c-correct:checked)):not(:has(#c-close:checked)) .cta .k-i{display:inline}
+  .screen:has(#c-correct:checked):has(#c-close:checked):not(:has(#c-incorrect:checked)) .cta .k-c-cl{display:inline}
+  .screen:has(#c-correct:checked):has(#c-incorrect:checked):not(:has(#c-close:checked)) .cta .k-c-i{display:inline}
+  .screen:has(#c-close:checked):has(#c-incorrect:checked):not(:has(#c-correct:checked)) .cta .k-cl-i{display:inline}
+  .screen:has(#c-correct:checked):has(#c-close:checked):has(#c-incorrect:checked) .cta .k-all{display:inline}
+
+  /* ── annotation cards ──────────────────────────────────────────────── */
+  .notes{max-width:1120px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:26px}
+  .note{background:rgba(20,18,52,.5);border:1px solid rgba(155,107,255,.28);border-radius:14px;padding:14px 16px}
+  .note h4{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);margin-bottom:7px}
+  .note p{font-size:12px;color:var(--ink-mid);line-height:1.6}
+  .note p + p{margin-top:7px}
+  .note b{color:var(--ink-hi);font-weight:600}
+  .note .warn{color:var(--amber)}
+
+  @media (prefers-reduced-motion: reduce){
+    .ff{animation:none !important;opacity:.5;transform:none !important}
+    .ring{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="tagline">Hotaru · Neon Yūgure</div>
+<div class="personality">
+  <b>Session Summary, expanded.</b> The breakdown ring sits top-left, the three grade tallies top-right as
+  <b>multi-select filter controls</b>, and every word you met this session lists below with the result it
+  got. Selecting tallies narrows the list <em>and</em> re-scopes the primary action — so the filter and the
+  replay button are one mechanism, not two features.
+  <b>The tallies are live — click any combination in Frame 1.</b>
+</div>
+
+<div class="stage">
+
+  <!-- ══════════════ FRAME 1 — DEFAULT (interactive) ══════════════ -->
+  <div class="phone">
+    <div class="label-pill">HERO · Summary (tallies are clickable)</div>
+    <div class="notch"></div>
+    <span class="ff ff1"></span><span class="ff cyan ff2"></span><span class="ff mag ff3"></span>
+    <span class="ff ff4"></span><span class="ff cyan ff5"></span>
+
+    <div class="screen">
+      <div class="topbar">
+        <div class="brand"><span class="kanji">蛍</span><span>Hotaru</span></div>
+        <div class="scope-tag">Genki · Lesson 2</div>
+      </div>
+
+      <!-- filter state (pure CSS, multi-select) -->
+      <input class="fstate" type="checkbox" id="c-correct" />
+      <input class="fstate" type="checkbox" id="c-close" />
+      <input class="fstate" type="checkbox" id="c-incorrect" />
+
+      <div class="head">
+        <div class="ring">
+          <svg viewBox="0 0 120 120">
+            <circle class="track" cx="60" cy="60" r="46" />
+            <!-- circumference = 289.03 · incorrect 3, close 5, correct 12 of 20 · 6-unit gaps -->
+            <circle class="seg seg-incorrect" cx="60" cy="60" r="46"
+                    stroke-dasharray="37.4 289.03" stroke-dashoffset="-3" transform="rotate(-90 60 60)" />
+            <circle class="seg seg-close" cx="60" cy="60" r="46"
+                    stroke-dasharray="66.3 289.03" stroke-dashoffset="-46.4" transform="rotate(-90 60 60)" />
+            <circle class="seg seg-correct" cx="60" cy="60" r="46"
+                    stroke-dasharray="167.4 289.03" stroke-dashoffset="-118.7" transform="rotate(-90 60 60)" />
+          </svg>
+          <div class="ring-center">
+            <div class="ring-count">20</div>
+            <div class="ring-label">words</div>
+          </div>
+        </div>
+
+        <div class="tallies">
+          <label class="tally t-correct" for="c-correct">
+            <span class="pip"></span><span class="nm">Correct</span><span class="n">12</span>
+          </label>
+          <label class="tally t-close" for="c-close">
+            <span class="pip"></span><span class="nm">Close</span><span class="n">5</span>
+          </label>
+          <label class="tally t-incorrect" for="c-incorrect">
+            <span class="pip"></span><span class="nm">Incorrect</span><span class="n">3</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="fline">
+        <span class="lab">This session<span class="l-c"> · correct</span><span class="l-cl"> · close</span><span class="l-i"> · incorrect</span></span>
+        <span class="clear">Show all</span>
+      </div>
+
+      <div class="list">
+        <div class="wrow r-incorrect">
+          <div class="wmain"><div class="wjp">留学生</div><div class="wread">りゅうがくせい</div>
+            <div class="wen">international student</div></div>
+          <span class="gmark g-incorrect">Incorrect</span>
+        </div>
+        <div class="wrow r-correct">
+          <div class="wmain"><div class="wjp">約束</div><div class="wread">やくそく</div>
+            <div class="wen">promise</div></div>
+          <span class="gmark g-correct">Correct</span>
+        </div>
+        <div class="wrow r-close">
+          <div class="wmain"><div class="wjp">高校</div><div class="wread">こうこう</div>
+            <div class="wen">high school</div></div>
+          <span class="gmark g-close">Close</span>
+        </div>
+        <div class="wrow r-correct">
+          <div class="wmain"><div class="wjp kana">ときどき</div>
+            <div class="wen">sometimes</div></div>
+          <span class="gmark g-correct">Correct</span>
+        </div>
+        <div class="wrow r-incorrect">
+          <div class="wmain"><div class="wjp">専門</div><div class="wread">せんもん</div>
+            <div class="wen">major, speciality</div></div>
+          <span class="gmark g-incorrect">Incorrect</span>
+        </div>
+        <div class="wrow r-correct">
+          <div class="wmain"><div class="wjp">友達</div><div class="wread">ともだち</div>
+            <div class="wen">friend</div></div>
+          <span class="gmark g-correct">Correct</span>
+        </div>
+        <div class="wrow r-close">
+          <div class="wmain"><div class="wjp">時計</div><div class="wread">とけい</div>
+            <div class="wen">watch, clock</div></div>
+          <span class="gmark g-close">Close</span>
+        </div>
+        <div class="wrow r-correct">
+          <div class="wmain"><div class="wjp">大学</div><div class="wread">だいがく</div>
+            <div class="wen">university</div></div>
+          <span class="gmark g-correct">Correct</span>
+        </div>
+        <div class="wrow r-incorrect">
+          <div class="wmain"><div class="wjp">仕事</div><div class="wread">しごと</div>
+            <div class="wen">job, work</div></div>
+          <span class="gmark g-incorrect">Incorrect</span>
+        </div>
+        <div class="wrow r-correct">
+          <div class="wmain"><div class="wjp kana">たかい</div>
+            <div class="wen">expensive, tall</div></div>
+          <span class="gmark g-correct">Correct</span>
+        </div>
+        <div class="wrow r-close">
+          <div class="wmain"><div class="wjp">先生</div><div class="wread">せんせい</div>
+            <div class="wen">teacher</div></div>
+          <span class="gmark g-close">Close</span>
+        </div>
+        <div class="wrow r-correct">
+          <div class="wmain"><div class="wjp">名前</div><div class="wread">なまえ</div>
+            <div class="wen">name</div></div>
+          <span class="gmark g-correct">Correct</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="cta">
+          <span class="k-none">Practice Again ✦</span>
+          <span class="k-c">Practice these 12 again ✦</span>
+          <span class="k-cl">Practice these 5 again ✦</span>
+          <span class="k-i">Practice these 3 again ✦</span>
+          <span class="k-c-cl">Practice these 17 again ✦</span>
+          <span class="k-c-i">Practice these 15 again ✦</span>
+          <span class="k-cl-i">Practice these 8 again ✦</span>
+          <span class="k-all">Practice these 20 again ✦</span>
+        </button>
+        <button class="ghost">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ FRAME 2 — FILTERED (static) ══════════════ -->
+  <div class="phone">
+    <div class="label-pill">STATE · Close + Incorrect selected</div>
+    <div class="notch"></div>
+    <span class="ff ff1"></span><span class="ff mag ff3"></span><span class="ff cyan ff5"></span>
+
+    <div class="screen">
+      <div class="topbar">
+        <div class="brand"><span class="kanji">蛍</span><span>Hotaru</span></div>
+        <div class="scope-tag">Genki · Lesson 2</div>
+      </div>
+
+      <div class="head">
+        <div class="ring">
+          <svg viewBox="0 0 120 120">
+            <circle class="track" cx="60" cy="60" r="46" />
+            <circle class="seg seg-incorrect" cx="60" cy="60" r="46"
+                    stroke-dasharray="37.4 289.03" stroke-dashoffset="-3" transform="rotate(-90 60 60)" />
+            <circle class="seg seg-close" cx="60" cy="60" r="46"
+                    stroke-dasharray="66.3 289.03" stroke-dashoffset="-46.4" transform="rotate(-90 60 60)" />
+            <circle class="seg seg-correct" cx="60" cy="60" r="46" style="opacity:.22;filter:none"
+                    stroke-dasharray="167.4 289.03" stroke-dashoffset="-118.7" transform="rotate(-90 60 60)" />
+          </svg>
+          <div class="ring-center">
+            <div class="ring-count">20</div>
+            <div class="ring-label">words</div>
+          </div>
+        </div>
+
+        <div class="tallies">
+          <div class="tally t-correct">
+            <span class="pip"></span><span class="nm">Correct</span><span class="n">12</span>
+          </div>
+          <div class="tally t-close"
+               style="border-color:rgba(255,206,92,.6);box-shadow:0 0 22px rgba(255,206,92,.22);
+                      background:rgba(255,255,255,.07);color:var(--amber)">
+            <span class="pip"></span><span class="nm">Close</span><span class="n">5</span>
+          </div>
+          <div class="tally t-incorrect"
+               style="border-color:rgba(255,92,200,.55);box-shadow:0 0 22px rgba(255,92,200,.2);
+                      background:rgba(255,255,255,.07);color:var(--magenta)">
+            <span class="pip"></span><span class="nm">Incorrect</span><span class="n">3</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="fline">
+        <span class="lab">This session · close · incorrect</span>
+        <span class="clear" style="display:inline">Show all</span>
+      </div>
+
+      <div class="list" style="flex:0 0 auto">
+        <div class="wrow r-incorrect">
+          <div class="wmain"><div class="wjp">留学生</div><div class="wread">りゅうがくせい</div>
+            <div class="wen">international student</div></div>
+          <span class="gmark g-incorrect">Incorrect</span>
+        </div>
+        <div class="wrow r-close">
+          <div class="wmain"><div class="wjp">高校</div><div class="wread">こうこう</div>
+            <div class="wen">high school</div></div>
+          <span class="gmark g-close">Close</span>
+        </div>
+        <div class="wrow r-incorrect">
+          <div class="wmain"><div class="wjp">専門</div><div class="wread">せんもん</div>
+            <div class="wen">major, speciality</div></div>
+          <span class="gmark g-incorrect">Incorrect</span>
+        </div>
+        <div class="wrow r-close">
+          <div class="wmain"><div class="wjp">時計</div><div class="wread">とけい</div>
+            <div class="wen">watch, clock</div></div>
+          <span class="gmark g-close">Close</span>
+        </div>
+        <div class="wrow r-incorrect">
+          <div class="wmain"><div class="wjp">仕事</div><div class="wread">しごと</div>
+            <div class="wen">job, work</div></div>
+          <span class="gmark g-incorrect">Incorrect</span>
+        </div>
+        <div class="wrow r-close">
+          <div class="wmain"><div class="wjp">先生</div><div class="wread">せんせい</div>
+            <div class="wen">teacher</div></div>
+          <span class="gmark g-close">Close</span>
+        </div>
+      </div>
+
+      <div style="flex:1"></div>
+
+      <div class="actions">
+        <button class="cta">Practice these 8 again ✦</button>
+        <button class="ghost">Close</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="notes">
+  <div class="note">
+    <h4>The filter IS the button</h4>
+    <p>Tallies are <b>multi-select</b> — any combination. Selecting re-scopes <b>both</b> the list and
+      the primary action, so the learner never reconciles "what's shown" against "what will run".</p>
+    <p>Nothing selected → <b>"Practice Again"</b>, no number: it replays the whole session, and naming
+      no count keeps it from being misread as a subset. Select Close + Incorrect →
+      <b>"Practice these 8 again ✦"</b>.</p>
+  </div>
+  <div class="note">
+    <h4>Grade reads as a word, not a hue</h4>
+    <p>The accessibility floor is explicit: <b>"grade outcome carries its meaning in the word, not the
+      colour."</b> So each row ends in a text pill — Correct / Close / Incorrect — tinted to match the
+      grade buttons the learner already knows.</p>
+    <p>It's deliberately <b>not</b> the familiarity ○◔◑◕● glyph. Grade (this session) and familiarity
+      (lifetime) are different facts; the spine forbids collapsing them into one mark.</p>
+  </div>
+  <div class="note">
+    <h4>Clearing the selection</h4>
+    <p>Each tally toggles independently. A <b>"Show all"</b> link appears in the state line the moment
+      anything is selected, clearing all three at once, and the line names what you're looking at
+      ("This session · close · incorrect").</p>
+    <p><em>Mock caveat:</em> "Show all" is inert here — pure CSS can't uncheck boxes. One line in Vue.</p>
+  </div>
+  <div class="note">
+    <h4 class="warn">The calm guardrail</h4>
+    <p>FR-18 bans due-counts and backlog walls. This screen clears that bar only because it is
+      <b>session-bounded and opt-in</b> — it exists here, for this session, and is gone when you leave.</p>
+    <p class="warn">Constraint: the mistake count must <b>never</b> escape this screen. No "3 words
+      outstanding" badge on Home, no carry-over into the next session, no nudge. The moment it persists
+      it becomes the debt wall the product is built against.</p>
+  </div>
+  <div class="note">
+    <h4>Replay costs no new endpoint</h4>
+    <p>The drill already holds every card object for the session client-side, so "Practice Again"
+      re-seeds the queue <b>in memory</b> — no <code>words=</code> param on
+      <code>/practice/queue</code>, and it works offline. Direction and scoring mode carry over.</p>
+    <p><b>Replay grades count, but cramming can't promote you.</b> A replay <em>Correct</em> earns its
+      point toward re-promotion but never crosses a tier boundary within the replay; <em>Incorrect</em>
+      still drops as normal. So a fix recovers ground without a 30-second-old answer buying a tier.</p>
+  </div>
+  <div class="note">
+    <h4>What this drops from Story 2.7</h4>
+    <p>2.7's AC-2 and AC-3 required the post-session <b>familiarity distribution</b> and
+      <b>"N remain in scope"</b>. This design keeps neither — the per-word list is a better answer to
+      "how did I do", and both required a post-session fetch this screen no longer makes.</p>
+    <p><b>Decided:</b> 2.7 is rewritten in place (it never reached <code>done/</code>), so those two ACs
+      come out and the ring, list, filters and replay go in.</p>
+  </div>
+  <div class="note">
+    <h4>Density &amp; scroll</h4>
+    <p>Word rows drop to <b>21px</b> Japanese (the spine's list size is 24px) — a results list is denser
+      than Library. Flagging it as a deliberate deviation for you to accept or reject.</p>
+    <p>The head block stays put, the list scrolls, the two actions pin to the bottom. A 20-word session
+      never pushes the CTA off-screen.</p>
+  </div>
+  <div class="note">
+    <h4>Decided by default</h4>
+    <p><b>Row order</b> — the order you met them, replaying the session as lived (not grouped by result;
+      selection already groups on demand).</p>
+    <p><b>Rows are not tappable</b> through to Word detail. It's a second exit from a screen whose job is
+      ending the session cleanly. Easy to add later.</p>
+    <p><b>A perfect round</b> hides the replay CTA — nothing to run — and "Close" becomes the primary
+      button. No consolation copy, no fake task.</p>
+  </div>
+</div>
+
+</body>
+</html>
