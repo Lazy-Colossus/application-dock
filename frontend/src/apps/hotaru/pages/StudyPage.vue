@@ -139,9 +139,11 @@ onMounted(async () => {
   text-shadow: 0 0 26px rgba(255, 210, 74, 0.7)
   margin-bottom: 8px
 
+// The 蛍 mark is always lamp-yellow — a firefly against the neon dusk — at any
+// size and on any surface. Cyan stays reserved for the practiced word.
 .study-glyph
-  color: var(--hotaru-bamboo)
-  text-shadow: 0 0 12px rgba(56, 240, 230, 0.7)
+  color: #ffd24a
+  text-shadow: 0 0 12px rgba(255, 210, 74, 0.7)
   margin-right: 5px
 
 .study-scope

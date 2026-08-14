@@ -112,8 +112,8 @@ spacing:
   grade-gap: 9px
 components:
   app-bar:
-    brand-glyph: '{colors.cyan}'
-    brand-glyph-glow: '0 0 16px rgba(56,240,230,.8)'   # cyan text-shadow on 蛍
+    brand-glyph: '{colors.lamp-yellow}'
+    brand-glyph-glow: '0 0 16px rgba(255,210,74,.75)'  # lamp-yellow text-shadow on 蛍
     name: '{typography.brand}'
     avatar-size: 38px
     progress-bar: 'linear-gradient(90deg, {colors.cyan}, {colors.magenta}); glow 0 0 12px rgba(56,240,230,.8)'
@@ -244,7 +244,7 @@ The palette is a saturated evening neon over a deep indigo dark. It is layered: 
 - **Field** — a radial gradient from `field-2 #1a1148` (violet haze, top) through `field-1 #0a0a24` to `field-0 #04060f` (deepest dusk, floor). Full-bleed page background; never a card surface. `field-raise #11132e` is the one solid raised surface (avatar menu popover).
 - **Glass** — `glass rgba(20,18,52,0.55)` violet-tinted translucent fill, always paired with `blur(16px)` and the `glass-line rgba(155,107,255,0.28)` violet border. The substrate for every content panel.
 - **Ink** — text on the dark field: `ink-hi #f1f0ff` (headings/body), `ink-mid #b3aede` (secondary/readings-support), `ink-lo #6f6aa0` (hints/meta/labels).
-- **Cyan (PRIMARY)** — `cyan #38f0e6` is the brand colour: the 蛍 glyph glow, CTAs, FAB, active tabs/chips, the mode toggle, and — reserved above all — **the practiced Japanese word**. `cyan-bright #7ff7ee` is the CTA gradient's far stop / hover; `cyan-deep #10a89f` for pressed depth; `cyan-on #03121a` is the dark ink placed on cyan fills.
+- **Cyan (PRIMARY)** — `cyan #38f0e6` is the interface accent: CTAs, FAB, active tabs/chips, the mode toggle, and — reserved above all — **the practiced Japanese word**. (The 蛍 mark is *not* cyan; see Lamp-yellow.) `cyan-bright #7ff7ee` is the CTA gradient's far stop / hover; `cyan-deep #10a89f` for pressed depth; `cyan-on #03121a` is the dark ink placed on cyan fills.
 - **Magenta (SECONDARY)** — `magenta #ff5cc8`: the reading line on the drill card, the Mastered tier, the Incorrect grade edge, and "aging / drifting back" marks.
 - **Violet (TERTIARY)** — `violet #9b6bff`: panel edges, shared-note accent, the Learning tier, chip fills, category pills.
 - **Amber** — `amber #ffce5c`: the literal firefly glow (motion layer), the Strong tier, the Close grade edge, and the private/aging accent (`amber-private`, same hue). Never a chrome fill.
@@ -262,7 +262,7 @@ Type roles:
 
 - **Japanese display** is the loudest role and scales by context: `jp-drill` 48px/700 on the drill card (**cyan + glow**, the brightest element), `jp-detail` 48px/600 in the word-detail header, `jp-row` 24px in library/aging rows (`ink-hi`).
 - **Prompt** 34px/700 (the English cue on the drill front, e.g. "promise") in `ink-hi`.
-- **Brand** 18px/700, letter-spacing .02em (the "Hotaru" wordmark beside the cyan 蛍 glyph).
+- **Brand** 18px/700, letter-spacing .02em (the "Hotaru" wordmark beside the lamp-yellow 蛍 glyph).
 - **Reading** 20px (furigana/romaji) — **magenta + glow** on the drill card, `ink-mid` elsewhere; **body** 13px/1.45; **caption** 12px.
 - **label-caps** 11px/600, letter-spacing .16em, uppercase — prompt label, section tags, the EN→JP mode toggle.
 - **Pill** text is intentionally tiny: 8.5px for category pills (9px for word-detail tag pills).
@@ -289,7 +289,7 @@ The z-order is load-bearing: **field gradient (back) → firefly layer (z:4) →
 
 - **Glass panels** lift off the field by tone + the violet border + a faint top inset highlight (`inset 0 1px 0 rgba(255,255,255,.06)`) + `blur(16px)`, with a soft violet edge-glow (`0 0 40px rgba(155,107,255,.12)`) and a real drop shadow (`0 18px 44px rgba(0,0,0,.55)`).
 - **The drill card** is the focal elevation: the glass panel plus a dual **cyan+violet ambient glow** (`0 0 40px rgba(155,107,255,.16), 0 0 40px rgba(56,240,230,.10)`). The practiced word adds its own cyan text-glow on top — the brightest point on screen.
-- **Glow as accent, not chrome:** firefly blooms, the brand glyph's cyan glow, familiarity-icon glows, and active-chip glows are all soft and contained; only the drill card and the practiced word glow strongly.
+- **Glow as accent, not chrome:** firefly blooms, the brand glyph's lamp-yellow glow, familiarity-icon glows, and active-chip glows are all soft and contained; only the drill card and the practiced word glow strongly.
 
 ## Shapes
 
@@ -323,6 +323,7 @@ Supporting components in the mocks (inherit Quasar mechanics, brand-tinted): not
 | Do | Don't |
 |---|---|
 | Reserve **cyan `#38f0e6` + glow** for the primary accent and, brightest of all, the **practiced Japanese word** | Scatter cyan glow so widely that the practiced word no longer reads as the brightest thing |
+| Render the **蛍 mark in lamp-yellow `#ffd24a`** at every size and on every surface | Colour 蛍 cyan, or pair a lamp-yellow glyph with a cyan glow (or vice versa) |
 | Use **cyan** primary, **magenta** + **violet** secondary/tertiary as specified | Introduce a colour outside the neon families, or use amber as a solid chrome fill |
 | Render the familiarity ramp as **colour + distinct icon + text label** | Rely on colour alone, or reuse the category-pill style for familiarity |
 | Colour Japanese by script in lists: **kanji cyan, kana lamp-yellow** | Colour kana cyan, or paint a whole row one colour |
