@@ -10,7 +10,9 @@
       {{ store.error }}
     </q-banner>
 
-    <div class="text-h5 q-mb-md recurring-players-page__heading">Recurring Players</div>
+    <div class="text-h5 q-mb-md recurring-players-page__heading">
+      Recurring Players
+    </div>
 
     <!-- Add player row -->
     <div class="row items-start q-gutter-sm q-mb-sm">
@@ -58,12 +60,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRecurringPlayersStore } from '@/apps/archery/stores/useRecurringPlayersStore';
-import ArcherChip from '@/apps/archery/components/ArcherChip.vue';
+import { ref, onMounted } from "vue";
+import { useRecurringPlayersStore } from "@/apps/archery/stores/useRecurringPlayersStore";
+import ArcherChip from "@/apps/archery/components/ArcherChip.vue";
 
 const store = useRecurringPlayersStore();
-const newName = ref('');
+const newName = ref("");
 const inputError = ref<string | null>(null);
 
 onMounted(() => {
@@ -77,17 +79,17 @@ async function onRemove(name: string): Promise<void> {
 async function addPlayer(): Promise<void> {
   const name = newName.value.trim();
   if (!name) {
-    inputError.value = 'Player name is required.';
+    inputError.value = "Player name is required.";
     return;
   }
   if (store.players.includes(name.toLowerCase())) {
-    inputError.value = 'Player already in the list.';
+    inputError.value = "Player already in the list.";
     return;
   }
   inputError.value = null;
   await store.addPlayer(name.toLowerCase());
   if (!store.error) {
-    newName.value = '';
+    newName.value = "";
   }
 }
 </script>

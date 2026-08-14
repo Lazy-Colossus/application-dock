@@ -55,9 +55,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/useAuthStore';
+import { computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 const route = useRoute();
 const router = useRouter();
@@ -68,7 +68,7 @@ const showBack = computed(() => route.path !== "/");
 // Inside the Hotaru app the shell bar adopts Hotaru's dusk field so the header
 // reads as part of the app, not a foreign grey chrome strip.
 const inHotaru = computed(() => route.path.startsWith("/hotaru"));
-const isHome = computed(() => route.path === '/');
+const isHome = computed(() => route.path === "/");
 
 const pageTitle = computed(() => {
   const t = route.meta?.title;
@@ -85,7 +85,7 @@ function goBack(): void {
 
 function handleLogout(): void {
   authStore.logout();
-  void router.push('/login');
+  void router.push("/login");
 }
 </script>
 

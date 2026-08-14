@@ -8,8 +8,8 @@
 </template>
 
 <script setup lang="ts">
-import AppCard from '@/components/AppCard.vue';
-import { apps } from '@/apps/registry';
+import AppCard from "@/components/AppCard.vue";
+import { apps } from "@/apps/registry";
 </script>
 
 <style lang="sass" scoped>

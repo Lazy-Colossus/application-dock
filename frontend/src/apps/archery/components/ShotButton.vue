@@ -3,7 +3,9 @@
     class="shot-button"
     :class="[`shot-button--v${value}`]"
     :disabled="disabled"
-    :aria-label="value === 11 ? 'Shot value 11, bullseye' : `Shot value ${value}`"
+    :aria-label="
+      value === 11 ? 'Shot value 11, bullseye' : `Shot value ${value}`
+    "
     type="button"
     @click="emit('tap', value)"
   >

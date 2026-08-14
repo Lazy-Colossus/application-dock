@@ -4,7 +4,9 @@
     <div class="scoring-board-page__topbar row items-center q-px-md">
       <span class="col scoring-board-page__count">
         {{ confirmedCount }} of 18 confirmed
-        <span v-if="confirmedCount === 18" class="scoring-board-page__all-done"> · all done ✓</span>
+        <span v-if="confirmedCount === 18" class="scoring-board-page__all-done">
+          · all done ✓</span
+        >
       </span>
       <q-btn
         flat
@@ -32,7 +34,10 @@
           no-caps
           label="Retry"
           data-testid="save-retry-btn"
-          @click="store.error = null; store.scoreEntryOpen = true"
+          @click="
+            store.error = null;
+            store.scoreEntryOpen = true;
+          "
         />
       </template>
     </q-banner>
@@ -49,7 +54,9 @@
     </div>
 
     <!-- Archer chips strip (read-only, no remove X) -->
-    <div class="scoring-board-page__archers q-px-md q-pt-md row wrap q-gutter-sm">
+    <div
+      class="scoring-board-page__archers q-px-md q-pt-md row wrap q-gutter-sm"
+    >
       <ArcherChip
         v-for="name in store.session?.archers ?? []"
         :key="name"
@@ -75,12 +82,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useArcherySessionStore } from '@/apps/archery/stores/useArcherySessionStore';
-import TargetIcon from '@/apps/archery/components/TargetIcon.vue';
-import ArcherChip from '@/apps/archery/components/ArcherChip.vue';
-import ScoreEntryPanel from '@/apps/archery/components/ScoreEntryPanel.vue';
+import { computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useArcherySessionStore } from "@/apps/archery/stores/useArcherySessionStore";
+import TargetIcon from "@/apps/archery/components/TargetIcon.vue";
+import ArcherChip from "@/apps/archery/components/ArcherChip.vue";
+import ScoreEntryPanel from "@/apps/archery/components/ScoreEntryPanel.vue";
 
 const store = useArcherySessionStore();
 const router = useRouter();
@@ -90,12 +97,12 @@ onMounted(() => {
   // already loaded into the store (via create or resume). If none is loaded,
   // there is nothing to disambiguate here — send the operator home to pick one.
   if (store.session === null) {
-    void router.replace('/archery');
+    void router.replace("/archery");
   }
 });
 
 const confirmedCount = computed(
-  () => store.session?.targets.filter((t) => t.confirmed === true).length ?? 0
+  () => store.session?.targets.filter((t) => t.confirmed === true).length ?? 0,
 );
 
 function isConfirmed(n: number): boolean {

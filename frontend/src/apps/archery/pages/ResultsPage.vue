@@ -7,7 +7,7 @@
 
     <!-- Session name (Story 6.2) -->
     <div class="results-page__label q-mb-md">
-      {{ store.session ? displaySessionName(store.session) : '' }}
+      {{ store.session ? displaySessionName(store.session) : "" }}
     </div>
 
     <!-- Ranked summary -->
@@ -17,18 +17,28 @@
         :key="row.archer"
         class="results-page__rank-row row items-center q-pa-md"
       >
-        <div class="results-page__rank-chip" :class="i === 0 ? 'results-page__rank-chip--first' : ''">
+        <div
+          class="results-page__rank-chip"
+          :class="i === 0 ? 'results-page__rank-chip--first' : ''"
+        >
           {{ i + 1 }}
         </div>
         <div class="col results-page__archer-name">{{ row.archer }}</div>
-        <div class="results-page__score" :class="i === 0 ? 'results-page__score--first' : ''">
+        <div
+          class="results-page__score"
+          :class="i === 0 ? 'results-page__score--first' : ''"
+        >
           {{ row.total }}
         </div>
       </div>
     </div>
 
     <!-- Per-target breakdown -->
-    <ResultsTable v-if="store.session" :session="store.session" class="q-mb-lg" />
+    <ResultsTable
+      v-if="store.session"
+      :session="store.session"
+      class="q-mb-lg"
+    />
 
     <!-- Action buttons -->
     <div class="column q-gutter-sm q-mt-auto">
@@ -39,7 +49,12 @@
         no-caps
         :disable="store.loading"
         :loading="store.loading"
-        style="height: 56px; border-radius: 8px; background: #C8960A; color: #F0F0F0"
+        style="
+          height: 56px;
+          border-radius: 8px;
+          background: #c8960a;
+          color: #f0f0f0;
+        "
         data-testid="finalise-btn"
         @click="finaliseDialogOpen = true"
       />
@@ -48,7 +63,7 @@
         label="Return to Scoring"
         outline
         no-caps
-        style="height: 56px; border-radius: 8px; color: #F0F0F0"
+        style="height: 56px; border-radius: 8px; color: #f0f0f0"
         data-testid="return-btn"
         @click="router.push('/archery/scoring')"
       />
@@ -58,14 +73,21 @@
     <q-dialog v-model="finaliseDialogOpen">
       <div class="results-page__dialog q-pa-md">
         <p class="q-mb-xs text-h6">Finalise this session?</p>
-        <p class="q-mb-md text-caption text-grey-5">You can't edit it after this.</p>
+        <p class="q-mb-md text-caption text-grey-5">
+          You can't edit it after this.
+        </p>
         <div class="row justify-end q-gutter-sm">
-          <q-btn flat label="Cancel" no-caps @click="finaliseDialogOpen = false" />
+          <q-btn
+            flat
+            label="Cancel"
+            no-caps
+            @click="finaliseDialogOpen = false"
+          />
           <q-btn
             unelevated
             label="Finalise"
             no-caps
-            style="background: #C8960A; color: #F0F0F0"
+            style="background: #c8960a; color: #f0f0f0"
             data-testid="finalise-confirm-btn"
             @click="onFinalise"
           />
@@ -76,28 +98,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useArcherySessionStore } from '@/apps/archery/stores/useArcherySessionStore';
-import { ranked } from '@/apps/archery/composables/useScores';
-import { displaySessionName } from '@/apps/archery/composables/useSessionLabel';
-import ResultsTable from '@/apps/archery/components/ResultsTable.vue';
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useArcherySessionStore } from "@/apps/archery/stores/useArcherySessionStore";
+import { ranked } from "@/apps/archery/composables/useScores";
+import { displaySessionName } from "@/apps/archery/composables/useSessionLabel";
+import ResultsTable from "@/apps/archery/components/ResultsTable.vue";
 
 const store = useArcherySessionStore();
 const router = useRouter();
 const finaliseDialogOpen = ref(false);
 
 onMounted(() => {
-  if (!store.session) void router.replace('/archery');
+  if (!store.session) void router.replace("/archery");
 });
 
-const rankedArchers = computed(() => (store.session ? ranked(store.session) : []));
+const rankedArchers = computed(() =>
+  store.session ? ranked(store.session) : [],
+);
 
 async function onFinalise(): Promise<void> {
   finaliseDialogOpen.value = false;
   try {
     await store.finaliseSession();
-    void router.replace('/archery');
+    void router.replace("/archery");
   } catch {
     // error already set in store; stay on page
   }

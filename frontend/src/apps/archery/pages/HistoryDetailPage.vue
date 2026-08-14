@@ -2,14 +2,24 @@
   <q-page class="history-detail-page q-pa-md column no-wrap">
     <!-- Error state -->
     <template v-if="store.detailError">
-      <q-banner dense rounded class="bg-negative text-white q-mb-md" data-testid="error-banner">
+      <q-banner
+        dense
+        rounded
+        class="bg-negative text-white q-mb-md"
+        data-testid="error-banner"
+      >
         {{ store.detailError }}
       </q-banner>
       <q-btn
         outline
         no-caps
         label="Back to History"
-        style="height: 44px; border-radius: 8px; color: #F0F0F0; align-self: flex-start"
+        style="
+          height: 44px;
+          border-radius: 8px;
+          color: #f0f0f0;
+          align-self: flex-start;
+        "
         data-testid="back-btn"
         @click="router.push('/archery/history')"
       />
@@ -40,7 +50,9 @@
           >
             {{ i + 1 }}
           </div>
-          <div class="col history-detail-page__archer-name">{{ row.archer }}</div>
+          <div class="col history-detail-page__archer-name">
+            {{ row.archer }}
+          </div>
           <div
             class="history-detail-page__score"
             :class="i === 0 ? 'history-detail-page__score--first' : ''"
@@ -57,12 +69,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useArcheryHistoryStore } from '@/apps/archery/stores/useArcheryHistoryStore';
-import { ranked } from '@/apps/archery/composables/useScores';
-import { displaySessionName } from '@/apps/archery/composables/useSessionLabel';
-import ResultsTable from '@/apps/archery/components/ResultsTable.vue';
+import { computed, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useArcheryHistoryStore } from "@/apps/archery/stores/useArcheryHistoryStore";
+import { ranked } from "@/apps/archery/composables/useScores";
+import { displaySessionName } from "@/apps/archery/composables/useSessionLabel";
+import ResultsTable from "@/apps/archery/components/ResultsTable.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -73,7 +85,9 @@ onMounted(() => {
   void store.loadDetail(label);
 });
 
-const rankedArchers = computed(() => (store.detail ? ranked(store.detail) : []));
+const rankedArchers = computed(() =>
+  store.detail ? ranked(store.detail) : [],
+);
 </script>
 
 <style scoped lang="sass">

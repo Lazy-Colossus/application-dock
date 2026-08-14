@@ -1,7 +1,12 @@
 <template>
   <q-page class="history-page q-pa-md column no-wrap">
     <!-- Error banner -->
-    <q-banner v-if="store.error" dense rounded class="bg-negative text-white q-mb-md">
+    <q-banner
+      v-if="store.error"
+      dense
+      rounded
+      class="bg-negative text-white q-mb-md"
+    >
       Couldn't load history.
       <template #action>
         <q-btn flat no-caps label="Retry" @click="store.loadHistory()" />
@@ -37,10 +42,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useArcheryHistoryStore } from '@/apps/archery/stores/useArcheryHistoryStore';
-import HistoryListItem from '@/apps/archery/components/HistoryListItem.vue';
+import { onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useArcheryHistoryStore } from "@/apps/archery/stores/useArcheryHistoryStore";
+import HistoryListItem from "@/apps/archery/components/HistoryListItem.vue";
 
 const store = useArcheryHistoryStore();
 const router = useRouter();

@@ -10,7 +10,9 @@
             class="results-table__th"
           >
             <div>{{ archer }}</div>
-            <div class="results-table__total">{{ totalFor(session, archer) }}</div>
+            <div class="results-table__total">
+              {{ totalFor(session, archer) }}
+            </div>
           </th>
         </tr>
       </thead>
@@ -24,10 +26,15 @@
           >
             <template v-if="scoreFor(n, archer)">
               <span class="results-table__shots">
-                {{ scoreFor(n, archer)![0] ?? 0 }} / {{ scoreFor(n, archer)![1] ?? 0 }}
+                {{ scoreFor(n, archer)![0] ?? 0 }} /
+                {{ scoreFor(n, archer)![1] ?? 0 }}
               </span>
               <span class="results-table__sub">
-                = {{ (scoreFor(n, archer)![0] ?? 0) + (scoreFor(n, archer)![1] ?? 0) }}
+                =
+                {{
+                  (scoreFor(n, archer)![0] ?? 0) +
+                  (scoreFor(n, archer)![1] ?? 0)
+                }}
               </span>
             </template>
             <span v-else class="results-table__empty">—</span>
@@ -39,12 +46,15 @@
 </template>
 
 <script setup lang="ts">
-import type { SessionData } from '@/apps/archery/types';
-import { totalFor } from '@/apps/archery/composables/useScores';
+import type { SessionData } from "@/apps/archery/types";
+import { totalFor } from "@/apps/archery/composables/useScores";
 
 const props = defineProps<{ session: SessionData }>();
 
-function scoreFor(targetNumber: number, archer: string): [number | null, number | null] | null {
+function scoreFor(
+  targetNumber: number,
+  archer: string,
+): [number | null, number | null] | null {
   const t = props.session.targets.find((x) => x.number === targetNumber);
   return t?.scores[archer] ?? null;
 }

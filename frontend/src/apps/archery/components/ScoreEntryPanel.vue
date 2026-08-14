@@ -13,7 +13,9 @@
 
       <!-- Header -->
       <div class="row items-center q-mb-md">
-        <div class="col text-center sep__title">Target {{ store.activeTargetNumber }}</div>
+        <div class="col text-center sep__title">
+          Target {{ store.activeTargetNumber }}
+        </div>
         <q-btn
           flat
           round
@@ -42,35 +44,51 @@
       </div>
 
       <!-- Active archer label + sub-label -->
-      <div class="text-center q-mb-xs sep__archer-name">{{ currentArcher }}</div>
-      <div class="text-center sep__shot-label q-mb-md">Shot {{ shotIndex + 1 }} of 2</div>
+      <div class="text-center q-mb-xs sep__archer-name">
+        {{ currentArcher }}
+      </div>
+      <div class="text-center sep__shot-label q-mb-md">
+        Shot {{ shotIndex + 1 }} of 2
+      </div>
 
       <!-- Shot slots — tap to choose which slot the next value fills (Story 7.4) -->
       <div class="row justify-center q-gutter-sm q-mb-md">
         <button
           type="button"
           class="sep__slot"
-          :class="{ 'sep__slot--active': shotIndex === 0, 'sep__slot--filled': currentEntry[0] !== null }"
+          :class="{
+            'sep__slot--active': shotIndex === 0,
+            'sep__slot--filled': currentEntry[0] !== null,
+          }"
           data-testid="slot-0"
           @click="selectSlot(0)"
         >
-          {{ currentEntry[0] !== null ? currentEntry[0] : '' }}
+          {{ currentEntry[0] !== null ? currentEntry[0] : "" }}
         </button>
         <button
           type="button"
           class="sep__slot"
-          :class="{ 'sep__slot--active': shotIndex === 1, 'sep__slot--filled': currentEntry[1] !== null }"
+          :class="{
+            'sep__slot--active': shotIndex === 1,
+            'sep__slot--filled': currentEntry[1] !== null,
+          }"
           data-testid="slot-1"
           @click="selectSlot(1)"
         >
-          {{ currentEntry[1] !== null ? currentEntry[1] : '' }}
+          {{ currentEntry[1] !== null ? currentEntry[1] : "" }}
         </button>
       </div>
 
       <!-- Shot button grid -->
       <div class="sep__grid q-mb-md">
-        <ShotButton v-for="v in SHOT_VALUES" :key="v" :value="v" @tap="onShotTap" />
-        <div /><!-- 6th cell spacer -->
+        <ShotButton
+          v-for="v in SHOT_VALUES"
+          :key="v"
+          :value="v"
+          @tap="onShotTap"
+        />
+        <div />
+        <!-- 6th cell spacer -->
       </div>
 
       <!-- Confirm button — always enabled; empty shots saved as 0 (Story 7.3) -->
@@ -89,17 +107,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { useArcherySessionStore } from '@/apps/archery/stores/useArcherySessionStore';
-import ShotButton from '@/apps/archery/components/ShotButton.vue';
-import type { TargetScores } from '@/apps/archery/types';
+import { ref, computed, watch } from "vue";
+import { useArcherySessionStore } from "@/apps/archery/stores/useArcherySessionStore";
+import ShotButton from "@/apps/archery/components/ShotButton.vue";
+import type { TargetScores } from "@/apps/archery/types";
 
 const SHOT_VALUES = [0, 5, 8, 10, 11] as const;
 
 const store = useArcherySessionStore();
 
 const prefersReducedMotion =
-  typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+  typeof window !== "undefined" &&
+  window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
 
 // Panel-local entry state — committed to the store on close or confirm.
 const entries = ref<Record<string, [number | null, number | null]>>({});
@@ -107,20 +126,22 @@ const archerIndex = ref(0);
 const shotIndex = ref(0);
 
 const roster = computed(() => store.session?.archers ?? []);
-const currentArcher = computed(() => roster.value[archerIndex.value] ?? '');
+const currentArcher = computed(() => roster.value[archerIndex.value] ?? "");
 const currentEntry = computed<[number | null, number | null]>(
-  () => entries.value[currentArcher.value] ?? [null, null]
+  () => entries.value[currentArcher.value] ?? [null, null],
 );
 
 const hasAnyEntry = computed(() =>
-  Object.values(entries.value).some(([s1, s2]) => s1 !== null || s2 !== null)
+  Object.values(entries.value).some(([s1, s2]) => s1 !== null || s2 !== null),
 );
 
 function initEntries(): void {
   archerIndex.value = 0;
   shotIndex.value = 0;
   const existing =
-    store.activeTargetNumber !== null ? store.targetByNumber(store.activeTargetNumber) : null;
+    store.activeTargetNumber !== null
+      ? store.targetByNumber(store.activeTargetNumber)
+      : null;
   const init: Record<string, [number | null, number | null]> = {};
   for (const name of roster.value) {
     const prior = existing?.scores[name];
@@ -134,14 +155,14 @@ watch(
   (open) => {
     if (open) initEntries();
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 watch(
   () => store.activeTargetNumber,
   () => {
     if (store.scoreEntryOpen) initEntries();
-  }
+  },
 );
 
 function selectArcher(i: number): void {
