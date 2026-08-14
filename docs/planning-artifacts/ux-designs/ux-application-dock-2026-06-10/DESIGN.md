@@ -14,6 +14,7 @@ sources:
   - mockups/library.html
   - mockups/add-word.html
   - mockups/word-notes.html
+  - mockups/session-summary.html
 inherits_ui_system: "Vue 3 + Quasar v2 (Material-based)"
 name: Hotaru
 description: "Japanese vocabulary practice inside the Application Dock shell. A deep-indigo dusk field (夕暮れ) lit by saturated neon — electric cyan, hot magenta, neon violet — with a few amber fireflies drifting behind violet glass. Nightlife sparkle over a quiet late-evening field; the word you're learning glows cyan like a sign in the dark. Quietly alive, never gamified — no streaks, no leaderboards, no due-counts."
