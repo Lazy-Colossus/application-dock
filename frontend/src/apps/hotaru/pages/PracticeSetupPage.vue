@@ -426,7 +426,7 @@ const quickSessionCount = computed(() =>
 const quickSummary = computed(() => {
   const preset =
     FAMILIARITY_PRESETS.find((p) => p.key === quickPreset.value)?.label ?? "";
-  const dir = direction.value === "r2m" ? "JP→EN" : "EN→JP";
+  const dir = direction.value === "r2m" ? "あ→EN" : "EN→あ";
   const scoring = mode.value === "self" ? "self-grade" : "typed";
   const count =
     countValue.value > 0 ? `${countValue.value} words` : "all words";

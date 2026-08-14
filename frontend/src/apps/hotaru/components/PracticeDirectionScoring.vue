@@ -9,7 +9,7 @@
           data-testid="dir-r2m"
           @click="setDirection('r2m')"
         >
-          JP → EN
+          あ → EN
         </button>
         <button
           class="practice-seg__btn"
@@ -17,7 +17,7 @@
           data-testid="dir-m2r"
           @click="setDirection('m2r')"
         >
-          EN → JP
+          EN → あ
         </button>
       </div>
     </div>

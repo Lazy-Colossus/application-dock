@@ -95,7 +95,7 @@
           data-testid="direction-toggle"
           @click="toggleDirection"
         >
-          {{ direction === "r2m" ? "JP → EN" : "EN → JP" }}
+          {{ direction === "r2m" ? "あ → EN" : "EN → あ" }}
         </button>
         <div class="row items-center no-wrap">
           <button
