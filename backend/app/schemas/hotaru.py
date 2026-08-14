@@ -102,9 +102,12 @@ class QueueItem(BaseModel):
 
 
 class GradeItem(BaseModel):
-    # One graded card in a batch submission.
+    # One graded card in a batch submission. `replay` marks a re-practice of a
+    # word already met earlier in the same session, which the SRS engine credits
+    # without letting it promote a tier (see srs.next_review).
     word_id: str
     grade: Grade
+    replay: bool = False
 
 
 class CreateNoteRequest(BaseModel):

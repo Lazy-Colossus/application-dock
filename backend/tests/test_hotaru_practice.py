@@ -420,6 +420,29 @@ def test_grades_are_scoped_to_the_user() -> None:
     assert progress_repo.read_progress("jake") == {}
 
 
+def test_replay_grade_credits_progress_without_promoting() -> None:
+    # Tier 1 needs 3 points; sitting on 2, a genuine Correct would promote.
+    wid = _make_word({"reading": "ねこ", "meaning": "cat"})
+    progress_repo.set_entry("dani", wid, ProgressEntry(tier=1, points=2, last_reviewed_at=NOW))
+    body = _grade([{"word_id": wid, "grade": "correct", "replay": True}]).json()[wid]
+    assert (body["tier"], body["points"]) == (1, 2)
+
+
+def test_replay_flag_defaults_to_false_when_omitted() -> None:
+    # Every existing client posts {word_id, grade} — those must still promote.
+    wid = _make_word({"reading": "いぬ", "meaning": "dog"})
+    progress_repo.set_entry("dani", wid, ProgressEntry(tier=1, points=2, last_reviewed_at=NOW))
+    body = _grade([{"word_id": wid, "grade": "correct"}]).json()[wid]
+    assert (body["tier"], body["points"]) == (2, 0)
+
+
+def test_replay_incorrect_still_drops_a_tier() -> None:
+    wid = _make_word({"reading": "とり", "meaning": "bird"})
+    progress_repo.set_entry("dani", wid, ProgressEntry(tier=3, points=5, last_reviewed_at=NOW))
+    body = _grade([{"word_id": wid, "grade": "incorrect", "replay": True}]).json()[wid]
+    assert (body["tier"], body["points"]) == (2, 0)
+
+
 def test_grade_response_has_no_due_debt() -> None:
     wid = _make_word({"reading": "ねこ", "meaning": "cat"})
     entry = _grade([{"word_id": wid, "grade": "correct"}]).json()[wid]

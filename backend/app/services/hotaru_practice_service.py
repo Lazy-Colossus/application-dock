@@ -148,7 +148,7 @@ def apply_grades(
     updated: dict[str, ProgressEntry] = {}
     for item in grades:
         entry = progress.get(item.word_id) or ProgressEntry()
-        entry = srs.next_review(entry, item.grade, now)
+        entry = srs.next_review(entry, item.grade, now, replay=item.replay)
         progress[item.word_id] = entry
         updated[item.word_id] = entry
     progress_repo.write_progress(user, progress)
