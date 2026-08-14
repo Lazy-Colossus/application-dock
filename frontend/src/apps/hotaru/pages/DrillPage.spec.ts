@@ -401,58 +401,46 @@ describe("DrillPage", () => {
     ]);
   });
 
-  it("ends with a recap: practised count, remaining-in-scope, updated familiarity", async () => {
+  it("ends with a recap: the breakdown ring + grade tallies", async () => {
     const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
     await flushPromises();
-    // Grade both cards to reach the end.
+    // Grade both cards to reach the end — one Correct, one Close.
     await wrapper.find('[data-testid="reveal-btn"]').trigger("click");
     await wrapper.find('[data-testid="grade-correct"]').trigger("click");
     await wrapper.find('[data-testid="reveal-btn"]').trigger("click");
-    await wrapper.find('[data-testid="grade-correct"]').trigger("click");
+    await wrapper.find('[data-testid="grade-close"]').trigger("click");
     await flushPromises();
     expect(wrapper.find('[data-testid="drill-done"]').exists()).toBe(true);
-    // Practised 2; scope has 5 → 3 remain.
+    // Ring center = words practised.
     expect(wrapper.find('[data-testid="summary-practised"]').text()).toContain(
       "2",
     );
-    expect(getMock).toHaveBeenCalledWith(
-      "/hotaru/practice/overview?scope=lesson%3AL2&user=dani",
+    // Tallies reflect the grade mix.
+    expect(wrapper.find('[data-testid="tally-correct"]').text()).toContain("1");
+    expect(wrapper.find('[data-testid="tally-close"]').text()).toContain("1");
+    expect(wrapper.find('[data-testid="tally-incorrect"]').text()).toContain(
+      "0",
     );
-    expect(wrapper.find('[data-testid="summary-remaining"]').text()).toContain(
-      "3",
-    );
-    // Updated familiarity distribution rendered (New = 3, Learning = 2).
-    expect(wrapper.find('[data-testid="summary-tier-0"]').text()).toContain(
-      "New",
-    );
-    expect(wrapper.find('[data-testid="summary-tier-0"]').text()).toContain(
-      "3",
-    );
-    expect(wrapper.find('[data-testid="summary-tier-1"]').text()).toContain(
-      "2",
-    );
+    // Two grades present → two ring segments (no incorrect arc).
+    expect(wrapper.findAll(".drill-ring__seg").length).toBe(2);
   });
 
-  it("degrades gracefully when the summary stats fetch fails", async () => {
+  it("draws a single ring segment for an all-correct session; no post-session fetch", async () => {
     queue = [{ word: word("g1", "猫", "ねこ", "cat") }];
-    getMock.mockImplementation((path: string) => {
-      if (path.startsWith("/hotaru/users")) return Promise.resolve(USERS);
-      if (path.startsWith("/hotaru/practice/overview"))
-        return Promise.reject(new Error("stats down"));
-      return Promise.resolve(queue);
-    });
     const wrapper = mount(DrillPage, { global: { stubs: STUBS } });
     await flushPromises();
     await wrapper.find('[data-testid="reveal-btn"]').trigger("click");
     await wrapper.find('[data-testid="grade-correct"]').trigger("click");
     await flushPromises();
-    // Still shows the recap with the practised count — no page-level error.
     expect(wrapper.find('[data-testid="drill-done"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="summary-practised"]').text()).toContain(
       "1",
     );
-    expect(wrapper.find('[data-testid="summary-remaining"]').exists()).toBe(
-      false,
+    expect(wrapper.find('[data-testid="tally-correct"]').text()).toContain("1");
+    expect(wrapper.findAll(".drill-ring__seg").length).toBe(1);
+    // The recap is built from local counts — it never fetches the scope overview.
+    expect(getMock).not.toHaveBeenCalledWith(
+      expect.stringContaining("/hotaru/practice/overview"),
     );
     expect(wrapper.find('[data-testid="drill-error"]').exists()).toBe(false);
   });

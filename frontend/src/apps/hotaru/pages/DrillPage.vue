@@ -35,36 +35,56 @@
       <div class="drill-done__glyph">蛍</div>
       <div class="drill-done__title">Session complete.</div>
 
-      <div class="drill-summary hotaru-panel column">
-        <div class="drill-summary__practised" data-testid="summary-practised">
-          Practised {{ practised }} {{ practised === 1 ? "word" : "words" }}
-        </div>
-        <div
-          v-if="summaryLoading && !summary"
-          class="drill-summary__hint"
-          data-testid="summary-loading"
-        >
-          Tallying…
-        </div>
-        <template v-else-if="summary">
-          <div class="drill-summary__hint" data-testid="summary-remaining">
-            {{ remaining }} more in {{ scopeLabel }}
-          </div>
-          <div
-            class="drill-summary__fam column"
-            data-testid="summary-familiarity"
+      <div class="drill-summary hotaru-panel column flex-center">
+        <!-- Session breakdown: a ring split by this session's grade mix. -->
+        <div class="drill-ring" data-testid="summary-ring">
+          <svg
+            class="drill-ring__svg"
+            viewBox="-12 -12 144 144"
+            aria-hidden="true"
           >
-            <div
-              v-for="(count, tier) in summary.familiarity"
-              :key="tier"
-              class="drill-summary__tier row items-center justify-between"
-              :data-testid="`summary-tier-${tier}`"
-            >
-              <FamiliarityIcon :tier="tier" show-label />
-              <span>{{ count }}</span>
+            <circle class="drill-ring__track" cx="60" cy="60" r="52" />
+            <circle
+              v-for="seg in ringSegments"
+              :key="seg.g"
+              class="drill-ring__seg"
+              cx="60"
+              cy="60"
+              r="52"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="12"
+              :stroke-dasharray="seg.dasharray"
+              :stroke-dashoffset="seg.dashoffset"
+              :style="{ color: seg.color }"
+              transform="rotate(-90 60 60)"
+            />
+          </svg>
+          <div class="drill-ring__center">
+            <div class="drill-ring__count" data-testid="summary-practised">
+              {{ practised }}
+            </div>
+            <div class="drill-ring__label">
+              {{ practised === 1 ? "word" : "words" }}
             </div>
           </div>
-        </template>
+          <SessionCelebration />
+        </div>
+
+        <div class="drill-breakdown" data-testid="summary-breakdown">
+          <span class="drill-tally" data-testid="tally-correct">
+            <i class="drill-dot drill-dot--correct" />Correct
+            <b>{{ counts.correct }}</b>
+          </span>
+          <span class="drill-tally" data-testid="tally-close">
+            <i class="drill-dot drill-dot--close" />Close
+            <b>{{ counts.close }}</b>
+          </span>
+          <span class="drill-tally" data-testid="tally-incorrect">
+            <i class="drill-dot drill-dot--incorrect" />Incorrect
+            <b>{{ counts.incorrect }}</b>
+          </span>
+        </div>
       </div>
 
       <q-btn
@@ -205,18 +225,14 @@ import { storeToRefs } from "pinia";
 import { useRoute, useRouter } from "vue-router";
 import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
 import Flashcard from "@/apps/hotaru/components/Flashcard.vue";
-import FamiliarityIcon from "@/apps/hotaru/components/FamiliarityIcon.vue";
 import GradeButtons from "@/apps/hotaru/components/GradeButtons.vue";
+import SessionCelebration from "@/apps/hotaru/components/SessionCelebration.vue";
 import WordNotesDialog from "@/apps/hotaru/components/WordNotesDialog.vue";
 import { useDrill } from "@/apps/hotaru/composables/useDrill";
 import { useHotaruPracticeStore } from "@/apps/hotaru/stores/useHotaruPracticeStore";
 import { useHotaruNotesStore } from "@/apps/hotaru/stores/useHotaruNotesStore";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
-import type {
-  DrillGrade,
-  PracticeOverview,
-  Visibility,
-} from "@/apps/hotaru/types";
+import type { DrillGrade, Visibility } from "@/apps/hotaru/types";
 import "./../css/hotaru.sass";
 
 const store = useHotaruPracticeStore();
@@ -370,22 +386,52 @@ function submitTyped(): void {
 }
 
 // Session recap: count grades through the single choke-point (both self-grade
-// and typed-Correct route here), and the scope stats fetched once we finish.
+// and typed-Correct route here). The tallies feed the breakdown ring.
 const practised = ref(0);
-const summary = ref<PracticeOverview | null>(null);
-const summaryLoading = ref(false);
-const remaining = computed(() =>
-  summary.value
-    ? Math.max(0, summary.value.word_count - practised.value)
-    : null,
-);
+const counts = ref<Record<DrillGrade, number>>({
+  correct: 0,
+  close: 0,
+  incorrect: 0,
+});
 
 function onGrade(g: DrillGrade): void {
   grade(g);
   practised.value += 1;
+  counts.value[g] += 1;
   typedAnswer.value = "";
   void flushGrades();
 }
+
+// Breakdown ring — a donut split by this session's grade mix. Built from the
+// local counts, so it draws instantly on finish (no post-session fetch). Fixed
+// hues match the grade buttons: Correct cyan, Close amber, Incorrect magenta.
+const RING_CIRC = 2 * Math.PI * 52; // r=52, centre (60,60)
+const RING_GAP = 7; // arc units left blank between adjacent segments
+const GRADE_COLOR: Record<DrillGrade, string> = {
+  correct: "var(--hotaru-bamboo)",
+  close: "var(--hotaru-amber-private)",
+  incorrect: "var(--hotaru-fam-5)",
+};
+const ringSegments = computed(() => {
+  // Order round the ring so the big Correct arc reads on the left and Incorrect
+  // sits to the right (the tallies below keep the natural Correct→Incorrect order).
+  const order: DrillGrade[] = ["incorrect", "close", "correct"];
+  const present = order.filter((g) => counts.value[g] > 0);
+  const gap = present.length > 1 ? RING_GAP : 0;
+  let acc = 0;
+  return present.map((g) => {
+    const segLen = (counts.value[g] / practised.value) * RING_CIRC;
+    const dash = Math.max(1, segLen - gap);
+    const seg = {
+      g,
+      color: GRADE_COLOR[g],
+      dasharray: `${dash} ${RING_CIRC}`,
+      dashoffset: -(acc + gap / 2),
+    };
+    acc += segLen;
+    return seg;
+  });
+});
 
 // Per-session reveal aids: furigana (kana above kanji, on the prompt) and
 // romaji (on the reveal). One "eye" button toggles whichever fits the step.
@@ -468,21 +514,10 @@ onMounted(async () => {
   });
 });
 
-// On a clean end: sync every grade, THEN read the scope's updated stats for the
-// summary (best-effort — a failed/slow fetch just leaves the practised count).
-watch(finished, async (done) => {
-  if (!done) return;
-  summaryLoading.value = true;
-  try {
-    await flushGrades();
-    const scope =
-      typeof route.query.scope === "string" ? route.query.scope : "";
-    if (scope && drillUser) {
-      summary.value = await store.fetchOverview(scope, drillUser);
-    }
-  } finally {
-    summaryLoading.value = false;
-  }
+// On a clean end: make sure every buffered grade lands (per-grade flushes
+// already ran; this guarantees the last one syncs before the recap/return).
+watch(finished, (done) => {
+  if (done) void flushGrades();
 });
 onBeforeUnmount(() => {
   void flushGrades();
@@ -513,6 +548,17 @@ watch(
   color: var(--hotaru-lamp-yellow, #ffd24a)
   text-shadow: 0 0 26px rgba(255, 210, 74, 0.7)
   margin-bottom: 8px
+  animation: cel-glyph 1.2s ease-out both
+
+@keyframes cel-glyph
+  0%
+    transform: scale(0.8)
+    opacity: 0
+  45%
+    transform: scale(1.08)
+    opacity: 1
+  100%
+    transform: scale(1)
 
 .drill-done__title
   font-size: 16px
@@ -520,25 +566,105 @@ watch(
 
 .drill-summary
   align-self: stretch
-  gap: 6px
+  gap: 14px
   margin-top: 16px
-  padding: 16px
-  text-align: left
+  padding: 20px 16px
 
-.drill-summary__practised
-  font-size: 18px
-  font-weight: 600
+// Breakdown ring — a donut around the practised count.
+.drill-ring
+  position: relative
+  width: 184px
+  height: 184px
+  display: grid
+  place-items: center
+  animation: cel-bloom 0.7s cubic-bezier(0.2, 0.8, 0.3, 1) both
+
+@keyframes cel-bloom
+  0%
+    transform: scale(0.9)
+    opacity: 0
+  100%
+    transform: scale(1)
+    opacity: 1
+
+.drill-ring__svg
+  width: 100%
+  height: 100%
+  overflow: visible
+
+.drill-ring__track
+  fill: none
+  stroke: rgba(155, 107, 255, 0.14)
+  stroke-width: 12
+
+.drill-ring__seg
+  filter: drop-shadow(0 0 6px currentColor)
+
+.drill-ring__center
+  position: absolute
+  display: flex
+  flex-direction: column
+  align-items: center
+
+.drill-ring__count
+  font-size: 30px
+  font-weight: 700
   color: var(--hotaru-cream)
+  line-height: 1
 
-.drill-summary__hint
+.drill-ring__label
+  font-size: 12px
+  color: var(--hotaru-sage)
+  margin-top: 3px
+
+.drill-breakdown
+  display: flex
+  flex-wrap: wrap
+  justify-content: center
+  gap: 6px 16px
+  animation: cel-rise 0.5s ease-out 0.5s both
+
+@keyframes cel-rise
+  0%
+    transform: translateY(6px)
+    opacity: 0
+  100%
+    transform: translateY(0)
+    opacity: 1
+
+// Honour reduced-motion: no entrance animation, just the final state.
+@media (prefers-reduced-motion: reduce)
+  .drill-done__glyph, .drill-ring, .drill-breakdown
+    animation: none
+
+.drill-tally
+  display: flex
+  align-items: center
+  gap: 6px
   font-size: 13px
   color: var(--hotaru-cream-soft)
-  margin-bottom: 4px
 
-.drill-summary__tier
-  font-size: 14px
-  color: var(--hotaru-cream-soft)
-  padding: 3px 0
+.drill-tally b
+  color: var(--hotaru-cream)
+  font-variant-numeric: tabular-nums
+
+.drill-dot
+  width: 9px
+  height: 9px
+  border-radius: 50%
+  display: inline-block
+
+.drill-dot--correct
+  background: var(--hotaru-bamboo)
+  box-shadow: 0 0 8px rgba(56, 240, 230, 0.7)
+
+.drill-dot--close
+  background: var(--hotaru-amber-private)
+  box-shadow: 0 0 8px rgba(255, 206, 92, 0.7)
+
+.drill-dot--incorrect
+  background: var(--hotaru-fam-5)
+  box-shadow: 0 0 8px rgba(255, 92, 200, 0.7)
 
 .drill-glyph
   color: var(--hotaru-bamboo)
