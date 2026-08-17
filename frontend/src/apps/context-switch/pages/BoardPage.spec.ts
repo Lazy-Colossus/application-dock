@@ -13,13 +13,17 @@ vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
   api: { get: getMock, post: postMock, put: putMock, del: delMock },
 }));
-vi.mock("vue-router", () => ({
-  useRoute: () => ({ params: { listId: "l-42" } }),
-  useRouter: () => ({ push }),
-}));
+// A reactive route: switching lists (Story 3.1) changes only the param, which
+// does not remount the page — tests drive that by mutating `route.params`.
+vi.mock("vue-router", async () => {
+  const { reactive } = await import("vue");
+  const route = reactive({ params: { listId: "l-42" } });
+  return { useRoute: () => route, useRouter: () => ({ push }) };
+});
 
+import { useRoute } from "vue-router";
 import BoardPage from "./BoardPage.vue";
-import type { Todo, TodoList } from "@/apps/context-switch/types";
+import type { ListSummary, Todo, TodoList } from "@/apps/context-switch/types";
 
 const STUBS = {
   "q-page": { template: '<div class="q-page-stub"><slot /></div>' },
@@ -68,10 +72,12 @@ function makeTodo(overrides: Partial<Todo> = {}): Todo {
 function makeList(
   todos: Todo[] = [],
   grid = { columns: 3, rows: 2 },
+  id = "l-42",
+  name = "Work",
 ): TodoList {
   return {
-    id: "l-42",
-    name: "Work",
+    id,
+    name,
     grid,
     created_at: "2026-08-13T10:00:00Z",
     todos,
@@ -84,9 +90,42 @@ function makeTodos(count: number): Todo[] {
   );
 }
 
+// The board now reads two endpoints — its own list and the list sequence the
+// arrows walk (Story 3.1) — so GET is dispatched by URL instead of by call order.
+let boards: Record<string, TodoList>;
+let summaries: ListSummary[];
+let archivedTodos: Todo[];
+let boardError: Error | null;
+
+function setBoard(list: TodoList): void {
+  boards[list.id] = list;
+}
+
+function setRoute(listId: string): void {
+  useRoute().params.listId = listId;
+}
+
 beforeEach(() => {
   setActivePinia(createPinia());
-  getMock.mockReset().mockResolvedValue(makeList());
+  boards = { "l-42": makeList() };
+  summaries = [{ id: "l-42", name: "Work", active_count: 0 }];
+  archivedTodos = [];
+  boardError = null;
+  setRoute("l-42");
+
+  getMock.mockReset().mockImplementation((url: string) => {
+    if (url === "/context-switch/lists") return Promise.resolve(summaries);
+    const archived = /^\/context-switch\/lists\/([^/]+)\/archived$/.exec(url);
+    if (archived) return Promise.resolve(archivedTodos);
+    const board = /^\/context-switch\/lists\/([^/]+)$/.exec(url);
+    if (board) {
+      if (boardError) return Promise.reject(boardError);
+      return Promise.resolve(
+        boards[board[1]] ?? makeList([], undefined, board[1]),
+      );
+    }
+    return Promise.reject(new Error(`unexpected GET ${url}`));
+  });
   postMock.mockReset();
   putMock.mockReset();
   delMock.mockReset();
@@ -114,7 +153,7 @@ describe("BoardPage", () => {
   });
 
   it("renders a pill per active todo in order", async () => {
-    getMock.mockResolvedValue(
+    setBoard(
       makeList([
         makeTodo({ id: "t-2", header: "Second", order: 1 }),
         makeTodo({ id: "t-1", header: "First", order: 0 }),
@@ -147,7 +186,7 @@ describe("BoardPage", () => {
   });
 
   it("surfaces a load failure", async () => {
-    getMock.mockRejectedValue(new Error("boom"));
+    boardError = new Error("boom");
     const wrapper = mount(BoardPage, MOUNT_OPTS);
     await flushPromises();
     expect(wrapper.find('[data-testid="error"]').exists()).toBe(true);
@@ -159,7 +198,7 @@ describe("BoardPage", () => {
   // ── grid + pagination (Story 2.2) ───────────────────────────────────────────
 
   it("lays the board out in the list's column count", async () => {
-    getMock.mockResolvedValue(makeList(makeTodos(2), { columns: 4, rows: 2 }));
+    setBoard(makeList(makeTodos(2), { columns: 4, rows: 2 }));
     const wrapper = mount(BoardPage, MOUNT_OPTS);
     await flushPromises();
     expect(wrapper.find('[data-testid="board"]').attributes("style")).toContain(
@@ -168,7 +207,7 @@ describe("BoardPage", () => {
   });
 
   it("shows only one page of pills and no pager when everything fits", async () => {
-    getMock.mockResolvedValue(makeList(makeTodos(4), { columns: 2, rows: 2 }));
+    setBoard(makeList(makeTodos(4), { columns: 2, rows: 2 }));
     const wrapper = mount(BoardPage, MOUNT_OPTS);
     await flushPromises();
 
@@ -177,7 +216,7 @@ describe("BoardPage", () => {
   });
 
   it("paginates the overflow and keeps every todo reachable", async () => {
-    getMock.mockResolvedValue(makeList(makeTodos(5), { columns: 2, rows: 2 }));
+    setBoard(makeList(makeTodos(5), { columns: 2, rows: 2 }));
     const wrapper = mount(BoardPage, MOUNT_OPTS);
     await flushPromises();
 
@@ -198,7 +237,7 @@ describe("BoardPage", () => {
   });
 
   it("persists a grid change and re-lays the board", async () => {
-    getMock.mockResolvedValue(makeList(makeTodos(5), { columns: 2, rows: 2 }));
+    setBoard(makeList(makeTodos(5), { columns: 2, rows: 2 }));
     putMock.mockResolvedValue(makeList(makeTodos(5), { columns: 5, rows: 2 }));
     const wrapper = mount(BoardPage, MOUNT_OPTS);
     await flushPromises();
@@ -219,7 +258,7 @@ describe("BoardPage", () => {
   // ── open + edit (Story 2.4) ─────────────────────────────────────────────────
 
   it("opens the detail dialog on the clicked todo", async () => {
-    getMock.mockResolvedValue(makeList(makeTodos(2)));
+    setBoard(makeList(makeTodos(2)));
     const wrapper = mount(BoardPage, MOUNT_OPTS);
     await flushPromises();
 
@@ -234,7 +273,7 @@ describe("BoardPage", () => {
   });
 
   it("saves an edit and re-renders the pill", async () => {
-    getMock.mockResolvedValue(makeList(makeTodos(2)));
+    setBoard(makeList(makeTodos(2)));
     putMock.mockResolvedValue(
       makeTodo({ id: "t-1", header: "Renamed", color: "#202124", order: 0 }),
     );
@@ -261,7 +300,7 @@ describe("BoardPage", () => {
   });
 
   it("surfaces a rejected edit", async () => {
-    getMock.mockResolvedValue(makeList(makeTodos(1)));
+    setBoard(makeList(makeTodos(1)));
     putMock.mockRejectedValue(new Error("rejected"));
     const wrapper = mount(BoardPage, MOUNT_OPTS);
     await flushPromises();
@@ -278,7 +317,7 @@ describe("BoardPage", () => {
   // ── close as done / archive (Story 2.6) ─────────────────────────────────────
 
   it("closes a todo as done and removes its pill from the board", async () => {
-    getMock.mockResolvedValue(makeList(makeTodos(2)));
+    setBoard(makeList(makeTodos(2)));
     putMock.mockResolvedValue(
       makeTodo({
         id: "t-1",
@@ -308,18 +347,18 @@ describe("BoardPage", () => {
   // ── archive view + delete (Story 2.7) ───────────────────────────────────────
 
   it("opens the archive drawer and loads archived todos", async () => {
-    getMock.mockResolvedValueOnce(makeList(makeTodos(1)));
-    const wrapper = mount(BoardPage, MOUNT_OPTS);
-    await flushPromises();
-
-    getMock.mockResolvedValueOnce([
+    setBoard(makeList(makeTodos(1)));
+    archivedTodos = [
       makeTodo({
         id: "t-9",
         header: "Archived one",
         status: "archived",
         archived_at: "2026-08-13T12:00:00Z",
       }),
-    ]);
+    ];
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
     await wrapper.find('[data-testid="archive-btn"]').trigger("click");
     await flushPromises();
 
@@ -332,13 +371,13 @@ describe("BoardPage", () => {
   });
 
   it("deletes an archived todo from the drawer", async () => {
-    getMock.mockResolvedValueOnce(makeList(makeTodos(1)));
+    setBoard(makeList(makeTodos(1)));
+    archivedTodos = [
+      makeTodo({ id: "t-9", header: "Archived one", status: "archived" }),
+    ];
     const wrapper = mount(BoardPage, MOUNT_OPTS);
     await flushPromises();
 
-    getMock.mockResolvedValueOnce([
-      makeTodo({ id: "t-9", header: "Archived one", status: "archived" }),
-    ]);
     await wrapper.find('[data-testid="archive-btn"]').trigger("click");
     await flushPromises();
 
@@ -360,7 +399,7 @@ describe("BoardPage", () => {
   // ── drag reorder (Story 2.3) ────────────────────────────────────────────────
 
   it("posts the new full id order when a pill is dropped on another", async () => {
-    getMock.mockResolvedValue(makeList(makeTodos(3), { columns: 3, rows: 2 }));
+    setBoard(makeList(makeTodos(3), { columns: 3, rows: 2 }));
     postMock.mockResolvedValue(undefined);
     const wrapper = mount(BoardPage, MOUNT_OPTS);
     await flushPromises();
@@ -380,7 +419,7 @@ describe("BoardPage", () => {
 
   it("sends one sequence over all pages, not just the visible one", async () => {
     // 2x1 grid over 4 todos: page 2 shows todos 3 and 4.
-    getMock.mockResolvedValue(makeList(makeTodos(4), { columns: 2, rows: 1 }));
+    setBoard(makeList(makeTodos(4), { columns: 2, rows: 1 }));
     postMock.mockResolvedValue(undefined);
     const wrapper = mount(BoardPage, MOUNT_OPTS);
     await flushPromises();
@@ -397,7 +436,7 @@ describe("BoardPage", () => {
   });
 
   it("rolls the order back and shows the error when the reorder is rejected", async () => {
-    getMock.mockResolvedValue(makeList(makeTodos(3), { columns: 3, rows: 2 }));
+    setBoard(makeList(makeTodos(3), { columns: 3, rows: 2 }));
     postMock.mockRejectedValue(new Error("rejected"));
     const wrapper = mount(BoardPage, MOUNT_OPTS);
     await flushPromises();
@@ -413,7 +452,7 @@ describe("BoardPage", () => {
   });
 
   it("does not post when a pill is dropped on itself", async () => {
-    getMock.mockResolvedValue(makeList(makeTodos(3), { columns: 3, rows: 2 }));
+    setBoard(makeList(makeTodos(3), { columns: 3, rows: 2 }));
     const wrapper = mount(BoardPage, MOUNT_OPTS);
     await flushPromises();
 
@@ -425,7 +464,7 @@ describe("BoardPage", () => {
   });
 
   it("pulls the viewer back when the grid change removes their page", async () => {
-    getMock.mockResolvedValue(makeList(makeTodos(5), { columns: 2, rows: 2 }));
+    setBoard(makeList(makeTodos(5), { columns: 2, rows: 2 }));
     putMock.mockResolvedValue(makeList(makeTodos(5), { columns: 5, rows: 2 }));
     const wrapper = mount(BoardPage, MOUNT_OPTS);
     await flushPromises();
@@ -441,5 +480,282 @@ describe("BoardPage", () => {
 
     expect(wrapper.find('[data-testid="pager"]').exists()).toBe(false);
     expect(wrapper.findAll('[data-testid="pill-header"]')).toHaveLength(5);
+  });
+
+  // ── switch lists from the board (Story 3.1) ─────────────────────────────────
+
+  function threeLists(): void {
+    summaries = [
+      { id: "l-1", name: "One", active_count: 0 },
+      { id: "l-42", name: "Work", active_count: 0 },
+      { id: "l-9", name: "Nine", active_count: 0 },
+    ];
+  }
+
+  it("fetches the list sequence so a deep-linked board knows its neighbours", async () => {
+    threeLists();
+    mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+    expect(getMock).toHaveBeenCalledWith("/context-switch/lists");
+  });
+
+  it("shows an arrow either side of the list name when there are other lists", async () => {
+    threeLists();
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="prev-list-btn"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="next-list-btn"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="list-name"]').text()).toBe("Work");
+  });
+
+  it("shows no arrows when there is only one list", async () => {
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="prev-list-btn"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="next-list-btn"]').exists()).toBe(false);
+  });
+
+  it("moves to the next list in picker order", async () => {
+    threeLists();
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="next-list-btn"]').trigger("click");
+    expect(push).toHaveBeenCalledWith("/context-switch/lists/l-9");
+  });
+
+  it("moves to the previous list in picker order", async () => {
+    threeLists();
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="prev-list-btn"]').trigger("click");
+    expect(push).toHaveBeenCalledWith("/context-switch/lists/l-1");
+  });
+
+  it("wraps from the last list round to the first", async () => {
+    threeLists();
+    setRoute("l-9");
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="next-list-btn"]').trigger("click");
+    expect(push).toHaveBeenCalledWith("/context-switch/lists/l-1");
+  });
+
+  it("wraps from the first list back to the last", async () => {
+    threeLists();
+    setRoute("l-1");
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="prev-list-btn"]').trigger("click");
+    expect(push).toHaveBeenCalledWith("/context-switch/lists/l-9");
+  });
+
+  it("loads the new list when the route param changes without a remount", async () => {
+    threeLists();
+    setBoard(makeList(makeTodos(2)));
+    setBoard(
+      makeList(
+        [makeTodo({ id: "t-77", header: "Elsewhere" })],
+        undefined,
+        "l-9",
+        "Nine",
+      ),
+    );
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    setRoute("l-9");
+    await flushPromises();
+
+    expect(getMock).toHaveBeenCalledWith("/context-switch/lists/l-9");
+    expect(wrapper.find('[data-testid="list-name"]').text()).toBe("Nine");
+    expect(
+      wrapper.findAll('[data-testid="pill-header"]').map((n) => n.text()),
+    ).toEqual(["Elsewhere"]);
+  });
+
+  it("starts the new list on page 1", async () => {
+    threeLists();
+    setBoard(makeList(makeTodos(5), { columns: 2, rows: 2 }));
+    setBoard(makeList(makeTodos(5), { columns: 2, rows: 2 }, "l-9", "Nine"));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="page-next"]').trigger("click");
+    expect(wrapper.find('[data-testid="page-indicator"]').text()).toBe("2 / 2");
+
+    setRoute("l-9");
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="page-indicator"]').text()).toBe("1 / 2");
+  });
+
+  // ── move a todo to another list (Story 3.2) ─────────────────────────────────
+
+  async function dragPillOverTheListName(
+    wrapper: ReturnType<typeof mount>,
+    slot = "slot-t-1",
+  ): Promise<void> {
+    await wrapper.find(`[data-testid="${slot}"]`).trigger("dragstart");
+    await wrapper.find('[data-testid="list-name"]').trigger("dragover");
+    vi.advanceTimersByTime(600);
+    await flushPromises();
+  }
+
+  it("opens a popup of the other lists when a pill is held over the list name", async () => {
+    vi.useFakeTimers();
+    threeLists();
+    setBoard(makeList(makeTodos(2)));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="move-popup"]').exists()).toBe(false);
+    await dragPillOverTheListName(wrapper);
+
+    expect(wrapper.find('[data-testid="move-popup"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="move-target-l-1"]').text()).toBe("One");
+    expect(wrapper.find('[data-testid="move-target-l-9"]').exists()).toBe(true);
+    // Never offer the list the todo is already in.
+    expect(wrapper.find('[data-testid="move-target-l-42"]').exists()).toBe(
+      false,
+    );
+    vi.useRealTimers();
+  });
+
+  it("leaves the name alone until the pill has hovered long enough", async () => {
+    vi.useFakeTimers();
+    threeLists();
+    setBoard(makeList(makeTodos(2)));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="slot-t-1"]').trigger("dragstart");
+    await wrapper.find('[data-testid="list-name"]').trigger("dragover");
+    vi.advanceTimersByTime(200);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="move-popup"]').exists()).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it("does not open the popup when no pill is being dragged", async () => {
+    vi.useFakeTimers();
+    threeLists();
+    setBoard(makeList(makeTodos(2)));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="list-name"]').trigger("dragover");
+    vi.advanceTimersByTime(600);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="move-popup"]').exists()).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it("does not open an empty popup when there is nowhere to move to", async () => {
+    vi.useFakeTimers();
+    setBoard(makeList(makeTodos(2)));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await dragPillOverTheListName(wrapper);
+
+    expect(wrapper.find('[data-testid="move-popup"]').exists()).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it("moves the todo into the list it is dropped on", async () => {
+    vi.useFakeTimers();
+    threeLists();
+    setBoard(makeList(makeTodos(2)));
+    postMock.mockResolvedValue(makeTodo({ id: "t-1" }));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await dragPillOverTheListName(wrapper);
+    await wrapper.find('[data-testid="move-target-l-9"]').trigger("drop");
+    await flushPromises();
+
+    expect(postMock).toHaveBeenCalledWith(
+      "/context-switch/lists/l-42/todos/t-1/move",
+      { target_list_id: "l-9" },
+    );
+    expect(wrapper.find('[data-testid="pill-t-1"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="move-popup"]').exists()).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it("keeps the pill and shows the error when the move is rejected", async () => {
+    vi.useFakeTimers();
+    threeLists();
+    setBoard(makeList(makeTodos(2)));
+    postMock.mockRejectedValue(new Error("rejected"));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await dragPillOverTheListName(wrapper);
+    await wrapper.find('[data-testid="move-target-l-9"]').trigger("drop");
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="pill-t-1"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="error"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="move-popup"]').exists()).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it("closes the popup when the drag is abandoned", async () => {
+    vi.useFakeTimers();
+    threeLists();
+    setBoard(makeList(makeTodos(2)));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await dragPillOverTheListName(wrapper);
+    await wrapper.find('[data-testid="slot-t-1"]').trigger("dragend");
+
+    expect(wrapper.find('[data-testid="move-popup"]').exists()).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it("still reorders when a pill is dropped on another pill", async () => {
+    setBoard(makeList(makeTodos(3), { columns: 3, rows: 2 }));
+    postMock.mockResolvedValue(undefined);
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="slot-t-1"]').trigger("dragstart");
+    await wrapper.find('[data-testid="slot-t-3"]').trigger("drop");
+    await flushPromises();
+
+    expect(postMock).toHaveBeenCalledWith(
+      "/context-switch/lists/l-42/todos/reorder",
+      { ordered_ids: ["t-2", "t-3", "t-1"] },
+    );
+  });
+
+  it("closes an open todo dialog when the list changes underneath it", async () => {
+    threeLists();
+    setBoard(makeList(makeTodos(2)));
+    setBoard(makeList(makeTodos(2), undefined, "l-9", "Nine"));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="pill-t-1"]').trigger("click");
+    expect(wrapper.find('[data-testid="detail-header-input"]').exists()).toBe(
+      true,
+    );
+
+    setRoute("l-9");
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="detail-header-input"]').exists()).toBe(
+      false,
+    );
   });
 });

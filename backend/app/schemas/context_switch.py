@@ -103,6 +103,12 @@ class ReorderTodosRequest(BaseModel):
     ordered_ids: list[str]
 
 
+class MoveTodoRequest(BaseModel):
+    # Where the todo is going; the source list and todo come from the path
+    # (Story 3.2). Both lists live in the same user document.
+    target_list_id: str
+
+
 class AddUpdateRequest(BaseModel):
     # A single timestamped log entry appended to a todo (Story 2.5). Blank text
     # is rejected in the service; the entry never touches header/body.

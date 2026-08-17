@@ -136,6 +136,8 @@ One JSON file per user — `DATA_DIR/context-switch/users/{username}.json`:
 - FR-11: Epic 2 — timestamped updates log
 - FR-12: Epic 2 — close as done (archive)
 - FR-13: Epic 2 — archive view + permanent delete
+- FR-14: Epic 3 — switch lists from the board (arrows beside the list name)
+- FR-15: Epic 3 — move a todo to another list by dragging it onto the list name
 
 ## Epic List
 
@@ -153,8 +155,15 @@ manage the archive. The whole todo experience.
 **FRs covered:** FR-6, FR-7, FR-8, FR-9, FR-10, FR-11, FR-12, FR-13
 **Supporting:** NFR-1, NFR-4.
 
-**Dependencies:** Epic 2 builds on Epic 1 (needs the data layer and an open list). No epic depends
-on a later epic.
+### Epic 3: Moving Between Lists
+Once a user keeps several lists, the board becomes the place they live — so let them change context
+without going back to the picker: arrows beside the list name walk their lists, and a todo can be
+dragged onto that name to be moved into another list, keeping its whole history.
+**FRs covered:** FR-14, FR-15
+**Supporting:** NFR-1, NFR-3, NFR-4.
+
+**Dependencies:** Epic 2 builds on Epic 1 (needs the data layer and an open list). Epic 3 builds on
+both (needs several lists and a board of draggable pills). No epic depends on a later epic.
 
 ---
 
@@ -414,6 +423,68 @@ there is no reopen in v1 (FR-13).
 **Given** a delete for a todo id not in my file
 **When** requested
 **Then** the API returns `404` with a `{detail}` message.
+
+---
+
+## Epic 3: Moving Between Lists
+
+A user with several lists can change which one they are looking at, and move work between them,
+without leaving the board.
+
+### Story 3.1: Switch lists from the board
+
+As a user,
+I want arrows either side of the list name on the board,
+so that I can flip between my lists without going back to the picker.
+
+**Acceptance Criteria:**
+
+**Given** a board and more than one list
+**When** the header renders
+**Then** a left and a right arrow sit either side of the list name, and the board I am on is the
+one named between them (FR-14).
+
+**Given** I am on a board
+**When** I press the right (or left) arrow
+**Then** I land on the next (or previous) list in the same order the picker shows, the URL becomes
+that list's board, and its todos and grid are what I see (FR-14, FR-4).
+
+**Given** I am on the last (or first) list
+**When** I press the right (or left) arrow
+**Then** it wraps around to the first (or last) list — the arrows are never a dead end (FR-14).
+
+**Given** I have one list or none
+**When** the header renders
+**Then** no arrows are shown (there is nowhere to go).
+
+### Story 3.2: Move a todo to another list by dragging it onto the list name
+
+As a user,
+I want to drag a todo onto the list name and drop it into another list,
+so that I can move work between contexts without retyping it.
+
+**Acceptance Criteria:**
+
+**Given** I am dragging a todo pill
+**When** I hold it over the list name
+**Then** a popup opens under the name listing my other lists as drop targets (the list I am on is
+not among them) (FR-15).
+
+**Given** that popup is open mid-drag
+**When** I drop the pill onto one of the lists
+**Then** the todo leaves this board and belongs to that list, keeping its text, color, and its whole
+updates log, and it is there when I open that list (FR-15, FR-11).
+
+**Given** a moved todo
+**When** the destination board renders
+**Then** it sits last among that list's active todos, and neither list's remaining order is
+disturbed (FR-15, FR-9).
+
+**Given** a move naming a list or todo that is not mine
+**When** requested
+**Then** the API returns `404` with a `{detail}` message and nothing is written; a move that would
+leave the todo where it already is, or that names an archived todo, is rejected with a `422`
+(FR-2).
 
 ---
 

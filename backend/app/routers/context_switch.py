@@ -13,6 +13,7 @@ from app.schemas.context_switch import (
     CreateListRequest,
     CreateTodoRequest,
     ListSummary,
+    MoveTodoRequest,
     ReorderTodosRequest,
     Todo,
     TodoList,
@@ -144,6 +145,21 @@ def add_update(
         return service.add_update(current_user, list_id, todo_id, req.text)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Todo not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/lists/{list_id}/todos/{todo_id}/move", response_model=Todo)
+def move_todo(
+    list_id: str,
+    todo_id: str,
+    req: MoveTodoRequest,
+    current_user: str = Depends(get_current_user),
+) -> Todo:
+    try:
+        return service.move_todo(current_user, list_id, todo_id, req.target_list_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="List or todo not found") from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 

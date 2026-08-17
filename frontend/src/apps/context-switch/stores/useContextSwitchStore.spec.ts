@@ -147,6 +147,47 @@ describe("useContextSwitchStore", () => {
     expect(store.loading).toBe(false);
   });
 
+  it("fetchList empties the board while the next list is loading", async () => {
+    getMock.mockResolvedValueOnce(newList("l-1", "Work"));
+    const store = useContextSwitchStore();
+    await store.fetchList("l-1");
+
+    let resolveNext: (list: unknown) => void = () => {};
+    getMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveNext = resolve;
+      }),
+    );
+    const pending = store.fetchList("l-2");
+    expect(store.currentList).toBeNull();
+
+    resolveNext(newList("l-2", "Other"));
+    await pending;
+    expect(store.currentList?.id).toBe("l-2");
+  });
+
+  it("fetchList ignores a response a newer load has already superseded", async () => {
+    let resolveFirst: (list: unknown) => void = () => {};
+    getMock
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveFirst = resolve;
+        }),
+      )
+      .mockResolvedValueOnce(newList("l-2", "Second"));
+    const store = useContextSwitchStore();
+
+    const first = store.fetchList("l-1");
+    const second = store.fetchList("l-2");
+    await second;
+
+    resolveFirst(newList("l-1", "First"));
+    await first;
+
+    expect(store.currentList?.id).toBe("l-2");
+    expect(store.loading).toBe(false);
+  });
+
   it("activeTodos excludes archived todos and sorts by order", async () => {
     getMock.mockResolvedValue({
       ...newList("l-1", "Work"),
@@ -187,7 +228,9 @@ describe("useContextSwitchStore", () => {
       ...newList("l-1", "Work"),
       todos: [newTodo("t-1", { header: "Old", color: "#aabbcc" })],
     });
-    putMock.mockResolvedValue(newTodo("t-1", { header: "New", color: "#aabbcc" }));
+    putMock.mockResolvedValue(
+      newTodo("t-1", { header: "New", color: "#aabbcc" }),
+    );
     const store = useContextSwitchStore();
     await store.fetchList("l-1");
 
@@ -261,6 +304,111 @@ describe("useContextSwitchStore", () => {
     expect(store.activeTodos.map((t) => t.id)).toEqual(["t-a", "t-b"]);
     expect(store.error).toBeTruthy();
     expect(store.loading).toBe(false);
+  });
+
+  it("moveTodo posts the target list and drops the pill from the board", async () => {
+    getMock.mockResolvedValue({
+      ...newList("l-1", "Work"),
+      todos: [newTodo("t-a", { order: 0 }), newTodo("t-b", { order: 1 })],
+    });
+    postMock.mockResolvedValue(newTodo("t-a", { order: 3 }));
+    const store = useContextSwitchStore();
+    await store.fetchList("l-1");
+
+    await store.moveTodo("l-1", "t-a", "l-2");
+
+    expect(postMock).toHaveBeenCalledWith(
+      "/context-switch/lists/l-1/todos/t-a/move",
+      { target_list_id: "l-2" },
+    );
+    expect(store.activeTodos.map((t) => t.id)).toEqual(["t-b"]);
+    expect(store.loading).toBe(false);
+  });
+
+  it("moveTodo shifts the active count from the source list to the target", async () => {
+    getMock
+      .mockResolvedValueOnce([
+        { id: "l-1", name: "Work", active_count: 2 },
+        { id: "l-2", name: "Home", active_count: 0 },
+      ])
+      .mockResolvedValueOnce({
+        ...newList("l-1", "Work"),
+        todos: [newTodo("t-a", { order: 0 }), newTodo("t-b", { order: 1 })],
+      });
+    postMock.mockResolvedValue(newTodo("t-a"));
+    const store = useContextSwitchStore();
+    await store.fetchLists();
+    await store.fetchList("l-1");
+
+    await store.moveTodo("l-1", "t-a", "l-2");
+
+    expect(store.lists.map((l) => l.active_count)).toEqual([1, 1]);
+  });
+
+  it("moveTodo keeps the todo on the board and rethrows when the move fails", async () => {
+    getMock.mockResolvedValue({
+      ...newList("l-1", "Work"),
+      todos: [newTodo("t-a", { order: 0 })],
+    });
+    postMock.mockRejectedValue(new Error("nope"));
+    const store = useContextSwitchStore();
+    await store.fetchList("l-1");
+
+    await expect(store.moveTodo("l-1", "t-a", "l-2")).rejects.toThrow();
+
+    expect(store.activeTodos.map((t) => t.id)).toEqual(["t-a"]);
+    expect(store.error).toBeTruthy();
+    expect(store.loading).toBe(false);
+  });
+
+  it("moveTodo leaves a board it no longer owns untouched", async () => {
+    getMock.mockResolvedValueOnce({
+      ...newList("l-1", "Work"),
+      todos: [newTodo("t-a", { order: 0 })],
+    });
+    const store = useContextSwitchStore();
+    await store.fetchList("l-1");
+
+    let resolveMove: () => void = () => {};
+    postMock.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveMove = resolve;
+      }),
+    );
+    const pending = store.moveTodo("l-1", "t-a", "l-2");
+
+    // The user follows the todo into its new list before the move resolves.
+    getMock.mockResolvedValueOnce({
+      ...newList("l-2", "Other"),
+      todos: [newTodo("t-a", { order: 0 })],
+    });
+    await store.fetchList("l-2");
+
+    resolveMove();
+    await pending;
+
+    expect(store.activeTodos.map((t) => t.id)).toEqual(["t-a"]);
+  });
+
+  it("fetchArchived drops the previous list's rows before the new ones land", async () => {
+    getMock.mockResolvedValueOnce([
+      newTodo("t-old", { status: "archived", archived_at: "2026-08-13" }),
+    ]);
+    const store = useContextSwitchStore();
+    await store.fetchArchived("l-1");
+    expect(store.archived).toHaveLength(1);
+
+    let resolveNext: (rows: unknown) => void = () => {};
+    getMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveNext = resolve;
+      }),
+    );
+    const pending = store.fetchArchived("l-2");
+    expect(store.archived).toEqual([]);
+
+    resolveNext([]);
+    await pending;
   });
 
   it("setGrid PUTs the grid and updates the board locally", async () => {
@@ -386,7 +534,10 @@ describe("useContextSwitchStore", () => {
 
   it("fetchArchived loads the archived todos for a list", async () => {
     getMock.mockResolvedValue([
-      newTodo("t-9", { status: "archived", archived_at: "2026-08-13T12:00:00Z" }),
+      newTodo("t-9", {
+        status: "archived",
+        archived_at: "2026-08-13T12:00:00Z",
+      }),
     ]);
     const store = useContextSwitchStore();
 

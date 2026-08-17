@@ -895,3 +895,161 @@ def test_delete_todo_is_scoped_to_own_lists() -> None:
 
     # The owner's archived todo is untouched.
     assert [t["id"] for t in _archived(list_id).json()] == [todo["id"]]
+
+
+# ── POST /lists/{id}/todos/{todo_id}/move (Story 3.2) ─────────────────────────
+
+
+def _move(list_id: str, todo_id: str, target_list_id: str):
+    return client.post(
+        f"/api/context-switch/lists/{list_id}/todos/{todo_id}/move",
+        json={"target_list_id": target_list_id},
+    )
+
+
+def test_move_takes_the_todo_out_of_the_source_list() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+
+    resp = _move(source, ids[1], target)
+
+    assert resp.status_code == 200
+    assert resp.json()["id"] == ids[1]
+    assert _headers(source) == ["A", "C"]
+    assert _headers(target) == ["B"]
+
+
+def test_move_persists_across_a_reload() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+    _move(source, ids[0], target)
+
+    doc = context_switch_repo.read_doc("test_user")
+    by_id = {lst.id: [t.id for t in lst.todos] for lst in doc.lists}
+    assert by_id[source] == [ids[1], ids[2]]
+    assert by_id[target] == [ids[0]]
+
+
+def test_move_keeps_the_todo_whole_including_its_updates_log() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+    _add_update(source, ids[0], "first note")
+    _add_update(source, ids[0], "second note")
+    before = client.get(f"/api/context-switch/lists/{source}").json()["todos"][0]
+
+    moved = _move(source, ids[0], target).json()
+
+    assert moved["id"] == before["id"]
+    assert moved["header"] == before["header"]
+    assert moved["color"] == before["color"]
+    assert moved["status"] == "active"
+    assert [u["text"] for u in moved["updates"]] == ["first note", "second note"]
+
+
+def test_moved_todo_lands_last_in_the_target_list() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+    _add_todo(target, "X")
+    _add_todo(target, "Y")
+
+    _move(source, ids[0], target)
+
+    assert _headers(target) == ["X", "Y", "A"]
+
+
+def test_move_into_an_empty_list_orders_from_zero() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+
+    _move(source, ids[2], target)
+
+    todos = client.get(f"/api/context-switch/lists/{target}").json()["todos"]
+    assert [(t["header"], t["order"]) for t in todos] == [("C", 0)]
+
+
+def test_move_leaves_the_source_order_intact() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+
+    _move(source, ids[0], target)
+
+    assert _headers(source) == ["B", "C"]
+
+
+def test_move_updates_both_active_counts() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+
+    _move(source, ids[0], target)
+
+    counts = {
+        lst["id"]: lst["active_count"] for lst in client.get("/api/context-switch/lists").json()
+    }
+    assert counts[source] == 2
+    assert counts[target] == 1
+
+
+def test_move_to_the_same_list_rejected() -> None:
+    source, ids = _seed_three()
+
+    assert _move(source, ids[0], source).status_code == 422
+    assert _headers(source) == ["A", "B", "C"]
+
+
+def test_move_of_an_archived_todo_rejected() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+    _archive(source, ids[1])
+
+    assert _move(source, ids[1], target).status_code == 422
+    assert [t["id"] for t in _archived(source).json()] == [ids[1]]
+    assert _headers(target) == []
+
+
+def test_move_to_an_unknown_target_list_404() -> None:
+    source, ids = _seed_three()
+
+    assert _move(source, ids[0], "l-nope").status_code == 404
+    assert _headers(source) == ["A", "B", "C"]
+
+
+def test_move_from_an_unknown_source_list_404() -> None:
+    target = _create("Other")
+    assert _move("l-nope", "t-nope", target).status_code == 404
+
+
+def test_move_of_an_unknown_todo_404() -> None:
+    source, _ids = _seed_three()
+    target = _create("Other")
+
+    assert _move(source, "t-nope", target).status_code == 404
+    assert _headers(target) == []
+
+
+def test_move_is_scoped_to_own_lists() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert _move(source, ids[0], target).status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+    assert _headers(source) == ["A", "B", "C"]
+    assert _headers(target) == []
+
+
+def test_rejected_move_writes_nothing() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+    before = json.loads(context_switch_repo._user_path("test_user").read_text(encoding="utf-8"))
+
+    assert _move(source, ids[0], "l-nope").status_code == 404
+    assert _move(source, "t-nope", target).status_code == 404
+    assert _move(source, ids[0], source).status_code == 422
+
+    assert (
+        json.loads(context_switch_repo._user_path("test_user").read_text(encoding="utf-8"))
+        == before
+    )

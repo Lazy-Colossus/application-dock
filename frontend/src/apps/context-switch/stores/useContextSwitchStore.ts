@@ -89,18 +89,28 @@ export const useContextSwitchStore = defineStore("contextSwitch", () => {
     }
   }
 
+  // Switching lists (Story 3.1) can leave two loads in flight; only the newest
+  // may write the board, or a slow earlier response lands on top of it and
+  // `currentList` ends up describing a list the route has already left.
+  let listLoad = 0;
+
   async function fetchList(listId: string): Promise<void> {
+    const load = ++listLoad;
     loading.value = true;
     error.value = null;
+    // Blank the board for the duration: the previous list's pills must never
+    // linger under the new list's name.
+    currentList.value = null;
     try {
-      currentList.value = await api.get<TodoList>(
-        `/context-switch/lists/${listId}`,
-      );
+      const list = await api.get<TodoList>(`/context-switch/lists/${listId}`);
+      if (load !== listLoad) return;
+      currentList.value = list;
     } catch (e) {
+      if (load !== listLoad) return;
       currentList.value = null;
       error.value = e instanceof Error ? e.message : String(e);
     } finally {
-      loading.value = false;
+      if (load === listLoad) loading.value = false;
     }
   }
 
@@ -199,10 +209,48 @@ export const useContextSwitchStore = defineStore("contextSwitch", () => {
     }
   }
 
+  /** Move a todo to another list (Story 3.2).
+   *
+   * Deliberately not optimistic: the pill stays put until the server confirms,
+   * so a rejected move never blinks a todo off the board.
+   */
+  async function moveTodo(
+    listId: string,
+    todoId: string,
+    targetListId: string,
+  ): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      await api.post(`/context-switch/lists/${listId}/todos/${todoId}/move`, {
+        target_list_id: targetListId,
+      });
+      // Only the source board loses the pill — by the time this resolves the
+      // user may already be looking at the list the todo was moved into.
+      if (currentList.value?.id === listId) {
+        currentList.value.todos = currentList.value.todos.filter(
+          (t) => t.id !== todoId,
+        );
+      }
+      const source = lists.value.find((l) => l.id === listId);
+      if (source) source.active_count -= 1;
+      const target = lists.value.find((l) => l.id === targetListId);
+      if (target) target.active_count += 1;
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   /** Load a list's archived todos for the archive view (Story 2.7). */
   async function fetchArchived(listId: string): Promise<void> {
     loading.value = true;
     error.value = null;
+    // The drawer opens before this resolves, so drop the previous list's rows
+    // now — otherwise it briefly offers todos belonging to another list.
+    archived.value = [];
     try {
       archived.value = await api.get<Todo[]>(
         `/context-switch/lists/${listId}/archived`,
@@ -271,6 +319,7 @@ export const useContextSwitchStore = defineStore("contextSwitch", () => {
     addUpdate,
     fetchArchived,
     deleteTodo,
+    moveTodo,
     reorderTodos,
     setGrid,
   };

@@ -256,6 +256,34 @@ def add_update(username: str, list_id: str, todo_id: str, text: str) -> Todo:
     return todo
 
 
+def move_todo(username: str, list_id: str, todo_id: str, target_list_id: str) -> Todo:
+    """Move an active todo to another of the user's lists, keeping it whole.
+
+    The todo keeps its id, header, color and updates log; it lands last in the
+    target list's active order. Both lists live in the same document, so this is
+    one write. Everything is validated before anything is mutated, so a rejected
+    move never leaves the todo in both lists or in neither. Raises ValueError for
+    a same-list or archived-todo move, FileNotFoundError if either list or the
+    todo is absent.
+    """
+    doc = repo.read_doc(username)
+    source = _find_list(doc, list_id)
+    target = _find_list(doc, target_list_id)
+    todo = _find_todo(source, todo_id)
+
+    if target.id == source.id:
+        raise ValueError("A todo cannot be moved to the list it is already in")
+    if todo.status != "active":
+        raise ValueError("Only an active todo can be moved")
+
+    source.todos = [t for t in source.todos if t.id != todo_id]
+    todo.order = max((t.order for t in target.todos if t.status == "active"), default=-1) + 1
+    target.todos.append(todo)
+
+    repo.write_doc(username, doc)
+    return todo
+
+
 def reorder_todos(username: str, list_id: str, ordered_ids: list[str]) -> TodoList:
     """Rewrite active todo `order` from a full ordered id sequence.
 
