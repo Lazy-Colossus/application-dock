@@ -411,6 +411,78 @@ describe("useContextSwitchStore", () => {
     await pending;
   });
 
+  // ── restore from the archive (Story 3.3) ───────────────────────────────────
+
+  it("restoreTodo moves the todo out of the archive and onto the board", async () => {
+    getMock
+      .mockResolvedValueOnce([{ id: "l-1", name: "Work", active_count: 1 }])
+      .mockResolvedValueOnce({
+        ...newList("l-1", "Work"),
+        todos: [newTodo("t-a", { order: 0 })],
+      })
+      .mockResolvedValueOnce([
+        newTodo("t-old", { status: "archived", archived_at: "2026-08-13" }),
+      ]);
+    putMock.mockResolvedValue(newTodo("t-old", { status: "active", order: 1 }));
+    const store = useContextSwitchStore();
+    await store.fetchLists();
+    await store.fetchList("l-1");
+    await store.fetchArchived("l-1");
+
+    await store.restoreTodo("l-1", "t-old");
+
+    expect(putMock).toHaveBeenCalledWith(
+      "/context-switch/lists/l-1/todos/t-old",
+      { status: "active" },
+    );
+    expect(store.archived).toEqual([]);
+    expect(store.activeTodos.map((t) => t.id)).toEqual(["t-a", "t-old"]);
+    expect(store.lists[0].active_count).toBe(2);
+    expect(store.loading).toBe(false);
+  });
+
+  it("restoreTodo leaves both views untouched and rethrows when it fails", async () => {
+    getMock
+      .mockResolvedValueOnce({ ...newList("l-1", "Work"), todos: [] })
+      .mockResolvedValueOnce([newTodo("t-old", { status: "archived" })]);
+    putMock.mockRejectedValue(new Error("nope"));
+    const store = useContextSwitchStore();
+    await store.fetchList("l-1");
+    await store.fetchArchived("l-1");
+
+    await expect(store.restoreTodo("l-1", "t-old")).rejects.toThrow();
+
+    expect(store.archived.map((t) => t.id)).toEqual(["t-old"]);
+    expect(store.activeTodos).toEqual([]);
+    expect(store.error).toBeTruthy();
+    expect(store.loading).toBe(false);
+  });
+
+  it("restoreTodo does not touch a board it no longer owns", async () => {
+    getMock
+      .mockResolvedValueOnce({ ...newList("l-1", "Work"), todos: [] })
+      .mockResolvedValueOnce([newTodo("t-old", { status: "archived" })]);
+    const store = useContextSwitchStore();
+    await store.fetchList("l-1");
+    await store.fetchArchived("l-1");
+
+    let resolveRestore: (todo: unknown) => void = () => {};
+    putMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveRestore = resolve;
+      }),
+    );
+    const pending = store.restoreTodo("l-1", "t-old");
+
+    getMock.mockResolvedValueOnce({ ...newList("l-2", "Other"), todos: [] });
+    await store.fetchList("l-2");
+
+    resolveRestore(newTodo("t-old", { status: "active" }));
+    await pending;
+
+    expect(store.activeTodos).toEqual([]);
+  });
+
   it("setGrid PUTs the grid and updates the board locally", async () => {
     getMock.mockResolvedValue(newList("l-1", "Work"));
     putMock.mockResolvedValue({

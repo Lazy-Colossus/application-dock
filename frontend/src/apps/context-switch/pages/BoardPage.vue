@@ -119,7 +119,11 @@
             @drop.prevent="onDrop(todo.id)"
             @dragend="onDragEnd"
           >
-            <TodoPill :todo="todo" @open="openTodo(todo.id)" />
+            <TodoPill
+              :todo="todo"
+              @open="openTodo(todo.id)"
+              @complete="onComplete(todo.id)"
+            />
           </div>
         </div>
 
@@ -166,6 +170,7 @@
       v-model="archiveOpen"
       :archived="store.archived"
       @delete="onDeleteArchived"
+      @restore="onRestoreArchived"
     />
   </q-page>
 </template>
@@ -314,6 +319,24 @@ async function onCloseAsDone(): Promise<void> {
     await store.updateTodo(listId.value, openTodoId.value, {
       status: "archived",
     });
+  } catch {
+    // Surfaced via store.error.
+  }
+}
+
+// Quick complete from the pill is the same archive mutation the detail dialog's
+// "close as done" performs — only the trigger is new (Story 3.3).
+async function onComplete(todoId: string): Promise<void> {
+  try {
+    await store.updateTodo(listId.value, todoId, { status: "archived" });
+  } catch {
+    // Surfaced via store.error; the pill stays put.
+  }
+}
+
+async function onRestoreArchived(todoId: string): Promise<void> {
+  try {
+    await store.restoreTodo(listId.value, todoId);
   } catch {
     // Surfaced via store.error.
   }

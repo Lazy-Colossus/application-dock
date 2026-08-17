@@ -736,6 +736,101 @@ def test_reactivating_clears_archived_at() -> None:
     assert reactivated["archived_at"] is None
 
 
+# ── restore from the archive (Story 3.3) ──────────────────────────────────────
+
+
+def _restore(list_id: str, todo_id: str):
+    return _edit(list_id, todo_id, status="active")
+
+
+def test_restored_todo_lands_last_in_the_active_order() -> None:
+    list_id, ids = _seed_three()
+    _archive(list_id, ids[0])
+    assert _headers(list_id) == ["B", "C"]
+
+    _restore(list_id, ids[0])
+
+    assert _headers(list_id) == ["B", "C", "A"]
+
+
+def test_restore_does_not_collide_with_an_order_taken_since() -> None:
+    # "A" was archived at order 0; "D" has held order 0 on the board since.
+    list_id, ids = _seed_three()
+    _archive(list_id, ids[0])
+    _archive(list_id, ids[1])
+    _archive(list_id, ids[2])
+    fresh = _add_todo(list_id, "D")["id"]
+    assert _headers(list_id) == ["D"]
+
+    _restore(list_id, ids[0])
+
+    todos = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]
+    orders = [t["order"] for t in todos]
+    assert [t["header"] for t in todos] == ["D", "A"]
+    assert len(set(orders)) == len(orders)
+    assert todos[0]["id"] == fresh
+
+
+def test_restore_into_an_empty_board_orders_from_zero() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Only")["id"]
+    _archive(list_id, todo)
+
+    restored = _restore(list_id, todo).json()
+
+    assert restored["order"] == 0
+
+
+def test_restore_leaves_the_other_todos_orders_alone() -> None:
+    list_id, ids = _seed_three()
+    _archive(list_id, ids[1])
+    before = {
+        t["id"]: t["order"]
+        for t in client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]
+    }
+
+    _restore(list_id, ids[1])
+
+    after = {
+        t["id"]: t["order"]
+        for t in client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]
+    }
+    assert {k: v for k, v in after.items() if k in before} == before
+
+
+def test_restore_keeps_the_todo_whole() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Header", color="#aabbcc")["id"]
+    _add_update(list_id, todo, "a note")
+    _archive(list_id, todo)
+
+    restored = _restore(list_id, todo).json()
+
+    assert restored["header"] == "Header"
+    assert restored["color"] == "#aabbcc"
+    assert restored["archived_at"] is None
+    assert [u["text"] for u in restored["updates"]] == ["a note"]
+
+
+def test_restore_puts_it_back_in_the_active_count() -> None:
+    list_id, ids = _seed_three()
+    _archive(list_id, ids[0])
+    assert client.get("/api/context-switch/lists").json()[0]["active_count"] == 2
+
+    _restore(list_id, ids[0])
+
+    assert client.get("/api/context-switch/lists").json()[0]["active_count"] == 3
+    assert _archived(list_id).json() == []
+
+
+def test_restoring_an_already_active_todo_does_not_move_it() -> None:
+    list_id, ids = _seed_three()
+
+    _restore(list_id, ids[0])
+
+    assert _headers(list_id) == ["A", "B", "C"]
+
+
 def test_archive_persists_across_reload() -> None:
     list_id = _create("Work")
     todo = _add_todo(list_id, "Persist")

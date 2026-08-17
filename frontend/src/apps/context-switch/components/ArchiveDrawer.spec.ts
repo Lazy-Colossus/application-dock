@@ -7,7 +7,7 @@ const STUBS = {
   "q-dialog": { template: "<div><slot /></div>" },
   "q-btn": {
     template:
-      '<button :data-testid="$attrs[\'data-testid\']" @click="$emit(\'click\')">{{ label }}</button>',
+      "<button :data-testid=\"$attrs['data-testid']\" @click=\"$emit('click')\">{{ label }}</button>",
     props: ["label", "color", "flat", "dense", "round", "noCaps", "icon"],
     emits: ["click"],
   },
@@ -52,13 +52,26 @@ describe("ArchiveDrawer", () => {
     expect(wrapper.find('[data-testid="archived-empty"]').exists()).toBe(false);
   });
 
-  it("offers no reopen affordance (terminal — view + delete only)", () => {
+  // Story 3.3 revises Story 2.7's "terminal, no reopen in v1": archiving is now
+  // reversible, permanent delete still is not.
+  it("offers both a restore and a delete control per row", () => {
     const wrapper = mountDrawer([makeTodo({ id: "t-7" })]);
     const item = wrapper.find('[data-testid="archived-item-t-7"]');
-    expect(item.find('[data-testid="archived-reopen-t-7"]').exists()).toBe(
-      false,
+    expect(item.find('[data-testid="archived-restore-t-7"]').exists()).toBe(
+      true,
     );
-    expect(item.find('[data-testid="archived-delete-t-7"]').exists()).toBe(true);
+    expect(item.find('[data-testid="archived-delete-t-7"]').exists()).toBe(
+      true,
+    );
+  });
+
+  it("emits restore with the todo id, without a confirm step", async () => {
+    const wrapper = mountDrawer([makeTodo({ id: "t-7" })]);
+
+    await wrapper.find('[data-testid="archived-restore-t-7"]').trigger("click");
+
+    expect(wrapper.emitted("restore")?.[0]).toEqual(["t-7"]);
+    expect(wrapper.emitted("delete")).toBeUndefined();
   });
 
   it("confirms before deleting and emits delete only on confirm", async () => {

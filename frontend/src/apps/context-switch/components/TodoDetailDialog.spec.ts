@@ -119,7 +119,9 @@ describe("TodoDetailDialog", () => {
     );
     const entry = wrapper.find('[data-testid="detail-update-u-1"]');
     expect(entry.find('[data-testid="update-edit-u-1"]').exists()).toBe(false);
-    expect(entry.find('[data-testid="update-delete-u-1"]').exists()).toBe(false);
+    expect(entry.find('[data-testid="update-delete-u-1"]').exists()).toBe(
+      false,
+    );
   });
 
   it("keeps the add-update button disabled until text is entered", async () => {

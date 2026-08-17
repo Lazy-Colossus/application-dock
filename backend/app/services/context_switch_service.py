@@ -184,12 +184,14 @@ def update_todo(
     """Apply the provided fields to a todo and bump `updated_at`.
 
     Absent fields are left alone. Setting `status="archived"` stamps
-    `archived_at`; setting it back to `"active"` clears it (no UI does this in
-    v1, but the door is left open — Story 2.6). Raises ValueError on a blank
-    header, FileNotFoundError if the list or todo is absent.
+    `archived_at` (Story 2.6); setting it back to `"active"` clears it and moves
+    the todo to the end of the board — this is the archive's restore path
+    (Story 3.3). Raises ValueError on a blank header, FileNotFoundError if the
+    list or todo is absent.
     """
     doc = repo.read_doc(username)
-    todo = _find_todo(_find_list(doc, list_id), todo_id)
+    lst = _find_list(doc, list_id)
+    todo = _find_todo(lst, todo_id)
 
     if header is not None:
         clean = header.strip()
@@ -201,6 +203,11 @@ def update_todo(
         todo.color = color
 
     if status is not None:
+        # A restored todo re-enters at the end of the board (Story 3.3): the
+        # order it held when archived is very likely taken by now, and
+        # `activeTodos` sorts on `order` alone, so a tie would resolve at random.
+        if status == "active" and todo.status != "active":
+            todo.order = max((t.order for t in lst.todos if t.status == "active"), default=-1) + 1
         todo.status = status
         todo.archived_at = _now_iso() if status == "archived" else None
 

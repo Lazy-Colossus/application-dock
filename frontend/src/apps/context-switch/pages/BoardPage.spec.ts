@@ -482,6 +482,87 @@ describe("BoardPage", () => {
     expect(wrapper.findAll('[data-testid="pill-header"]')).toHaveLength(5);
   });
 
+  // ── quick complete + restore (Story 3.3) ────────────────────────────────────
+
+  it("completes a todo from its pill and takes it off the board", async () => {
+    setBoard(makeList(makeTodos(2)));
+    putMock.mockResolvedValue(
+      makeTodo({
+        id: "t-1",
+        header: "Todo 1",
+        status: "archived",
+        archived_at: "2026-08-13T12:00:00Z",
+      }),
+    );
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="pill-complete-t-1"]').trigger("click");
+    await wrapper
+      .find('[data-testid="pill-complete-confirm-t-1"]')
+      .trigger("click");
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith(
+      "/context-switch/lists/l-42/todos/t-1",
+      { status: "archived" },
+    );
+    expect(wrapper.find('[data-testid="pill-t-1"]').exists()).toBe(false);
+    // The detail dialog must not have opened behind the confirm.
+    expect(wrapper.find('[data-testid="detail-header-input"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("keeps the pill and shows the error when completing is rejected", async () => {
+    setBoard(makeList(makeTodos(2)));
+    putMock.mockRejectedValue(new Error("rejected"));
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="pill-complete-t-1"]').trigger("click");
+    await wrapper
+      .find('[data-testid="pill-complete-confirm-t-1"]')
+      .trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="pill-t-1"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="error"]').exists()).toBe(true);
+  });
+
+  it("restores a todo from the archive back onto the board", async () => {
+    setBoard(makeList(makeTodos(1)));
+    archivedTodos = [
+      makeTodo({
+        id: "t-9",
+        header: "Archived one",
+        status: "archived",
+        archived_at: "2026-08-13T12:00:00Z",
+      }),
+    ];
+    putMock.mockResolvedValue(
+      makeTodo({ id: "t-9", header: "Archived one", order: 1 }),
+    );
+    const wrapper = mount(BoardPage, MOUNT_OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="archive-btn"]').trigger("click");
+    await flushPromises();
+    await wrapper.find('[data-testid="archived-restore-t-9"]').trigger("click");
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith(
+      "/context-switch/lists/l-42/todos/t-9",
+      { status: "active" },
+    );
+    expect(wrapper.find('[data-testid="archived-item-t-9"]').exists()).toBe(
+      false,
+    );
+    expect(
+      wrapper.findAll('[data-testid="pill-header"]').map((n) => n.text()),
+    ).toEqual(["Todo 1", "Archived one"]);
+  });
+
   // ── switch lists from the board (Story 3.1) ─────────────────────────────────
 
   function threeLists(): void {

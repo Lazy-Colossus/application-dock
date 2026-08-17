@@ -53,16 +53,28 @@
                 @click="confirmingId = null"
               />
             </template>
-            <q-btn
-              v-else
-              flat
-              dense
-              round
-              color="negative"
-              icon="delete"
-              :data-testid="`archived-delete-${todo.id}`"
-              @click="confirmingId = todo.id"
-            />
+            <template v-else>
+              <!-- Restore needs no confirm: it is the safe direction, and it is
+                   itself the undo for a mistaken complete (Story 3.3). -->
+              <q-btn
+                flat
+                dense
+                round
+                icon="unarchive"
+                :aria-label="`Restore ${todo.header}`"
+                :data-testid="`archived-restore-${todo.id}`"
+                @click="emit('restore', todo.id)"
+              />
+              <q-btn
+                flat
+                dense
+                round
+                color="negative"
+                icon="delete"
+                :data-testid="`archived-delete-${todo.id}`"
+                @click="confirmingId = todo.id"
+              />
+            </template>
           </div>
         </div>
       </div>
@@ -89,6 +101,7 @@ defineProps<{ modelValue: boolean; archived: Todo[] }>();
 const emit = defineEmits<{
   "update:modelValue": [open: boolean];
   delete: [todoId: string];
+  restore: [todoId: string];
 }>();
 
 // Only one row shows its delete confirmation at a time.

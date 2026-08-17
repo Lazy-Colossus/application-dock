@@ -138,6 +138,9 @@ One JSON file per user — `DATA_DIR/context-switch/users/{username}.json`:
 - FR-13: Epic 2 — archive view + permanent delete
 - FR-14: Epic 3 — switch lists from the board (arrows beside the list name)
 - FR-15: Epic 3 — move a todo to another list by dragging it onto the list name
+- FR-16: Epic 3 — complete a todo straight from its pill
+- FR-17: Epic 3 — restore a todo from the archive back to the board (revises FR-13's
+  "terminal, no reopen in v1")
 
 ## Epic List
 
@@ -155,11 +158,12 @@ manage the archive. The whole todo experience.
 **FRs covered:** FR-6, FR-7, FR-8, FR-9, FR-10, FR-11, FR-12, FR-13
 **Supporting:** NFR-1, NFR-4.
 
-### Epic 3: Moving Between Lists
-Once a user keeps several lists, the board becomes the place they live — so let them change context
-without going back to the picker: arrows beside the list name walk their lists, and a todo can be
-dragged onto that name to be moved into another list, keeping its whole history.
-**FRs covered:** FR-14, FR-15
+### Epic 3: Living on the Board
+Once a user keeps several lists, the board becomes the place they live — so the everyday moves stop
+requiring a detour. Arrows beside the list name walk their lists, a todo can be dragged onto that
+name to be moved into another list keeping its whole history, a pill can be completed where it sits,
+and anything completed by mistake can be pulled back out of the archive.
+**FRs covered:** FR-14, FR-15, FR-16, FR-17
 **Supporting:** NFR-1, NFR-3, NFR-4.
 
 **Dependencies:** Epic 2 builds on Epic 1 (needs the data layer and an open list). Epic 3 builds on
@@ -426,10 +430,10 @@ there is no reopen in v1 (FR-13).
 
 ---
 
-## Epic 3: Moving Between Lists
+## Epic 3: Living on the Board
 
-A user with several lists can change which one they are looking at, and move work between them,
-without leaving the board.
+A user with several lists can change which one they are looking at, move work between them, finish
+a todo, and undo finishing it — all without leaving the board.
 
 ### Story 3.1: Switch lists from the board
 
@@ -485,6 +489,37 @@ disturbed (FR-15, FR-9).
 **Then** the API returns `404` with a `{detail}` message and nothing is written; a move that would
 leave the todo where it already is, or that names an archived todo, is rejected with a `422`
 (FR-2).
+
+### Story 3.3: Complete a todo from its pill, and restore one from the archive
+
+As a user,
+I want to tick a todo off without opening it, and to pull one back if I tick it off by mistake,
+so that finishing work costs one tap and is not a one-way door.
+
+**Acceptance Criteria:**
+
+**Given** an active todo pill on the board
+**When** I use the small complete control on the pill
+**Then** it asks me to confirm, and on confirming the todo is archived exactly as "close as done"
+already does — the pill leaves the board and the todo is kept, not deleted (FR-16, FR-12).
+
+**Given** the complete control
+**When** I use it
+**Then** it does not open the todo's detail view, and the pill remains draggable for reorder and
+for moving between lists (FR-16, FR-9, FR-15).
+
+**Given** an archived todo in the archive view
+**When** I restore it
+**Then** it becomes active again, `archived_at` is cleared, and it appears on the board as the last
+of that list's active todos, keeping its text, color, and updates log (FR-17).
+
+**Given** a restored todo
+**When** I look at the archive
+**Then** it is no longer listed there, and the list's active count includes it again (FR-17,
+FR-13).
+
+**Note:** this revises Story 2.7's "this is terminal — there is no reopen in v1". Permanent delete
+stays terminal; only archiving becomes reversible.
 
 ---
 

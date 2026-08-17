@@ -263,6 +263,34 @@ export const useContextSwitchStore = defineStore("contextSwitch", () => {
     }
   }
 
+  /** Bring an archived todo back onto the board (Story 3.3).
+   *
+   * Not `updateTodo`: an archived todo is absent from `currentList.todos`
+   * altogether (the board read returns active todos only), so that action's
+   * index-replace would silently do nothing. The server decides where it lands.
+   */
+  async function restoreTodo(listId: string, todoId: string): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const restored = await api.put<Todo>(
+        `/context-switch/lists/${listId}/todos/${todoId}`,
+        { status: "active" },
+      );
+      archived.value = archived.value.filter((t) => t.id !== todoId);
+      if (currentList.value?.id === listId) {
+        currentList.value.todos.push(restored);
+      }
+      const summary = lists.value.find((l) => l.id === listId);
+      if (summary) summary.active_count += 1;
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   /** Permanently delete an archived todo; drop it locally on success. */
   async function deleteTodo(listId: string, todoId: string): Promise<void> {
     loading.value = true;
@@ -320,6 +348,7 @@ export const useContextSwitchStore = defineStore("contextSwitch", () => {
     fetchArchived,
     deleteTodo,
     moveTodo,
+    restoreTodo,
     reorderTodos,
     setGrid,
   };

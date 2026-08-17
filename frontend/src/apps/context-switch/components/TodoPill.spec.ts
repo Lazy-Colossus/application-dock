@@ -97,4 +97,61 @@ describe("TodoPill", () => {
     await wrapper.find('[data-testid="pill-t-1"]').trigger("click");
     expect(wrapper.emitted("open")).toHaveLength(1);
   });
+
+  // ── quick complete (Story 3.3) ─────────────────────────────────────────────
+
+  it("carries a complete control that does not open the todo", async () => {
+    const wrapper = mount(TodoPill, { props: { todo: makeTodo() } });
+
+    const complete = wrapper.find('[data-testid="pill-complete-t-1"]');
+    expect(complete.exists()).toBe(true);
+
+    await complete.trigger("click");
+    expect(wrapper.emitted("open")).toBeUndefined();
+    expect(wrapper.emitted("complete")).toBeUndefined();
+  });
+
+  it("asks to confirm, then emits complete", async () => {
+    const wrapper = mount(TodoPill, { props: { todo: makeTodo() } });
+
+    await wrapper.find('[data-testid="pill-complete-t-1"]').trigger("click");
+    expect(wrapper.find('[data-testid="pill-complete-t-1"]').exists()).toBe(
+      false,
+    );
+
+    await wrapper
+      .find('[data-testid="pill-complete-confirm-t-1"]')
+      .trigger("click");
+    expect(wrapper.emitted("complete")).toHaveLength(1);
+    expect(wrapper.emitted("open")).toBeUndefined();
+  });
+
+  it("cancels back to rest without emitting", async () => {
+    const wrapper = mount(TodoPill, { props: { todo: makeTodo() } });
+
+    await wrapper.find('[data-testid="pill-complete-t-1"]').trigger("click");
+    await wrapper
+      .find('[data-testid="pill-complete-cancel-t-1"]')
+      .trigger("click");
+
+    expect(wrapper.emitted("complete")).toBeUndefined();
+    expect(wrapper.emitted("open")).toBeUndefined();
+    expect(wrapper.find('[data-testid="pill-complete-t-1"]').exists()).toBe(
+      true,
+    );
+  });
+
+  it("drops a pending confirm when the pill is reused for another todo", async () => {
+    const wrapper = mount(TodoPill, { props: { todo: makeTodo() } });
+    await wrapper.find('[data-testid="pill-complete-t-1"]').trigger("click");
+
+    await wrapper.setProps({ todo: makeTodo({ id: "t-2", header: "Other" }) });
+
+    expect(
+      wrapper.find('[data-testid="pill-complete-confirm-t-2"]').exists(),
+    ).toBe(false);
+    expect(wrapper.find('[data-testid="pill-complete-t-2"]').exists()).toBe(
+      true,
+    );
+  });
 });

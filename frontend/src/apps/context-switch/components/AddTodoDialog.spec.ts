@@ -67,7 +67,9 @@ describe("AddTodoDialog", () => {
 
   it("has no details field", () => {
     const wrapper = mountDialog();
-    expect(wrapper.find('[data-testid="todo-body-input"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="todo-body-input"]').exists()).toBe(
+      false,
+    );
   });
 
   it("emits the color chosen in the picker", async () => {
