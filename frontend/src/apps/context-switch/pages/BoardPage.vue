@@ -47,9 +47,7 @@
           data-testid="move-popup"
           @dragover.prevent
         >
-          <div class="text-caption text-grey-7 q-px-sm q-pb-xs">
-            Move to another list
-          </div>
+          <div class="cs-move-caption">Move to another list</div>
           <div
             v-for="target in moveTargets"
             :key="target.id"
@@ -469,6 +467,7 @@ async function onDrop(targetId: string): Promise<void> {
 .cs-list-name--armed
   border-color: var(--q-primary)
 
+// Same surface as the archive drawer — the app's one overlay palette.
 .cs-move-popup
   position: absolute
   top: 100%
@@ -479,17 +478,36 @@ async function onDrop(targetId: string): Promise<void> {
   max-height: 260px
   overflow-y: auto
   padding: 8px 0
-  border-radius: 8px
-  background: white
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.24)
+  border-radius: 14px
+  background: #242424
+  color: #F0F0F0
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45)
+  scrollbar-width: thin
+  scrollbar-color: #4A4A4A transparent
+
+  &::-webkit-scrollbar
+    width: 8px
+
+  &::-webkit-scrollbar-thumb
+    background: #4A4A4A
+    border-radius: 4px
+
+  &::-webkit-scrollbar-track
+    background: transparent
+
+.cs-move-caption
+  padding: 2px 16px 6px
+  font-size: 12px
+  color: #8A8A8A
 
 .cs-move-target
   padding: 8px 16px
+  font-size: 15px
   cursor: pointer
   white-space: nowrap
   overflow: hidden
   text-overflow: ellipsis
 
   &:hover
-    background: rgba(0, 0, 0, 0.06)
+    background: #1E1E1E
 </style>
