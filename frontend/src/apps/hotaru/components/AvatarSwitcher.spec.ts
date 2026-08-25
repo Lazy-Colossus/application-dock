@@ -80,6 +80,12 @@ describe("AvatarSwitcher", () => {
     expect(push).toHaveBeenCalledWith("/hotaru/identity");
   });
 
+  it("routes to Hotaru's own Settings, not the platform screen", async () => {
+    const { wrapper } = mountWithActive("dani");
+    await wrapper.find('[data-testid="settings"]').trigger("click");
+    expect(push).toHaveBeenCalledWith("/hotaru/settings");
+  });
+
   it("renders nothing when no active user", () => {
     useHotaruUserStore().users = USERS;
     const wrapper = mount(AvatarSwitcher, {

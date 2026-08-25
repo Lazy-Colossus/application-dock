@@ -133,6 +133,28 @@ export const useHotaruLibraryStore = defineStore("hotaruLibrary", () => {
     return familiarity.value[wordId] ?? 0;
   }
 
+  // Story 2.14 — wipe the user's familiarity; every word returns to New.
+  // Clears the local map rather than refetching: an absent word already
+  // resolves to tier 0, so this is the same state the server now holds.
+  async function resetProgress(user: string): Promise<boolean> {
+    loading.value = true;
+    error.value = null;
+    try {
+      await api.del(
+        `/hotaru/practice/progress?user=${encodeURIComponent(user)}`,
+      );
+      familiarity.value = {};
+      return true;
+    } catch (e) {
+      error.value =
+        (e as { detail?: string }).detail ??
+        (e instanceof Error ? e.message : String(e));
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   async function createWord(
     payload: CreateWordInput,
     user: string,
@@ -457,6 +479,7 @@ export const useHotaruLibraryStore = defineStore("hotaruLibrary", () => {
     lessons,
     loadFamiliarity,
     familiarityTier,
+    resetProgress,
     wordsByLesson,
     textbookSources,
     lessonsForSource,

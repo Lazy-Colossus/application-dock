@@ -131,6 +131,15 @@ def build_queue(
     return [QueueItem(word=w, notes=notes_map.get(w.id, [])) for w in capped]
 
 
+def reset_progress(user: str) -> None:
+    """Clear the user's familiarity — every word returns to New.
+
+    Touches progress only. The user's private words and their authored notes are
+    content they wrote, not earned state, and are deliberately left alone.
+    """
+    progress_repo.clear_progress(user)
+
+
 def apply_grades(
     user: str,
     grades: list[GradeItem],

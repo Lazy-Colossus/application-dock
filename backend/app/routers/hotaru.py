@@ -229,6 +229,14 @@ def practice_familiarity(user: str) -> dict[str, int]:
     return hotaru_practice_service.familiarity_map(user=user)
 
 
+@router.delete("/practice/progress", status_code=204)
+def practice_reset_progress(user: str) -> None:
+    """Reset one learner's familiarity. Their words and notes are not touched."""
+    if user not in VALID_USER_IDS:
+        raise HTTPException(status_code=404, detail=f"Unknown user {user}.")
+    hotaru_practice_service.reset_progress(user=user)
+
+
 def _parse_tiers(raw: str) -> list[int]:
     """Parse a comma-separated tier list (Quick Practice). Raises ValueError on a
     non-integer or out-of-range (0–4) value, mapped to 422 by the caller."""

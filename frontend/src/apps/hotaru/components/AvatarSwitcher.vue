@@ -65,8 +65,10 @@ function goIdentity(): void {
   void router.push("/hotaru/identity");
 }
 
+// Hotaru's own Settings — not the platform screen at `/settings`, whose
+// "users" are dock login accounts rather than the household learners here.
 function onSettings(): void {
-  // TODO(later): open Settings. No Settings screen exists yet.
+  void router.push("/hotaru/settings");
 }
 </script>
 

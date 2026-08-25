@@ -72,6 +72,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "Hotaru", requiresAuth: true },
       },
       {
+        path: "hotaru/settings",
+        name: "hotaru-settings",
+        component: () => import("@/apps/hotaru/pages/HotaruSettingsPage.vue"),
+        meta: { title: "Settings", requiresAuth: true },
+      },
+      {
         path: "hotaru/identity",
         name: "hotaru-identity",
         component: () => import("@/apps/hotaru/pages/IdentityPage.vue"),

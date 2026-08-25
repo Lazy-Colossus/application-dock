@@ -522,6 +522,26 @@ So that choosing what to practise never means scrolling past a wall of controls.
 **When** it renders
 **Then** whole-library familiarity shows as one compact ramp; Quick Practice is a collapsible card that opens its settings (presets/count/direction/scoring) inline with a Start button (nothing launches unseen); Lessons and Topics are collapsible lists of scope rows (mini-ramp + label + count), one region open at a time; selecting a row opens an inline Study/Practice drawer. Launch behaviour and Quick logic are unchanged; familiarity stats are computed client-side (no per-scope `overview` call). Frontend-only.
 
+### Story 2.14: Hotaru Settings — reset my progress
+
+_Added 2026-08-26 — the avatar menu has always offered a **Settings** row whose handler was an empty function (`AvatarSwitcher.onSettings()`), and `EXPERIENCE.md` left the surface "referenced but not specified … a stub for v1". A brainstorming session inventoried 16 candidate settings against "where else could this live?"; twelve belonged either where the thing is used (Practice setup, Library, Add-note) or in the platform shell (account, password, updates). **One survived.** Placed in Epic 2 (per the Story 2.10 precedent) because it is governed by Epic-2 familiarity data. See `.decision-log.md` 2026-08-26._
+
+As a learner whose familiarity has drifted away from what I actually know,
+I want to wipe my progress and start the whole library from New,
+So that I can begin again cleanly — without it counting against me, and without losing the words and notes I wrote.
+
+**Acceptance Criteria:**
+
+**Given** the avatar menu, **when** I tap **Settings**, **then** I reach a Hotaru-scoped Settings screen at `/hotaru/settings` — the dead handler is wired, and the platform's own `/settings` (container updates, dock login accounts, password) remains a separate screen.
+
+**Given** that screen, **when** it renders, **then** its single action **names the active user** ("Reset Jake's progress", never bare "Reset progress") and requires a confirm that states what is cleared **and what is kept**; cancel leaves everything untouched; there is no undo and the copy must not imply one.
+
+**Given** I confirm, **when** the reset completes, **then** the active user's `users/{id}/progress.json` is emptied — every word returns to **New** (tier 0) — while their private words, their authored notes, and all shared content are untouched (progress is earned state; authored content is owned property), and other users' progress is unaffected (FR-20, FR-21).
+
+**Given** a completed reset, **when** I return to Library or Practice, **then** familiarity reads as a fresh library with no stale tiers and no page reload.
+
+**Given** the screen, **when** it renders, **then** reset is its **only** action — no motion toggle, no export, no About block, and no practice preferences (Direction/Scoring/preset/limit want "remember last used" on the Practice setup page and stay deferred by PRD §6.2). No streak, due-count, or badge is introduced (SM-C1).
+
 ## Epic 3: Cooperative Notes
 
 Dani and Jake can leave each other memory hacks on any word — shared or private — and discover their partner's tips, including mid-drill.
