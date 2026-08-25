@@ -334,3 +334,52 @@ describe("PracticeSetupPage", () => {
     expect(replace).toHaveBeenCalledWith("/hotaru/identity");
   });
 });
+
+describe("PracticeSetupPage — jump to the filtered Library (Story 2.10)", () => {
+  // Familiarity is mocked empty, so g1 (the only L2 word) is New (tier 0).
+  async function openL2() {
+    const wrapper = mountPage();
+    await flushPromises();
+    await wrapper.find('[data-testid="scope-lesson-L2"]').trigger("click");
+    return wrapper;
+  }
+
+  it("shows the scope's five tiers with counts in the drawer", async () => {
+    const wrapper = await openL2();
+    expect(wrapper.find('[data-testid="scope-tiers"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="scope-tier-0"]').text()).toContain("1");
+    expect(wrapper.find('[data-testid="scope-tier-3"]').text()).toContain("0");
+  });
+
+  it("navigates to the Library filtered by that tier and scope", async () => {
+    const wrapper = await openL2();
+    await wrapper.find('[data-testid="scope-tier-0"]').trigger("click");
+    expect(push).toHaveBeenCalledWith(
+      "/hotaru/library?tier=0&scope=lesson%3AL2",
+    );
+  });
+
+  it("does not navigate from a tier with no words", async () => {
+    const wrapper = await openL2();
+    await wrapper.find('[data-testid="scope-tier-3"]').trigger("click");
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("carries the topic scope when the jump starts from a topic", async () => {
+    const wrapper = mountPage();
+    await flushPromises();
+    await wrapper.find('[data-testid="section-topics"]').trigger("click");
+    await wrapper.find('[data-testid="scope-topic-t1"]').trigger("click");
+    await wrapper.find('[data-testid="scope-tier-0"]').trigger("click");
+    expect(push).toHaveBeenCalledWith(
+      "/hotaru/library?tier=0&scope=topic%3At1",
+    );
+  });
+
+  it("keeps exactly one drawer's tier rows mounted", async () => {
+    const wrapper = await openL2();
+    // The accordion guarantees a single open drawer, so the shared
+    // scope-tier-* testids never collide.
+    expect(wrapper.findAll('[data-testid="scope-tiers"]').length).toBe(1);
+  });
+});

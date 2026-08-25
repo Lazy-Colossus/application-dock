@@ -74,6 +74,22 @@
             class="practice-drawer"
             data-testid="scope-actions"
           >
+            <div class="practice-tiers" data-testid="scope-tiers">
+              <button
+                v-for="tier in [0, 1, 2, 3, 4]"
+                :key="tier"
+                class="practice-tier"
+                type="button"
+                :disabled="selectedTiers[tier] === 0"
+                :data-testid="`scope-tier-${tier}`"
+                @click="openInLibrary(tier)"
+              >
+                <FamiliarityIcon :tier="tier" show-label />
+                <span class="practice-tier__count">{{
+                  selectedTiers[tier]
+                }}</span>
+              </button>
+            </div>
             <PracticeDirectionScoring
               v-model:direction="direction"
               v-model:mode="mode"
@@ -145,6 +161,22 @@
             class="practice-drawer"
             data-testid="scope-actions"
           >
+            <div class="practice-tiers" data-testid="scope-tiers">
+              <button
+                v-for="tier in [0, 1, 2, 3, 4]"
+                :key="tier"
+                class="practice-tier"
+                type="button"
+                :disabled="selectedTiers[tier] === 0"
+                :data-testid="`scope-tier-${tier}`"
+                @click="openInLibrary(tier)"
+              >
+                <FamiliarityIcon :tier="tier" show-label />
+                <span class="practice-tier__count">{{
+                  selectedTiers[tier]
+                }}</span>
+              </button>
+            </div>
             <PracticeDirectionScoring
               v-model:direction="direction"
               v-model:mode="mode"
@@ -280,6 +312,7 @@ import { useRoute, useRouter } from "vue-router";
 import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
 import PracticeDirectionScoring from "@/apps/hotaru/components/PracticeDirectionScoring.vue";
 import ScopeIcon from "@/apps/hotaru/components/ScopeIcon.vue";
+import FamiliarityIcon from "@/apps/hotaru/components/FamiliarityIcon.vue";
 import { useHotaruLibraryStore } from "@/apps/hotaru/stores/useHotaruLibraryStore";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
 import type { Word, Topic } from "@/apps/hotaru/types";
@@ -357,6 +390,29 @@ function lessonWords(l: string): Word[] {
 }
 function topicWords(t: Topic): Word[] {
   return store.words.filter((w) => t.word_ids.includes(w.id));
+}
+
+// Story 2.10 — the selected scope's familiarity breakdown, used by whichever
+// drawer is open. Safe to derive from `selected` alone because the accordion
+// guarantees exactly one drawer is mounted at a time.
+function wordsForScope(scope: string | null): Word[] {
+  if (scope === null) return [];
+  if (scope.startsWith("lesson:")) return lessonWords(scope.slice(7));
+  if (scope.startsWith("topic:")) {
+    const t = store.topics.find((x) => x.id === scope.slice(6));
+    return t ? topicWords(t) : [];
+  }
+  return store.words;
+}
+
+const selectedTiers = computed(() => tiersOf(wordsForScope(selected.value)));
+
+// Jump to the Library showing just this tier within this scope (Story 2.10).
+function openInLibrary(tier: number): void {
+  if (selected.value === null || selectedTiers.value[tier] === 0) return;
+  void router.push(
+    `/hotaru/library?tier=${tier}&scope=${encodeURIComponent(selected.value)}`,
+  );
 }
 
 // --- Quick Practice (Story 2.9): build a session from the whole list -------
@@ -553,6 +609,38 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="sass">
+.practice-tiers
+  display: flex
+  flex-direction: column
+  gap: 2px
+  margin-bottom: 10px
+
+.practice-tier
+  display: flex
+  align-items: center
+  gap: 10px
+  width: 100%
+  padding: 7px 10px
+  border: none
+  border-radius: 10px
+  background: transparent
+  color: var(--hotaru-cream-soft)
+  font-size: 13px
+  text-align: left
+  cursor: pointer
+
+.practice-tier:disabled
+  opacity: 0.4
+  cursor: default
+
+.practice-tier:not(:disabled):hover
+  background: var(--hotaru-fill)
+
+.practice-tier__count
+  margin-left: auto
+  font-variant-numeric: tabular-nums
+  color: var(--hotaru-cream)
+
 .practice-title
   font-size: 22px
   font-weight: 600

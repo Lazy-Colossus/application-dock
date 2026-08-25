@@ -30,7 +30,10 @@
     </div>
 
     <!-- Level 2: subsections (lessons, or Shared/Private) -->
-    <div class="library-tabs row items-center q-gutter-xs q-mb-md">
+    <div
+      v-if="subsections.length > 0"
+      class="library-tabs row items-center q-gutter-xs q-mb-md"
+    >
       <button
         v-for="sub in subsections"
         :key="sub.key"
@@ -40,6 +43,33 @@
         @click="subsection = sub.key"
       >
         {{ sub.label }}
+      </button>
+    </div>
+
+    <!-- Familiarity filter: five toggles, multi-select, empty = no filter -->
+    <div class="library-fam row items-center no-wrap q-mb-md">
+      <button
+        v-for="tier in [0, 1, 2, 3, 4]"
+        :key="tier"
+        class="library-fam__tier"
+        :class="{ 'library-fam__tier--on': activeTiers.has(tier) }"
+        type="button"
+        :aria-pressed="activeTiers.has(tier)"
+        :aria-label="`${TIER_LABELS[tier]}: ${tierCounts[tier]} words`"
+        :data-testid="`fam-filter-${tier}`"
+        @click="toggleTier(tier)"
+      >
+        <FamiliarityIcon :tier="tier" />
+        <span class="library-fam__count">{{ tierCounts[tier] }}</span>
+      </button>
+      <button
+        v-if="tierFiltered"
+        class="library-fam__clear"
+        type="button"
+        data-testid="fam-filter-clear"
+        @click="clearTiers"
+      >
+        Clear
       </button>
     </div>
 
@@ -72,6 +102,21 @@
       data-testid="library-empty"
     >
       No topics yet — add words to a topic from any row.
+    </div>
+    <div
+      v-else-if="visibleWords.length === 0 && tierFiltered"
+      class="library-state"
+      data-testid="library-empty-filtered"
+    >
+      No words at that familiarity here.
+      <button
+        class="library-state__clear"
+        type="button"
+        data-testid="fam-filter-clear-empty"
+        @click="clearTiers"
+      >
+        Clear filter
+      </button>
     </div>
     <div
       v-else-if="visibleWords.length === 0"
@@ -164,8 +209,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
+import FamiliarityIcon from "@/apps/hotaru/components/FamiliarityIcon.vue";
 import WordRow from "@/apps/hotaru/components/WordRow.vue";
 import WordRowDetails from "@/apps/hotaru/components/WordRowDetails.vue";
 import WordTopicsDialog from "@/apps/hotaru/components/WordTopicsDialog.vue";
@@ -182,11 +228,13 @@ const store = useHotaruLibraryStore();
 const notesStore = useHotaruNotesStore();
 const userStore = useHotaruUserStore();
 const router = useRouter();
+const route = useRoute();
 
 // The last-viewed selection lives in the store so it survives navigating to the
 // Add-word page and back.
 const { activeSection, activeSubsection } = storeToRefs(store);
 
+const ALL = "__all__";
 const CUSTOM = "__custom__";
 const TOPICS = "__topics__";
 
@@ -209,6 +257,7 @@ const sections = computed<Tab[]>(() => {
     .textbookSources(userIds.value)
     .map((s) => ({ key: s, label: prettifySource(s) }));
   return [
+    { key: ALL, label: "All" },
     ...textbook,
     { key: CUSTOM, label: "Custom words" },
     { key: TOPICS, label: "Topics" },
@@ -219,6 +268,7 @@ const section = ref<string>(CUSTOM);
 const subsection = ref<string>("shared");
 
 const subsections = computed<Tab[]>(() => {
+  if (section.value === ALL) return [];
   if (section.value === CUSTOM) {
     return [
       { key: "all", label: "All" },
@@ -234,7 +284,14 @@ const subsections = computed<Tab[]>(() => {
     .map((l) => ({ key: l, label: l }));
 });
 
-const visibleWords = computed(() => {
+// The section/subsection view BEFORE the familiarity filter. Tier counts are
+// derived from this, so they keep describing where the words are even while a
+// filter is narrowing what's listed.
+const scopedWords = computed(() => {
+  if (section.value === ALL) {
+    // Already exactly the active user's visible words (shared + their own private).
+    return store.words;
+  }
   if (section.value === CUSTOM) {
     // "All" (the default) shows every custom word; Shared/Private filter it.
     if (subsection.value === "all") return store.allCustomWords(userIds.value);
@@ -246,10 +303,51 @@ const visibleWords = computed(() => {
   return store.wordsBySourceLesson(section.value, subsection.value);
 });
 
+// Mirrors FamiliarityIcon's ramp — used for the filter's accessible names.
+const TIER_LABELS = ["New", "Learning", "Familiar", "Strong", "Mastered"];
+
+// Empty set means "no filter" — deliberately NOT "all five selected", so that
+// clearing stays distinguishable from selecting everything.
+const activeTiers = ref<Set<number>>(new Set());
+
+const tierCounts = computed(() => {
+  const counts = [0, 0, 0, 0, 0];
+  for (const w of scopedWords.value) {
+    const t = Math.min(4, Math.max(0, store.familiarityTier(w.id)));
+    counts[t] += 1;
+  }
+  return counts;
+});
+
+// Applied last, so it composes with every section rather than replacing any.
+const visibleWords = computed(() => {
+  if (activeTiers.value.size === 0) return scopedWords.value;
+  return scopedWords.value.filter((w) =>
+    activeTiers.value.has(
+      Math.min(4, Math.max(0, store.familiarityTier(w.id))),
+    ),
+  );
+});
+
+const tierFiltered = computed(() => activeTiers.value.size > 0);
+
+function toggleTier(tier: number): void {
+  const next = new Set(activeTiers.value);
+  if (next.has(tier)) next.delete(tier);
+  else next.add(tier);
+  activeTiers.value = next;
+  expandedId.value = null;
+}
+
+function clearTiers(): void {
+  activeTiers.value = new Set();
+}
+
 // Only user-added Custom words are editable — textbook words are read-only seed.
 const editable = computed(() => section.value === CUSTOM);
 
 function subsectionKeys(key: string): string[] {
+  if (key === ALL) return [];
   if (key === CUSTOM) return ["all", "shared", "private"];
   if (key === TOPICS) return store.topics.map((t) => t.id);
   return store.lessonsForSource(key);
@@ -266,7 +364,7 @@ function ensureValidSelection(): void {
   const keys = sections.value.map((s) => s.key);
   if (!keys.includes(section.value)) {
     const firstTextbook = sections.value.find(
-      (s) => s.key !== CUSTOM && s.key !== TOPICS,
+      (s) => s.key !== ALL && s.key !== CUSTOM && s.key !== TOPICS,
     );
     selectSection(firstTextbook ? firstTextbook.key : CUSTOM);
     return;
@@ -286,6 +384,62 @@ watch([section, subsection], ([s, sub]) => {
   expandedId.value = null; // collapse any open row when the view changes
 });
 
+// --- Deep link: /hotaru/library?tier=3,4&scope=lesson:L2 ------------------
+
+function parseTiers(raw: unknown): number[] {
+  if (typeof raw !== "string") return [];
+  return raw
+    .split(",")
+    .map((part) => Number.parseInt(part, 10))
+    .filter((n) => Number.isInteger(n) && n >= 0 && n <= 4);
+}
+
+// Lessons live under sources and nothing stops two sources listing an "L2",
+// so the rule is: the first source (in tab order) that lists the code.
+function sourceForLesson(lesson: string): string | null {
+  for (const src of store.textbookSources(userIds.value)) {
+    if (store.lessonsForSource(src).includes(lesson)) return src;
+  }
+  return null;
+}
+
+/** Apply `?tier=` / `?scope=`. Returns true if a scope was resolved. */
+function applyDeepLink(): boolean {
+  const tiers = parseTiers(route.query.tier);
+  if (tiers.length > 0) activeTiers.value = new Set(tiers);
+
+  const scope = route.query.scope;
+  if (typeof scope !== "string") return false;
+
+  if (scope === "all") {
+    section.value = ALL;
+    subsection.value = "";
+    return true;
+  }
+  if (scope.startsWith("lesson:")) {
+    const lesson = scope.slice("lesson:".length);
+    const src = sourceForLesson(lesson);
+    if (src === null) {
+      // Unresolvable — land on the whole library rather than erroring.
+      section.value = ALL;
+      subsection.value = "";
+      return true;
+    }
+    section.value = src;
+    subsection.value = lesson;
+    return true;
+  }
+  if (scope.startsWith("topic:")) {
+    const id = scope.slice("topic:".length);
+    section.value = TOPICS;
+    subsection.value = id;
+    return true;
+  }
+  section.value = ALL;
+  subsection.value = "";
+  return true;
+}
+
 onMounted(async () => {
   if (userStore.users.length === 0) await userStore.loadUsers();
   if (userStore.activeUserId === null) {
@@ -298,7 +452,11 @@ onMounted(async () => {
     store.loadFamiliarity(userStore.activeUserId),
     notesStore.loadPresence(userStore.activeUserId),
   ]);
-  if (activeSection.value !== null) {
+  // A deep link from Practice wins over the remembered selection.
+  const linked = applyDeepLink();
+  if (linked) {
+    ensureValidSelection();
+  } else if (activeSection.value !== null) {
     // Returning to the library — restore where the user was.
     section.value = activeSection.value;
     subsection.value = activeSubsection.value ?? "shared";
@@ -306,7 +464,7 @@ onMounted(async () => {
   } else {
     // First visit — default to the first textbook section.
     const firstTextbook = sections.value.find(
-      (s) => s.key !== CUSTOM && s.key !== TOPICS,
+      (s) => s.key !== ALL && s.key !== CUSTOM && s.key !== TOPICS,
     );
     selectSection(firstTextbook ? firstTextbook.key : CUSTOM);
   }
@@ -524,6 +682,49 @@ function onToggleExpand(word: Word): void {
 </script>
 
 <style scoped lang="sass">
+.library-fam
+  gap: 6px
+
+.library-fam__tier
+  display: flex
+  align-items: center
+  gap: 5px
+  padding: 5px 9px
+  border-radius: 999px
+  border: 1px solid var(--hotaru-line-soft)
+  background: transparent
+  color: var(--hotaru-cream-soft)
+  font-size: 12px
+  cursor: pointer
+
+.library-fam__tier--on
+  border-color: rgba(56, 240, 230, 0.55)
+  background: rgba(56, 240, 230, 0.12)
+  color: var(--hotaru-cream)
+
+.library-fam__count
+  font-variant-numeric: tabular-nums
+
+.library-fam__clear
+  margin-left: auto
+  padding: 5px 10px
+  border: none
+  background: transparent
+  color: var(--hotaru-bamboo-bright)
+  font-size: 12px
+  cursor: pointer
+
+.library-state__clear
+  display: block
+  margin: 10px auto 0
+  padding: 6px 14px
+  border-radius: 999px
+  border: 1px solid rgba(56, 240, 230, 0.4)
+  background: transparent
+  color: var(--hotaru-bamboo-bright)
+  font-size: 12px
+  cursor: pointer
+
 // Section row: the scrollable tabs take the space, the ⋮ actions menu pins right.
 .library-sections
   gap: 8px

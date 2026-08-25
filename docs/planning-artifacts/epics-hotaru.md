@@ -462,7 +462,7 @@ So that I can start a focused session drawn from my whole vocabulary using prese
 
 **Given** the active user's presets, **when** I return to Quick Practice, **then** my last-used preset is remembered (persisted per user) so re-entry is genuinely quick; a preset matching no words shows a calm empty state ("nothing to practise here yet"), never an error.
 
-### Story 2.10: Filter the library by familiarity (and jump there from practice stats)
+### Story 2.10: Filter the library by familiarity (and jump there from practice)
 
 _Added 2026-07-11 — depends on the familiarity model/display (2.1, 2.6) and the pre-session stats (2.2). Turns the read-only familiarity signal into a navigational filter. Its primary deliverable is a **Library** filter, placed in Epic 2 because it needs Epic-2 familiarity data + the practice stats it links from._
 
@@ -474,9 +474,13 @@ So that I can find and act on exactly the words at a given level (e.g. everythin
 
 **Given** the library, **when** I apply a **familiarity filter** (one or more of the 5 tiers), **then** the list shows only the active user's words at those tiers, combinable with the existing Lesson/Topic/Custom navigation, using the per-word familiarity already available (`GET /api/hotaru/practice/familiarity`) (FR-21, UX-DR3). Mobile-first: a compact tier control reusing `FamiliarityIcon`, not a wide toolbar.
 
-**Given** the Practice pre-session stats table — the all-words view **or** a selected Lesson/Topic — **when** I tap a familiarity group/row, **then** I'm navigated to the Library with that tier filter pre-applied **and** the originating scope respected: no scope → the whole library; a selected Lesson/Topic → that lesson/topic pre-selected (FR-11, FR-21). Deep-linked via route query (e.g. `/hotaru/library?tier=4&scope=lesson:L2`).
+**Given** the Library's section tabs, **when** I select **All**, **then** every word visible to me is listed (seeded textbook words and custom words together) with no subsection tabs — the whole-library view the tier filter needs in order to work across everything.
 
-**Given** a familiarity filter yields no words, **when** the list renders, **then** it shows a calm empty state and the filter can be cleared to return to the full view.
+**Given** a Lesson or Topic selected on the Practice setup screen, **when** its drawer is open, **then** the drawer lists the 5 tiers with `FamiliarityIcon` + count, and tapping one navigates to the Library with that tier pre-applied and the originating scope respected: a Lesson/Topic → that lesson/topic pre-selected; the whole library → the All section (FR-11, FR-21). Deep-linked via route query (e.g. `/hotaru/library?tier=4&scope=lesson:L2`), and a deep link overrides the remembered last-viewed selection.
+
+**Given** a familiarity filter yields no words, **when** the list renders, **then** it shows a calm empty state that names the filter as the reason (distinct from a genuinely empty view) and the filter can be cleared in one tap.
+
+_AC restated 2026-08-26 (implementation). The original second criterion deep-linked from "the Practice **pre-session stats table**", which **Story 2.13 deleted** in favour of ramp bars; the link source is now the scope drawer. Ramp segments were deliberately not made tappable — the per-lesson mini-ramp sits inside the row `<button>`, and nesting interactive elements is invalid HTML and an accessibility problem. The **All** section is new: the original AC assumed a whole-library view that did not exist. Backend unchanged._
 
 **Given** an active filter, **when** familiarity has changed (e.g. after a session), **then** reopening/refreshing the library reflects the updated tiers (familiarity is read fresh, never stale).
 

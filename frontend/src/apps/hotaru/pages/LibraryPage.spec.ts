@@ -2,16 +2,25 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, postMock, putMock, patchMock, delMock, push, replace } =
-  vi.hoisted(() => ({
-    getMock: vi.fn(),
-    postMock: vi.fn(),
-    putMock: vi.fn(),
-    patchMock: vi.fn(),
-    delMock: vi.fn(),
-    push: vi.fn(),
-    replace: vi.fn(),
-  }));
+const {
+  getMock,
+  postMock,
+  putMock,
+  patchMock,
+  delMock,
+  push,
+  replace,
+  routeQuery,
+} = vi.hoisted(() => ({
+  getMock: vi.fn(),
+  postMock: vi.fn(),
+  putMock: vi.fn(),
+  patchMock: vi.fn(),
+  delMock: vi.fn(),
+  push: vi.fn(),
+  replace: vi.fn(),
+  routeQuery: { value: {} as Record<string, string> },
+}));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
   api: {
@@ -22,7 +31,10 @@ vi.mock("@/composables/useApi", () => ({
     del: delMock,
   },
 }));
-vi.mock("vue-router", () => ({ useRouter: () => ({ push, replace }) }));
+vi.mock("vue-router", () => ({
+  useRouter: () => ({ push, replace }),
+  useRoute: () => ({ query: routeQuery.value }),
+}));
 
 import LibraryPage from "./LibraryPage.vue";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
@@ -98,6 +110,7 @@ beforeEach(() => {
   putMock.mockReset().mockResolvedValue({});
   patchMock.mockReset().mockResolvedValue({});
   push.mockReset();
+  routeQuery.value = {};
 });
 
 describe("LibraryPage (two-level)", () => {
@@ -510,5 +523,126 @@ describe("LibraryPage (two-level)", () => {
     await wrapper.find('[data-testid="section-genki_3"]').trigger("click");
     await openActions(wrapper);
     expect(wrapper.text()).toContain("0 selected");
+  });
+});
+
+describe("LibraryPage — familiarity filter (Story 2.10)", () => {
+  // Familiarity across the fixture: g1 is Mastered (4); every other word is
+  // absent from the map and so resolves to New (0).
+  async function mountLibrary() {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    return wrapper;
+  }
+
+  it("adds an All section listing every visible word, with no subsection tabs", async () => {
+    const wrapper = await mountLibrary();
+    await wrapper.find('[data-testid="section-__all__"]').trigger("click");
+    // Textbook, custom-shared and custom-private words all appear together.
+    expect(wrapper.text()).toContain("thanks");
+    expect(wrapper.text()).toContain("university");
+    expect(wrapper.text()).toContain("my shared word");
+    expect(wrapper.text()).toContain("my private word");
+    // Level-2 tabs are hidden for All.
+    expect(wrapper.find('[data-testid="sub-G"]').exists()).toBe(false);
+  });
+
+  it("still defaults to the first textbook lesson, not All", async () => {
+    const wrapper = await mountLibrary();
+    expect(wrapper.find('[data-testid="library-count"]').text()).toContain("1");
+    expect(wrapper.text()).toContain("thanks");
+  });
+
+  it("shows a per-tier count for the current view", async () => {
+    const wrapper = await mountLibrary();
+    await wrapper.find('[data-testid="section-__all__"]').trigger("click");
+    // 4 words: g1 Mastered, the other three New.
+    expect(wrapper.find('[data-testid="fam-filter-0"]').text()).toContain("3");
+    expect(wrapper.find('[data-testid="fam-filter-4"]').text()).toContain("1");
+  });
+
+  it("filters to a selected tier and back", async () => {
+    const wrapper = await mountLibrary();
+    await wrapper.find('[data-testid="section-__all__"]').trigger("click");
+    await wrapper.find('[data-testid="fam-filter-4"]').trigger("click");
+    expect(wrapper.text()).toContain("thanks");
+    expect(wrapper.text()).not.toContain("university");
+
+    await wrapper.find('[data-testid="fam-filter-clear"]').trigger("click");
+    expect(wrapper.text()).toContain("university");
+  });
+
+  it("unions multiple selected tiers", async () => {
+    const wrapper = await mountLibrary();
+    await wrapper.find('[data-testid="section-__all__"]').trigger("click");
+    await wrapper.find('[data-testid="fam-filter-4"]').trigger("click");
+    await wrapper.find('[data-testid="fam-filter-0"]').trigger("click");
+    // Both tiers now shown — everything is back.
+    expect(wrapper.text()).toContain("thanks");
+    expect(wrapper.text()).toContain("university");
+  });
+
+  it("composes with the section/subsection navigation", async () => {
+    const wrapper = await mountLibrary();
+    await wrapper.find('[data-testid="section-__all__"]').trigger("click");
+    await wrapper.find('[data-testid="fam-filter-0"]').trigger("click");
+    // Narrow to the Genki source while New stays selected: g1 (Mastered) is
+    // excluded, so its lesson view is empty rather than showing it.
+    await wrapper.find('[data-testid="section-genki_3"]').trigger("click");
+    expect(
+      wrapper.find('[data-testid="library-empty-filtered"]').exists(),
+    ).toBe(true);
+  });
+
+  it("distinguishes filtered-empty from never-had-words", async () => {
+    const wrapper = await mountLibrary();
+    await wrapper.find('[data-testid="section-__all__"]').trigger("click");
+    await wrapper.find('[data-testid="fam-filter-2"]').trigger("click");
+    expect(
+      wrapper.find('[data-testid="library-empty-filtered"]').exists(),
+    ).toBe(true);
+    expect(wrapper.find('[data-testid="library-empty"]').exists()).toBe(false);
+    // And it can be cleared straight from the empty state.
+    await wrapper
+      .find('[data-testid="fam-filter-clear-empty"]')
+      .trigger("click");
+    expect(wrapper.text()).toContain("thanks");
+  });
+
+  it("applies a deep link's tier and lesson scope", async () => {
+    routeQuery.value = { tier: "4", scope: "lesson:G" };
+    const wrapper = await mountLibrary();
+    expect(wrapper.text()).toContain("thanks");
+    expect(
+      wrapper.find('[data-testid="fam-filter-4"]').attributes("aria-pressed"),
+    ).toBe("true");
+  });
+
+  it("lets a deep link beat the remembered selection", async () => {
+    // First visit remembers Custom words...
+    const first = await mountLibrary();
+    await first.find('[data-testid="section-__custom__"]').trigger("click");
+    // ...then a deep link arrives for a lesson scope.
+    routeQuery.value = { tier: "0", scope: "lesson:L1" };
+    const wrapper = await mountLibrary();
+    expect(wrapper.text()).toContain("university");
+  });
+
+  it("falls back to All when the scope cannot be resolved", async () => {
+    routeQuery.value = { scope: "lesson:NOPE" };
+    const wrapper = await mountLibrary();
+    // All words listed rather than an error or an empty screen.
+    expect(wrapper.text()).toContain("thanks");
+    expect(wrapper.text()).toContain("my private word");
+  });
+
+  it("ignores out-of-range tiers in the query", async () => {
+    routeQuery.value = { tier: "9,foo", scope: "all" };
+    const wrapper = await mountLibrary();
+    // No valid tier → no filter → everything shows.
+    expect(wrapper.find('[data-testid="fam-filter-clear"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.text()).toContain("thanks");
   });
 });
