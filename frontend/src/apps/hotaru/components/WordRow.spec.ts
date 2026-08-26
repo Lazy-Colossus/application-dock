@@ -143,6 +143,59 @@ describe("WordRow", () => {
     ).toBe("New");
   });
 
+  it("shows a checkbox and hides the ⋮ menu in select mode", () => {
+    const wrapper = mount(WordRow, {
+      props: { word: word(), selectable: true, editable: true },
+      global: { stubs: STUBS },
+    });
+    expect(wrapper.find('[data-testid="row-select"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="row-menu"]').exists()).toBe(false);
+  });
+
+  it("emits toggle-select with the word when the row is clicked in select mode", async () => {
+    const w = word();
+    const wrapper = mount(WordRow, {
+      props: { word: w, selectable: true },
+      global: { stubs: STUBS },
+    });
+    await wrapper.find('[data-testid="word-row"]').trigger("click");
+    expect(wrapper.emitted("toggle-select")?.[0]).toEqual([w]);
+  });
+
+  it("has no checkbox when not selectable", () => {
+    const wrapper = mount(WordRow, {
+      props: { word: word() },
+      global: { stubs: STUBS },
+    });
+    expect(wrapper.find('[data-testid="row-select"]').exists()).toBe(false);
+  });
+
+  it("emits notes from the menu (shown on every row)", async () => {
+    const w = word();
+    const wrapper = mount(WordRow, {
+      props: { word: w },
+      global: { stubs: STUBS },
+    });
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
+    await wrapper.find('[data-testid="manage-notes"]').trigger("click");
+    expect(wrapper.emitted("notes")?.[0]).toEqual([w]);
+  });
+
+  it("copies a readable form of the word to the clipboard from the menu", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+    const wrapper = mount(WordRow, {
+      props: { word: word() },
+      global: { stubs: STUBS },
+    });
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
+    await wrapper.find('[data-testid="copy-word"]').trigger("click");
+    expect(writeText).toHaveBeenCalledWith("大学（だいがく）— university");
+  });
+
   it("emits topics from the menu (shown on every row, even non-editable)", async () => {
     const w = word();
     const wrapper = mount(WordRow, {
@@ -152,5 +205,61 @@ describe("WordRow", () => {
     await wrapper.find('[data-testid="row-menu"]').trigger("click");
     await wrapper.find('[data-testid="manage-topics"]').trigger("click");
     expect(wrapper.emitted("topics")?.[0]).toEqual([w]);
+  });
+
+  it("shows a note cue only when the word has a note", () => {
+    const without = mount(WordRow, {
+      props: { word: word() },
+      global: { stubs: STUBS },
+    });
+    expect(without.find('[data-testid="row-has-note"]').exists()).toBe(false);
+    const withNote = mount(WordRow, {
+      props: { word: word(), hasNote: true },
+      global: { stubs: STUBS },
+    });
+    expect(withNote.find('[data-testid="row-has-note"]').exists()).toBe(true);
+  });
+
+  it("emits toggle-expand when the row body is tapped (normal mode)", async () => {
+    const w = word();
+    const wrapper = mount(WordRow, {
+      props: { word: w },
+      global: { stubs: STUBS },
+    });
+    await wrapper.find('[data-testid="word-row"]').trigger("click");
+    expect(wrapper.emitted("toggle-expand")?.[0]).toEqual([w]);
+    // A disclosure chevron is present in normal mode.
+    expect(wrapper.find('[data-testid="row-chevron"]').exists()).toBe(true);
+  });
+
+  it("marks the chevron open when expanded", () => {
+    const wrapper = mount(WordRow, {
+      props: { word: word(), expanded: true },
+      global: { stubs: STUBS },
+    });
+    expect(wrapper.find('[data-testid="row-chevron"]').classes()).toContain(
+      "word-row__chevron--open",
+    );
+  });
+
+  it("does NOT expand when the ⋮ menu is used (click.stop)", async () => {
+    const wrapper = mount(WordRow, {
+      props: { word: word() },
+      global: { stubs: STUBS },
+    });
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
+    expect(wrapper.emitted("toggle-expand")).toBeUndefined();
+  });
+
+  it("in select mode a tap selects (not expands) and shows no chevron", async () => {
+    const w = word();
+    const wrapper = mount(WordRow, {
+      props: { word: w, selectable: true },
+      global: { stubs: STUBS },
+    });
+    await wrapper.find('[data-testid="word-row"]').trigger("click");
+    expect(wrapper.emitted("toggle-select")?.[0]).toEqual([w]);
+    expect(wrapper.emitted("toggle-expand")).toBeUndefined();
+    expect(wrapper.find('[data-testid="row-chevron"]').exists()).toBe(false);
   });
 });

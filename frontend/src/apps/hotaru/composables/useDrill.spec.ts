@@ -67,14 +67,40 @@ describe("useDrill", () => {
   it("grade() buffers the grade for the current card and advances", () => {
     const d = useDrill(queueOf("a", "b"));
     d.grade("correct");
-    expect(d.pending.value).toEqual([{ word_id: "a", grade: "correct" }]);
+    expect(d.pending.value).toEqual([
+      { word_id: "a", grade: "correct", replay: false },
+    ]);
     expect(d.current.value?.word.id).toBe("b");
     expect(d.revealed.value).toBe(false);
     d.grade("incorrect");
     expect(d.pending.value).toEqual([
-      { word_id: "a", grade: "correct" },
-      { word_id: "b", grade: "incorrect" },
+      { word_id: "a", grade: "correct", replay: false },
+      { word_id: "b", grade: "incorrect", replay: false },
     ]);
     expect(d.finished.value).toBe(true);
+  });
+
+  it("grade() marks a replay so the server can withhold promotion", () => {
+    const d = useDrill(queueOf("a"));
+    d.grade("correct", true);
+    expect(d.pending.value).toEqual([
+      { word_id: "a", grade: "correct", replay: true },
+    ]);
+  });
+
+  it("restart() replays the queue from the top without dropping buffered grades", () => {
+    const queue = queueOf("a", "b");
+    const d = useDrill(queue);
+    d.grade("correct");
+    d.grade("incorrect");
+    expect(d.finished.value).toBe(true);
+
+    // The caller narrows the queue first; restart only resets position.
+    queue.value = [queue.value[1]];
+    d.restart();
+    expect(d.finished.value).toBe(false);
+    expect(d.current.value?.word.id).toBe("b");
+    expect(d.revealed.value).toBe(false);
+    expect(d.pending.value).toHaveLength(2);
   });
 });

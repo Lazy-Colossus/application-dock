@@ -7,15 +7,24 @@
   >
     <span class="avatar-switcher__initial">{{ active.name.charAt(0) }}</span>
     <q-menu anchor="bottom right" self="top right">
-      <q-list style="min-width: 160px">
+      <q-list style="min-width: 180px">
         <q-item
-          v-if="other"
+          v-for="u in others"
+          :key="u.id"
           clickable
           v-close-popup
-          data-testid="switch-user"
-          @click="switchTo(other.id)"
+          :data-testid="`switch-user-${u.id}`"
+          @click="switchTo(u.id)"
         >
-          <q-item-section>Switch to {{ other.name }}</q-item-section>
+          <q-item-section>Switch to {{ u.name }}</q-item-section>
+        </q-item>
+        <q-item
+          clickable
+          v-close-popup
+          data-testid="who-studying"
+          @click="goIdentity"
+        >
+          <q-item-section>Who's studying?</q-item-section>
         </q-item>
         <q-item
           clickable
@@ -32,21 +41,34 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { useRouter } from "vue-router";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
 
 const store = useHotaruUserStore();
+const router = useRouter();
 
 const active = computed(() => store.activeUser);
-const other = computed(
-  () => store.users.find((u) => u.id !== store.activeUserId) ?? null,
+
+// Everyone except the active user — one "Switch to …" per person, so any number
+// of household users is reachable (not just a single "other").
+const others = computed(() =>
+  store.users.filter((u) => u.id !== store.activeUserId),
 );
 
 function switchTo(id: string): void {
   store.setActiveUser(id);
 }
 
+// The full "Who's studying?" picker — the canonical way back to re-choose (or
+// reach someone not shown as a quick switch).
+function goIdentity(): void {
+  void router.push("/hotaru/identity");
+}
+
+// Hotaru's own Settings — not the platform screen at `/settings`, whose
+// "users" are dock login accounts rather than the household learners here.
 function onSettings(): void {
-  // TODO(later): open Settings. No Settings screen exists yet.
+  void router.push("/hotaru/settings");
 }
 </script>
 
@@ -74,4 +96,7 @@ function onSettings(): void {
 
 .avatar-switcher--jake .avatar-switcher__initial
   background: var(--hotaru-fam-4)
+
+.avatar-switcher--jim .avatar-switcher__initial
+  background: var(--hotaru-fam-5)
 </style>

@@ -87,9 +87,13 @@ function onCreate(): void {
 </script>
 
 <style scoped lang="sass">
+// q-dialog teleports to <body>, outside the `.hotaru-app` scope — so the
+// --hotaru-* CSS vars don't resolve here (they'd fall back to the old forest
+// green). Hardcode the Neon Yūgure dusk palette instead.
 .wt-dialog
-  background: var(--hotaru-surface, #22260f)
-  color: var(--hotaru-cream)
+  background: rgba(20, 18, 52, 0.98)
+  backdrop-filter: blur(16px)
+  color: #f1f0ff
   border: 1px solid rgba(155, 107, 255, 0.30)
   border-radius: 14px
   padding: 18px
@@ -101,7 +105,7 @@ function onCreate(): void {
   margin-bottom: 10px
 
 .wt-empty
-  color: var(--hotaru-cream-soft)
+  color: #b3aede
   font-size: 13px
 
 .wt-row
@@ -111,14 +115,18 @@ function onCreate(): void {
   padding: 6px 0
   cursor: pointer
 
+// Tint the native membership checkboxes cyan (else the browser-default green).
+.wt-row input[type="checkbox"]
+  accent-color: #38f0e6
+
 .wt-name
   font-size: 14px
 
 .wt-input
-  background: rgba(20, 18, 52, 0.55)
+  background: rgba(4, 6, 15, 0.5)
   border: 1px solid rgba(155, 107, 255, 0.30)
   border-radius: 10px
   padding: 8px
-  color: var(--hotaru-cream)
+  color: #f1f0ff
   font-size: 14px
 </style>

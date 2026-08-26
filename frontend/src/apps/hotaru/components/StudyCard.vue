@@ -3,7 +3,8 @@
     class="study-card hotaru-panel column flex-center"
     data-testid="study-card"
   >
-    <!-- Headword: kanji glows cyan, a kana-only headword glows lamp-yellow. -->
+    <!-- Headword: cyan like the drill card, whatever the script. The kana
+         variant only steps the size down (kana run longer than kanji). -->
     <div
       class="study-card__jp"
       :class="word.kanji ? 'study-card__jp--kanji' : 'study-card__jp--kana'"
@@ -12,12 +13,37 @@
       {{ word.kanji ?? word.reading }}
     </div>
 
-    <!-- Reading (kana) beneath a kanji headword — lamp-yellow. -->
+    <!-- Reading (kana) beneath a kanji headword. -->
     <div v-if="word.kanji" class="study-card__reading">{{ word.reading }}</div>
 
     <div v-if="word.romaji" class="study-card__romaji">{{ word.romaji }}</div>
 
     <div class="study-card__meaning">{{ word.meaning }}</div>
+
+    <!-- Notes on this word (shared + my own private) — shown inline, no reveal. -->
+    <div
+      v-if="notes.length"
+      class="study-card__notes column"
+      data-testid="study-notes"
+    >
+      <div
+        v-for="n in notes"
+        :key="n.id"
+        class="study-card__note"
+        data-testid="study-note"
+      >
+        <span class="study-card__note-who">
+          <q-icon
+            v-if="n.visibility === 'private'"
+            name="lock"
+            size="12px"
+            class="study-card__note-lock"
+          />
+          {{ displayName(n) }}
+        </span>
+        <span class="study-card__note-text">{{ n.text }}</span>
+      </div>
+    </div>
 
     <!-- Info pills (lesson + part of speech) along the bottom edge. -->
     <div
@@ -32,9 +58,23 @@
 </template>
 
 <script setup lang="ts">
-import type { Word } from "@/apps/hotaru/types";
+import type { HotaruUser, Note, Word } from "@/apps/hotaru/types";
+import { useNoteDisplay } from "@/apps/hotaru/composables/useNoteDisplay";
 
-defineProps<{ word: Word }>();
+const props = withDefaults(
+  defineProps<{
+    word: Word;
+    notes?: Note[];
+    users?: HotaruUser[];
+    activeUser?: string;
+  }>(),
+  { notes: () => [], users: () => [], activeUser: undefined },
+);
+
+const { displayName } = useNoteDisplay(
+  () => props.users,
+  () => props.activeUser,
+);
 </script>
 
 <style scoped lang="sass">
@@ -55,20 +95,24 @@ defineProps<{ word: Word }>();
   font-weight: 700
   line-height: 1.1
 
-// Kanji headword → electric cyan; kana-only headword → warm lamp-yellow.
-.study-card__jp--kanji
+// Study shows one word large on a card, so it follows the DRILL card — all
+// Japanese in cyan — not the Library list's kanji-cyan/kana-yellow split. The
+// script split earns its keep when scanning a column of rows; on a single
+// focal word it just makes the same word change colour between surfaces.
+.study-card__jp--kanji,
+.study-card__jp--kana
   color: var(--hotaru-bamboo)
   text-shadow: 0 0 32px rgba(56, 240, 230, 0.6), 0 0 16px rgba(56, 240, 230, 0.5)
 
+// Kana-only headwords run longer than a compact kanji — size them down a step
+// so they don't overwhelm the card (matching Flashcard).
 .study-card__jp--kana
-  color: var(--hotaru-lamp-yellow, #ffd24a)
-  text-shadow: 0 0 30px rgba(255, 210, 74, 0.6), 0 0 16px rgba(255, 210, 74, 0.5)
+  font-size: 50px
 
-// Reading line is kana → lamp-yellow.
 .study-card__reading
   font-size: 22px
-  color: var(--hotaru-lamp-yellow, #ffd24a)
-  text-shadow: 0 0 14px rgba(255, 210, 74, 0.4)
+  color: var(--hotaru-bamboo)
+  text-shadow: 0 0 14px rgba(56, 240, 230, 0.4)
 
 .study-card__romaji
   font-size: 15px
@@ -77,6 +121,34 @@ defineProps<{ word: Word }>();
 
 .study-card__meaning
   font-size: 20px
+  color: var(--hotaru-cream-soft)
+
+// Notes strip — calm and compact; bottom margin clears the absolute pills row.
+.study-card__notes
+  gap: 6px
+  margin: 4px 2px 34px
+  padding-top: 10px
+  border-top: 1px solid rgba(155, 107, 255, 0.18)
+  max-height: 26vh
+  overflow-y: auto
+  text-align: left
+
+.study-card__note
+  font-size: 13px
+  line-height: 1.35
+
+.study-card__note-who
+  display: inline-flex
+  align-items: center
+  gap: 3px
+  font-weight: 600
+  color: var(--hotaru-sage)
+  margin-right: 6px
+
+.study-card__note-lock
+  color: var(--hotaru-amber-private)
+
+.study-card__note-text
   color: var(--hotaru-cream-soft)
 
 .study-card__pills

@@ -38,7 +38,13 @@ def label_for(tier: int) -> str:
     return TIER_LABELS[tier]
 
 
-def next_review(state: ProgressEntry, grade: Grade, now: datetime) -> ProgressEntry:
+def next_review(
+    state: ProgressEntry,
+    grade: Grade,
+    now: datetime,
+    *,
+    replay: bool = False,
+) -> ProgressEntry:
     """Return the updated state after a grade. Pure — does not mutate `state`.
 
     Correct: +1 point; on reaching the tier's threshold, +1 tier and reset
@@ -50,12 +56,21 @@ def next_review(state: ProgressEntry, grade: Grade, now: datetime) -> ProgressEn
     whatever the grade — graduates New → Learning, and a lapse (Incorrect) drops
     toward Learning but never back to New. (Standard SRS: New = novelty, not the
     bottom of mastery.)
+
+    `replay=True` marks a grade from re-practising words already met earlier in
+    the same session. Recalling an answer seen a minute ago is short-term memory,
+    not retrieval, so a replay Correct earns ground toward the next tier but can
+    never cross the threshold — repeated replays stall one point short, and only
+    a later genuine review promotes. A replay Incorrect still drops as normal:
+    the safety net is for inflated progress, not for lapses.
     """
     tier, points = state.tier, state.points
 
     if grade == "correct":
         if tier >= MAX_TIER:
             points = 0
+        elif replay:
+            points = min(points + 1, max(0, THRESHOLDS[tier] - 1))
         else:
             points += 1
             if points >= THRESHOLDS[tier]:

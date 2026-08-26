@@ -29,7 +29,8 @@ npm run dev          # Quasar dev server on :9000, proxies /api/* → localhost:
 npm test             # vitest run (one-shot)
 npm run test:watch   # vitest watch
 npx vitest run src/apps/archery/pages/ResultsPage.spec.ts   # one file
-npm run lint         # eslint
+npm run lint         # eslint (flat config in eslint.config.mjs)
+npm run lint:fix     # eslint --fix
 npm run format       # prettier
 ```
 Requires **Node ≥22.22** (`package.json` engines; Quasar v2.6+ requirement). The README says "Node 20+" — that's stale.

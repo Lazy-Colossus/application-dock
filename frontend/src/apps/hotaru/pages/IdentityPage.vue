@@ -76,6 +76,9 @@ function pick(id: string): void {
 .identity-avatar--jake .identity-avatar__initial
   background: var(--hotaru-fam-4)
 
+.identity-avatar--jim .identity-avatar__initial
+  background: var(--hotaru-fam-5)
+
 .identity-avatar__name
   font-size: 15px
   color: var(--hotaru-cream-soft)

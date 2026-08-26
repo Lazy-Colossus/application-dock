@@ -462,7 +462,7 @@ So that I can start a focused session drawn from my whole vocabulary using prese
 
 **Given** the active user's presets, **when** I return to Quick Practice, **then** my last-used preset is remembered (persisted per user) so re-entry is genuinely quick; a preset matching no words shows a calm empty state ("nothing to practise here yet"), never an error.
 
-### Story 2.10: Filter the library by familiarity (and jump there from practice stats)
+### Story 2.10: Filter the library by familiarity (and jump there from practice)
 
 _Added 2026-07-11 — depends on the familiarity model/display (2.1, 2.6) and the pre-session stats (2.2). Turns the read-only familiarity signal into a navigational filter. Its primary deliverable is a **Library** filter, placed in Epic 2 because it needs Epic-2 familiarity data + the practice stats it links from._
 
@@ -474,11 +474,77 @@ So that I can find and act on exactly the words at a given level (e.g. everythin
 
 **Given** the library, **when** I apply a **familiarity filter** (one or more of the 5 tiers), **then** the list shows only the active user's words at those tiers, combinable with the existing Lesson/Topic/Custom navigation, using the per-word familiarity already available (`GET /api/hotaru/practice/familiarity`) (FR-21, UX-DR3). Mobile-first: a compact tier control reusing `FamiliarityIcon`, not a wide toolbar.
 
-**Given** the Practice pre-session stats table — the all-words view **or** a selected Lesson/Topic — **when** I tap a familiarity group/row, **then** I'm navigated to the Library with that tier filter pre-applied **and** the originating scope respected: no scope → the whole library; a selected Lesson/Topic → that lesson/topic pre-selected (FR-11, FR-21). Deep-linked via route query (e.g. `/hotaru/library?tier=4&scope=lesson:L2`).
+**Given** the Library's section tabs, **when** I select **All**, **then** every word visible to me is listed (seeded textbook words and custom words together) with no subsection tabs — the whole-library view the tier filter needs in order to work across everything.
 
-**Given** a familiarity filter yields no words, **when** the list renders, **then** it shows a calm empty state and the filter can be cleared to return to the full view.
+**Given** a Lesson or Topic selected on the Practice setup screen, **when** its drawer is open, **then** the drawer lists the 5 tiers with `FamiliarityIcon` + count, and tapping one navigates to the Library with that tier pre-applied and the originating scope respected: a Lesson/Topic → that lesson/topic pre-selected; the whole library → the All section (FR-11, FR-21). Deep-linked via route query (e.g. `/hotaru/library?tier=4&scope=lesson:L2`), and a deep link overrides the remembered last-viewed selection.
+
+**Given** a familiarity filter yields no words, **when** the list renders, **then** it shows a calm empty state that names the filter as the reason (distinct from a genuinely empty view) and the filter can be cleared in one tap.
+
+_AC restated 2026-08-26 (implementation). The original second criterion deep-linked from "the Practice **pre-session stats table**", which **Story 2.13 deleted** in favour of ramp bars; the link source is now the scope drawer. Ramp segments were deliberately not made tappable — the per-lesson mini-ramp sits inside the row `<button>`, and nesting interactive elements is invalid HTML and an accessibility problem. The **All** section is new: the original AC assumed a whole-library view that did not exist. Backend unchanged._
 
 **Given** an active filter, **when** familiarity has changed (e.g. after a session), **then** reopening/refreshing the library reflects the updated tiers (familiarity is read fresh, never stale).
+
+### Story 2.11: Show my typed answer on self-grade
+
+_Added 2026-07-19 — refines FR-14 (typed scoring). On a typed-mode miss the answer reveals for self-grade, but the learner couldn't see what they typed. Design agreed in the UX decision-log (2026-07-19): keep the answer as-is; show the submitted answer as a quiet muted line beneath it (diff-highlight variants rejected)._
+
+As a learner drilling in typed mode,
+I want to see what I typed next to the correct answer when I miss,
+So that I can fairly judge whether I was Correct, Close, or Incorrect.
+
+**Acceptance Criteria:**
+
+**Given** typed mode (EN→JP) and a non-exact submission
+**When** the answer reveals
+**Then** my submitted text shows beneath the (unchanged, still-prominent) answer as a quiet "you wrote" line — no diff/highlight; an empty submission reads "you wrote —"; self-grade mode / an exact match show no such line.
+
+### Story 2.12: Direction & Scoring on Quick Practice
+
+_Added 2026-07-19 — refines Quick Practice (2.9), which always launched JP→EN self-grade. Surface the existing Direction (JP→EN / EN→JP) and Scoring (Self-grade / Typed) controls on the Quick Practice flow too._
+
+As a learner using Quick Practice,
+I want to choose direction and scoring the same way I can for a lesson or topic,
+So that a whole-library session isn't locked to JP→EN self-grade.
+
+**Acceptance Criteria:**
+
+**Given** the Quick Practice view
+**When** it renders
+**Then** the Direction + Scoring segmented controls are present (the same as for a chosen scope), Typed stays EN→JP-only, and starting the session launches the drill with the chosen `direction`/`mode` (not hardcoded `r2m`/`self`); the scoped picker is unchanged. Frontend-only.
+
+### Story 2.13: Calm the Practice setup screen (collapsed accordion)
+
+_Added 2026-07-19 — the setup screen grows too tall once Lessons/Topics become full browsable lists. Redesign it as one calm accordion (Sally's Design 1 of the whole-screen comparison): an ambient familiarity ramp, a collapsible Quick Practice card that opens its settings inline before Start, and Lessons/Topics as collapsible lists of scope rows — one region open at a time._
+
+As a learner opening Practice on my phone,
+I want the setup screen to stay short and calm even when my Lessons and Topics lists are long,
+So that choosing what to practise never means scrolling past a wall of controls.
+
+**Acceptance Criteria:**
+
+**Given** the Practice setup screen
+**When** it renders
+**Then** whole-library familiarity shows as one compact ramp; Quick Practice is a collapsible card that opens its settings (presets/count/direction/scoring) inline with a Start button (nothing launches unseen); Lessons and Topics are collapsible lists of scope rows (mini-ramp + label + count), one region open at a time; selecting a row opens an inline Study/Practice drawer. Launch behaviour and Quick logic are unchanged; familiarity stats are computed client-side (no per-scope `overview` call). Frontend-only.
+
+### Story 2.14: Hotaru Settings — reset my progress
+
+_Added 2026-08-26 — the avatar menu has always offered a **Settings** row whose handler was an empty function (`AvatarSwitcher.onSettings()`), and `EXPERIENCE.md` left the surface "referenced but not specified … a stub for v1". A brainstorming session inventoried 16 candidate settings against "where else could this live?"; twelve belonged either where the thing is used (Practice setup, Library, Add-note) or in the platform shell (account, password, updates). **One survived.** Placed in Epic 2 (per the Story 2.10 precedent) because it is governed by Epic-2 familiarity data. See `.decision-log.md` 2026-08-26._
+
+As a learner whose familiarity has drifted away from what I actually know,
+I want to wipe my progress and start the whole library from New,
+So that I can begin again cleanly — without it counting against me, and without losing the words and notes I wrote.
+
+**Acceptance Criteria:**
+
+**Given** the avatar menu, **when** I tap **Settings**, **then** I reach a Hotaru-scoped Settings screen at `/hotaru/settings` — the dead handler is wired, and the platform's own `/settings` (container updates, dock login accounts, password) remains a separate screen.
+
+**Given** that screen, **when** it renders, **then** its single action **names the active user** ("Reset Jake's progress", never bare "Reset progress") and requires a confirm that states what is cleared **and what is kept**; cancel leaves everything untouched; there is no undo and the copy must not imply one.
+
+**Given** I confirm, **when** the reset completes, **then** the active user's `users/{id}/progress.json` is emptied — every word returns to **New** (tier 0) — while their private words, their authored notes, and all shared content are untouched (progress is earned state; authored content is owned property), and other users' progress is unaffected (FR-20, FR-21).
+
+**Given** a completed reset, **when** I return to Library or Practice, **then** familiarity reads as a fresh library with no stale tiers and no page reload.
+
+**Given** the screen, **when** it renders, **then** reset is its **only** action — no motion toggle, no export, no About block, and no practice preferences (Direction/Scoring/preset/limit want "remember last used" on the Practice setup page and stay deferred by PRD §6.2). No streak, due-count, or badge is introduced (SM-C1).
 
 ## Epic 3: Cooperative Notes
 
@@ -543,3 +609,43 @@ So that I can capture a hack the moment it strikes.
 **Given** an active drill
 **When** I add a note to the current word
 **Then** I can write it and set shared/private inline, it persists (per Story 3.1/3.2), and the drill resumes without losing my place (FR-16).
+
+### Story 3.5: Expandable library rows — topics & notes inline
+
+_Added 2026-07-16 — not from an original FR. A UX composition over Epic 3 (notes, FR-22/24) and topics (FR-6/7): a library row expands in place to show a word's topics and notes and add new ones, instead of opening a separate ⋮ dialog for each. Frontend-only (reuses the 3.1 notes and 1.7 topic endpoints/stores); coexists with the ⋮ dialogs._
+
+As a learner,
+I want to expand a word's row in the library to see its topics and notes and add new ones inline,
+So that I can review and enrich a word's context without opening a separate dialog for each.
+
+**Acceptance Criteria:**
+
+**Given** the library list
+**When** I tap a row's expand affordance (a disclosure control, not the ⋮ menu)
+**Then** the row expands in place to show the word's topics (as pills) and its notes (privacy-filtered: shared + my own private, attributed, 🔒 on private), and collapses again on tap — calm, mobile-first, Neon-themed, respecting `prefers-reduced-motion`.
+
+**Given** an expanded row
+**When** I assign/create a topic or add a note (text + Shared/Private, honouring the 300-char note limit)
+**Then** it persists via the existing topic and notes endpoints/stores and the inline lists update — matching the ⋮ dialogs' behaviour, which remain available (no regression), and staying inert in bulk-select mode.
+
+_New design for the expanded row is agreed in-story (a gated first task) with the user, then implemented._
+
+### Story 3.6: Edit or delete a note
+
+_Added 2026-07-17 — not from an original FR. Completes the note lifecycle: 3.1 add, 3.1/3.3 view, 3.2 flip visibility — but a note's text couldn't be corrected and a note couldn't be removed. Author-only, reusing the 3.2 privacy/move machinery; surfaces in the library dialog, the drill, and the inline row (all reuse `WordNotesDialog`)._
+
+As a learner,
+I want to fix the wording of a note I wrote, or remove one I no longer want,
+So that our shared tips stay accurate and uncluttered.
+
+**Acceptance Criteria:**
+
+**Given** a note I authored
+**When** I edit its text (`PATCH /api/hotaru/notes/{id}` with `{text}`) or delete it (`DELETE /api/hotaru/notes/{id}`)
+**Then** the text updates in place (id/author/visibility/created_at preserved) or the note is removed — text validated like create (trimmed, non-empty, ≤300); the extended PATCH still flips visibility (3.2) when given `{visibility}`, and edit+flip compose.
+
+**Given** a note I did not author (or a partner's private note, or an unknown id)
+**When** I try to edit or delete it
+**Then** it is rejected — 403 for a partner's shared note, 404 for an invisible/unknown note (NFR-2), with no change.
+
+_Edit/Delete affordances live on the author's own notes in `WordNotesDialog`, so they appear wherever notes do (library, drill, inline row)._

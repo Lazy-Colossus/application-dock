@@ -2,19 +2,42 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, delMock, push, replace } = vi.hoisted(() => ({
+const {
+  getMock,
+  postMock,
+  putMock,
+  patchMock,
+  delMock,
+  push,
+  replace,
+  routeQuery,
+} = vi.hoisted(() => ({
   getMock: vi.fn(),
+  postMock: vi.fn(),
+  putMock: vi.fn(),
+  patchMock: vi.fn(),
   delMock: vi.fn(),
   push: vi.fn(),
   replace: vi.fn(),
+  routeQuery: { value: {} as Record<string, string> },
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
-  api: { get: getMock, post: vi.fn(), put: vi.fn(), del: delMock },
+  api: {
+    get: getMock,
+    post: postMock,
+    put: putMock,
+    patch: patchMock,
+    del: delMock,
+  },
 }));
-vi.mock("vue-router", () => ({ useRouter: () => ({ push, replace }) }));
+vi.mock("vue-router", () => ({
+  useRouter: () => ({ push, replace }),
+  useRoute: () => ({ query: routeQuery.value }),
+}));
 
 import LibraryPage from "./LibraryPage.vue";
+import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
 import type { Word } from "@/apps/hotaru/types";
 
 const USERS = [
@@ -45,6 +68,7 @@ function word(
 
 const STUBS = {
   "q-page": { template: "<div><slot /></div>" },
+  "q-dialog": { template: "<div><slot /></div>" },
   "q-icon": { template: "<i />" },
   "q-btn": {
     template:
@@ -76,10 +100,17 @@ beforeEach(() => {
     if (path.startsWith("/hotaru/topics")) return Promise.resolve(topics);
     if (path.startsWith("/hotaru/practice/familiarity"))
       return Promise.resolve({ g1: 4 });
+    if (path.startsWith("/hotaru/notes/presence"))
+      return Promise.resolve(["g1"]); // g1 has a note
+    if (path.includes("/notes")) return Promise.resolve([]); // word notes
     return Promise.resolve(WORDS);
   });
   delMock.mockReset().mockResolvedValue(undefined);
+  postMock.mockReset().mockResolvedValue({});
+  putMock.mockReset().mockResolvedValue({});
+  patchMock.mockReset().mockResolvedValue({});
   push.mockReset();
+  routeQuery.value = {};
 });
 
 describe("LibraryPage (two-level)", () => {
@@ -92,6 +123,14 @@ describe("LibraryPage (two-level)", () => {
     );
     // Default: Genki → G → shows "thanks"
     expect(wrapper.text()).toContain("thanks");
+  });
+
+  it("shows the note cue on a word that has notes (presence)", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    expect(getMock).toHaveBeenCalledWith("/hotaru/notes/presence?user=dani");
+    // Default view (Genki → G) shows g1, which has a note.
+    expect(wrapper.find('[data-testid="row-has-note"]').exists()).toBe(true);
   });
 
   it("loads familiarity and shows each word's tier on its row", async () => {
@@ -113,6 +152,30 @@ describe("LibraryPage (two-level)", () => {
     await wrapper.find('[data-testid="sub-private"]').trigger("click");
     expect(wrapper.text()).toContain("my private word");
     expect(wrapper.text()).not.toContain("my shared word");
+  });
+
+  it("Custom words default to All — both shared and private shown", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="section-__custom__"]').trigger("click");
+    expect(wrapper.find('[data-testid="sub-all"]').exists()).toBe(true);
+    // Default subsection is "All" → both custom words are listed.
+    expect(wrapper.text()).toContain("my shared word");
+    expect(wrapper.text()).toContain("my private word");
+  });
+
+  it("shows the word count for the current section", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    // Default view (Genki → G) has a single word.
+    expect(wrapper.find('[data-testid="library-count"]').text()).toContain(
+      "Words: 1",
+    );
+    // Custom → All lists both custom words.
+    await wrapper.find('[data-testid="section-__custom__"]').trigger("click");
+    expect(wrapper.find('[data-testid="library-count"]').text()).toContain(
+      "Words: 2",
+    );
   });
 
   it("Custom → Shared shows only shared custom words", async () => {
@@ -206,6 +269,156 @@ describe("LibraryPage (two-level)", () => {
     confirm.mockRestore();
   });
 
+  it("opens the Notes dialog from a word's ⋮ menu, loads notes, and adds one", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
+    await wrapper.find('[data-testid="manage-notes"]').trigger("click");
+    await flushPromises();
+    expect(wrapper.find('[data-testid="notes-dialog"]').exists()).toBe(true);
+    expect(getMock).toHaveBeenCalledWith(
+      expect.stringContaining("/notes?user=dani"),
+    );
+    // Add a note → posts to the word's notes endpoint.
+    await wrapper.find('[data-testid="note-text-input"]').setValue("a tip");
+    await wrapper.find('[data-testid="note-add"]').trigger("click");
+    await flushPromises();
+    expect(postMock).toHaveBeenCalledWith(
+      expect.stringContaining("/notes?user=dani"),
+      { text: "a tip", visibility: "shared" },
+    );
+  });
+
+  it("flips a note's visibility from the Notes dialog", async () => {
+    getMock.mockImplementation((path: string) => {
+      if (path.startsWith("/hotaru/users")) return Promise.resolve(USERS);
+      if (path.startsWith("/hotaru/topics")) return Promise.resolve(topics);
+      if (path.startsWith("/hotaru/practice/familiarity"))
+        return Promise.resolve({ g1: 4 });
+      if (path.includes("/notes"))
+        return Promise.resolve([
+          {
+            id: "n1",
+            word_id: "g1",
+            author: "dani",
+            text: "my tip",
+            visibility: "shared",
+            created_at: "2026-01-01T00:00:00Z",
+          },
+        ]);
+      return Promise.resolve(WORDS);
+    });
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
+    await wrapper.find('[data-testid="manage-notes"]').trigger("click");
+    await flushPromises();
+    await wrapper.find('[data-testid="note-flip"]').trigger("click");
+    await flushPromises();
+    expect(patchMock).toHaveBeenCalledWith("/hotaru/notes/n1?user=dani", {
+      visibility: "private",
+    });
+  });
+
+  it("edits and deletes a note from the Notes dialog (Story 3.6)", async () => {
+    getMock.mockImplementation((path: string) => {
+      if (path.startsWith("/hotaru/users")) return Promise.resolve(USERS);
+      if (path.startsWith("/hotaru/topics")) return Promise.resolve(topics);
+      if (path.startsWith("/hotaru/practice/familiarity"))
+        return Promise.resolve({ g1: 4 });
+      if (path.includes("/notes"))
+        return Promise.resolve([
+          {
+            id: "n1",
+            word_id: "g1",
+            author: "dani",
+            text: "my tip",
+            visibility: "shared",
+            created_at: "2026-01-01T00:00:00Z",
+          },
+        ]);
+      return Promise.resolve(WORDS);
+    });
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="row-menu"]').trigger("click");
+    await wrapper.find('[data-testid="manage-notes"]').trigger("click");
+    await flushPromises();
+
+    // Edit → PATCH { text } for the note (returns the edited note so the row
+    // keeps its author and the Delete control stays available).
+    patchMock.mockResolvedValueOnce({
+      id: "n1",
+      word_id: "g1",
+      author: "dani",
+      text: "fixed tip",
+      visibility: "shared",
+      created_at: "2026-01-01T00:00:00Z",
+    });
+    await wrapper.find('[data-testid="note-edit"]').trigger("click");
+    await wrapper.find('[data-testid="note-edit-input"]').setValue("fixed tip");
+    await wrapper.find('[data-testid="note-edit-save"]').trigger("click");
+    await flushPromises();
+    expect(patchMock).toHaveBeenCalledWith("/hotaru/notes/n1?user=dani", {
+      text: "fixed tip",
+    });
+
+    // Delete (confirmed) → DELETE the note.
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    await wrapper.find('[data-testid="note-delete"]').trigger("click");
+    await flushPromises();
+    expect(delMock).toHaveBeenCalledWith("/hotaru/notes/n1?user=dani");
+    confirm.mockRestore();
+  });
+
+  it("expands a row inline; its buttons open the topics/notes dialogs (Story 3.5)", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    // Not expanded until the row body is tapped.
+    expect(wrapper.find('[data-testid="row-details"]').exists()).toBe(false);
+    await wrapper.find('[data-testid="word-row"]').trigger("click");
+    await flushPromises();
+    const panel = wrapper.find('[data-testid="row-details"]');
+    expect(panel.exists()).toBe(true);
+    // The expanded word's notes were loaded (default view = Genki → G → g1).
+    expect(getMock).toHaveBeenCalledWith(
+      expect.stringContaining("/words/g1/notes?user=dani"),
+    );
+    // Assigned topic shown; no inline text inputs (editing is via the dialogs).
+    expect(panel.find('[data-testid="row-topic-t1"]').exists()).toBe(true);
+    expect(panel.find("textarea").exists()).toBe(false);
+    expect(panel.find("input").exists()).toBe(false);
+    // ＋Note opens the notes dialog for the word.
+    await wrapper.find('[data-testid="row-add-note"]').trigger("click");
+    expect(wrapper.find('[data-testid="notes-dialog"]').exists()).toBe(true);
+  });
+
+  it("collapses an expanded row when entering select mode (3.5 AC-6)", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="word-row"]').trigger("click");
+    await flushPromises();
+    expect(wrapper.find('[data-testid="row-details"]').exists()).toBe(true);
+    await openActions(wrapper);
+    await wrapper.find('[data-testid="action-select"]').trigger("click");
+    expect(wrapper.find('[data-testid="row-details"]').exists()).toBe(false);
+  });
+
+  it("collapses + re-scopes the library when the active user switches (NFR-2)", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await wrapper.find('[data-testid="word-row"]').trigger("click");
+    await flushPromises();
+    expect(wrapper.find('[data-testid="row-details"]').exists()).toBe(true);
+    getMock.mockClear();
+    // Switch profile in-page (AvatarSwitcher just calls setActiveUser).
+    useHotaruUserStore().setActiveUser("jake");
+    await flushPromises();
+    // Panel collapsed (no stale private note) and the list reloaded for jake.
+    expect(wrapper.find('[data-testid="row-details"]').exists()).toBe(false);
+    expect(getMock).toHaveBeenCalledWith(expect.stringContaining("user=jake"));
+  });
+
   it("Topics section lists the selected topic's words", async () => {
     const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
     await flushPromises();
@@ -224,5 +437,212 @@ describe("LibraryPage (two-level)", () => {
     expect(wrapper.find('[data-testid="library-empty"]').text()).toContain(
       "No topics yet",
     );
+  });
+
+  // --- bulk actions (Story 1.9) ---------------------------------------------
+
+  function openActions(wrapper: ReturnType<typeof mount>) {
+    return wrapper.find('[data-testid="library-actions"]').trigger("click");
+  }
+
+  // Custom → Shared, enter select mode from the ⋮ menu, select the one word.
+  async function enterCustomSelect(wrapper: ReturnType<typeof mount>) {
+    await wrapper.find('[data-testid="section-__custom__"]').trigger("click");
+    await wrapper.find('[data-testid="sub-shared"]').trigger("click");
+    await openActions(wrapper);
+    await wrapper.find('[data-testid="action-select"]').trigger("click");
+    await wrapper.find('[data-testid="word-row"]').trigger("click"); // select "cs"
+  }
+
+  it("enters select mode from the ⋮ menu: checkboxes appear, the FAB hides, count tracks", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    expect(wrapper.find('[data-testid="add-word-fab"]').exists()).toBe(true);
+    await openActions(wrapper);
+    await wrapper.find('[data-testid="action-select"]').trigger("click");
+    expect(wrapper.find('[data-testid="row-select"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="add-word-fab"]').exists()).toBe(false);
+    await wrapper.find('[data-testid="word-row"]').trigger("click");
+    // The count shows in the ⋮ menu.
+    await openActions(wrapper);
+    expect(wrapper.text()).toContain("1 selected");
+  });
+
+  it("bulk-deletes the selected custom words after one confirm", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await enterCustomSelect(wrapper);
+    await openActions(wrapper);
+    await wrapper.find('[data-testid="bulk-delete"]').trigger("click");
+    await flushPromises();
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(delMock).toHaveBeenCalledWith("/hotaru/words/cs?user=dani");
+    expect(wrapper.find('[data-testid="bulk-result"]').text()).toContain(
+      "Deleted 1",
+    );
+    confirm.mockRestore();
+  });
+
+  it("bulk-adds the selection to a picked topic", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await enterCustomSelect(wrapper);
+    await openActions(wrapper);
+    await wrapper.find('[data-testid="bulk-add-topic"]').trigger("click");
+    await wrapper.find('[data-testid="bulk-topic-pick-t1"]').trigger("click");
+    await flushPromises();
+    expect(postMock).toHaveBeenCalledWith(
+      "/hotaru/topics/t1/words/cs?user=dani",
+    );
+    expect(wrapper.find('[data-testid="bulk-result"]').text()).toContain(
+      "Added 1",
+    );
+  });
+
+  it("bulk-changes the lesson via a prompt", async () => {
+    const prompt = vi.spyOn(window, "prompt").mockReturnValue("L5");
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await enterCustomSelect(wrapper);
+    await openActions(wrapper);
+    await wrapper.find('[data-testid="bulk-change-lesson"]').trigger("click");
+    await flushPromises();
+    expect(putMock).toHaveBeenCalledWith(
+      "/hotaru/words/cs?user=dani",
+      expect.objectContaining({ lesson: "L5" }),
+    );
+    prompt.mockRestore();
+  });
+
+  it("clears the selection when the section changes", async () => {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    await enterCustomSelect(wrapper);
+    // Switch section → selection cleared (still in select mode, count 0).
+    await wrapper.find('[data-testid="section-genki_3"]').trigger("click");
+    await openActions(wrapper);
+    expect(wrapper.text()).toContain("0 selected");
+  });
+});
+
+describe("LibraryPage — familiarity filter (Story 2.10)", () => {
+  // Familiarity across the fixture: g1 is Mastered (4); every other word is
+  // absent from the map and so resolves to New (0).
+  async function mountLibrary() {
+    const wrapper = mount(LibraryPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    return wrapper;
+  }
+
+  it("adds an All section listing every visible word, with no subsection tabs", async () => {
+    const wrapper = await mountLibrary();
+    await wrapper.find('[data-testid="section-__all__"]').trigger("click");
+    // Textbook, custom-shared and custom-private words all appear together.
+    expect(wrapper.text()).toContain("thanks");
+    expect(wrapper.text()).toContain("university");
+    expect(wrapper.text()).toContain("my shared word");
+    expect(wrapper.text()).toContain("my private word");
+    // Level-2 tabs are hidden for All.
+    expect(wrapper.find('[data-testid="sub-G"]').exists()).toBe(false);
+  });
+
+  it("still defaults to the first textbook lesson, not All", async () => {
+    const wrapper = await mountLibrary();
+    expect(wrapper.find('[data-testid="library-count"]').text()).toContain("1");
+    expect(wrapper.text()).toContain("thanks");
+  });
+
+  it("shows a per-tier count for the current view", async () => {
+    const wrapper = await mountLibrary();
+    await wrapper.find('[data-testid="section-__all__"]').trigger("click");
+    // 4 words: g1 Mastered, the other three New.
+    expect(wrapper.find('[data-testid="fam-filter-0"]').text()).toContain("3");
+    expect(wrapper.find('[data-testid="fam-filter-4"]').text()).toContain("1");
+  });
+
+  it("filters to a selected tier and back", async () => {
+    const wrapper = await mountLibrary();
+    await wrapper.find('[data-testid="section-__all__"]').trigger("click");
+    await wrapper.find('[data-testid="fam-filter-4"]').trigger("click");
+    expect(wrapper.text()).toContain("thanks");
+    expect(wrapper.text()).not.toContain("university");
+
+    await wrapper.find('[data-testid="fam-filter-clear"]').trigger("click");
+    expect(wrapper.text()).toContain("university");
+  });
+
+  it("unions multiple selected tiers", async () => {
+    const wrapper = await mountLibrary();
+    await wrapper.find('[data-testid="section-__all__"]').trigger("click");
+    await wrapper.find('[data-testid="fam-filter-4"]').trigger("click");
+    await wrapper.find('[data-testid="fam-filter-0"]').trigger("click");
+    // Both tiers now shown — everything is back.
+    expect(wrapper.text()).toContain("thanks");
+    expect(wrapper.text()).toContain("university");
+  });
+
+  it("composes with the section/subsection navigation", async () => {
+    const wrapper = await mountLibrary();
+    await wrapper.find('[data-testid="section-__all__"]').trigger("click");
+    await wrapper.find('[data-testid="fam-filter-0"]').trigger("click");
+    // Narrow to the Genki source while New stays selected: g1 (Mastered) is
+    // excluded, so its lesson view is empty rather than showing it.
+    await wrapper.find('[data-testid="section-genki_3"]').trigger("click");
+    expect(
+      wrapper.find('[data-testid="library-empty-filtered"]').exists(),
+    ).toBe(true);
+  });
+
+  it("distinguishes filtered-empty from never-had-words", async () => {
+    const wrapper = await mountLibrary();
+    await wrapper.find('[data-testid="section-__all__"]').trigger("click");
+    await wrapper.find('[data-testid="fam-filter-2"]').trigger("click");
+    expect(
+      wrapper.find('[data-testid="library-empty-filtered"]').exists(),
+    ).toBe(true);
+    expect(wrapper.find('[data-testid="library-empty"]').exists()).toBe(false);
+    // And it can be cleared straight from the empty state.
+    await wrapper
+      .find('[data-testid="fam-filter-clear-empty"]')
+      .trigger("click");
+    expect(wrapper.text()).toContain("thanks");
+  });
+
+  it("applies a deep link's tier and lesson scope", async () => {
+    routeQuery.value = { tier: "4", scope: "lesson:G" };
+    const wrapper = await mountLibrary();
+    expect(wrapper.text()).toContain("thanks");
+    expect(
+      wrapper.find('[data-testid="fam-filter-4"]').attributes("aria-pressed"),
+    ).toBe("true");
+  });
+
+  it("lets a deep link beat the remembered selection", async () => {
+    // First visit remembers Custom words...
+    const first = await mountLibrary();
+    await first.find('[data-testid="section-__custom__"]').trigger("click");
+    // ...then a deep link arrives for a lesson scope.
+    routeQuery.value = { tier: "0", scope: "lesson:L1" };
+    const wrapper = await mountLibrary();
+    expect(wrapper.text()).toContain("university");
+  });
+
+  it("falls back to All when the scope cannot be resolved", async () => {
+    routeQuery.value = { scope: "lesson:NOPE" };
+    const wrapper = await mountLibrary();
+    // All words listed rather than an error or an empty screen.
+    expect(wrapper.text()).toContain("thanks");
+    expect(wrapper.text()).toContain("my private word");
+  });
+
+  it("ignores out-of-range tiers in the query", async () => {
+    routeQuery.value = { tier: "9,foo", scope: "all" };
+    const wrapper = await mountLibrary();
+    // No valid tier → no filter → everything shows.
+    expect(wrapper.find('[data-testid="fam-filter-clear"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.text()).toContain("thanks");
   });
 });

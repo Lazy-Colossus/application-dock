@@ -11,7 +11,7 @@ export interface SessionData {
   name: string;
   date: string;
   created: string;
-  status: 'in_progress' | 'finalised';
+  status: "in_progress" | "finalised";
   archers: string[];
   targets: TargetScores[];
 }

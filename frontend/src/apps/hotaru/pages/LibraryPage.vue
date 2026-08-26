@@ -1,22 +1,39 @@
 <template>
   <q-page class="hotaru-app column no-wrap q-pa-md">
     <FireflyLayer />
-    <!-- Level 1: sections (each textbook source + Custom words) -->
-    <div class="library-tabs row items-center q-gutter-xs q-mb-sm">
-      <button
-        v-for="s in sections"
-        :key="s.key"
-        class="library-tab"
-        :class="{ 'library-tab--active': s.key === section }"
-        :data-testid="`section-${s.key}`"
-        @click="selectSection(s.key)"
-      >
-        {{ s.label }}
-      </button>
+    <!-- Level 1: sections (each textbook source + Custom words) + actions menu -->
+    <div class="library-sections row items-center no-wrap q-mb-sm">
+      <div class="library-tabs row items-center q-gutter-xs">
+        <button
+          v-for="s in sections"
+          :key="s.key"
+          class="library-tab"
+          :class="{ 'library-tab--active': s.key === section }"
+          :data-testid="`section-${s.key}`"
+          @click="selectSection(s.key)"
+        >
+          {{ s.label }}
+        </button>
+      </div>
+      <LibraryActionsMenu
+        :select-mode="selectMode"
+        :count="selectedIds.size"
+        :editable="editable"
+        :in-topic="section === TOPICS"
+        @select="startSelect"
+        @add-topic="bulkTopicOpen = true"
+        @remove-topic="onBulkRemoveTopic"
+        @change-lesson="onBulkChangeLesson"
+        @delete="onBulkDelete"
+        @cancel="exitSelect"
+      />
     </div>
 
     <!-- Level 2: subsections (lessons, or Shared/Private) -->
-    <div class="library-tabs row items-center q-gutter-xs q-mb-md">
+    <div
+      v-if="subsections.length > 0"
+      class="library-tabs row items-center q-gutter-xs q-mb-md"
+    >
       <button
         v-for="sub in subsections"
         :key="sub.key"
@@ -27,6 +44,42 @@
       >
         {{ sub.label }}
       </button>
+    </div>
+
+    <!-- Familiarity filter: five toggles, multi-select, empty = no filter -->
+    <div class="library-fam row items-center no-wrap q-mb-md">
+      <button
+        v-for="tier in [0, 1, 2, 3, 4]"
+        :key="tier"
+        class="library-fam__tier"
+        :class="{ 'library-fam__tier--on': activeTiers.has(tier) }"
+        type="button"
+        :aria-pressed="activeTiers.has(tier)"
+        :aria-label="`${TIER_LABELS[tier]}: ${tierCounts[tier]} words`"
+        :data-testid="`fam-filter-${tier}`"
+        @click="toggleTier(tier)"
+      >
+        <FamiliarityIcon :tier="tier" />
+        <span class="library-fam__count">{{ tierCounts[tier] }}</span>
+      </button>
+      <button
+        v-if="tierFiltered"
+        class="library-fam__clear"
+        type="button"
+        data-testid="fam-filter-clear"
+        @click="clearTiers"
+      >
+        Clear
+      </button>
+    </div>
+
+    <!-- Transient result of the last bulk action. -->
+    <div
+      v-if="bulkResult"
+      class="library-bulk-result q-mb-sm"
+      data-testid="bulk-result"
+    >
+      {{ bulkResult }}
     </div>
 
     <div
@@ -51,6 +104,21 @@
       No topics yet — add words to a topic from any row.
     </div>
     <div
+      v-else-if="visibleWords.length === 0 && tierFiltered"
+      class="library-state"
+      data-testid="library-empty-filtered"
+    >
+      No words at that familiarity here.
+      <button
+        class="library-state__clear"
+        type="button"
+        data-testid="fam-filter-clear-empty"
+        @click="clearTiers"
+      >
+        Clear filter
+      </button>
+    </div>
+    <div
       v-else-if="visibleWords.length === 0"
       class="library-state"
       data-testid="library-empty"
@@ -62,19 +130,40 @@
       class="library-list hotaru-panel column"
       data-testid="library-list"
     >
-      <WordRow
-        v-for="word in visibleWords"
-        :key="word.id"
-        :word="word"
-        :editable="editable"
-        :tier="store.familiarityTier(word.id)"
-        @edit="onEdit"
-        @delete="onDelete"
-        @topics="onManageTopics"
-      />
+      <div class="library-count" data-testid="library-count">
+        Words: {{ visibleWords.length }}
+      </div>
+      <template v-for="word in visibleWords" :key="word.id">
+        <WordRow
+          :word="word"
+          :editable="editable"
+          :tier="store.familiarityTier(word.id)"
+          :selectable="selectMode"
+          :selected="selectedIds.has(word.id)"
+          :expanded="expandedId === word.id"
+          :has-note="notesStore.hasNote(word.id)"
+          @edit="onEdit"
+          @delete="onDelete"
+          @topics="onManageTopics"
+          @notes="onManageNotes"
+          @toggle-select="onToggleSelect"
+          @toggle-expand="onToggleExpand"
+        />
+        <WordRowDetails
+          v-if="expandedId === word.id && !selectMode"
+          :word="word"
+          :topics="store.topics"
+          :notes="notesStore.notesFor(word.id)"
+          :users="userStore.users"
+          :active-user="userStore.activeUserId ?? undefined"
+          @manage-topics="onManageTopics"
+          @manage-notes="onManageNotes"
+        />
+      </template>
     </div>
 
     <q-btn
+      v-if="!selectMode"
       class="library-add"
       round
       unelevated
@@ -82,6 +171,14 @@
       aria-label="Add word"
       data-testid="add-word-fab"
       @click="onAdd"
+    />
+
+    <BulkTopicDialog
+      v-model="bulkTopicOpen"
+      :topics="store.topics"
+      :count="selectedIds.size"
+      @pick="onBulkPickTopic"
+      @create="onBulkCreateTopic"
     />
 
     <WordTopicsDialog
@@ -93,29 +190,51 @@
       @unassign="onUnassign"
       @create="onCreateTopic"
     />
+
+    <WordNotesDialog
+      v-if="notesWord"
+      v-model="notesDialogOpen"
+      :word="notesWord"
+      :notes="notesStore.notesFor(notesWord.id)"
+      :users="userStore.users"
+      :active-user="userStore.activeUserId ?? undefined"
+      @add="onAddNote"
+      @flip="onFlipNote"
+      @edit="onEditNote"
+      @delete="onDeleteNote"
+    />
   </q-page>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import FireflyLayer from "@/apps/hotaru/components/FireflyLayer.vue";
+import FamiliarityIcon from "@/apps/hotaru/components/FamiliarityIcon.vue";
 import WordRow from "@/apps/hotaru/components/WordRow.vue";
+import WordRowDetails from "@/apps/hotaru/components/WordRowDetails.vue";
 import WordTopicsDialog from "@/apps/hotaru/components/WordTopicsDialog.vue";
+import WordNotesDialog from "@/apps/hotaru/components/WordNotesDialog.vue";
+import LibraryActionsMenu from "@/apps/hotaru/components/LibraryActionsMenu.vue";
+import BulkTopicDialog from "@/apps/hotaru/components/BulkTopicDialog.vue";
 import { useHotaruLibraryStore } from "@/apps/hotaru/stores/useHotaruLibraryStore";
+import { useHotaruNotesStore } from "@/apps/hotaru/stores/useHotaruNotesStore";
 import { useHotaruUserStore } from "@/apps/hotaru/stores/useHotaruUserStore";
 import type { Visibility, Word } from "@/apps/hotaru/types";
 import "./../css/hotaru.sass";
 
 const store = useHotaruLibraryStore();
+const notesStore = useHotaruNotesStore();
 const userStore = useHotaruUserStore();
 const router = useRouter();
+const route = useRoute();
 
 // The last-viewed selection lives in the store so it survives navigating to the
 // Add-word page and back.
 const { activeSection, activeSubsection } = storeToRefs(store);
 
+const ALL = "__all__";
 const CUSTOM = "__custom__";
 const TOPICS = "__topics__";
 
@@ -138,6 +257,7 @@ const sections = computed<Tab[]>(() => {
     .textbookSources(userIds.value)
     .map((s) => ({ key: s, label: prettifySource(s) }));
   return [
+    { key: ALL, label: "All" },
     ...textbook,
     { key: CUSTOM, label: "Custom words" },
     { key: TOPICS, label: "Topics" },
@@ -148,8 +268,10 @@ const section = ref<string>(CUSTOM);
 const subsection = ref<string>("shared");
 
 const subsections = computed<Tab[]>(() => {
+  if (section.value === ALL) return [];
   if (section.value === CUSTOM) {
     return [
+      { key: "all", label: "All" },
       { key: "shared", label: "Shared" },
       { key: "private", label: "Private" },
     ];
@@ -162,8 +284,17 @@ const subsections = computed<Tab[]>(() => {
     .map((l) => ({ key: l, label: l }));
 });
 
-const visibleWords = computed(() => {
+// The section/subsection view BEFORE the familiarity filter. Tier counts are
+// derived from this, so they keep describing where the words are even while a
+// filter is narrowing what's listed.
+const scopedWords = computed(() => {
+  if (section.value === ALL) {
+    // Already exactly the active user's visible words (shared + their own private).
+    return store.words;
+  }
   if (section.value === CUSTOM) {
+    // "All" (the default) shows every custom word; Shared/Private filter it.
+    if (subsection.value === "all") return store.allCustomWords(userIds.value);
     return store.customWords(userIds.value, subsection.value as Visibility);
   }
   if (section.value === TOPICS) {
@@ -172,11 +303,52 @@ const visibleWords = computed(() => {
   return store.wordsBySourceLesson(section.value, subsection.value);
 });
 
+// Mirrors FamiliarityIcon's ramp — used for the filter's accessible names.
+const TIER_LABELS = ["New", "Learning", "Familiar", "Strong", "Mastered"];
+
+// Empty set means "no filter" — deliberately NOT "all five selected", so that
+// clearing stays distinguishable from selecting everything.
+const activeTiers = ref<Set<number>>(new Set());
+
+const tierCounts = computed(() => {
+  const counts = [0, 0, 0, 0, 0];
+  for (const w of scopedWords.value) {
+    const t = Math.min(4, Math.max(0, store.familiarityTier(w.id)));
+    counts[t] += 1;
+  }
+  return counts;
+});
+
+// Applied last, so it composes with every section rather than replacing any.
+const visibleWords = computed(() => {
+  if (activeTiers.value.size === 0) return scopedWords.value;
+  return scopedWords.value.filter((w) =>
+    activeTiers.value.has(
+      Math.min(4, Math.max(0, store.familiarityTier(w.id))),
+    ),
+  );
+});
+
+const tierFiltered = computed(() => activeTiers.value.size > 0);
+
+function toggleTier(tier: number): void {
+  const next = new Set(activeTiers.value);
+  if (next.has(tier)) next.delete(tier);
+  else next.add(tier);
+  activeTiers.value = next;
+  expandedId.value = null;
+}
+
+function clearTiers(): void {
+  activeTiers.value = new Set();
+}
+
 // Only user-added Custom words are editable — textbook words are read-only seed.
 const editable = computed(() => section.value === CUSTOM);
 
 function subsectionKeys(key: string): string[] {
-  if (key === CUSTOM) return ["shared"];
+  if (key === ALL) return [];
+  if (key === CUSTOM) return ["all", "shared", "private"];
   if (key === TOPICS) return store.topics.map((t) => t.id);
   return store.lessonsForSource(key);
 }
@@ -192,7 +364,7 @@ function ensureValidSelection(): void {
   const keys = sections.value.map((s) => s.key);
   if (!keys.includes(section.value)) {
     const firstTextbook = sections.value.find(
-      (s) => s.key !== CUSTOM && s.key !== TOPICS,
+      (s) => s.key !== ALL && s.key !== CUSTOM && s.key !== TOPICS,
     );
     selectSection(firstTextbook ? firstTextbook.key : CUSTOM);
     return;
@@ -204,10 +376,69 @@ function ensureValidSelection(): void {
 }
 
 // Persist every selection change so we can restore it after navigating away.
+// Changing the view also drops any bulk selection (keeps eligibility simple).
 watch([section, subsection], ([s, sub]) => {
   activeSection.value = s;
   activeSubsection.value = sub;
+  selectedIds.value = new Set();
+  expandedId.value = null; // collapse any open row when the view changes
 });
+
+// --- Deep link: /hotaru/library?tier=3,4&scope=lesson:L2 ------------------
+
+function parseTiers(raw: unknown): number[] {
+  if (typeof raw !== "string") return [];
+  return raw
+    .split(",")
+    .map((part) => Number.parseInt(part, 10))
+    .filter((n) => Number.isInteger(n) && n >= 0 && n <= 4);
+}
+
+// Lessons live under sources and nothing stops two sources listing an "L2",
+// so the rule is: the first source (in tab order) that lists the code.
+function sourceForLesson(lesson: string): string | null {
+  for (const src of store.textbookSources(userIds.value)) {
+    if (store.lessonsForSource(src).includes(lesson)) return src;
+  }
+  return null;
+}
+
+/** Apply `?tier=` / `?scope=`. Returns true if a scope was resolved. */
+function applyDeepLink(): boolean {
+  const tiers = parseTiers(route.query.tier);
+  if (tiers.length > 0) activeTiers.value = new Set(tiers);
+
+  const scope = route.query.scope;
+  if (typeof scope !== "string") return false;
+
+  if (scope === "all") {
+    section.value = ALL;
+    subsection.value = "";
+    return true;
+  }
+  if (scope.startsWith("lesson:")) {
+    const lesson = scope.slice("lesson:".length);
+    const src = sourceForLesson(lesson);
+    if (src === null) {
+      // Unresolvable — land on the whole library rather than erroring.
+      section.value = ALL;
+      subsection.value = "";
+      return true;
+    }
+    section.value = src;
+    subsection.value = lesson;
+    return true;
+  }
+  if (scope.startsWith("topic:")) {
+    const id = scope.slice("topic:".length);
+    section.value = TOPICS;
+    subsection.value = id;
+    return true;
+  }
+  section.value = ALL;
+  subsection.value = "";
+  return true;
+}
 
 onMounted(async () => {
   if (userStore.users.length === 0) await userStore.loadUsers();
@@ -219,8 +450,13 @@ onMounted(async () => {
     store.loadWords(userStore.activeUserId),
     store.loadTopics(),
     store.loadFamiliarity(userStore.activeUserId),
+    notesStore.loadPresence(userStore.activeUserId),
   ]);
-  if (activeSection.value !== null) {
+  // A deep link from Practice wins over the remembered selection.
+  const linked = applyDeepLink();
+  if (linked) {
+    ensureValidSelection();
+  } else if (activeSection.value !== null) {
     // Returning to the library — restore where the user was.
     section.value = activeSection.value;
     subsection.value = activeSubsection.value ?? "shared";
@@ -228,7 +464,7 @@ onMounted(async () => {
   } else {
     // First visit — default to the first textbook section.
     const firstTextbook = sections.value.find(
-      (s) => s.key !== CUSTOM && s.key !== TOPICS,
+      (s) => s.key !== ALL && s.key !== CUSTOM && s.key !== TOPICS,
     );
     selectSection(firstTextbook ? firstTextbook.key : CUSTOM);
   }
@@ -250,6 +486,97 @@ async function onDelete(word: Word): Promise<void> {
   await store.deleteWord(word.id, user);
 }
 
+// --- Bulk actions (Story 1.9) -----------------------------------------------
+
+const selectMode = ref(false);
+const selectedIds = ref<Set<string>>(new Set());
+const bulkResult = ref<string | null>(null);
+const bulkTopicOpen = ref(false);
+
+function startSelect(): void {
+  selectMode.value = true;
+  selectedIds.value = new Set();
+  bulkResult.value = null;
+  expandedId.value = null; // no inline panel left open under the select UI
+}
+
+function onToggleSelect(word: Word): void {
+  const next = new Set(selectedIds.value);
+  if (next.has(word.id)) next.delete(word.id);
+  else next.add(word.id);
+  selectedIds.value = next;
+}
+
+function exitSelect(): void {
+  selectMode.value = false;
+  selectedIds.value = new Set();
+}
+
+function summarize(verb: string, ok: number, failed: number): void {
+  bulkResult.value =
+    failed > 0 ? `${verb} ${ok} · skipped ${failed}` : `${verb} ${ok}`;
+}
+
+async function onBulkDelete(): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null) return;
+  const ids = [...selectedIds.value];
+  if (ids.length === 0) return;
+  if (!window.confirm(`Delete ${ids.length} word(s)? This can't be undone.`))
+    return;
+  summarize("Deleted", ...resultTuple(await store.bulkDelete(ids, user)));
+  exitSelect();
+}
+
+async function onBulkChangeLesson(): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null) return;
+  const ids = [...selectedIds.value];
+  if (ids.length === 0) return;
+  const lesson = window.prompt("Lesson code (e.g. L5):");
+  if (lesson === null) return; // cancelled
+  summarize(
+    "Updated",
+    ...resultTuple(await store.bulkChangeLesson(lesson.trim(), ids, user)),
+  );
+  exitSelect();
+}
+
+async function onBulkPickTopic(topicId: string): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null) return;
+  const ids = [...selectedIds.value];
+  bulkTopicOpen.value = false;
+  if (ids.length === 0) return;
+  summarize(
+    "Added",
+    ...resultTuple(await store.bulkAssignTopic(topicId, ids, user)),
+  );
+  exitSelect();
+}
+
+async function onBulkCreateTopic(name: string): Promise<void> {
+  const created = await store.createTopic(name);
+  if (created) await onBulkPickTopic(created.id);
+}
+
+async function onBulkRemoveTopic(): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null) return;
+  const ids = [...selectedIds.value];
+  if (ids.length === 0) return;
+  // In the Topics view the current subsection IS the topic id.
+  summarize(
+    "Removed",
+    ...resultTuple(await store.bulkUnassignTopic(subsection.value, ids, user)),
+  );
+  exitSelect();
+}
+
+function resultTuple(r: { ok: number; failed: number }): [number, number] {
+  return [r.ok, r.failed];
+}
+
 // --- Topic assignment dialog ------------------------------------------------
 
 const topicsWord = ref<Word | null>(null);
@@ -258,6 +585,46 @@ const topicsDialogOpen = ref(false);
 function onManageTopics(word: Word): void {
   topicsWord.value = word;
   topicsDialogOpen.value = true;
+}
+
+// --- Notes dialog (Story 3.1) -----------------------------------------------
+
+const notesWord = ref<Word | null>(null);
+const notesDialogOpen = ref(false);
+
+function onManageNotes(word: Word): void {
+  const user = userStore.activeUserId;
+  if (user === null) return;
+  notesWord.value = word;
+  notesDialogOpen.value = true;
+  void notesStore.loadNotes(word.id, user);
+}
+
+async function onAddNote(text: string, visibility: Visibility): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null || notesWord.value === null) return;
+  await notesStore.addNote(notesWord.value.id, { text, visibility }, user);
+}
+
+async function onFlipNote(
+  noteId: string,
+  visibility: Visibility,
+): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null || notesWord.value === null) return;
+  await notesStore.setVisibility(notesWord.value.id, noteId, visibility, user);
+}
+
+async function onEditNote(noteId: string, text: string): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null || notesWord.value === null) return;
+  await notesStore.editNote(notesWord.value.id, noteId, text, user);
+}
+
+async function onDeleteNote(noteId: string): Promise<void> {
+  const user = userStore.activeUserId;
+  if (user === null || notesWord.value === null) return;
+  await notesStore.deleteNote(notesWord.value.id, noteId, user);
 }
 
 async function onAssign(topicId: string, wordId: string): Promise<void> {
@@ -279,9 +646,96 @@ async function onCreateTopic(name: string): Promise<void> {
   const created = await store.createTopic(name);
   if (created) await store.assignWord(created.id, topicsWord.value.id, user);
 }
+
+// --- Inline expandable row (Story 3.5) --------------------------------------
+// Single-open: expanding one row collapses the others. On expand, lazy-load the
+// word's notes so the panel can show them (topics are already loaded).
+const expandedId = ref<string | null>(null);
+
+// A user switch re-scopes everything (NFR-2, the hard rule): collapse any open
+// row so a cached private note can't render to the new user, and reload the
+// list/familiarity for the new user. Notes reload on the next expand.
+watch(
+  () => userStore.activeUserId,
+  (u) => {
+    if (u === null) return;
+    expandedId.value = null;
+    void store.loadWords(u);
+    void store.loadFamiliarity(u);
+    void notesStore.loadPresence(u);
+  },
+);
+
+function onToggleExpand(word: Word): void {
+  if (expandedId.value === word.id) {
+    expandedId.value = null;
+    return;
+  }
+  expandedId.value = word.id;
+  const user = userStore.activeUserId;
+  if (user !== null) void notesStore.loadNotes(word.id, user);
+}
+
+// The inline panel is a read view — its ＋Topic / ＋Note buttons open the
+// existing dialogs (onManageTopics / onManageNotes) for all editing. The
+// dialogs mutate the stores, so the panel reflects the change reactively.
 </script>
 
 <style scoped lang="sass">
+.library-fam
+  gap: 6px
+
+.library-fam__tier
+  display: flex
+  align-items: center
+  gap: 5px
+  padding: 5px 9px
+  border-radius: 999px
+  border: 1px solid var(--hotaru-line-soft)
+  background: transparent
+  color: var(--hotaru-cream-soft)
+  font-size: 12px
+  cursor: pointer
+
+.library-fam__tier--on
+  border-color: rgba(56, 240, 230, 0.55)
+  background: rgba(56, 240, 230, 0.12)
+  color: var(--hotaru-cream)
+
+.library-fam__count
+  font-variant-numeric: tabular-nums
+
+.library-fam__clear
+  margin-left: auto
+  padding: 5px 10px
+  border: none
+  background: transparent
+  color: var(--hotaru-bamboo-bright)
+  font-size: 12px
+  cursor: pointer
+
+.library-state__clear
+  display: block
+  margin: 10px auto 0
+  padding: 6px 14px
+  border-radius: 999px
+  border: 1px solid rgba(56, 240, 230, 0.4)
+  background: transparent
+  color: var(--hotaru-bamboo-bright)
+  font-size: 12px
+  cursor: pointer
+
+// Section row: the scrollable tabs take the space, the ⋮ actions menu pins right.
+.library-sections
+  gap: 8px
+
+// Only the section-row tabs grow to fill the row width. (Scoping `flex: 1` to
+// this row matters: the level-2 subsection tabs are a direct child of the
+// column page, where `flex: 1` would stretch them vertically — the gap bug.)
+.library-sections .library-tabs
+  flex: 1
+  min-width: 0
+
 .library-tabs
   overflow-x: auto
 
@@ -315,9 +769,21 @@ async function onCreateTopic(name: string): Promise<void> {
 .library-list
   padding: 2px 14px
 
+// At-a-glance count for the current section — quiet, upper-right of the list.
+.library-count
+  align-self: flex-end
+  font-size: 12px
+  color: var(--hotaru-sage)
+  padding: 6px 0 2px
+  font-variant-numeric: tabular-nums
+
 // Rows already divide with a hairline; drop the last one inside the panel.
 .library-list :deep(.word-row:last-child)
   border-bottom: none
+
+.library-bulk-result
+  font-size: 13px
+  color: var(--hotaru-bamboo)
 
 .library-state
   color: var(--hotaru-cream-soft)

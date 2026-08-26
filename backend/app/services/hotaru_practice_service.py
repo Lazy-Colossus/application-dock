@@ -18,7 +18,7 @@ from app.schemas.hotaru import (
     QueueItem,
     Word,
 )
-from app.services import hotaru_vocab_service, srs
+from app.services import hotaru_vocab_service, notes_service, srs
 from app.services.srs import MAX_TIER
 
 # Calm session bound — the queue is soft-capped to this many cards (tunable).
@@ -60,12 +60,15 @@ def overview(scope: str, user: str) -> PracticeOverview:
     return PracticeOverview(scope=scope, word_count=len(words), familiarity=familiarity)
 
 
-def study_words(scope: str, user: str) -> list[Word]:
+def study_words(scope: str, user: str) -> list[QueueItem]:
     """Every word in a scope, in natural (lesson/list) order — for the un-graded
     Study browse. No SRS weighting, no session cap (the deliberate difference
-    from `build_queue`). Privacy is inherited from the scope resolution. Raises
-    ValueError on a malformed scope."""
-    return _words_for_scope(scope, user)
+    from `build_queue`). Each card carries its notes (shared + own private, like
+    the drill queue) so tips show while browsing. Privacy is inherited from the
+    scope resolution. Raises ValueError on a malformed scope."""
+    words = _words_for_scope(scope, user)
+    notes_map = notes_service.notes_for_words([w.id for w in words], user)
+    return [QueueItem(word=w, notes=notes_map.get(w.id, [])) for w in words]
 
 
 def familiarity_map(user: str) -> dict[str, int]:
@@ -121,7 +124,20 @@ def build_queue(
     ordered = sorted(words, key=sort_key)
     # limit <= 0 means "no cap" (Quick Practice's "All"); otherwise soft-cap.
     capped = ordered if limit <= 0 else ordered[:limit]
-    return [QueueItem(word=w) for w in capped]
+    # Attach each card's privacy-filtered notes (shared + this user's own private)
+    # so the drill renders them without a second fetch (Story 3.3, FR-24). Batched
+    # over just the capped words — one read of each notes file, not one per card.
+    notes_map = notes_service.notes_for_words([w.id for w in capped], user)
+    return [QueueItem(word=w, notes=notes_map.get(w.id, [])) for w in capped]
+
+
+def reset_progress(user: str) -> None:
+    """Clear the user's familiarity — every word returns to New.
+
+    Touches progress only. The user's private words and their authored notes are
+    content they wrote, not earned state, and are deliberately left alone.
+    """
+    progress_repo.clear_progress(user)
 
 
 def apply_grades(
@@ -141,7 +157,7 @@ def apply_grades(
     updated: dict[str, ProgressEntry] = {}
     for item in grades:
         entry = progress.get(item.word_id) or ProgressEntry()
-        entry = srs.next_review(entry, item.grade, now)
+        entry = srs.next_review(entry, item.grade, now, replay=item.replay)
         progress[item.word_id] = entry
         updated[item.word_id] = entry
     progress_repo.write_progress(user, progress)

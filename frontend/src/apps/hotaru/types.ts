@@ -44,6 +44,11 @@ export interface PracticeOverview {
 // One drill card. Thin wrapper (Epic 3 will attach notes); no due-debt.
 export interface QueueItem {
   word: Word;
+  // Shared notes + the active user's own private notes for this card
+  // (privacy-filtered server-side, Story 3.3) — rendered on reveal. Always
+  // present from the drill queue; optional because Study mode reuses the drill
+  // sequencer over plain words with no notes.
+  notes?: Note[];
 }
 
 // A self-grade on a drilled card.
@@ -52,4 +57,24 @@ export type DrillGrade = "correct" | "close" | "incorrect";
 export interface GradeItem {
   word_id: string;
   grade: DrillGrade;
+  // Set when re-practising a word already met earlier in the same session. The
+  // SRS engine credits a replay Correct without letting it promote a tier.
+  replay?: boolean;
+}
+
+// One graded card kept for the end-of-session recap: which word, how it went.
+export interface SessionResult {
+  word: Word;
+  grade: DrillGrade;
+}
+
+// A cooperative memory note on a word. `author` is a user id; a private note is
+// only ever returned to its author (path-privacy, NFR-2).
+export interface Note {
+  id: string;
+  word_id: string;
+  author: string;
+  text: string;
+  visibility: Visibility;
+  created_at: string;
 }

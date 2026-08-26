@@ -59,7 +59,10 @@
       data-testid="recurring-picker"
     >
       <template v-if="recurringStore.players.length === 0">
-        <p class="text-caption text-grey-5 q-pa-sm" data-testid="picker-empty-state">
+        <p
+          class="text-caption text-grey-5 q-pa-sm"
+          data-testid="picker-empty-state"
+        >
           No recurring players — add some in
           <router-link to="/archery/players" data-testid="picker-manage-link">
             Manage Players
@@ -67,7 +70,10 @@
         </p>
       </template>
       <template v-else-if="availablePlayers.length === 0">
-        <p class="text-caption text-grey-5 q-pa-sm" data-testid="picker-all-rostered">
+        <p
+          class="text-caption text-grey-5 q-pa-sm"
+          data-testid="picker-all-rostered"
+        >
           All recurring players are already in this session's roster.
         </p>
       </template>
@@ -119,11 +125,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
-import { useArcherySessionStore } from '@/apps/archery/stores/useArcherySessionStore';
-import { useRecurringPlayersStore } from '@/apps/archery/stores/useRecurringPlayersStore';
-import ArcherChip from '@/apps/archery/components/ArcherChip.vue';
+import { ref, computed, onMounted, nextTick } from "vue";
+import { useRouter } from "vue-router";
+import { useArcherySessionStore } from "@/apps/archery/stores/useArcherySessionStore";
+import { useRecurringPlayersStore } from "@/apps/archery/stores/useRecurringPlayersStore";
+import ArcherChip from "@/apps/archery/components/ArcherChip.vue";
 
 const store = useArcherySessionStore();
 const recurringStore = useRecurringPlayersStore();
@@ -134,8 +140,8 @@ const pickerOpen = ref(false);
 
 const availablePlayers = computed(() =>
   recurringStore.players.filter(
-    (n) => !store.draftRoster.some((r) => r.toLowerCase() === n.toLowerCase())
-  )
+    (n) => !store.draftRoster.some((r) => r.toLowerCase() === n.toLowerCase()),
+  ),
 );
 
 // Story 8.1: keep the cursor in the name field so several archers can be
@@ -147,7 +153,7 @@ function focusNameInput(): void {
 onMounted(() => {
   // If a session is already active in the store, go straight to scoring.
   if (store.session !== null) {
-    void router.replace('/archery/scoring');
+    void router.replace("/archery/scoring");
     return;
   }
   // Preload the session name with today's date (Story 6.2). Multiple concurrent
@@ -160,11 +166,11 @@ onMounted(() => {
 // Shared validation for both typed input and picker selection.
 function addName(name: string): boolean {
   if (!name) {
-    inputError.value = 'Archer name is required.';
+    inputError.value = "Archer name is required.";
     return false;
   }
   if (store.draftRoster.some((r) => r.toLowerCase() === name.toLowerCase())) {
-    inputError.value = 'Archer name is already used.';
+    inputError.value = "Archer name is already used.";
     return false;
   }
   inputError.value = null;
@@ -175,7 +181,7 @@ function addName(name: string): boolean {
 function addArcher(): void {
   const name = store.draftName.trim();
   if (addName(name)) {
-    store.draftName = '';
+    store.draftName = "";
   }
   focusNameInput();
 }
@@ -194,7 +200,7 @@ function removeArcher(name: string): void {
 async function confirmRoster(): Promise<void> {
   await store.createSession();
   if (!store.error) {
-    await router.push('/archery/scoring');
+    await router.push("/archery/scoring");
   }
 }
 </script>

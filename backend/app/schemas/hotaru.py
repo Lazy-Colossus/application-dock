@@ -80,14 +80,43 @@ class PracticeOverview(BaseModel):
     familiarity: list[int]
 
 
+class Note(BaseModel):
+    # A cooperative memory note on a word. A shared note lives in
+    # notes_shared.json (both users see it); a private note lives under its
+    # author's directory and is never read for anyone else (NFR-2).
+    id: str
+    word_id: str
+    author: str
+    text: str
+    visibility: Visibility
+    created_at: datetime
+
+
 class QueueItem(BaseModel):
-    # One drill card. A thin wrapper so later stories can attach per-card data
-    # (Epic 3 adds notes) without changing the endpoint shape. Queue-not-debt:
-    # carries NO due/overdue/next_review_at — "due" only orders the queue.
+    # One drill card. `notes` carries the word's shared notes + the active user's
+    # own private notes (privacy-filtered server-side, Story 3.3) so the drill
+    # renders them without a second fetch. Queue-not-debt: still NO
+    # due/overdue/next_review_at — "due" only orders the queue.
     word: Word
+    notes: list[Note] = []
 
 
 class GradeItem(BaseModel):
-    # One graded card in a batch submission.
+    # One graded card in a batch submission. `replay` marks a re-practice of a
+    # word already met earlier in the same session, which the SRS engine credits
+    # without letting it promote a tier (see srs.next_review).
     word_id: str
     grade: Grade
+    replay: bool = False
+
+
+class CreateNoteRequest(BaseModel):
+    text: str
+    visibility: Visibility = "shared"
+
+
+class UpdateNoteRequest(BaseModel):
+    # A note update: edit the text, flip the visibility, or both. Both optional
+    # (Story 3.6) — a `{visibility}`-only body is the Story 3.2 flip unchanged.
+    text: str | None = None
+    visibility: Visibility | None = None

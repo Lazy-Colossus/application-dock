@@ -1,9 +1,9 @@
-import { ref } from 'vue';
-import { defineStore } from 'pinia';
-import { api, ApiError } from '@/composables/useApi';
-import type { SessionData, SessionSummary } from '@/apps/archery/types';
+import { ref } from "vue";
+import { defineStore } from "pinia";
+import { api, ApiError } from "@/composables/useApi";
+import type { SessionData, SessionSummary } from "@/apps/archery/types";
 
-export const useArcheryHistoryStore = defineStore('archeryHistory', () => {
+export const useArcheryHistoryStore = defineStore("archeryHistory", () => {
   // List state
   const summaries = ref<SessionSummary[]>([]);
   const loading = ref(false);
@@ -18,7 +18,7 @@ export const useArcheryHistoryStore = defineStore('archeryHistory', () => {
     loading.value = true;
     error.value = null;
     try {
-      summaries.value = await api.get<SessionSummary[]>('/archery/sessions');
+      summaries.value = await api.get<SessionSummary[]>("/archery/sessions");
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e);
     } finally {
@@ -31,7 +31,9 @@ export const useArcheryHistoryStore = defineStore('archeryHistory', () => {
     detailLoading.value = true;
     detailError.value = null;
     try {
-      detail.value = await api.get<SessionData>(`/archery/sessions/${encodeURIComponent(label)}`);
+      detail.value = await api.get<SessionData>(
+        `/archery/sessions/${encodeURIComponent(label)}`,
+      );
     } catch (e: unknown) {
       if (e instanceof ApiError && e.status === 404) {
         detailError.value = `Session ${label} not found.`;
@@ -51,6 +53,6 @@ export const useArcheryHistoryStore = defineStore('archeryHistory', () => {
     detailLoading,
     detailError,
     loadHistory,
-    loadDetail
+    loadDetail,
   };
 });

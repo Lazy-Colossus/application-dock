@@ -1,5 +1,29 @@
 # Deferred Work
 
+## Deferred from: code review of 3.6.edit-or-delete-a-note (Hotaru Epic 3) — 2026-07-17
+
+- Inline note editor collapses on Save regardless of whether the PATCH succeeded — on validation/permission/network failure the typed edit is lost from the field and only a store-level `error` is set. A clean fix needs the parent to signal success back to the dialog; deferred [`frontend/src/apps/hotaru/components/WordNotesDialog.vue` onEditSave]
+- Mid-drill edit/delete are attributed to the captured `drillUser` while the dialog's Edit/Delete controls are gated on the live `activeUser` — after a mid-drill user switch they diverge and a click 403/404s silently. Transient only: the user-switch watcher redirects out of the drill (queue discarded), so the window is a sub-frame [`frontend/src/apps/hotaru/pages/DrillPage.vue`]
+- `notes_repo.remove`/`replace` are imperfect on a crash-duplicated note (a note left in BOTH files by an interrupted Story 3.2 move): `remove` deletes only the shared copy; `replace` rewrites only the file matching `note.visibility`. Depends on a prior interrupted move (rare); inherent to the JSON-no-DB store [`backend/app/repositories/notes_repo.py`]
+- Note-length count differs frontend vs backend for astral characters (JS UTF-16 units vs Python code points) — now lives in `NoteComposer`; only ever over-blocks client-side (same item recurring from 3.2/3.3–3.5) [`frontend/src/apps/hotaru/components/NoteComposer.vue`]
+- Concurrent read-modify-write on `notes_shared.json` (two users / two devices) can lose an edit or delete — last-write-wins on the whole file; inherent to the JSON store, widened by edit/delete [`backend/app/repositories/notes_repo.py`]
+
+## Deferred from: code review of 3.3 + 3.4 + 3.5 (Hotaru Epic 3) — 2026-07-16
+
+- Inline expand-load failure is indistinguishable from "no notes" — `LibraryPage.onToggleExpand` fires `void notesStore.loadNotes(...)` and ignores rejection; `WordRowDetails` shows "No notes yet" whenever the list is empty. A failed load looks noteless (user might add a duplicate). Clean fix needs per-word load/error state — `notesStore.error` is a global singleton, so it can't be attributed to one panel today [`frontend/src/apps/hotaru/pages/LibraryPage.vue`, `WordRowDetails.vue`]
+- `notes_service.notes_for_words` re-implements the shared+own-private filter/sort rather than sharing a helper with `list_for_word` — behavior-equivalent and correctly batched, maintainability drift only [`backend/app/services/notes_service.py`]
+- Note-length gate counts UTF-16 units (`String.length`) while the backend counts code points — the composer over-counts astral characters (emoji/rare kanji), over-blocking text the backend would accept. Now lives in `NoteComposer` after the 3.5 extraction (same item as the 3.2 deferral) [`frontend/src/apps/hotaru/components/NoteComposer.vue`]
+- Drill Flashcard can render the drill-owner's private note for one frame on a mid-drill user switch — the guard watch calls `router.replace` (async) so the card re-renders once with the new `activeUser` before navigating away; transient, and the note author/persistence are now pinned to `drillUser` [`frontend/src/apps/hotaru/pages/DrillPage.vue`]
+
+## Deferred from: code review of 3.2.set-and-change-a-note-s-visibility (Hotaru Epic 3) — 2026-07-16
+
+- Concurrent read-modify-write race on `notes_shared.json` (and per-user private files) — `add`/`set_visibility` do `read_* → write_*` with no lock; two overlapping writers can drop a write. Inherent to the JSON-no-DB architecture (same pattern in `vocab_repo`/`progress_repo`); low risk at 2-user household scale [`backend/app/repositories/notes_repo.py`]
+- Per-learner `user` query-param is not tied to the JWT principal — an authenticated user could pass `?user=<other>` on any Hotaru endpoint. App-wide, matches the documented no-auth/trusted-two-user design (NFR-3); privacy is a path boundary, not a security boundary. Revisit if the trust model changes [`backend/app/routers/hotaru.py`]
+- ~~`delete_word` does not cascade-delete a word's notes — orphaned notes (incl. private) accumulate.~~ **RESOLVED 2026-07-17**: `hotaru_vocab_service.delete_word` now calls `notes_service.remove_word_notes` → `notes_repo.remove_for_word` (purges the word's notes from the shared file + all users' private files). _Still deferred:_ no word-existence validation on the notes endpoints — you can still POST/GET notes for a nonexistent word id (harmless; no orphan accumulation now that delete cascades) [`backend/app/services/notes_service.py`, `backend/app/routers/hotaru.py`]
+- Note-length count differs frontend vs backend for astral-plane characters (JS UTF-16 code units vs Python code points) — only ever over-blocks client-side; a ~150-astral-kanji note the backend accepts is rejected in the UI [`frontend/src/apps/hotaru/components/WordNotesDialog.vue`]
+- `MAX_NOTE_LENGTH = 300` duplicated across Python (`notes_service.py`) and TS (`WordNotesDialog.vue`) — no clean cross-language share; commented "keep in sync", tested both sides, backend authoritative
+- Double type-assertion `payload as unknown as Record<string, unknown>` in `addNote` — pre-existing 3.1 code, unchanged by 3.2 [`frontend/src/apps/hotaru/stores/useHotaruNotesStore.ts`]
+
 ## Deferred from: code review of 1.5.jwt-authentication pass 2 (2026-06-18)
 
 - No test validates 7-day expiry claim in JWT — `test_login_success` checks only token presence; low risk, `jose.jwt.decode` validates `exp` at runtime [`backend/tests/test_auth.py:48–56`]

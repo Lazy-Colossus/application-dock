@@ -155,7 +155,7 @@ def test_study_preserves_natural_order() -> None:
     ids = [_make_word({"reading": f"よ{i}", "meaning": f"m{i}"}) for i in range(3)]
     for wid in ids:
         _assign(tid, wid)
-    got = [w["id"] for w in _study(f"topic:{tid}").json()]
+    got = [it["word"]["id"] for it in _study(f"topic:{tid}").json()]
     # Natural (assembly) order — no SRS reordering.
     assert got == ids
 
@@ -166,8 +166,21 @@ def test_study_private_word_only_for_owner() -> None:
         {"reading": "ひみつ", "meaning": "secret", "visibility": "private"}, user="dani"
     )
     _assign(tid, priv, user="dani")
-    assert priv in [w["id"] for w in _study(f"topic:{tid}", user="dani").json()]
-    assert priv not in [w["id"] for w in _study(f"topic:{tid}", user="jake").json()]
+    assert priv in [it["word"]["id"] for it in _study(f"topic:{tid}", user="dani").json()]
+    assert priv not in [it["word"]["id"] for it in _study(f"topic:{tid}", user="jake").json()]
+
+
+def test_study_cards_carry_notes() -> None:
+    tid = _create_topic("S-notes")
+    w = _make_word({"reading": "ねこ", "meaning": "cat"})
+    _assign(tid, w)
+    client.post(
+        f"/api/hotaru/words/{w}/notes",
+        params={"user": "dani"},
+        json={"text": "looks like a cat", "visibility": "shared"},
+    )
+    item = next(it for it in _study(f"topic:{tid}").json() if it["word"]["id"] == w)
+    assert [n["text"] for n in item["notes"]] == ["looks like a cat"]
 
 
 def test_study_empty_scope_is_empty_list() -> None:
@@ -240,7 +253,7 @@ def test_queue_direction_m2r_includes_every_word() -> None:
     assert r.status_code == 200
     ids = [it["word"]["id"] for it in r.json()]
     assert kanji_w in ids and kana_w in ids
-    assert all(set(it.keys()) == {"word"} for it in r.json())
+    assert all(set(it.keys()) == {"word", "notes"} for it in r.json())
 
 
 def test_queue_tiers_filter_keeps_only_matching_familiarity() -> None:
@@ -331,7 +344,8 @@ def test_queue_carries_no_due_debt() -> None:
     tid = _create_topic("Q-debt")
     _assign(tid, _make_word({"reading": "ねこ", "meaning": "cat"}))
     item = _queue(f"topic:{tid}").json()[0]
-    assert set(item.keys()) == {"word"}
+    # `notes` is the only field beyond `word` (Story 3.3); still no due-debt.
+    assert set(item.keys()) == {"word", "notes"}
     assert "due" not in item["word"]
     assert "next_review_at" not in item["word"]
 
@@ -406,6 +420,29 @@ def test_grades_are_scoped_to_the_user() -> None:
     assert progress_repo.read_progress("jake") == {}
 
 
+def test_replay_grade_credits_progress_without_promoting() -> None:
+    # Tier 1 needs 3 points; sitting on 2, a genuine Correct would promote.
+    wid = _make_word({"reading": "ねこ", "meaning": "cat"})
+    progress_repo.set_entry("dani", wid, ProgressEntry(tier=1, points=2, last_reviewed_at=NOW))
+    body = _grade([{"word_id": wid, "grade": "correct", "replay": True}]).json()[wid]
+    assert (body["tier"], body["points"]) == (1, 2)
+
+
+def test_replay_flag_defaults_to_false_when_omitted() -> None:
+    # Every existing client posts {word_id, grade} — those must still promote.
+    wid = _make_word({"reading": "いぬ", "meaning": "dog"})
+    progress_repo.set_entry("dani", wid, ProgressEntry(tier=1, points=2, last_reviewed_at=NOW))
+    body = _grade([{"word_id": wid, "grade": "correct"}]).json()[wid]
+    assert (body["tier"], body["points"]) == (2, 0)
+
+
+def test_replay_incorrect_still_drops_a_tier() -> None:
+    wid = _make_word({"reading": "とり", "meaning": "bird"})
+    progress_repo.set_entry("dani", wid, ProgressEntry(tier=3, points=5, last_reviewed_at=NOW))
+    body = _grade([{"word_id": wid, "grade": "incorrect", "replay": True}]).json()[wid]
+    assert (body["tier"], body["points"]) == (2, 0)
+
+
 def test_grade_response_has_no_due_debt() -> None:
     wid = _make_word({"reading": "ねこ", "meaning": "cat"})
     entry = _grade([{"word_id": wid, "grade": "correct"}]).json()[wid]
@@ -418,3 +455,52 @@ def test_grade_unknown_user_is_404() -> None:
 
 def test_grade_invalid_value_is_422() -> None:
     assert _grade([{"word_id": "x", "grade": "bogus"}]).status_code == 422
+
+
+# --- Story 3.3: notes ride the drill queue (privacy-filtered, server-side) ----
+
+
+def _add_note(word_id: str, text: str, visibility: str = "shared", user: str = "dani"):
+    return client.post(
+        f"/api/hotaru/words/{word_id}/notes",
+        params={"user": user},
+        json={"text": text, "visibility": visibility},
+    )
+
+
+def _queue_item(scope: str, word_id: str, user: str = "dani"):
+    for it in _queue(scope, user).json():
+        if it["word"]["id"] == word_id:
+            return it
+    return None
+
+
+def test_queue_carries_shared_and_own_private_notes_oldest_first() -> None:
+    tid = _create_topic("Q-notes")
+    w = _make_word({"reading": "ねこ", "meaning": "cat"})
+    _assign(tid, w)
+    _add_note(w, "shared tip", "shared", "dani")
+    _add_note(w, "my private hook", "private", "dani")
+    item = _queue_item(f"topic:{tid}", w)
+    assert [n["text"] for n in item["notes"]] == ["shared tip", "my private hook"]
+
+
+def test_queue_hides_the_partners_private_notes() -> None:
+    tid = _create_topic("Q-priv")
+    w = _make_word({"reading": "いぬ", "meaning": "dog"})
+    _assign(tid, w)
+    _add_note(w, "shared for both", "shared", "dani")
+    _add_note(w, "jake secret", "private", "jake")
+    texts = [n["text"] for n in _queue_item(f"topic:{tid}", w, user="dani")["notes"]]
+    assert "shared for both" in texts
+    assert "jake secret" not in texts  # NFR-2: partner's private never read
+
+
+def test_queue_note_free_word_has_empty_notes_and_no_debt_fields() -> None:
+    tid = _create_topic("Q-empty")
+    w = _make_word({"reading": "みず", "meaning": "water"})
+    _assign(tid, w)
+    item = _queue_item(f"topic:{tid}", w)
+    assert item["notes"] == []
+    # Queue-not-debt: a card is only word + notes, nothing due/overdue.
+    assert set(item.keys()) == {"word", "notes"}

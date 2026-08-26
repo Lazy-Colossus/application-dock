@@ -286,4 +286,63 @@ describe("useHotaruLibraryStore", () => {
     expect(store.wordsForTopic("t1").map((w) => w.id)).toEqual(["a"]);
     expect(store.wordsForTopic("nope")).toEqual([]);
   });
+
+  // --- bulk actions (Story 1.9) ---------------------------------------------
+
+  it("bulkDelete deletes each id and refreshes once, returning counts", async () => {
+    delMock.mockResolvedValue(undefined);
+    getMock.mockResolvedValueOnce([]); // the single reload after the batch
+    const store = useHotaruLibraryStore();
+    const r = await store.bulkDelete(["a", "b", "c"], "dani");
+    expect(delMock).toHaveBeenCalledTimes(3);
+    expect(delMock).toHaveBeenCalledWith("/hotaru/words/a?user=dani");
+    expect(getMock).toHaveBeenCalledTimes(1); // one loadWords, not per item
+    expect(r).toEqual({ ok: 3, failed: 0 });
+  });
+
+  it("bulkDelete counts a rejected item as failed", async () => {
+    delMock
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce({ detail: "seeded" });
+    getMock.mockResolvedValueOnce([]);
+    const store = useHotaruLibraryStore();
+    const r = await store.bulkDelete(["a", "seed"], "dani");
+    expect(r).toEqual({ ok: 1, failed: 1 });
+  });
+
+  it("bulkAssignTopic posts each id then reloads topics", async () => {
+    postMock.mockResolvedValue({});
+    getMock.mockResolvedValueOnce([]); // loadTopics
+    const store = useHotaruLibraryStore();
+    const r = await store.bulkAssignTopic("t1", ["a", "b"], "dani");
+    expect(postMock).toHaveBeenCalledWith(
+      "/hotaru/topics/t1/words/a?user=dani",
+    );
+    expect(postMock).toHaveBeenCalledTimes(2);
+    expect(r).toEqual({ ok: 2, failed: 0 });
+  });
+
+  it("bulkUnassignTopic deletes each membership then reloads topics", async () => {
+    delMock.mockResolvedValue(undefined);
+    getMock.mockResolvedValueOnce([]);
+    const store = useHotaruLibraryStore();
+    const r = await store.bulkUnassignTopic("t1", ["a", "b"], "dani");
+    expect(delMock).toHaveBeenCalledWith("/hotaru/topics/t1/words/a?user=dani");
+    expect(r).toEqual({ ok: 2, failed: 0 });
+  });
+
+  it("bulkChangeLesson PUTs each word with the new lesson, preserving fields", async () => {
+    getMock.mockResolvedValueOnce([word("a", "L1"), word("b", "L1")]); // loadWords
+    putMock.mockResolvedValue({});
+    getMock.mockResolvedValueOnce([]); // reload after batch
+    const store = useHotaruLibraryStore();
+    await store.loadWords("dani");
+    const r = await store.bulkChangeLesson("L5", ["a", "b"], "dani");
+    expect(putMock).toHaveBeenCalledTimes(2);
+    expect(putMock).toHaveBeenCalledWith(
+      "/hotaru/words/a?user=dani",
+      expect.objectContaining({ lesson: "L5", meaning: "meaning" }),
+    );
+    expect(r).toEqual({ ok: 2, failed: 0 });
+  });
 });

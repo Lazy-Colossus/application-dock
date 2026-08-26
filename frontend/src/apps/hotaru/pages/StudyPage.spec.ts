@@ -18,7 +18,7 @@ vi.mock("vue-router", () => ({
 }));
 
 import StudyPage from "./StudyPage.vue";
-import type { Word } from "@/apps/hotaru/types";
+import type { Note, Word } from "@/apps/hotaru/types";
 
 const USERS = [
   { id: "dani", name: "Dani" },
@@ -45,10 +45,12 @@ function word(
   };
 }
 
-let studyList: Word[] = [];
+type StudyItem = { word: Word; notes: Note[] };
+let studyList: StudyItem[] = [];
 
 const STUBS = {
   "q-page": { template: "<div><slot /></div>" },
+  "q-icon": { template: "<i />" },
   "q-btn": {
     template:
       "<button :data-testid=\"$attrs['data-testid']\" @click=\"$emit('click')\">{{ label }}</button>",
@@ -62,8 +64,8 @@ beforeEach(() => {
   localStorage.setItem("hotaru.activeUser", "dani");
   routeQuery.value = { scope: "lesson:L2" };
   studyList = [
-    word("g1", "大学", "だいがく", "university"),
-    word("g2", null, "ありがとう", "thanks"),
+    { word: word("g1", "大学", "だいがく", "university"), notes: [] },
+    { word: word("g2", null, "ありがとう", "thanks"), notes: [] },
   ];
   getMock.mockReset();
   getMock.mockImplementation((path: string) =>
@@ -101,6 +103,30 @@ describe("StudyPage", () => {
     expect(wrapper.find('[data-testid="study-done"]').exists()).toBe(true);
     await wrapper.find('[data-testid="study-done-btn"]').trigger("click");
     expect(push).toHaveBeenCalledWith("/hotaru/library");
+  });
+
+  it("shows the current word's notes on the study card", async () => {
+    studyList = [
+      {
+        word: word("g1", "大学", "だいがく", "university"),
+        notes: [
+          {
+            id: "n1",
+            word_id: "g1",
+            author: "jake",
+            text: "looks like a gate",
+            visibility: "shared",
+            created_at: "2026-01-01T00:00:00Z",
+          },
+        ],
+      },
+    ];
+    const wrapper = mount(StudyPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    const notes = wrapper.find('[data-testid="study-notes"]');
+    expect(notes.exists()).toBe(true);
+    expect(notes.text()).toContain("looks like a gate");
+    expect(notes.text()).toContain("Jake");
   });
 
   it("shows the empty state when the scope has no words", async () => {

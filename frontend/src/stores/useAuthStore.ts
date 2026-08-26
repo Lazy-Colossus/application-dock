@@ -1,15 +1,15 @@
-import { computed, ref } from 'vue';
-import { defineStore } from 'pinia';
-import { ApiError } from '@/composables/useApi';
+import { computed, ref } from "vue";
+import { defineStore } from "pinia";
+import { ApiError } from "@/composables/useApi";
 
-const TOKEN_KEY = 'auth_token';
+const TOKEN_KEY = "auth_token";
 
 interface TokenResponse {
   access_token: string;
   token_type: string;
 }
 
-export const useAuthStore = defineStore('auth', () => {
+export const useAuthStore = defineStore("auth", () => {
   const token = ref<string | null>(localStorage.getItem(TOKEN_KEY));
   const username = ref<string | null>(null);
   const loading = ref(false);
@@ -18,7 +18,11 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => token.value !== null);
 
   function messageFrom(e: unknown): string {
-    return e instanceof ApiError ? e.detail : e instanceof Error ? e.message : String(e);
+    return e instanceof ApiError
+      ? e.detail
+      : e instanceof Error
+        ? e.message
+        : String(e);
   }
 
   async function login(user: string, password: string): Promise<void> {
@@ -26,10 +30,10 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null;
     try {
       // Import lazily to avoid circular dependency with useApi
-      const { api } = await import('@/composables/useApi');
-      const data = await api.post<TokenResponse>('/auth/login', {
+      const { api } = await import("@/composables/useApi");
+      const data = await api.post<TokenResponse>("/auth/login", {
         username: user,
-        password
+        password,
       });
       token.value = data.access_token;
       username.value = user;
@@ -50,13 +54,22 @@ export const useAuthStore = defineStore('auth', () => {
   async function restoreSession(): Promise<void> {
     if (!token.value || username.value !== null) return;
     try {
-      const { api } = await import('@/composables/useApi');
-      const data = await api.get<{ username: string }>('/auth/me');
+      const { api } = await import("@/composables/useApi");
+      const data = await api.get<{ username: string }>("/auth/me");
       username.value = data.username;
     } catch {
       // 401 handled by useApi (logout + redirect); other errors are non-fatal
     }
   }
 
-  return { token, username, loading, error, isAuthenticated, login, logout, restoreSession };
+  return {
+    token,
+    username,
+    loading,
+    error,
+    isAuthenticated,
+    login,
+    logout,
+    restoreSession,
+  };
 });

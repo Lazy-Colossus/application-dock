@@ -14,7 +14,11 @@
         </div>
 
         <!-- The practiced Japanese word, brightest on the card, glowing cyan. -->
-        <div class="flashcard__jp" data-testid="card-prompt">
+        <div
+          class="flashcard__jp"
+          :class="{ 'flashcard__jp--kana': !word.kanji }"
+          data-testid="card-prompt"
+        >
           {{ word.kanji ?? word.reading }}
         </div>
 
@@ -44,15 +48,60 @@
           class="flashcard__answer column flex-center"
           data-testid="card-answer"
         >
-          <div class="flashcard__jp">{{ word.kanji ?? word.reading }}</div>
+          <div
+            class="flashcard__jp"
+            :class="{ 'flashcard__jp--kana': !word.kanji }"
+          >
+            {{ word.kanji ?? word.reading }}
+          </div>
           <div v-if="word.kanji" class="flashcard__reading">
             {{ word.reading }}
           </div>
           <div v-if="word.romaji && showRomaji" class="flashcard__romaji">
             {{ word.romaji }}
           </div>
+
+          <!-- What the learner typed (Story 2.11) — quiet, under the answer, so
+               a near-miss can be self-graded fairly. Only in typed mode; `null`
+               means self-grade / JP→EN (nothing submitted). -->
+          <div
+            v-if="submitted !== null"
+            class="flashcard__submitted"
+            data-testid="card-submitted"
+          >
+            <span class="flashcard__submitted-label">you wrote</span>
+            <span class="flashcard__submitted-text">{{
+              submitted || "—"
+            }}</span>
+          </div>
         </div>
       </template>
+    </div>
+
+    <!-- Partner's shared notes + my own private notes, revealed with the answer
+         so a tip lands right when I need it (Story 3.3). Never on the prompt. -->
+    <div
+      v-if="revealed && notes.length"
+      class="flashcard__notes column"
+      data-testid="card-notes"
+    >
+      <div
+        v-for="n in notes"
+        :key="n.id"
+        class="flashcard__note"
+        data-testid="card-note"
+      >
+        <span class="flashcard__note-who">
+          <q-icon
+            v-if="n.visibility === 'private'"
+            name="lock"
+            size="12px"
+            class="flashcard__note-lock"
+          />
+          {{ displayName(n) }}
+        </span>
+        <span class="flashcard__note-text">{{ n.text }}</span>
+      </div>
     </div>
 
     <!-- Info pills lined along the card's bottom edge (reveal side). -->
@@ -68,9 +117,10 @@
 </template>
 
 <script setup lang="ts">
-import type { Word } from "@/apps/hotaru/types";
+import type { HotaruUser, Note, Word } from "@/apps/hotaru/types";
+import { useNoteDisplay } from "@/apps/hotaru/composables/useNoteDisplay";
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     word: Word;
     revealed: boolean;
@@ -78,8 +128,28 @@ withDefaults(
     direction?: "r2m" | "m2r";
     showReading?: boolean;
     showRomaji?: boolean;
+    // The word's notes (shared + my own private), shown on reveal (Story 3.3).
+    notes?: Note[];
+    users?: HotaruUser[];
+    activeUser?: string;
+    // The learner's typed answer, shown under the reveal (Story 2.11). `null` =
+    // nothing submitted (self-grade / JP→EN); `""` = typed nothing → em-dash.
+    submitted?: string | null;
   }>(),
-  { direction: "r2m", showReading: false, showRomaji: false },
+  {
+    direction: "r2m",
+    showReading: false,
+    showRomaji: false,
+    notes: () => [],
+    users: () => [],
+    activeUser: undefined,
+    submitted: null,
+  },
+);
+
+const { displayName } = useNoteDisplay(
+  () => props.users,
+  () => props.activeUser,
 );
 </script>
 
@@ -116,6 +186,11 @@ withDefaults(
   color: var(--hotaru-bamboo)
   text-shadow: 0 0 32px rgba(56, 240, 230, 0.6), 0 0 16px rgba(56, 240, 230, 0.5)
 
+// Kana-only headwords run longer than a compact kanji — size them down a step
+// so they don't overwhelm the card.
+.flashcard__jp--kana
+  font-size: 44px
+
 // English prompt (EN→JP production): a clear, calm headword — not the cyan JP
 // glow, which is reserved for the Japanese being recalled.
 .flashcard__prompt-en
@@ -142,6 +217,54 @@ withDefaults(
 
 .flashcard__meaning
   font-size: 20px
+  color: var(--hotaru-cream-soft)
+
+// The learner's typed attempt — deliberately quiet + subordinate to the answer
+// above it (a reference, not a competitor). No highlight, no verdict colour.
+.flashcard__submitted
+  margin-top: 10px
+  display: flex
+  align-items: baseline
+  gap: 8px
+
+.flashcard__submitted-label
+  font-size: 11px
+  font-weight: 600
+  letter-spacing: 0.14em
+  text-transform: uppercase
+  color: var(--hotaru-sage)
+
+.flashcard__submitted-text
+  font-size: 20px
+  color: var(--hotaru-cream-soft)
+
+// Notes strip on the reveal side — calm and compact so it never dominates the
+// word. Bottom margin clears the absolutely-positioned pills row.
+.flashcard__notes
+  gap: 6px
+  margin: 6px 2px 34px
+  padding-top: 10px
+  border-top: 1px solid rgba(155, 107, 255, 0.18)
+  max-height: 26vh
+  overflow-y: auto
+  text-align: left
+
+.flashcard__note
+  font-size: 13px
+  line-height: 1.35
+
+.flashcard__note-who
+  display: inline-flex
+  align-items: center
+  gap: 3px
+  font-weight: 600
+  color: var(--hotaru-sage)
+  margin-right: 6px
+
+.flashcard__note-lock
+  color: var(--hotaru-amber-private)
+
+.flashcard__note-text
   color: var(--hotaru-cream-soft)
 
 // Tiny category-style pills, bottom-left, with a hairline rule above.

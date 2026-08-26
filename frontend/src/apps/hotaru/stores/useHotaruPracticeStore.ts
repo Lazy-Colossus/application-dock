@@ -6,14 +6,14 @@ import type {
   GradeItem,
   PracticeOverview,
   QueueItem,
-  Word,
 } from "@/apps/hotaru/types";
 
 export const useHotaruPracticeStore = defineStore("hotaruPractice", () => {
   const overview = ref<PracticeOverview | null>(null);
   const queue = ref<QueueItem[]>([]);
-  // Every word in a scope, natural order, for the un-graded Study browse (2.8).
-  const study = ref<Word[]>([]);
+  // Every word in a scope, natural order, for the un-graded Study browse (2.8);
+  // each carries its notes (Story: notes on the study surface).
+  const study = ref<QueueItem[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -85,12 +85,12 @@ export const useHotaruPracticeStore = defineStore("hotaruPractice", () => {
   }
 
   // Study list for a scope — every word, natural order, no cap (mirrors
-  // loadQueue but returns Word[] and applies no SRS ordering).
+  // loadQueue but applies no SRS ordering). Carries per-card notes like the queue.
   async function loadStudy(scope: string, user: string): Promise<void> {
     loading.value = true;
     error.value = null;
     try {
-      study.value = await api.get<Word[]>(
+      study.value = await api.get<QueueItem[]>(
         `/hotaru/practice/study?scope=${encodeURIComponent(scope)}&user=${encodeURIComponent(user)}`,
       );
     } catch (e) {

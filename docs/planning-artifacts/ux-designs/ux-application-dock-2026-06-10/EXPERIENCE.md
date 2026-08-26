@@ -2,7 +2,7 @@
 title: "Hotaru — Experience (EXPERIENCE.md)"
 status: final
 created: 2026-06-10
-updated: 2026-07-06
+updated: 2026-08-26
 sources:
   - ../../prds/prd-application-dock-2026-06-10/prd.md
   - ../../briefs/brief-application-dock-2026-06-10/brief.md
@@ -152,6 +152,6 @@ Named-protagonist flows mirroring the PRD's UJ IDs verbatim.
 
 **Coverage gaps / notes:**
 - **FR-9 Genki seeding** is an offline pipeline, explicitly out-of-app (PRD §6.2). It has no dedicated UI surface; it surfaces only as preloaded Lessons in Library/picker. Noted, not a screen.
-- **Settings surface** (reached from the avatar menu) is referenced but not specified — PRD gives it no FRs beyond the menu entry; left as a stub for v1 (consistent with platform; Phase II "✨ improve" affordance, PRD §10, would live near Word detail and is intentionally absent in v1).
+- **Settings surface** (reached from the avatar menu) is **specified as of 2026-08-26** — no longer a stub. PRD gives it no FRs, so its scope was decided by inventory (see `.decision-log.md`, 2026-08-26): it holds **exactly one action — reset the active User's familiarity progress**, and deliberately nothing else. Sixteen candidates were tested against "where else could this live?"; twelve belonged either **where the thing is used** (Practice setup, Library, Add-note) or in the **platform shell** (account, password, updates). Only a destructive, User-scoped, rare action needs this surface. The action **names the User whose progress it clears** ("Reset Jake's progress") and confirms before acting; it clears familiarity only (`{colors.fam-1-new}`–`{colors.fam-5-mastered}` state), never authored Words or Notes — progress is earned state, authored content is owned property. Frames as the *queue-not-debt* stance applied wholesale: starting over costs nothing and is held against no one (PRD SM-C1). *(The Phase II "✨ improve" affordance, PRD §10, is unrelated — it lives near Word detail and stays absent in v1.)*
 - **Persisted practice preferences** are explicitly out of scope (PRD §6.2) — Direction/Scoring are per-session, reflected in the Direction-toggle rule.
 - **Token names** are reconciled against the locked `DESIGN.md`: `{colors.lamp-yellow}`, `{colors.cyan}`, `{colors.fam-1-new}`–`{colors.fam-5-mastered}`, `{colors.firefly}`, the drill-card glows `{components.drill-card.ambient-glow}` / `{components.drill-card.jp-glow}`, and avatar fills `{components.avatar.bg-jake}` / `{components.avatar.bg-dani}` all resolve against `DESIGN.md`.

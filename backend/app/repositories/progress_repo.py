@@ -30,6 +30,16 @@ def write_progress(user: str, entries: dict[str, ProgressEntry]) -> None:
     )
 
 
+def clear_progress(user: str) -> None:
+    """Reset the user's familiarity by emptying their progress map.
+
+    An empty map is exactly what `read_progress` defaults to for a user who has
+    never been graded, so every word reads back as New. Written (not unlinked)
+    so the mutation stays on the atomic write path.
+    """
+    write_progress(user, {})
+
+
 def get_entry(user: str, word_id: str) -> ProgressEntry | None:
     return read_progress(user).get(word_id)
 

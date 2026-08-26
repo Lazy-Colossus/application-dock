@@ -43,4 +43,44 @@ describe("StudyCard", () => {
     expect(head.classes()).toContain("study-card__jp--kana");
     expect(wrapper.text()).toContain("thanks");
   });
+
+  it("renders the word's notes (attributed, 🔒 on private), or nothing when none", () => {
+    const bare = mount(StudyCard, { props: { word: word() } });
+    expect(bare.find('[data-testid="study-notes"]').exists()).toBe(false);
+
+    const withNotes = mount(StudyCard, {
+      props: {
+        word: word(),
+        users: [
+          { id: "dani", name: "Dani" },
+          { id: "jake", name: "Jake" },
+        ],
+        activeUser: "dani",
+        notes: [
+          {
+            id: "n1",
+            word_id: "genki_3-L1-0001",
+            author: "jake",
+            text: "gate hook",
+            visibility: "shared",
+            created_at: "2026-01-01T00:00:00Z",
+          },
+          {
+            id: "n2",
+            word_id: "genki_3-L1-0001",
+            author: "dani",
+            text: "my private hook",
+            visibility: "private",
+            created_at: "2026-01-02T00:00:00Z",
+          },
+        ],
+      },
+      global: { stubs: { "q-icon": { template: "<i />" } } },
+    });
+    const notes = withNotes.find('[data-testid="study-notes"]');
+    expect(notes.text()).toContain("gate hook");
+    expect(notes.text()).toContain("Jake");
+    expect(notes.text()).toContain("You"); // own note
+    expect(notes.find(".study-card__note-lock").exists()).toBe(true);
+  });
 });

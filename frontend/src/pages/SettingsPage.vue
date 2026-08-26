@@ -24,8 +24,18 @@
           The page will lose connection briefly — refresh once it's back.
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn flat label="Cancel" data-testid="cancel-btn" @click="confirmOpen = false" />
-          <q-btn color="primary" label="Confirm" data-testid="confirm-btn" @click="onConfirm" />
+          <q-btn
+            flat
+            label="Cancel"
+            data-testid="cancel-btn"
+            @click="confirmOpen = false"
+          />
+          <q-btn
+            color="primary"
+            label="Confirm"
+            data-testid="confirm-btn"
+            @click="onConfirm"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -91,9 +101,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { Notify } from 'quasar';
-import { api, ApiError } from '@/composables/useApi';
+import { ref, computed, onMounted } from "vue";
+import { Notify } from "quasar";
+import { api, ApiError } from "@/composables/useApi";
 
 const checking = ref(true);
 const available = ref(false);
@@ -102,27 +112,32 @@ const confirmOpen = ref(false);
 const updateTriggered = ref(false);
 
 const usernames = ref<string[]>([]);
-const newUsername = ref('');
+const newUsername = ref("");
 
-const currentPassword = ref('');
-const newPassword = ref('');
-const confirmPassword = ref('');
+const currentPassword = ref("");
+const newPassword = ref("");
+const confirmPassword = ref("");
 const confirmMismatch = ref(false);
 
-const btnLabel = computed(() => (available.value ? 'Update applications' : 'Update not available'));
+const btnLabel = computed(() =>
+  available.value ? "Update applications" : "Update not available",
+);
 
 onMounted(async () => {
   try {
-    const status = await api.get<{ available: boolean }>('/shell/update-status');
+    const status = await api.get<{ available: boolean }>(
+      "/shell/update-status",
+    );
     available.value = status.available;
   } catch (e) {
-    updateError.value = e instanceof ApiError ? e.detail : 'Could not reach server';
+    updateError.value =
+      e instanceof ApiError ? e.detail : "Could not reach server";
   } finally {
     checking.value = false;
   }
 
   try {
-    const data = await api.get<{ usernames: string[] }>('/auth/users');
+    const data = await api.get<{ usernames: string[] }>("/auth/users");
     usernames.value = data.usernames;
   } catch {
     // Non-critical — USERS section will remain empty on error
@@ -138,18 +153,18 @@ function onUpdateClick() {
 async function onConfirm() {
   confirmOpen.value = false;
   try {
-    await api.post<{ detail: string }>('/shell/update');
+    await api.post<{ detail: string }>("/shell/update");
     updateTriggered.value = true;
     Notify.create({
-      type: 'positive',
+      type: "positive",
       message: "Update started — connection may drop. Refresh once it's back.",
-      persistent: true,
-      actions: [{ label: 'Dismiss', color: 'white' }],
+      timeout: 0,
+      actions: [{ label: "Dismiss", color: "white" }],
     });
   } catch (e) {
     if (e instanceof ApiError) {
       Notify.create({
-        type: 'negative',
+        type: "negative",
         message: e.detail,
       });
     }
@@ -163,17 +178,20 @@ async function onChangePassword() {
   }
   confirmMismatch.value = false;
   try {
-    await api.post('/auth/change-password', {
+    await api.post("/auth/change-password", {
       current_password: currentPassword.value,
       new_password: newPassword.value,
     });
-    currentPassword.value = '';
-    newPassword.value = '';
-    confirmPassword.value = '';
-    Notify.create({ type: 'positive', message: 'Password changed successfully.' });
+    currentPassword.value = "";
+    newPassword.value = "";
+    confirmPassword.value = "";
+    Notify.create({
+      type: "positive",
+      message: "Password changed successfully.",
+    });
   } catch (e) {
     if (e instanceof ApiError) {
-      Notify.create({ type: 'negative', message: e.detail });
+      Notify.create({ type: "negative", message: e.detail });
     }
   }
 }
@@ -181,19 +199,19 @@ async function onChangePassword() {
 async function onAddUser() {
   const username = newUsername.value.trim();
   try {
-    await api.post<{ username: string }>('/auth/users', { username });
+    await api.post<{ username: string }>("/auth/users", { username });
     usernames.value = [...usernames.value, username];
-    newUsername.value = '';
+    newUsername.value = "";
     Notify.create({
-      type: 'positive',
+      type: "positive",
       message: `User created. Temporary password: tmp123 — ask them to change it after first login.`,
-      persistent: true,
-      actions: [{ label: 'Dismiss', color: 'white' }],
+      timeout: 0,
+      actions: [{ label: "Dismiss", color: "white" }],
     });
   } catch (e) {
     if (e instanceof ApiError) {
       Notify.create({
-        type: 'negative',
+        type: "negative",
         message: e.detail,
       });
     }

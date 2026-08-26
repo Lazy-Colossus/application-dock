@@ -29,7 +29,10 @@
             :disable="authStore.loading"
           />
 
-          <div v-if="authStore.error" class="text-negative q-mb-md text-caption">
+          <div
+            v-if="authStore.error"
+            class="text-negative q-mb-md text-caption"
+          >
             {{ authStore.error }}
           </div>
 
@@ -47,23 +50,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useAuthStore } from '@/stores/useAuthStore';
+import { ref } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
 
-const username = ref('');
-const password = ref('');
+const username = ref("");
+const password = ref("");
 
 async function handleLogin(): Promise<void> {
   await authStore.login(username.value, password.value);
   if (authStore.isAuthenticated) {
-    const raw = typeof route.query.redirect === 'string' ? route.query.redirect : '/';
+    const raw =
+      typeof route.query.redirect === "string" ? route.query.redirect : "/";
     // Reject absolute URLs and protocol-relative paths to prevent open redirect
-    const redirect = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/';
+    const redirect = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
     await router.push(redirect);
   }
 }
