@@ -24,4 +24,10 @@ export const apps: AppDescriptor[] = [
     icon: "school",
     route: "/hotaru",
   },
+  {
+    id: "context-switch",
+    label: "Context-Switch",
+    icon: "swap_horiz",
+    route: "/context-switch",
+  },
 ];

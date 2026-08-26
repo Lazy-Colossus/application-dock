@@ -1,0 +1,1150 @@
+"""Integration tests for the Context-Switch list endpoints (Story 1.3)."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+from fastapi.testclient import TestClient
+
+from app.core.dependencies import get_current_user
+from app.main import app
+from app.repositories import context_switch_repo
+
+client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def patch_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "data_dir", tmp_path)
+    monkeypatch.setattr(context_switch_repo.settings, "data_dir", tmp_path)
+
+
+# ── GET /lists ────────────────────────────────────────────────────────────────
+
+
+def test_list_lists_empty_for_new_user() -> None:
+    resp = client.get("/api/context-switch/lists")
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+# ── POST /lists ───────────────────────────────────────────────────────────────
+
+
+def test_create_list_returns_created_list() -> None:
+    resp = client.post("/api/context-switch/lists", json={"name": "Work"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["id"].startswith("l-")
+    assert body["name"] == "Work"
+    assert body["todos"] == []
+    assert body["grid"]["columns"] >= 1
+    assert body["grid"]["rows"] >= 1
+
+
+def test_create_then_list_shows_summary() -> None:
+    client.post("/api/context-switch/lists", json={"name": "Work"})
+    resp = client.get("/api/context-switch/lists")
+    body = resp.json()
+    assert len(body) == 1
+    assert body[0]["name"] == "Work"
+    assert body[0]["active_count"] == 0
+    assert body[0]["id"].startswith("l-")
+
+
+def test_create_list_trims_name() -> None:
+    resp = client.post("/api/context-switch/lists", json={"name": "  Groceries  "})
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "Groceries"
+
+
+def test_create_list_blank_name_rejected() -> None:
+    resp = client.post("/api/context-switch/lists", json={"name": "   "})
+    assert resp.status_code == 422
+
+
+def test_create_second_list_keeps_first() -> None:
+    client.post("/api/context-switch/lists", json={"name": "One"})
+    client.post("/api/context-switch/lists", json={"name": "Two"})
+    resp = client.get("/api/context-switch/lists")
+    names = sorted(item["name"] for item in resp.json())
+    assert names == ["One", "Two"]
+
+
+# ── per-user isolation (auth-scoped file) ─────────────────────────────────────
+
+
+def test_lists_are_isolated_per_user() -> None:
+    client.post("/api/context-switch/lists", json={"name": "Mine"})
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        resp = client.get("/api/context-switch/lists")
+        assert resp.json() == []
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+
+# ── PUT /lists/{id} — rename (Story 1.4) ──────────────────────────────────────
+
+
+def _create(name: str) -> str:
+    return client.post("/api/context-switch/lists", json={"name": name}).json()["id"]
+
+
+def test_rename_list_updates_name() -> None:
+    list_id = _create("Old")
+    resp = client.put(f"/api/context-switch/lists/{list_id}", json={"name": "New"})
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "New"
+
+    summaries = client.get("/api/context-switch/lists").json()
+    assert summaries[0]["name"] == "New"
+
+
+def test_rename_list_trims_name() -> None:
+    list_id = _create("Old")
+    resp = client.put(f"/api/context-switch/lists/{list_id}", json={"name": "  Trimmed  "})
+    assert resp.json()["name"] == "Trimmed"
+
+
+def test_rename_list_blank_name_rejected() -> None:
+    list_id = _create("Old")
+    resp = client.put(f"/api/context-switch/lists/{list_id}", json={"name": "   "})
+    assert resp.status_code == 422
+
+
+def test_rename_unknown_list_404() -> None:
+    resp = client.put("/api/context-switch/lists/l-nope", json={"name": "X"})
+    assert resp.status_code == 404
+
+
+def test_rename_is_scoped_to_own_lists() -> None:
+    list_id = _create("Mine")
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        # Another user cannot rename a list that isn't in their own file;
+        # a real (but not-mine) id is simply "not found".
+        resp = client.put(f"/api/context-switch/lists/{list_id}", json={"name": "Hijacked"})
+        assert resp.status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+    # The owner's list name is untouched.
+    summaries = client.get("/api/context-switch/lists").json()
+    assert summaries[0]["name"] == "Mine"
+
+
+# ── DELETE /lists/{id} (Story 1.4) ────────────────────────────────────────────
+
+
+def test_delete_list_removes_it() -> None:
+    list_id = _create("Doomed")
+    resp = client.delete(f"/api/context-switch/lists/{list_id}")
+    assert resp.status_code == 204
+    assert client.get("/api/context-switch/lists").json() == []
+
+
+def test_delete_unknown_list_404() -> None:
+    resp = client.delete("/api/context-switch/lists/l-nope")
+    assert resp.status_code == 404
+
+
+def test_delete_is_scoped_to_own_lists() -> None:
+    list_id = _create("Mine")
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        # Another user cannot delete a list that isn't in their own file.
+        resp = client.delete(f"/api/context-switch/lists/{list_id}")
+        assert resp.status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+    # The owner's list is untouched.
+    assert len(client.get("/api/context-switch/lists").json()) == 1
+
+
+# ── GET /lists/{id} + POST /lists/{id}/todos (Story 2.1) ──────────────────────
+
+
+def _add_todo(list_id: str, header: str, **extra: object) -> dict:
+    body: dict[str, object] = {"header": header, **extra}
+    return client.post(f"/api/context-switch/lists/{list_id}/todos", json=body).json()
+
+
+def test_get_list_returns_list_with_todos() -> None:
+    list_id = _create("Work")
+    resp = client.get(f"/api/context-switch/lists/{list_id}")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["id"] == list_id
+    assert body["name"] == "Work"
+    assert body["todos"] == []
+
+
+def test_get_unknown_list_404() -> None:
+    assert client.get("/api/context-switch/lists/l-nope").status_code == 404
+
+
+def test_add_todo_returns_active_todo() -> None:
+    list_id = _create("Work")
+    resp = client.post(
+        f"/api/context-switch/lists/{list_id}/todos",
+        json={"header": "Ship it", "color": "#aabbcc"},
+    )
+    assert resp.status_code == 200
+    todo = resp.json()
+    assert todo["id"].startswith("t-")
+    assert todo["header"] == "Ship it"
+    assert "body" not in todo  # Story 2.8 removed the body field entirely.
+    assert todo["color"] == "#aabbcc"
+    assert todo["status"] == "active"
+    assert todo["order"] == 0
+    assert todo["updates"] == []
+    assert todo["archived_at"] is None
+
+
+def test_added_todo_appears_in_get_list() -> None:
+    list_id = _create("Work")
+    _add_todo(list_id, "First")
+    todos = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]
+    assert [t["header"] for t in todos] == ["First"]
+
+
+def test_add_todo_appends_at_end_of_order() -> None:
+    list_id = _create("Work")
+    for header in ("A", "B", "C"):
+        _add_todo(list_id, header)
+    todos = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]
+    assert [t["header"] for t in todos] == ["A", "B", "C"]
+    assert [t["order"] for t in todos] == [0, 1, 2]
+
+
+def test_add_todo_trims_header() -> None:
+    list_id = _create("Work")
+    assert _add_todo(list_id, "  Padded  ")["header"] == "Padded"
+
+
+def test_add_todo_blank_header_rejected() -> None:
+    list_id = _create("Work")
+    resp = client.post(f"/api/context-switch/lists/{list_id}/todos", json={"header": "   "})
+    assert resp.status_code == 422
+
+
+def test_add_todo_has_no_body_field() -> None:
+    list_id = _create("Work")
+    assert "body" not in _add_todo(list_id, "No body")
+
+
+def test_add_todo_with_first_update_seeds_the_log() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Task", update="kicked off")
+    assert [u["text"] for u in todo["updates"]] == ["kicked off"]
+    assert todo["updates"][0]["id"].startswith("u-")
+
+
+def test_add_todo_without_first_update_has_empty_log() -> None:
+    list_id = _create("Work")
+    assert _add_todo(list_id, "Task")["updates"] == []
+
+
+def test_add_todo_blank_first_update_is_ignored() -> None:
+    list_id = _create("Work")
+    assert _add_todo(list_id, "Task", update="   ")["updates"] == []
+
+
+def test_legacy_body_on_disk_is_dropped_on_read() -> None:
+    # A pre-2.8 record carries `body`; the model ignores the extra key (AC 5).
+    list_id = _create("Work")
+    _add_todo(list_id, "Legacy")
+    path = context_switch_repo._user_path("test_user")
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw["lists"][0]["todos"][0]["body"] = "legacy notes"
+    path.write_text(json.dumps(raw), encoding="utf-8")
+
+    reloaded = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]
+    assert "body" not in reloaded
+    assert reloaded["header"] == "Legacy"
+
+
+def test_add_todo_invalid_color_rejected() -> None:
+    list_id = _create("Work")
+    resp = client.post(
+        f"/api/context-switch/lists/{list_id}/todos",
+        json={"header": "X", "color": "red"},
+    )
+    assert resp.status_code == 422
+
+
+def test_add_todo_unknown_list_404() -> None:
+    resp = client.post("/api/context-switch/lists/l-nope/todos", json={"header": "X"})
+    assert resp.status_code == 404
+
+
+def test_todos_are_isolated_per_user() -> None:
+    list_id = _create("Mine")
+    _add_todo(list_id, "Secret")
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert client.get(f"/api/context-switch/lists/{list_id}").status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+    todos = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]
+    assert [t["header"] for t in todos] == ["Secret"]
+
+
+# ── PUT /lists/{id} — grid (Story 2.2) ────────────────────────────────────────
+
+
+def test_grid_defaults_are_within_bounds() -> None:
+    grid = client.get(f"/api/context-switch/lists/{_create('Work')}").json()["grid"]
+    assert grid["columns"] >= 1
+    assert grid["rows"] >= 1
+
+
+def test_set_grid_persists() -> None:
+    list_id = _create("Work")
+    resp = client.put(
+        f"/api/context-switch/lists/{list_id}",
+        json={"grid": {"columns": 4, "rows": 3}},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["grid"] == {"columns": 4, "rows": 3}
+
+    reloaded = client.get(f"/api/context-switch/lists/{list_id}").json()
+    assert reloaded["grid"] == {"columns": 4, "rows": 3}
+
+
+def test_set_grid_leaves_name_alone() -> None:
+    list_id = _create("Work")
+    client.put(f"/api/context-switch/lists/{list_id}", json={"grid": {"columns": 2, "rows": 2}})
+    assert client.get(f"/api/context-switch/lists/{list_id}").json()["name"] == "Work"
+
+
+def test_update_list_can_set_name_and_grid_together() -> None:
+    list_id = _create("Work")
+    resp = client.put(
+        f"/api/context-switch/lists/{list_id}",
+        json={"name": "Renamed", "grid": {"columns": 5, "rows": 1}},
+    )
+    body = resp.json()
+    assert body["name"] == "Renamed"
+    assert body["grid"] == {"columns": 5, "rows": 1}
+
+
+def test_update_list_with_no_fields_rejected() -> None:
+    resp = client.put(f"/api/context-switch/lists/{_create('Work')}", json={})
+    assert resp.status_code == 422
+
+
+@pytest.mark.parametrize(
+    "grid",
+    [
+        {"columns": 0, "rows": 2},
+        {"columns": 2, "rows": 0},
+        {"columns": 99, "rows": 2},
+        {"columns": 2, "rows": 99},
+        {"columns": -1, "rows": -1},
+    ],
+)
+def test_out_of_bounds_grid_rejected(grid: dict[str, int]) -> None:
+    resp = client.put(f"/api/context-switch/lists/{_create('Work')}", json={"grid": grid})
+    assert resp.status_code == 422
+
+
+def test_grid_does_not_limit_how_many_todos_exist() -> None:
+    # "rows" is page height, not a cap — every todo stays reachable.
+    list_id = _create("Work")
+    client.put(f"/api/context-switch/lists/{list_id}", json={"grid": {"columns": 1, "rows": 1}})
+    for header in ("A", "B", "C"):
+        _add_todo(list_id, header)
+    todos = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]
+    assert [t["header"] for t in todos] == ["A", "B", "C"]
+
+
+def test_active_count_reflects_added_todos() -> None:
+    list_id = _create("Work")
+    _add_todo(list_id, "One")
+    _add_todo(list_id, "Two")
+    summaries = client.get("/api/context-switch/lists").json()
+    assert summaries[0]["active_count"] == 2
+
+
+# ── PUT /lists/{id}/todos/{todo_id} (Story 2.4) ───────────────────────────────
+
+
+def _edit(list_id: str, todo_id: str, **fields: object):
+    return client.put(f"/api/context-switch/lists/{list_id}/todos/{todo_id}", json=fields)
+
+
+def test_update_todo_changes_only_provided_fields() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Old", color="#aabbcc")
+
+    updated = _edit(list_id, todo["id"], header="New").json()
+
+    assert updated["header"] == "New"
+    assert updated["color"] == "#aabbcc"
+
+
+def test_update_todo_bumps_updated_at_and_keeps_created_at() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Old")
+
+    updated = _edit(list_id, todo["id"], color="#123456").json()
+
+    assert updated["updated_at"] >= todo["updated_at"]
+    assert updated["created_at"] == todo["created_at"]
+
+
+def test_update_todo_persists() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Old")
+    _edit(list_id, todo["id"], header="New", color="#112233")
+
+    reloaded = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]
+    assert reloaded["header"] == "New"
+    assert reloaded["color"] == "#112233"
+
+
+def test_update_todo_trims_header() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Old")
+    assert _edit(list_id, todo["id"], header="  Trimmed  ").json()["header"] == "Trimmed"
+
+
+def test_update_todo_blank_header_rejected() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Keep")
+
+    assert _edit(list_id, todo["id"], header="   ").status_code == 422
+    assert client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]["header"] == "Keep"
+
+
+def test_update_todo_body_field_is_gone() -> None:
+    # `body` is no longer a schema field (Story 2.8), so a PUT carrying only
+    # `body` has no recognised fields and is rejected as an empty update.
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Header")
+    assert _edit(list_id, todo["id"], body="anything").status_code == 422
+
+
+def test_update_todo_invalid_color_rejected() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Header")
+    assert _edit(list_id, todo["id"], color="blue").status_code == 422
+
+
+def test_update_todo_with_no_fields_rejected() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Header")
+    assert _edit(list_id, todo["id"]).status_code == 422
+
+
+def test_update_todo_does_not_change_order_or_status() -> None:
+    list_id = _create("Work")
+    _add_todo(list_id, "A")
+    second = _add_todo(list_id, "B")
+
+    updated = _edit(list_id, second["id"], header="B2").json()
+
+    assert updated["order"] == 1
+    assert updated["status"] == "active"
+
+
+def test_update_unknown_todo_404() -> None:
+    list_id = _create("Work")
+    assert _edit(list_id, "t-nope", header="X").status_code == 404
+
+
+def test_update_todo_in_unknown_list_404() -> None:
+    assert _edit("l-nope", "t-nope", header="X").status_code == 404
+
+
+def test_update_todo_is_scoped_to_own_lists() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Mine")
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert _edit(list_id, todo["id"], header="Yours").status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+    assert client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]["header"] == "Mine"
+
+
+# ── POST /lists/{id}/todos/reorder (Story 2.3) ────────────────────────────────
+
+
+def _headers(list_id: str) -> list[str]:
+    return [t["header"] for t in client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]]
+
+
+def _seed_three() -> tuple[str, list[str]]:
+    list_id = _create("Work")
+    ids = [_add_todo(list_id, header)["id"] for header in ("A", "B", "C")]
+    return list_id, ids
+
+
+def _reorder(list_id: str, ordered_ids: list[str]):
+    return client.post(
+        f"/api/context-switch/lists/{list_id}/todos/reorder",
+        json={"ordered_ids": ordered_ids},
+    )
+
+
+def test_reorder_rewrites_order_and_persists() -> None:
+    list_id, ids = _seed_three()
+    resp = _reorder(list_id, [ids[2], ids[0], ids[1]])
+
+    assert resp.status_code == 200
+    assert [t["header"] for t in resp.json()["todos"]] == ["C", "A", "B"]
+    assert [t["order"] for t in resp.json()["todos"]] == [0, 1, 2]
+    # Survives a reload.
+    assert _headers(list_id) == ["C", "A", "B"]
+
+
+def test_reorder_missing_id_rejected() -> None:
+    list_id, ids = _seed_three()
+    assert _reorder(list_id, ids[:2]).status_code == 422
+    assert _headers(list_id) == ["A", "B", "C"]
+
+
+def test_reorder_extra_id_rejected() -> None:
+    list_id, ids = _seed_three()
+    assert _reorder(list_id, [*ids, "t-ghost"]).status_code == 422
+    assert _headers(list_id) == ["A", "B", "C"]
+
+
+def test_reorder_duplicate_id_rejected() -> None:
+    list_id, ids = _seed_three()
+    assert _reorder(list_id, [ids[0], ids[0], ids[1]]).status_code == 422
+    assert _headers(list_id) == ["A", "B", "C"]
+
+
+def test_reorder_unknown_id_rejected() -> None:
+    list_id, ids = _seed_three()
+    assert _reorder(list_id, [ids[0], ids[1], "t-nope"]).status_code == 422
+    assert _headers(list_id) == ["A", "B", "C"]
+
+
+def test_reorder_id_from_another_list_rejected() -> None:
+    list_id, ids = _seed_three()
+    other_id = _add_todo(_create("Other"), "Elsewhere")["id"]
+    assert _reorder(list_id, [ids[0], ids[1], other_id]).status_code == 422
+    assert _headers(list_id) == ["A", "B", "C"]
+
+
+def test_reorder_referencing_an_archived_todo_rejected() -> None:
+    # Archiving lands in Story 2.6, so flip the status on disk to set this up.
+    list_id, ids = _seed_three()
+    doc = context_switch_repo.read_doc("test_user")
+    archived = next(t for t in doc.lists[0].todos if t.id == ids[1])
+    archived.status = "archived"
+    context_switch_repo.write_doc("test_user", doc)
+
+    assert _headers(list_id) == ["A", "C"]
+    assert _reorder(list_id, ids).status_code == 422
+    assert _headers(list_id) == ["A", "C"]
+
+
+def test_reorder_ignores_archived_todos() -> None:
+    list_id, ids = _seed_three()
+    doc = context_switch_repo.read_doc("test_user")
+    next(t for t in doc.lists[0].todos if t.id == ids[0]).status = "archived"
+    context_switch_repo.write_doc("test_user", doc)
+
+    resp = _reorder(list_id, [ids[2], ids[1]])
+    assert resp.status_code == 200
+    assert _headers(list_id) == ["C", "B"]
+
+
+def test_reorder_unknown_list_404() -> None:
+    assert _reorder("l-nope", []).status_code == 404
+
+
+def test_reorder_of_empty_list_is_a_noop() -> None:
+    list_id = _create("Work")
+    assert _reorder(list_id, []).status_code == 200
+
+
+def test_reorder_is_scoped_to_own_lists() -> None:
+    list_id, ids = _seed_three()
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert _reorder(list_id, ids).status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+    assert _headers(list_id) == ["A", "B", "C"]
+
+
+# ── POST /lists/{id}/todos/{todo_id}/updates (Story 2.5) ──────────────────────
+
+
+def _add_update(list_id: str, todo_id: str, text: str):
+    return client.post(
+        f"/api/context-switch/lists/{list_id}/todos/{todo_id}/updates",
+        json={"text": text},
+    )
+
+
+def test_add_update_appends_entry_and_keeps_header() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Task")
+
+    resp = _add_update(list_id, todo["id"], "made progress")
+    assert resp.status_code == 200
+    updated = resp.json()
+
+    # The header is untouched — an update never rewrites the todo itself.
+    assert updated["header"] == "Task"
+
+    assert len(updated["updates"]) == 1
+    entry = updated["updates"][0]
+    assert entry["id"].startswith("u-")
+    assert entry["text"] == "made progress"
+    assert entry["created_at"]
+
+
+def test_add_update_persists() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Task")
+    _add_update(list_id, todo["id"], "logged")
+
+    reloaded = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]
+    assert [u["text"] for u in reloaded["updates"]] == ["logged"]
+
+
+def test_add_update_multiple_preserve_order() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Task")
+    for text in ("first", "second", "third"):
+        _add_update(list_id, todo["id"], text)
+
+    reloaded = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]
+    assert [u["text"] for u in reloaded["updates"]] == ["first", "second", "third"]
+
+
+def test_add_update_trims_text() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Task")
+    entry = _add_update(list_id, todo["id"], "  padded  ").json()["updates"][0]
+    assert entry["text"] == "padded"
+
+
+def test_add_update_blank_text_rejected() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Task")
+    assert _add_update(list_id, todo["id"], "   ").status_code == 422
+    reloaded = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]
+    assert reloaded["updates"] == []
+
+
+def test_add_update_does_not_bump_updated_at() -> None:
+    # An update is a log entry, not an edit of the todo's own fields.
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Task")
+    after = _add_update(list_id, todo["id"], "note").json()
+    assert after["updated_at"] == todo["updated_at"]
+
+
+def test_add_update_unknown_todo_404() -> None:
+    list_id = _create("Work")
+    assert _add_update(list_id, "t-nope", "x").status_code == 404
+
+
+def test_add_update_unknown_list_404() -> None:
+    assert _add_update("l-nope", "t-nope", "x").status_code == 404
+
+
+def test_add_update_is_scoped_to_own_lists() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Mine")
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert _add_update(list_id, todo["id"], "sneaky").status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+    reloaded = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]
+    assert reloaded["updates"] == []
+
+
+# ── PATCH status: archive (Story 2.6) ─────────────────────────────────────────
+
+
+def test_archive_sets_status_and_archived_at() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Done thing")
+
+    archived = _edit(list_id, todo["id"], status="archived").json()
+    assert archived["status"] == "archived"
+    assert archived["archived_at"] is not None
+
+
+def test_archived_todo_kept_in_file_not_deleted() -> None:
+    # The record stays on disk (archive is soft) — it just leaves the board.
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Keep me")
+    _edit(list_id, todo["id"], status="archived")
+
+    doc = context_switch_repo.read_doc("test_user")
+    assert [t.id for t in doc.lists[0].todos] == [todo["id"]]
+
+
+def test_archived_todo_absent_from_active_board() -> None:
+    list_id = _create("Work")
+    keep = _add_todo(list_id, "Keep")
+    gone = _add_todo(list_id, "Archive me")
+
+    _edit(list_id, gone["id"], status="archived")
+
+    todos = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]
+    assert [t["header"] for t in todos] == ["Keep"]
+    assert keep["id"] in [t["id"] for t in todos]
+
+
+def test_archived_todo_excluded_from_active_count() -> None:
+    list_id = _create("Work")
+    _add_todo(list_id, "A")
+    gone = _add_todo(list_id, "B")
+    _edit(list_id, gone["id"], status="archived")
+
+    assert client.get("/api/context-switch/lists").json()[0]["active_count"] == 1
+
+
+def test_reactivating_clears_archived_at() -> None:
+    # No UI sets this in v1, but the service must support it (door left open).
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Toggle")
+    _edit(list_id, todo["id"], status="archived")
+
+    reactivated = _edit(list_id, todo["id"], status="active").json()
+    assert reactivated["status"] == "active"
+    assert reactivated["archived_at"] is None
+
+
+# ── restore from the archive (Story 3.3) ──────────────────────────────────────
+
+
+def _restore(list_id: str, todo_id: str):
+    return _edit(list_id, todo_id, status="active")
+
+
+def test_restored_todo_lands_last_in_the_active_order() -> None:
+    list_id, ids = _seed_three()
+    _archive(list_id, ids[0])
+    assert _headers(list_id) == ["B", "C"]
+
+    _restore(list_id, ids[0])
+
+    assert _headers(list_id) == ["B", "C", "A"]
+
+
+def test_restore_does_not_collide_with_an_order_taken_since() -> None:
+    # "A" was archived at order 0; "D" has held order 0 on the board since.
+    list_id, ids = _seed_three()
+    _archive(list_id, ids[0])
+    _archive(list_id, ids[1])
+    _archive(list_id, ids[2])
+    fresh = _add_todo(list_id, "D")["id"]
+    assert _headers(list_id) == ["D"]
+
+    _restore(list_id, ids[0])
+
+    todos = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]
+    orders = [t["order"] for t in todos]
+    assert [t["header"] for t in todos] == ["D", "A"]
+    assert len(set(orders)) == len(orders)
+    assert todos[0]["id"] == fresh
+
+
+def test_restore_into_an_empty_board_orders_from_zero() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Only")["id"]
+    _archive(list_id, todo)
+
+    restored = _restore(list_id, todo).json()
+
+    assert restored["order"] == 0
+
+
+def test_restore_leaves_the_other_todos_orders_alone() -> None:
+    list_id, ids = _seed_three()
+    _archive(list_id, ids[1])
+    before = {
+        t["id"]: t["order"]
+        for t in client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]
+    }
+
+    _restore(list_id, ids[1])
+
+    after = {
+        t["id"]: t["order"]
+        for t in client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]
+    }
+    assert {k: v for k, v in after.items() if k in before} == before
+
+
+def test_restore_keeps_the_todo_whole() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Header", color="#aabbcc")["id"]
+    _add_update(list_id, todo, "a note")
+    _archive(list_id, todo)
+
+    restored = _restore(list_id, todo).json()
+
+    assert restored["header"] == "Header"
+    assert restored["color"] == "#aabbcc"
+    assert restored["archived_at"] is None
+    assert [u["text"] for u in restored["updates"]] == ["a note"]
+
+
+def test_restore_puts_it_back_in_the_active_count() -> None:
+    list_id, ids = _seed_three()
+    _archive(list_id, ids[0])
+    assert client.get("/api/context-switch/lists").json()[0]["active_count"] == 2
+
+    _restore(list_id, ids[0])
+
+    assert client.get("/api/context-switch/lists").json()[0]["active_count"] == 3
+    assert _archived(list_id).json() == []
+
+
+def test_restoring_an_already_active_todo_does_not_move_it() -> None:
+    list_id, ids = _seed_three()
+
+    _restore(list_id, ids[0])
+
+    assert _headers(list_id) == ["A", "B", "C"]
+
+
+def test_archive_persists_across_reload() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Persist")
+    _edit(list_id, todo["id"], status="archived")
+
+    # Active read hides it; the raw doc still carries it as archived.
+    assert client.get(f"/api/context-switch/lists/{list_id}").json()["todos"] == []
+    doc = context_switch_repo.read_doc("test_user")
+    assert doc.lists[0].todos[0].status == "archived"
+
+
+def test_archive_leaves_other_fields_alone() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Header", color="#aabbcc")
+    archived = _edit(list_id, todo["id"], status="archived").json()
+    assert archived["header"] == "Header"
+    assert archived["color"] == "#aabbcc"
+
+
+def test_invalid_status_rejected() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "X")
+    assert _edit(list_id, todo["id"], status="frozen").status_code == 422
+
+
+def test_archive_unknown_todo_404() -> None:
+    list_id = _create("Work")
+    assert _edit(list_id, "t-nope", status="archived").status_code == 404
+
+
+def test_archive_is_scoped_to_own_lists() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Mine")
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert _edit(list_id, todo["id"], status="archived").status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+    assert (
+        client.get(f"/api/context-switch/lists/{list_id}").json()["todos"][0]["status"] == "active"
+    )
+
+
+# ── Archive view + delete (Story 2.7) ─────────────────────────────────────────
+
+
+def _archive(list_id: str, todo_id: str) -> None:
+    _edit(list_id, todo_id, status="archived")
+
+
+def _archived(list_id: str):
+    return client.get(f"/api/context-switch/lists/{list_id}/archived")
+
+
+def _delete_todo(list_id: str, todo_id: str):
+    return client.delete(f"/api/context-switch/lists/{list_id}/todos/{todo_id}")
+
+
+def test_archived_read_returns_only_archived_todos() -> None:
+    list_id = _create("Work")
+    _add_todo(list_id, "Active one")
+    gone = _add_todo(list_id, "Done one", color="#aabbcc")
+    _archive(list_id, gone["id"])
+
+    resp = _archived(list_id)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert [t["id"] for t in body] == [gone["id"]]
+    assert body[0]["header"] == "Done one"
+    assert body[0]["color"] == "#aabbcc"
+    assert body[0]["archived_at"] is not None
+
+
+def test_archived_read_empty_when_nothing_archived() -> None:
+    list_id = _create("Work")
+    _add_todo(list_id, "Active")
+    assert _archived(list_id).json() == []
+
+
+def test_archived_read_ordered_by_archived_at_desc() -> None:
+    # Set archived_at explicitly so the ordering assertion is deterministic.
+    list_id = _create("Work")
+    older = _add_todo(list_id, "Older")
+    newer = _add_todo(list_id, "Newer")
+
+    doc = context_switch_repo.read_doc("test_user")
+    for todo in doc.lists[0].todos:
+        todo.status = "archived"
+        todo.archived_at = (
+            "2026-08-10T09:00:00+00:00" if todo.id == older["id"] else "2026-08-12T09:00:00+00:00"
+        )
+    context_switch_repo.write_doc("test_user", doc)
+
+    assert [t["id"] for t in _archived(list_id).json()] == [newer["id"], older["id"]]
+
+
+def test_archived_read_unknown_list_404() -> None:
+    assert _archived("l-nope").status_code == 404
+
+
+def test_archived_read_is_scoped_to_own_lists() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Mine")
+    _archive(list_id, todo["id"])
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert _archived(list_id).status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+
+def test_delete_todo_removes_the_record() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Doomed")
+    _archive(list_id, todo["id"])
+
+    assert _delete_todo(list_id, todo["id"]).status_code == 204
+    assert _archived(list_id).json() == []
+    doc = context_switch_repo.read_doc("test_user")
+    assert doc.lists[0].todos == []
+
+
+def test_delete_todo_leaves_active_board_intact() -> None:
+    list_id = _create("Work")
+    keep = _add_todo(list_id, "Keep")
+    gone = _add_todo(list_id, "Archive then delete")
+    _archive(list_id, gone["id"])
+
+    _delete_todo(list_id, gone["id"])
+
+    todos = client.get(f"/api/context-switch/lists/{list_id}").json()["todos"]
+    assert [t["id"] for t in todos] == [keep["id"]]
+
+
+def test_delete_unknown_todo_404() -> None:
+    list_id = _create("Work")
+    assert _delete_todo(list_id, "t-nope").status_code == 404
+
+
+def test_delete_todo_in_unknown_list_404() -> None:
+    assert _delete_todo("l-nope", "t-nope").status_code == 404
+
+
+def test_delete_todo_is_scoped_to_own_lists() -> None:
+    list_id = _create("Work")
+    todo = _add_todo(list_id, "Mine")
+    _archive(list_id, todo["id"])
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert _delete_todo(list_id, todo["id"]).status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+    # The owner's archived todo is untouched.
+    assert [t["id"] for t in _archived(list_id).json()] == [todo["id"]]
+
+
+# ── POST /lists/{id}/todos/{todo_id}/move (Story 3.2) ─────────────────────────
+
+
+def _move(list_id: str, todo_id: str, target_list_id: str):
+    return client.post(
+        f"/api/context-switch/lists/{list_id}/todos/{todo_id}/move",
+        json={"target_list_id": target_list_id},
+    )
+
+
+def test_move_takes_the_todo_out_of_the_source_list() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+
+    resp = _move(source, ids[1], target)
+
+    assert resp.status_code == 200
+    assert resp.json()["id"] == ids[1]
+    assert _headers(source) == ["A", "C"]
+    assert _headers(target) == ["B"]
+
+
+def test_move_persists_across_a_reload() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+    _move(source, ids[0], target)
+
+    doc = context_switch_repo.read_doc("test_user")
+    by_id = {lst.id: [t.id for t in lst.todos] for lst in doc.lists}
+    assert by_id[source] == [ids[1], ids[2]]
+    assert by_id[target] == [ids[0]]
+
+
+def test_move_keeps_the_todo_whole_including_its_updates_log() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+    _add_update(source, ids[0], "first note")
+    _add_update(source, ids[0], "second note")
+    before = client.get(f"/api/context-switch/lists/{source}").json()["todos"][0]
+
+    moved = _move(source, ids[0], target).json()
+
+    assert moved["id"] == before["id"]
+    assert moved["header"] == before["header"]
+    assert moved["color"] == before["color"]
+    assert moved["status"] == "active"
+    assert [u["text"] for u in moved["updates"]] == ["first note", "second note"]
+
+
+def test_moved_todo_lands_last_in_the_target_list() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+    _add_todo(target, "X")
+    _add_todo(target, "Y")
+
+    _move(source, ids[0], target)
+
+    assert _headers(target) == ["X", "Y", "A"]
+
+
+def test_move_into_an_empty_list_orders_from_zero() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+
+    _move(source, ids[2], target)
+
+    todos = client.get(f"/api/context-switch/lists/{target}").json()["todos"]
+    assert [(t["header"], t["order"]) for t in todos] == [("C", 0)]
+
+
+def test_move_leaves_the_source_order_intact() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+
+    _move(source, ids[0], target)
+
+    assert _headers(source) == ["B", "C"]
+
+
+def test_move_updates_both_active_counts() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+
+    _move(source, ids[0], target)
+
+    counts = {
+        lst["id"]: lst["active_count"] for lst in client.get("/api/context-switch/lists").json()
+    }
+    assert counts[source] == 2
+    assert counts[target] == 1
+
+
+def test_move_to_the_same_list_rejected() -> None:
+    source, ids = _seed_three()
+
+    assert _move(source, ids[0], source).status_code == 422
+    assert _headers(source) == ["A", "B", "C"]
+
+
+def test_move_of_an_archived_todo_rejected() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+    _archive(source, ids[1])
+
+    assert _move(source, ids[1], target).status_code == 422
+    assert [t["id"] for t in _archived(source).json()] == [ids[1]]
+    assert _headers(target) == []
+
+
+def test_move_to_an_unknown_target_list_404() -> None:
+    source, ids = _seed_three()
+
+    assert _move(source, ids[0], "l-nope").status_code == 404
+    assert _headers(source) == ["A", "B", "C"]
+
+
+def test_move_from_an_unknown_source_list_404() -> None:
+    target = _create("Other")
+    assert _move("l-nope", "t-nope", target).status_code == 404
+
+
+def test_move_of_an_unknown_todo_404() -> None:
+    source, _ids = _seed_three()
+    target = _create("Other")
+
+    assert _move(source, "t-nope", target).status_code == 404
+    assert _headers(target) == []
+
+
+def test_move_is_scoped_to_own_lists() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert _move(source, ids[0], target).status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+    assert _headers(source) == ["A", "B", "C"]
+    assert _headers(target) == []
+
+
+def test_rejected_move_writes_nothing() -> None:
+    source, ids = _seed_three()
+    target = _create("Other")
+    before = json.loads(context_switch_repo._user_path("test_user").read_text(encoding="utf-8"))
+
+    assert _move(source, ids[0], "l-nope").status_code == 404
+    assert _move(source, "t-nope", target).status_code == 404
+    assert _move(source, ids[0], source).status_code == 422
+
+    assert (
+        json.loads(context_switch_repo._user_path("test_user").read_text(encoding="utf-8"))
+        == before
+    )

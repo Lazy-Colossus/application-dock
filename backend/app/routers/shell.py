@@ -32,6 +32,12 @@ _APPS: list[AppDescriptor] = [
         icon="school",
         route="/hotaru",
     ),
+    AppDescriptor(
+        id="context-switch",
+        label="Context-Switch",
+        icon="swap_horiz",
+        route="/context-switch",
+    ),
 ]
 
 

@@ -117,7 +117,20 @@ const routes: RouteRecordRaw[] = [
         path: "hotaru/words/:id/edit",
         name: "hotaru-edit-word",
         component: () => import("@/apps/hotaru/pages/AddWordPage.vue"),
-        meta: { title: "Edit word", requiresAuth: true },
+        meta: { title: "Edit word" },
+      },
+      {
+        path: "context-switch",
+        name: "context-switch-home",
+        component: () =>
+          import("@/apps/context-switch/pages/ContextSwitchHomePage.vue"),
+        meta: { title: "Context-Switch", requiresAuth: true },
+      },
+      {
+        path: "context-switch/lists/:listId",
+        name: "context-switch-board",
+        component: () => import("@/apps/context-switch/pages/BoardPage.vue"),
+        meta: { title: "Context-Switch", requiresAuth: true },
       },
     ],
   },
