@@ -263,3 +263,40 @@ def create_row(
     tab.rows.append(row)
     repo.write_doc(username, doc)
     return row
+
+
+def update_row_cells(
+    username: str,
+    sheet_id: str,
+    tab_id: str,
+    row_id: str,
+    cells: dict[str, object],
+) -> Row:
+    """Merge `cells` into a row — only the provided keys are touched.
+
+    A provided key whose value is empty clears that cell (the key is removed);
+    keys that are absent from the payload keep whatever they held. Validation
+    runs over the whole payload before anything is applied, so a rejected
+    update leaves the row exactly as it was.
+    """
+    doc = repo.read_doc(username)
+    tab = find_tab(find_sheet(doc.sheets, sheet_id).tabs, tab_id)
+    row = find_row(tab.rows, row_id)
+
+    by_id = {column.id: column for column in tab.columns}
+    validated: dict[str, CellValue] = {}
+    for column_id, value in cells.items():
+        column = by_id.get(column_id)
+        if column is None:
+            raise ValueError(f"unknown column: {column_id}")
+        validated[column_id] = coerce_value(value, column.type)
+
+    for column_id, value in validated.items():
+        if value is None:
+            row.cells.pop(column_id, None)
+        else:
+            row.cells[column_id] = value
+
+    row.updated_at = now_iso()
+    repo.write_doc(username, doc)
+    return row

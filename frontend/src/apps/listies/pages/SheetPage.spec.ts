@@ -159,3 +159,29 @@ describe("SheetPage", () => {
     expect(wrapper.find('[data-testid="spinner"]').exists()).toBe(false);
   });
 });
+
+describe("SheetPage — editing (Story 2.2)", () => {
+  it("persists a cell the grid commits", async () => {
+    putMock.mockReset().mockResolvedValue({
+      id: "r-1",
+      order: 0,
+      cells: { "c-1": "Stove" },
+      created_at: "t",
+      updated_at: "t2",
+    });
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    await wrapper.findComponent({ name: "SheetGrid" }).vm.$emit("commit-cell", {
+      rowId: "r-1",
+      columnId: "c-1",
+      value: "Stove",
+    });
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith(
+      "/listies/sheets/s-1/tabs/tb-1/rows/r-1",
+      { cells: { "c-1": "Stove" } },
+    );
+  });
+});

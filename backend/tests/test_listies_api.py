@@ -356,3 +356,122 @@ def test_create_row_in_an_unknown_tab_returns_404() -> None:
 
 def test_create_row_in_an_unknown_sheet_returns_404() -> None:
     assert client.post("/api/listies/sheets/s-nope/tabs/tb-1/rows", json={}).status_code == 404
+
+
+# ── PUT /sheets/{sid}/tabs/{tid}/rows/{rid} (Story 2.2) ───────────────────────
+
+
+def _row_with_cells() -> tuple[str, str, str, list[str]]:
+    """A sheet with one row holding a value in each of its three columns."""
+    sheet_id, tab_id = _sheet_and_tab()
+    columns = client.get(f"/api/listies/sheets/{sheet_id}").json()["tabs"][0]["columns"]
+    ids = [c["id"] for c in columns]
+    row_id = client.post(
+        f"/api/listies/sheets/{sheet_id}/tabs/{tab_id}/rows",
+        json={"cells": {ids[0]: "Tent", ids[1]: 1, ids[2]: "2026-09-02"}},
+    ).json()["id"]
+    return sheet_id, tab_id, row_id, ids
+
+
+def _put_cells(sheet_id: str, tab_id: str, row_id: str, cells: dict):
+    return client.put(
+        f"/api/listies/sheets/{sheet_id}/tabs/{tab_id}/rows/{row_id}",
+        json={"cells": cells},
+    )
+
+
+def test_update_row_sets_the_given_cell() -> None:
+    sheet_id, tab_id, row_id, ids = _row_with_cells()
+
+    resp = _put_cells(sheet_id, tab_id, row_id, {ids[0]: "Stove"})
+
+    assert resp.status_code == 200
+    assert resp.json()["cells"][ids[0]] == "Stove"
+
+
+def test_update_row_merges_rather_than_replacing() -> None:
+    sheet_id, tab_id, row_id, ids = _row_with_cells()
+
+    body = _put_cells(sheet_id, tab_id, row_id, {ids[0]: "Stove"}).json()
+
+    assert body["cells"][ids[1]] == 1
+    assert body["cells"][ids[2]] == "2026-09-02"
+
+
+def test_update_row_stamps_updated_at_without_touching_created_at() -> None:
+    sheet_id, tab_id, row_id, ids = _row_with_cells()
+    before = client.get(f"/api/listies/sheets/{sheet_id}").json()["tabs"][0]["rows"][0]
+
+    body = _put_cells(sheet_id, tab_id, row_id, {ids[0]: "Stove"}).json()
+
+    assert body["created_at"] == before["created_at"]
+    assert body["updated_at"] >= before["updated_at"]
+
+
+def test_update_row_persists() -> None:
+    sheet_id, tab_id, row_id, ids = _row_with_cells()
+    _put_cells(sheet_id, tab_id, row_id, {ids[0]: "Stove"})
+
+    rows = client.get(f"/api/listies/sheets/{sheet_id}").json()["tabs"][0]["rows"]
+
+    assert rows[0]["cells"][ids[0]] == "Stove"
+
+
+def test_clearing_a_cell_stores_nothing_rather_than_zero_or_empty_string() -> None:
+    sheet_id, tab_id, row_id, ids = _row_with_cells()
+
+    body = _put_cells(sheet_id, tab_id, row_id, {ids[0]: None}).json()
+
+    assert ids[0] not in body["cells"]
+    assert body["cells"][ids[1]] == 1
+
+
+def test_clearing_a_text_cell_with_whitespace_also_empties_it() -> None:
+    sheet_id, tab_id, row_id, ids = _row_with_cells()
+
+    body = _put_cells(sheet_id, tab_id, row_id, {ids[0]: "   "}).json()
+
+    assert ids[0] not in body["cells"]
+
+
+def test_zero_is_a_value_not_an_empty_cell() -> None:
+    sheet_id, tab_id, row_id, ids = _row_with_cells()
+
+    body = _put_cells(sheet_id, tab_id, row_id, {ids[1]: 0}).json()
+
+    assert body["cells"][ids[1]] == 0
+
+
+def test_update_row_rejects_a_value_that_does_not_fit_its_column() -> None:
+    sheet_id, tab_id, row_id, ids = _row_with_cells()
+
+    assert _put_cells(sheet_id, tab_id, row_id, {ids[1]: "abc"}).status_code == 422
+    assert _put_cells(sheet_id, tab_id, row_id, {ids[2]: "31/02/2026"}).status_code == 422
+
+
+def test_a_rejected_update_changes_nothing() -> None:
+    sheet_id, tab_id, row_id, ids = _row_with_cells()
+
+    _put_cells(sheet_id, tab_id, row_id, {ids[0]: "Stove", ids[1]: "abc"})
+
+    rows = client.get(f"/api/listies/sheets/{sheet_id}").json()["tabs"][0]["rows"]
+    assert rows[0]["cells"][ids[0]] == "Tent"
+
+
+def test_update_row_rejects_an_unknown_column_id() -> None:
+    sheet_id, tab_id, row_id, _ = _row_with_cells()
+    assert _put_cells(sheet_id, tab_id, row_id, {"c-nope": "x"}).status_code == 422
+
+
+def test_update_unknown_row_returns_404() -> None:
+    sheet_id, tab_id, _, ids = _row_with_cells()
+    assert _put_cells(sheet_id, tab_id, "r-nope", {ids[0]: "x"}).status_code == 404
+
+
+def test_update_row_in_another_users_sheet_returns_404() -> None:
+    sheet_id, tab_id, row_id, ids = _row_with_cells()
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert _put_cells(sheet_id, tab_id, row_id, {ids[0]: "x"}).status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"

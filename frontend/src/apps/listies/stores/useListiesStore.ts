@@ -20,6 +20,16 @@ function summarise(sheet: Sheet): SheetSummary {
   };
 }
 
+// Empty means the key is absent, never `null` stored in the map — that keeps
+// the client's shape identical to what the server persists.
+function applyCell(row: Row, columnId: string, value: CellValue): void {
+  if (value === null) {
+    delete row.cells[columnId];
+  } else {
+    row.cells[columnId] = value;
+  }
+}
+
 export const useListiesStore = defineStore("listies", () => {
   const sheets = ref<SheetSummary[]>([]);
   const currentSheet = ref<Sheet | null>(null);
@@ -133,6 +143,40 @@ export const useListiesStore = defineStore("listies", () => {
     }
   }
 
+  /**
+   * Write one cell, optimistically.
+   *
+   * The grid shows the new value immediately and stays interactive — this
+   * deliberately does NOT touch `loading`, which would gate the whole page on
+   * a keystroke. On failure the previous value is put back and the message is
+   * surfaced in `error`.
+   */
+  async function commitCell(
+    rowId: string,
+    columnId: string,
+    value: CellValue,
+  ): Promise<void> {
+    const sheet = currentSheet.value;
+    const tab = activeTab.value;
+    const row = tab?.rows.find((r) => r.id === rowId);
+    if (!sheet || !tab || !row) return;
+
+    const previous = row.cells[columnId] ?? null;
+    applyCell(row, columnId, value);
+
+    error.value = null;
+    try {
+      const updated = await api.put<Row>(
+        `/listies/sheets/${sheet.id}/tabs/${tab.id}/rows/${rowId}`,
+        { cells: { [columnId]: value } },
+      );
+      Object.assign(row, updated);
+    } catch (e) {
+      applyCell(row, columnId, previous);
+      error.value = e instanceof Error ? e.message : String(e);
+    }
+  }
+
   return {
     sheets,
     currentSheet,
@@ -140,6 +184,7 @@ export const useListiesStore = defineStore("listies", () => {
     activeTab,
     fetchSheet,
     addRow,
+    commitCell,
     loading,
     error,
     fetchSheets,

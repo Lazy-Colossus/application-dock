@@ -47,6 +47,9 @@
         v-if="store.activeTab"
         :tab="store.activeTab"
         @add-row="store.addRow()"
+        @commit-cell="
+          store.commitCell($event.rowId, $event.columnId, $event.value)
+        "
       />
     </template>
   </q-page>

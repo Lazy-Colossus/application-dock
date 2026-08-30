@@ -36,8 +36,16 @@
             <GridCell
               v-for="column in orderedColumns"
               :key="column.id"
+              editable
               :value="row.cells[column.id] ?? null"
               :column="column"
+              @commit="
+                emit('commit-cell', {
+                  rowId: row.id,
+                  columnId: column.id,
+                  value: $event,
+                })
+              "
             />
           </tr>
         </tbody>
@@ -70,10 +78,15 @@
 import { computed } from "vue";
 import GridCell from "./GridCell.vue";
 import { typeGlyph } from "@/apps/listies/coerce";
-import type { Tab } from "@/apps/listies/types";
+import type { CellValue, Tab } from "@/apps/listies/types";
 
 const props = defineProps<{ tab: Tab }>();
-const emit = defineEmits<{ "add-row": [] }>();
+const emit = defineEmits<{
+  "add-row": [];
+  "commit-cell": [
+    payload: { rowId: string; columnId: string; value: CellValue },
+  ];
+}>();
 
 // `order` is authoritative on both axes; array position is an implementation
 // detail of however the document was last written.

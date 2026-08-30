@@ -88,3 +88,8 @@ class UpdateSheetRequest(BaseModel):
 
 class CreateRowRequest(BaseModel):
     cells: dict[str, CellValue] | None = None
+
+
+class UpdateRowRequest(BaseModel):
+    # Only the provided keys are applied; a key set to null clears that cell.
+    cells: dict[str, CellValue]

@@ -282,3 +282,142 @@ describe("useListiesStore — addRow (Story 2.1)", () => {
     expect(postMock).not.toHaveBeenCalled();
   });
 });
+
+describe("useListiesStore — commitCell (Story 2.2)", () => {
+  const withRow = (): Sheet => {
+    const s = sheet();
+    s.tabs[0]!.rows = [
+      {
+        id: "r-1",
+        order: 0,
+        cells: { "c-1": "Tent" },
+        created_at: "t",
+        updated_at: "t",
+      },
+    ];
+    return s;
+  };
+
+  beforeEach(() => {
+    getMock.mockImplementation(() => Promise.resolve(withRow()));
+  });
+
+  it("shows the new value before the request resolves", async () => {
+    let resolve: (row: unknown) => void = () => {};
+    putMock.mockReset().mockImplementation(
+      () =>
+        new Promise((r) => {
+          resolve = r;
+        }),
+    );
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    const pending = store.commitCell("r-1", "c-1", "Stove");
+
+    expect(store.activeTab!.rows[0]!.cells["c-1"]).toBe("Stove");
+
+    resolve({
+      id: "r-1",
+      order: 0,
+      cells: { "c-1": "Stove" },
+      created_at: "t",
+      updated_at: "t2",
+    });
+    await pending;
+  });
+
+  it("sends only the changed cell", async () => {
+    putMock.mockReset().mockResolvedValue({
+      id: "r-1",
+      order: 0,
+      cells: { "c-1": "Stove" },
+      created_at: "t",
+      updated_at: "t2",
+    });
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.commitCell("r-1", "c-1", "Stove");
+
+    expect(putMock).toHaveBeenCalledWith(
+      "/listies/sheets/s-2/tabs/tb-1/rows/r-1",
+      {
+        cells: { "c-1": "Stove" },
+      },
+    );
+  });
+
+  it("reconciles the row with the server's response", async () => {
+    putMock.mockReset().mockResolvedValue({
+      id: "r-1",
+      order: 0,
+      cells: { "c-1": "Stove" },
+      created_at: "t",
+      updated_at: "t2",
+    });
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.commitCell("r-1", "c-1", "Stove");
+
+    expect(store.activeTab!.rows[0]!.updated_at).toBe("t2");
+  });
+
+  it("rolls the cell back and surfaces the error when the write fails", async () => {
+    putMock.mockReset().mockRejectedValue(new Error("nope"));
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.commitCell("r-1", "c-1", "Stove");
+
+    expect(store.activeTab!.rows[0]!.cells["c-1"]).toBe("Tent");
+    expect(store.error).toBe("nope");
+  });
+
+  it("restores an empty cell to empty on rollback, not to undefined", async () => {
+    putMock.mockReset().mockRejectedValue(new Error("nope"));
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.commitCell("r-1", "c-1", null);
+    expect(store.activeTab!.rows[0]!.cells["c-1"]).toBe("Tent");
+  });
+
+  it("clears a cell optimistically by removing the key", async () => {
+    putMock.mockReset().mockResolvedValue({
+      id: "r-1",
+      order: 0,
+      cells: {},
+      created_at: "t",
+      updated_at: "t2",
+    });
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.commitCell("r-1", "c-1", null);
+
+    expect(store.activeTab!.rows[0]!.cells["c-1"]).toBeUndefined();
+  });
+
+  it("never blocks the grid on the network", async () => {
+    putMock.mockReset().mockImplementation(() => new Promise(() => {}));
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    void store.commitCell("r-1", "c-1", "Stove");
+    await Promise.resolve();
+
+    expect(store.loading).toBe(false);
+  });
+
+  it("does nothing when the row is not in the active tab", async () => {
+    putMock.mockReset();
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.commitCell("r-nope", "c-1", "Stove");
+
+    expect(putMock).not.toHaveBeenCalled();
+  });
+});

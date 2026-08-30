@@ -49,3 +49,48 @@ export function formatCell(value: CellValue, type: ColumnType): string {
 export function typeGlyph(type: ColumnType): string {
   return GLYPHS[type];
 }
+
+export type ParseResult =
+  | { ok: true; value: CellValue }
+  | { ok: false; error: string };
+
+/** Is this a real calendar date, not just ISO-shaped? (2026-02-31 is not.) */
+function isRealDate(year: number, month: number, day: number): boolean {
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+/**
+ * Validate what the user typed against the column's type.
+ *
+ * The server is the authority (it re-validates every write); this exists so
+ * the user finds out immediately rather than after a round trip. An empty
+ * entry always means "clear the cell" — never 0 and never "".
+ */
+export function parseCell(input: string, type: ColumnType): ParseResult {
+  if (!input.trim()) return { ok: true, value: null };
+
+  if (type === "text") return { ok: true, value: input };
+
+  if (type === "number") {
+    // Number("") is 0 and Number(" ") is 0, but both are handled above.
+    const value = Number(input);
+    if (!Number.isFinite(value)) {
+      return { ok: false, error: "Enter a number" };
+    }
+    return { ok: true, value };
+  }
+
+  const match = ISO_DATE.exec(input.trim());
+  if (
+    !match ||
+    !isRealDate(Number(match[1]), Number(match[2]), Number(match[3]))
+  ) {
+    return { ok: false, error: "Enter a date as YYYY-MM-DD" };
+  }
+  return { ok: true, value: input.trim() };
+}

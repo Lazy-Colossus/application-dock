@@ -142,3 +142,23 @@ describe("SheetGrid", () => {
     expect(wrapper.findAll('[data-testid^="header-name-"]')).toHaveLength(3);
   });
 });
+
+describe("SheetGrid — editing (Story 2.2)", () => {
+  it("makes its cells editable", () => {
+    const cell = mountGrid().findComponent({ name: "GridCell" });
+    expect(cell.props("editable")).toBe(true);
+  });
+
+  it("reports which row and column a commit belongs to", async () => {
+    const wrapper = mountGrid();
+
+    await wrapper
+      .find('[data-testid="row-r-1"]')
+      .findAllComponents({ name: "GridCell" })[1]!
+      .vm.$emit("commit", 4);
+
+    expect(wrapper.emitted("commit-cell")).toEqual([
+      [{ rowId: "r-1", columnId: "c-2", value: 4 }],
+    ]);
+  });
+});
