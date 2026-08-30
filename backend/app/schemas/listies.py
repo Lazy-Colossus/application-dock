@@ -54,3 +54,27 @@ class Sheet(BaseModel):
 class ListiesDoc(BaseModel):
     schema_version: int = 1
     sheets: list[Sheet] = Field(default_factory=list)
+
+
+# Lightweight projection for the sheet picker (Story 1.3).
+class SheetSummary(BaseModel):
+    id: str
+    name: str
+    tab_count: int
+    row_count: int
+    created_at: str
+
+
+# ── Request bodies ────────────────────────────────────────────────────────────
+
+
+class ColumnSpec(BaseModel):
+    """A column as the client defines it — the id and order are minted server-side."""
+
+    name: str
+    type: ColumnType
+
+
+class CreateSheetRequest(BaseModel):
+    name: str
+    columns: list[ColumnSpec]

@@ -10,7 +10,17 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, date, datetime
 
-from app.schemas.listies import CellValue, Column, ColumnType, Row, Sheet, Tab
+from app.repositories import listies_repo as repo
+from app.schemas.listies import (
+    CellValue,
+    Column,
+    ColumnSpec,
+    ColumnType,
+    Row,
+    Sheet,
+    SheetSummary,
+    Tab,
+)
 
 
 def now_iso() -> str:
@@ -122,3 +132,72 @@ def find_row(rows: list[Row], row_id: str) -> Row:
         if row.id == row_id:
             return row
     raise FileNotFoundError(f"row not found: {row_id}")
+
+
+# ── sheets ────────────────────────────────────────────────────────────────────
+
+_FIRST_TAB_NAME = "Tab 1"
+
+
+def _clean_name(name: str, what: str) -> str:
+    cleaned = name.strip()
+    if not cleaned:
+        raise ValueError(f"{what} must not be blank")
+    return cleaned
+
+
+def build_columns(specs: list[ColumnSpec]) -> list[Column]:
+    """Mint columns from client-supplied specs, rejecting blank/duplicate names.
+
+    Shared by sheet creation and tab creation so both enforce the same rules.
+    """
+    if not specs:
+        raise ValueError("a tab needs at least one column")
+
+    columns: list[Column] = []
+    seen: set[str] = set()
+    for order, spec in enumerate(specs):
+        name = _clean_name(spec.name, "column name")
+        if name.casefold() in seen:
+            raise ValueError(f"duplicate column name: {name}")
+        seen.add(name.casefold())
+        columns.append(Column(id=new_id("c"), name=name, type=spec.type, order=order))
+    return columns
+
+
+def list_sheets(username: str) -> list[SheetSummary]:
+    return [
+        SheetSummary(
+            id=sheet.id,
+            name=sheet.name,
+            tab_count=len(sheet.tabs),
+            row_count=sum(len(tab.rows) for tab in sheet.tabs),
+            created_at=sheet.created_at,
+        )
+        for sheet in repo.read_doc(username).sheets
+    ]
+
+
+def create_sheet(username: str, name: str, columns: list[ColumnSpec]) -> Sheet:
+    """Create a sheet whose first tab carries `columns`.
+
+    Columns belong to the tab, not the sheet (FR-13) — these seed "Tab 1".
+    """
+    sheet = Sheet(
+        id=new_id("s"),
+        name=_clean_name(name, "sheet name"),
+        created_at=now_iso(),
+        tabs=[
+            Tab(
+                id=new_id("tb"),
+                name=_FIRST_TAB_NAME,
+                order=0,
+                columns=build_columns(columns),
+                rows=[],
+            )
+        ],
+    )
+    doc = repo.read_doc(username)
+    doc.sheets.append(sheet)
+    repo.write_doc(username, doc)
+    return sheet
