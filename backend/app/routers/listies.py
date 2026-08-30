@@ -9,7 +9,9 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.dependencies import get_current_user
 from app.schemas.listies import (
+    CreateRowRequest,
     CreateSheetRequest,
+    Row,
     Sheet,
     SheetSummary,
     UpdateSheetRequest,
@@ -56,3 +58,26 @@ def delete_sheet(sheet_id: str, current_user: str = Depends(get_current_user)) -
         service.delete_sheet(current_user, sheet_id)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Sheet not found") from exc
+
+
+@router.get("/sheets/{sheet_id}", response_model=Sheet)
+def get_sheet(sheet_id: str, current_user: str = Depends(get_current_user)) -> Sheet:
+    try:
+        return service.get_sheet(current_user, sheet_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Sheet not found") from exc
+
+
+@router.post("/sheets/{sheet_id}/tabs/{tab_id}/rows", response_model=Row)
+def create_row(
+    sheet_id: str,
+    tab_id: str,
+    req: CreateRowRequest,
+    current_user: str = Depends(get_current_user),
+) -> Row:
+    try:
+        return service.create_row(current_user, sheet_id, tab_id, req.cells)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

@@ -1,7 +1,14 @@
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { defineStore } from "pinia";
 import { api } from "@/composables/useApi";
-import type { ColumnSpec, Sheet, SheetSummary } from "@/apps/listies/types";
+import type {
+  CellValue,
+  ColumnSpec,
+  Row,
+  Sheet,
+  SheetSummary,
+  Tab,
+} from "@/apps/listies/types";
 
 function summarise(sheet: Sheet): SheetSummary {
   return {
@@ -15,8 +22,15 @@ function summarise(sheet: Sheet): SheetSummary {
 
 export const useListiesStore = defineStore("listies", () => {
   const sheets = ref<SheetSummary[]>([]);
+  const currentSheet = ref<Sheet | null>(null);
+  const activeTabId = ref<string | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
+
+  const activeTab = computed<Tab | null>(
+    () =>
+      currentSheet.value?.tabs.find((t) => t.id === activeTabId.value) ?? null,
+  );
 
   async function fetchSheets(): Promise<void> {
     loading.value = true;
@@ -81,8 +95,51 @@ export const useListiesStore = defineStore("listies", () => {
     }
   }
 
+  async function fetchSheet(sheetId: string): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const sheet = await api.get<Sheet>(`/listies/sheets/${sheetId}`);
+      currentSheet.value = sheet;
+      // Tab order is authoritative; array position is not.
+      activeTabId.value =
+        [...sheet.tabs].sort((a, b) => a.order - b.order)[0]?.id ?? null;
+    } catch (e) {
+      currentSheet.value = null;
+      activeTabId.value = null;
+      error.value = e instanceof Error ? e.message : String(e);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function addRow(cells: Record<string, CellValue> = {}): Promise<void> {
+    const sheet = currentSheet.value;
+    const tab = activeTab.value;
+    if (!sheet || !tab) return;
+
+    loading.value = true;
+    error.value = null;
+    try {
+      const row = await api.post<Row>(
+        `/listies/sheets/${sheet.id}/tabs/${tab.id}/rows`,
+        { cells },
+      );
+      tab.rows.push(row);
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+    } finally {
+      loading.value = false;
+    }
+  }
+
   return {
     sheets,
+    currentSheet,
+    activeTabId,
+    activeTab,
+    fetchSheet,
+    addRow,
     loading,
     error,
     fetchSheets,

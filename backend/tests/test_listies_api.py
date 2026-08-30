@@ -228,3 +228,131 @@ def test_another_users_sheet_id_is_simply_not_found() -> None:
         assert client.delete(f"/api/listies/sheets/{sheet_id}").status_code == 404
     finally:
         app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+
+# ── GET /sheets/{id} (Story 2.1) ──────────────────────────────────────────────
+
+
+def test_get_sheet_returns_tabs_columns_and_rows() -> None:
+    sheet_id = _create().json()["id"]
+
+    resp = client.get(f"/api/listies/sheets/{sheet_id}")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["id"] == sheet_id
+    assert len(body["tabs"]) == 1
+    assert [c["name"] for c in body["tabs"][0]["columns"]] == ["Item", "Qty", "Due"]
+    assert body["tabs"][0]["rows"] == []
+
+
+def test_get_unknown_sheet_returns_404() -> None:
+    resp = client.get("/api/listies/sheets/s-nope")
+    assert resp.status_code == 404
+    assert "detail" in resp.json()
+
+
+def test_get_another_users_sheet_returns_404() -> None:
+    sheet_id = _create().json()["id"]
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert client.get(f"/api/listies/sheets/{sheet_id}").status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+
+# ── POST /sheets/{sid}/tabs/{tid}/rows (Story 2.1) ────────────────────────────
+
+
+def _sheet_and_tab() -> tuple[str, str]:
+    sheet = _create().json()
+    return sheet["id"], sheet["tabs"][0]["id"]
+
+
+def test_create_row_appends_an_empty_row() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+
+    resp = client.post(f"/api/listies/sheets/{sheet_id}/tabs/{tab_id}/rows", json={})
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["id"].startswith("r-")
+    assert body["cells"] == {}
+    assert body["order"] == 0
+    assert body["created_at"] and body["updated_at"]
+
+
+def test_create_row_appends_at_the_end_of_the_order() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+    client.post(f"/api/listies/sheets/{sheet_id}/tabs/{tab_id}/rows", json={})
+
+    second = client.post(f"/api/listies/sheets/{sheet_id}/tabs/{tab_id}/rows", json={}).json()
+
+    assert second["order"] == 1
+
+
+def test_create_row_persists_into_the_sheet() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+    row_id = client.post(f"/api/listies/sheets/{sheet_id}/tabs/{tab_id}/rows", json={}).json()["id"]
+
+    rows = client.get(f"/api/listies/sheets/{sheet_id}").json()["tabs"][0]["rows"]
+
+    assert [r["id"] for r in rows] == [row_id]
+
+
+def test_create_row_accepts_initial_cells() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+    columns = client.get(f"/api/listies/sheets/{sheet_id}").json()["tabs"][0]["columns"]
+    item_id = columns[0]["id"]
+
+    body = client.post(
+        f"/api/listies/sheets/{sheet_id}/tabs/{tab_id}/rows",
+        json={"cells": {item_id: "Tent"}},
+    ).json()
+
+    assert body["cells"] == {item_id: "Tent"}
+
+
+def test_create_row_rejects_a_value_that_does_not_fit_its_column() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+    qty_id = client.get(f"/api/listies/sheets/{sheet_id}").json()["tabs"][0]["columns"][1]["id"]
+
+    resp = client.post(
+        f"/api/listies/sheets/{sheet_id}/tabs/{tab_id}/rows",
+        json={"cells": {qty_id: "not a number"}},
+    )
+
+    assert resp.status_code == 422
+
+
+def test_create_row_rejects_an_unknown_column_id() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+
+    resp = client.post(
+        f"/api/listies/sheets/{sheet_id}/tabs/{tab_id}/rows",
+        json={"cells": {"c-nope": "Tent"}},
+    )
+
+    assert resp.status_code == 422
+
+
+def test_create_row_prunes_empty_values() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+    item_id = client.get(f"/api/listies/sheets/{sheet_id}").json()["tabs"][0]["columns"][0]["id"]
+
+    body = client.post(
+        f"/api/listies/sheets/{sheet_id}/tabs/{tab_id}/rows",
+        json={"cells": {item_id: "   "}},
+    ).json()
+
+    assert body["cells"] == {}
+
+
+def test_create_row_in_an_unknown_tab_returns_404() -> None:
+    sheet_id, _ = _sheet_and_tab()
+    resp = client.post(f"/api/listies/sheets/{sheet_id}/tabs/tb-nope/rows", json={})
+    assert resp.status_code == 404
+
+
+def test_create_row_in_an_unknown_sheet_returns_404() -> None:
+    assert client.post("/api/listies/sheets/s-nope/tabs/tb-1/rows", json={}).status_code == 404

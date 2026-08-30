@@ -216,3 +216,50 @@ def delete_sheet(username: str, sheet_id: str) -> None:
     sheet = find_sheet(doc.sheets, sheet_id)
     doc.sheets.remove(sheet)
     repo.write_doc(username, doc)
+
+
+# ── rows ──────────────────────────────────────────────────────────────────────
+
+
+def get_sheet(username: str, sheet_id: str) -> Sheet:
+    return find_sheet(repo.read_doc(username).sheets, sheet_id)
+
+
+def _coerce_cells(tab: Tab, cells: dict[str, object]) -> dict[str, CellValue]:
+    """Validate a partial cell payload against the tab's columns.
+
+    An unknown column id is a client error, not a silently-ignored key, so it
+    raises. Empty values are pruned — an absent key is exactly `None`.
+    """
+    by_id = {column.id: column for column in tab.columns}
+    coerced: dict[str, CellValue] = {}
+    for column_id, value in cells.items():
+        column = by_id.get(column_id)
+        if column is None:
+            raise ValueError(f"unknown column: {column_id}")
+        result = coerce_value(value, column.type)
+        if result is not None:
+            coerced[column_id] = result
+    return coerced
+
+
+def create_row(
+    username: str,
+    sheet_id: str,
+    tab_id: str,
+    cells: dict[str, object] | None = None,
+) -> Row:
+    doc = repo.read_doc(username)
+    tab = find_tab(find_sheet(doc.sheets, sheet_id).tabs, tab_id)
+
+    stamp = now_iso()
+    row = Row(
+        id=new_id("r"),
+        order=len(tab.rows),
+        cells=_coerce_cells(tab, cells or {}),
+        created_at=stamp,
+        updated_at=stamp,
+    )
+    tab.rows.append(row)
+    repo.write_doc(username, doc)
+    return row
