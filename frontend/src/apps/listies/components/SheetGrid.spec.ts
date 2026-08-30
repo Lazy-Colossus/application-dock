@@ -27,7 +27,15 @@ const STUBS = {
   "q-menu": {
     template:
       '<div v-if="modelValue !== false" :data-testid="$attrs[\'data-testid\']"><slot /></div>',
-    props: ["modelValue", "anchor", "self", "contextMenu"],
+    // Typed, so a valueless attribute casts to `true` the way Quasar's own
+    // boolean props do, instead of arriving as an empty string.
+    props: {
+      modelValue: { type: null, default: undefined },
+      anchor: { type: null, default: undefined },
+      self: { type: null, default: undefined },
+      contextMenu: Boolean,
+      noParentEvent: Boolean,
+    },
     emits: ["update:modelValue"],
   },
   "q-input": {
@@ -798,5 +806,18 @@ describe("SheetGrid — the ready row follows you down (UI fix 2)", () => {
     await wrapper.setProps({ tab: grown });
 
     expect(cellsOfRow(wrapper, "row-r-1")[0]!.props("focused")).toBe(true);
+  });
+});
+
+describe("SheetGrid — the add-column popup actually opens", () => {
+  it("does not let Quasar toggle the menu behind our back", async () => {
+    // A QMenu nested in a QBtn attaches its own click handler to that button.
+    // With `v-model` as well, the two fight: our handler opens it, Quasar's
+    // toggle immediately closes it, and the button appears dead.
+    const wrapper = mountGrid();
+    await wrapper.find('[data-testid="add-column"]').trigger("click");
+
+    const menu = wrapper.findComponent('[data-testid="add-column-menu"]');
+    expect(menu.props("noParentEvent")).toBe(true);
   });
 });

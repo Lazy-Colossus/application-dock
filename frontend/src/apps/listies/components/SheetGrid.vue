@@ -75,6 +75,7 @@
                      fixed-width columns has no room for a name field. -->
                 <q-menu
                   v-model="addingColumn"
+                  no-parent-event
                   data-testid="add-column-menu"
                   anchor="bottom right"
                   self="top right"

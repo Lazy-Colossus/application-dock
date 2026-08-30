@@ -304,3 +304,46 @@ describe("TabBar — tab colour", () => {
     ]);
   });
 });
+
+describe("TabBar — a coloured chip keeps its colour", () => {
+  const gold = (): Tab[] => [
+    {
+      id: "tb-1",
+      name: "Packing",
+      order: 0,
+      color: "#ffcc00",
+      columns: [],
+      rows: [],
+    },
+  ];
+
+  const bar = (list: Tab[] = gold(), activeTabId = "tb-1") =>
+    mount(TabBar, {
+      props: { tabs: list, activeTabId },
+      global: {
+        stubs: { ...STUBS, "q-menu": { template: "<div><slot /></div>" } },
+      },
+    });
+
+  it("does not ask for the primary colour when the tab has its own", () => {
+    // Quasar's `color="primary"` adds `bg-primary`, whose `!important` beats
+    // our inline background — the chip would render amber, not the tab colour.
+    const chip = bar().findComponent('[data-testid="tab-chip-tb-1"]');
+    expect(chip.props("color")).toBeUndefined();
+  });
+
+  it("still uses the primary colour for an active tab with no colour of its own", () => {
+    const plain: Tab[] = [
+      {
+        id: "tb-1",
+        name: "Packing",
+        order: 0,
+        color: null,
+        columns: [],
+        rows: [],
+      },
+    ];
+    const chip = bar(plain).findComponent('[data-testid="tab-chip-tb-1"]');
+    expect(chip.props("color")).toBe("primary");
+  });
+});

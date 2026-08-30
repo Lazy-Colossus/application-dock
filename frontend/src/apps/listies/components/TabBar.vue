@@ -10,7 +10,7 @@
         no-caps
         size="sm"
         class="tab-bar__chip"
-        :color="tab.id === activeTabId ? 'primary' : undefined"
+        :color="chipColor(tab)"
         :outline="tab.id !== activeTabId"
         :unelevated="tab.id === activeTabId"
         :label="tab.name"
@@ -220,6 +220,15 @@ function reset(): void {
   renamingId.value = null;
   confirmingId.value = null;
   colouringId.value = null;
+}
+
+/**
+ * Quasar's `color` adds a `bg-*` class whose `!important` beats our inline
+ * background — so a tab with its own colour must not ask for one.
+ */
+function chipColor(tab: Tab): string | undefined {
+  if (tab.color) return undefined;
+  return tab.id === props.activeTabId ? "primary" : undefined;
 }
 
 /** Tint the chip: filled when active, outlined in its colour when not. */
