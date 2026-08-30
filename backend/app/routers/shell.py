@@ -38,6 +38,12 @@ _APPS: list[AppDescriptor] = [
         icon="swap_horiz",
         route="/context-switch",
     ),
+    AppDescriptor(
+        id="listies",
+        label="Listies",
+        icon="table_chart",
+        route="/listies",
+    ),
 ]
 
 

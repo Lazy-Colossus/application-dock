@@ -107,3 +107,18 @@ def test_post_update_returns_502_on_docker_error(monkeypatch) -> None:
     response = client.post("/api/shell/update")
     assert response.status_code == 502
     assert "Update launch failed" in response.json()["detail"]
+
+
+def test_list_apps_includes_listies() -> None:
+    response = client.get("/api/apps")
+    listies = next((a for a in response.json() if a["id"] == "listies"), None)
+    assert listies is not None
+    assert listies["label"] == "Listies"
+    assert listies["icon"] == "table_chart"
+    assert listies["route"] == "/listies"
+
+
+def test_listies_router_is_mounted() -> None:
+    from app.routers import listies
+
+    assert listies.router.prefix == "/api/listies"

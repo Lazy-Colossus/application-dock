@@ -132,6 +132,18 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/apps/context-switch/pages/BoardPage.vue"),
         meta: { title: "Context-Switch", requiresAuth: true },
       },
+      {
+        path: "listies",
+        name: "listies-home",
+        component: () => import("@/apps/listies/pages/ListiesHomePage.vue"),
+        meta: { title: "Listies", requiresAuth: true },
+      },
+      {
+        path: "listies/sheets/:sheetId",
+        name: "listies-sheet",
+        component: () => import("@/apps/listies/pages/SheetPage.vue"),
+        meta: { title: "Listies", requiresAuth: true },
+      },
     ],
   },
   {

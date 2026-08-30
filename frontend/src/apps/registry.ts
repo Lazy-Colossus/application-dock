@@ -30,4 +30,10 @@ export const apps: AppDescriptor[] = [
     icon: "swap_horiz",
     route: "/context-switch",
   },
+  {
+    id: "listies",
+    label: "Listies",
+    icon: "table_chart",
+    route: "/listies",
+  },
 ];
