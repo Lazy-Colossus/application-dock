@@ -461,3 +461,28 @@ def create_tab(
     sheet.tabs.append(tab)
     repo.write_doc(username, doc)
     return tab
+
+
+def update_tab(username: str, sheet_id: str, tab_id: str, name: str) -> Tab:
+    doc = repo.read_doc(username)
+    tab = find_tab(find_sheet(doc.sheets, sheet_id).tabs, tab_id)
+    tab.name = _clean_name(name, "tab name")
+    repo.write_doc(username, doc)
+    return tab
+
+
+def delete_tab(username: str, sheet_id: str, tab_id: str) -> None:
+    """Remove a tab, its columns and all its rows.
+
+    A sheet always keeps at least one tab — an empty sheet would have nowhere
+    to put a row and no columns to define one.
+    """
+    doc = repo.read_doc(username)
+    sheet = find_sheet(doc.sheets, sheet_id)
+    tab = find_tab(sheet.tabs, tab_id)
+
+    if len(sheet.tabs) == 1:
+        raise ValueError("a sheet must keep at least one tab")
+
+    sheet.tabs.remove(tab)
+    repo.write_doc(username, doc)

@@ -398,3 +398,53 @@ describe("SheetPage — copying a tab's columns (Story 3.2)", () => {
     });
   });
 });
+
+describe("SheetPage — renaming and deleting tabs (Story 3.3)", () => {
+  const twoTabs = (): Sheet => {
+    const s = sheet();
+    s.tabs = [
+      { id: "tb-1", name: "Packing", order: 0, columns: [], rows: [] },
+      { id: "tb-2", name: "Flights", order: 1, columns: [], rows: [] },
+    ];
+    return s;
+  };
+
+  beforeEach(() => {
+    getMock.mockImplementation(() => Promise.resolve(twoTabs()));
+  });
+
+  it("renames the tab the bar asks about", async () => {
+    putMock.mockReset().mockResolvedValue({
+      id: "tb-2",
+      name: "Trains",
+      order: 1,
+      columns: [],
+      rows: [],
+    });
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    await wrapper
+      .findComponent({ name: "TabBar" })
+      .vm.$emit("rename", { tabId: "tb-2", name: "Trains" });
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith("/listies/sheets/s-1/tabs/tb-2", {
+      name: "Trains",
+    });
+  });
+
+  it("deletes the tab the bar asks about", async () => {
+    delMock.mockReset().mockResolvedValue(undefined);
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    await wrapper.findComponent({ name: "TabBar" }).vm.$emit("delete", "tb-2");
+    await flushPromises();
+
+    expect(delMock).toHaveBeenCalledWith("/listies/sheets/s-1/tabs/tb-2");
+    expect(
+      wrapper.findComponent({ name: "TabBar" }).props("tabs"),
+    ).toHaveLength(1);
+  });
+});

@@ -725,3 +725,100 @@ describe("useListiesStore — createTab by copying (Story 3.2)", () => {
     expect(store.activeTabId).toBe("tb-9");
   });
 });
+
+describe("useListiesStore — rename and delete a tab (Story 3.3)", () => {
+  const threeTabs = (): Sheet => {
+    const s = sheet();
+    s.tabs = [
+      { id: "tb-1", name: "Packing", order: 0, columns: [], rows: [] },
+      { id: "tb-2", name: "Flights", order: 1, columns: [], rows: [] },
+      { id: "tb-3", name: "Budget", order: 2, columns: [], rows: [] },
+    ];
+    return s;
+  };
+
+  beforeEach(() => {
+    getMock.mockImplementation(() => Promise.resolve(threeTabs()));
+    putMock.mockReset().mockResolvedValue({
+      id: "tb-2",
+      name: "Flights & trains",
+      order: 1,
+      columns: [],
+      rows: [],
+    });
+    delMock.mockReset().mockResolvedValue(undefined);
+  });
+
+  it("renames a tab in place", async () => {
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.renameTab("tb-2", "Flights & trains");
+
+    expect(putMock).toHaveBeenCalledWith("/listies/sheets/s-2/tabs/tb-2", {
+      name: "Flights & trains",
+    });
+    expect(store.currentSheet!.tabs[1]!.name).toBe("Flights & trains");
+  });
+
+  it("deletes a tab and drops it locally", async () => {
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.deleteTab("tb-2");
+
+    expect(delMock).toHaveBeenCalledWith("/listies/sheets/s-2/tabs/tb-2");
+    expect(store.currentSheet!.tabs.map((t) => t.id)).toEqual(["tb-1", "tb-3"]);
+  });
+
+  it("moves to the next tab when the active one is deleted", async () => {
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+    store.setActiveTab("tb-2");
+
+    await store.deleteTab("tb-2");
+
+    expect(store.activeTabId).toBe("tb-3");
+  });
+
+  it("falls back to the previous tab when the last one is deleted", async () => {
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+    store.setActiveTab("tb-3");
+
+    await store.deleteTab("tb-3");
+
+    expect(store.activeTabId).toBe("tb-2");
+  });
+
+  it("leaves the active tab alone when another one is deleted", async () => {
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.deleteTab("tb-3");
+
+    expect(store.activeTabId).toBe("tb-1");
+  });
+
+  it("refuses to delete the only tab without asking the server", async () => {
+    getMock.mockImplementation(() => Promise.resolve(sheet()));
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.deleteTab("tb-1");
+
+    expect(delMock).not.toHaveBeenCalled();
+    expect(store.currentSheet!.tabs).toHaveLength(1);
+  });
+
+  it("keeps the tab and surfaces the error when a delete fails", async () => {
+    delMock.mockRejectedValue(new Error("nope"));
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.deleteTab("tb-2");
+
+    expect(store.currentSheet!.tabs).toHaveLength(3);
+    expect(store.error).toBe("nope");
+  });
+});

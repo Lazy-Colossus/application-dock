@@ -64,6 +64,8 @@
         :active-tab-id="store.activeTabId"
         @select="store.setActiveTab($event)"
         @add="tabDialogOpen = true"
+        @rename="store.renameTab($event.tabId, $event.name)"
+        @delete="store.deleteTab($event)"
       />
 
       <CreateTabDialog

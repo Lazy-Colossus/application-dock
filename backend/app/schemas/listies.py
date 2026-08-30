@@ -116,3 +116,7 @@ class CreateTabRequest(BaseModel):
     # Exactly one of these: define the columns, or copy another tab's setup.
     columns: list[ColumnSpec] | None = None
     copy_columns_from: str | None = None
+
+
+class UpdateTabRequest(BaseModel):
+    name: str | None = None

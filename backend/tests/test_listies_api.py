@@ -1071,3 +1071,119 @@ def test_a_rejected_tab_creation_writes_nothing() -> None:
     sheet_id, _ = _sheet_and_tab()
     client.post(f"/api/listies/sheets/{sheet_id}/tabs", json={"name": "X"})
     assert len(_tabs(sheet_id)) == 1
+
+
+# ── PUT / DELETE /sheets/{sid}/tabs/{tid} (Story 3.3) ─────────────────────────
+
+
+def _second_tab(sheet_id: str) -> str:
+    return client.post(
+        f"/api/listies/sheets/{sheet_id}/tabs",
+        json={"name": "Flights", "columns": [{"name": "Airline", "type": "text"}]},
+    ).json()["id"]
+
+
+def test_rename_tab_updates_the_name() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+
+    resp = client.put(_tab_url(sheet_id, tab_id), json={"name": "Packing"})
+
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "Packing"
+    assert _tabs(sheet_id)[0]["name"] == "Packing"
+
+
+def test_rename_tab_trims_the_name() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+    assert client.put(_tab_url(sheet_id, tab_id), json={"name": "  P  "}).json()["name"] == "P"
+
+
+def test_rename_tab_keeps_its_columns_and_rows() -> None:
+    sheet_id, tab_id, _, _ = _populated()
+
+    body = client.put(_tab_url(sheet_id, tab_id), json={"name": "Packing"}).json()
+
+    assert len(body["columns"]) == 3
+    assert len(body["rows"]) == 1
+
+
+@pytest.mark.parametrize("name", ["", "   "])
+def test_rename_tab_rejects_a_blank_name(name: str) -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+    assert client.put(_tab_url(sheet_id, tab_id), json={"name": name}).status_code == 422
+
+
+def test_rename_tab_rejects_a_body_with_nothing_to_change() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+    assert client.put(_tab_url(sheet_id, tab_id), json={}).status_code == 422
+
+
+def test_rename_unknown_tab_returns_404() -> None:
+    sheet_id, _ = _sheet_and_tab()
+    assert client.put(_tab_url(sheet_id, "tb-nope"), json={"name": "x"}).status_code == 404
+
+
+def test_delete_tab_removes_it_with_its_rows() -> None:
+    sheet_id, first = _sheet_and_tab()
+    second = _second_tab(sheet_id)
+
+    resp = client.delete(_tab_url(sheet_id, second))
+
+    assert resp.status_code == 204
+    assert resp.content == b""
+    assert [t["id"] for t in _tabs(sheet_id)] == [first]
+
+
+def test_delete_tab_keeps_the_remaining_tabs_in_order() -> None:
+    sheet_id, first = _sheet_and_tab()
+    second = _second_tab(sheet_id)
+    third = _second_tab(sheet_id)
+
+    client.delete(_tab_url(sheet_id, second))
+
+    orders = [t["order"] for t in _tabs(sheet_id)]
+    assert orders == sorted(orders)
+    assert [t["id"] for t in _tabs(sheet_id)] == [first, third]
+
+
+def test_a_tab_added_after_a_delete_still_sorts_last() -> None:
+    sheet_id, first = _sheet_and_tab()
+    second = _second_tab(sheet_id)
+    client.delete(_tab_url(sheet_id, first))
+
+    added = client.post(
+        f"/api/listies/sheets/{sheet_id}/tabs",
+        json={"name": "New", "columns": [{"name": "A", "type": "text"}]},
+    ).json()
+
+    orders = [t["order"] for t in _tabs(sheet_id)]
+    assert len(set(orders)) == len(orders)
+    assert added["order"] == max(orders)
+    assert second in [t["id"] for t in _tabs(sheet_id)]
+
+
+def test_the_last_tab_cannot_be_deleted() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+
+    resp = client.delete(_tab_url(sheet_id, tab_id))
+
+    assert resp.status_code == 422
+    assert "detail" in resp.json()
+    assert len(_tabs(sheet_id)) == 1
+
+
+def test_delete_unknown_tab_returns_404() -> None:
+    sheet_id, _ = _sheet_and_tab()
+    _second_tab(sheet_id)
+    assert client.delete(_tab_url(sheet_id, "tb-nope")).status_code == 404
+
+
+def test_tab_operations_on_another_users_sheet_return_404() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+    _second_tab(sheet_id)
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert client.put(_tab_url(sheet_id, tab_id), json={"name": "x"}).status_code == 404
+        assert client.delete(_tab_url(sheet_id, tab_id)).status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"

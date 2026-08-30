@@ -21,6 +21,7 @@ from app.schemas.listies import (
     UpdateColumnRequest,
     UpdateRowRequest,
     UpdateSheetRequest,
+    UpdateTabRequest,
 )
 from app.services import listies_service as service
 
@@ -198,6 +199,37 @@ def create_tab(
             columns=req.columns,
             copy_columns_from=req.copy_columns_from,
         )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.put("/sheets/{sheet_id}/tabs/{tab_id}", response_model=Tab)
+def update_tab(
+    sheet_id: str,
+    tab_id: str,
+    req: UpdateTabRequest,
+    current_user: str = Depends(get_current_user),
+) -> Tab:
+    if req.name is None:
+        raise HTTPException(status_code=422, detail="No updatable fields provided")
+    try:
+        return service.update_tab(current_user, sheet_id, tab_id, req.name)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.delete("/sheets/{sheet_id}/tabs/{tab_id}", status_code=204)
+def delete_tab(
+    sheet_id: str,
+    tab_id: str,
+    current_user: str = Depends(get_current_user),
+) -> None:
+    try:
+        service.delete_tab(current_user, sheet_id, tab_id)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:

@@ -227,6 +227,47 @@ export const useListiesStore = defineStore("listies", () => {
     await postTab({ name, copy_columns_from: sourceTabId });
   }
 
+  async function renameTab(tabId: string, name: string): Promise<void> {
+    const sheet = currentSheet.value;
+    if (!sheet) return;
+
+    error.value = null;
+    try {
+      const updated = await api.put<Tab>(
+        `/listies/sheets/${sheet.id}/tabs/${tabId}`,
+        { name },
+      );
+      const tab = sheet.tabs.find((t) => t.id === tabId);
+      if (tab) tab.name = updated.name;
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  async function deleteTab(tabId: string): Promise<void> {
+    const sheet = currentSheet.value;
+    if (!sheet) return;
+
+    const ordered = [...sheet.tabs].sort((a, b) => a.order - b.order);
+    const index = ordered.findIndex((t) => t.id === tabId);
+    // A sheet always keeps at least one tab; the server enforces it too, but
+    // there is no reason to ask.
+    if (index < 0 || ordered.length === 1) return;
+
+    error.value = null;
+    try {
+      await api.del<void>(`/listies/sheets/${sheet.id}/tabs/${tabId}`);
+      sheet.tabs = sheet.tabs.filter((t) => t.id !== tabId);
+      if (activeTabId.value === tabId) {
+        // The next tab along, or the previous one if this was the last.
+        const neighbour = ordered[index + 1] ?? ordered[index - 1];
+        activeTabId.value = neighbour?.id ?? null;
+      }
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+    }
+  }
+
   // ── columns (Story 2.5) ────────────────────────────────────────────────
   //
   // Every column write returns the whole tab: a retype can rewrite many rows
@@ -322,6 +363,8 @@ export const useListiesStore = defineStore("listies", () => {
     setActiveTab,
     createTab,
     createTabFrom,
+    renameTab,
+    deleteTab,
     deleteRow,
     addColumn,
     renameColumn,
