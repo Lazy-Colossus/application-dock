@@ -185,3 +185,29 @@ describe("SheetPage — editing (Story 2.2)", () => {
     );
   });
 });
+
+describe("SheetPage — the ghost row (Story 2.3)", () => {
+  it("creates a row carrying the value typed into the ghost row", async () => {
+    postMock.mockResolvedValue({
+      id: "r-2",
+      order: 1,
+      cells: { "c-1": "Stove" },
+      created_at: "t",
+      updated_at: "t",
+    });
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    await wrapper
+      .findComponent({ name: "SheetGrid" })
+      .vm.$emit("add-row", { "c-1": "Stove" });
+    await flushPromises();
+
+    expect(postMock).toHaveBeenCalledWith(
+      "/listies/sheets/s-1/tabs/tb-1/rows",
+      {
+        cells: { "c-1": "Stove" },
+      },
+    );
+  });
+});

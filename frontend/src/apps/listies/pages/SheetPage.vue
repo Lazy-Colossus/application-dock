@@ -46,7 +46,7 @@
       <SheetGrid
         v-if="store.activeTab"
         :tab="store.activeTab"
-        @add-row="store.addRow()"
+        @add-row="store.addRow($event)"
         @commit-cell="
           store.commitCell($event.rowId, $event.columnId, $event.value)
         "

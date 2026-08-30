@@ -1,6 +1,10 @@
 <template>
   <div class="sheet-grid">
-    <div class="sheet-grid__scroll">
+    <div
+      class="sheet-grid__scroll"
+      data-testid="grid-body"
+      @keydown="onKeydown"
+    >
       <table class="sheet-grid__table">
         <thead>
           <tr>
@@ -27,18 +31,23 @@
 
         <tbody>
           <tr
-            v-for="(row, index) in orderedRows"
+            v-for="(row, rowIndex) in orderedRows"
             :key="row.id"
             class="sheet-grid__row"
-            :class="{ 'sheet-grid__row--striped': index % 2 === 1 }"
+            :class="{ 'sheet-grid__row--striped': rowIndex % 2 === 1 }"
             :data-testid="`row-${row.id}`"
           >
             <GridCell
-              v-for="column in orderedColumns"
+              v-for="(column, columnIndex) in orderedColumns"
               :key="column.id"
+              :ref="(el) => registerCell(rowIndex, columnIndex, el)"
               editable
               :value="row.cells[column.id] ?? null"
               :column="column"
+              :focused="nav.isFocused(rowIndex, columnIndex)"
+              :editing="nav.isEditing(rowIndex, columnIndex)"
+              @begin-edit="startEdit(rowIndex, columnIndex)"
+              @end-edit="nav.endEdit()"
               @commit="
                 emit('commit-cell', {
                   rowId: row.id,
@@ -46,6 +55,29 @@
                   value: $event,
                 })
               "
+            />
+          </tr>
+
+          <!-- The trailing ghost row: typing here materialises a real row. -->
+          <tr
+            class="sheet-grid__row sheet-grid__row--ghost"
+            :class="{
+              'sheet-grid__row--striped': orderedRows.length % 2 === 1,
+            }"
+            data-testid="ghost-row"
+          >
+            <GridCell
+              v-for="(column, columnIndex) in orderedColumns"
+              :key="column.id"
+              :ref="(el) => registerCell(orderedRows.length, columnIndex, el)"
+              :editable="!ghostPending"
+              :value="null"
+              :column="column"
+              :focused="nav.isFocused(orderedRows.length, columnIndex)"
+              :editing="nav.isEditing(orderedRows.length, columnIndex)"
+              @begin-edit="startEdit(orderedRows.length, columnIndex)"
+              @end-edit="nav.endEdit()"
+              @commit="materialise(column.id, $event)"
             />
           </tr>
         </tbody>
@@ -57,7 +89,8 @@
       class="sheet-grid__empty"
       data-testid="grid-empty"
     >
-      Nothing here yet — add your first row.
+      Nothing here yet — add your first row, or just start typing in the last
+      one.
     </div>
 
     <div class="sheet-grid__actions">
@@ -68,21 +101,23 @@
         icon="add"
         label="Add row"
         data-testid="add-row"
-        @click="emit('add-row')"
+        @click="emit('add-row', {})"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
+import type { ComponentPublicInstance } from "vue";
 import GridCell from "./GridCell.vue";
 import { typeGlyph } from "@/apps/listies/coerce";
+import { useGridNavigation } from "@/apps/listies/composables/useGridNavigation";
 import type { CellValue, Tab } from "@/apps/listies/types";
 
 const props = defineProps<{ tab: Tab }>();
 const emit = defineEmits<{
-  "add-row": [];
+  "add-row": [cells: Record<string, CellValue>];
   "commit-cell": [
     payload: { rowId: string; columnId: string; value: CellValue },
   ];
@@ -95,6 +130,123 @@ const orderedColumns = computed(() =>
 );
 const orderedRows = computed(() =>
   [...props.tab.rows].sort((a, b) => a.order - b.order),
+);
+
+// The ghost row is the extra navigable row past the last real one.
+const nav = useGridNavigation(
+  () => orderedRows.value.length + 1,
+  () => orderedColumns.value.length,
+);
+
+type CellInstance = ComponentPublicInstance<
+  unknown,
+  unknown,
+  unknown,
+  unknown,
+  { commit: () => void }
+>;
+
+const cells = new Map<string, CellInstance>();
+const key = (rowIndex: number, columnIndex: number) =>
+  `${rowIndex}:${columnIndex}`;
+
+function registerCell(
+  rowIndex: number,
+  columnIndex: number,
+  el: Element | ComponentPublicInstance | null,
+): void {
+  const id = key(rowIndex, columnIndex);
+  if (el) cells.set(id, el as CellInstance);
+  else cells.delete(id);
+}
+
+function startEdit(rowIndex: number, columnIndex: number): void {
+  nav.focusCell(rowIndex, columnIndex);
+  nav.beginEdit();
+}
+
+/**
+ * Commit the cell being edited before focus leaves it.
+ *
+ * Moving removes the editor from the DOM, and removal does not fire `blur` —
+ * so without this the keystroke that moves would silently discard the entry.
+ */
+function commitFocused(): void {
+  const at = nav.focused.value;
+  if (!at || !nav.editing.value) return;
+  cells.get(key(at.rowIndex, at.columnIndex))?.commit();
+}
+
+function focusFocusedCell(): void {
+  const at = nav.focused.value;
+  if (!at) return;
+  void nextTick(() => {
+    const cell = cells.get(key(at.rowIndex, at.columnIndex));
+    (cell?.$el as HTMLElement | undefined)?.focus?.();
+  });
+}
+
+function onKeydown(event: KeyboardEvent): void {
+  if (!nav.focused.value) return;
+
+  switch (event.key) {
+    case "Tab":
+      event.preventDefault();
+      commitFocused();
+      if (event.shiftKey) nav.movePrevious();
+      else nav.moveNext();
+      focusFocusedCell();
+      break;
+    case "Enter":
+      event.preventDefault();
+      commitFocused();
+      nav.moveDown();
+      focusFocusedCell();
+      break;
+    case "Escape":
+      nav.endEdit();
+      break;
+    case "ArrowRight":
+    case "ArrowLeft":
+    case "ArrowUp":
+    case "ArrowDown":
+      // While editing, the arrows belong to the text being typed.
+      if (nav.editing.value) return;
+      event.preventDefault();
+      if (event.key === "ArrowRight") nav.moveRight();
+      if (event.key === "ArrowLeft") nav.moveLeft();
+      if (event.key === "ArrowUp") nav.moveUp();
+      if (event.key === "ArrowDown") nav.moveDown();
+      focusFocusedCell();
+      break;
+    default:
+      break;
+  }
+}
+
+// One ghost entry can be in flight at a time: a second keystroke must not
+// create a second row. The ghost re-opens once the row has arrived.
+const ghostPending = ref(false);
+
+function materialise(columnId: string, value: CellValue): void {
+  if (ghostPending.value || value === null) return;
+  ghostPending.value = true;
+  emit("add-row", { [columnId]: value });
+}
+
+watch(
+  () => props.tab.rows.length,
+  () => {
+    ghostPending.value = false;
+    nav.clampToGrid();
+  },
+);
+
+watch(
+  () => props.tab.id,
+  () => {
+    nav.focusCell(-1, -1);
+  },
 );
 </script>
 
@@ -144,6 +296,10 @@ const orderedRows = computed(() =>
 
 .sheet-grid__row--striped {
   background: rgba(255, 255, 255, 0.025);
+}
+
+.sheet-grid__row--ghost {
+  opacity: 0.75;
 }
 
 .sheet-grid__empty {

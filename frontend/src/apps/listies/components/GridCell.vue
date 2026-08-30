@@ -5,8 +5,10 @@
       'grid-cell--number': column.type === 'number',
       'grid-cell--empty': isEmpty && !editing,
       'grid-cell--invalid': invalid !== null,
+      'grid-cell--focused': focused,
     }"
-    @click="beginEdit"
+    :tabindex="editable ? 0 : undefined"
+    @click="requestEdit"
   >
     <template v-if="editing">
       <input
@@ -26,18 +28,33 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { formatCell, parseCell } from "@/apps/listies/coerce";
 import type { CellValue, Column } from "@/apps/listies/types";
 
+/**
+ * One cell. Editing is **parent-controlled**: the grid owns which cell is being
+ * edited, because the keyboard moves that selection across cells (Story 2.3).
+ * This component asks (`begin-edit` / `end-edit`) and reports (`commit`).
+ */
 const props = withDefaults(
-  defineProps<{ value: CellValue; column: Column; editable?: boolean }>(),
-  { editable: false },
+  defineProps<{
+    value: CellValue;
+    column: Column;
+    editable?: boolean;
+    editing?: boolean;
+    focused?: boolean;
+  }>(),
+  { editable: false, editing: false, focused: false },
 );
-const emit = defineEmits<{ commit: [value: CellValue] }>();
 
-const editing = ref(false);
-const draft = ref("");
+const emit = defineEmits<{
+  commit: [value: CellValue];
+  "begin-edit": [];
+  "end-edit": [];
+}>();
+
+const draft = ref<string | number>("");
 const invalid = ref<string | null>(null);
 const inputEl = ref<HTMLInputElement | null>(null);
 
@@ -46,8 +63,6 @@ const isEmpty = computed(
   () => props.value === null || props.value === undefined,
 );
 
-// Text and date both edit as strings, but a date edits in ISO form (the
-// native picker's format) rather than the "02 Sep 26" display form.
 // A date gets the native picker — it is a real gain and it enforces ISO. A
 // number deliberately does NOT: a native number input silently discards what
 // it cannot parse, so a typo would clear the cell instead of being explained.
@@ -58,18 +73,29 @@ const inputMode = computed(() =>
   props.column.type === "number" ? "decimal" : undefined,
 );
 
-function beginEdit(): void {
-  if (!props.editable || editing.value) return;
-  draft.value = props.value === null ? "" : String(props.value);
-  invalid.value = null;
-  editing.value = true;
-  void nextTick(() => inputEl.value?.select());
+watch(
+  () => props.editing,
+  (editing) => {
+    if (editing) {
+      draft.value = props.value === null ? "" : String(props.value);
+      invalid.value = null;
+      void nextTick(() => inputEl.value?.select());
+    } else {
+      invalid.value = null;
+    }
+  },
+  { immediate: true },
+);
+
+function requestEdit(): void {
+  if (!props.editable || props.editing) return;
+  emit("begin-edit");
 }
 
 function commit(): void {
-  if (!editing.value) return;
+  if (!props.editing) return;
 
-  const result = parseCell(draft.value, props.column.type);
+  const result = parseCell(String(draft.value ?? ""), props.column.type);
   if (!result.ok) {
     // Stay in the editor so the entry can be corrected rather than lost.
     invalid.value = result.error;
@@ -77,15 +103,17 @@ function commit(): void {
   }
 
   invalid.value = null;
-  editing.value = false;
   const current = props.value ?? null;
   if (result.value !== current) emit("commit", result.value);
+  emit("end-edit");
 }
 
 function cancel(): void {
-  editing.value = false;
   invalid.value = null;
+  emit("end-edit");
 }
+
+defineExpose({ commit });
 </script>
 
 <style scoped>
@@ -96,6 +124,7 @@ function cancel(): void {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 20rem;
+  outline: none;
 }
 
 .grid-cell--number {
@@ -107,9 +136,12 @@ function cancel(): void {
   color: var(--listies-muted, rgba(255, 255, 255, 0.35));
 }
 
+.grid-cell--focused {
+  box-shadow: inset 0 0 0 2px var(--q-primary, #1976d2);
+}
+
 .grid-cell--invalid {
-  outline: 1px solid var(--q-negative, #c10015);
-  outline-offset: -1px;
+  box-shadow: inset 0 0 0 2px var(--q-negative, #c10015);
 }
 
 .grid-cell__input {
