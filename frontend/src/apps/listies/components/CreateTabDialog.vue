@@ -26,9 +26,51 @@
 
         <div>
           <div class="text-caption text-grey-6 q-mb-xs">Columns</div>
-          <ColumnBuilder v-model="columns" />
-          <div v-if="duplicateNames" class="text-negative text-caption q-mt-xs">
-            Column names must be unique.
+
+          <q-option-group
+            v-if="canCopy"
+            v-model="mode"
+            inline
+            dense
+            :options="MODE_OPTIONS"
+            data-testid="column-mode"
+          />
+
+          <!-- Each branch keeps a single root element: swapping two
+               multi-root <template> branches trips Vue's fragment anchors. -->
+          <div v-if="mode === 'copy'">
+            <q-select
+              v-model="copySourceId"
+              dense
+              outlined
+              emit-value
+              map-options
+              class="q-mt-sm"
+              label="Same columns as…"
+              :options="sourceOptions"
+              data-testid="copy-source"
+            />
+            <div
+              v-if="previewColumns.length"
+              class="text-caption text-grey-6 q-mt-xs"
+              data-testid="copy-preview"
+            >
+              Copies
+              {{
+                previewColumns.map((c) => `${c.name} (${c.type})`).join(", ")
+              }}
+              — and no rows.
+            </div>
+          </div>
+
+          <div v-else>
+            <ColumnBuilder v-model="columns" />
+            <div
+              v-if="duplicateNames"
+              class="text-negative text-caption q-mt-xs"
+            >
+              Column names must be unique.
+            </div>
           </div>
         </div>
       </q-card-section>
@@ -63,8 +105,21 @@ import type { ColumnSpec, Tab } from "@/apps/listies/types";
 const props = defineProps<{ modelValue: boolean; existingTabs: Tab[] }>();
 const emit = defineEmits<{
   "update:modelValue": [value: boolean];
-  submit: [payload: { name: string; columns: ColumnSpec[] }];
+  submit: [
+    payload: {
+      name: string;
+      columns?: ColumnSpec[];
+      copyColumnsFrom?: string;
+    },
+  ];
 }>();
+
+type Mode = "define" | "copy";
+
+const MODE_OPTIONS: { label: string; value: Mode }[] = [
+  { label: "Define columns", value: "define" },
+  { label: "Same columns as…", value: "copy" },
+];
 
 function blankColumns(): ColumnSpec[] {
   return [{ name: "", type: "text" }];
@@ -72,6 +127,24 @@ function blankColumns(): ColumnSpec[] {
 
 const name = ref("");
 const columns = ref<ColumnSpec[]>(blankColumns());
+const mode = ref<Mode>("define");
+const copySourceId = ref<string | null>(null);
+
+// Copying only makes sense when there is something to copy from.
+const canCopy = computed(() => props.existingTabs.length > 0);
+
+const sourceOptions = computed(() =>
+  [...props.existingTabs]
+    .sort((a, b) => a.order - b.order)
+    .map((tab) => ({ label: tab.name, value: tab.id })),
+);
+
+const previewColumns = computed(() => {
+  const source = props.existingTabs.find((t) => t.id === copySourceId.value);
+  return source ? [...source.columns].sort((a, b) => a.order - b.order) : [];
+});
+
+copySourceId.value = props.existingTabs[0]?.id ?? null;
 
 watch(
   () => props.modelValue,
@@ -79,6 +152,8 @@ watch(
     if (open) {
       name.value = "";
       columns.value = blankColumns();
+      mode.value = "define";
+      copySourceId.value = props.existingTabs[0]?.id ?? null;
     }
   },
 );
@@ -99,16 +174,26 @@ const nameAlreadyUsed = computed(() =>
   ),
 );
 
-const canSubmit = computed(
-  () =>
-    name.value.trim().length > 0 &&
+const canSubmit = computed(() => {
+  if (!name.value.trim()) return false;
+  if (mode.value === "copy") return copySourceId.value !== null;
+  return (
     trimmed.value.length > 0 &&
     trimmed.value.every((c) => c.name.length > 0) &&
-    !duplicateNames.value,
-);
+    !duplicateNames.value
+  );
+});
 
 function submit(): void {
   if (!canSubmit.value) return;
+  // Exactly one of the two — the API rejects both or neither.
+  if (mode.value === "copy" && copySourceId.value) {
+    emit("submit", {
+      name: name.value.trim(),
+      copyColumnsFrom: copySourceId.value,
+    });
+    return;
+  }
   emit("submit", { name: name.value.trim(), columns: trimmed.value });
 }
 </script>

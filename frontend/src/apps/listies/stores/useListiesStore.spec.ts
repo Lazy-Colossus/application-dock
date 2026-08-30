@@ -702,3 +702,26 @@ describe("useListiesStore — tabs (Story 3.1)", () => {
     expect(postMock).not.toHaveBeenCalled();
   });
 });
+
+describe("useListiesStore — createTab by copying (Story 3.2)", () => {
+  it("sends copy_columns_from and no column list", async () => {
+    getMock.mockImplementation(() => Promise.resolve(sheet()));
+    postMock.mockReset().mockResolvedValue({
+      id: "tb-9",
+      name: "Cafés",
+      order: 1,
+      columns: [],
+      rows: [],
+    });
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.createTabFrom("Cafés", "tb-1");
+
+    expect(postMock).toHaveBeenCalledWith("/listies/sheets/s-2/tabs", {
+      name: "Cafés",
+      copy_columns_from: "tb-1",
+    });
+    expect(store.activeTabId).toBe("tb-9");
+  });
+});

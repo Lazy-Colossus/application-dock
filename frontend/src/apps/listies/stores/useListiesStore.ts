@@ -201,21 +201,30 @@ export const useListiesStore = defineStore("listies", () => {
     activeTabId.value = tabId;
   }
 
-  async function createTab(name: string, columns: ColumnSpec[]): Promise<void> {
+  async function postTab(body: Record<string, unknown>): Promise<void> {
     const sheet = currentSheet.value;
     if (!sheet) return;
 
     error.value = null;
     try {
-      const tab = await api.post<Tab>(`/listies/sheets/${sheet.id}/tabs`, {
-        name,
-        columns,
-      });
+      const tab = await api.post<Tab>(`/listies/sheets/${sheet.id}/tabs`, body);
       sheet.tabs.push(tab);
       activeTabId.value = tab.id;
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e);
     }
+  }
+
+  async function createTab(name: string, columns: ColumnSpec[]): Promise<void> {
+    await postTab({ name, columns });
+  }
+
+  /** Copy another tab's column setup — the API takes one or the other. */
+  async function createTabFrom(
+    name: string,
+    sourceTabId: string,
+  ): Promise<void> {
+    await postTab({ name, copy_columns_from: sourceTabId });
   }
 
   // ── columns (Story 2.5) ────────────────────────────────────────────────
@@ -312,6 +321,7 @@ export const useListiesStore = defineStore("listies", () => {
     commitCell,
     setActiveTab,
     createTab,
+    createTabFrom,
     deleteRow,
     addColumn,
     renameColumn,

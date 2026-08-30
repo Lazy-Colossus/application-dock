@@ -31,11 +31,50 @@ const STUBS = {
     ],
     emits: ["click"],
   },
-  "q-select": { template: "<select />" },
+  "q-select": {
+    template:
+      '<select :data-testid="$attrs[\'data-testid\']" :value="modelValue" @change="$emit(\'update:modelValue\', $event.target.value)"><option v-for="o in options || []" :key="o.value" :value="o.value">{{ o.label }}</option></select>',
+    props: [
+      "modelValue",
+      "options",
+      "dense",
+      "outlined",
+      "emitValue",
+      "mapOptions",
+      "label",
+    ],
+    emits: ["update:modelValue"],
+  },
+  "q-option-group": {
+    template:
+      '<div :data-testid="$attrs[\'data-testid\']"><button v-for="o in options" :key="o.value" :data-testid="\'mode-\' + o.value" @click="$emit(\'update:modelValue\', o.value)">{{ o.label }}</button></div>',
+    props: ["modelValue", "options", "inline", "dense"],
+    emits: ["update:modelValue"],
+  },
 };
 
 const EXISTING: Tab[] = [
   { id: "tb-1", name: "Packing", order: 0, columns: [], rows: [] },
+];
+
+const WITH_COLUMNS: Tab[] = [
+  {
+    id: "tb-1",
+    name: "Packing",
+    order: 0,
+    columns: [
+      { id: "c-1", name: "Item", type: "text", order: 0 },
+      { id: "c-2", name: "Qty", type: "number", order: 1 },
+    ],
+    rows: [],
+  },
+  {
+    id: "tb-2",
+    name: "Flights",
+    order: 1,
+    columns: [{ id: "c-9", name: "Airline", type: "text", order: 0 }],
+    rows: [],
+  },
 ];
 
 function mountDialog(existingTabs: Tab[] = EXISTING) {
@@ -132,5 +171,87 @@ describe("CreateTabDialog", () => {
       (wrapper.find('[data-testid="tab-name"]').element as HTMLInputElement)
         .value,
     ).toBe("");
+  });
+});
+
+describe("CreateTabDialog — copying another tab's columns (Story 3.2)", () => {
+  const copyMode = async (w: ReturnType<typeof mountDialog>) => {
+    await w.find('[data-testid="mode-copy"]').trigger("click");
+  };
+
+  it("offers a choice between defining columns and copying a tab", () => {
+    const wrapper = mountDialog(WITH_COLUMNS);
+    expect(wrapper.find('[data-testid="column-mode"]').exists()).toBe(true);
+  });
+
+  it("does not offer copying when the sheet has no other tab", () => {
+    expect(mountDialog([]).find('[data-testid="column-mode"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("hides the column builder in copy mode", async () => {
+    const wrapper = mountDialog(WITH_COLUMNS);
+
+    await copyMode(wrapper);
+
+    expect(wrapper.findComponent({ name: "ColumnBuilder" }).exists()).toBe(
+      false,
+    );
+  });
+
+  it("previews the columns that would be copied", async () => {
+    const wrapper = mountDialog(WITH_COLUMNS);
+    await copyMode(wrapper);
+
+    const preview = wrapper.find('[data-testid="copy-preview"]').text();
+
+    expect(preview).toContain("Item");
+    expect(preview).toContain("Qty");
+  });
+
+  it("updates the preview when another source tab is chosen", async () => {
+    const wrapper = mountDialog(WITH_COLUMNS);
+    await copyMode(wrapper);
+
+    await wrapper.find('[data-testid="copy-source"]').setValue("tb-2");
+
+    expect(wrapper.find('[data-testid="copy-preview"]').text()).toContain(
+      "Airline",
+    );
+    expect(wrapper.find('[data-testid="copy-preview"]').text()).not.toContain(
+      "Qty",
+    );
+  });
+
+  it("submits the source tab instead of a column list", async () => {
+    const wrapper = mountDialog(WITH_COLUMNS);
+    await copyMode(wrapper);
+    await wrapper.find('[data-testid="tab-name"]').setValue("Cafés");
+
+    await submitBtn(wrapper).trigger("click");
+
+    expect(wrapper.emitted("submit")![0]![0]).toEqual({
+      name: "Cafés",
+      copyColumnsFrom: "tb-1",
+    });
+  });
+
+  it("still requires a tab name in copy mode", async () => {
+    const wrapper = mountDialog(WITH_COLUMNS);
+    await copyMode(wrapper);
+
+    expect(submitBtn(wrapper).attributes("disabled")).toBeDefined();
+  });
+
+  it("returns to defining columns when the mode is switched back", async () => {
+    const wrapper = mountDialog(WITH_COLUMNS);
+    await copyMode(wrapper);
+
+    await wrapper.find('[data-testid="mode-define"]').trigger("click");
+
+    expect(wrapper.findComponent({ name: "ColumnBuilder" }).exists()).toBe(
+      true,
+    );
   });
 });

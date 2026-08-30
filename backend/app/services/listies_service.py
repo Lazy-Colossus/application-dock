@@ -413,20 +413,49 @@ def delete_column(username: str, sheet_id: str, tab_id: str, column_id: str) -> 
 # ── tabs ──────────────────────────────────────────────────────────────────────
 
 
-def create_tab(username: str, sheet_id: str, name: str, columns: list[ColumnSpec]) -> Tab:
+def _copied_columns(sheet: Sheet, source_tab_id: str) -> list[Column]:
+    """Snapshot another tab's columns with **fresh ids**.
+
+    Fresh ids matter: cells are keyed by column id, so reusing the source's
+    ids would make two tabs share keys and turn a later retype in one tab into
+    an action at a distance in the other. The copy is structural only.
+    """
+    source = find_tab(sheet.tabs, source_tab_id)
+    return [
+        Column(id=new_id("c"), name=column.name, type=column.type, order=column.order)
+        for column in sorted(source.columns, key=lambda c: c.order)
+    ]
+
+
+def create_tab(
+    username: str,
+    sheet_id: str,
+    name: str,
+    columns: list[ColumnSpec] | None = None,
+    copy_columns_from: str | None = None,
+) -> Tab:
     """Add a tab with its own columns and no rows.
 
     Tab names are NOT required to be unique — a tab is identified by its id,
     and two tabs called "Notes" are the user's business, not an error.
     """
+    if (columns is None) == (copy_columns_from is None):
+        raise ValueError("provide exactly one of columns or copy_columns_from")
+
     doc = repo.read_doc(username)
     sheet = find_sheet(doc.sheets, sheet_id)
+
+    new_columns = (
+        _copied_columns(sheet, copy_columns_from)
+        if copy_columns_from is not None
+        else build_columns(columns or [])
+    )
 
     tab = Tab(
         id=new_id("tb"),
         name=_clean_name(name, "tab name"),
         order=max((t.order for t in sheet.tabs), default=-1) + 1,
-        columns=build_columns(columns),
+        columns=new_columns,
         rows=[],
     )
     sheet.tabs.append(tab)

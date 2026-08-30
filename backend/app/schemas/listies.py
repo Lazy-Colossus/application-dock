@@ -113,4 +113,6 @@ class ReorderColumnsRequest(BaseModel):
 
 class CreateTabRequest(BaseModel):
     name: str
-    columns: list[ColumnSpec]
+    # Exactly one of these: define the columns, or copy another tab's setup.
+    columns: list[ColumnSpec] | None = None
+    copy_columns_from: str | None = None

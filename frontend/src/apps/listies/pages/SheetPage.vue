@@ -100,9 +100,14 @@ watch(() => route.params.sheetId, load);
 
 async function createTab(payload: {
   name: string;
-  columns: ColumnSpec[];
+  columns?: ColumnSpec[];
+  copyColumnsFrom?: string;
 }): Promise<void> {
-  await store.createTab(payload.name, payload.columns);
+  if (payload.copyColumnsFrom) {
+    await store.createTabFrom(payload.name, payload.copyColumnsFrom);
+  } else {
+    await store.createTab(payload.name, payload.columns ?? []);
+  }
   if (!store.error) tabDialogOpen.value = false;
 }
 </script>

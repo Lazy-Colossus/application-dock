@@ -191,7 +191,13 @@ def create_tab(
     current_user: str = Depends(get_current_user),
 ) -> Tab:
     try:
-        return service.create_tab(current_user, sheet_id, req.name, req.columns)
+        return service.create_tab(
+            current_user,
+            sheet_id,
+            req.name,
+            columns=req.columns,
+            copy_columns_from=req.copy_columns_from,
+        )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:

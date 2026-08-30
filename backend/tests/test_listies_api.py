@@ -974,3 +974,100 @@ def test_create_tab_in_another_users_sheet_returns_404() -> None:
         assert resp.status_code == 404
     finally:
         app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+
+# ── copying a tab's column setup (Story 3.2) ──────────────────────────────────
+
+
+def _copy_tab(sheet_id: str, source_tab_id: str, name: str = "Copy"):
+    return client.post(
+        f"/api/listies/sheets/{sheet_id}/tabs",
+        json={"name": name, "copy_columns_from": source_tab_id},
+    )
+
+
+def test_copying_reproduces_the_names_types_and_order() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+
+    body = _copy_tab(sheet_id, tab_id).json()
+
+    source = _tabs(sheet_id)[0]["columns"]
+    assert [(c["name"], c["type"], c["order"]) for c in body["columns"]] == [
+        (c["name"], c["type"], c["order"]) for c in source
+    ]
+
+
+def test_copying_mints_fresh_column_ids() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+    source_ids = {c["id"] for c in _tabs(sheet_id)[0]["columns"]}
+
+    body = _copy_tab(sheet_id, tab_id).json()
+
+    assert {c["id"] for c in body["columns"]}.isdisjoint(source_ids)
+    assert all(c["id"].startswith("c-") for c in body["columns"])
+
+
+def test_copying_brings_no_rows() -> None:
+    sheet_id, tab_id, _, _ = _populated()
+
+    body = _copy_tab(sheet_id, tab_id).json()
+
+    assert body["rows"] == []
+
+
+def test_a_copied_tab_is_a_snapshot_not_a_link() -> None:
+    """Renaming a column in one tab must not touch the other."""
+    sheet_id, tab_id = _sheet_and_tab()
+    copy = _copy_tab(sheet_id, tab_id).json()
+    source_column = _tabs(sheet_id)[0]["columns"][0]["id"]
+
+    client.put(
+        f"{_tab_url(sheet_id, tab_id)}/columns/{source_column}",
+        json={"name": "Renamed"},
+    )
+
+    after = next(t for t in _tabs(sheet_id) if t["id"] == copy["id"])
+    assert after["columns"][0]["name"] == "Item"
+
+
+def test_deleting_a_column_in_the_source_leaves_the_copy_intact() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+    copy = _copy_tab(sheet_id, tab_id).json()
+    source_column = _tabs(sheet_id)[0]["columns"][0]["id"]
+
+    client.delete(f"{_tab_url(sheet_id, tab_id)}/columns/{source_column}")
+
+    after = next(t for t in _tabs(sheet_id) if t["id"] == copy["id"])
+    assert len(after["columns"]) == 3
+
+
+def test_copying_from_a_tab_that_is_not_in_this_sheet_returns_404() -> None:
+    sheet_id, _ = _sheet_and_tab()
+    assert _copy_tab(sheet_id, "tb-nope").status_code == 404
+
+
+def test_supplying_both_columns_and_a_copy_source_is_rejected() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+
+    resp = client.post(
+        f"/api/listies/sheets/{sheet_id}/tabs",
+        json={
+            "name": "X",
+            "columns": [{"name": "A", "type": "text"}],
+            "copy_columns_from": tab_id,
+        },
+    )
+
+    assert resp.status_code == 422
+
+
+def test_supplying_neither_columns_nor_a_copy_source_is_rejected() -> None:
+    sheet_id, _ = _sheet_and_tab()
+    resp = client.post(f"/api/listies/sheets/{sheet_id}/tabs", json={"name": "X"})
+    assert resp.status_code == 422
+
+
+def test_a_rejected_tab_creation_writes_nothing() -> None:
+    sheet_id, _ = _sheet_and_tab()
+    client.post(f"/api/listies/sheets/{sheet_id}/tabs", json={"name": "X"})
+    assert len(_tabs(sheet_id)) == 1

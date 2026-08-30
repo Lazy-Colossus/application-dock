@@ -374,3 +374,27 @@ describe("SheetPage — tabs (Story 3.1)", () => {
     );
   });
 });
+
+describe("SheetPage — copying a tab's columns (Story 3.2)", () => {
+  it("sends the source tab rather than a column list", async () => {
+    postMock.mockResolvedValue({
+      id: "tb-3",
+      name: "Cafés",
+      order: 2,
+      columns: [],
+      rows: [],
+    });
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    await wrapper
+      .findComponent({ name: "CreateTabDialog" })
+      .vm.$emit("submit", { name: "Cafés", copyColumnsFrom: "tb-1" });
+    await flushPromises();
+
+    expect(postMock).toHaveBeenCalledWith("/listies/sheets/s-1/tabs", {
+      name: "Cafés",
+      copy_columns_from: "tb-1",
+    });
+  });
+});
