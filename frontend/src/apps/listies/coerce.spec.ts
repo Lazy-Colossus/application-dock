@@ -105,3 +105,43 @@ describe("parseCell — date", () => {
     if (!result.ok) expect(result.error.length).toBeGreaterThan(0);
   });
 });
+
+import { countBlankedByRetype } from "./coerce";
+import type { Row } from "@/apps/listies/types";
+
+const rowsWith = (values: (string | number | null)[]): Row[] =>
+  values.map((v, i) => ({
+    id: `r-${i}`,
+    order: i,
+    cells: v === null ? {} : { "c-1": v },
+    created_at: "t",
+    updated_at: "t",
+  }));
+
+describe("countBlankedByRetype", () => {
+  it("counts nothing when every value survives", () => {
+    expect(countBlankedByRetype(rowsWith(["12", "3.5"]), "c-1", "number")).toBe(
+      0,
+    );
+  });
+
+  it("counts the values a retype would empty", () => {
+    expect(
+      countBlankedByRetype(rowsWith(["12", "abc", "nope"]), "c-1", "number"),
+    ).toBe(2);
+  });
+
+  it("never counts already-empty cells — there is nothing to lose there", () => {
+    expect(countBlankedByRetype(rowsWith([null, null]), "c-1", "date")).toBe(0);
+  });
+
+  it("counts nothing when converting to text, which keeps everything", () => {
+    expect(countBlankedByRetype(rowsWith([12, "abc"]), "c-1", "text")).toBe(0);
+  });
+
+  it("counts dates that a number retype cannot keep", () => {
+    expect(
+      countBlankedByRetype(rowsWith(["2026-09-02", "7"]), "c-1", "number"),
+    ).toBe(1);
+  });
+});

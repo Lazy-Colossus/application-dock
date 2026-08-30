@@ -470,3 +470,142 @@ describe("useListiesStore — deleteRow (Story 2.4)", () => {
     expect(delMock).not.toHaveBeenCalled();
   });
 });
+
+describe("useListiesStore — columns (Story 2.5)", () => {
+  const threeColumns = (): Sheet => {
+    const s = sheet();
+    s.tabs[0]!.columns = [
+      { id: "c-1", name: "Item", type: "text", order: 0 },
+      { id: "c-2", name: "Qty", type: "number", order: 1 },
+      { id: "c-3", name: "Due", type: "date", order: 2 },
+    ];
+    return s;
+  };
+
+  const returnedTab = {
+    id: "tb-1",
+    name: "Tab 1",
+    order: 0,
+    columns: [{ id: "c-1", name: "Gear", type: "text", order: 0 }],
+    rows: [],
+  };
+
+  beforeEach(() => {
+    getMock.mockImplementation(() => Promise.resolve(threeColumns()));
+    postMock.mockReset().mockResolvedValue(returnedTab);
+    putMock.mockReset().mockResolvedValue(returnedTab);
+    delMock.mockReset().mockResolvedValue(undefined);
+  });
+
+  it("adds a column and replaces the tab with the response", async () => {
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.addColumn("Notes", "text");
+
+    expect(postMock).toHaveBeenCalledWith(
+      "/listies/sheets/s-2/tabs/tb-1/columns",
+      { name: "Notes", type: "text" },
+    );
+    expect(store.activeTab!.columns).toEqual(returnedTab.columns);
+  });
+
+  it("renames a column", async () => {
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.renameColumn("c-1", "Gear");
+
+    expect(putMock).toHaveBeenCalledWith(
+      "/listies/sheets/s-2/tabs/tb-1/columns/c-1",
+      { name: "Gear" },
+    );
+  });
+
+  it("retypes a column", async () => {
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.retypeColumn("c-2", "text");
+
+    expect(putMock).toHaveBeenCalledWith(
+      "/listies/sheets/s-2/tabs/tb-1/columns/c-2",
+      { type: "text" },
+    );
+  });
+
+  it("moves a column by sending the whole new order", async () => {
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.moveColumn("c-1", 1);
+
+    expect(putMock).toHaveBeenCalledWith(
+      "/listies/sheets/s-2/tabs/tb-1/columns/order",
+      { column_ids: ["c-2", "c-1", "c-3"] },
+    );
+  });
+
+  it("does not move the first column further left", async () => {
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.moveColumn("c-1", -1);
+
+    expect(putMock).not.toHaveBeenCalled();
+  });
+
+  it("does not move the last column further right", async () => {
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.moveColumn("c-3", 1);
+
+    expect(putMock).not.toHaveBeenCalled();
+  });
+
+  it("deletes a column and drops it locally", async () => {
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.deleteColumn("c-2");
+
+    expect(delMock).toHaveBeenCalledWith(
+      "/listies/sheets/s-2/tabs/tb-1/columns/c-2",
+    );
+    expect(store.activeTab!.columns.map((c) => c.id)).toEqual(["c-1", "c-3"]);
+  });
+
+  it("also drops the deleted column's values from every row", async () => {
+    getMock.mockImplementation(() => {
+      const s = threeColumns();
+      s.tabs[0]!.rows = [
+        {
+          id: "r-1",
+          order: 0,
+          cells: { "c-1": "Tent", "c-2": 1 },
+          created_at: "t",
+          updated_at: "t",
+        },
+      ];
+      return Promise.resolve(s);
+    });
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.deleteColumn("c-2");
+
+    expect(store.activeTab!.rows[0]!.cells).toEqual({ "c-1": "Tent" });
+  });
+
+  it("keeps the column and surfaces the error when a column write fails", async () => {
+    putMock.mockRejectedValue(new Error("duplicate column name: Qty"));
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.renameColumn("c-1", "Qty");
+
+    expect(store.activeTab!.columns[0]!.name).toBe("Item");
+    expect(store.error).toBe("duplicate column name: Qty");
+  });
+});

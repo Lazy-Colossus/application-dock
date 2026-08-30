@@ -9,11 +9,15 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.dependencies import get_current_user
 from app.schemas.listies import (
+    AddColumnRequest,
     CreateRowRequest,
     CreateSheetRequest,
+    ReorderColumnsRequest,
     Row,
     Sheet,
     SheetSummary,
+    Tab,
+    UpdateColumnRequest,
     UpdateRowRequest,
     UpdateSheetRequest,
 )
@@ -111,3 +115,69 @@ def delete_row(
         service.delete_row(current_user, sheet_id, tab_id, row_id)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/sheets/{sheet_id}/tabs/{tab_id}/columns", response_model=Tab)
+def add_column(
+    sheet_id: str,
+    tab_id: str,
+    req: AddColumnRequest,
+    current_user: str = Depends(get_current_user),
+) -> Tab:
+    try:
+        return service.add_column(current_user, sheet_id, tab_id, req.name, req.type)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+# Declared BEFORE /columns/{column_id} — otherwise "order" matches as an id.
+@router.put("/sheets/{sheet_id}/tabs/{tab_id}/columns/order", response_model=Tab)
+def reorder_columns(
+    sheet_id: str,
+    tab_id: str,
+    req: ReorderColumnsRequest,
+    current_user: str = Depends(get_current_user),
+) -> Tab:
+    try:
+        return service.reorder_columns(current_user, sheet_id, tab_id, req.column_ids)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.put("/sheets/{sheet_id}/tabs/{tab_id}/columns/{column_id}", response_model=Tab)
+def update_column(
+    sheet_id: str,
+    tab_id: str,
+    column_id: str,
+    req: UpdateColumnRequest,
+    current_user: str = Depends(get_current_user),
+) -> Tab:
+    if req.name is None and req.type is None:
+        raise HTTPException(status_code=422, detail="No updatable fields provided")
+    try:
+        return service.update_column(
+            current_user, sheet_id, tab_id, column_id, name=req.name, column_type=req.type
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.delete("/sheets/{sheet_id}/tabs/{tab_id}/columns/{column_id}", status_code=204)
+def delete_column(
+    sheet_id: str,
+    tab_id: str,
+    column_id: str,
+    current_user: str = Depends(get_current_user),
+) -> None:
+    try:
+        service.delete_column(current_user, sheet_id, tab_id, column_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

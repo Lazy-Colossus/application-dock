@@ -16,6 +16,7 @@ from app.schemas.listies import (
     Column,
     ColumnSpec,
     ColumnType,
+    ListiesDoc,
     Row,
     Sheet,
     SheetSummary,
@@ -308,4 +309,102 @@ def delete_row(username: str, sheet_id: str, tab_id: str, row_id: str) -> None:
     doc = repo.read_doc(username)
     tab = find_tab(find_sheet(doc.sheets, sheet_id).tabs, tab_id)
     tab.rows.remove(find_row(tab.rows, row_id))
+    repo.write_doc(username, doc)
+
+
+# ── columns ───────────────────────────────────────────────────────────────────
+
+
+def _check_name_is_free(tab: Tab, name: str, *, except_id: str | None = None) -> None:
+    """Column names are unique within a tab, compared case-insensitively.
+
+    Case-sensitive matching would happily allow "Item" beside "item", which is
+    indistinguishable at a glance in a header row.
+    """
+    folded = name.casefold()
+    for column in tab.columns:
+        if column.id != except_id and column.name.casefold() == folded:
+            raise ValueError(f"duplicate column name: {name}")
+
+
+def _tab_of(username: str, sheet_id: str, tab_id: str) -> tuple[ListiesDoc, Tab]:
+    doc = repo.read_doc(username)
+    return doc, find_tab(find_sheet(doc.sheets, sheet_id).tabs, tab_id)
+
+
+def add_column(
+    username: str, sheet_id: str, tab_id: str, name: str, column_type: ColumnType
+) -> Tab:
+    doc, tab = _tab_of(username, sheet_id, tab_id)
+    cleaned = _clean_name(name, "column name")
+    _check_name_is_free(tab, cleaned)
+
+    tab.columns.append(
+        Column(
+            id=new_id("c"),
+            name=cleaned,
+            type=column_type,
+            # Past the highest existing order — a deletion leaves gaps, so
+            # `len(columns)` would collide with a survivor.
+            order=max((c.order for c in tab.columns), default=-1) + 1,
+        )
+    )
+    repo.write_doc(username, doc)
+    return tab
+
+
+def update_column(
+    username: str,
+    sheet_id: str,
+    tab_id: str,
+    column_id: str,
+    name: str | None = None,
+    column_type: ColumnType | None = None,
+) -> Tab:
+    """Rename and/or retype a column.
+
+    A retype re-coerces every row: values that still parse are kept, the rest
+    are blanked. Returns the whole tab because one change can touch many rows.
+    """
+    doc, tab = _tab_of(username, sheet_id, tab_id)
+    column = find_column(tab.columns, column_id)
+
+    if name is not None:
+        cleaned = _clean_name(name, "column name")
+        _check_name_is_free(tab, cleaned, except_id=column_id)
+        column.name = cleaned
+
+    if column_type is not None and column_type != column.type:
+        column.type = column_type
+        recoerce_column(tab.rows, column_id, column_type)
+
+    repo.write_doc(username, doc)
+    return tab
+
+
+def reorder_columns(username: str, sheet_id: str, tab_id: str, column_ids: list[str]) -> Tab:
+    doc, tab = _tab_of(username, sheet_id, tab_id)
+
+    if sorted(column_ids) != sorted(c.id for c in tab.columns):
+        raise ValueError("column_ids must be a permutation of the tab's columns")
+
+    positions = {column_id: index for index, column_id in enumerate(column_ids)}
+    for column in tab.columns:
+        column.order = positions[column.id]
+
+    repo.write_doc(username, doc)
+    return tab
+
+
+def delete_column(username: str, sheet_id: str, tab_id: str, column_id: str) -> None:
+    doc, tab = _tab_of(username, sheet_id, tab_id)
+    column = find_column(tab.columns, column_id)
+
+    if len(tab.columns) == 1:
+        raise ValueError("a tab must keep at least one column")
+
+    tab.columns.remove(column)
+    for row in tab.rows:
+        row.cells.pop(column_id, None)
+
     repo.write_doc(username, doc)

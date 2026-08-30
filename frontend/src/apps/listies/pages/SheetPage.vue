@@ -48,6 +48,11 @@
         :tab="store.activeTab"
         @add-row="store.addRow($event)"
         @delete-row="store.deleteRow($event)"
+        @add-column="store.addColumn($event.name, $event.type)"
+        @rename-column="store.renameColumn($event.columnId, $event.name)"
+        @retype-column="store.retypeColumn($event.columnId, $event.type)"
+        @move-column="store.moveColumn($event.columnId, $event.delta)"
+        @delete-column="store.deleteColumn($event)"
         @commit-cell="
           store.commitCell($event.rowId, $event.columnId, $event.value)
         "

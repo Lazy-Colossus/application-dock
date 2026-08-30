@@ -228,3 +228,44 @@ describe("SheetPage — deleting a row (Story 2.4)", () => {
     );
   });
 });
+
+describe("SheetPage — column management (Story 2.5)", () => {
+  const TAB = {
+    id: "tb-1",
+    name: "Packing",
+    order: 0,
+    columns: [{ id: "c-1", name: "Gear", type: "text", order: 0 }],
+    rows: [],
+  };
+
+  it("passes each column action through to the API", async () => {
+    postMock.mockResolvedValue(TAB);
+    putMock.mockReset().mockResolvedValue(TAB);
+    delMock.mockReset().mockResolvedValue(undefined);
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+    const grid = wrapper.findComponent({ name: "SheetGrid" });
+
+    await grid.vm.$emit("add-column", { name: "Notes", type: "text" });
+    await grid.vm.$emit("rename-column", { columnId: "c-1", name: "Gear" });
+    await grid.vm.$emit("retype-column", { columnId: "c-1", type: "number" });
+    await grid.vm.$emit("delete-column", "c-1");
+    await flushPromises();
+
+    expect(postMock).toHaveBeenCalledWith(
+      "/listies/sheets/s-1/tabs/tb-1/columns",
+      { name: "Notes", type: "text" },
+    );
+    expect(putMock).toHaveBeenCalledWith(
+      "/listies/sheets/s-1/tabs/tb-1/columns/c-1",
+      { name: "Gear" },
+    );
+    expect(putMock).toHaveBeenCalledWith(
+      "/listies/sheets/s-1/tabs/tb-1/columns/c-1",
+      { type: "number" },
+    );
+    expect(delMock).toHaveBeenCalledWith(
+      "/listies/sheets/s-1/tabs/tb-1/columns/c-1",
+    );
+  });
+});

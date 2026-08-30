@@ -4,6 +4,7 @@ import { api } from "@/composables/useApi";
 import type {
   CellValue,
   ColumnSpec,
+  ColumnType,
   Row,
   Sheet,
   SheetSummary,
@@ -193,6 +194,90 @@ export const useListiesStore = defineStore("listies", () => {
     }
   }
 
+  // ── columns (Story 2.5) ────────────────────────────────────────────────
+  //
+  // Every column write returns the whole tab: a retype can rewrite many rows
+  // and a reorder changes every column's order, so replacing the tab wholesale
+  // is simpler and safer than reconciling deltas.
+
+  function tabUrl(): string | null {
+    const sheet = currentSheet.value;
+    const tab = activeTab.value;
+    return sheet && tab ? `/listies/sheets/${sheet.id}/tabs/${tab.id}` : null;
+  }
+
+  function replaceActiveTab(updated: Tab): void {
+    const sheet = currentSheet.value;
+    if (!sheet) return;
+    const index = sheet.tabs.findIndex((t) => t.id === updated.id);
+    if (index >= 0) sheet.tabs[index] = updated;
+  }
+
+  async function columnWrite(
+    write: (url: string) => Promise<Tab>,
+  ): Promise<void> {
+    const url = tabUrl();
+    if (!url) return;
+    error.value = null;
+    try {
+      replaceActiveTab(await write(url));
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  async function addColumn(name: string, type: ColumnType): Promise<void> {
+    await columnWrite((url) => api.post<Tab>(`${url}/columns`, { name, type }));
+  }
+
+  async function renameColumn(columnId: string, name: string): Promise<void> {
+    await columnWrite((url) =>
+      api.put<Tab>(`${url}/columns/${columnId}`, { name }),
+    );
+  }
+
+  async function retypeColumn(
+    columnId: string,
+    type: ColumnType,
+  ): Promise<void> {
+    await columnWrite((url) =>
+      api.put<Tab>(`${url}/columns/${columnId}`, { type }),
+    );
+  }
+
+  /** Swap a column with its neighbour; a no-op at either edge. */
+  async function moveColumn(columnId: string, delta: number): Promise<void> {
+    const tab = activeTab.value;
+    if (!tab) return;
+
+    const ids = [...tab.columns]
+      .sort((a, b) => a.order - b.order)
+      .map((c) => c.id);
+    const from = ids.indexOf(columnId);
+    const to = from + delta;
+    if (from < 0 || to < 0 || to >= ids.length) return;
+    [ids[from], ids[to]] = [ids[to]!, ids[from]!];
+
+    await columnWrite((url) =>
+      api.put<Tab>(`${url}/columns/order`, { column_ids: ids }),
+    );
+  }
+
+  async function deleteColumn(columnId: string): Promise<void> {
+    const url = tabUrl();
+    const tab = activeTab.value;
+    if (!url || !tab) return;
+
+    error.value = null;
+    try {
+      await api.del<void>(`${url}/columns/${columnId}`);
+      tab.columns = tab.columns.filter((c) => c.id !== columnId);
+      for (const row of tab.rows) delete row.cells[columnId];
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+    }
+  }
+
   return {
     sheets,
     currentSheet,
@@ -202,6 +287,11 @@ export const useListiesStore = defineStore("listies", () => {
     addRow,
     commitCell,
     deleteRow,
+    addColumn,
+    renameColumn,
+    retypeColumn,
+    moveColumn,
+    deleteColumn,
     loading,
     error,
     fetchSheets,

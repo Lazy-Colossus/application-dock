@@ -93,3 +93,19 @@ class CreateRowRequest(BaseModel):
 class UpdateRowRequest(BaseModel):
     # Only the provided keys are applied; a key set to null clears that cell.
     cells: dict[str, CellValue]
+
+
+class AddColumnRequest(BaseModel):
+    name: str
+    type: ColumnType
+
+
+class UpdateColumnRequest(BaseModel):
+    name: str | None = None
+    type: ColumnType | None = None
+
+
+class ReorderColumnsRequest(BaseModel):
+    # Must be a permutation of the tab's current column ids — a partial list
+    # would silently drop columns.
+    column_ids: list[str]

@@ -9,7 +9,7 @@
         <thead>
           <tr>
             <th
-              v-for="column in orderedColumns"
+              v-for="(column, columnIndex) in orderedColumns"
               :key="column.id"
               class="sheet-grid__header"
               :class="{
@@ -25,8 +25,84 @@
                 :data-testid="`header-name-${column.id}`"
                 >{{ column.name }}</span
               >
+              <q-btn
+                dense
+                flat
+                round
+                size="sm"
+                icon="expand_more"
+                class="sheet-grid__menu-btn"
+                :data-testid="`column-menu-${column.id}`"
+              >
+                <ColumnHeaderMenu
+                  :column="column"
+                  :rows="tab.rows"
+                  :can-move-left="columnIndex > 0"
+                  :can-move-right="columnIndex < orderedColumns.length - 1"
+                  :can-delete="orderedColumns.length > 1"
+                  @rename="
+                    emit('rename-column', { columnId: column.id, name: $event })
+                  "
+                  @retype="
+                    emit('retype-column', { columnId: column.id, type: $event })
+                  "
+                  @move="
+                    emit('move-column', { columnId: column.id, delta: $event })
+                  "
+                  @delete="emit('delete-column', column.id)"
+                />
+              </q-btn>
             </th>
-            <th class="sheet-grid__header sheet-grid__header--actions"></th>
+
+            <th class="sheet-grid__header sheet-grid__header--actions">
+              <template v-if="addingColumn">
+                <div class="row items-center q-gutter-xs no-wrap">
+                  <q-input
+                    v-model="newColumnName"
+                    dense
+                    outlined
+                    autofocus
+                    placeholder="Column name"
+                    data-testid="add-column-name"
+                  />
+                  <q-select
+                    v-model="newColumnType"
+                    dense
+                    outlined
+                    emit-value
+                    map-options
+                    :options="TYPE_OPTIONS"
+                    data-testid="add-column-type"
+                  />
+                  <q-btn
+                    dense
+                    flat
+                    no-caps
+                    label="Add"
+                    :disable="!newColumnName.trim()"
+                    data-testid="add-column-save"
+                    @click="saveNewColumn"
+                  />
+                  <q-btn
+                    dense
+                    flat
+                    round
+                    icon="close"
+                    data-testid="add-column-cancel"
+                    @click="addingColumn = false"
+                  />
+                </div>
+              </template>
+              <q-btn
+                v-else
+                dense
+                flat
+                round
+                icon="add"
+                data-testid="add-column"
+                @click="startAddColumn"
+              />
+            </th>
           </tr>
         </thead>
 
@@ -143,15 +219,21 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
 import type { ComponentPublicInstance } from "vue";
+import ColumnHeaderMenu from "./ColumnHeaderMenu.vue";
 import GridCell from "./GridCell.vue";
 import { typeGlyph } from "@/apps/listies/coerce";
 import { useGridNavigation } from "@/apps/listies/composables/useGridNavigation";
-import type { CellValue, Tab } from "@/apps/listies/types";
+import type { CellValue, ColumnType, Tab } from "@/apps/listies/types";
 
 const props = defineProps<{ tab: Tab }>();
 const emit = defineEmits<{
   "add-row": [cells: Record<string, CellValue>];
   "delete-row": [rowId: string];
+  "add-column": [spec: { name: string; type: ColumnType }];
+  "rename-column": [payload: { columnId: string; name: string }];
+  "retype-column": [payload: { columnId: string; type: ColumnType }];
+  "move-column": [payload: { columnId: string; delta: number }];
+  "delete-column": [columnId: string];
   "commit-cell": [
     payload: { rowId: string; columnId: string; value: CellValue },
   ];
@@ -258,6 +340,29 @@ function onKeydown(event: KeyboardEvent): void {
   }
 }
 
+const TYPE_OPTIONS: { label: string; value: ColumnType }[] = [
+  { label: "Text", value: "text" },
+  { label: "Number", value: "number" },
+  { label: "Date", value: "date" },
+];
+
+const addingColumn = ref(false);
+const newColumnName = ref("");
+const newColumnType = ref<ColumnType>("text");
+
+function startAddColumn(): void {
+  newColumnName.value = "";
+  newColumnType.value = "text";
+  addingColumn.value = true;
+}
+
+function saveNewColumn(): void {
+  const name = newColumnName.value.trim();
+  if (!name) return;
+  emit("add-column", { name, type: newColumnType.value });
+  addingColumn.value = false;
+}
+
 // Deleting a row destroys data with no undo, so it always confirms first —
 // inline, and only ever for one row at a time.
 const confirmingRowId = ref<string | null>(null);
@@ -329,6 +434,14 @@ watch(
 
 .sheet-grid__header--number {
   text-align: right;
+}
+
+.sheet-grid__menu-btn {
+  opacity: 0.5;
+}
+
+.sheet-grid__header:hover .sheet-grid__menu-btn {
+  opacity: 1;
 }
 
 .sheet-grid__glyph {

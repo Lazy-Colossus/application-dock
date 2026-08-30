@@ -1,7 +1,7 @@
 // Display formatting for cell values. Pure functions — no Vue, no store — so
 // the fiddly per-type rules are unit-tested without mounting a grid.
 
-import type { CellValue, ColumnType } from "@/apps/listies/types";
+import type { CellValue, ColumnType, Row } from "@/apps/listies/types";
 
 // An unfilled cell reads as a muted dash rather than blank space, so an empty
 // cell is visibly empty rather than ambiguous.
@@ -93,4 +93,23 @@ export function parseCell(input: string, type: ColumnType): ParseResult {
     return { ok: false, error: "Enter a date as YYYY-MM-DD" };
   }
   return { ok: true, value: input.trim() };
+}
+
+/**
+ * How many filled cells a retype would empty.
+ *
+ * Used to warn before applying a destructive type change. It mirrors the
+ * server's re-coercion rules; the server remains the authority, this is only
+ * how the user finds out what it will cost.
+ */
+export function countBlankedByRetype(
+  rows: Row[],
+  columnId: string,
+  newType: ColumnType,
+): number {
+  return rows.filter((row) => {
+    const value = row.cells[columnId];
+    if (value === null || value === undefined) return false;
+    return !parseCell(String(value), newType).ok;
+  }).length;
 }

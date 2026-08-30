@@ -545,3 +545,304 @@ def test_delete_row_in_another_users_sheet_returns_404() -> None:
         assert resp.status_code == 404
     finally:
         app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+
+# ── columns (Story 2.5) ───────────────────────────────────────────────────────
+
+
+def _tab_url(sheet_id: str, tab_id: str) -> str:
+    return f"/api/listies/sheets/{sheet_id}/tabs/{tab_id}"
+
+
+def _populated() -> tuple[str, str, list[str], str]:
+    """A sheet with three typed columns and one row holding a value in each."""
+    sheet_id, tab_id, row_id, ids = _row_with_cells()
+    return sheet_id, tab_id, ids, row_id
+
+
+def _columns(sheet_id: str) -> list[dict]:
+    return client.get(f"/api/listies/sheets/{sheet_id}").json()["tabs"][0]["columns"]
+
+
+def _rows(sheet_id: str) -> list[dict]:
+    return client.get(f"/api/listies/sheets/{sheet_id}").json()["tabs"][0]["rows"]
+
+
+# add
+
+
+def test_add_column_appends_it_with_a_fresh_id() -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+
+    resp = client.post(
+        f"{_tab_url(sheet_id, tab_id)}/columns", json={"name": "Notes", "type": "text"}
+    )
+
+    assert resp.status_code == 200
+    columns = resp.json()["columns"]
+    assert columns[-1]["name"] == "Notes"
+    assert columns[-1]["id"].startswith("c-")
+    assert columns[-1]["id"] not in ids
+    assert columns[-1]["order"] == max(c["order"] for c in columns)
+
+
+def test_add_column_leaves_existing_rows_untouched() -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+    before = _rows(sheet_id)[0]["cells"]
+
+    client.post(f"{_tab_url(sheet_id, tab_id)}/columns", json={"name": "Notes", "type": "text"})
+
+    assert _rows(sheet_id)[0]["cells"] == before
+
+
+@pytest.mark.parametrize("name", ["", "   "])
+def test_add_column_rejects_a_blank_name(name: str) -> None:
+    sheet_id, tab_id, _, _ = _populated()
+    resp = client.post(f"{_tab_url(sheet_id, tab_id)}/columns", json={"name": name, "type": "text"})
+    assert resp.status_code == 422
+
+
+def test_add_column_rejects_a_duplicate_name_ignoring_case() -> None:
+    sheet_id, tab_id, _, _ = _populated()
+    resp = client.post(
+        f"{_tab_url(sheet_id, tab_id)}/columns", json={"name": "item", "type": "text"}
+    )
+    assert resp.status_code == 422
+
+
+def test_add_column_rejects_an_unknown_type() -> None:
+    sheet_id, tab_id, _, _ = _populated()
+    resp = client.post(
+        f"{_tab_url(sheet_id, tab_id)}/columns", json={"name": "X", "type": "colour"}
+    )
+    assert resp.status_code == 422
+
+
+# rename
+
+
+def test_rename_column_changes_only_the_name() -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+
+    resp = client.put(f"{_tab_url(sheet_id, tab_id)}/columns/{ids[0]}", json={"name": "Gear"})
+
+    assert resp.status_code == 200
+    assert resp.json()["columns"][0]["name"] == "Gear"
+    assert resp.json()["columns"][0]["type"] == "text"
+
+
+def test_rename_column_does_not_disturb_row_data() -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+
+    client.put(f"{_tab_url(sheet_id, tab_id)}/columns/{ids[0]}", json={"name": "Gear"})
+
+    assert _rows(sheet_id)[0]["cells"][ids[0]] == "Tent"
+
+
+def test_rename_column_rejects_a_blank_or_duplicate_name() -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+    assert (
+        client.put(f"{_tab_url(sheet_id, tab_id)}/columns/{ids[0]}", json={"name": " "}).status_code
+        == 422
+    )
+    assert (
+        client.put(
+            f"{_tab_url(sheet_id, tab_id)}/columns/{ids[0]}", json={"name": "qty"}
+        ).status_code
+        == 422
+    )
+
+
+def test_renaming_a_column_to_its_own_name_is_allowed() -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+    resp = client.put(f"{_tab_url(sheet_id, tab_id)}/columns/{ids[0]}", json={"name": "Item"})
+    assert resp.status_code == 200
+
+
+# retype
+
+
+def test_retype_to_text_keeps_the_values_as_strings() -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+
+    resp = client.put(f"{_tab_url(sheet_id, tab_id)}/columns/{ids[1]}", json={"type": "text"})
+
+    assert resp.status_code == 200
+    assert resp.json()["rows"][0]["cells"][ids[1]] == "1"
+
+
+def test_retype_to_number_blanks_what_cannot_parse() -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+
+    body = client.put(
+        f"{_tab_url(sheet_id, tab_id)}/columns/{ids[0]}", json={"type": "number"}
+    ).json()
+
+    assert ids[0] not in body["rows"][0]["cells"]
+    assert body["columns"][0]["type"] == "number"
+
+
+def test_retype_to_number_keeps_a_numeric_string() -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+    row_id = _rows(sheet_id)[0]["id"]
+    _put_cells(sheet_id, tab_id, row_id, {ids[0]: "12"})
+
+    body = client.put(
+        f"{_tab_url(sheet_id, tab_id)}/columns/{ids[0]}", json={"type": "number"}
+    ).json()
+
+    assert body["rows"][0]["cells"][ids[0]] == 12
+
+
+def test_retype_to_date_blanks_what_cannot_parse() -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+
+    body = client.put(
+        f"{_tab_url(sheet_id, tab_id)}/columns/{ids[0]}", json={"type": "date"}
+    ).json()
+
+    assert ids[0] not in body["rows"][0]["cells"]
+
+
+def test_retype_leaves_other_columns_alone() -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+
+    body = client.put(
+        f"{_tab_url(sheet_id, tab_id)}/columns/{ids[0]}", json={"type": "number"}
+    ).json()
+
+    assert body["rows"][0]["cells"][ids[2]] == "2026-09-02"
+
+
+def test_update_column_rejects_a_body_with_nothing_to_change() -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+    assert client.put(f"{_tab_url(sheet_id, tab_id)}/columns/{ids[0]}", json={}).status_code == 422
+
+
+# reorder
+
+
+def test_reorder_columns_persists_the_new_order() -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+
+    resp = client.put(
+        f"{_tab_url(sheet_id, tab_id)}/columns/order",
+        json={"column_ids": [ids[2], ids[0], ids[1]]},
+    )
+
+    assert resp.status_code == 200
+    ordered = sorted(resp.json()["columns"], key=lambda c: c["order"])
+    assert [c["id"] for c in ordered] == [ids[2], ids[0], ids[1]]
+    assert [c["id"] for c in sorted(_columns(sheet_id), key=lambda c: c["order"])] == [
+        ids[2],
+        ids[0],
+        ids[1],
+    ]
+
+
+def test_reorder_does_not_touch_row_data() -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+
+    client.put(
+        f"{_tab_url(sheet_id, tab_id)}/columns/order", json={"column_ids": [ids[2], ids[1], ids[0]]}
+    )
+
+    assert _rows(sheet_id)[0]["cells"][ids[0]] == "Tent"
+
+
+@pytest.mark.parametrize(
+    "make_payload",
+    [
+        lambda ids: ids[:2],  # missing one
+        lambda ids: [*ids, "c-extra"],  # an id that is not in the tab
+        lambda ids: [ids[0], ids[0], ids[1]],  # duplicated
+    ],
+)
+def test_reorder_rejects_anything_that_is_not_a_permutation(make_payload) -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+
+    resp = client.put(
+        f"{_tab_url(sheet_id, tab_id)}/columns/order",
+        json={"column_ids": make_payload(ids)},
+    )
+
+    assert resp.status_code == 422
+    assert [c["id"] for c in sorted(_columns(sheet_id), key=lambda c: c["order"])] == ids
+
+
+def test_order_is_not_mistaken_for_a_column_id() -> None:
+    """The literal path segment must win over the {column_id} route."""
+    sheet_id, tab_id, ids, _ = _populated()
+    resp = client.put(f"{_tab_url(sheet_id, tab_id)}/columns/order", json={"column_ids": ids})
+    assert resp.status_code == 200
+
+
+# delete
+
+
+def test_delete_column_removes_it_and_its_values() -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+
+    resp = client.delete(f"{_tab_url(sheet_id, tab_id)}/columns/{ids[0]}")
+
+    assert resp.status_code == 204
+    assert [c["id"] for c in _columns(sheet_id)] == ids[1:]
+    assert ids[0] not in _rows(sheet_id)[0]["cells"]
+
+
+def test_delete_column_keeps_the_other_values() -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+
+    client.delete(f"{_tab_url(sheet_id, tab_id)}/columns/{ids[0]}")
+
+    assert _rows(sheet_id)[0]["cells"][ids[1]] == 1
+
+
+def test_the_last_column_cannot_be_deleted() -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+    client.delete(f"{_tab_url(sheet_id, tab_id)}/columns/{ids[0]}")
+    client.delete(f"{_tab_url(sheet_id, tab_id)}/columns/{ids[1]}")
+
+    resp = client.delete(f"{_tab_url(sheet_id, tab_id)}/columns/{ids[2]}")
+
+    assert resp.status_code == 422
+    assert len(_columns(sheet_id)) == 1
+
+
+def test_a_column_added_after_a_delete_still_sorts_last() -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+    client.delete(f"{_tab_url(sheet_id, tab_id)}/columns/{ids[0]}")
+
+    body = client.post(
+        f"{_tab_url(sheet_id, tab_id)}/columns", json={"name": "Notes", "type": "text"}
+    )
+
+    orders = [c["order"] for c in body.json()["columns"]]
+    assert len(set(orders)) == len(orders)
+
+
+# unknown ids
+
+
+@pytest.mark.parametrize(
+    "call",
+    [
+        lambda url: client.put(f"{url}/columns/c-nope", json={"name": "x"}),
+        lambda url: client.delete(f"{url}/columns/c-nope"),
+    ],
+)
+def test_unknown_column_id_returns_404(call) -> None:
+    sheet_id, tab_id, _, _ = _populated()
+    assert call(_tab_url(sheet_id, tab_id)).status_code == 404
+
+
+def test_column_operations_on_another_users_sheet_return_404() -> None:
+    sheet_id, tab_id, ids, _ = _populated()
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        url = _tab_url(sheet_id, tab_id)
+        assert client.post(f"{url}/columns", json={"name": "X", "type": "text"}).status_code == 404
+        assert client.put(f"{url}/columns/{ids[0]}", json={"name": "X"}).status_code == 404
+        assert client.delete(f"{url}/columns/{ids[0]}").status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"

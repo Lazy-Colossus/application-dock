@@ -6,8 +6,9 @@ import type { Tab } from "@/apps/listies/types";
 
 const STUBS = {
   "q-btn": {
+    // Keeps the slot: the column header menu lives inside a button.
     template:
-      "<button :data-testid=\"$attrs['data-testid']\" @click=\"$emit('click', $event)\">{{ label }}</button>",
+      '<button :data-testid="$attrs[\'data-testid\']" :disabled="disable" @click="$emit(\'click\', $event)">{{ label }}<slot /></button>',
     props: [
       "label",
       "disable",
@@ -18,8 +19,35 @@ const STUBS = {
       "color",
       "noCaps",
       "unelevated",
+      "size",
     ],
     emits: ["click"],
+  },
+  "q-input": {
+    template:
+      '<input :data-testid="$attrs[\'data-testid\']" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    props: ["modelValue", "dense", "outlined", "autofocus", "placeholder"],
+    emits: ["update:modelValue"],
+  },
+  "q-select": {
+    template:
+      '<select :data-testid="$attrs[\'data-testid\']" :value="modelValue" @change="$emit(\'update:modelValue\', $event.target.value)"><option v-for="o in options" :key="o.value" :value="o.value">{{ o.label }}</option></select>',
+    props: [
+      "modelValue",
+      "options",
+      "dense",
+      "outlined",
+      "emitValue",
+      "mapOptions",
+    ],
+    emits: ["update:modelValue"],
+  },
+  // The menu has its own spec; here we only care that the grid wires it up.
+  ColumnHeaderMenu: {
+    name: "ColumnHeaderMenu",
+    template: "<div />",
+    props: ["column", "rows", "canMoveLeft", "canMoveRight", "canDelete"],
+    emits: ["rename", "retype", "move", "delete"],
   },
 };
 
@@ -425,5 +453,78 @@ describe("SheetGrid — deleting a row (Story 2.4)", () => {
       .findAllComponents({ name: "GridCell" })
       .filter((c) => c.props("focused"));
     expect(focused).toHaveLength(1);
+  });
+});
+
+describe("SheetGrid — column management (Story 2.5)", () => {
+  it("puts a menu on every column header", () => {
+    const wrapper = mountGrid();
+    expect(
+      wrapper.findAllComponents({ name: "ColumnHeaderMenu" }),
+    ).toHaveLength(3);
+  });
+
+  it("tells each menu whether the column can move", () => {
+    const menus = mountGrid().findAllComponents({ name: "ColumnHeaderMenu" });
+
+    expect(menus[0]!.props("canMoveLeft")).toBe(false);
+    expect(menus[0]!.props("canMoveRight")).toBe(true);
+    expect(menus[2]!.props("canMoveRight")).toBe(false);
+  });
+
+  it("does not allow deleting the only column", () => {
+    const single = tab({
+      columns: [{ id: "c-1", name: "Item", type: "text", order: 0 }],
+      rows: [],
+    });
+
+    expect(
+      mountGrid(single)
+        .findComponent({ name: "ColumnHeaderMenu" })
+        .props("canDelete"),
+    ).toBe(false);
+  });
+
+  it("forwards each column action with the column it belongs to", async () => {
+    const wrapper = mountGrid();
+    const menu = wrapper.findAllComponents({ name: "ColumnHeaderMenu" })[1]!;
+
+    await menu.vm.$emit("rename", "Amount");
+    await menu.vm.$emit("retype", "text");
+    await menu.vm.$emit("move", 1);
+    await menu.vm.$emit("delete");
+
+    expect(wrapper.emitted("rename-column")).toEqual([
+      [{ columnId: "c-2", name: "Amount" }],
+    ]);
+    expect(wrapper.emitted("retype-column")).toEqual([
+      [{ columnId: "c-2", type: "text" }],
+    ]);
+    expect(wrapper.emitted("move-column")).toEqual([
+      [{ columnId: "c-2", delta: 1 }],
+    ]);
+    expect(wrapper.emitted("delete-column")).toEqual([["c-2"]]);
+  });
+
+  it("adds a column from the header row", async () => {
+    const wrapper = mountGrid();
+
+    await wrapper.find('[data-testid="add-column"]').trigger("click");
+    await wrapper.find('[data-testid="add-column-name"]').setValue("Notes");
+    await wrapper.find('[data-testid="add-column-save"]').trigger("click");
+
+    expect(wrapper.emitted("add-column")).toEqual([
+      [{ name: "Notes", type: "text" }],
+    ]);
+  });
+
+  it("will not add a column with a blank name", async () => {
+    const wrapper = mountGrid();
+    await wrapper.find('[data-testid="add-column"]').trigger("click");
+
+    await wrapper.find('[data-testid="add-column-name"]').setValue("   ");
+    await wrapper.find('[data-testid="add-column-save"]').trigger("click");
+
+    expect(wrapper.emitted("add-column")).toBeUndefined();
   });
 });
