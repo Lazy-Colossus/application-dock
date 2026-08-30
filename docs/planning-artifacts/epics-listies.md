@@ -20,8 +20,10 @@ sticky header, gridlines, zebra rows, type-aware cells. Rows are filled in **inl
 spreadsheet keyboard movement (Tab / Shift-Tab / Enter / Esc), and typing in the trailing empty
 row appends a new one. A sheet holds several **tabs**, switched from a bar at the **bottom** of
 the screen; **each tab owns its own columns**, and a new tab can copy an existing tab's column
-setup instead of defining columns from scratch. Everything is **bound to the logged-in user** —
-the JWT username scopes a single JSON file per user.
+setup instead of defining columns from scratch. A fourth column type, **place**, holds a location
+found through **Google Places** search, and a tab's places can be plotted together on a **map
+beside the grid** — a row per café you want to visit becomes a map of that city. Everything is
+**bound to the logged-in user** — the JWT username scopes a single JSON file per user.
 
 Platform-wide architecture is inherited, not re-built (3-layer backend, `useApi` HTTP boundary,
 registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live under
@@ -58,6 +60,19 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
 - FR-11: Rows can be **sorted by a column** — type-aware, ascending / descending / none. The sort
   is a **view**; it never rewrites stored row order.
 
+**F5 — Places & Maps**
+- FR-15: A **`place` column type** — a fourth type alongside text / number / date — whose cell
+  holds a structured snapshot of a location: `place_id`, `name`, `address`, `lat`, `lng`.
+- FR-16: Editing a place cell **searches Google Places by text**; picking a result fills the cell.
+- FR-17: A tab with at least one place column can open a **map pane beside the grid**, toggled
+  from the tab toolbar, plotting a pin per non-empty place cell.
+- FR-18: While the pane is open the grid carries a per-row **"on map" checkbox** (with all / none
+  controls) choosing which places are currently plotted.
+- FR-19: **Marker ↔ row selection** — clicking a marker highlights and scrolls to its row;
+  selecting a row pans the map to its pin.
+- FR-20: Maps credentials come from **server configuration**; with them unset the place type and
+  the map are unavailable and the rest of the app is unaffected.
+
 **F4 — Tabs**
 - FR-12: A sheet has a **bottom-anchored tab bar**; the user switches tabs there and creates a new
   **named tab with its own columns**.
@@ -80,6 +95,11 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
   lazy routes; Pinia store exposes `loading`/`error`; snake_case JSON, direct serialization (no
   envelopes), `{detail}` errors, ISO-8601 timestamps; all routes behind
   `Depends(get_current_user)`.
+- NFR-6: **External API cost and exposure are controlled** — place search is proxied server-side
+  so the Google **server key never reaches the browser**; the **browser key** is
+  referrer-restricted and served to the SPA at runtime rather than baked into the build; search is
+  debounced client-side and cached server-side by query so retyping does not re-bill; places are
+  stored as **snapshots** and nothing is re-fetched in the background.
 - NFR-5: **The grid never blocks on the network** — cell commits are optimistic: the grid updates
   immediately, the store reconciles on success and rolls the cell back on failure, surfacing the
   message in `error`.
@@ -99,6 +119,12 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
   `migrate()` on read.
 - AR-4: **API contract** — `/api/listies/*`, every route `Depends(get_current_user)`; the username
   scopes the file and never appears in a path/body. Direct serialization; `{detail}` errors.
+- AR-6: **Places integration** — `services/places_service.py` is the only module that calls
+  Google; `httpx` is promoted from a dev dependency to a runtime one;
+  `settings.google_maps_server_key` and `settings.google_maps_browser_key` come from env and are
+  passed through in `docker-compose.yml`.
+- AR-7: **The cell value union widens** to include a `Place` object. This is purely additive — a
+  document written before places still validates — so `schema_version` stays `1`.
 - AR-5: **Cells are keyed by column id** — never by index or column name — so renaming, reordering
   and deleting columns never disturbs row data.
 
@@ -131,7 +157,14 @@ One JSON file per user — `DATA_DIR/listies/users/{username}.json`:
               "cells": {                            // keyed by column id (AR-5)
                 "c-9a8b7c6d": "Tent",
                 "c-4d5e6f70": 1,
-                "c-11223344": "2026-09-02"
+                "c-11223344": "2026-09-02",
+                "c-7f8e9d0a": {                     // a `place` cell (FR-15)
+                  "place_id": "ChIJ…",
+                  "name": "Blue Bottle",
+                  "address": "Rua Nova 12, Lisboa",
+                  "lat": 38.7107,
+                  "lng": -9.1373
+                }
               },
               "created_at": "…",
               "updated_at": "…"
@@ -145,13 +178,15 @@ One JSON file per user — `DATA_DIR/listies/users/{username}.json`:
 ```
 
 **Cell values by column type** — `text` → JSON string, `number` → JSON number, `date` →
-`YYYY-MM-DD` string. `null` means "not filled in" and is distinct from `0` or `""` (an
+`YYYY-MM-DD` string, `place` → an object (`place_id`, `name`, `address`, `lat`, `lng`). `null` means "not filled in" and is distinct from `0` or `""` (an
 empty/whitespace text value normalizes to `null`). An absent key is equivalent to `null`; the
 service prunes `null` keys and keys for columns that no longer exist.
 
 **Type coercion on a column retype (FR-10)** — keep what still parses, blank the rest: any →
-`text` is `str(value)`; → `number` parses the value as a number, unparseable → `null`; → `date`
-parses `YYYY-MM-DD`, unparseable → `null`.
+`text` is `str(value)` (a place contributes its `name`); → `number` parses the value as a number,
+unparseable → `null`; → `date` parses `YYYY-MM-DD`, unparseable → `null`; a place → `number`/`date`
+is always `null`; anything → `place` is always `null`, since a place cannot be reconstructed from
+a string.
 
 ### FR Coverage Map
 
@@ -169,6 +204,12 @@ parses `YYYY-MM-DD`, unparseable → `null`.
 - FR-12: Epic 3 — bottom tab bar, switching, creating a tab
 - FR-13: Epic 3 — create a tab copying another tab's columns
 - FR-14: Epic 3 — rename / delete a tab
+- FR-15: Epic 4 — the `place` column type
+- FR-16: Epic 4 — Google Places search inside a place cell
+- FR-17: Epic 4 — the map pane beside the grid
+- FR-18: Epic 4 — per-row "on map" checkbox, all / none
+- FR-19: Epic 4 — marker ↔ row selection
+- FR-20: Epic 4 — server-side maps configuration and graceful degradation
 
 ## Epic List
 
@@ -194,8 +235,18 @@ setup, and renames or removes tabs as the sheet evolves.
 **FRs covered:** FR-12, FR-13, FR-14
 **Supporting:** NFR-1, NFR-4.
 
+### Epic 4: Places & Maps
+A sheet stops being only text. A `place` column is filled by searching Google Places from inside
+the cell, and a tab's places are plotted together on a map that opens beside the grid — a row per
+café becomes a map of the city. Credentials live in server configuration, search is proxied and
+cached so the key never reaches the browser, and with no key configured the whole feature is
+simply absent rather than broken.
+**FRs covered:** FR-15, FR-16, FR-17, FR-18, FR-19, FR-20
+**Supporting:** AR-6, AR-7; NFR-1, NFR-4, NFR-5, NFR-6.
+
 **Dependencies:** Epic 2 builds on Epic 1 (needs the data layer and an open sheet). Epic 3 builds
-on both (needs a sheet whose grid already renders one tab). No epic depends on a later epic.
+on both (needs a sheet whose grid already renders one tab). Epic 4 builds on Epics 1–2 (needs
+columns and a rendered grid) but not on Epic 3. No epic depends on a later epic.
 
 ---
 
@@ -600,3 +651,236 @@ sheet always has at least one tab (FR-14).
 **Given** a rename or delete for a tab id that isn't in this sheet
 **When** requested
 **Then** the API returns `404` with a `{detail}` message.
+
+---
+
+## Epic 4: Places & Maps
+
+A `place` column turns a row into somewhere you can go, and a tab into a map of them.
+
+### Story 4.1: Maps configuration and the place-search endpoint
+
+As the platform,
+I want Google credentials in server configuration and place search proxied through our own API,
+so that the server key never reaches the browser, searches are cached, and an unconfigured
+deployment degrades cleanly instead of breaking.
+
+**Acceptance Criteria:**
+
+**Given** `app/core/config.py`
+**When** settings load
+**Then** `google_maps_server_key` and `google_maps_browser_key` are read from the environment
+(defaulting to empty), and `docker-compose.yml` passes both through (AR-6, FR-20).
+
+**Given** `GET /api/listies/maps-config`
+**When** called by an authenticated user
+**Then** it returns `{ enabled: true, browser_key: "…" }` when both keys are configured and
+`{ enabled: false }` otherwise — and never returns the **server** key under any circumstances
+(NFR-6).
+
+**Given** `GET /api/listies/places/search?q=…`
+**When** maps are configured
+**Then** `services/places_service.py` calls the Google Places **Text Search** endpoint with the
+server key and returns a normalized `list[PlaceResult]` (`place_id`, `name`, `address`, `lat`,
+`lng`) — it is the only module in the codebase that talks to Google (AR-6, FR-16).
+
+**Given** a repeated `(q, near)` search within the cache TTL
+**When** it is requested
+**Then** it is served from an in-process cache without a second upstream call; the cache is
+bounded in size and its entries expire (NFR-6).
+
+**Given** a `near=lat,lng` parameter
+**When** searching
+**Then** results are biased toward that location.
+
+**Given** maps are **not** configured
+**When** `/places/search` is called
+**Then** it returns `503` with a `{detail}` naming the missing configuration — no crash, and no
+other app is affected (FR-20).
+
+**Given** an upstream error, non-2xx or timeout
+**When** searching
+**Then** the endpoint returns `502` with a `{detail}`, never a stack trace and never the key.
+
+**Given** a blank or whitespace `q`
+**When** requested
+**Then** the endpoint returns `422` `{detail}` without calling Google.
+
+**Given** the test suite
+**When** it runs
+**Then** no test performs a real network call — `httpx` is stubbed — and `httpx` has moved from
+`requirements-dev.txt` into `requirements.txt`.
+
+### Story 4.2: The `place` column type
+
+As a user,
+I want a column whose cells hold a real location,
+so that a row can be somewhere I intend to go rather than just its name.
+
+**Acceptance Criteria:**
+
+**Given** the column types
+**When** a column is created or retyped
+**Then** `place` is available as a fourth type alongside text / number / date — offered only when
+`maps-config` reports `enabled` (FR-15, FR-20).
+
+**Given** `schemas/listies.py`
+**When** a place cell is validated
+**Then** a `Place` model (`place_id`, `name`, `address`, `lat`, `lng`) is accepted for a `place`
+column and rejected for any other column type; a scalar in a `place` column is a `422` (AR-7).
+
+**Given** an existing document written before places
+**When** it is read
+**Then** it still validates unchanged — the union widened additively and `schema_version` stays
+`1` (AR-7).
+
+**Given** a retype touching a place column
+**When** it is applied
+**Then** `place` → `text` keeps the place's `name`; `place` → `number`/`date` blanks to `null`;
+anything → `place` blanks to `null`; and the existing "this will empty N cells" warning covers it
+(FR-10).
+
+**Given** a place cell in the grid
+**When** it renders
+**Then** it shows a 📍 glyph with the place name and the address muted beneath; an empty place
+cell shows the same muted `—` as every other type.
+
+**Given** a sort on a place column
+**When** applied
+**Then** it compares by place **name** using the text comparator, with empties last (FR-11).
+
+### Story 4.3: Search Google and fill a place cell
+
+As a user,
+I want to type a place name into a cell and pick the real place from Google,
+so that filling in a location takes one search rather than a copy-paste of coordinates.
+
+**Acceptance Criteria:**
+
+**Given** a place cell
+**When** I click it
+**Then** it opens a search field in place, pre-filled with the current place's name if it has one
+(FR-16).
+
+**Given** the search field
+**When** I have typed at least two characters
+**Then** after a debounce the client calls `GET /api/listies/places/search` through `useApi` and
+shows a result list beneath the cell — name in full, address muted (NFR-6).
+
+**Given** the result list
+**When** I move through it with the arrow keys and press Enter (or click a result)
+**Then** the chosen place is written to the cell through the ordinary row-cells `PUT` as a whole
+place object, and the grid shows it immediately with the same optimistic-then-reconcile behaviour
+as every other cell (FR-16, NFR-5).
+
+**Given** the column already holds places
+**When** a search is issued
+**Then** it passes `near` as the centroid of those places, so results are local to what is already
+in the column.
+
+**Given** the search
+**When** it is loading, returns nothing, or fails
+**Then** the cell shows a loading indicator, a "no places found" line, or the error — never a
+silent empty dropdown.
+
+**Given** a filled place cell
+**When** I clear it
+**Then** the cell is stored as `null` and renders as `—`.
+
+**Given** Esc while the result list is open
+**When** pressed
+**Then** the list closes and the cell keeps its previous value, consistent with every other editor
+(FR-8).
+
+**Given** maps are not configured
+**When** a place cell is opened
+**Then** it is read-only and explains that maps are not configured, rather than offering a search
+that cannot work (FR-20).
+
+### Story 4.4: The map pane beside the grid
+
+As a user,
+I want to open a map next to my grid showing every place in the tab,
+so that a tab of cafés becomes a map of that city.
+
+**Acceptance Criteria:**
+
+**Given** a tab with at least one place column and maps configured
+**When** the tab toolbar renders
+**Then** it offers a `Map` toggle; the toggle is absent for a tab with no place column or when
+maps are not configured (FR-17, FR-20).
+
+**Given** the toggle
+**When** I open it
+**Then** the view splits — grid left, map right — and closing it returns the grid to full width;
+the open state is remembered per tab for the session (FR-17).
+
+**Given** the pane opens for the first time
+**When** it loads
+**Then** the Maps JS SDK is fetched **once, on demand**, using the browser key from
+`GET /api/listies/maps-config` — never a key baked into the bundle (NFR-6).
+
+**Given** the pane is open
+**When** it renders
+**Then** it plots one marker per non-empty place cell in the tab; when a tab has more than one
+place column the markers are colour-coded per column with a small legend (FR-17).
+
+**Given** the pane opens
+**When** the markers are plotted
+**Then** the map fits its bounds to them; a single place is centred at a sensible zoom.
+
+**Given** a marker
+**When** it renders
+**Then** it is labelled by its row's first text value, falling back to the place's own name.
+
+**Given** a marker
+**When** I click it
+**Then** its row is highlighted and the grid scrolls to it; selecting a row pans the map to that
+row's pin (FR-19).
+
+**Given** a tab whose place cells are all empty
+**When** the pane opens
+**Then** it shows an empty state inviting me to fill a place cell, not a blank world map.
+
+**Given** the SDK fails to load or the key is rejected
+**When** the pane opens
+**Then** it shows an error state and the grid keeps working normally (FR-20).
+
+### Story 4.5: Choose which places are on the map
+
+As a user,
+I want to tick and untick which places are currently plotted,
+so that I can narrow the map to the handful I am actually deciding between.
+
+**Acceptance Criteria:**
+
+**Given** the map pane is open
+**When** the grid renders
+**Then** it grows a leading "on map" checkbox column, one tick per row holding at least one
+non-empty place; rows with no place have no checkbox (FR-18).
+
+**Given** the pane opens
+**When** it first renders
+**Then** every place row is ticked.
+
+**Given** a ticked row
+**When** I untick it
+**Then** its marker disappears immediately, and re-ticking restores it — no request is made either
+way (FR-18).
+
+**Given** the pane header
+**When** it renders
+**Then** it offers **all** and **none** controls and a "4 of 7 shown" counter.
+
+**Given** a tick change
+**When** the markers update
+**Then** the map does **not** re-fit its bounds (that would make it jump); an explicit "fit to
+shown" control re-fits on demand.
+
+**Given** the ticks
+**When** I switch tab, reload, or close the pane
+**Then** they reset to all-on — like sorting, this is view state and is never written to the file.
+
+**Given** the map pane is closed
+**When** the grid renders
+**Then** the checkbox column is gone and the grid is back to full width.
