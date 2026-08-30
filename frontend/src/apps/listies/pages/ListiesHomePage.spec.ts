@@ -45,7 +45,7 @@ const STUBS = {
   "q-item-label": { template: "<div><slot /></div>" },
   "q-btn": {
     template:
-      '<button :data-testid="$attrs[\'data-testid\']" :disabled="disable" @click="$emit(\'click\')">{{ label }}</button>',
+      '<button :data-testid="$attrs[\'data-testid\']" :disabled="disable" @click="$emit(\'click\', $event)">{{ label }}</button>',
     props: [
       "label",
       "disable",
@@ -60,6 +60,12 @@ const STUBS = {
     emits: ["click"],
   },
   "q-spinner": { template: "<div />" },
+  "q-input": {
+    template:
+      '<input :data-testid="$attrs[\'data-testid\']" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" @keyup.enter="$emit(\'keyup\', $event)" />',
+    props: ["modelValue", "dense", "outlined", "autofocus"],
+    emits: ["update:modelValue", "keyup"],
+  },
   CreateSheetDialog: {
     name: "CreateSheetDialog",
     template: "<div />",
@@ -169,5 +175,132 @@ describe("ListiesHomePage", () => {
 
     expect(wrapper.find('[data-testid="error"]').text()).toContain("offline");
     expect(wrapper.find('[data-testid="empty-state"]').exists()).toBe(false);
+  });
+});
+
+describe("ListiesHomePage — rename (Story 1.4)", () => {
+  beforeEach(() => {
+    getMock.mockResolvedValue([SUMMARY]);
+    putMock
+      .mockReset()
+      .mockResolvedValue({ ...CREATED, id: "s-1", name: "Lisbon" });
+  });
+
+  it("swaps the row for an input when renaming starts", async () => {
+    const wrapper = mount(ListiesHomePage, OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="rename-s-1"]').trigger("click");
+
+    expect(wrapper.find('[data-testid="rename-input-s-1"]').exists()).toBe(
+      true,
+    );
+  });
+
+  it("saves the new name", async () => {
+    const wrapper = mount(ListiesHomePage, OPTS);
+    await flushPromises();
+    await wrapper.find('[data-testid="rename-s-1"]').trigger("click");
+
+    await wrapper.find('[data-testid="rename-input-s-1"]').setValue("Lisbon");
+    await wrapper.find('[data-testid="rename-save-s-1"]').trigger("click");
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith("/listies/sheets/s-1", {
+      name: "Lisbon",
+    });
+    expect(wrapper.find('[data-testid="rename-input-s-1"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("cannot save a blank name", async () => {
+    const wrapper = mount(ListiesHomePage, OPTS);
+    await flushPromises();
+    await wrapper.find('[data-testid="rename-s-1"]').trigger("click");
+
+    await wrapper.find('[data-testid="rename-input-s-1"]').setValue("   ");
+
+    expect(
+      wrapper.find('[data-testid="rename-save-s-1"]').attributes("disabled"),
+    ).toBeDefined();
+  });
+
+  it("cancels without sending anything", async () => {
+    const wrapper = mount(ListiesHomePage, OPTS);
+    await flushPromises();
+    await wrapper.find('[data-testid="rename-s-1"]').trigger("click");
+
+    await wrapper.find('[data-testid="rename-input-s-1"]').setValue("Lisbon");
+    await wrapper.find('[data-testid="rename-cancel-s-1"]').trigger("click");
+
+    expect(putMock).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid="rename-input-s-1"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("does not open the sheet while renaming it", async () => {
+    const wrapper = mount(ListiesHomePage, OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="rename-s-1"]').trigger("click");
+
+    expect(push).not.toHaveBeenCalled();
+  });
+});
+
+describe("ListiesHomePage — delete (Story 1.4)", () => {
+  beforeEach(() => {
+    getMock.mockResolvedValue([SUMMARY]);
+    delMock.mockReset().mockResolvedValue(undefined);
+  });
+
+  it("asks for confirmation before deleting", async () => {
+    const wrapper = mount(ListiesHomePage, OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="delete-s-1"]').trigger("click");
+
+    expect(delMock).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid="delete-confirm-s-1"]').exists()).toBe(
+      true,
+    );
+  });
+
+  it("names the sheet in the confirmation", async () => {
+    const wrapper = mount(ListiesHomePage, OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="delete-s-1"]').trigger("click");
+
+    expect(wrapper.find('[data-testid="sheet-s-1"]').text()).toContain(
+      "Delete",
+    );
+  });
+
+  it("deletes once confirmed", async () => {
+    const wrapper = mount(ListiesHomePage, OPTS);
+    await flushPromises();
+    await wrapper.find('[data-testid="delete-s-1"]').trigger("click");
+
+    await wrapper.find('[data-testid="delete-confirm-s-1"]').trigger("click");
+    await flushPromises();
+
+    expect(delMock).toHaveBeenCalledWith("/listies/sheets/s-1");
+    expect(wrapper.find('[data-testid="sheet-s-1"]').exists()).toBe(false);
+  });
+
+  it("sends nothing when the confirmation is dismissed", async () => {
+    const wrapper = mount(ListiesHomePage, OPTS);
+    await flushPromises();
+    await wrapper.find('[data-testid="delete-s-1"]').trigger("click");
+
+    await wrapper.find('[data-testid="delete-cancel-s-1"]').trigger("click");
+
+    expect(delMock).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid="delete-confirm-s-1"]').exists()).toBe(
+      false,
+    );
   });
 });

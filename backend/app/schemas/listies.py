@@ -78,3 +78,9 @@ class ColumnSpec(BaseModel):
 class CreateSheetRequest(BaseModel):
     name: str
     columns: list[ColumnSpec]
+
+
+class UpdateSheetRequest(BaseModel):
+    # All-optional so a later story adds a field without a new endpoint; only
+    # provided fields are applied, and a body with nothing to apply is a 422.
+    name: str | None = None

@@ -52,5 +52,42 @@ export const useListiesStore = defineStore("listies", () => {
     }
   }
 
-  return { sheets, loading, error, fetchSheets, createSheet };
+  async function renameSheet(sheetId: string, name: string): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const updated = await api.put<Sheet>(`/listies/sheets/${sheetId}`, {
+        name,
+      });
+      const summary = sheets.value.find((s) => s.id === sheetId);
+      if (summary) summary.name = updated.name;
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function deleteSheet(sheetId: string): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      await api.del<void>(`/listies/sheets/${sheetId}`);
+      sheets.value = sheets.value.filter((s) => s.id !== sheetId);
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  return {
+    sheets,
+    loading,
+    error,
+    fetchSheets,
+    createSheet,
+    renameSheet,
+    deleteSheet,
+  };
 });

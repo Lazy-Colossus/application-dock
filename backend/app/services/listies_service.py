@@ -201,3 +201,18 @@ def create_sheet(username: str, name: str, columns: list[ColumnSpec]) -> Sheet:
     doc.sheets.append(sheet)
     repo.write_doc(username, doc)
     return sheet
+
+
+def update_sheet(username: str, sheet_id: str, name: str) -> Sheet:
+    doc = repo.read_doc(username)
+    sheet = find_sheet(doc.sheets, sheet_id)
+    sheet.name = _clean_name(name, "sheet name")
+    repo.write_doc(username, doc)
+    return sheet
+
+
+def delete_sheet(username: str, sheet_id: str) -> None:
+    doc = repo.read_doc(username)
+    sheet = find_sheet(doc.sheets, sheet_id)
+    doc.sheets.remove(sheet)
+    repo.write_doc(username, doc)

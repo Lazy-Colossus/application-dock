@@ -15,13 +15,15 @@ vi.mock("@/composables/useApi", () => ({
 import { useListiesStore } from "./useListiesStore";
 import type { Sheet, SheetSummary } from "@/apps/listies/types";
 
-const SUMMARY: SheetSummary = {
+// A factory, not a shared object: the store mutates the summary it holds when
+// renaming, so tests must not share one instance across cases.
+const summary = (): SheetSummary => ({
   id: "s-1",
   name: "Trip planning",
   tab_count: 1,
   row_count: 0,
   created_at: "2026-08-30T10:00:00Z",
-};
+});
 
 const SHEET: Sheet = {
   id: "s-2",
@@ -46,13 +48,13 @@ beforeEach(() => {
 
 describe("useListiesStore — fetchSheets", () => {
   it("loads sheet summaries from the API", async () => {
-    getMock.mockResolvedValue([SUMMARY]);
+    getMock.mockResolvedValue([summary()]);
     const store = useListiesStore();
 
     await store.fetchSheets();
 
     expect(getMock).toHaveBeenCalledWith("/listies/sheets");
-    expect(store.sheets).toEqual([SUMMARY]);
+    expect(store.sheets).toEqual([summary()]);
   });
 
   it("clears loading when the request succeeds", async () => {
@@ -112,6 +114,66 @@ describe("useListiesStore — createSheet", () => {
       store.createSheet("Cafés", [{ name: "Item", type: "text" }]),
     ).rejects.toThrow("nope");
     expect(store.error).toBe("nope");
+    expect(store.loading).toBe(false);
+  });
+});
+
+describe("useListiesStore — renameSheet", () => {
+  it("puts the new name and updates the local summary", async () => {
+    getMock.mockResolvedValue([summary()]);
+    putMock
+      .mockReset()
+      .mockResolvedValue({ ...SHEET, id: "s-1", name: "Lisbon" });
+    const store = useListiesStore();
+    await store.fetchSheets();
+
+    await store.renameSheet("s-1", "Lisbon");
+
+    expect(putMock).toHaveBeenCalledWith("/listies/sheets/s-1", {
+      name: "Lisbon",
+    });
+    expect(store.sheets[0]!.name).toBe("Lisbon");
+  });
+
+  it("leaves the local name alone and surfaces the error when it fails", async () => {
+    getMock.mockResolvedValue([summary()]);
+    putMock.mockReset().mockRejectedValue(new Error("nope"));
+    const store = useListiesStore();
+    await store.fetchSheets();
+
+    await store.renameSheet("s-1", "Lisbon");
+
+    expect(store.sheets[0]!.name).toBe("Trip planning");
+    expect(store.error).toBe("nope");
+    expect(store.loading).toBe(false);
+  });
+});
+
+describe("useListiesStore — deleteSheet", () => {
+  it("deletes and drops the sheet locally without refetching", async () => {
+    getMock.mockResolvedValue([summary()]);
+    delMock.mockReset().mockResolvedValue(undefined);
+    const store = useListiesStore();
+    await store.fetchSheets();
+    getMock.mockClear();
+
+    await store.deleteSheet("s-1");
+
+    expect(delMock).toHaveBeenCalledWith("/listies/sheets/s-1");
+    expect(store.sheets).toEqual([]);
+    expect(getMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps the sheet and surfaces the error when deleting fails", async () => {
+    getMock.mockResolvedValue([summary()]);
+    delMock.mockReset().mockRejectedValue(new Error("busy"));
+    const store = useListiesStore();
+    await store.fetchSheets();
+
+    await store.deleteSheet("s-1");
+
+    expect(store.sheets).toHaveLength(1);
+    expect(store.error).toBe("busy");
     expect(store.loading).toBe(false);
   });
 });

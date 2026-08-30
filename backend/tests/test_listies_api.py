@@ -140,3 +140,91 @@ def test_sheets_are_isolated_per_user() -> None:
 def test_responses_are_direct_serializations_without_an_envelope() -> None:
     body = client.get("/api/listies/sheets").json()
     assert isinstance(body, list)
+
+
+# ── PUT /sheets/{id} — rename (Story 1.4) ─────────────────────────────────────
+
+
+def test_rename_sheet_updates_the_name() -> None:
+    sheet_id = _create().json()["id"]
+
+    resp = client.put(f"/api/listies/sheets/{sheet_id}", json={"name": "Lisbon trip"})
+
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "Lisbon trip"
+
+
+def test_rename_sheet_persists() -> None:
+    sheet_id = _create().json()["id"]
+    client.put(f"/api/listies/sheets/{sheet_id}", json={"name": "Lisbon trip"})
+    assert client.get("/api/listies/sheets").json()[0]["name"] == "Lisbon trip"
+
+
+def test_rename_sheet_trims_the_name() -> None:
+    sheet_id = _create().json()["id"]
+    resp = client.put(f"/api/listies/sheets/{sheet_id}", json={"name": "  Lisbon  "})
+    assert resp.json()["name"] == "Lisbon"
+
+
+def test_rename_sheet_keeps_its_tabs() -> None:
+    sheet_id = _create().json()["id"]
+    body = client.put(f"/api/listies/sheets/{sheet_id}", json={"name": "Lisbon"}).json()
+    assert len(body["tabs"][0]["columns"]) == 3
+
+
+@pytest.mark.parametrize("name", ["", "   "])
+def test_rename_sheet_rejects_a_blank_name(name: str) -> None:
+    sheet_id = _create().json()["id"]
+    assert client.put(f"/api/listies/sheets/{sheet_id}", json={"name": name}).status_code == 422
+
+
+def test_rename_sheet_rejects_a_body_with_nothing_to_update() -> None:
+    sheet_id = _create().json()["id"]
+    assert client.put(f"/api/listies/sheets/{sheet_id}", json={}).status_code == 422
+
+
+def test_rename_unknown_sheet_returns_404() -> None:
+    resp = client.put("/api/listies/sheets/s-nope", json={"name": "x"})
+    assert resp.status_code == 404
+    assert "detail" in resp.json()
+
+
+# ── DELETE /sheets/{id} (Story 1.4) ───────────────────────────────────────────
+
+
+def test_delete_sheet_returns_204_with_no_body() -> None:
+    sheet_id = _create().json()["id"]
+
+    resp = client.delete(f"/api/listies/sheets/{sheet_id}")
+
+    assert resp.status_code == 204
+    assert resp.content == b""
+
+
+def test_delete_sheet_removes_it_from_the_listing() -> None:
+    sheet_id = _create().json()["id"]
+    client.delete(f"/api/listies/sheets/{sheet_id}")
+    assert client.get("/api/listies/sheets").json() == []
+
+
+def test_delete_sheet_leaves_other_sheets_alone() -> None:
+    first = _create(name="Keep").json()["id"]
+    second = _create(name="Drop").json()["id"]
+
+    client.delete(f"/api/listies/sheets/{second}")
+
+    assert [s["id"] for s in client.get("/api/listies/sheets").json()] == [first]
+
+
+def test_delete_unknown_sheet_returns_404() -> None:
+    assert client.delete("/api/listies/sheets/s-nope").status_code == 404
+
+
+def test_another_users_sheet_id_is_simply_not_found() -> None:
+    sheet_id = _create().json()["id"]
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        assert client.put(f"/api/listies/sheets/{sheet_id}", json={"name": "x"}).status_code == 404
+        assert client.delete(f"/api/listies/sheets/{sheet_id}").status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"
