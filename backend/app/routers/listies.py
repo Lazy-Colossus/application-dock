@@ -12,6 +12,7 @@ from app.schemas.listies import (
     AddColumnRequest,
     CreateRowRequest,
     CreateSheetRequest,
+    CreateTabRequest,
     ReorderColumnsRequest,
     Row,
     Sheet,
@@ -177,6 +178,20 @@ def delete_column(
 ) -> None:
     try:
         service.delete_column(current_user, sheet_id, tab_id, column_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/sheets/{sheet_id}/tabs", response_model=Tab)
+def create_tab(
+    sheet_id: str,
+    req: CreateTabRequest,
+    current_user: str = Depends(get_current_user),
+) -> Tab:
+    try:
+        return service.create_tab(current_user, sheet_id, req.name, req.columns)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:

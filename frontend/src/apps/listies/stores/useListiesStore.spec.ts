@@ -609,3 +609,96 @@ describe("useListiesStore — columns (Story 2.5)", () => {
     expect(store.error).toBe("duplicate column name: Qty");
   });
 });
+
+describe("useListiesStore — tabs (Story 3.1)", () => {
+  const twoTabs = (): Sheet => {
+    const s = sheet();
+    s.tabs = [
+      {
+        id: "tb-1",
+        name: "Packing",
+        order: 0,
+        columns: [{ id: "c-1", name: "Item", type: "text", order: 0 }],
+        rows: [],
+      },
+      {
+        id: "tb-2",
+        name: "Flights",
+        order: 1,
+        columns: [{ id: "c-9", name: "Airline", type: "text", order: 0 }],
+        rows: [],
+      },
+    ];
+    return s;
+  };
+
+  const NEW_TAB = {
+    id: "tb-3",
+    name: "Budget",
+    order: 2,
+    columns: [{ id: "c-7", name: "Item", type: "text", order: 0 }],
+    rows: [],
+  };
+
+  beforeEach(() => {
+    getMock.mockImplementation(() => Promise.resolve(twoTabs()));
+    postMock.mockReset().mockResolvedValue(NEW_TAB);
+  });
+
+  it("switches the active tab", async () => {
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    store.setActiveTab("tb-2");
+
+    expect(store.activeTabId).toBe("tb-2");
+    expect(store.activeTab!.name).toBe("Flights");
+  });
+
+  it("ignores a tab that is not in this sheet", async () => {
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    store.setActiveTab("tb-nope");
+
+    expect(store.activeTabId).toBe("tb-1");
+  });
+
+  it("creates a tab, appends it, and makes it active", async () => {
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.createTab("Budget", [{ name: "Item", type: "text" }]);
+
+    expect(postMock).toHaveBeenCalledWith("/listies/sheets/s-2/tabs", {
+      name: "Budget",
+      columns: [{ name: "Item", type: "text" }],
+    });
+    expect(store.currentSheet!.tabs.map((t) => t.id)).toEqual([
+      "tb-1",
+      "tb-2",
+      "tb-3",
+    ]);
+    expect(store.activeTabId).toBe("tb-3");
+  });
+
+  it("stays on the current tab and surfaces the error when creating fails", async () => {
+    postMock.mockRejectedValue(new Error("nope"));
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.createTab("Budget", [{ name: "Item", type: "text" }]);
+
+    expect(store.currentSheet!.tabs).toHaveLength(2);
+    expect(store.activeTabId).toBe("tb-1");
+    expect(store.error).toBe("nope");
+  });
+
+  it("does nothing when no sheet is open", async () => {
+    const store = useListiesStore();
+
+    await store.createTab("Budget", [{ name: "Item", type: "text" }]);
+
+    expect(postMock).not.toHaveBeenCalled();
+  });
+});

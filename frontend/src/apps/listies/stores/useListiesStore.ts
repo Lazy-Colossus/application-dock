@@ -194,6 +194,30 @@ export const useListiesStore = defineStore("listies", () => {
     }
   }
 
+  // ── tabs (Story 3.1) ───────────────────────────────────────────────────
+
+  function setActiveTab(tabId: string): void {
+    if (!currentSheet.value?.tabs.some((t) => t.id === tabId)) return;
+    activeTabId.value = tabId;
+  }
+
+  async function createTab(name: string, columns: ColumnSpec[]): Promise<void> {
+    const sheet = currentSheet.value;
+    if (!sheet) return;
+
+    error.value = null;
+    try {
+      const tab = await api.post<Tab>(`/listies/sheets/${sheet.id}/tabs`, {
+        name,
+        columns,
+      });
+      sheet.tabs.push(tab);
+      activeTabId.value = tab.id;
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+    }
+  }
+
   // ── columns (Story 2.5) ────────────────────────────────────────────────
   //
   // Every column write returns the whole tab: a retype can rewrite many rows
@@ -286,6 +310,8 @@ export const useListiesStore = defineStore("listies", () => {
     fetchSheet,
     addRow,
     commitCell,
+    setActiveTab,
+    createTab,
     deleteRow,
     addColumn,
     renameColumn,

@@ -57,19 +57,37 @@
           store.commitCell($event.rowId, $event.columnId, $event.value)
         "
       />
+
+      <TabBar
+        class="listies-sheet__tabs"
+        :tabs="store.currentSheet.tabs"
+        :active-tab-id="store.activeTabId"
+        @select="store.setActiveTab($event)"
+        @add="tabDialogOpen = true"
+      />
+
+      <CreateTabDialog
+        v-model="tabDialogOpen"
+        :existing-tabs="store.currentSheet.tabs"
+        @submit="createTab"
+      />
     </template>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { onMounted, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import CreateTabDialog from "@/apps/listies/components/CreateTabDialog.vue";
 import SheetGrid from "@/apps/listies/components/SheetGrid.vue";
+import TabBar from "@/apps/listies/components/TabBar.vue";
 import { useListiesStore } from "@/apps/listies/stores/useListiesStore";
+import type { ColumnSpec } from "@/apps/listies/types";
 
 const store = useListiesStore();
 const route = useRoute();
 const router = useRouter();
+const tabDialogOpen = ref(false);
 
 function load(): void {
   const sheetId = String(route.params.sheetId ?? "");
@@ -79,4 +97,23 @@ function load(): void {
 onMounted(load);
 // The route param can change without remounting the page.
 watch(() => route.params.sheetId, load);
+
+async function createTab(payload: {
+  name: string;
+  columns: ColumnSpec[];
+}): Promise<void> {
+  await store.createTab(payload.name, payload.columns);
+  if (!store.error) tabDialogOpen.value = false;
+}
 </script>
+
+<style scoped>
+/* The tab switcher lives at the bottom of the sheet, framing the grid the way
+   a spreadsheet's sheet tabs do. */
+.listies-sheet__tabs {
+  position: sticky;
+  bottom: 0;
+  background: var(--q-dark-page, #1d1d1d);
+  margin-top: 0.5rem;
+}
+</style>

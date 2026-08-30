@@ -408,3 +408,27 @@ def delete_column(username: str, sheet_id: str, tab_id: str, column_id: str) -> 
         row.cells.pop(column_id, None)
 
     repo.write_doc(username, doc)
+
+
+# ── tabs ──────────────────────────────────────────────────────────────────────
+
+
+def create_tab(username: str, sheet_id: str, name: str, columns: list[ColumnSpec]) -> Tab:
+    """Add a tab with its own columns and no rows.
+
+    Tab names are NOT required to be unique — a tab is identified by its id,
+    and two tabs called "Notes" are the user's business, not an error.
+    """
+    doc = repo.read_doc(username)
+    sheet = find_sheet(doc.sheets, sheet_id)
+
+    tab = Tab(
+        id=new_id("tb"),
+        name=_clean_name(name, "tab name"),
+        order=max((t.order for t in sheet.tabs), default=-1) + 1,
+        columns=build_columns(columns),
+        rows=[],
+    )
+    sheet.tabs.append(tab)
+    repo.write_doc(username, doc)
+    return tab

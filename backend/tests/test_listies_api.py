@@ -846,3 +846,131 @@ def test_column_operations_on_another_users_sheet_return_404() -> None:
         assert client.delete(f"{url}/columns/{ids[0]}").status_code == 404
     finally:
         app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+
+# ── POST /sheets/{sid}/tabs (Story 3.1) ───────────────────────────────────────
+
+
+def _tabs(sheet_id: str) -> list[dict]:
+    return client.get(f"/api/listies/sheets/{sheet_id}").json()["tabs"]
+
+
+def test_create_tab_appends_it_with_its_own_columns() -> None:
+    sheet_id, _ = _sheet_and_tab()
+
+    resp = client.post(
+        f"/api/listies/sheets/{sheet_id}/tabs",
+        json={"name": "Flights", "columns": [{"name": "Airline", "type": "text"}]},
+    )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["id"].startswith("tb-")
+    assert body["name"] == "Flights"
+    assert body["rows"] == []
+    assert [c["name"] for c in body["columns"]] == ["Airline"]
+    assert body["columns"][0]["id"].startswith("c-")
+
+
+def test_create_tab_goes_to_the_end_of_the_tab_order() -> None:
+    sheet_id, _ = _sheet_and_tab()
+
+    body = client.post(
+        f"/api/listies/sheets/{sheet_id}/tabs",
+        json={"name": "Flights", "columns": [{"name": "Airline", "type": "text"}]},
+    ).json()
+
+    assert body["order"] == max(t["order"] for t in _tabs(sheet_id))
+
+
+def test_create_tab_persists_alongside_the_existing_tab() -> None:
+    sheet_id, first_tab = _sheet_and_tab()
+
+    client.post(
+        f"/api/listies/sheets/{sheet_id}/tabs",
+        json={"name": "Flights", "columns": [{"name": "Airline", "type": "text"}]},
+    )
+
+    assert [t["id"] for t in _tabs(sheet_id)][0] == first_tab
+    assert len(_tabs(sheet_id)) == 2
+
+
+def test_create_tab_does_not_touch_the_other_tabs_columns() -> None:
+    sheet_id, _ = _sheet_and_tab()
+
+    client.post(
+        f"/api/listies/sheets/{sheet_id}/tabs",
+        json={"name": "Flights", "columns": [{"name": "Airline", "type": "text"}]},
+    )
+
+    assert [c["name"] for c in _tabs(sheet_id)[0]["columns"]] == ["Item", "Qty", "Due"]
+
+
+def test_create_tab_trims_the_name() -> None:
+    sheet_id, _ = _sheet_and_tab()
+    body = client.post(
+        f"/api/listies/sheets/{sheet_id}/tabs",
+        json={"name": "  Flights  ", "columns": [{"name": "Airline", "type": "text"}]},
+    ).json()
+    assert body["name"] == "Flights"
+
+
+def test_a_duplicate_tab_name_is_allowed_tabs_are_identified_by_id() -> None:
+    sheet_id, _ = _sheet_and_tab()
+
+    resp = client.post(
+        f"/api/listies/sheets/{sheet_id}/tabs",
+        json={"name": "Tab 1", "columns": [{"name": "Airline", "type": "text"}]},
+    )
+
+    assert resp.status_code == 200
+    assert len(_tabs(sheet_id)) == 2
+
+
+@pytest.mark.parametrize("name", ["", "   "])
+def test_create_tab_rejects_a_blank_name(name: str) -> None:
+    sheet_id, _ = _sheet_and_tab()
+    resp = client.post(
+        f"/api/listies/sheets/{sheet_id}/tabs",
+        json={"name": name, "columns": [{"name": "Airline", "type": "text"}]},
+    )
+    assert resp.status_code == 422
+
+
+def test_create_tab_rejects_zero_columns() -> None:
+    sheet_id, _ = _sheet_and_tab()
+    resp = client.post(f"/api/listies/sheets/{sheet_id}/tabs", json={"name": "X", "columns": []})
+    assert resp.status_code == 422
+
+
+def test_create_tab_rejects_duplicate_column_names() -> None:
+    sheet_id, _ = _sheet_and_tab()
+    resp = client.post(
+        f"/api/listies/sheets/{sheet_id}/tabs",
+        json={
+            "name": "X",
+            "columns": [{"name": "A", "type": "text"}, {"name": "a", "type": "text"}],
+        },
+    )
+    assert resp.status_code == 422
+
+
+def test_create_tab_in_an_unknown_sheet_returns_404() -> None:
+    resp = client.post(
+        "/api/listies/sheets/s-nope/tabs",
+        json={"name": "X", "columns": [{"name": "A", "type": "text"}]},
+    )
+    assert resp.status_code == 404
+
+
+def test_create_tab_in_another_users_sheet_returns_404() -> None:
+    sheet_id, _ = _sheet_and_tab()
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        resp = client.post(
+            f"/api/listies/sheets/{sheet_id}/tabs",
+            json={"name": "X", "columns": [{"name": "A", "type": "text"}]},
+        )
+        assert resp.status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"

@@ -65,6 +65,12 @@ const STUBS = {
     emits: ["click"],
   },
   "q-spinner": { template: '<div data-testid="spinner" />' },
+  CreateTabDialog: {
+    name: "CreateTabDialog",
+    template: "<div />",
+    props: ["modelValue", "existingTabs"],
+    emits: ["update:modelValue", "submit"],
+  },
 };
 
 const OPTS = { global: { stubs: STUBS } };
@@ -266,6 +272,105 @@ describe("SheetPage — column management (Story 2.5)", () => {
     );
     expect(delMock).toHaveBeenCalledWith(
       "/listies/sheets/s-1/tabs/tb-1/columns/c-1",
+    );
+  });
+});
+
+describe("SheetPage — tabs (Story 3.1)", () => {
+  const twoTabs = (): Sheet => {
+    const s = sheet();
+    s.tabs = [
+      {
+        id: "tb-1",
+        name: "Packing",
+        order: 0,
+        columns: [{ id: "c-1", name: "Item", type: "text", order: 0 }],
+        rows: [],
+      },
+      {
+        id: "tb-2",
+        name: "Flights",
+        order: 1,
+        columns: [{ id: "c-9", name: "Airline", type: "text", order: 0 }],
+        rows: [],
+      },
+    ];
+    return s;
+  };
+
+  beforeEach(() => {
+    getMock.mockImplementation(() => Promise.resolve(twoTabs()));
+  });
+
+  it("shows a tab bar carrying the sheet's tabs", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    const bar = wrapper.findComponent({ name: "TabBar" });
+    expect(bar.exists()).toBe(true);
+    expect(bar.props("tabs")).toHaveLength(2);
+    expect(bar.props("activeTabId")).toBe("tb-1");
+  });
+
+  it("switches the grid to the chosen tab without refetching", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+    getMock.mockClear();
+
+    await wrapper.findComponent({ name: "TabBar" }).vm.$emit("select", "tb-2");
+    await flushPromises();
+
+    expect(getMock).not.toHaveBeenCalled();
+    expect(wrapper.findComponent({ name: "SheetGrid" }).props("tab").id).toBe(
+      "tb-2",
+    );
+  });
+
+  it("opens the create-tab dialog from the bar", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    await wrapper.findComponent({ name: "TabBar" }).vm.$emit("add");
+
+    expect(
+      wrapper.findComponent({ name: "CreateTabDialog" }).props("modelValue"),
+    ).toBe(true);
+  });
+
+  it("tells the dialog which tabs already exist", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    expect(
+      wrapper.findComponent({ name: "CreateTabDialog" }).props("existingTabs"),
+    ).toHaveLength(2);
+  });
+
+  it("creates the tab the dialog asks for", async () => {
+    postMock.mockResolvedValue({
+      id: "tb-3",
+      name: "Budget",
+      order: 2,
+      columns: [{ id: "c-7", name: "Item", type: "text", order: 0 }],
+      rows: [],
+    });
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    await wrapper
+      .findComponent({ name: "CreateTabDialog" })
+      .vm.$emit("submit", {
+        name: "Budget",
+        columns: [{ name: "Item", type: "text" }],
+      });
+    await flushPromises();
+
+    expect(postMock).toHaveBeenCalledWith("/listies/sheets/s-1/tabs", {
+      name: "Budget",
+      columns: [{ name: "Item", type: "text" }],
+    });
+    expect(wrapper.findComponent({ name: "SheetGrid" }).props("tab").id).toBe(
+      "tb-3",
     );
   });
 });

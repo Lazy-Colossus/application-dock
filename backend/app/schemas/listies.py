@@ -109,3 +109,8 @@ class ReorderColumnsRequest(BaseModel):
     # Must be a permutation of the tab's current column ids — a partial list
     # would silently drop columns.
     column_ids: list[str]
+
+
+class CreateTabRequest(BaseModel):
+    name: str
+    columns: list[ColumnSpec]
