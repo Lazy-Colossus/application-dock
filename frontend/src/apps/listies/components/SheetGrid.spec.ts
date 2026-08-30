@@ -528,3 +528,168 @@ describe("SheetGrid — column management (Story 2.5)", () => {
     expect(wrapper.emitted("add-column")).toBeUndefined();
   });
 });
+
+describe("SheetGrid — sorting (Story 2.6)", () => {
+  const sortable = () =>
+    tab({
+      rows: [
+        {
+          id: "r-1",
+          order: 0,
+          cells: { "c-1": "Tent" },
+          created_at: "t",
+          updated_at: "t",
+        },
+        {
+          id: "r-2",
+          order: 1,
+          cells: { "c-1": "Mat" },
+          created_at: "t",
+          updated_at: "t",
+        },
+        {
+          id: "r-3",
+          order: 2,
+          cells: { "c-1": "Stove" },
+          created_at: "t",
+          updated_at: "t",
+        },
+      ],
+    });
+
+  const rowOrder = (w: ReturnType<typeof mountGrid>) =>
+    w.findAll('[data-testid^="row-"]').map((r) => r.attributes("data-testid"));
+
+  const clickHeader = (w: ReturnType<typeof mountGrid>, columnId: string) =>
+    w.find(`[data-testid="header-name-${columnId}"]`).trigger("click");
+
+  it("renders in stored order until a sort is asked for", () => {
+    expect(rowOrder(mountGrid(sortable()))).toEqual([
+      "row-r-1",
+      "row-r-2",
+      "row-r-3",
+    ]);
+  });
+
+  it("sorts ascending on the first header click", async () => {
+    const wrapper = mountGrid(sortable());
+
+    await clickHeader(wrapper, "c-1");
+
+    expect(rowOrder(wrapper)).toEqual(["row-r-2", "row-r-3", "row-r-1"]);
+  });
+
+  it("sorts descending on the second click", async () => {
+    const wrapper = mountGrid(sortable());
+
+    await clickHeader(wrapper, "c-1");
+    await clickHeader(wrapper, "c-1");
+
+    expect(rowOrder(wrapper)).toEqual(["row-r-1", "row-r-3", "row-r-2"]);
+  });
+
+  it("returns to stored order on the third click", async () => {
+    const wrapper = mountGrid(sortable());
+
+    await clickHeader(wrapper, "c-1");
+    await clickHeader(wrapper, "c-1");
+    await clickHeader(wrapper, "c-1");
+
+    expect(rowOrder(wrapper)).toEqual(["row-r-1", "row-r-2", "row-r-3"]);
+  });
+
+  it("shows which way the sorted column is facing", async () => {
+    const wrapper = mountGrid(sortable());
+
+    await clickHeader(wrapper, "c-1");
+
+    expect(wrapper.find('[data-testid="sort-indicator-c-1"]').exists()).toBe(
+      true,
+    );
+    expect(wrapper.find('[data-testid="sort-indicator-c-2"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("sorts by only one column at a time", async () => {
+    const wrapper = mountGrid(sortable());
+    await clickHeader(wrapper, "c-1");
+
+    await clickHeader(wrapper, "c-2");
+
+    expect(wrapper.find('[data-testid="sort-indicator-c-1"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('[data-testid="sort-indicator-c-2"]').exists()).toBe(
+      true,
+    );
+  });
+
+  it("does not reorder while a cell is edited — the row must not jump", async () => {
+    const wrapper = mountGrid(sortable());
+    await clickHeader(wrapper, "c-1");
+
+    const edited = sortable();
+    edited.rows[1]!.cells["c-1"] = "Zebra";
+    await wrapper.setProps({ tab: edited });
+
+    expect(rowOrder(wrapper)).toEqual(["row-r-2", "row-r-3", "row-r-1"]);
+  });
+
+  it("appends a new row at the end of the sorted view", async () => {
+    const wrapper = mountGrid(sortable());
+    await clickHeader(wrapper, "c-1");
+
+    const grown = sortable();
+    grown.rows.push({
+      id: "r-4",
+      order: 3,
+      cells: { "c-1": "Axe" },
+      created_at: "t",
+      updated_at: "t",
+    });
+    await wrapper.setProps({ tab: grown });
+
+    expect(rowOrder(wrapper)).toEqual([
+      "row-r-2",
+      "row-r-3",
+      "row-r-1",
+      "row-r-4",
+    ]);
+  });
+
+  it("drops a deleted row from the view without re-sorting the rest", async () => {
+    const wrapper = mountGrid(sortable());
+    await clickHeader(wrapper, "c-1");
+
+    const shrunk = sortable();
+    shrunk.rows = shrunk.rows.filter((r) => r.id !== "r-3");
+    shrunk.rows[0]!.cells["c-1"] = "Aaa";
+    await wrapper.setProps({ tab: shrunk });
+
+    expect(rowOrder(wrapper)).toEqual(["row-r-2", "row-r-1"]);
+  });
+
+  it("clears the sort when the tab changes", async () => {
+    const wrapper = mountGrid(sortable());
+    await clickHeader(wrapper, "c-1");
+
+    const other = sortable();
+    other.id = "tb-2";
+    await wrapper.setProps({ tab: other });
+
+    expect(wrapper.find('[data-testid="sort-indicator-c-1"]').exists()).toBe(
+      false,
+    );
+    expect(rowOrder(wrapper)).toEqual(["row-r-1", "row-r-2", "row-r-3"]);
+  });
+
+  it("never writes anything when sorting", async () => {
+    const wrapper = mountGrid(sortable());
+
+    await clickHeader(wrapper, "c-1");
+
+    expect(wrapper.emitted("commit-cell")).toBeUndefined();
+    expect(wrapper.emitted("move-column")).toBeUndefined();
+  });
+});

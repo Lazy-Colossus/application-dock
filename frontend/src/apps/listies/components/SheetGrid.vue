@@ -23,7 +23,14 @@
               <span
                 class="sheet-grid__header-name"
                 :data-testid="`header-name-${column.id}`"
+                @click="cycleSort(column.id)"
                 >{{ column.name }}</span
+              >
+              <span
+                v-if="sortSpec?.columnId === column.id"
+                class="sheet-grid__sort"
+                :data-testid="`sort-indicator-${column.id}`"
+                >{{ sortSpec.direction === "asc" ? "▲" : "▼" }}</span
               >
               <q-btn
                 dense
@@ -222,6 +229,8 @@ import type { ComponentPublicInstance } from "vue";
 import ColumnHeaderMenu from "./ColumnHeaderMenu.vue";
 import GridCell from "./GridCell.vue";
 import { typeGlyph } from "@/apps/listies/coerce";
+import { sortRowIds } from "@/apps/listies/sort";
+import type { SortSpec } from "@/apps/listies/sort";
 import { useGridNavigation } from "@/apps/listies/composables/useGridNavigation";
 import type { CellValue, ColumnType, Tab } from "@/apps/listies/types";
 
@@ -244,8 +253,71 @@ const emit = defineEmits<{
 const orderedColumns = computed(() =>
   [...props.tab.columns].sort((a, b) => a.order - b.order),
 );
-const orderedRows = computed(() =>
+const storedOrder = computed(() =>
   [...props.tab.rows].sort((a, b) => a.order - b.order),
+);
+
+// ── sorting (Story 2.6) ──────────────────────────────────────────────────
+//
+// A sort is a view: it produces a display order of row ids and never writes.
+// That order is recomputed only when the sort *spec* changes — not when a cell
+// value changes — so a row never jumps out from under the cursor mid-edit.
+
+const sortSpec = ref<SortSpec | null>(null);
+const displayRowIds = ref<string[] | null>(null);
+
+const orderedRows = computed(() => {
+  const ids = displayRowIds.value;
+  if (!ids) return storedOrder.value;
+  const byId = new Map(props.tab.rows.map((row) => [row.id, row]));
+  return ids.flatMap((id) => {
+    const row = byId.get(id);
+    return row ? [row] : [];
+  });
+});
+
+function recomputeSort(): void {
+  const spec = sortSpec.value;
+  if (!spec) {
+    displayRowIds.value = null;
+    return;
+  }
+  const column = props.tab.columns.find((c) => c.id === spec.columnId);
+  if (!column) {
+    displayRowIds.value = null;
+    return;
+  }
+  displayRowIds.value = sortRowIds(storedOrder.value, column, spec.direction);
+}
+
+/** Cycle a header: unsorted → ascending → descending → unsorted. */
+function cycleSort(columnId: string): void {
+  const spec = sortSpec.value;
+  if (!spec || spec.columnId !== columnId) {
+    sortSpec.value = { columnId, direction: "asc" };
+  } else if (spec.direction === "asc") {
+    sortSpec.value = { columnId, direction: "desc" };
+  } else {
+    sortSpec.value = null;
+  }
+  recomputeSort();
+}
+
+// Rows arriving or leaving adjust the display order in place: a new row goes
+// to the end rather than jumping into its sorted position, and a removed one
+// is spliced out. Neither re-sorts what is already on screen.
+watch(
+  () => props.tab.rows.map((row) => row.id).join("|"),
+  () => {
+    const ids = displayRowIds.value;
+    if (!ids) return;
+    const present = new Set(props.tab.rows.map((row) => row.id));
+    const kept = ids.filter((id) => present.has(id));
+    const added = props.tab.rows
+      .map((row) => row.id)
+      .filter((id) => !ids.includes(id));
+    displayRowIds.value = [...kept, ...added];
+  },
 );
 
 // The ghost row is the extra navigable row past the last real one.
@@ -394,6 +466,9 @@ watch(
   () => props.tab.id,
   () => {
     nav.focusCell(-1, -1);
+    // A sort belongs to the tab being looked at.
+    sortSpec.value = null;
+    displayRowIds.value = null;
   },
 );
 </script>
@@ -436,11 +511,31 @@ watch(
   text-align: right;
 }
 
+.sheet-grid__header-name {
+  cursor: pointer;
+}
+
+.sheet-grid__sort {
+  margin-left: 0.25rem;
+  font-size: 0.7em;
+  opacity: 0.7;
+}
+
 .sheet-grid__menu-btn {
   opacity: 0.5;
 }
 
-.sheet-grid__header:hover .sheet-grid__menu-btn {
+.sheet-grid__header:hover .sheet-grid__header-name {
+  cursor: pointer;
+}
+
+.sheet-grid__sort {
+  margin-left: 0.25rem;
+  font-size: 0.7em;
+  opacity: 0.7;
+}
+
+.sheet-grid__menu-btn {
   opacity: 1;
 }
 
