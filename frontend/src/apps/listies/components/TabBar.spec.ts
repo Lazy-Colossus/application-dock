@@ -120,7 +120,9 @@ describe("TabBar — rename and delete (Story 3.3)", () => {
     });
 
   it("offers a menu on each tab chip", () => {
-    expect(withMenu().findAll('[data-testid^="tab-menu-"]')).toHaveLength(2);
+    // `tab-menu-tb-` and not `tab-menu-`: the latter also matches the caret
+    // button's `tab-menu-btn-*`.
+    expect(withMenu().findAll('[data-testid^="tab-menu-tb-"]')).toHaveLength(2);
   });
 
   it("renames a tab", async () => {
@@ -182,5 +184,123 @@ describe("TabBar — rename and delete (Story 3.3)", () => {
   it("still offers rename for the only tab", () => {
     const wrapper = withMenu([three()[0]!]);
     expect(wrapper.find('[data-testid="tab-rename-tb-1"]').exists()).toBe(true);
+  });
+});
+
+describe("TabBar — the tab menu is discoverable (UI fix 4)", () => {
+  const two = (): Tab[] => [
+    { id: "tb-1", name: "Packing", order: 0, columns: [], rows: [] },
+    { id: "tb-2", name: "Flights", order: 1, columns: [], rows: [] },
+  ];
+
+  const bar = (list: Tab[] = two(), activeTabId = "tb-1") =>
+    mount(TabBar, {
+      props: { tabs: list, activeTabId },
+      global: { stubs: STUBS },
+    });
+
+  it("shows a visible control that opens the menu", () => {
+    const wrapper = bar();
+
+    // Right-click is not a discoverable affordance — there must be something
+    // to click.
+    expect(wrapper.find('[data-testid="tab-menu-btn-tb-1"]').exists()).toBe(
+      true,
+    );
+  });
+
+  it("does not hide the menu behind a right-click", () => {
+    const menu = bar().findComponent('[data-testid="tab-menu-tb-1"]');
+    expect(menu.props("contextMenu")).toBeFalsy();
+  });
+
+  it("opening the menu does not switch tabs", async () => {
+    const wrapper = bar();
+
+    await wrapper.find('[data-testid="tab-menu-btn-tb-2"]').trigger("click");
+
+    expect(wrapper.emitted("select")).toBeUndefined();
+  });
+
+  it("still switches tabs when the chip itself is clicked", async () => {
+    const wrapper = bar();
+
+    await wrapper.find('[data-testid="tab-chip-tb-2"]').trigger("click");
+
+    expect(wrapper.emitted("select")).toEqual([["tb-2"]]);
+  });
+});
+
+describe("TabBar — tab colour", () => {
+  const coloured = (): Tab[] => [
+    {
+      id: "tb-1",
+      name: "Packing",
+      order: 0,
+      color: "#ffcc00",
+      columns: [],
+      rows: [],
+    },
+    {
+      id: "tb-2",
+      name: "Flights",
+      order: 1,
+      color: null,
+      columns: [],
+      rows: [],
+    },
+  ];
+
+  const bar = (list: Tab[] = coloured(), activeTabId = "tb-1") =>
+    mount(TabBar, {
+      props: { tabs: list, activeTabId },
+      global: {
+        stubs: { ...STUBS, "q-menu": { template: "<div><slot /></div>" } },
+      },
+    });
+
+  it("tints a chip that has a colour", () => {
+    const chip = bar().findComponent('[data-testid="tab-chip-tb-1"]');
+    expect(chip.attributes("style")).toContain("#ffcc00");
+  });
+
+  it("leaves an uncoloured chip to the default styling", () => {
+    const chip = bar().findComponent('[data-testid="tab-chip-tb-2"]');
+    expect(chip.attributes("style") ?? "").not.toContain("#");
+  });
+
+  it("offers a swatch per preset colour", async () => {
+    const wrapper = bar();
+
+    await wrapper.find('[data-testid="tab-colour-tb-1"]').trigger("click");
+
+    expect(
+      wrapper.findAll('[data-testid^="tab-swatch-"]').length,
+    ).toBeGreaterThan(2);
+  });
+
+  it("picks a colour", async () => {
+    const wrapper = bar();
+    await wrapper.find('[data-testid="tab-colour-tb-1"]').trigger("click");
+
+    await wrapper.findAll('[data-testid^="tab-swatch-"]')[0]!.trigger("click");
+
+    const emitted = wrapper.emitted("recolour")![0]![0] as {
+      tabId: string;
+      color: string | null;
+    };
+    expect(emitted.tabId).toBe("tb-1");
+    expect(emitted.color).toMatch(/^#[0-9a-f]{6}$/);
+  });
+
+  it("clears a colour", async () => {
+    const wrapper = bar();
+    await wrapper.find('[data-testid="tab-colour-tb-1"]').trigger("click");
+
+    await wrapper.find('[data-testid="tab-swatch-none"]').trigger("click");
+
+    expect(wrapper.emitted("recolour")).toEqual([
+      [{ tabId: "tb-1", color: null }],
+    ]);
   });
 });

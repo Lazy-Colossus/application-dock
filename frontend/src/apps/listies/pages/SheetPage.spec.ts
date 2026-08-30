@@ -46,7 +46,10 @@ const sheet = (): Sheet => ({
 });
 
 const STUBS = {
-  "q-page": { template: '<div class="q-page-stub"><slot /></div>' },
+  "q-page": {
+    template: '<div class="q-page-stub"><slot /></div>',
+    props: ["styleFn"],
+  },
   "q-btn": {
     template:
       "<button :data-testid=\"$attrs['data-testid']\" @click=\"$emit('click', $event)\">{{ label }}</button>",
@@ -65,6 +68,30 @@ const STUBS = {
     emits: ["click"],
   },
   "q-spinner": { template: '<div data-testid="spinner" />' },
+  // Rendered by the real TabBar and SheetGrid this page mounts; each has its
+  // own spec, so here they only need to resolve.
+  "q-menu": { template: "<div><slot /></div>" },
+  "q-list": { template: "<div><slot /></div>" },
+  "q-item": { template: "<div><slot /></div>" },
+  "q-item-section": { template: "<div><slot /></div>" },
+  "q-input": {
+    template: "<input />",
+    props: ["modelValue", "label", "dense", "outlined", "autofocus"],
+  },
+  // A div, not a <select>: `options` is a read-only DOM property on a real
+  // select element, so a native root turns the stub into a warning factory.
+  "q-select": {
+    template: "<div />",
+    props: [
+      "modelValue",
+      "options",
+      "label",
+      "dense",
+      "outlined",
+      "emitValue",
+      "mapOptions",
+    ],
+  },
   CreateTabDialog: {
     name: "CreateTabDialog",
     template: "<div />",
@@ -446,5 +473,77 @@ describe("SheetPage — renaming and deleting tabs (Story 3.3)", () => {
     expect(
       wrapper.findComponent({ name: "TabBar" }).props("tabs"),
     ).toHaveLength(1);
+  });
+});
+
+describe("SheetPage — the page fills the viewport (UI fix 1)", () => {
+  it("gives the page a definite height rather than a minimum", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    const styleFn = wrapper.findComponent(".q-page-stub").props("styleFn") as (
+      offset: number,
+    ) => Record<string, string>;
+
+    // A *definite* height is what lets the grid scroll internally and the tab
+    // bar stay put; min-height would let tall content push the bar off-screen.
+    expect(styleFn(50)).toEqual({ height: "calc(100vh - 50px)" });
+    expect(styleFn(0)).toEqual({ height: "100vh" });
+  });
+
+  it("lays the page out as a column so the grid can take the slack", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    expect(wrapper.find(".q-page-stub").classes()).toContain("listies-sheet");
+    expect(wrapper.find(".listies-sheet__body").exists()).toBe(true);
+  });
+
+  it("keeps the tab bar outside the scrolling area, after the grid", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    const body = wrapper.find(".listies-sheet__body");
+    expect(body.findComponent({ name: "SheetGrid" }).exists()).toBe(true);
+    expect(body.findComponent({ name: "TabBar" }).exists()).toBe(false);
+    expect(wrapper.findComponent({ name: "TabBar" }).exists()).toBe(true);
+  });
+});
+
+describe("SheetPage — tab colour", () => {
+  it("recolours the tab the bar asks about", async () => {
+    putMock.mockReset().mockResolvedValue({
+      id: "tb-1",
+      name: "Packing",
+      order: 0,
+      color: "#ffcc00",
+      columns: [],
+      rows: [],
+    });
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    await wrapper
+      .findComponent({ name: "TabBar" })
+      .vm.$emit("recolour", { tabId: "tb-1", color: "#ffcc00" });
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith("/listies/sheets/s-1/tabs/tb-1", {
+      color: "#ffcc00",
+    });
+  });
+
+  it("accents the grid with the active tab's colour", async () => {
+    getMock.mockImplementation(() => {
+      const s = sheet();
+      s.tabs[0]!.color = "#ffcc00";
+      return Promise.resolve(s);
+    });
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    expect(wrapper.find(".listies-sheet__body").attributes("style")).toContain(
+      "#ffcc00",
+    );
   });
 });

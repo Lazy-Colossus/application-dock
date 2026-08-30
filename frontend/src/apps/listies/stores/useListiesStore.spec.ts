@@ -822,3 +822,60 @@ describe("useListiesStore — rename and delete a tab (Story 3.3)", () => {
     expect(store.error).toBe("nope");
   });
 });
+
+describe("useListiesStore — tab colour", () => {
+  beforeEach(() => {
+    getMock.mockImplementation(() => Promise.resolve(sheet()));
+    putMock.mockReset().mockResolvedValue({
+      id: "tb-1",
+      name: "Tab 1",
+      order: 0,
+      color: "#ffcc00",
+      columns: [],
+      rows: [],
+    });
+  });
+
+  it("sets a tab's colour", async () => {
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.recolourTab("tb-1", "#ffcc00");
+
+    expect(putMock).toHaveBeenCalledWith("/listies/sheets/s-2/tabs/tb-1", {
+      color: "#ffcc00",
+    });
+    expect(store.currentSheet!.tabs[0]!.color).toBe("#ffcc00");
+  });
+
+  it("clears a colour by sending an empty string", async () => {
+    putMock.mockResolvedValue({
+      id: "tb-1",
+      name: "Tab 1",
+      order: 0,
+      color: null,
+      columns: [],
+      rows: [],
+    });
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.recolourTab("tb-1", null);
+
+    expect(putMock).toHaveBeenCalledWith("/listies/sheets/s-2/tabs/tb-1", {
+      color: "",
+    });
+    expect(store.currentSheet!.tabs[0]!.color).toBeNull();
+  });
+
+  it("keeps the old colour and surfaces the error when it fails", async () => {
+    putMock.mockRejectedValue(new Error("nope"));
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.recolourTab("tb-1", "#ffcc00");
+
+    expect(store.currentSheet!.tabs[0]!.color).toBeUndefined();
+    expect(store.error).toBe("nope");
+  });
+});

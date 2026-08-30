@@ -244,6 +244,28 @@ export const useListiesStore = defineStore("listies", () => {
     }
   }
 
+  /** Set or clear a tab's accent colour; `null` clears it. */
+  async function recolourTab(
+    tabId: string,
+    color: string | null,
+  ): Promise<void> {
+    const sheet = currentSheet.value;
+    if (!sheet) return;
+
+    error.value = null;
+    try {
+      // The API distinguishes "" (clear) from omitted (leave alone).
+      const updated = await api.put<Tab>(
+        `/listies/sheets/${sheet.id}/tabs/${tabId}`,
+        { color: color ?? "" },
+      );
+      const tab = sheet.tabs.find((t) => t.id === tabId);
+      if (tab) tab.color = updated.color ?? null;
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+    }
+  }
+
   async function deleteTab(tabId: string): Promise<void> {
     const sheet = currentSheet.value;
     if (!sheet) return;
@@ -364,6 +386,7 @@ export const useListiesStore = defineStore("listies", () => {
     createTab,
     createTabFrom,
     renameTab,
+    recolourTab,
     deleteTab,
     deleteRow,
     addColumn,

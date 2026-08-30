@@ -27,6 +27,9 @@ export interface Tab {
   id: string;
   name: string;
   order: number;
+  // `#rrggbb`, or null when the tab has no accent. Optional so a document
+  // written before colours still satisfies the type.
+  color?: string | null;
   columns: Column[];
   rows: Row[];
 }

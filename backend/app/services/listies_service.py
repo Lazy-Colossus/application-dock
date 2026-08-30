@@ -7,11 +7,13 @@ column retype and an ordinary edit can never disagree about what a type means.
 
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import UTC, date, datetime
 
 from app.repositories import listies_repo as repo
 from app.schemas.listies import (
+    HEX_COLOR_PATTERN,
     CellValue,
     Column,
     ColumnSpec,
@@ -463,10 +465,32 @@ def create_tab(
     return tab
 
 
-def update_tab(username: str, sheet_id: str, tab_id: str, name: str) -> Tab:
+def _clean_color(color: str) -> str | None:
+    """`#rrggbb`, or `None` when the colour is being cleared."""
+    cleaned = color.strip()
+    if not cleaned:
+        return None
+    if not re.fullmatch(HEX_COLOR_PATTERN, cleaned):
+        raise ValueError(f"expected a #rrggbb colour, got {color!r}")
+    return cleaned.lower()
+
+
+def update_tab(
+    username: str,
+    sheet_id: str,
+    tab_id: str,
+    name: str | None = None,
+    color: str | None = None,
+) -> Tab:
+    """Rename and/or recolour a tab — only the fields provided are applied."""
     doc = repo.read_doc(username)
     tab = find_tab(find_sheet(doc.sheets, sheet_id).tabs, tab_id)
-    tab.name = _clean_name(name, "tab name")
+
+    if name is not None:
+        tab.name = _clean_name(name, "tab name")
+    if color is not None:
+        tab.color = _clean_color(color)
+
     repo.write_doc(username, doc)
     return tab
 

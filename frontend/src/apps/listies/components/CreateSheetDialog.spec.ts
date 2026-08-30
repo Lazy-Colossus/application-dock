@@ -40,7 +40,20 @@ const STUBS = {
   },
   // Rendered by the nested ColumnBuilder, which this suite exercises through
   // its props rather than its markup.
-  "q-select": { template: "<select />" },
+  // A div with declared props: `options` is read-only on a real <select>
+  // element, so a native root makes Vue warn on every render.
+  "q-select": {
+    template: "<div />",
+    props: [
+      "modelValue",
+      "options",
+      "label",
+      "dense",
+      "outlined",
+      "emitValue",
+      "mapOptions",
+    ],
+  },
 };
 
 function mountDialog() {

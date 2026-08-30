@@ -1,5 +1,5 @@
 <template>
-  <div class="sheet-grid">
+  <div class="sheet-grid sheet-grid--fill">
     <div
       class="sheet-grid__scroll"
       data-testid="grid-body"
@@ -62,53 +62,68 @@
             </th>
 
             <th class="sheet-grid__header sheet-grid__header--actions">
-              <template v-if="addingColumn">
-                <div class="row items-center q-gutter-xs no-wrap">
-                  <q-input
-                    v-model="newColumnName"
-                    dense
-                    outlined
-                    autofocus
-                    placeholder="Column name"
-                    data-testid="add-column-name"
-                  />
-                  <q-select
-                    v-model="newColumnType"
-                    dense
-                    outlined
-                    emit-value
-                    map-options
-                    :options="TYPE_OPTIONS"
-                    data-testid="add-column-type"
-                  />
-                  <q-btn
-                    dense
-                    flat
-                    no-caps
-                    label="Add"
-                    :disable="!newColumnName.trim()"
-                    data-testid="add-column-save"
-                    @click="saveNewColumn"
-                  />
-                  <q-btn
-                    dense
-                    flat
-                    round
-                    icon="close"
-                    data-testid="add-column-cancel"
-                    @click="addingColumn = false"
-                  />
-                </div>
-              </template>
               <q-btn
-                v-else
                 dense
                 flat
                 round
+                size="sm"
                 icon="add"
                 data-testid="add-column"
                 @click="startAddColumn"
-              />
+              >
+                <!-- In a popup, not inline: a header cell squeezed between
+                     fixed-width columns has no room for a name field. -->
+                <q-menu
+                  v-model="addingColumn"
+                  data-testid="add-column-menu"
+                  anchor="bottom right"
+                  self="top right"
+                >
+                  <div
+                    class="sheet-grid__add-column column q-gutter-sm q-pa-md"
+                  >
+                    <q-input
+                      v-model="newColumnName"
+                      dense
+                      outlined
+                      autofocus
+                      label="Column name"
+                      data-testid="add-column-name"
+                      @keyup.enter="saveNewColumn"
+                    />
+                    <q-select
+                      v-model="newColumnType"
+                      dense
+                      outlined
+                      emit-value
+                      map-options
+                      label="Type"
+                      :options="TYPE_OPTIONS"
+                      data-testid="add-column-type"
+                    />
+                    <div class="row justify-end q-gutter-xs">
+                      <q-btn
+                        dense
+                        flat
+                        no-caps
+                        label="Cancel"
+                        data-testid="add-column-cancel"
+                        @click="addingColumn = false"
+                      />
+                      <q-btn
+                        dense
+                        flat
+                        no-caps
+                        color="primary"
+                        label="Add"
+                        :disable="!newColumnName.trim()"
+                        data-testid="add-column-save"
+                        @click="saveNewColumn"
+                      />
+                    </div>
+                  </div>
+                </q-menu>
+              </q-btn>
             </th>
           </tr>
         </thead>
@@ -456,9 +471,18 @@ function materialise(columnId: string, value: CellValue): void {
 
 watch(
   () => props.tab.rows.length,
-  () => {
+  (count, previous) => {
+    const materialised = ghostPending.value && count > (previous ?? 0);
     ghostPending.value = false;
     nav.clampToGrid();
+
+    // The row the user just typed into is now a real row, and a fresh empty
+    // one sits beneath it. Follow down so there is always a ready row under
+    // the cursor — otherwise entry stalls on the row that was just filled.
+    if (materialised) {
+      nav.moveDown();
+      focusFocusedCell();
+    }
   },
 );
 
@@ -477,12 +501,25 @@ watch(
 .sheet-grid {
   --listies-gridline: rgba(255, 255, 255, 0.08);
   --listies-muted: rgba(255, 255, 255, 0.35);
+  /* Every data column is this wide; the table scrolls sideways rather than
+     squeezing columns until their headers are unreadable. */
+  --listies-column-width: 12rem;
+}
+
+/* The page hands the grid its height (SheetPage); the grid must not cap
+   itself, or the tab bar ends up floating above the fold. */
+.sheet-grid--fill {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 /* Wide-first: a dense grid scrolls sideways rather than reflowing (NFR-1). */
 .sheet-grid__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
-  max-height: 70vh;
   border: 1px solid var(--listies-gridline);
   border-radius: 6px;
 }
@@ -490,11 +527,27 @@ watch(
 .sheet-grid__table {
   border-collapse: separate;
   border-spacing: 0;
-  width: 100%;
+  /* Not 100%: fixed columns plus max-content is what makes the table scroll
+     horizontally instead of compressing. */
+  width: max-content;
+  min-width: 100%;
+  table-layout: fixed;
   font-size: 0.875rem;
 }
 
+.sheet-grid__header:not(.sheet-grid__header--actions),
+.sheet-grid__table :deep(.grid-cell) {
+  width: var(--listies-column-width);
+  max-width: var(--listies-column-width);
+}
+
+.sheet-grid__add-column {
+  min-width: 16rem;
+}
+
 .sheet-grid__header {
+  /* Picks up the active tab's colour when it has one (set by SheetPage). */
+  border-top: 2px solid var(--listies-accent, transparent);
   position: sticky;
   top: 0;
   z-index: 1;

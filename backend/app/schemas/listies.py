@@ -36,10 +36,16 @@ class Row(BaseModel):
     updated_at: str
 
 
+# A tab's accent, stored as `#rrggbb`. Optional and additive: a document
+# written before colours simply has no key, which reads as `None`.
+HEX_COLOR_PATTERN = r"^#[0-9a-fA-F]{6}$"
+
+
 class Tab(BaseModel):
     id: str
     name: str
     order: int = 0
+    color: str | None = None
     columns: list[Column] = Field(default_factory=list)
     rows: list[Row] = Field(default_factory=list)
 
@@ -120,3 +126,6 @@ class CreateTabRequest(BaseModel):
 
 class UpdateTabRequest(BaseModel):
     name: str | None = None
+    # An empty string clears the colour; `None` means "leave it alone", which
+    # is why the two are not the same thing here.
+    color: str | None = None

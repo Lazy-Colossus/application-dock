@@ -79,7 +79,11 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
 - FR-13: When creating a tab, the user can **copy the column setup** of an existing tab in the same
   sheet.
 - FR-14: A tab can be **renamed** and **deleted** (confirmation; the **last remaining tab cannot be
-  deleted**).
+  deleted**). The controls are reachable from a **visible** affordance on the chip — not a
+  right-click-only context menu (corrected in Story 3.4).
+- FR-21: A tab can be given an **accent colour** from a small preset palette, or none. The chip is
+  tinted and the grid's header picks up the accent, so the tab you are in is legible without
+  looking down at the bar.
 
 ### NonFunctional Requirements
 
@@ -204,6 +208,7 @@ a string.
 - FR-12: Epic 3 — bottom tab bar, switching, creating a tab
 - FR-13: Epic 3 — create a tab copying another tab's columns
 - FR-14: Epic 3 — rename / delete a tab
+- FR-21: Epic 3 (Story 3.4) — a per-tab accent colour
 - FR-15: Epic 4 — the `place` column type
 - FR-16: Epic 4 — Google Places search inside a place cell
 - FR-17: Epic 4 — the map pane beside the grid
@@ -884,3 +889,39 @@ shown" control re-fits on demand.
 **Given** the map pane is closed
 **When** the grid renders
 **Then** the checkbox column is gone and the grid is back to full width.
+
+
+### Story 3.4: Sheet layout fixes and tab colour
+
+As a user,
+I want the tab bar always on screen, a row always ready for input, room to name a new column, and
+tabs I can visibly edit and colour,
+so that the sheet is usable with real amounts of data rather than only with a few rows.
+
+**Acceptance Criteria:**
+
+**Given** a tab with more rows than fit the screen
+**When** the sheet renders
+**Then** the tab bar stays at the bottom of the viewport and the grid scrolls inside its own box —
+the bar is never pushed below the fold (revises FR-12).
+
+**Given** any tab
+**When** the user fills the last row and it becomes real
+**Then** a fresh empty row is immediately beneath it and the cursor follows down into it, so entry
+never stalls on the row just filled (revises FR-8).
+
+**Given** a tab with several columns
+**When** the user adds a column
+**Then** the name field opens in a popup with room to type; data columns are a fixed width and the
+table scrolls horizontally rather than compressing (revises FR-10, NFR-1).
+
+**Given** a tab chip
+**When** it renders
+**Then** a visible control opens its menu — rename, colour, delete — with no right-click required
+(revises FR-14).
+
+**Given** the tab menu
+**When** a colour is picked from the preset palette (or cleared)
+**Then** `PUT .../tabs/{tab_id}` persists `color` as `#rrggbb` or `null`, the chip is tinted, and
+the grid header takes the accent (FR-21). The field is additive — a document written before
+colours still reads, and `schema_version` stays `1`.

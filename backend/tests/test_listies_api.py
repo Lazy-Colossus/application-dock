@@ -1187,3 +1187,84 @@ def test_tab_operations_on_another_users_sheet_return_404() -> None:
         assert client.delete(_tab_url(sheet_id, tab_id)).status_code == 404
     finally:
         app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+
+# ── tab colour (UI follow-up) ─────────────────────────────────────────────────
+
+
+def test_a_new_tab_has_no_colour_until_one_is_chosen() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+    assert _tabs(sheet_id)[0]["color"] is None
+
+
+def test_set_a_tab_colour() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+
+    resp = client.put(_tab_url(sheet_id, tab_id), json={"color": "#ffcc00"})
+
+    assert resp.status_code == 200
+    assert resp.json()["color"] == "#ffcc00"
+    assert _tabs(sheet_id)[0]["color"] == "#ffcc00"
+
+
+def test_setting_a_colour_leaves_the_name_alone() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+    client.put(_tab_url(sheet_id, tab_id), json={"name": "Packing"})
+
+    body = client.put(_tab_url(sheet_id, tab_id), json={"color": "#ffcc00"}).json()
+
+    assert body["name"] == "Packing"
+
+
+def test_renaming_leaves_the_colour_alone() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+    client.put(_tab_url(sheet_id, tab_id), json={"color": "#ffcc00"})
+
+    body = client.put(_tab_url(sheet_id, tab_id), json={"name": "Packing"}).json()
+
+    assert body["color"] == "#ffcc00"
+
+
+def test_name_and_colour_can_be_set_together() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+
+    body = client.put(
+        _tab_url(sheet_id, tab_id), json={"name": "Packing", "color": "#00aaff"}
+    ).json()
+
+    assert (body["name"], body["color"]) == ("Packing", "#00aaff")
+
+
+def test_a_tab_colour_can_be_cleared() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+    client.put(_tab_url(sheet_id, tab_id), json={"color": "#ffcc00"})
+
+    body = client.put(_tab_url(sheet_id, tab_id), json={"color": ""}).json()
+
+    assert body["color"] is None
+
+
+@pytest.mark.parametrize("colour", ["red", "#fff", "#12345", "ffcc00", "#gggggg"])
+def test_a_colour_that_is_not_a_hex_triple_is_rejected(colour: str) -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+    assert client.put(_tab_url(sheet_id, tab_id), json={"color": colour}).status_code == 422
+
+
+def test_a_document_written_before_colours_still_reads() -> None:
+    """The field is additive — an older file has no `color` key at all."""
+    from app.repositories import listies_repo
+    from app.schemas.listies import ListiesDoc
+
+    raw = {
+        "schema_version": 1,
+        "sheets": [
+            {
+                "id": "s-old",
+                "name": "Old",
+                "created_at": "t",
+                "tabs": [{"id": "tb-old", "name": "Tab 1", "order": 0, "columns": [], "rows": []}],
+            }
+        ],
+    }
+    doc = ListiesDoc.model_validate(listies_repo.migrate(raw))
+    assert doc.sheets[0].tabs[0].color is None

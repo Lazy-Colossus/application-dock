@@ -23,6 +23,13 @@ const STUBS = {
     ],
     emits: ["click"],
   },
+  // Honours v-model so a closed popup really is absent from the DOM.
+  "q-menu": {
+    template:
+      '<div v-if="modelValue !== false" :data-testid="$attrs[\'data-testid\']"><slot /></div>',
+    props: ["modelValue", "anchor", "self", "contextMenu"],
+    emits: ["update:modelValue"],
+  },
   "q-input": {
     template:
       '<input :data-testid="$attrs[\'data-testid\']" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
@@ -691,5 +698,105 @@ describe("SheetGrid — sorting (Story 2.6)", () => {
 
     expect(wrapper.emitted("commit-cell")).toBeUndefined();
     expect(wrapper.emitted("move-column")).toBeUndefined();
+  });
+});
+
+describe("SheetGrid — layout and column width (UI fixes 1 and 3)", () => {
+  it("fills the space it is given rather than capping itself", () => {
+    const wrapper = mountGrid();
+
+    // The page owns the height now; a self-imposed cap would leave a gap under
+    // the grid and float the tab bar in the middle of the screen.
+    expect(wrapper.find(".sheet-grid").classes()).toContain("sheet-grid--fill");
+    expect(wrapper.find(".sheet-grid__scroll").exists()).toBe(true);
+  });
+
+  it("opens the add-column form in a popup, not in the header cell", async () => {
+    const wrapper = mountGrid();
+    expect(wrapper.find('[data-testid="add-column-menu"]').exists()).toBe(
+      false,
+    );
+
+    await wrapper.find('[data-testid="add-column"]').trigger("click");
+
+    // The form lives in a menu so it has room regardless of column widths.
+    const menu = wrapper.find('[data-testid="add-column-menu"]');
+    expect(menu.exists()).toBe(true);
+    expect(menu.find('[data-testid="add-column-name"]').exists()).toBe(true);
+  });
+
+  it("still refuses a blank column name from the popup", async () => {
+    const wrapper = mountGrid();
+    await wrapper.find('[data-testid="add-column"]').trigger("click");
+
+    await wrapper.find('[data-testid="add-column-name"]').setValue("  ");
+    await wrapper.find('[data-testid="add-column-save"]').trigger("click");
+
+    expect(wrapper.emitted("add-column")).toBeUndefined();
+  });
+});
+
+describe("SheetGrid — the ready row follows you down (UI fix 2)", () => {
+  const cellsOfRow = (w: ReturnType<typeof mountGrid>, testId: string) =>
+    w.find(`[data-testid="${testId}"]`).findAllComponents({ name: "GridCell" });
+
+  it("moves onto the new empty row once a ghost entry becomes real", async () => {
+    const wrapper = mountGrid();
+    // Focus the ghost row's first cell and type into it.
+    await cellsOfRow(wrapper, "ghost-row")[0]!.trigger("click");
+    await cellsOfRow(wrapper, "ghost-row")[0]!.vm.$emit("commit", "Mat");
+
+    const grown = tab();
+    grown.rows = [
+      ...grown.rows,
+      {
+        id: "r-3",
+        order: 2,
+        cells: { "c-1": "Mat" },
+        created_at: "t",
+        updated_at: "t",
+      },
+    ];
+    await wrapper.setProps({ tab: grown });
+
+    // The row that was the ghost is now real; focus should be on the fresh
+    // ghost beneath it, ready for the next entry.
+    expect(cellsOfRow(wrapper, "ghost-row")[0]!.props("focused")).toBe(true);
+    expect(cellsOfRow(wrapper, "row-r-3")[0]!.props("focused")).toBe(false);
+  });
+
+  it("keeps the same column when it follows down", async () => {
+    const wrapper = mountGrid();
+    await cellsOfRow(wrapper, "ghost-row")[1]!.trigger("click");
+    await cellsOfRow(wrapper, "ghost-row")[1]!.vm.$emit("commit", 4);
+
+    const grown = tab();
+    grown.rows = [
+      ...grown.rows,
+      {
+        id: "r-3",
+        order: 2,
+        cells: { "c-2": 4 },
+        created_at: "t",
+        updated_at: "t",
+      },
+    ];
+    await wrapper.setProps({ tab: grown });
+
+    expect(cellsOfRow(wrapper, "ghost-row")[1]!.props("focused")).toBe(true);
+  });
+
+  it("does not move focus when a row arrives from somewhere else", async () => {
+    const wrapper = mountGrid();
+    await cellsOfRow(wrapper, "row-r-1")[0]!.trigger("click");
+
+    const grown = tab();
+    grown.rows = [
+      ...grown.rows,
+      { id: "r-3", order: 2, cells: {}, created_at: "t", updated_at: "t" },
+    ];
+    await wrapper.setProps({ tab: grown });
+
+    expect(cellsOfRow(wrapper, "row-r-1")[0]!.props("focused")).toBe(true);
   });
 });
