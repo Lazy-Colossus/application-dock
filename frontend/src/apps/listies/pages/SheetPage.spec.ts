@@ -211,3 +211,20 @@ describe("SheetPage — the ghost row (Story 2.3)", () => {
     );
   });
 });
+
+describe("SheetPage — deleting a row (Story 2.4)", () => {
+  it("deletes the row the grid asks to remove", async () => {
+    delMock.mockReset().mockResolvedValue(undefined);
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    await wrapper
+      .findComponent({ name: "SheetGrid" })
+      .vm.$emit("delete-row", "r-1");
+    await flushPromises();
+
+    expect(delMock).toHaveBeenCalledWith(
+      "/listies/sheets/s-1/tabs/tb-1/rows/r-1",
+    );
+  });
+});

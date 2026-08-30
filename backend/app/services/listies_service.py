@@ -255,7 +255,9 @@ def create_row(
     stamp = now_iso()
     row = Row(
         id=new_id("r"),
-        order=len(tab.rows),
+        # Past the highest existing order, not `len(rows)`: a deletion leaves
+        # gaps, and `len` would collide with a surviving row's order.
+        order=max((r.order for r in tab.rows), default=-1) + 1,
         cells=_coerce_cells(tab, cells or {}),
         created_at=stamp,
         updated_at=stamp,
@@ -300,3 +302,10 @@ def update_row_cells(
     row.updated_at = now_iso()
     repo.write_doc(username, doc)
     return row
+
+
+def delete_row(username: str, sheet_id: str, tab_id: str, row_id: str) -> None:
+    doc = repo.read_doc(username)
+    tab = find_tab(find_sheet(doc.sheets, sheet_id).tabs, tab_id)
+    tab.rows.remove(find_row(tab.rows, row_id))
+    repo.write_doc(username, doc)

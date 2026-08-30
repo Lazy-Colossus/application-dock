@@ -177,6 +177,22 @@ export const useListiesStore = defineStore("listies", () => {
     }
   }
 
+  async function deleteRow(rowId: string): Promise<void> {
+    const sheet = currentSheet.value;
+    const tab = activeTab.value;
+    if (!sheet || !tab || !tab.rows.some((r) => r.id === rowId)) return;
+
+    error.value = null;
+    try {
+      await api.del<void>(
+        `/listies/sheets/${sheet.id}/tabs/${tab.id}/rows/${rowId}`,
+      );
+      tab.rows = tab.rows.filter((r) => r.id !== rowId);
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+    }
+  }
+
   return {
     sheets,
     currentSheet,
@@ -185,6 +201,7 @@ export const useListiesStore = defineStore("listies", () => {
     fetchSheet,
     addRow,
     commitCell,
+    deleteRow,
     loading,
     error,
     fetchSheets,

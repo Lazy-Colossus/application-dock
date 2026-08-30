@@ -111,14 +111,23 @@ describe("SheetGrid", () => {
     ]);
   });
 
+  // Scoped to GridCell: a row also carries a trailing actions cell (Story 2.4).
+  const dataCells = (w: ReturnType<typeof mountGrid>, rowTestId: string) =>
+    w
+      .find(`[data-testid="${rowTestId}"]`)
+      .findAllComponents({ name: "GridCell" })
+      .map((c) => c.text());
+
   it("renders each row's cells against the right columns", () => {
-    const cells = mountGrid().find('[data-testid="row-r-1"]').findAll("td");
-    expect(cells.map((c) => c.text())).toEqual(["Tent", "1", "02 Sep 26"]);
+    expect(dataCells(mountGrid(), "row-r-1")).toEqual([
+      "Tent",
+      "1",
+      "02 Sep 26",
+    ]);
   });
 
   it("shows a dash where a row has no value for a column", () => {
-    const cells = mountGrid().find('[data-testid="row-r-2"]').findAll("td");
-    expect(cells.map((c) => c.text())).toEqual(["Stove", "—", "—"]);
+    expect(dataCells(mountGrid(), "row-r-2")).toEqual(["Stove", "—", "—"]);
   });
 
   it("stripes alternate rows", () => {
@@ -337,5 +346,84 @@ describe("SheetGrid — keyboard and the ghost row (Story 2.3)", () => {
     await cellsOf(wrapper, "ghost-row")[0]!.vm.$emit("commit", "Pillow");
 
     expect(wrapper.emitted("add-row")).toHaveLength(2);
+  });
+});
+
+describe("SheetGrid — deleting a row (Story 2.4)", () => {
+  it("offers a delete control on each real row but not on the ghost row", () => {
+    const wrapper = mountGrid();
+
+    expect(wrapper.find('[data-testid="delete-row-r-1"]').exists()).toBe(true);
+    expect(
+      wrapper.find('[data-testid="ghost-row"]').find("button").exists(),
+    ).toBe(false);
+  });
+
+  it("asks for confirmation before deleting anything", async () => {
+    const wrapper = mountGrid();
+
+    await wrapper.find('[data-testid="delete-row-r-1"]').trigger("click");
+
+    expect(wrapper.emitted("delete-row")).toBeUndefined();
+    expect(
+      wrapper.find('[data-testid="delete-row-confirm-r-1"]').exists(),
+    ).toBe(true);
+  });
+
+  it("deletes once confirmed", async () => {
+    const wrapper = mountGrid();
+    await wrapper.find('[data-testid="delete-row-r-1"]').trigger("click");
+
+    await wrapper
+      .find('[data-testid="delete-row-confirm-r-1"]')
+      .trigger("click");
+
+    expect(wrapper.emitted("delete-row")).toEqual([["r-1"]]);
+  });
+
+  it("emits nothing when the confirmation is dismissed", async () => {
+    const wrapper = mountGrid();
+    await wrapper.find('[data-testid="delete-row-r-1"]').trigger("click");
+
+    await wrapper
+      .find('[data-testid="delete-row-cancel-r-1"]')
+      .trigger("click");
+
+    expect(wrapper.emitted("delete-row")).toBeUndefined();
+    expect(
+      wrapper.find('[data-testid="delete-row-confirm-r-1"]').exists(),
+    ).toBe(false);
+  });
+
+  it("only ever confirms one row at a time", async () => {
+    const wrapper = mountGrid();
+    await wrapper.find('[data-testid="delete-row-r-1"]').trigger("click");
+
+    await wrapper.find('[data-testid="delete-row-r-2"]').trigger("click");
+
+    expect(
+      wrapper.find('[data-testid="delete-row-confirm-r-1"]').exists(),
+    ).toBe(false);
+    expect(
+      wrapper.find('[data-testid="delete-row-confirm-r-2"]').exists(),
+    ).toBe(true);
+  });
+
+  it("keeps focus inside the grid after the deleted row disappears", async () => {
+    const wrapper = mountGrid();
+    // Focus the last real row, then let it vanish.
+    await wrapper
+      .find('[data-testid="row-r-2"]')
+      .findAllComponents({ name: "GridCell" })[0]!
+      .trigger("click");
+
+    const shrunk = tab();
+    shrunk.rows = [shrunk.rows[0]!];
+    await wrapper.setProps({ tab: shrunk });
+
+    const focused = wrapper
+      .findAllComponents({ name: "GridCell" })
+      .filter((c) => c.props("focused"));
+    expect(focused).toHaveLength(1);
   });
 });

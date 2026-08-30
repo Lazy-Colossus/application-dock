@@ -26,6 +26,7 @@
                 >{{ column.name }}</span
               >
             </th>
+            <th class="sheet-grid__header sheet-grid__header--actions"></th>
           </tr>
         </thead>
 
@@ -56,6 +57,37 @@
                 })
               "
             />
+
+            <td class="sheet-grid__actions-cell">
+              <template v-if="confirmingRowId === row.id">
+                <q-btn
+                  dense
+                  flat
+                  no-caps
+                  color="negative"
+                  label="Delete"
+                  :data-testid="`delete-row-confirm-${row.id}`"
+                  @click="confirmDelete(row.id)"
+                />
+                <q-btn
+                  dense
+                  flat
+                  no-caps
+                  label="Keep"
+                  :data-testid="`delete-row-cancel-${row.id}`"
+                  @click="confirmingRowId = null"
+                />
+              </template>
+              <q-btn
+                v-else
+                dense
+                flat
+                round
+                icon="delete"
+                :data-testid="`delete-row-${row.id}`"
+                @click="confirmingRowId = row.id"
+              />
+            </td>
           </tr>
 
           <!-- The trailing ghost row: typing here materialises a real row. -->
@@ -79,6 +111,7 @@
               @end-edit="nav.endEdit()"
               @commit="materialise(column.id, $event)"
             />
+            <td class="sheet-grid__actions-cell"></td>
           </tr>
         </tbody>
       </table>
@@ -118,6 +151,7 @@ import type { CellValue, Tab } from "@/apps/listies/types";
 const props = defineProps<{ tab: Tab }>();
 const emit = defineEmits<{
   "add-row": [cells: Record<string, CellValue>];
+  "delete-row": [rowId: string];
   "commit-cell": [
     payload: { rowId: string; columnId: string; value: CellValue },
   ];
@@ -224,6 +258,15 @@ function onKeydown(event: KeyboardEvent): void {
   }
 }
 
+// Deleting a row destroys data with no undo, so it always confirms first —
+// inline, and only ever for one row at a time.
+const confirmingRowId = ref<string | null>(null);
+
+function confirmDelete(rowId: string): void {
+  confirmingRowId.value = null;
+  emit("delete-row", rowId);
+}
+
 // One ghost entry can be in flight at a time: a second keystroke must not
 // create a second row. The ghost re-opens once the row has arrived.
 const ghostPending = ref(false);
@@ -296,6 +339,14 @@ watch(
 
 .sheet-grid__row--striped {
   background: rgba(255, 255, 255, 0.025);
+}
+
+.sheet-grid__header--actions,
+.sheet-grid__actions-cell {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+  padding: 0 0.25rem;
 }
 
 .sheet-grid__row--ghost {

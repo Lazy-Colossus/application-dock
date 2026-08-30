@@ -475,3 +475,73 @@ def test_update_row_in_another_users_sheet_returns_404() -> None:
         assert _put_cells(sheet_id, tab_id, row_id, {ids[0]: "x"}).status_code == 404
     finally:
         app.dependency_overrides[get_current_user] = lambda: "test_user"
+
+
+# ── DELETE /sheets/{sid}/tabs/{tid}/rows/{rid} (Story 2.4) ────────────────────
+
+
+def _three_rows() -> tuple[str, str, list[str]]:
+    sheet_id, tab_id = _sheet_and_tab()
+    ids = [
+        client.post(f"/api/listies/sheets/{sheet_id}/tabs/{tab_id}/rows", json={}).json()["id"]
+        for _ in range(3)
+    ]
+    return sheet_id, tab_id, ids
+
+
+def test_delete_row_returns_204_with_no_body() -> None:
+    sheet_id, tab_id, ids = _three_rows()
+
+    resp = client.delete(f"/api/listies/sheets/{sheet_id}/tabs/{tab_id}/rows/{ids[1]}")
+
+    assert resp.status_code == 204
+    assert resp.content == b""
+
+
+def test_delete_row_removes_only_that_row() -> None:
+    sheet_id, tab_id, ids = _three_rows()
+
+    client.delete(f"/api/listies/sheets/{sheet_id}/tabs/{tab_id}/rows/{ids[1]}")
+
+    rows = client.get(f"/api/listies/sheets/{sheet_id}").json()["tabs"][0]["rows"]
+    assert [r["id"] for r in rows] == [ids[0], ids[2]]
+
+
+def test_delete_row_keeps_the_remaining_rows_in_order() -> None:
+    sheet_id, tab_id, ids = _three_rows()
+
+    client.delete(f"/api/listies/sheets/{sheet_id}/tabs/{tab_id}/rows/{ids[0]}")
+
+    rows = client.get(f"/api/listies/sheets/{sheet_id}").json()["tabs"][0]["rows"]
+    orders = [r["order"] for r in rows]
+    assert orders == sorted(orders)
+
+
+def test_a_row_added_after_a_delete_still_sorts_last() -> None:
+    """Order values must stay unique — appending must not collide with a survivor."""
+    sheet_id, tab_id, ids = _three_rows()
+    client.delete(f"/api/listies/sheets/{sheet_id}/tabs/{tab_id}/rows/{ids[0]}")
+
+    added = client.post(f"/api/listies/sheets/{sheet_id}/tabs/{tab_id}/rows", json={}).json()
+
+    rows = client.get(f"/api/listies/sheets/{sheet_id}").json()["tabs"][0]["rows"]
+    orders = [r["order"] for r in rows]
+    assert len(set(orders)) == len(orders)
+    assert added["order"] == max(orders)
+
+
+def test_delete_unknown_row_returns_404() -> None:
+    sheet_id, tab_id, _ = _three_rows()
+    resp = client.delete(f"/api/listies/sheets/{sheet_id}/tabs/{tab_id}/rows/r-nope")
+    assert resp.status_code == 404
+    assert "detail" in resp.json()
+
+
+def test_delete_row_in_another_users_sheet_returns_404() -> None:
+    sheet_id, tab_id, ids = _three_rows()
+    app.dependency_overrides[get_current_user] = lambda: "someone_else"
+    try:
+        resp = client.delete(f"/api/listies/sheets/{sheet_id}/tabs/{tab_id}/rows/{ids[0]}")
+        assert resp.status_code == 404
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: "test_user"

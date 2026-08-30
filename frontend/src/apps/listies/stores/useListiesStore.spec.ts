@@ -421,3 +421,52 @@ describe("useListiesStore — commitCell (Story 2.2)", () => {
     expect(putMock).not.toHaveBeenCalled();
   });
 });
+
+describe("useListiesStore — deleteRow (Story 2.4)", () => {
+  const withRows = (): Sheet => {
+    const s = sheet();
+    s.tabs[0]!.rows = [
+      { id: "r-1", order: 0, cells: {}, created_at: "t", updated_at: "t" },
+      { id: "r-2", order: 1, cells: {}, created_at: "t", updated_at: "t" },
+    ];
+    return s;
+  };
+
+  beforeEach(() => {
+    getMock.mockImplementation(() => Promise.resolve(withRows()));
+  });
+
+  it("deletes the row and drops it locally", async () => {
+    delMock.mockReset().mockResolvedValue(undefined);
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.deleteRow("r-1");
+
+    expect(delMock).toHaveBeenCalledWith(
+      "/listies/sheets/s-2/tabs/tb-1/rows/r-1",
+    );
+    expect(store.activeTab!.rows.map((r) => r.id)).toEqual(["r-2"]);
+  });
+
+  it("keeps the row and surfaces the error when the delete fails", async () => {
+    delMock.mockReset().mockRejectedValue(new Error("nope"));
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.deleteRow("r-1");
+
+    expect(store.activeTab!.rows).toHaveLength(2);
+    expect(store.error).toBe("nope");
+  });
+
+  it("does nothing when the row is not in the active tab", async () => {
+    delMock.mockReset();
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.deleteRow("r-nope");
+
+    expect(delMock).not.toHaveBeenCalled();
+  });
+});

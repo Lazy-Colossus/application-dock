@@ -47,6 +47,7 @@
         v-if="store.activeTab"
         :tab="store.activeTab"
         @add-row="store.addRow($event)"
+        @delete-row="store.deleteRow($event)"
         @commit-cell="
           store.commitCell($event.rowId, $event.columnId, $event.value)
         "
