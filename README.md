@@ -21,10 +21,19 @@ App is then reachable at <http://localhost:8123>.
 
 Data persists in the named Docker volume `archery-data` (mounted at `/data` inside the container, defaulting from the `DATA_DIR` env var).
 
+### Configuration — one `.env` at the repository root
+
+Copy `.env.example` to `.env` (gitignored) and fill it in. That single file serves both the
+backend, which reads it directly, and `docker compose`, which reads it for `${...}` interpolation.
+A `backend/.env` is read afterwards and wins, which is the place for local-only overrides such as
+`DATA_DIR=./local-data`. Exported environment variables override both, so
+`export DATA_DIR=./local-data` keeps working.
+
 ### Optional: Google Maps (Listies place columns)
 
-Listies can hold locations found through Google Places and plot a tab's places on a map. That
-needs two keys, both optional:
+Listies can hold locations found through Google Places and plot a tab's places on a map. Enable
+**Places API (New)** and **Maps JavaScript API** in Google Cloud, then set two keys — both
+optional:
 
 | Variable | Used for | Notes |
 | --- | --- | --- |
@@ -34,6 +43,12 @@ needs two keys, both optional:
 With either unset, the `place` column type and the map are simply unavailable and the rest of
 Listies is unaffected. Place search is proxied through the API and cached per query, so retyping a
 search does not re-bill it.
+
+```bash
+# .env at the repository root
+GOOGLE_MAPS_SERVER_KEY=AIza...
+GOOGLE_MAPS_BROWSER_KEY=AIza...
+```
 
 ## Quickstart — Local dev (two terminals)
 

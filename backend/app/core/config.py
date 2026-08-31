@@ -2,10 +2,20 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# config.py -> core -> app -> backend -> repository root
+_BACKEND_DIR = Path(__file__).resolve().parents[2]
+_REPO_ROOT = _BACKEND_DIR.parent
+
 
 class Settings(BaseSettings):
+    # One `.env` at the repository root serves both local dev and
+    # `docker compose` (which reads the same file for its own interpolation),
+    # so keys live in a single gitignored place. Paths are absolute so they do
+    # not depend on where the process was started from. A `backend/.env` is
+    # read second and therefore wins — useful for local-only overrides such as
+    # DATA_DIR. Real environment variables still beat both.
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(_REPO_ROOT / ".env", _BACKEND_DIR / ".env"),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
