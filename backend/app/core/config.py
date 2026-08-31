@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_days: int = 7
 
+    # Google Maps (Listies place columns). Optional: with these unset the place
+    # column type and the map are simply unavailable, and nothing else changes.
+    # The server key is used only server-side; the browser key is handed to the
+    # SPA at runtime and should be referrer-restricted.
+    google_maps_server_key: str = ""
+    google_maps_browser_key: str = ""
+
 
 settings = Settings()
 try:

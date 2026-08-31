@@ -13,6 +13,8 @@ services:
       HOST_SCRIPTS_DIR_ON_HOST: ${HOST_SCRIPTS_DIR:-/home/jake/scripts}
       HOST_PROJECT_DIR_ON_HOST: ${HOST_PROJECT_DIR:-}
       HOST_COMPOSE_FILE_DIR_ON_HOST: ${HOST_COMPOSE_FILE_DIR:-}
+      GOOGLE_MAPS_SERVER_KEY: ${GOOGLE_MAPS_SERVER_KEY:-}
+      GOOGLE_MAPS_BROWSER_KEY: ${GOOGLE_MAPS_BROWSER_KEY:-}
     volumes:
       - archery-data:/data
       - /var/run/docker.sock:/var/run/docker.sock

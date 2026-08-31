@@ -5,7 +5,7 @@ user via `get_current_user`; the username selects the on-disk file (never taken
 from request input).
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.core.dependencies import get_current_user
 from app.schemas.listies import (
@@ -13,6 +13,8 @@ from app.schemas.listies import (
     CreateRowRequest,
     CreateSheetRequest,
     CreateTabRequest,
+    MapsConfig,
+    PlaceResult,
     ReorderColumnsRequest,
     Row,
     Sheet,
@@ -24,6 +26,7 @@ from app.schemas.listies import (
     UpdateTabRequest,
 )
 from app.services import listies_service as service
+from app.services import places_service
 
 router = APIRouter(prefix="/api/listies", tags=["listies"])
 
@@ -232,5 +235,32 @@ def delete_tab(
         service.delete_tab(current_user, sheet_id, tab_id)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+# ── places (Story 4.1) ────────────────────────────────────────────────────────
+
+
+@router.get("/maps-config", response_model=MapsConfig)
+def maps_config(_: str = Depends(get_current_user)) -> MapsConfig:
+    """Hand the SPA the browser key at runtime, so it is never built into the bundle."""
+    if not places_service.maps_enabled():
+        return MapsConfig(enabled=False)
+    return MapsConfig(enabled=True, browser_key=places_service.browser_key())
+
+
+@router.get("/places/search", response_model=list[PlaceResult])
+def search_places(
+    q: str = Query(...),
+    near: str | None = Query(default=None),
+    _: str = Depends(get_current_user),
+) -> list[PlaceResult]:
+    try:
+        return places_service.search(q, near)
+    except places_service.MapsNotConfiguredError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except places_service.PlacesUpstreamError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

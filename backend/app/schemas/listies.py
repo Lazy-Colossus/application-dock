@@ -129,3 +129,22 @@ class UpdateTabRequest(BaseModel):
     # An empty string clears the colour; `None` means "leave it alone", which
     # is why the two are not the same thing here.
     color: str | None = None
+
+
+# ── places (Story 4.1) ────────────────────────────────────────────────────────
+
+
+class PlaceResult(BaseModel):
+    """One search hit, normalised down to what a place cell stores."""
+
+    place_id: str
+    name: str
+    address: str
+    lat: float
+    lng: float
+
+
+class MapsConfig(BaseModel):
+    enabled: bool
+    # Present only when enabled; the server key is never serialised anywhere.
+    browser_key: str | None = None

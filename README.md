@@ -21,6 +21,20 @@ App is then reachable at <http://localhost:8123>.
 
 Data persists in the named Docker volume `archery-data` (mounted at `/data` inside the container, defaulting from the `DATA_DIR` env var).
 
+### Optional: Google Maps (Listies place columns)
+
+Listies can hold locations found through Google Places and plot a tab's places on a map. That
+needs two keys, both optional:
+
+| Variable | Used for | Notes |
+| --- | --- | --- |
+| `GOOGLE_MAPS_SERVER_KEY` | Place search, server-side only | Never sent to the browser. Restrict it by IP. |
+| `GOOGLE_MAPS_BROWSER_KEY` | Rendering the map in the SPA | Served to the client at runtime, so restrict it by HTTP referrer. |
+
+With either unset, the `place` column type and the map are simply unavailable and the rest of
+Listies is unaffected. Place search is proxied through the API and cached per query, so retyping a
+search does not re-bill it.
+
 ## Quickstart — Local dev (two terminals)
 
 Prerequisites: Node 20+, Python 3.12+.
