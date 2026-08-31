@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
+import { componentAt } from "@/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
 const { getMock, postMock, putMock, delMock, push } = vi.hoisted(() => ({
@@ -484,7 +485,7 @@ describe("SheetPage — the page fills the viewport (UI fix 1)", () => {
     const wrapper = mount(SheetPage, OPTS);
     await flushPromises();
 
-    const styleFn = wrapper.findComponent(".q-page-stub").props("styleFn") as (
+    const styleFn = componentAt(wrapper, ".q-page-stub").props("styleFn") as (
       offset: number,
     ) => Record<string, string>;
 

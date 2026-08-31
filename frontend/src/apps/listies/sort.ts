@@ -1,6 +1,7 @@
 // View-only sorting. Nothing here writes: the stored `order` stays
 // authoritative, and a sort produces a display order of row ids.
 
+import { isPlace } from "@/apps/listies/types";
 import type { CellValue, Column, ColumnType, Row } from "@/apps/listies/types";
 
 export type SortDirection = "asc" | "desc";
@@ -31,9 +32,10 @@ export function compareValues(
 
   if (type === "number") return Number(a) - Number(b);
   if (type === "date") return String(a).localeCompare(String(b));
-  return String(a).localeCompare(String(b), undefined, {
-    sensitivity: "base",
-  });
+  // A place sorts by its name, through the same text comparator.
+  const left = isPlace(a) ? a.name : String(a);
+  const right = isPlace(b) ? b.name : String(b);
+  return left.localeCompare(right, undefined, { sensitivity: "base" });
 }
 
 /**

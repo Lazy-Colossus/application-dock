@@ -21,7 +21,7 @@
         map-options
         class="column-builder__type"
         :model-value="spec.type"
-        :options="TYPE_OPTIONS"
+        :options="typeOptions"
         :data-testid="`column-type-${index}`"
         @update:model-value="setType(index, $event)"
       />
@@ -69,16 +69,17 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
+import { columnTypeOptions } from "@/apps/listies/columnTypes";
 import type { ColumnSpec, ColumnType } from "@/apps/listies/types";
 
-const TYPE_OPTIONS: { label: string; value: ColumnType }[] = [
-  { label: "Text", value: "text" },
-  { label: "Number", value: "number" },
-  { label: "Date", value: "date" },
-];
-
-const props = defineProps<{ modelValue: ColumnSpec[] }>();
+const props = withDefaults(
+  defineProps<{ modelValue: ColumnSpec[]; allowPlace?: boolean }>(),
+  { allowPlace: false },
+);
 const emit = defineEmits<{ "update:modelValue": [value: ColumnSpec[]] }>();
+
+const typeOptions = computed(() => columnTypeOptions(props.allowPlace));
 
 function replace(index: number, spec: ColumnSpec): void {
   emit(

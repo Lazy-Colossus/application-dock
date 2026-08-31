@@ -2,12 +2,13 @@
   "name": "application-dock-frontend",
   "version": "0.1.0",
   "private": true,
-  "description": "Application Dock — multi-app platform shell (Vue 3 + Quasar + Vite)",
+  "description": "Application Dock \u2014 multi-app platform shell (Vue 3 + Quasar + Vite)",
   "scripts": {
     "dev": "quasar dev",
     "build": "quasar build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json",
     "format": "prettier --write \"src/**/*.{js,ts,vue,sass,scss,css}\"",
     "test": "vitest run",
     "test:watch": "vitest"

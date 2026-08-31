@@ -38,6 +38,12 @@ export const useListiesStore = defineStore("listies", () => {
   const loading = ref(false);
   const error = ref<string | null>(null);
 
+  // Google Maps is optional server configuration (Story 4.1). Everything
+  // place-related keys off this.
+  const mapsEnabled = ref(false);
+  const browserKey = ref<string | null>(null);
+  let mapsConfigLoaded = false;
+
   const activeTab = computed<Tab | null>(
     () =>
       currentSheet.value?.tabs.find((t) => t.id === activeTabId.value) ?? null,
@@ -191,6 +197,27 @@ export const useListiesStore = defineStore("listies", () => {
       tab.rows = tab.rows.filter((r) => r.id !== rowId);
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  /**
+   * Load the maps configuration once per session.
+   *
+   * A failure here is deliberately silent: maps are optional, and a sheet
+   * without them works perfectly well — an error banner would be noise.
+   */
+  async function fetchMapsConfig(): Promise<void> {
+    if (mapsConfigLoaded) return;
+    mapsConfigLoaded = true;
+    try {
+      const config = await api.get<{ enabled: boolean; browser_key?: string }>(
+        "/listies/maps-config",
+      );
+      mapsEnabled.value = config.enabled;
+      browserKey.value = config.browser_key ?? null;
+    } catch {
+      mapsEnabled.value = false;
+      browserKey.value = null;
     }
   }
 
@@ -377,6 +404,9 @@ export const useListiesStore = defineStore("listies", () => {
   return {
     sheets,
     currentSheet,
+    mapsEnabled,
+    browserKey,
+    fetchMapsConfig,
     activeTabId,
     activeTab,
     fetchSheet,

@@ -11,6 +11,8 @@ import re
 import uuid
 from datetime import UTC, date, datetime
 
+from pydantic import ValidationError as PydanticValidationError
+
 from app.repositories import listies_repo as repo
 from app.schemas.listies import (
     HEX_COLOR_PATTERN,
@@ -19,6 +21,7 @@ from app.schemas.listies import (
     ColumnSpec,
     ColumnType,
     ListiesDoc,
+    Place,
     Row,
     Sheet,
     SheetSummary,
@@ -46,6 +49,13 @@ def coerce_value(value: object, column_type: ColumnType) -> CellValue:
     if value is None:
         return None
 
+    if column_type == "place":
+        return _as_place(value)
+
+    # A place is never a valid scalar: it would silently become "Place(...)".
+    if isinstance(value, Place) or _looks_like_place(value):
+        raise ValueError(f"expected {column_type}, got a place")
+
     if column_type == "text":
         if not isinstance(value, str):
             raise ValueError(f"expected text, got {type(value).__name__}")
@@ -68,10 +78,35 @@ def coerce_value(value: object, column_type: ColumnType) -> CellValue:
     return value
 
 
+def _looks_like_place(value: object) -> bool:
+    return isinstance(value, dict) and "place_id" in value
+
+
+def _as_place(value: object) -> Place | None:
+    """Accept a `Place` or the dict form; reject anything else."""
+    if value is None:
+        return None
+    if isinstance(value, Place):
+        return value
+    if not isinstance(value, dict):
+        raise ValueError(f"expected a place, got {type(value).__name__}")
+    try:
+        return Place.model_validate(value)
+    except PydanticValidationError as exc:
+        # Pydantic's message names every failing field; keep it short instead.
+        raise ValueError("expected a place with place_id, name, lat and lng") from exc
+
+
 def _reparse(value: CellValue, new_type: ColumnType) -> CellValue:
     """Best-effort conversion used by a retype: keep what parses, else `None`."""
     if value is None:
         return None
+    if new_type == "place":
+        # A place cannot be reconstructed from a string or a number.
+        return value if isinstance(value, Place) else None
+    if isinstance(value, Place):
+        # Only text can hold a place, and it holds the name.
+        return value.name if new_type == "text" else None
     if new_type == "text":
         return str(value)
     if new_type == "number":

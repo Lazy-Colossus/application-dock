@@ -64,7 +64,7 @@
           </div>
 
           <div v-else>
-            <ColumnBuilder v-model="columns" />
+            <ColumnBuilder v-model="columns" :allow-place="allowPlace" />
             <div
               v-if="duplicateNames"
               class="text-negative text-caption q-mt-xs"
@@ -102,7 +102,14 @@ import { computed, ref, watch } from "vue";
 import ColumnBuilder from "./ColumnBuilder.vue";
 import type { ColumnSpec, Tab } from "@/apps/listies/types";
 
-const props = defineProps<{ modelValue: boolean; existingTabs: Tab[] }>();
+const props = withDefaults(
+  defineProps<{
+    modelValue: boolean;
+    existingTabs: Tab[];
+    allowPlace?: boolean;
+  }>(),
+  { allowPlace: false },
+);
 const emit = defineEmits<{
   "update:modelValue": [value: boolean];
   submit: [

@@ -1,6 +1,7 @@
 // Display formatting for cell values. Pure functions — no Vue, no store — so
 // the fiddly per-type rules are unit-tested without mounting a grid.
 
+import { isPlace } from "@/apps/listies/types";
 import type { CellValue, ColumnType, Row } from "@/apps/listies/types";
 
 // An unfilled cell reads as a muted dash rather than blank space, so an empty
@@ -28,6 +29,7 @@ const GLYPHS: Record<ColumnType, string> = {
   text: "Aa",
   number: "#",
   date: "▤",
+  place: "📍",
 };
 
 /** "2026-09-02" → "02 Sep 26". A malformed value is passed through untouched. */
@@ -42,8 +44,15 @@ function formatDate(value: string): string {
 
 export function formatCell(value: CellValue, type: ColumnType): string {
   if (value === null || value === undefined) return EMPTY_DISPLAY;
+  // A place is an object: `String(place)` would print "[object Object]".
+  if (isPlace(value)) return value.name;
   if (type === "date" && typeof value === "string") return formatDate(value);
   return String(value);
+}
+
+/** The muted second line of a place cell. */
+export function placeAddress(value: CellValue): string {
+  return isPlace(value) ? value.address : "";
 }
 
 export function typeGlyph(type: ColumnType): string {
@@ -73,6 +82,11 @@ function isRealDate(year: number, month: number, day: number): boolean {
  */
 export function parseCell(input: string, type: ColumnType): ParseResult {
   if (!input.trim()) return { ok: true, value: null };
+
+  // A place is chosen from search results (Story 4.3), never typed in.
+  if (type === "place") {
+    return { ok: false, error: "Pick a place from the search results" };
+  }
 
   if (type === "text") return { ok: true, value: input };
 
@@ -110,6 +124,10 @@ export function countBlankedByRetype(
   return rows.filter((row) => {
     const value = row.cells[columnId];
     if (value === null || value === undefined) return false;
+    // A place survives only as text (its name) or as a place.
+    if (isPlace(value)) return newType !== "text" && newType !== "place";
+    // A scalar can never become a place.
+    if (newType === "place") return true;
     return !parseCell(String(value), newType).ok;
   }).length;
 }

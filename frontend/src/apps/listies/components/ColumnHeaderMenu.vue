@@ -50,7 +50,7 @@
               outlined
               emit-value
               map-options
-              :options="TYPE_OPTIONS"
+              :options="typeOptions"
               data-testid="retype-select"
             />
           </q-item-section>
@@ -167,15 +167,20 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { countBlankedByRetype } from "@/apps/listies/coerce";
+import { columnTypeOptions } from "@/apps/listies/columnTypes";
 import type { Column, ColumnType, Row } from "@/apps/listies/types";
 
-const props = defineProps<{
-  column: Column;
-  rows: Row[];
-  canMoveLeft: boolean;
-  canMoveRight: boolean;
-  canDelete: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    column: Column;
+    rows: Row[];
+    canMoveLeft: boolean;
+    canMoveRight: boolean;
+    canDelete: boolean;
+    allowPlace?: boolean;
+  }>(),
+  { allowPlace: false },
+);
 
 const emit = defineEmits<{
   rename: [name: string];
@@ -184,16 +189,12 @@ const emit = defineEmits<{
   delete: [];
 }>();
 
-const TYPE_OPTIONS: { label: string; value: ColumnType }[] = [
-  { label: "Text", value: "text" },
-  { label: "Number", value: "number" },
-  { label: "Date", value: "date" },
-];
-
 type Mode = "menu" | "rename" | "retype" | "delete";
 const mode = ref<Mode>("menu");
 const draftName = ref("");
 const draftType = ref<ColumnType>("text");
+
+const typeOptions = computed(() => columnTypeOptions(props.allowPlace));
 
 // How much a retype would cost, recomputed as the target type changes, so the
 // user sees the price before paying it rather than after.

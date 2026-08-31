@@ -14,7 +14,7 @@ const rows = (values: CellValue[]): Row[] =>
   values.map((v, i) => ({
     id: `r-${i}`,
     order: i,
-    cells: v === null ? {} : { "c-1": v },
+    cells: (v === null ? {} : { "c-1": v }) as Record<string, CellValue>,
     created_at: "t",
     updated_at: "t",
   }));
@@ -119,5 +119,54 @@ describe("sortRowIds", () => {
     const input = rows(["Tent", "Mat"]);
     sortRowIds(input, column("text"), "asc");
     expect(input.map((r) => r.id)).toEqual(["r-0", "r-1"]);
+  });
+});
+
+describe("sorting a place column (Story 4.2)", () => {
+  const place = (name: string) => ({
+    place_id: `ChIJ_${name}`,
+    name,
+    address: "somewhere",
+    lat: 0,
+    lng: 0,
+  });
+
+  const placeRows = (names: (string | null)[]): Row[] =>
+    names.map((n, i) => ({
+      id: `r-${i}`,
+      order: i,
+      cells: (n === null ? {} : { "c-1": place(n) }) as Record<
+        string,
+        CellValue
+      >,
+      created_at: "t",
+      updated_at: "t",
+    }));
+
+  it("compares by place name", () => {
+    const ids = sortRowIds(
+      placeRows(["Tent Cafe", "Blue Bottle", "Mat Roasters"]),
+      column("place"),
+      "asc",
+    );
+    expect(ids).toEqual(["r-1", "r-2", "r-0"]);
+  });
+
+  it("reverses on descending", () => {
+    const ids = sortRowIds(
+      placeRows(["Tent Cafe", "Blue Bottle"]),
+      column("place"),
+      "desc",
+    );
+    expect(ids).toEqual(["r-0", "r-1"]);
+  });
+
+  it("keeps empty place cells last", () => {
+    const ids = sortRowIds(
+      placeRows(["Tent Cafe", null, "Blue Bottle"]),
+      column("place"),
+      "asc",
+    );
+    expect(ids).toEqual(["r-2", "r-0", "r-1"]);
   });
 });

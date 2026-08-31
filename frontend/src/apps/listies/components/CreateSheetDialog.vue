@@ -18,7 +18,7 @@
 
         <div>
           <div class="text-caption text-grey-6 q-mb-xs">Columns</div>
-          <ColumnBuilder v-model="columns" />
+          <ColumnBuilder v-model="columns" :allow-place="allowPlace" />
           <div v-if="duplicateNames" class="text-negative text-caption q-mt-xs">
             Column names must be unique.
           </div>
@@ -52,7 +52,10 @@ import { computed, ref, watch } from "vue";
 import ColumnBuilder from "./ColumnBuilder.vue";
 import type { ColumnSpec } from "@/apps/listies/types";
 
-const props = defineProps<{ modelValue: boolean }>();
+const props = withDefaults(
+  defineProps<{ modelValue: boolean; allowPlace?: boolean }>(),
+  { allowPlace: false },
+);
 const emit = defineEmits<{
   "update:modelValue": [value: boolean];
   submit: [payload: { name: string; columns: ColumnSpec[] }];

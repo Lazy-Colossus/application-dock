@@ -47,6 +47,7 @@
                   :can-move-left="columnIndex > 0"
                   :can-move-right="columnIndex < orderedColumns.length - 1"
                   :can-delete="orderedColumns.length > 1"
+                  :allow-place="allowPlace"
                   @rename="
                     emit('rename-column', { columnId: column.id, name: $event })
                   "
@@ -99,7 +100,7 @@
                       emit-value
                       map-options
                       label="Type"
-                      :options="TYPE_OPTIONS"
+                      :options="typeOptions"
                       data-testid="add-column-type"
                     />
                     <div class="row justify-end q-gutter-xs">
@@ -245,12 +246,15 @@ import type { ComponentPublicInstance } from "vue";
 import ColumnHeaderMenu from "./ColumnHeaderMenu.vue";
 import GridCell from "./GridCell.vue";
 import { typeGlyph } from "@/apps/listies/coerce";
+import { columnTypeOptions } from "@/apps/listies/columnTypes";
 import { sortRowIds } from "@/apps/listies/sort";
 import type { SortSpec } from "@/apps/listies/sort";
 import { useGridNavigation } from "@/apps/listies/composables/useGridNavigation";
 import type { CellValue, ColumnType, Tab } from "@/apps/listies/types";
 
-const props = defineProps<{ tab: Tab }>();
+const props = withDefaults(defineProps<{ tab: Tab; allowPlace?: boolean }>(), {
+  allowPlace: false,
+});
 const emit = defineEmits<{
   "add-row": [cells: Record<string, CellValue>];
   "delete-row": [rowId: string];
@@ -342,13 +346,11 @@ const nav = useGridNavigation(
   () => orderedColumns.value.length,
 );
 
-type CellInstance = ComponentPublicInstance<
-  unknown,
-  unknown,
-  unknown,
-  unknown,
-  { commit: () => void }
->;
+// Only what the grid needs from a cell: commit the editor, and focus the <td>.
+interface CellInstance {
+  commit: () => void;
+  $el: HTMLElement;
+}
 
 const cells = new Map<string, CellInstance>();
 const key = (rowIndex: number, columnIndex: number) =>
@@ -360,7 +362,7 @@ function registerCell(
   el: Element | ComponentPublicInstance | null,
 ): void {
   const id = key(rowIndex, columnIndex);
-  if (el) cells.set(id, el as CellInstance);
+  if (el) cells.set(id, el as unknown as CellInstance);
   else cells.delete(id);
 }
 
@@ -386,7 +388,7 @@ function focusFocusedCell(): void {
   if (!at) return;
   void nextTick(() => {
     const cell = cells.get(key(at.rowIndex, at.columnIndex));
-    (cell?.$el as HTMLElement | undefined)?.focus?.();
+    cell?.$el?.focus?.();
   });
 }
 
@@ -428,11 +430,7 @@ function onKeydown(event: KeyboardEvent): void {
   }
 }
 
-const TYPE_OPTIONS: { label: string; value: ColumnType }[] = [
-  { label: "Text", value: "text" },
-  { label: "Number", value: "number" },
-  { label: "Date", value: "date" },
-];
+const typeOptions = computed(() => columnTypeOptions(props.allowPlace));
 
 const addingColumn = ref(false);
 const newColumnName = ref("");

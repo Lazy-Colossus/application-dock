@@ -169,3 +169,33 @@ describe("ColumnBuilder", () => {
     expect(options).toEqual(["text", "number", "date"]);
   });
 });
+
+describe("ColumnBuilder — the place type (Story 4.2)", () => {
+  const types = (wrapper: ReturnType<typeof mountBuilder>) =>
+    wrapper
+      .find('[data-testid="column-type-0"]')
+      .findAll("option")
+      .map((o) => o.attributes("value"));
+
+  it("does not offer place when maps are not configured", () => {
+    expect(types(mountBuilder([{ name: "Item", type: "text" }]))).toEqual([
+      "text",
+      "number",
+      "date",
+    ]);
+  });
+
+  it("offers place when maps are configured", () => {
+    const wrapper = mount(ColumnBuilder, {
+      props: { modelValue: [{ name: "Item", type: "text" }], allowPlace: true },
+      global: { stubs: STUBS },
+    });
+
+    expect(
+      wrapper
+        .find('[data-testid="column-type-0"]')
+        .findAll("option")
+        .map((o) => o.attributes("value")),
+    ).toEqual(["text", "number", "date", "place"]);
+  });
+});

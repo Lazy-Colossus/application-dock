@@ -879,3 +879,61 @@ describe("useListiesStore — tab colour", () => {
     expect(store.error).toBe("nope");
   });
 });
+
+describe("useListiesStore — maps configuration (Story 4.2)", () => {
+  beforeEach(() => {
+    getMock.mockReset();
+  });
+
+  it("assumes maps are off until told otherwise", () => {
+    const store = useListiesStore();
+    expect(store.mapsEnabled).toBe(false);
+    expect(store.browserKey).toBeNull();
+  });
+
+  it("loads the configuration and keeps the browser key", async () => {
+    getMock.mockResolvedValue({
+      enabled: true,
+      browser_key: "browser-key-xyz",
+    });
+    const store = useListiesStore();
+
+    await store.fetchMapsConfig();
+
+    expect(getMock).toHaveBeenCalledWith("/listies/maps-config");
+    expect(store.mapsEnabled).toBe(true);
+    expect(store.browserKey).toBe("browser-key-xyz");
+  });
+
+  it("stays off when the server reports it is not configured", async () => {
+    getMock.mockResolvedValue({ enabled: false });
+    const store = useListiesStore();
+
+    await store.fetchMapsConfig();
+
+    expect(store.mapsEnabled).toBe(false);
+    expect(store.browserKey).toBeNull();
+  });
+
+  it("asks only once per session", async () => {
+    getMock.mockResolvedValue({ enabled: true, browser_key: "k" });
+    const store = useListiesStore();
+
+    await store.fetchMapsConfig();
+    await store.fetchMapsConfig();
+
+    expect(getMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("stays off, and quiet, when the request fails", async () => {
+    getMock.mockRejectedValue(new Error("offline"));
+    const store = useListiesStore();
+
+    await store.fetchMapsConfig();
+
+    // Maps are optional: a failure here must not put an error banner over a
+    // sheet that works perfectly well without them.
+    expect(store.mapsEnabled).toBe(false);
+    expect(store.error).toBeNull();
+  });
+});

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
+import { componentAt } from "@/test-utils";
 
 import TabBar from "./TabBar.vue";
 import type { Tab } from "@/apps/listies/types";
@@ -73,10 +74,10 @@ describe("TabBar", () => {
     const wrapper = mountBar("tb-2");
 
     expect(
-      wrapper.findComponent('[data-testid="tab-chip-tb-2"]').props("outline"),
+      componentAt(wrapper, '[data-testid="tab-chip-tb-2"]').props("outline"),
     ).toBe(false);
     expect(
-      wrapper.findComponent('[data-testid="tab-chip-tb-1"]').props("outline"),
+      componentAt(wrapper, '[data-testid="tab-chip-tb-1"]').props("outline"),
     ).toBe(true);
   });
 
@@ -210,7 +211,7 @@ describe("TabBar — the tab menu is discoverable (UI fix 4)", () => {
   });
 
   it("does not hide the menu behind a right-click", () => {
-    const menu = bar().findComponent('[data-testid="tab-menu-tb-1"]');
+    const menu = componentAt(bar(), '[data-testid="tab-menu-tb-1"]');
     expect(menu.props("contextMenu")).toBeFalsy();
   });
 
@@ -260,12 +261,12 @@ describe("TabBar — tab colour", () => {
     });
 
   it("tints a chip that has a colour", () => {
-    const chip = bar().findComponent('[data-testid="tab-chip-tb-1"]');
+    const chip = componentAt(bar(), '[data-testid="tab-chip-tb-1"]');
     expect(chip.attributes("style")).toContain("#ffcc00");
   });
 
   it("leaves an uncoloured chip to the default styling", () => {
-    const chip = bar().findComponent('[data-testid="tab-chip-tb-2"]');
+    const chip = componentAt(bar(), '[data-testid="tab-chip-tb-2"]');
     expect(chip.attributes("style") ?? "").not.toContain("#");
   });
 
@@ -328,7 +329,7 @@ describe("TabBar — a coloured chip keeps its colour", () => {
   it("does not ask for the primary colour when the tab has its own", () => {
     // Quasar's `color="primary"` adds `bg-primary`, whose `!important` beats
     // our inline background — the chip would render amber, not the tab colour.
-    const chip = bar().findComponent('[data-testid="tab-chip-tb-1"]');
+    const chip = componentAt(bar(), '[data-testid="tab-chip-tb-1"]');
     expect(chip.props("color")).toBeUndefined();
   });
 
@@ -343,7 +344,7 @@ describe("TabBar — a coloured chip keeps its colour", () => {
         rows: [],
       },
     ];
-    const chip = bar(plain).findComponent('[data-testid="tab-chip-tb-1"]');
+    const chip = componentAt(bar(plain), '[data-testid="tab-chip-tb-1"]');
     expect(chip.props("color")).toBe("primary");
   });
 });

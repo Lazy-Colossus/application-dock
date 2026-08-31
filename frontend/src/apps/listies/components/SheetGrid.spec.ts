@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
+import { componentAt } from "@/test-utils";
 
 import SheetGrid from "./SheetGrid.vue";
 import type { Tab } from "@/apps/listies/types";
@@ -159,7 +160,7 @@ describe("SheetGrid", () => {
     w
       .find(`[data-testid="${rowTestId}"]`)
       .findAllComponents({ name: "GridCell" })
-      .map((c) => c.text());
+      .map((c: { text: () => string }) => c.text());
 
   it("renders each row's cells against the right columns", () => {
     expect(dataCells(mountGrid(), "row-r-1")).toEqual([
@@ -817,7 +818,7 @@ describe("SheetGrid — the add-column popup actually opens", () => {
     const wrapper = mountGrid();
     await wrapper.find('[data-testid="add-column"]').trigger("click");
 
-    const menu = wrapper.findComponent('[data-testid="add-column-menu"]');
+    const menu = componentAt(wrapper, '[data-testid="add-column-menu"]');
     expect(menu.props("noParentEvent")).toBe(true);
   });
 });

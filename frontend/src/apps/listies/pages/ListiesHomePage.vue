@@ -120,7 +120,11 @@
       </q-item>
     </q-list>
 
-    <CreateSheetDialog v-model="dialogOpen" @submit="create" />
+    <CreateSheetDialog
+      v-model="dialogOpen"
+      :allow-place="store.mapsEnabled"
+      @submit="create"
+    />
   </q-page>
 </template>
 
@@ -140,6 +144,8 @@ const confirmingId = ref<string | null>(null);
 
 onMounted(() => {
   void store.fetchSheets();
+  // Whether the `place` column type can be offered at all (Story 4.1).
+  void store.fetchMapsConfig();
 });
 
 function open(sheetId: string): void {

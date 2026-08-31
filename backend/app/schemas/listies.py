@@ -15,10 +15,27 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-ColumnType = Literal["text", "number", "date"]
+ColumnType = Literal["text", "number", "date", "place"]
 
-# A cell holds a string (text / date), a number, or nothing at all.
-CellValue = str | int | float | None
+
+class Place(BaseModel):
+    """A snapshot of somewhere, as Google Places returned it.
+
+    Deliberately a snapshot and not a reference: nothing is re-fetched later,
+    so a sheet still reads correctly if the API key is ever removed.
+    """
+
+    place_id: str
+    name: str
+    address: str = ""
+    lat: float = Field(ge=-90, le=90)
+    lng: float = Field(ge=-180, le=180)
+
+
+# A cell holds a string (text / date), a number, a place, or nothing at all.
+# Widening this was additive — a document written before places has no place
+# cells, so `schema_version` stays 1.
+CellValue = str | int | float | Place | None
 
 
 class Column(BaseModel):

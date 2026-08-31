@@ -1,11 +1,27 @@
 // Shared types for the Listies app. Mirrors backend/app/schemas/listies.py —
 // snake_case field names are the API contract, not an oversight.
 
-export type ColumnType = "text" | "number" | "date";
+export type ColumnType = "text" | "number" | "date" | "place";
 
-// A cell holds a string (text / date), a number, or nothing at all. `null`
-// means "not filled in", which is distinct from 0 or "".
-export type CellValue = string | number | null;
+/**
+ * A snapshot of somewhere, as Google Places returned it — not a reference.
+ * Nothing is re-fetched, so a sheet still reads correctly if the key is gone.
+ */
+export interface Place {
+  place_id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+}
+
+// A cell holds a string (text / date), a number, a place, or nothing at all.
+// `null` means "not filled in", which is distinct from 0 or "".
+export type CellValue = string | number | Place | null;
+
+export function isPlace(value: CellValue): value is Place {
+  return typeof value === "object" && value !== null && "place_id" in value;
+}
 
 export interface Column {
   id: string;

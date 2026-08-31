@@ -35,6 +35,7 @@
         <SheetGrid
           v-if="store.activeTab"
           :tab="store.activeTab"
+          :allow-place="store.mapsEnabled"
           @add-row="store.addRow($event)"
           @delete-row="store.deleteRow($event)"
           @add-column="store.addColumn($event.name, $event.type)"
@@ -62,6 +63,7 @@
       <CreateTabDialog
         v-model="tabDialogOpen"
         :existing-tabs="store.currentSheet.tabs"
+        :allow-place="store.mapsEnabled"
         @submit="createTab"
       />
     </template>
@@ -115,6 +117,7 @@ function fillViewport(offset: number): Record<string, string> {
 }
 
 function load(): void {
+  void store.fetchMapsConfig();
   const sheetId = String(route.params.sheetId ?? "");
   if (sheetId) void store.fetchSheet(sheetId);
 }

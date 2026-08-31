@@ -107,13 +107,13 @@ describe("parseCell — date", () => {
 });
 
 import { countBlankedByRetype } from "./coerce";
-import type { Row } from "@/apps/listies/types";
+import type { CellValue, Row } from "@/apps/listies/types";
 
 const rowsWith = (values: (string | number | null)[]): Row[] =>
   values.map((v, i) => ({
     id: `r-${i}`,
     order: i,
-    cells: v === null ? {} : { "c-1": v },
+    cells: (v === null ? {} : { "c-1": v }) as Record<string, CellValue>,
     created_at: "t",
     updated_at: "t",
   }));
@@ -143,5 +143,73 @@ describe("countBlankedByRetype", () => {
     expect(
       countBlankedByRetype(rowsWith(["2026-09-02", "7"]), "c-1", "number"),
     ).toBe(1);
+  });
+});
+
+import type { Place } from "@/apps/listies/types";
+
+const BLUE_BOTTLE: Place = {
+  place_id: "ChIJ_blue_bottle",
+  name: "Blue Bottle",
+  address: "Rua Nova 12, Lisboa",
+  lat: 38.7107,
+  lng: -9.1373,
+};
+
+describe("formatCell — place (Story 4.2)", () => {
+  it("shows the place name", () => {
+    expect(formatCell(BLUE_BOTTLE, "place")).toBe("Blue Bottle");
+  });
+
+  it("shows a dash for an empty place cell, like every other type", () => {
+    expect(formatCell(null, "place")).toBe(EMPTY_DISPLAY);
+  });
+
+  it("never renders an object as text", () => {
+    expect(formatCell(BLUE_BOTTLE, "place")).not.toContain("[object");
+  });
+});
+
+describe("parseCell — place (Story 4.2)", () => {
+  it("refuses free text: a place is chosen from search, not typed", () => {
+    const result = parseCell("Blue Bottle", "place");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.length).toBeGreaterThan(0);
+  });
+
+  it("treats an empty entry as clearing the cell", () => {
+    expect(parseCell("", "place")).toEqual({ ok: true, value: null });
+  });
+});
+
+describe("countBlankedByRetype — place (Story 4.2)", () => {
+  const rowWith = (value: CellValue) => [
+    {
+      id: "r-1",
+      order: 0,
+      cells: { "c-1": value } as Record<string, CellValue>,
+      created_at: "t",
+      updated_at: "t",
+    },
+  ];
+
+  it("counts a place as kept when converting to text — it keeps its name", () => {
+    expect(countBlankedByRetype(rowWith(BLUE_BOTTLE), "c-1", "text")).toBe(0);
+  });
+
+  it("counts a place as lost when converting to a number or a date", () => {
+    expect(countBlankedByRetype(rowWith(BLUE_BOTTLE), "c-1", "number")).toBe(1);
+    expect(countBlankedByRetype(rowWith(BLUE_BOTTLE), "c-1", "date")).toBe(1);
+  });
+
+  it("counts every filled scalar as lost when converting to place", () => {
+    expect(countBlankedByRetype(rowWith("Blue Bottle"), "c-1", "place")).toBe(
+      1,
+    );
+    expect(countBlankedByRetype(rowWith(42), "c-1", "place")).toBe(1);
+  });
+
+  it("counts a place as kept when it stays a place", () => {
+    expect(countBlankedByRetype(rowWith(BLUE_BOTTLE), "c-1", "place")).toBe(0);
   });
 });

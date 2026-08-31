@@ -208,3 +208,37 @@ describe("ColumnHeaderMenu — delete", () => {
     expect(wrapper.find('[data-testid="menu-delete"]').exists()).toBe(false);
   });
 });
+
+describe("ColumnHeaderMenu — the place type (Story 4.2)", () => {
+  const retypeOptions = async (allowPlace: boolean) => {
+    const wrapper = mount(ColumnHeaderMenu, {
+      props: {
+        column: COLUMN,
+        rows: ROWS,
+        canMoveLeft: true,
+        canMoveRight: true,
+        canDelete: true,
+        allowPlace,
+      },
+      global: { stubs: STUBS },
+    });
+    await wrapper.find('[data-testid="menu-retype"]').trigger("click");
+    return wrapper
+      .find('[data-testid="retype-select"]')
+      .findAll("option")
+      .map((o) => o.attributes("value"));
+  };
+
+  it("does not offer retyping to place when maps are not configured", async () => {
+    expect(await retypeOptions(false)).toEqual(["text", "number", "date"]);
+  });
+
+  it("offers retyping to place when maps are configured", async () => {
+    expect(await retypeOptions(true)).toEqual([
+      "text",
+      "number",
+      "date",
+      "place",
+    ]);
+  });
+});

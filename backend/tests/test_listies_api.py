@@ -1268,3 +1268,198 @@ def test_a_document_written_before_colours_still_reads() -> None:
     }
     doc = ListiesDoc.model_validate(listies_repo.migrate(raw))
     assert doc.sheets[0].tabs[0].color is None
+
+
+# ── the `place` column type (Story 4.2) ───────────────────────────────────────
+
+PLACE = {
+    "place_id": "ChIJ_blue_bottle",
+    "name": "Blue Bottle",
+    "address": "Rua Nova 12, Lisboa",
+    "lat": 38.7107,
+    "lng": -9.1373,
+}
+
+
+def _sheet_with_place() -> tuple[str, str, str, str]:
+    """A sheet with a text column and a place column, and one row."""
+    resp = _create(columns=[{"name": "Cafe", "type": "text"}, {"name": "Where", "type": "place"}])
+    sheet = resp.json()
+    tab_id = sheet["tabs"][0]["id"]
+    text_id, place_id = (c["id"] for c in sheet["tabs"][0]["columns"])
+    row_id = client.post(f"/api/listies/sheets/{sheet['id']}/tabs/{tab_id}/rows", json={}).json()[
+        "id"
+    ]
+    return sheet["id"], tab_id, row_id, place_id
+
+
+def test_a_place_column_can_be_created() -> None:
+    resp = _create(columns=[{"name": "Where", "type": "place"}])
+
+    assert resp.status_code == 200
+    assert resp.json()["tabs"][0]["columns"][0]["type"] == "place"
+
+
+def test_a_place_column_can_be_added_to_an_existing_tab() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+
+    resp = client.post(
+        f"{_tab_url(sheet_id, tab_id)}/columns", json={"name": "Where", "type": "place"}
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["columns"][-1]["type"] == "place"
+
+
+def test_a_place_can_be_stored_in_a_place_cell() -> None:
+    sheet_id, tab_id, row_id, place_col = _sheet_with_place()
+
+    resp = _put_cells(sheet_id, tab_id, row_id, {place_col: PLACE})
+
+    assert resp.status_code == 200
+    assert resp.json()["cells"][place_col] == PLACE
+
+
+def test_a_stored_place_survives_a_reread() -> None:
+    sheet_id, tab_id, row_id, place_col = _sheet_with_place()
+    _put_cells(sheet_id, tab_id, row_id, {place_col: PLACE})
+
+    rows = client.get(f"/api/listies/sheets/{sheet_id}").json()["tabs"][0]["rows"]
+
+    assert rows[0]["cells"][place_col]["name"] == "Blue Bottle"
+    assert rows[0]["cells"][place_col]["lat"] == 38.7107
+
+
+def test_a_place_cell_can_be_cleared() -> None:
+    sheet_id, tab_id, row_id, place_col = _sheet_with_place()
+    _put_cells(sheet_id, tab_id, row_id, {place_col: PLACE})
+
+    body = _put_cells(sheet_id, tab_id, row_id, {place_col: None}).json()
+
+    assert place_col not in body["cells"]
+
+
+def test_a_scalar_is_rejected_in_a_place_column() -> None:
+    sheet_id, tab_id, row_id, place_col = _sheet_with_place()
+
+    assert _put_cells(sheet_id, tab_id, row_id, {place_col: "Blue Bottle"}).status_code == 422
+    assert _put_cells(sheet_id, tab_id, row_id, {place_col: 42}).status_code == 422
+
+
+def test_a_place_is_rejected_in_a_text_column() -> None:
+    sheet = _create(
+        columns=[{"name": "Cafe", "type": "text"}, {"name": "Where", "type": "place"}]
+    ).json()
+    tab_id = sheet["tabs"][0]["id"]
+    text_col = sheet["tabs"][0]["columns"][0]["id"]
+    row_id = client.post(f"/api/listies/sheets/{sheet['id']}/tabs/{tab_id}/rows", json={}).json()[
+        "id"
+    ]
+
+    assert _put_cells(sheet["id"], tab_id, row_id, {text_col: PLACE}).status_code == 422
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {**PLACE, "lat": 91},
+        {**PLACE, "lat": -91},
+        {**PLACE, "lng": 181},
+        {**PLACE, "lng": -181},
+    ],
+)
+def test_coordinates_outside_the_world_are_rejected(bad: dict) -> None:
+    sheet_id, tab_id, row_id, place_col = _sheet_with_place()
+    assert _put_cells(sheet_id, tab_id, row_id, {place_col: bad}).status_code == 422
+
+
+@pytest.mark.parametrize("missing", ["place_id", "name", "lat", "lng"])
+def test_an_incomplete_place_is_rejected(missing: str) -> None:
+    sheet_id, tab_id, row_id, place_col = _sheet_with_place()
+    bad = {k: v for k, v in PLACE.items() if k != missing}
+
+    assert _put_cells(sheet_id, tab_id, row_id, {place_col: bad}).status_code == 422
+
+
+def test_a_place_without_an_address_is_allowed() -> None:
+    """Google does not always return a formatted address."""
+    sheet_id, tab_id, row_id, place_col = _sheet_with_place()
+    body = _put_cells(sheet_id, tab_id, row_id, {place_col: {**PLACE, "address": ""}})
+    assert body.status_code == 200
+
+
+# retyping to and from place
+
+
+def test_retyping_a_place_column_to_text_keeps_the_place_name() -> None:
+    sheet_id, tab_id, row_id, place_col = _sheet_with_place()
+    _put_cells(sheet_id, tab_id, row_id, {place_col: PLACE})
+
+    body = client.put(
+        f"{_tab_url(sheet_id, tab_id)}/columns/{place_col}", json={"type": "text"}
+    ).json()
+
+    assert body["rows"][0]["cells"][place_col] == "Blue Bottle"
+
+
+@pytest.mark.parametrize("target", ["number", "date"])
+def test_retyping_a_place_column_to_a_scalar_type_blanks_it(target: str) -> None:
+    sheet_id, tab_id, row_id, place_col = _sheet_with_place()
+    _put_cells(sheet_id, tab_id, row_id, {place_col: PLACE})
+
+    body = client.put(
+        f"{_tab_url(sheet_id, tab_id)}/columns/{place_col}", json={"type": target}
+    ).json()
+
+    assert place_col not in body["rows"][0]["cells"]
+
+
+def test_retyping_a_text_column_to_place_blanks_it() -> None:
+    """A place cannot be reconstructed from a string."""
+    sheet_id, tab_id, row_id, _ = _sheet_with_place()
+    text_col = _columns(sheet_id)[0]["id"]
+    _put_cells(sheet_id, tab_id, row_id, {text_col: "Blue Bottle"})
+
+    body = client.put(
+        f"{_tab_url(sheet_id, tab_id)}/columns/{text_col}", json={"type": "place"}
+    ).json()
+
+    assert text_col not in body["rows"][0]["cells"]
+
+
+def test_a_document_written_before_places_still_reads() -> None:
+    from app.repositories import listies_repo
+    from app.schemas.listies import ListiesDoc
+
+    raw = {
+        "schema_version": 1,
+        "sheets": [
+            {
+                "id": "s-old",
+                "name": "Old",
+                "created_at": "t",
+                "tabs": [
+                    {
+                        "id": "tb-old",
+                        "name": "Tab 1",
+                        "order": 0,
+                        "columns": [{"id": "c-1", "name": "Item", "type": "text", "order": 0}],
+                        "rows": [
+                            {
+                                "id": "r-1",
+                                "order": 0,
+                                "cells": {"c-1": "Tent"},
+                                "created_at": "t",
+                                "updated_at": "t",
+                            }
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+
+    doc = ListiesDoc.model_validate(listies_repo.migrate(raw))
+
+    assert doc.schema_version == 1
+    assert doc.sheets[0].tabs[0].rows[0].cells["c-1"] == "Tent"

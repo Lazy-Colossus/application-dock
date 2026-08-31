@@ -69,7 +69,7 @@ const STUBS = {
   CreateSheetDialog: {
     name: "CreateSheetDialog",
     template: "<div />",
-    props: ["modelValue"],
+    props: ["modelValue", "allowPlace"],
     emits: ["update:modelValue", "submit"],
   },
 };
@@ -302,5 +302,35 @@ describe("ListiesHomePage — delete (Story 1.4)", () => {
     expect(wrapper.find('[data-testid="delete-confirm-s-1"]').exists()).toBe(
       false,
     );
+  });
+});
+
+describe("ListiesHomePage — the place type (Story 4.2)", () => {
+  it("tells the create dialog when maps are configured", async () => {
+    getMock.mockImplementation((path: string) =>
+      path === "/listies/maps-config"
+        ? Promise.resolve({ enabled: true, browser_key: "k" })
+        : Promise.resolve([]),
+    );
+    const wrapper = mount(ListiesHomePage, OPTS);
+    await flushPromises();
+
+    expect(
+      wrapper.findComponent({ name: "CreateSheetDialog" }).props("allowPlace"),
+    ).toBe(true);
+  });
+
+  it("does not offer the place type when maps are unconfigured", async () => {
+    getMock.mockImplementation((path: string) =>
+      path === "/listies/maps-config"
+        ? Promise.resolve({ enabled: false })
+        : Promise.resolve([]),
+    );
+    const wrapper = mount(ListiesHomePage, OPTS);
+    await flushPromises();
+
+    expect(
+      wrapper.findComponent({ name: "CreateSheetDialog" }).props("allowPlace"),
+    ).toBe(false);
   });
 });
