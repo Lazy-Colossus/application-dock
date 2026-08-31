@@ -20,6 +20,7 @@ vi.mock("vue-router", async () => {
 });
 
 import SheetPage from "./SheetPage.vue";
+import { usePageDetailStore } from "@/stores/usePageDetailStore";
 import type { Sheet } from "@/apps/listies/types";
 
 const sheet = (): Sheet => ({
@@ -117,11 +118,13 @@ describe("SheetPage", () => {
     expect(getMock).toHaveBeenCalledWith("/listies/sheets/s-1");
   });
 
-  it("shows the sheet name", async () => {
-    const wrapper = mount(SheetPage, OPTS);
+  it("publishes the sheet name to the shell's title bar", async () => {
+    // The page used to render its own title row; that was the second header
+    // (and second back arrow) stacked under the shell's.
+    mount(SheetPage, OPTS);
     await flushPromises();
 
-    expect(wrapper.text()).toContain("Trip planning");
+    expect(usePageDetailStore().detail).toBe("Trip planning");
   });
 
   it("renders the first tab as a grid", async () => {
@@ -545,5 +548,56 @@ describe("SheetPage — tab colour", () => {
     expect(wrapper.find(".listies-sheet__body").attributes("style")).toContain(
       "#ffcc00",
     );
+  });
+});
+
+describe("SheetPage — one header, not two", () => {
+  it("names the sheet in the shell bar instead of its own title row", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    expect(usePageDetailStore().detail).toBe("Trip planning");
+    // The name is the shell bar's job now; repeating it here is the duplicate
+    // header the user was looking at.
+    expect(wrapper.find('[data-testid="sheet-title"]').exists()).toBe(false);
+  });
+
+  it("has no back arrow of its own — the shell bar already has one", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="back-to-sheets"]').exists()).toBe(false);
+  });
+
+  it("keeps a way back from the not-found state, where there is no sheet to name", async () => {
+    getMock.mockRejectedValue(new Error("Sheet not found"));
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="back-to-sheets"]').exists()).toBe(true);
+    expect(usePageDetailStore().detail).toBeNull();
+  });
+
+  it("clears the detail when it goes away", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    wrapper.unmount();
+
+    expect(usePageDetailStore().detail).toBeNull();
+  });
+
+  it("renames the bar when the sheet is renamed elsewhere", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    wrapper.findComponent({ name: "SheetGrid" }); // sheet is loaded
+    const store = (
+      await import("@/apps/listies/stores/useListiesStore")
+    ).useListiesStore();
+    store.currentSheet!.name = "Lisbon trip";
+    await flushPromises();
+
+    expect(usePageDetailStore().detail).toBe("Lisbon trip");
   });
 });

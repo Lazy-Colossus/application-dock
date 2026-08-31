@@ -27,18 +27,6 @@
     </div>
 
     <template v-else>
-      <div class="row items-center q-gutter-sm q-mb-md">
-        <q-btn
-          dense
-          flat
-          round
-          icon="arrow_back"
-          data-testid="back-to-sheets"
-          @click="router.push('/listies')"
-        />
-        <div class="text-h5">{{ store.currentSheet.name }}</div>
-      </div>
-
       <div v-if="store.error" class="text-negative q-mb-md" data-testid="error">
         {{ store.error }}
       </div>
@@ -81,18 +69,30 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import CreateTabDialog from "@/apps/listies/components/CreateTabDialog.vue";
 import SheetGrid from "@/apps/listies/components/SheetGrid.vue";
 import TabBar from "@/apps/listies/components/TabBar.vue";
 import { useListiesStore } from "@/apps/listies/stores/useListiesStore";
+import { usePageDetailStore } from "@/stores/usePageDetailStore";
 import type { ColumnSpec } from "@/apps/listies/types";
 
 const store = useListiesStore();
+const pageDetail = usePageDetailStore();
 const route = useRoute();
 const router = useRouter();
 const tabDialogOpen = ref(false);
+
+// The sheet's name belongs in the shell's title bar — the page having its own
+// header meant two titles and two back arrows stacked on top of each other.
+watch(
+  () => store.currentSheet?.name ?? null,
+  (name) => pageDetail.setDetail(name),
+  { immediate: true },
+);
+
+onUnmounted(() => pageDetail.clearDetail());
 
 /**
  * Give the page a definite height instead of Quasar's default min-height.

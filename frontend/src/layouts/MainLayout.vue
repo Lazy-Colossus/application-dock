@@ -55,13 +55,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { usePageDetailStore } from "@/stores/usePageDetailStore";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const pageDetail = usePageDetailStore();
 
 const showBack = computed(() => route.path !== "/");
 
@@ -70,10 +72,25 @@ const showBack = computed(() => route.path !== "/");
 const inHotaru = computed(() => route.path.startsWith("/hotaru"));
 const isHome = computed(() => route.path === "/");
 
-const pageTitle = computed(() => {
+const routeTitle = computed(() => {
   const t = route.meta?.title;
   return typeof t === "string" ? t : "";
 });
+
+// A page can name what it is showing; the bar then reads "Listies - chuina
+// trip" and the app needs no header of its own.
+const pageTitle = computed(() =>
+  pageDetail.detail
+    ? `${routeTitle.value} - ${pageDetail.detail}`
+    : routeTitle.value,
+);
+
+// Clearing here rather than in each page means a forgotten cleanup cannot
+// carry one screen's detail onto the next.
+watch(
+  () => route.path,
+  () => pageDetail.clearDetail(),
+);
 
 function goBack(): void {
   if (window.history.length > 1) {
