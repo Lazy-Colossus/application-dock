@@ -34,37 +34,55 @@
         </button>
       </div>
 
-      <div v-if="failure" class="place-cell__error" data-testid="place-error">
-        {{ failure }}
-      </div>
-
-      <div
-        v-else-if="searched && results.length === 0 && !searching"
-        class="place-cell__empty"
-        data-testid="place-empty"
-      >
-        No places found.
-      </div>
-
-      <ul v-else-if="results.length" class="place-cell__results">
-        <li
-          v-for="(place, index) in results"
-          :key="place.place_id"
-          class="place-cell__result"
-          :class="{ 'place-cell__result--active': index === highlighted }"
-          :data-testid="`place-result-${index}`"
-          @mousedown.prevent="choose(index)"
+      <!--
+        Teleported to the body on purpose. A grid cell is `overflow: hidden`
+        and about 24px tall, and the table scrolls inside its own box — a
+        dropdown rendered in place is clipped to nothing. Fixed positioning
+        against the input keeps it where it belongs on screen.
+      -->
+      <Teleport to="body">
+        <div
+          v-if="failure"
+          class="place-cell__results place-cell__results--message"
+          :style="dropdownStyle"
+          data-testid="place-error"
         >
-          <div class="place-cell__name">{{ place.name }}</div>
-          <div class="place-cell__address">{{ place.address }}</div>
-        </li>
-      </ul>
+          {{ failure }}
+        </div>
+
+        <div
+          v-else-if="searched && results.length === 0 && !searching"
+          class="place-cell__results place-cell__results--message"
+          :style="dropdownStyle"
+          data-testid="place-empty"
+        >
+          No places found.
+        </div>
+
+        <ul
+          v-else-if="results.length"
+          class="place-cell__results"
+          :style="dropdownStyle"
+        >
+          <li
+            v-for="(place, index) in results"
+            :key="place.place_id"
+            class="place-cell__result"
+            :class="{ 'place-cell__result--active': index === highlighted }"
+            :data-testid="`place-result-${index}`"
+            @mousedown.prevent="choose(index)"
+          >
+            <div class="place-cell__name">{{ place.name }}</div>
+            <div class="place-cell__address">{{ place.address }}</div>
+          </li>
+        </ul>
+      </Teleport>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, ref, watch } from "vue";
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useListiesStore } from "@/apps/listies/stores/useListiesStore";
 import type { Place } from "@/apps/listies/types";
 
@@ -102,11 +120,41 @@ const failure = ref<string | null>(null);
 const searched = ref(false);
 const inputEl = ref<HTMLInputElement | null>(null);
 
+// Where the teleported dropdown sits: measured from the input, in viewport
+// coordinates, and re-measured whenever anything scrolls or resizes.
+const dropdownStyle = ref<Record<string, string>>({});
+
+function positionDropdown(): void {
+  const input = inputEl.value;
+  if (!input) return;
+  const rect = input.getBoundingClientRect();
+  dropdownStyle.value = {
+    position: "fixed",
+    top: `${Math.round(rect.bottom + 2)}px`,
+    left: `${Math.round(rect.left)}px`,
+    minWidth: `${Math.round(rect.width)}px`,
+  };
+}
+
 let timer: ReturnType<typeof setTimeout> | null = null;
 // Only the newest search may write to `results`; a slow earlier one is dropped.
 let latest = 0;
 
-void nextTick(() => inputEl.value?.select());
+void nextTick(() => {
+  inputEl.value?.select();
+  positionDropdown();
+});
+
+// `true` so a scroll inside the grid's own scroller counts, not just the page.
+onMounted(() => {
+  window.addEventListener("scroll", positionDropdown, true);
+  window.addEventListener("resize", positionDropdown);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("scroll", positionDropdown, true);
+  window.removeEventListener("resize", positionDropdown);
+});
 
 function reset(): void {
   results.value = [];
@@ -125,10 +173,12 @@ async function run(term: string): Promise<void> {
     results.value = found;
     highlighted.value = 0;
     searched.value = true;
+    positionDropdown();
   } catch (e) {
     if (ticket !== latest) return;
     failure.value = e instanceof Error ? e.message : String(e);
     results.value = [];
+    positionDropdown();
   } finally {
     if (ticket === latest) searching.value = false;
   }
@@ -192,20 +242,24 @@ function choose(index: number): void {
 }
 
 .place-cell__results {
-  position: absolute;
-  z-index: 10;
-  left: 0;
-  right: 0;
-  margin: 0.25rem 0 0;
+  z-index: 7000;
+  margin: 0;
   padding: 0;
   list-style: none;
-  max-height: 14rem;
+  max-height: 16rem;
   overflow-y: auto;
-  min-width: 16rem;
-  background: var(--q-dark-page, #1d1d1d);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  min-width: 18rem;
+  max-width: 26rem;
+  color: #f0f0f0;
+  background: #1d1d1d;
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+}
+
+.place-cell__results--message {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.75rem;
 }
 
 .place-cell__result {

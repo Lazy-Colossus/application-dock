@@ -36,6 +36,16 @@ const STUBS = {
   "q-spinner": { template: '<div data-testid="searching" />' },
 };
 
+// The result list is teleported out of the grid cell (it would be clipped by
+// the cell's `overflow: hidden`), so it is not inside the wrapper.
+const inBody = (selector: string) => document.body.querySelector(selector);
+const allInBody = (selector: string) => [
+  ...document.body.querySelectorAll(selector),
+];
+const bodyText = () => document.body.textContent ?? "";
+
+let mounted: { unmount: () => void } | null = null;
+
 function mountCell(
   props: Partial<{
     value: Place | null;
@@ -65,6 +75,13 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  mounted?.unmount();
+  mounted = null;
+  // Vue Test Utils does not clean up teleported content on unmount, so
+  // without this every body query sees the previous tests' results too.
+  document.body
+    .querySelectorAll(".place-cell__results")
+    .forEach((node) => node.remove());
   vi.useRealTimers();
 });
 
@@ -119,10 +136,10 @@ describe("PlaceCell — searching", () => {
 
     await typeQuery(wrapper, "coffee");
 
-    const results = wrapper.findAll('[data-testid^="place-result-"]');
+    const results = allInBody('[data-testid^="place-result-"]');
     expect(results).toHaveLength(2);
-    expect(results[0]!.text()).toContain("Blue Bottle");
-    expect(results[0]!.text()).toContain("Rua Nova 12, Lisboa");
+    expect(results[0]!.textContent).toContain("Blue Bottle");
+    expect(results[0]!.textContent).toContain("Rua Nova 12, Lisboa");
   });
 
   it("shows it is working while the search is in flight", async () => {
@@ -142,7 +159,7 @@ describe("PlaceCell — searching", () => {
 
     await typeQuery(wrapper, "zzzzzz");
 
-    expect(wrapper.find('[data-testid="place-empty"]').exists()).toBe(true);
+    expect(inBody('[data-testid="place-empty"]')).not.toBeNull();
   });
 
   it("shows the failure beside the cell", async () => {
@@ -151,7 +168,7 @@ describe("PlaceCell — searching", () => {
 
     await typeQuery(wrapper, "coffee");
 
-    expect(wrapper.find('[data-testid="place-error"]').text()).toContain(
+    expect(inBody('[data-testid="place-error"]')?.textContent).toContain(
       "unavailable",
     );
   });
@@ -171,8 +188,8 @@ describe("PlaceCell — searching", () => {
     await vi.advanceTimersByTimeAsync(1000);
     await flushPromises();
 
-    expect(wrapper.text()).not.toContain("Stale result");
-    expect(wrapper.text()).toContain("Fabrica Coffee");
+    expect(bodyText()).not.toContain("Stale result");
+    expect(bodyText()).toContain("Fabrica Coffee");
   });
 });
 
@@ -183,7 +200,10 @@ describe("PlaceCell — choosing", () => {
 
     // mousedown, not click: it fires before the input blurs, so the pick is
     // not lost to the editor closing underneath it.
-    await wrapper.find('[data-testid="place-result-0"]').trigger("mousedown");
+    inBody('[data-testid="place-result-0"]')!.dispatchEvent(
+      new MouseEvent("mousedown", { bubbles: true }),
+    );
+    await flushPromises();
 
     expect(wrapper.emitted("select")).toEqual([[BLUE_BOTTLE]]);
   });
@@ -204,9 +224,11 @@ describe("PlaceCell — choosing", () => {
 
     await wrapper.find("input").trigger("keydown", { key: "ArrowDown" });
 
-    expect(wrapper.find('[data-testid="place-result-1"]').classes()).toContain(
-      "place-cell__result--active",
-    );
+    expect(
+      inBody('[data-testid="place-result-1"]')!.classList.contains(
+        "place-cell__result--active",
+      ),
+    ).toBe(true);
   });
 
   it("stops at the ends of the list", async () => {
@@ -269,5 +291,29 @@ describe("PlaceCell — when maps are not configured", () => {
     await vi.advanceTimersByTimeAsync(400);
 
     expect(getMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("PlaceCell — the results must escape the cell", () => {
+  it("renders the list outside the component, so the cell cannot clip it", async () => {
+    // A grid cell is `overflow: hidden` and only ~24px tall: a dropdown
+    // rendered inside it is invisible. This is the bug the user hit.
+    const wrapper = mountCell();
+
+    await typeQuery(wrapper, "coffee");
+
+    const list = inBody(".place-cell__results");
+    expect(list).not.toBeNull();
+    expect(wrapper.element.contains(list)).toBe(false);
+  });
+
+  it("positions the list against the input rather than the page", async () => {
+    const wrapper = mountCell();
+
+    await typeQuery(wrapper, "coffee");
+
+    const style = (inBody(".place-cell__results") as HTMLElement).style;
+    expect(style.position).toBe("fixed");
+    expect(style.top).not.toBe("");
   });
 });
