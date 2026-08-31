@@ -94,6 +94,12 @@ const STUBS = {
       "mapOptions",
     ],
   },
+  MapPane: {
+    name: "MapPane",
+    template: "<div />",
+    props: ["tab", "browserKey", "selectedRowId"],
+    emits: ["select-row"],
+  },
   CreateTabDialog: {
     name: "CreateTabDialog",
     template: "<div />",
@@ -600,5 +606,148 @@ describe("SheetPage — one header, not two", () => {
     await flushPromises();
 
     expect(usePageDetailStore().detail).toBe("Lisbon trip");
+  });
+});
+
+describe("SheetPage — the map pane (Story 4.4)", () => {
+  const withPlaces = (): Sheet => {
+    const s = sheet();
+    s.tabs = [
+      {
+        id: "tb-1",
+        name: "Cafés",
+        order: 0,
+        columns: [
+          { id: "c-1", name: "Cafe", type: "text", order: 0 },
+          { id: "c-2", name: "Where", type: "place", order: 1 },
+        ],
+        rows: [],
+      },
+      {
+        id: "tb-2",
+        name: "Plain",
+        order: 1,
+        columns: [{ id: "c-9", name: "Item", type: "text", order: 0 }],
+        rows: [],
+      },
+    ];
+    return s;
+  };
+
+  const mapsOn = () =>
+    getMock.mockImplementation((path: string) =>
+      path === "/listies/maps-config"
+        ? Promise.resolve({ enabled: true, browser_key: "k" })
+        : Promise.resolve(withPlaces()),
+    );
+
+  const openMap = async (wrapper: ReturnType<typeof mount>) => {
+    await wrapper.find('[data-testid="toggle-map"]').trigger("click");
+    await flushPromises();
+  };
+
+  beforeEach(() => {
+    mapsOn();
+  });
+
+  it("offers a map for a tab that has places", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="toggle-map"]').exists()).toBe(true);
+  });
+
+  it("offers no map for a tab with no place column", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    await wrapper.findComponent({ name: "TabBar" }).vm.$emit("select", "tb-2");
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="toggle-map"]').exists()).toBe(false);
+  });
+
+  it("offers no map when the server has no maps configured", async () => {
+    getMock.mockImplementation((path: string) =>
+      path === "/listies/maps-config"
+        ? Promise.resolve({ enabled: false })
+        : Promise.resolve(withPlaces()),
+    );
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="toggle-map"]').exists()).toBe(false);
+  });
+
+  it("is closed until asked for, so the SDK is not loaded uninvited", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    expect(wrapper.findComponent({ name: "MapPane" }).exists()).toBe(false);
+  });
+
+  it("opens beside the grid and hands over the browser key", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    await openMap(wrapper);
+
+    const pane = wrapper.findComponent({ name: "MapPane" });
+    expect(pane.exists()).toBe(true);
+    expect(pane.props("browserKey")).toBe("k");
+    expect(wrapper.findComponent({ name: "SheetGrid" }).exists()).toBe(true);
+  });
+
+  it("closes again, giving the grid its width back", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+    await openMap(wrapper);
+
+    await wrapper.find('[data-testid="toggle-map"]').trigger("click");
+
+    expect(wrapper.findComponent({ name: "MapPane" }).exists()).toBe(false);
+  });
+
+  it("remembers that a tab's map was open when you come back to it", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+    await openMap(wrapper);
+
+    await wrapper.findComponent({ name: "TabBar" }).vm.$emit("select", "tb-2");
+    await flushPromises();
+    await wrapper.findComponent({ name: "TabBar" }).vm.$emit("select", "tb-1");
+    await flushPromises();
+
+    expect(wrapper.findComponent({ name: "MapPane" }).exists()).toBe(true);
+  });
+
+  it("highlights the row whose marker was clicked", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+    await openMap(wrapper);
+
+    await wrapper
+      .findComponent({ name: "MapPane" })
+      .vm.$emit("select-row", "r-7");
+    await flushPromises();
+
+    expect(
+      wrapper.findComponent({ name: "SheetGrid" }).props("highlightedRowId"),
+    ).toBe("r-7");
+  });
+
+  it("points the map at the row the grid moved to", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+    await openMap(wrapper);
+
+    await wrapper
+      .findComponent({ name: "SheetGrid" })
+      .vm.$emit("select-row", "r-3");
+    await flushPromises();
+
+    expect(
+      wrapper.findComponent({ name: "MapPane" }).props("selectedRowId"),
+    ).toBe("r-3");
   });
 });

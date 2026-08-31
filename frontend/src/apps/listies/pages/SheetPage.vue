@@ -31,13 +31,31 @@
         {{ store.error }}
       </div>
 
-      <div class="listies-sheet__body" :style="accentStyle">
+      <div v-if="canShowMap" class="listies-sheet__toolbar row justify-end">
+        <q-btn
+          dense
+          flat
+          no-caps
+          icon="map"
+          :label="mapOpen ? 'Hide map' : 'Map'"
+          :color="mapOpen ? 'primary' : undefined"
+          data-testid="toggle-map"
+          @click="toggleMap"
+        />
+      </div>
+
+      <div
+        class="listies-sheet__body"
+        :class="{ 'listies-sheet__body--split': mapOpen }"
+        :style="accentStyle"
+      >
         <SheetGrid
           v-if="store.activeTab"
           :tab="store.activeTab"
           :allow-place="store.mapsEnabled"
           :maps-enabled="store.mapsEnabled"
           :place-centroid="store.placeCentroid"
+          :highlighted-row-id="selectedRowId"
           @add-row="store.addRow($event)"
           @delete-row="store.deleteRow($event)"
           @add-column="store.addColumn($event.name, $event.type)"
@@ -48,6 +66,16 @@
           @commit-cell="
             store.commitCell($event.rowId, $event.columnId, $event.value)
           "
+          @select-row="selectedRowId = $event"
+        />
+
+        <MapPane
+          v-if="mapOpen && store.activeTab"
+          class="listies-sheet__map"
+          :tab="store.activeTab"
+          :browser-key="store.browserKey"
+          :selected-row-id="selectedRowId"
+          @select-row="selectedRowId = $event"
         />
       </div>
 
@@ -76,6 +104,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import CreateTabDialog from "@/apps/listies/components/CreateTabDialog.vue";
+import MapPane from "@/apps/listies/components/MapPane.vue";
 import SheetGrid from "@/apps/listies/components/SheetGrid.vue";
 import TabBar from "@/apps/listies/components/TabBar.vue";
 import { useListiesStore } from "@/apps/listies/stores/useListiesStore";
@@ -87,6 +116,33 @@ const pageDetail = usePageDetailStore();
 const route = useRoute();
 const router = useRouter();
 const tabDialogOpen = ref(false);
+const selectedRowId = ref<string | null>(null);
+
+// Which tabs have their map open, for this visit only. Keyed by tab so
+// switching away and back does not lose it.
+const openMaps = ref<Set<string>>(new Set());
+
+const canShowMap = computed(
+  () =>
+    store.mapsEnabled &&
+    (store.activeTab?.columns.some((column) => column.type === "place") ??
+      false),
+);
+
+// Closed until asked for: the Maps SDK is the heaviest thing this app loads,
+// and most tabs never want it.
+const mapOpen = computed(
+  () => canShowMap.value && openMaps.value.has(store.activeTabId ?? ""),
+);
+
+function toggleMap(): void {
+  const tabId = store.activeTabId;
+  if (!tabId) return;
+  const next = new Set(openMaps.value);
+  if (next.has(tabId)) next.delete(tabId);
+  else next.add(tabId);
+  openMaps.value = next;
+}
 
 // The sheet's name belongs in the shell's title bar — the page having its own
 // header meant two titles and two back arrows stacked on top of each other.
@@ -143,6 +199,10 @@ async function createTab(payload: {
 </script>
 
 <style scoped>
+.listies-sheet__toolbar {
+  margin-bottom: 0.25rem;
+}
+
 /* Header, grid, tab bar — the grid takes the slack and scrolls inside itself,
    so the bar stays on screen however many rows there are. */
 .listies-sheet {
@@ -156,6 +216,23 @@ async function createTab(payload: {
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+/* Grid left, map right. Declared AFTER the base rule: both are single-class
+   selectors, so source order decides which flex-direction wins. */
+.listies-sheet__body--split {
+  flex-direction: row;
+  gap: 0.75rem;
+}
+
+.listies-sheet__body--split > :first-child {
+  flex: 1 1 60%;
+  min-width: 0;
+}
+
+.listies-sheet__map {
+  flex: 1 1 40%;
+  min-width: 18rem;
 }
 
 .listies-sheet__tabs {

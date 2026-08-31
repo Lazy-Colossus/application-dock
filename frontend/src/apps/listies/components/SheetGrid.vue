@@ -135,7 +135,10 @@
             v-for="(row, rowIndex) in orderedRows"
             :key="row.id"
             class="sheet-grid__row"
-            :class="{ 'sheet-grid__row--striped': rowIndex % 2 === 1 }"
+            :class="{
+              'sheet-grid__row--striped': rowIndex % 2 === 1,
+              'sheet-grid__row--highlighted': row.id === highlightedRowId,
+            }"
             :data-testid="`row-${row.id}`"
           >
             <GridCell
@@ -263,8 +266,15 @@ const props = withDefaults(
     mapsEnabled?: boolean;
     /** Where a place column's search should look; supplied by the page. */
     placeCentroid?: (columnId: string) => string | null;
+    /** The row the map is pointing at. */
+    highlightedRowId?: string | null;
   }>(),
-  { allowPlace: false, mapsEnabled: false, placeCentroid: () => null },
+  {
+    allowPlace: false,
+    mapsEnabled: false,
+    placeCentroid: () => null,
+    highlightedRowId: null,
+  },
 );
 
 // Only a place column has a bias; a text column has nothing to do with places.
@@ -279,6 +289,7 @@ const emit = defineEmits<{
   "retype-column": [payload: { columnId: string; type: ColumnType }];
   "move-column": [payload: { columnId: string; delta: number }];
   "delete-column": [columnId: string];
+  "select-row": [rowId: string];
   "commit-cell": [
     payload: { rowId: string; columnId: string; value: CellValue },
   ];
@@ -501,6 +512,18 @@ watch(
   },
 );
 
+// Whatever the focus lands on is what the map should point at — clicking a
+// cell or walking down with the keyboard both count. The ghost row is not a
+// row yet, so it names nothing.
+watch(
+  () => nav.focused.value?.rowIndex ?? null,
+  (rowIndex) => {
+    if (rowIndex === null) return;
+    const row = orderedRows.value[rowIndex];
+    if (row) emit("select-row", row.id);
+  },
+);
+
 watch(
   () => props.tab.id,
   () => {
@@ -615,6 +638,10 @@ watch(
 
 .sheet-grid__row--striped {
   background: rgba(255, 255, 255, 0.025);
+}
+
+.sheet-grid__row--highlighted {
+  background: rgba(255, 255, 255, 0.09);
 }
 
 .sheet-grid__header--actions,

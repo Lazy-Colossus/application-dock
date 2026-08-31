@@ -1,0 +1,296 @@
+<template>
+  <div class="map-pane">
+    <div v-if="failure" class="map-pane__message" data-testid="map-error">
+      {{ failure }}
+    </div>
+
+    <div
+      v-else-if="pins.length === 0"
+      class="map-pane__message"
+      data-testid="map-empty"
+    >
+      Nothing to map yet — fill in a place and its pin appears here.
+    </div>
+
+    <template v-else>
+      <div v-if="loading" class="map-pane__loading">
+        <q-spinner size="2rem" />
+      </div>
+      <div ref="canvas" class="map-pane__canvas" data-testid="map-canvas" />
+
+      <div
+        v-if="placeColumns.length > 1"
+        class="map-pane__legend"
+        data-testid="map-legend"
+      >
+        <span
+          v-for="column in placeColumns"
+          :key="column.id"
+          class="map-pane__legend-item"
+        >
+          <span
+            class="map-pane__swatch"
+            :style="{ background: colourFor(column.id) }"
+          />
+          {{ column.name }}
+        </span>
+      </div>
+    </template>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { loadMapsSdk } from "@/apps/listies/maps";
+import type { GoogleMap, GoogleMarker, MapsApi } from "@/apps/listies/maps";
+import { isPlace } from "@/apps/listies/types";
+import type { Place, Tab } from "@/apps/listies/types";
+
+const props = defineProps<{
+  tab: Tab;
+  browserKey: string | null;
+  selectedRowId: string | null;
+}>();
+
+const emit = defineEmits<{ "select-row": [rowId: string] }>();
+
+// One colour per place column, so a tab with "Hotel" and "Dinner" columns
+// reads at a glance. Distinct hues rather than a gradient.
+const COLUMN_COLOURS = ["#e5484d", "#3e63dd", "#46a758", "#f76b15", "#8e4ec6"];
+
+const DEFAULT_ZOOM = 14;
+
+interface Pin {
+  key: string;
+  rowId: string;
+  columnId: string;
+  label: string;
+  place: Place;
+}
+
+const canvas = ref<HTMLElement | null>(null);
+const loading = ref(false);
+const failure = ref<string | null>(null);
+
+let map: GoogleMap | null = null;
+let api: MapsApi | null = null;
+const markers = new Map<string, GoogleMarker>();
+
+const placeColumns = computed(() =>
+  [...props.tab.columns]
+    .sort((a, b) => a.order - b.order)
+    .filter((column) => column.type === "place"),
+);
+
+/** The row's first text value names the pin; the place names itself otherwise. */
+function labelFor(rowId: string, place: Place): string {
+  const row = props.tab.rows.find((r) => r.id === rowId);
+  const textColumn = [...props.tab.columns]
+    .sort((a, b) => a.order - b.order)
+    .find((column) => column.type === "text");
+  const value = textColumn ? row?.cells[textColumn.id] : null;
+  return typeof value === "string" && value.trim() ? value : place.name;
+}
+
+const pins = computed<Pin[]>(() => {
+  const found: Pin[] = [];
+  for (const row of [...props.tab.rows].sort((a, b) => a.order - b.order)) {
+    for (const column of placeColumns.value) {
+      const value = row.cells[column.id];
+      if (!isPlace(value)) continue;
+      found.push({
+        key: `${row.id}:${column.id}`,
+        rowId: row.id,
+        columnId: column.id,
+        label: labelFor(row.id, value),
+        place: value,
+      });
+    }
+  }
+  return found;
+});
+
+function colourFor(columnId: string): string {
+  const index = placeColumns.value.findIndex((c) => c.id === columnId);
+  return COLUMN_COLOURS[index % COLUMN_COLOURS.length]!;
+}
+
+function iconFor(columnId: string): Record<string, unknown> | undefined {
+  // A single place column needs no colour coding; the default pin is clearer.
+  if (placeColumns.value.length < 2) return undefined;
+  return {
+    path: "M 0,0 m -8,0 a 8,8 0 1,0 16,0 a 8,8 0 1,0 -16,0",
+    fillColor: colourFor(columnId),
+    fillOpacity: 1,
+    strokeColor: "#ffffff",
+    strokeWeight: 2,
+    scale: 1,
+  };
+}
+
+function syncMarkers(): void {
+  if (!map || !api) return;
+
+  const wanted = new Set(pins.value.map((pin) => pin.key));
+
+  for (const [key, marker] of markers) {
+    if (!wanted.has(key)) {
+      marker.setMap(null);
+      markers.delete(key);
+    }
+  }
+
+  for (const pin of pins.value) {
+    if (markers.has(pin.key)) continue;
+    const marker = new api.Marker({
+      map,
+      position: { lat: pin.place.lat, lng: pin.place.lng },
+      title: pin.label,
+      icon: iconFor(pin.columnId),
+    });
+    marker.addListener("click", () => emit("select-row", pin.rowId));
+    markers.set(pin.key, marker);
+  }
+}
+
+/** Frame the pins. Called when the map opens — never on a data change. */
+function fitToPins(): void {
+  if (!map || !api) return;
+  const current = pins.value;
+  if (current.length === 0) return;
+
+  if (current.length === 1) {
+    // Fitting bounds to a single point zooms to the maximum, which is useless.
+    map.setCenter({ lat: current[0]!.place.lat, lng: current[0]!.place.lng });
+    map.setZoom(DEFAULT_ZOOM);
+    return;
+  }
+
+  const bounds = new api.LatLngBounds();
+  for (const pin of current) {
+    bounds.extend({ lat: pin.place.lat, lng: pin.place.lng });
+  }
+  map.fitBounds(bounds, 48);
+}
+
+async function build(): Promise<void> {
+  if (map || pins.value.length === 0) return;
+
+  loading.value = true;
+  failure.value = null;
+  try {
+    api = await loadMapsSdk(props.browserKey ?? "");
+  } catch (e) {
+    failure.value = e instanceof Error ? e.message : String(e);
+    return;
+  } finally {
+    loading.value = false;
+  }
+
+  // The canvas only exists once loading and error states are out of the way.
+  await nextTickCanvas();
+  if (!canvas.value || !api) return;
+
+  try {
+    map = new api.Map(canvas.value, {
+      zoom: DEFAULT_ZOOM,
+      center: { lat: pins.value[0]!.place.lat, lng: pins.value[0]!.place.lng },
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false,
+    });
+
+    syncMarkers();
+    fitToPins();
+  } catch (e) {
+    // Better a visible explanation than an unhandled rejection and a blank box.
+    map = null;
+    failure.value = e instanceof Error ? e.message : String(e);
+  }
+}
+
+async function nextTickCanvas(): Promise<void> {
+  const { nextTick } = await import("vue");
+  await nextTick();
+}
+
+void build();
+
+// Data changes move pins, never the viewport: re-framing while someone is
+// typing would make the map lurch under them (Story 4.5 adds an explicit
+// "fit to shown" control instead).
+watch(pins, () => {
+  if (map) syncMarkers();
+  else void build();
+});
+
+watch(
+  () => props.selectedRowId,
+  (rowId) => {
+    if (!map || !rowId) return;
+    const pin = pins.value.find((p) => p.rowId === rowId);
+    if (pin) map.panTo({ lat: pin.place.lat, lng: pin.place.lng });
+  },
+);
+
+onBeforeUnmount(() => {
+  for (const marker of markers.values()) marker.setMap(null);
+  markers.clear();
+  map = null;
+});
+</script>
+
+<style scoped>
+.map-pane {
+  position: relative;
+  height: 100%;
+  min-height: 12rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.map-pane__canvas {
+  height: 100%;
+  width: 100%;
+}
+
+.map-pane__message {
+  padding: 1rem;
+  opacity: 0.6;
+  font-size: 0.875rem;
+}
+
+.map-pane__loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-pane__legend {
+  position: absolute;
+  left: 0.5rem;
+  bottom: 0.5rem;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.65);
+  font-size: 0.75rem;
+}
+
+.map-pane__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.map-pane__swatch {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  display: inline-block;
+}
+</style>

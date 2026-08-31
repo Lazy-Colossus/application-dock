@@ -875,3 +875,55 @@ describe("SheetGrid — place cells (Story 4.3)", () => {
     expect(textCell!.props("near")).toBeNull();
   });
 });
+
+describe("SheetGrid — telling the map which row is in focus (Story 4.4)", () => {
+  it("reports the row when a cell is focused", async () => {
+    const wrapper = mountGrid();
+
+    await wrapper
+      .find('[data-testid="row-r-2"]')
+      .findAllComponents({ name: "GridCell" })[0]!
+      .trigger("click");
+
+    expect(wrapper.emitted("select-row")).toEqual([["r-2"]]);
+  });
+
+  it("reports the new row when the keyboard moves down", async () => {
+    const wrapper = mountGrid();
+    await wrapper
+      .find('[data-testid="row-r-1"]')
+      .findAllComponents({ name: "GridCell" })[0]!
+      .trigger("click");
+
+    await wrapper
+      .find('[data-testid="grid-body"]')
+      .trigger("keydown", { key: "Enter" });
+
+    expect(wrapper.emitted("select-row")!.at(-1)).toEqual(["r-2"]);
+  });
+
+  it("says nothing for the ghost row — it is not a row yet", async () => {
+    const wrapper = mountGrid();
+
+    await wrapper
+      .find('[data-testid="ghost-row"]')
+      .findAllComponents({ name: "GridCell" })[0]!
+      .trigger("click");
+
+    expect(wrapper.emitted("select-row")).toBeUndefined();
+  });
+
+  it("marks the row the map is pointing at", () => {
+    const wrapper = mount(SheetGrid, {
+      props: { tab: tab(), highlightedRowId: "r-2" },
+      global: { stubs: STUBS },
+    });
+
+    expect(wrapper.find('[data-testid="row-r-2"]').classes()).toContain(
+      "sheet-grid__row--highlighted",
+    );
+    expect(wrapper.find('[data-testid="row-r-1"]').classes()).not.toContain(
+      "sheet-grid__row--highlighted",
+    );
+  });
+});
