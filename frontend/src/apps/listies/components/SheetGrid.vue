@@ -147,6 +147,8 @@
               :column="column"
               :focused="nav.isFocused(rowIndex, columnIndex)"
               :editing="nav.isEditing(rowIndex, columnIndex)"
+              :maps-enabled="mapsEnabled"
+              :near="biasFor(column)"
               @begin-edit="startEdit(rowIndex, columnIndex)"
               @end-edit="nav.endEdit()"
               @commit="
@@ -207,6 +209,8 @@
               :column="column"
               :focused="nav.isFocused(orderedRows.length, columnIndex)"
               :editing="nav.isEditing(orderedRows.length, columnIndex)"
+              :maps-enabled="mapsEnabled"
+              :near="biasFor(column)"
               @begin-edit="startEdit(orderedRows.length, columnIndex)"
               @end-edit="nav.endEdit()"
               @commit="materialise(column.id, $event)"
@@ -250,11 +254,23 @@ import { columnTypeOptions } from "@/apps/listies/columnTypes";
 import { sortRowIds } from "@/apps/listies/sort";
 import type { SortSpec } from "@/apps/listies/sort";
 import { useGridNavigation } from "@/apps/listies/composables/useGridNavigation";
-import type { CellValue, ColumnType, Tab } from "@/apps/listies/types";
+import type { CellValue, Column, ColumnType, Tab } from "@/apps/listies/types";
 
-const props = withDefaults(defineProps<{ tab: Tab; allowPlace?: boolean }>(), {
-  allowPlace: false,
-});
+const props = withDefaults(
+  defineProps<{
+    tab: Tab;
+    allowPlace?: boolean;
+    mapsEnabled?: boolean;
+    /** Where a place column's search should look; supplied by the page. */
+    placeCentroid?: (columnId: string) => string | null;
+  }>(),
+  { allowPlace: false, mapsEnabled: false, placeCentroid: () => null },
+);
+
+// Only a place column has a bias; a text column has nothing to do with places.
+function biasFor(column: Column): string | null {
+  return column.type === "place" ? props.placeCentroid(column.id) : null;
+}
 const emit = defineEmits<{
   "add-row": [cells: Record<string, CellValue>];
   "delete-row": [rowId: string];

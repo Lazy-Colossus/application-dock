@@ -58,6 +58,12 @@ const STUBS = {
     ],
     emits: ["update:modelValue"],
   },
+  PlaceCell: {
+    name: "PlaceCell",
+    template: "<div />",
+    props: ["value", "enabled", "near"],
+    emits: ["select", "clear", "cancel"],
+  },
   // The menu has its own spec; here we only care that the grid wires it up.
   ColumnHeaderMenu: {
     name: "ColumnHeaderMenu",
@@ -820,5 +826,52 @@ describe("SheetGrid — the add-column popup actually opens", () => {
 
     const menu = componentAt(wrapper, '[data-testid="add-column-menu"]');
     expect(menu.props("noParentEvent")).toBe(true);
+  });
+});
+
+describe("SheetGrid — place cells (Story 4.3)", () => {
+  const placeTab = () =>
+    tab({
+      columns: [
+        { id: "c-1", name: "Cafe", type: "text", order: 0 },
+        { id: "c-2", name: "Where", type: "place", order: 1 },
+      ],
+      rows: [
+        { id: "r-1", order: 0, cells: {}, created_at: "t", updated_at: "t" },
+      ],
+    });
+
+  const mountPlaceGrid = (props: Record<string, unknown> = {}) =>
+    mount(SheetGrid, {
+      props: { tab: placeTab(), ...props },
+      global: { stubs: STUBS },
+    });
+
+  it("tells place cells whether maps are configured", () => {
+    const cells = mountPlaceGrid({ mapsEnabled: true }).findAllComponents({
+      name: "GridCell",
+    });
+
+    expect(cells.some((c) => c.props("mapsEnabled") === true)).toBe(true);
+  });
+
+  it("biases each place cell to the places already in its own column", () => {
+    const wrapper = mountPlaceGrid({ placeCentroid: () => "38.7,-9.1" });
+
+    const placeCells = wrapper
+      .findAllComponents({ name: "GridCell" })
+      .filter((c) => (c.props("column") as { type: string }).type === "place");
+
+    expect(placeCells[0]!.props("near")).toBe("38.7,-9.1");
+  });
+
+  it("gives a text cell no bias — it has nothing to do with places", () => {
+    const wrapper = mountPlaceGrid({ placeCentroid: () => "38.7,-9.1" });
+
+    const textCell = wrapper
+      .findAllComponents({ name: "GridCell" })
+      .find((c) => (c.props("column") as { type: string }).type === "text");
+
+    expect(textCell!.props("near")).toBeNull();
   });
 });

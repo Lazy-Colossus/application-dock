@@ -13,7 +13,7 @@ vi.mock("@/composables/useApi", () => ({
 }));
 
 import { useListiesStore } from "./useListiesStore";
-import type { Sheet, SheetSummary } from "@/apps/listies/types";
+import type { CellValue, Sheet, SheetSummary } from "@/apps/listies/types";
 
 // A factory, not a shared object: the store mutates the summary it holds when
 // renaming, so tests must not share one instance across cases.
@@ -935,5 +935,150 @@ describe("useListiesStore — maps configuration (Story 4.2)", () => {
     // sheet that works perfectly well without them.
     expect(store.mapsEnabled).toBe(false);
     expect(store.error).toBeNull();
+  });
+});
+
+describe("useListiesStore — place search (Story 4.3)", () => {
+  const RESULT = {
+    place_id: "ChIJ_1",
+    name: "Blue Bottle",
+    address: "Rua Nova 12",
+    lat: 38.71,
+    lng: -9.13,
+  };
+
+  beforeEach(() => {
+    getMock.mockReset().mockResolvedValue([RESULT]);
+  });
+
+  it("searches through the API", async () => {
+    const store = useListiesStore();
+
+    const results = await store.searchPlaces("coffee");
+
+    expect(getMock).toHaveBeenCalledWith("/listies/places/search?q=coffee");
+    expect(results).toEqual([RESULT]);
+  });
+
+  it("encodes the query rather than pasting it into the URL", async () => {
+    const store = useListiesStore();
+
+    await store.searchPlaces("caf & bar");
+
+    // URLSearchParams encodes a space as "+", which a query string decodes
+    // back to a space server-side (pinned by a backend test).
+    expect(getMock).toHaveBeenCalledWith(
+      "/listies/places/search?q=caf+%26+bar",
+    );
+  });
+
+  it("passes a near point when given one", async () => {
+    const store = useListiesStore();
+
+    await store.searchPlaces("cafe", "38.71,-9.13");
+
+    expect(getMock).toHaveBeenCalledWith(
+      "/listies/places/search?q=cafe&near=38.71%2C-9.13",
+    );
+  });
+
+  it("does not gate the grid on a search", async () => {
+    getMock.mockImplementation(() => new Promise(() => {}));
+    const store = useListiesStore();
+
+    void store.searchPlaces("coffee");
+    await Promise.resolve();
+
+    // A keystroke in one cell must not put a spinner over the whole sheet.
+    expect(store.loading).toBe(false);
+    expect(store.searching).toBe(true);
+  });
+
+  it("clears the in-flight flag when the search finishes", async () => {
+    const store = useListiesStore();
+    await store.searchPlaces("coffee");
+    expect(store.searching).toBe(false);
+  });
+
+  it("rethrows so the cell can show the failure, without a sheet-wide banner", async () => {
+    getMock.mockRejectedValue(new Error("502: upstream"));
+    const store = useListiesStore();
+
+    await expect(store.searchPlaces("coffee")).rejects.toThrow("502: upstream");
+    expect(store.error).toBeNull();
+    expect(store.searching).toBe(false);
+  });
+});
+
+describe("useListiesStore — biasing a search to the column (Story 4.3)", () => {
+  const place = (lat: number, lng: number) => ({
+    place_id: `ChIJ_${lat}`,
+    name: "somewhere",
+    address: "",
+    lat,
+    lng,
+  });
+
+  const withPlaces = (
+    values: ({ lat: number; lng: number } | null)[],
+  ): Sheet => {
+    const s = sheet();
+    s.tabs[0]!.columns = [
+      { id: "c-1", name: "Where", type: "place", order: 0 },
+    ];
+    s.tabs[0]!.rows = values.map((v, i) => ({
+      id: `r-${i}`,
+      order: i,
+      cells: (v === null ? {} : { "c-1": place(v.lat, v.lng) }) as Record<
+        string,
+        CellValue
+      >,
+      created_at: "t",
+      updated_at: "t",
+    }));
+    return s;
+  };
+
+  it("has no bias when the column is empty", async () => {
+    getMock.mockImplementation(() => Promise.resolve(withPlaces([null, null])));
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    expect(store.placeCentroid("c-1")).toBeNull();
+  });
+
+  it("biases to the one place already in the column", async () => {
+    getMock.mockImplementation(() =>
+      Promise.resolve(withPlaces([{ lat: 38.7, lng: -9.1 }])),
+    );
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    expect(store.placeCentroid("c-1")).toBe("38.7,-9.1");
+  });
+
+  it("biases to the middle of several places", async () => {
+    getMock.mockImplementation(() =>
+      Promise.resolve(
+        withPlaces([
+          { lat: 38.0, lng: -9.0 },
+          { lat: 40.0, lng: -7.0 },
+        ]),
+      ),
+    );
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    expect(store.placeCentroid("c-1")).toBe("39,-8");
+  });
+
+  it("ignores rows with nothing in that column", async () => {
+    getMock.mockImplementation(() =>
+      Promise.resolve(withPlaces([{ lat: 38.0, lng: -9.0 }, null])),
+    );
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    expect(store.placeCentroid("c-1")).toBe("38,-9");
   });
 });

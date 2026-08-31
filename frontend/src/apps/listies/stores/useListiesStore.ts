@@ -1,10 +1,12 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
 import { api } from "@/composables/useApi";
+import { isPlace } from "@/apps/listies/types";
 import type {
   CellValue,
   ColumnSpec,
   ColumnType,
+  Place,
   Row,
   Sheet,
   SheetSummary,
@@ -42,6 +44,7 @@ export const useListiesStore = defineStore("listies", () => {
   // place-related keys off this.
   const mapsEnabled = ref(false);
   const browserKey = ref<string | null>(null);
+  const searching = ref(false);
   let mapsConfigLoaded = false;
 
   const activeTab = computed<Tab | null>(
@@ -219,6 +222,45 @@ export const useListiesStore = defineStore("listies", () => {
       mapsEnabled.value = false;
       browserKey.value = null;
     }
+  }
+
+  /**
+   * Search Google Places through our API.
+   *
+   * Deliberately separate from `loading` and `error`: a keystroke in one cell
+   * must not put a spinner or a banner over the whole sheet. The caller shows
+   * the failure beside the cell, which is why this rethrows.
+   */
+  async function searchPlaces(
+    q: string,
+    near?: string | null,
+  ): Promise<Place[]> {
+    const params = new URLSearchParams({ q });
+    if (near) params.set("near", near);
+
+    searching.value = true;
+    try {
+      return await api.get<Place[]>(`/listies/places/search?${params}`);
+    } finally {
+      searching.value = false;
+    }
+  }
+
+  /**
+   * The middle of the places already in a column, as `"lat,lng"`.
+   *
+   * Used to bias a search, so "cafe" means the right cafés rather than the
+   * nearest ones to wherever Google guesses.
+   */
+  function placeCentroid(columnId: string): string | null {
+    const points = (activeTab.value?.rows ?? [])
+      .map((row) => row.cells[columnId])
+      .filter(isPlace);
+    if (points.length === 0) return null;
+
+    const lat = points.reduce((sum, p) => sum + p.lat, 0) / points.length;
+    const lng = points.reduce((sum, p) => sum + p.lng, 0) / points.length;
+    return `${Number(lat.toFixed(6))},${Number(lng.toFixed(6))}`;
   }
 
   // ── tabs (Story 3.1) ───────────────────────────────────────────────────
@@ -406,7 +448,10 @@ export const useListiesStore = defineStore("listies", () => {
     currentSheet,
     mapsEnabled,
     browserKey,
+    searching,
     fetchMapsConfig,
+    searchPlaces,
+    placeCentroid,
     activeTabId,
     activeTab,
     fetchSheet,

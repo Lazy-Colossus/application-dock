@@ -36,6 +36,8 @@
           v-if="store.activeTab"
           :tab="store.activeTab"
           :allow-place="store.mapsEnabled"
+          :maps-enabled="store.mapsEnabled"
+          :place-centroid="store.placeCentroid"
           @add-row="store.addRow($event)"
           @delete-row="store.deleteRow($event)"
           @add-column="store.addColumn($event.name, $event.type)"

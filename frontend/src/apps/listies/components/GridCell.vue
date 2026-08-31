@@ -10,7 +10,19 @@
     :tabindex="editable ? 0 : undefined"
     @click="requestEdit"
   >
-    <template v-if="editing">
+    <!-- A place is chosen from search results, so it gets its own editor
+         rather than a text box (Story 4.3). -->
+    <PlaceCell
+      v-if="isPlaceColumn && editing"
+      :value="isPlace(value) ? value : null"
+      :enabled="mapsEnabled"
+      :near="near"
+      @select="pickPlace"
+      @clear="clearPlace"
+      @cancel="emit('end-edit')"
+    />
+
+    <template v-else-if="editing">
       <input
         ref="inputEl"
         v-model="draft"
@@ -23,14 +35,24 @@
       />
       <div v-if="invalid" class="grid-cell__error">{{ invalid }}</div>
     </template>
-    <template v-else>{{ formatCell(value, column.type) }}</template>
+    <template v-else>
+      <template v-if="isPlace(value)">
+        <div class="grid-cell__place">{{ value.name }}</div>
+        <div v-if="value.address" class="grid-cell__address">
+          {{ value.address }}
+        </div>
+      </template>
+      <template v-else>{{ formatCell(value, column.type) }}</template>
+    </template>
   </td>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
+import PlaceCell from "./PlaceCell.vue";
 import { formatCell, parseCell } from "@/apps/listies/coerce";
-import type { CellValue, Column } from "@/apps/listies/types";
+import { isPlace } from "@/apps/listies/types";
+import type { CellValue, Column, Place } from "@/apps/listies/types";
 
 /**
  * One cell. Editing is **parent-controlled**: the grid owns which cell is being
@@ -44,8 +66,16 @@ const props = withDefaults(
     editable?: boolean;
     editing?: boolean;
     focused?: boolean;
+    mapsEnabled?: boolean;
+    near?: string | null;
   }>(),
-  { editable: false, editing: false, focused: false },
+  {
+    editable: false,
+    editing: false,
+    focused: false,
+    mapsEnabled: false,
+    near: null,
+  },
 );
 
 const emit = defineEmits<{
@@ -59,6 +89,8 @@ const invalid = ref<string | null>(null);
 const inputEl = ref<HTMLInputElement | null>(null);
 
 // `null` is empty; 0 and "" are not — they are values the user entered.
+const isPlaceColumn = computed(() => props.column.type === "place");
+
 const isEmpty = computed(
   () => props.value === null || props.value === undefined,
 );
@@ -92,8 +124,26 @@ function requestEdit(): void {
   emit("begin-edit");
 }
 
+function pickPlace(place: Place): void {
+  emit("commit", place);
+  emit("end-edit");
+}
+
+function clearPlace(): void {
+  emit("commit", null);
+  emit("end-edit");
+}
+
 function commit(): void {
   if (!props.editing) return;
+
+  // The grid commits the focused cell before moving (Story 2.3). A place cell
+  // has no typed text to save, so that must simply let go — treating the
+  // search box as an invalid entry would trap the cursor in the cell.
+  if (isPlaceColumn.value) {
+    emit("end-edit");
+    return;
+  }
 
   const result = parseCell(String(draft.value ?? ""), props.column.type);
   if (!result.ok) {
@@ -153,6 +203,17 @@ defineExpose({ commit });
   color: inherit;
   font: inherit;
   text-align: inherit;
+}
+
+.grid-cell__place {
+  font-weight: 500;
+}
+
+.grid-cell__address {
+  font-size: 0.7rem;
+  opacity: 0.55;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .grid-cell__error {

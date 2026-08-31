@@ -197,3 +197,122 @@ describe("GridCell — editing (Stories 2.2, 2.3)", () => {
     expect(cell("Tent", "text").classes()).not.toContain("grid-cell--focused");
   });
 });
+
+describe("GridCell — place cells delegate to the place editor (Story 4.3)", () => {
+  const PLACE = {
+    place_id: "ChIJ_blue",
+    name: "Blue Bottle",
+    address: "Rua Nova 12, Lisboa",
+    lat: 38.71,
+    lng: -9.13,
+  };
+
+  const placeColumn = {
+    id: "c-1",
+    name: "Where",
+    type: "place" as const,
+    order: 0,
+  };
+
+  const STUBS = {
+    PlaceCell: {
+      name: "PlaceCell",
+      template: "<div />",
+      props: ["value", "enabled", "near"],
+      emits: ["select", "clear", "cancel"],
+    },
+  };
+
+  function placeCell(
+    props: { value?: CellValue; editing?: boolean; mapsEnabled?: boolean } = {},
+  ) {
+    return mount(GridCell, {
+      props: {
+        value: null,
+        column: placeColumn,
+        editable: true,
+        editing: false,
+        ...props,
+      },
+      global: { stubs: STUBS },
+    });
+  }
+
+  it("shows the place name when not editing", () => {
+    expect(placeCell({ value: PLACE }).text()).toContain("Blue Bottle");
+  });
+
+  it("shows the address as a second line", () => {
+    expect(placeCell({ value: PLACE }).text()).toContain("Rua Nova 12, Lisboa");
+  });
+
+  it("shows a dash for an empty place cell", () => {
+    expect(placeCell().text()).toBe("—");
+  });
+
+  it("opens the place editor rather than a text input", () => {
+    const wrapper = placeCell({ editing: true });
+
+    expect(wrapper.findComponent({ name: "PlaceCell" }).exists()).toBe(true);
+    expect(wrapper.find("input").exists()).toBe(false);
+  });
+
+  it("commits the place that was chosen", async () => {
+    const wrapper = placeCell({ editing: true });
+
+    await wrapper
+      .findComponent({ name: "PlaceCell" })
+      .vm.$emit("select", PLACE);
+
+    expect(wrapper.emitted("commit")).toEqual([[PLACE]]);
+    expect(wrapper.emitted("end-edit")).toHaveLength(1);
+  });
+
+  it("commits null when the place is cleared", async () => {
+    const wrapper = placeCell({ value: PLACE, editing: true });
+
+    await wrapper.findComponent({ name: "PlaceCell" }).vm.$emit("clear");
+
+    expect(wrapper.emitted("commit")).toEqual([[null]]);
+  });
+
+  it("leaves edit mode on cancel without committing", async () => {
+    const wrapper = placeCell({ value: PLACE, editing: true });
+
+    await wrapper.findComponent({ name: "PlaceCell" }).vm.$emit("cancel");
+
+    expect(wrapper.emitted("commit")).toBeUndefined();
+    expect(wrapper.emitted("end-edit")).toHaveLength(1);
+  });
+
+  it("moving away from a place cell just leaves it — there is no text to save", async () => {
+    // The grid calls commit() before moving (Story 2.3). For a place cell that
+    // must be a no-op, not a validation failure that traps the cursor.
+    const wrapper = placeCell({ value: PLACE, editing: true });
+
+    (wrapper.vm as unknown as { commit: () => void }).commit();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.emitted("commit")).toBeUndefined();
+    expect(wrapper.classes()).not.toContain("grid-cell--invalid");
+    expect(wrapper.emitted("end-edit")).toHaveLength(1);
+  });
+
+  it("passes the maps state and the column bias to the editor", () => {
+    const wrapper = mount(GridCell, {
+      props: {
+        value: null,
+        column: placeColumn,
+        editable: true,
+        editing: true,
+        mapsEnabled: true,
+        near: "38.7,-9.1",
+      },
+      global: { stubs: STUBS },
+    });
+
+    const editor = wrapper.findComponent({ name: "PlaceCell" });
+    expect(editor.props("enabled")).toBe(true);
+    expect(editor.props("near")).toBe("38.7,-9.1");
+  });
+});

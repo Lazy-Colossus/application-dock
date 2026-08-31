@@ -316,3 +316,17 @@ def test_a_blank_query_is_422(monkeypatch: pytest.MonkeyPatch, q: str) -> None:
 
 def test_a_missing_query_is_422() -> None:
     assert client.get("/api/listies/places/search").status_code == 422
+
+
+def test_a_query_with_a_space_and_an_ampersand_arrives_intact(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The client encodes spaces as "+"; the query must decode back to a space."""
+    seen = stub_upstream(monkeypatch, ok())
+
+    resp = client.get("/api/listies/places/search?q=caf+%26+bar")
+
+    assert resp.status_code == 200
+    assert b'"textQuery": "caf & bar"' in seen[0].content.replace(
+        b'"textQuery":"', b'"textQuery": "'
+    )
