@@ -97,8 +97,8 @@ const STUBS = {
   MapPane: {
     name: "MapPane",
     template: "<div />",
-    props: ["tab", "browserKey", "selectedRowId"],
-    emits: ["select-row"],
+    props: ["tab", "browserKey", "selectedRowId", "shownRowIds"],
+    emits: ["select-row", "show-all", "show-none"],
   },
   CreateTabDialog: {
     name: "CreateTabDialog",
@@ -749,5 +749,147 @@ describe("SheetPage — the map pane (Story 4.4)", () => {
     expect(
       wrapper.findComponent({ name: "MapPane" }).props("selectedRowId"),
     ).toBe("r-3");
+  });
+});
+
+describe("SheetPage — which places are plotted (Story 4.5)", () => {
+  const placeRow = (id: string, name: string) => ({
+    id,
+    order: Number(id.slice(2)),
+    cells: {
+      "c-2": { place_id: `p-${id}`, name, address: "a", lat: 1, lng: 2 },
+    },
+    created_at: "t",
+    updated_at: "t",
+  });
+
+  const withPlaces = (): Sheet => {
+    const s = sheet();
+    s.tabs = [
+      {
+        id: "tb-1",
+        name: "Cafés",
+        order: 0,
+        columns: [
+          { id: "c-1", name: "Cafe", type: "text", order: 0 },
+          { id: "c-2", name: "Where", type: "place", order: 1 },
+        ],
+        rows: [placeRow("r-1", "Blue"), placeRow("r-2", "Fabrica")],
+      },
+      {
+        id: "tb-2",
+        name: "Other",
+        order: 1,
+        columns: [
+          { id: "c-3", name: "Cafe", type: "text", order: 0 },
+          { id: "c-4", name: "Where", type: "place", order: 1 },
+        ],
+        rows: [],
+      },
+    ];
+    return s;
+  };
+
+  beforeEach(() => {
+    getMock.mockImplementation((path: string) =>
+      path === "/listies/maps-config"
+        ? Promise.resolve({ enabled: true, browser_key: "k" })
+        : Promise.resolve(withPlaces()),
+    );
+  });
+
+  const open = async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+    await wrapper.find('[data-testid="toggle-map"]').trigger("click");
+    await flushPromises();
+    return wrapper;
+  };
+
+  const grid = (w: ReturnType<typeof mount>) =>
+    w.findComponent({ name: "SheetGrid" });
+  const pane = (w: ReturnType<typeof mount>) =>
+    w.findComponent({ name: "MapPane" });
+
+  it("starts with every place shown", async () => {
+    const wrapper = await open();
+
+    expect(pane(wrapper).props("shownRowIds")).toEqual(["r-1", "r-2"]);
+    expect(grid(wrapper).props("mappedRowIds")).toEqual(["r-1", "r-2"]);
+  });
+
+  it("gives the grid no ticks while the map is closed", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    expect(grid(wrapper).props("mappedRowIds")).toBeNull();
+  });
+
+  it("drops a row from the map when it is unticked", async () => {
+    const wrapper = await open();
+
+    await grid(wrapper).vm.$emit("toggle-mapped", "r-2");
+    await flushPromises();
+
+    expect(pane(wrapper).props("shownRowIds")).toEqual(["r-1"]);
+  });
+
+  it("puts it back when it is ticked again", async () => {
+    const wrapper = await open();
+    await grid(wrapper).vm.$emit("toggle-mapped", "r-2");
+    await flushPromises();
+
+    await grid(wrapper).vm.$emit("toggle-mapped", "r-2");
+    await flushPromises();
+
+    expect(pane(wrapper).props("shownRowIds")).toEqual(["r-1", "r-2"]);
+  });
+
+  it("never writes anything when ticking", async () => {
+    const wrapper = await open();
+    putMock.mockReset();
+
+    await grid(wrapper).vm.$emit("toggle-mapped", "r-2");
+    await flushPromises();
+
+    expect(putMock).not.toHaveBeenCalled();
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it("shows all and shows none", async () => {
+    const wrapper = await open();
+
+    await pane(wrapper).vm.$emit("show-none");
+    await flushPromises();
+    expect(pane(wrapper).props("shownRowIds")).toEqual([]);
+
+    await pane(wrapper).vm.$emit("show-all");
+    await flushPromises();
+    expect(pane(wrapper).props("shownRowIds")).toEqual(["r-1", "r-2"]);
+  });
+
+  it("resets the ticks when the tab changes", async () => {
+    const wrapper = await open();
+    await grid(wrapper).vm.$emit("toggle-mapped", "r-2");
+    await flushPromises();
+
+    await wrapper.findComponent({ name: "TabBar" }).vm.$emit("select", "tb-2");
+    await flushPromises();
+    await wrapper.findComponent({ name: "TabBar" }).vm.$emit("select", "tb-1");
+    await flushPromises();
+
+    expect(pane(wrapper).props("shownRowIds")).toEqual(["r-1", "r-2"]);
+  });
+
+  it("shows a newly added place without being asked", async () => {
+    const wrapper = await open();
+
+    const store = (
+      await import("@/apps/listies/stores/useListiesStore")
+    ).useListiesStore();
+    store.currentSheet!.tabs[0]!.rows.push(placeRow("r-3", "Dear Breakfast"));
+    await flushPromises();
+
+    expect(pane(wrapper).props("shownRowIds")).toContain("r-3");
   });
 });

@@ -116,6 +116,13 @@ function tabWith(
 
 const STUBS = {
   "q-spinner": { template: '<div data-testid="map-loading" />' },
+  "q-space": { template: "<span />" },
+  "q-btn": {
+    template:
+      "<button :data-testid=\"$attrs['data-testid']\" @click=\"$emit('click', $event)\">{{ label }}</button>",
+    props: ["label", "icon", "dense", "flat", "noCaps", "size", "color"],
+    emits: ["click"],
+  },
 };
 
 function mountPane(tab: Tab, props: Record<string, unknown> = {}) {
@@ -383,5 +390,100 @@ describe("MapPane — when the map itself will not build", () => {
     await flushPromises();
 
     expect(wrapper.find('[data-testid="map-error"]').exists()).toBe(true);
+  });
+});
+
+describe("MapPane — choosing what is shown (Story 4.5)", () => {
+  const THREE = () =>
+    tabWith([
+      { id: "r-1", cafe: "Blue", where: place("Blue", 38.7, -9.1) },
+      { id: "r-2", cafe: "Fabrica", where: place("Fabrica", 38.8, -9.2) },
+      { id: "r-3", cafe: "No place" },
+    ]);
+
+  it("plots everything when nothing has been unticked", async () => {
+    mountPane(THREE(), { shownRowIds: null });
+    await flushPromises();
+
+    expect(mapState.markers.filter((m) => m.attached)).toHaveLength(2);
+  });
+
+  it("plots only the rows that are ticked", async () => {
+    mountPane(THREE(), { shownRowIds: ["r-1"] });
+    await flushPromises();
+
+    expect(mapState.markers.filter((m) => m.attached)).toHaveLength(1);
+    expect(mapState.markers[0]!.position).toEqual({ lat: 38.7, lng: -9.1 });
+  });
+
+  it("removes a pin the moment its row is unticked", async () => {
+    const wrapper = mountPane(THREE(), { shownRowIds: ["r-1", "r-2"] });
+    await flushPromises();
+
+    await wrapper.setProps({ shownRowIds: ["r-1"] });
+    await flushPromises();
+
+    expect(mapState.markers.filter((m) => m.attached)).toHaveLength(1);
+  });
+
+  it("puts the pin back when it is ticked again", async () => {
+    const wrapper = mountPane(THREE(), { shownRowIds: ["r-1"] });
+    await flushPromises();
+
+    await wrapper.setProps({ shownRowIds: ["r-1", "r-2"] });
+    await flushPromises();
+
+    expect(mapState.markers.filter((m) => m.attached)).toHaveLength(2);
+  });
+
+  it("counts what is shown against what there is", async () => {
+    const wrapper = mountPane(THREE(), { shownRowIds: ["r-1"] });
+    await flushPromises();
+
+    // Only the two rows that hold a place count; the third has nothing to show.
+    expect(wrapper.find('[data-testid="map-counter"]').text()).toContain(
+      "1 of 2",
+    );
+  });
+
+  it("offers all and none", async () => {
+    const wrapper = mountPane(THREE(), { shownRowIds: ["r-1"] });
+    await flushPromises();
+
+    await wrapper.find('[data-testid="map-show-all"]').trigger("click");
+    await wrapper.find('[data-testid="map-show-none"]').trigger("click");
+
+    expect(wrapper.emitted("show-all")).toHaveLength(1);
+    expect(wrapper.emitted("show-none")).toHaveLength(1);
+  });
+
+  it("does not re-frame when a tick changes — the map must not jump", async () => {
+    const wrapper = mountPane(THREE(), { shownRowIds: ["r-1", "r-2"] });
+    await flushPromises();
+    const fitsAfterOpen = mapState.fits;
+
+    await wrapper.setProps({ shownRowIds: ["r-1"] });
+    await flushPromises();
+
+    expect(mapState.fits).toBe(fitsAfterOpen);
+  });
+
+  it("re-frames on demand, to what is currently shown", async () => {
+    const wrapper = mountPane(THREE(), { shownRowIds: ["r-1", "r-2"] });
+    await flushPromises();
+    const fitsAfterOpen = mapState.fits;
+
+    await wrapper.find('[data-testid="map-fit"]').trigger("click");
+
+    expect(mapState.fits).toBe(fitsAfterOpen + 1);
+  });
+
+  it("says there is nothing to show when everything is unticked", async () => {
+    const wrapper = mountPane(THREE(), { shownRowIds: [] });
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="map-counter"]').text()).toContain(
+      "0 of 2",
+    );
   });
 });

@@ -927,3 +927,82 @@ describe("SheetGrid — telling the map which row is in focus (Story 4.4)", () =
     );
   });
 });
+
+describe("SheetGrid — choosing what is on the map (Story 4.5)", () => {
+  const placeTab = () =>
+    tab({
+      columns: [
+        { id: "c-1", name: "Cafe", type: "text", order: 0 },
+        { id: "c-2", name: "Where", type: "place", order: 1 },
+      ],
+      rows: [
+        {
+          id: "r-1",
+          order: 0,
+          cells: {
+            "c-2": {
+              place_id: "p1",
+              name: "Blue",
+              address: "a",
+              lat: 1,
+              lng: 2,
+            },
+          },
+          created_at: "t",
+          updated_at: "t",
+        },
+        {
+          id: "r-2",
+          order: 1,
+          cells: { "c-1": "No place here" },
+          created_at: "t",
+          updated_at: "t",
+        },
+      ],
+    });
+
+  const mountWithTicks = (mappedRowIds: string[] | null) =>
+    mount(SheetGrid, {
+      props: { tab: placeTab(), mappedRowIds },
+      global: { stubs: STUBS },
+    });
+
+  it("shows no tick column when the map is closed", () => {
+    const wrapper = mountWithTicks(null);
+    expect(wrapper.find('[data-testid="map-tick-r-1"]').exists()).toBe(false);
+  });
+
+  it("shows a tick only for rows that actually hold a place", () => {
+    const wrapper = mountWithTicks(["r-1"]);
+
+    expect(wrapper.find('[data-testid="map-tick-r-1"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="map-tick-r-2"]').exists()).toBe(false);
+  });
+
+  it("reflects whether the row is currently plotted", () => {
+    const wrapper = mountWithTicks([]);
+    expect(
+      (wrapper.find('[data-testid="map-tick-r-1"]').element as HTMLInputElement)
+        .checked,
+    ).toBe(false);
+  });
+
+  it("asks to toggle the row, without writing anything", async () => {
+    const wrapper = mountWithTicks(["r-1"]);
+
+    await wrapper.find('[data-testid="map-tick-r-1"]').trigger("change");
+
+    expect(wrapper.emitted("toggle-mapped")).toEqual([["r-1"]]);
+    expect(wrapper.emitted("commit-cell")).toBeUndefined();
+  });
+
+  it("gives the ghost row no tick — it is not a row yet", () => {
+    const wrapper = mountWithTicks(["r-1"]);
+    expect(
+      wrapper
+        .find('[data-testid="ghost-row"]')
+        .find('input[type="checkbox"]')
+        .exists(),
+    ).toBe(false);
+  });
+});

@@ -56,6 +56,7 @@
           :maps-enabled="store.mapsEnabled"
           :place-centroid="store.placeCentroid"
           :highlighted-row-id="selectedRowId"
+          :mapped-row-ids="mapOpen ? shownRowIds : null"
           @add-row="store.addRow($event)"
           @delete-row="store.deleteRow($event)"
           @add-column="store.addColumn($event.name, $event.type)"
@@ -67,6 +68,7 @@
             store.commitCell($event.rowId, $event.columnId, $event.value)
           "
           @select-row="selectedRowId = $event"
+          @toggle-mapped="toggleMapped"
         />
 
         <MapPane
@@ -75,7 +77,10 @@
           :tab="store.activeTab"
           :browser-key="store.browserKey"
           :selected-row-id="selectedRowId"
+          :shown-row-ids="shownRowIds"
           @select-row="selectedRowId = $event"
+          @show-all="hiddenRowIds = new Set()"
+          @show-none="hiddenRowIds = new Set(placeRowIds)"
         />
       </div>
 
@@ -108,6 +113,7 @@ import MapPane from "@/apps/listies/components/MapPane.vue";
 import SheetGrid from "@/apps/listies/components/SheetGrid.vue";
 import TabBar from "@/apps/listies/components/TabBar.vue";
 import { useListiesStore } from "@/apps/listies/stores/useListiesStore";
+import { isPlace } from "@/apps/listies/types";
 import { usePageDetailStore } from "@/stores/usePageDetailStore";
 import type { ColumnSpec } from "@/apps/listies/types";
 
@@ -133,6 +139,46 @@ const canShowMap = computed(
 // and most tabs never want it.
 const mapOpen = computed(
   () => canShowMap.value && openMaps.value.has(store.activeTabId ?? ""),
+);
+
+/**
+ * Which rows are *hidden* from the map, not which are shown.
+ *
+ * Tracking the exceptions means a place added while the map is open is plotted
+ * without being asked for — the opposite (a set of shown ids) would silently
+ * leave new places off.
+ */
+const hiddenRowIds = ref<Set<string>>(new Set());
+
+const placeRowIds = computed(() => {
+  const tab = store.activeTab;
+  if (!tab) return [];
+  const placeColumns = tab.columns.filter((column) => column.type === "place");
+  return tab.rows
+    .filter((row) =>
+      placeColumns.some((column) => isPlace(row.cells[column.id] ?? null)),
+    )
+    .map((row) => row.id);
+});
+
+const shownRowIds = computed(() =>
+  placeRowIds.value.filter((id) => !hiddenRowIds.value.has(id)),
+);
+
+function toggleMapped(rowId: string): void {
+  const next = new Set(hiddenRowIds.value);
+  if (next.has(rowId)) next.delete(rowId);
+  else next.add(rowId);
+  hiddenRowIds.value = next;
+}
+
+// Like the sort, the ticks belong to the tab being looked at.
+watch(
+  () => store.activeTabId,
+  () => {
+    hiddenRowIds.value = new Set();
+    selectedRowId.value = null;
+  },
 );
 
 function toggleMap(): void {

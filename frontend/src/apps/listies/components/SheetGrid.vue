@@ -9,6 +9,10 @@
         <thead>
           <tr>
             <th
+              v-if="mappedRowIds !== null"
+              class="sheet-grid__header sheet-grid__header--tick"
+            />
+            <th
               v-for="(column, columnIndex) in orderedColumns"
               :key="column.id"
               class="sheet-grid__header"
@@ -141,6 +145,16 @@
             }"
             :data-testid="`row-${row.id}`"
           >
+            <td v-if="mappedRowIds !== null" class="sheet-grid__tick-cell">
+              <input
+                v-if="hasPlace(row)"
+                type="checkbox"
+                aria-label="Show this row on the map"
+                :checked="mappedRowIds.includes(row.id)"
+                :data-testid="`map-tick-${row.id}`"
+                @change="emit('toggle-mapped', row.id)"
+              />
+            </td>
             <GridCell
               v-for="(column, columnIndex) in orderedColumns"
               :key="column.id"
@@ -203,6 +217,7 @@
             }"
             data-testid="ghost-row"
           >
+            <td v-if="mappedRowIds !== null" class="sheet-grid__tick-cell" />
             <GridCell
               v-for="(column, columnIndex) in orderedColumns"
               :key="column.id"
@@ -257,7 +272,14 @@ import { columnTypeOptions } from "@/apps/listies/columnTypes";
 import { sortRowIds } from "@/apps/listies/sort";
 import type { SortSpec } from "@/apps/listies/sort";
 import { useGridNavigation } from "@/apps/listies/composables/useGridNavigation";
-import type { CellValue, Column, ColumnType, Tab } from "@/apps/listies/types";
+import { isPlace } from "@/apps/listies/types";
+import type {
+  CellValue,
+  Column,
+  ColumnType,
+  Row,
+  Tab,
+} from "@/apps/listies/types";
 
 const props = withDefaults(
   defineProps<{
@@ -268,16 +290,27 @@ const props = withDefaults(
     placeCentroid?: (columnId: string) => string | null;
     /** The row the map is pointing at. */
     highlightedRowId?: string | null;
+    /** Rows currently plotted; `null` means the map is closed, so no ticks. */
+    mappedRowIds?: string[] | null;
   }>(),
   {
     allowPlace: false,
     mapsEnabled: false,
     placeCentroid: () => null,
     highlightedRowId: null,
+    mappedRowIds: null,
   },
 );
 
 // Only a place column has a bias; a text column has nothing to do with places.
+/** Only a row with somewhere to plot gets a tick. */
+function hasPlace(row: Row): boolean {
+  return props.tab.columns.some(
+    (column) =>
+      column.type === "place" && isPlace(row.cells[column.id] ?? null),
+  );
+}
+
 function biasFor(column: Column): string | null {
   return column.type === "place" ? props.placeCentroid(column.id) : null;
 }
@@ -290,6 +323,7 @@ const emit = defineEmits<{
   "move-column": [payload: { columnId: string; delta: number }];
   "delete-column": [columnId: string];
   "select-row": [rowId: string];
+  "toggle-mapped": [rowId: string];
   "commit-cell": [
     payload: { rowId: string; columnId: string; value: CellValue },
   ];
@@ -642,6 +676,14 @@ watch(
 
 .sheet-grid__row--highlighted {
   background: rgba(255, 255, 255, 0.09);
+}
+
+.sheet-grid__header--tick,
+.sheet-grid__tick-cell {
+  width: 1%;
+  padding: 0 0.4rem;
+  text-align: center;
+  border-right: 1px solid var(--listies-gridline);
 }
 
 .sheet-grid__header--actions,

@@ -13,6 +13,41 @@
     </div>
 
     <template v-else>
+      <div class="map-pane__header row items-center no-wrap">
+        <span class="map-pane__counter" data-testid="map-counter">
+          {{ shownPins.length }} of {{ pins.length }} shown
+        </span>
+        <q-space />
+        <q-btn
+          dense
+          flat
+          no-caps
+          size="sm"
+          label="All"
+          data-testid="map-show-all"
+          @click="emit('show-all')"
+        />
+        <q-btn
+          dense
+          flat
+          no-caps
+          size="sm"
+          label="None"
+          data-testid="map-show-none"
+          @click="emit('show-none')"
+        />
+        <q-btn
+          dense
+          flat
+          no-caps
+          size="sm"
+          icon="center_focus_strong"
+          label="Fit"
+          data-testid="map-fit"
+          @click="fitToPins"
+        />
+      </div>
+
       <div v-if="loading" class="map-pane__loading">
         <q-spinner size="2rem" />
       </div>
@@ -46,13 +81,22 @@ import type { GoogleMap, GoogleMarker, MapsApi } from "@/apps/listies/maps";
 import { isPlace } from "@/apps/listies/types";
 import type { Place, Tab } from "@/apps/listies/types";
 
-const props = defineProps<{
-  tab: Tab;
-  browserKey: string | null;
-  selectedRowId: string | null;
-}>();
+const props = withDefaults(
+  defineProps<{
+    tab: Tab;
+    browserKey: string | null;
+    selectedRowId: string | null;
+    /** Rows to plot; `null` means all of them. */
+    shownRowIds?: string[] | null;
+  }>(),
+  { shownRowIds: null },
+);
 
-const emit = defineEmits<{ "select-row": [rowId: string] }>();
+const emit = defineEmits<{
+  "select-row": [rowId: string];
+  "show-all": [];
+  "show-none": [];
+}>();
 
 // One colour per place column, so a tab with "Hotel" and "Dinner" columns
 // reads at a glance. Distinct hues rather than a gradient.
@@ -110,6 +154,14 @@ const pins = computed<Pin[]>(() => {
   return found;
 });
 
+/** What is actually on the map right now: the ticked subset of `pins`. */
+const shownPins = computed(() => {
+  const shown = props.shownRowIds;
+  if (shown === null) return pins.value;
+  const allowed = new Set(shown);
+  return pins.value.filter((pin) => allowed.has(pin.rowId));
+});
+
 function colourFor(columnId: string): string {
   const index = placeColumns.value.findIndex((c) => c.id === columnId);
   return COLUMN_COLOURS[index % COLUMN_COLOURS.length]!;
@@ -131,7 +183,7 @@ function iconFor(columnId: string): Record<string, unknown> | undefined {
 function syncMarkers(): void {
   if (!map || !api) return;
 
-  const wanted = new Set(pins.value.map((pin) => pin.key));
+  const wanted = new Set(shownPins.value.map((pin) => pin.key));
 
   for (const [key, marker] of markers) {
     if (!wanted.has(key)) {
@@ -140,7 +192,7 @@ function syncMarkers(): void {
     }
   }
 
-  for (const pin of pins.value) {
+  for (const pin of shownPins.value) {
     if (markers.has(pin.key)) continue;
     const marker = new api.Marker({
       map,
@@ -153,10 +205,14 @@ function syncMarkers(): void {
   }
 }
 
-/** Frame the pins. Called when the map opens — never on a data change. */
+/**
+ * Frame what is shown. Called when the map opens and from the Fit control —
+ * never automatically on a data or tick change, which would make the map
+ * lurch while someone is working.
+ */
 function fitToPins(): void {
   if (!map || !api) return;
-  const current = pins.value;
+  const current = shownPins.value;
   if (current.length === 0) return;
 
   if (current.length === 1) {
@@ -219,7 +275,7 @@ void build();
 // Data changes move pins, never the viewport: re-framing while someone is
 // typing would make the map lurch under them (Story 4.5 adds an explicit
 // "fit to shown" control instead).
-watch(pins, () => {
+watch([pins, shownPins], () => {
   if (map) syncMarkers();
   else void build();
 });
@@ -248,6 +304,22 @@ onBeforeUnmount(() => {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
   overflow: hidden;
+}
+
+.map-pane__header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  gap: 0.25rem;
+  padding: 0.2rem 0.4rem;
+  background: rgba(0, 0, 0, 0.65);
+  font-size: 0.75rem;
+}
+
+.map-pane__counter {
+  opacity: 0.8;
 }
 
 .map-pane__canvas {
