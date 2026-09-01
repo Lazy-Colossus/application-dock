@@ -140,8 +140,11 @@ describe("LibraryPage (two-level)", () => {
       "/hotaru/practice/familiarity?user=dani",
     );
     // Default view (Genki → G) shows g1, whose tier is 4 (Mastered).
+    // Scoped to the list: the familiarity filter bar renders its own icons.
     expect(
-      wrapper.find('[data-testid="familiarity-icon"]').attributes("aria-label"),
+      wrapper
+        .find('[data-testid="library-list"] [data-testid="familiarity-icon"]')
+        .attributes("aria-label"),
     ).toBe("Mastered");
   });
 
