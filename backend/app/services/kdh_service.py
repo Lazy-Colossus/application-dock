@@ -181,3 +181,25 @@ def list_calendar_summaries() -> list[CalendarSummary]:
         )
         for calendar in repo.list_calendars()
     ]
+
+
+def rename_calendar(username: str, calendar_id: str, name: str) -> Calendar:
+    """Rename a calendar, leaving everything else exactly as it was. Admin only.
+
+    The first read-modify-write in the app, so the first to need the per-calendar
+    transaction (Story 1.8): a rename that read outside the lock could be undone
+    by a vote landing between the read and the write.
+    """
+    require_admin(username)
+    cleaned = _clean_name(name, "Calendar name")
+
+    with repo.calendar_transaction(calendar_id) as calendar:
+        calendar.name = cleaned
+        calendar.updated_at = now_iso()
+        return calendar
+
+
+def delete_calendar(username: str, calendar_id: str) -> None:
+    """Delete a calendar and every vote on it. Admin only, and unrecoverable."""
+    require_admin(username)
+    repo.delete_calendar(calendar_id)

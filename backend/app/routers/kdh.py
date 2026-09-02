@@ -13,7 +13,13 @@ stdlib exceptions and knows nothing about status codes.
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.dependencies import get_current_user
-from app.schemas.kdh import Calendar, CalendarSummary, CreateCalendarRequest, Me
+from app.schemas.kdh import (
+    Calendar,
+    CalendarSummary,
+    CreateCalendarRequest,
+    Me,
+    UpdateCalendarRequest,
+)
 from app.services import kdh_service as service
 
 router = APIRouter(prefix="/api/kdh", tags=["kdh"])
@@ -55,4 +61,32 @@ def get_calendar(calendar_id: str, _: str = Depends(get_current_user)) -> Calend
         raise HTTPException(status_code=404, detail="Calendar not found") from exc
     except ValueError as exc:
         # A malformed id (path separator, `..`) is bad input, not a missing file.
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.put("/calendars/{calendar_id}", response_model=Calendar)
+def rename_calendar(
+    calendar_id: str,
+    req: UpdateCalendarRequest,
+    current_user: str = Depends(get_current_user),
+) -> Calendar:
+    try:
+        return service.rename_calendar(current_user, calendar_id, req.name)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Calendar not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.delete("/calendars/{calendar_id}", status_code=204)
+def delete_calendar(calendar_id: str, current_user: str = Depends(get_current_user)) -> None:
+    try:
+        service.delete_calendar(current_user, calendar_id)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Calendar not found") from exc
+    except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

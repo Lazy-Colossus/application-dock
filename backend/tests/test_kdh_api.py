@@ -216,3 +216,107 @@ def test_list_ordering_is_deterministic_within_one_second() -> None:
     second = [c["id"] for c in client.get("/api/kdh/calendars").json()]
     assert first == second
     assert len(first) == 4
+
+
+# ── rename ───────────────────────────────────────────────────────────────────
+
+
+def test_rename_changes_only_the_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The clock is driven so `updated_at` is genuinely asserted — at second
+    precision a create and a rename in the same test would stamp the same value,
+    and `>=` would pass without proving anything."""
+    created = create("DnD", ["Dani", "Jake"]).json()
+    monkeypatch.setattr("app.services.kdh_service.now_iso", lambda: "2026-12-25T12:00:00Z")
+
+    renamed = client.put(
+        f"/api/kdh/calendars/{created['id']}", json={"name": "DnD — Strahd"}
+    ).json()
+
+    assert renamed["name"] == "DnD — Strahd"
+    assert renamed["updated_at"] == "2026-12-25T12:00:00Z"
+    assert renamed["updated_at"] != created["updated_at"]
+    for field in ("id", "created_at", "created_by", "invitees", "votes", "chosen_dates"):
+        assert renamed[field] == created[field], field
+
+
+def test_rename_trims_surrounding_whitespace() -> None:
+    created = create().json()
+    renamed = client.put(
+        f"/api/kdh/calendars/{created['id']}", json={"name": "  Movie night  "}
+    ).json()
+    assert renamed["name"] == "Movie night"
+
+
+def test_rename_persists() -> None:
+    created = create().json()
+    client.put(f"/api/kdh/calendars/{created['id']}", json={"name": "Renamed"})
+    assert client.get(f"/api/kdh/calendars/{created['id']}").json()["name"] == "Renamed"
+    assert [c["name"] for c in client.get("/api/kdh/calendars").json()] == ["Renamed"]
+
+
+@pytest.mark.parametrize("bad", ["", "   ", "\t"])
+def test_rename_rejects_a_blank_name(bad: str) -> None:
+    created = create("Keep me").json()
+    response = client.put(f"/api/kdh/calendars/{created['id']}", json={"name": bad})
+
+    assert response.status_code == 422
+    assert "detail" in response.json()
+    assert client.get(f"/api/kdh/calendars/{created['id']}").json()["name"] == "Keep me"
+
+
+def test_rename_of_an_unknown_calendar_is_404() -> None:
+    response = client.put("/api/kdh/calendars/cal-nope1234", json={"name": "X"})
+    assert response.status_code == 404
+
+
+def test_a_guest_cannot_rename(as_guest: None) -> None:
+    app.dependency_overrides[get_current_user] = lambda: "test_user"
+    created = create("Untouched").json()
+    app.dependency_overrides[get_current_user] = lambda: "players"
+
+    response = client.put(f"/api/kdh/calendars/{created['id']}", json={"name": "Hijacked"})
+
+    assert response.status_code == 403
+    assert client.get(f"/api/kdh/calendars/{created['id']}").json()["name"] == "Untouched"
+
+
+# ── delete ───────────────────────────────────────────────────────────────────
+
+
+def test_delete_removes_the_calendar() -> None:
+    created = create().json()
+
+    assert client.delete(f"/api/kdh/calendars/{created['id']}").status_code == 204
+    assert client.get(f"/api/kdh/calendars/{created['id']}").status_code == 404
+    assert client.get("/api/kdh/calendars").json() == []
+
+
+def test_delete_leaves_other_calendars_alone() -> None:
+    keep = create("Keep").json()
+    drop = create("Drop").json()
+
+    client.delete(f"/api/kdh/calendars/{drop['id']}")
+
+    assert [c["id"] for c in client.get("/api/kdh/calendars").json()] == [keep["id"]]
+
+
+def test_delete_of_an_unknown_calendar_is_404() -> None:
+    assert client.delete("/api/kdh/calendars/cal-nope1234").status_code == 404
+
+
+def test_a_guest_cannot_delete(as_guest: None) -> None:
+    app.dependency_overrides[get_current_user] = lambda: "test_user"
+    created = create("Untouched").json()
+    app.dependency_overrides[get_current_user] = lambda: "players"
+
+    response = client.delete(f"/api/kdh/calendars/{created['id']}")
+
+    assert response.status_code == 403
+    app.dependency_overrides[get_current_user] = lambda: "test_user"
+    assert client.get(f"/api/kdh/calendars/{created['id']}").status_code == 200
+
+
+@pytest.mark.parametrize("bad", ["..", " "])
+def test_mutating_a_malformed_id_is_never_a_server_error(bad: str) -> None:
+    assert client.put(f"/api/kdh/calendars/{bad}", json={"name": "X"}).status_code in (404, 422)
+    assert client.delete(f"/api/kdh/calendars/{bad}").status_code in (404, 422)

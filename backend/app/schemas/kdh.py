@@ -61,3 +61,7 @@ class Me(BaseModel):
 class CreateCalendarRequest(BaseModel):
     name: str
     invitee_names: list[str]
+
+
+class UpdateCalendarRequest(BaseModel):
+    name: str
