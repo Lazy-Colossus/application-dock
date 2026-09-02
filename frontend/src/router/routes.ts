@@ -144,6 +144,18 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/apps/listies/pages/SheetPage.vue"),
         meta: { title: "Listies", requiresAuth: true },
       },
+      {
+        path: "kdh",
+        name: "kdh-home",
+        component: () => import("@/apps/kdh/pages/KdhHomePage.vue"),
+        meta: { title: "KDH", requiresAuth: true },
+      },
+      {
+        path: "kdh/c/:calendarId",
+        name: "kdh-calendar",
+        component: () => import("@/apps/kdh/pages/CalendarPage.vue"),
+        meta: { title: "KDH", requiresAuth: true },
+      },
     ],
   },
   {
