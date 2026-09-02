@@ -90,7 +90,13 @@ def list_calendars() -> list[Calendar]:
     for path in directory.glob("*.json"):
         raw = path.read_text(encoding="utf-8")
         calendars.append(Calendar.model_validate(migrate(json.loads(raw))))
-    return sorted(calendars, key=lambda c: c.created_at, reverse=True)
+
+    # The id is a tiebreaker, not decoration: `created_at` has second precision,
+    # so two calendars made in the same second compare equal, and a stable sort
+    # would then fall back to whatever order `glob` happened to yield — which
+    # varies by filesystem. Ordering within one second is arbitrary either way;
+    # this at least makes it the same arbitrary order everywhere.
+    return sorted(calendars, key=lambda c: (c.created_at, c.id), reverse=True)
 
 
 @contextmanager

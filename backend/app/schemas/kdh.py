@@ -42,3 +42,22 @@ class Calendar(BaseModel):
     # Admin-marked days, ascending. Any number: a long-running calendar
     # accumulates them, and they survive into the past (FR-17).
     chosen_dates: list[str] = Field(default_factory=list)
+
+
+class CalendarSummary(BaseModel):
+    """A calendar as the landing list needs it — never the full vote map."""
+
+    id: str
+    name: str
+    invitee_count: int
+    created_at: str
+
+
+class Me(BaseModel):
+    username: str
+    is_admin: bool
+
+
+class CreateCalendarRequest(BaseModel):
+    name: str
+    invitee_names: list[str]
