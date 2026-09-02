@@ -69,22 +69,22 @@ def require_admin(username: str) -> None:
 
 # ── The invitee colour palette ───────────────────────────────────────────────
 
-# Distinguishable hues, comfortably more than a realistic group. Held here
-# rather than in the frontend so a colour is decided once, at assignment, and
-# every client renders the same person the same way.
+# Invitee colours are CATEGORICAL — they answer "which person", not "how many".
+# They sit deliberately outside the purple family used by the coverage wash
+# (DESIGN.md `wash-0`…`wash-6`): a person rendered in purple would read as a
+# coverage level. Pastels, so they hold against the violet-black field without
+# competing with the wash for attention.
+#
+# Source of truth: docs/planning-artifacts/ux-designs/ux-kdh-2026-09-03/DESIGN.md
 PALETTE: tuple[str, ...] = (
-    "#e8643a",  # ember
-    "#3a86e8",  # cobalt
-    "#6f4ae8",  # violet
-    "#2fa36b",  # jade
-    "#d64c8f",  # magenta
-    "#c9902a",  # amber
-    "#2c9fae",  # teal
-    "#8a5a2b",  # umber
-    "#7a8a2c",  # olive
-    "#b6443f",  # brick
-    "#5566a8",  # slate blue
-    "#9a3fb6",  # orchid
+    "#E9A6A0",  # rose
+    "#A9C8E8",  # sky
+    "#B9DCC2",  # mint
+    "#EBD3A0",  # sand
+    "#D3B2E8",  # lilac
+    "#A8D8D8",  # aqua
+    "#C9B8A0",  # clay
+    "#9FB8D8",  # steel
 )
 
 

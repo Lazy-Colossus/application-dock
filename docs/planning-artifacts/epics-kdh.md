@@ -2,6 +2,8 @@
 stepsCompleted: [1, 2, 3, 4]
 inputDocuments:
   - docs/superpowers/specs/2026-09-02-kdh-design.md
+  - docs/planning-artifacts/ux-designs/ux-kdh-2026-09-03/DESIGN.md
+  - docs/planning-artifacts/ux-designs/ux-kdh-2026-09-03/EXPERIENCE.md
   - docs/brainstorming/brainstorming-session-2026-09-02-0129.md
   - CLAUDE.md
   - docs/stories/application-dock-general/1.8.concurrency-safe-json-persistence.story.md
@@ -77,10 +79,11 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
 **F4 — The month view**
 - FR-12: The calendar renders the **current month** as a day grid, with **arrows** to the previous
   and next month and a control to jump back to today.
-- FR-13: Each day cell lists, in small text, the **names of the invitees on it**, with **if-needed
-  names visually distinguished** from freely-available ones (weight/style, not colour alone). Above
-  an overflow threshold the cell shows the first few names plus a `+N` remainder, with the full
-  list on hover/tap.
+- FR-13: **Names are one tap away, not in the cell.** A day cell carries only the date and the
+  coverage **count** — all that survives at a phone's ~44px. Tapping a day opens a **day sheet**
+  listing everyone on that date in their own colour, with **if-needed people distinguished by
+  weight and style**, never by tinting their colour. The sheet is also where a claimed voter sets
+  their own answer.
 - FR-14: Cells are **heat-highlighted by coverage** (available + if needed), scaled against the
   number of **active** invitees. Full coverage is the brightest step, one short a clear step down,
   fading to no highlight at zero. A day at full coverage that **relies on any if-needed** is marked
@@ -98,6 +101,9 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
 
 ### NonFunctional Requirements
 
+- NFR-0: **Phone-only, one layout.** Everyone does everything on a phone, admins included. No
+  desktop variant, no wide breakpoint. This is the constraint the rest of the interface follows
+  from — it is why FR-13's names cannot live in a cell and why the day sheet exists.
 - NFR-1: **Concurrent voting is the normal case, so writes must not lose updates.** Six people share
   one login and click days on the same calendar at the same time. The platform's current
   read-modify-write over a whole JSON document (Story 1.8, still Draft) would silently clobber
@@ -115,10 +121,10 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
 - NFR-5: **Dates are calendar dates, never timestamps.** Availability is stored as `YYYY-MM-DD`
   with no timezone; "today" for the past/future boundary is resolved **server-side**, so a
   traveller's laptop clock cannot unfreeze a past day for them alone.
-- NFR-6: **Legible at a glance is the whole product.** The heat scale stays distinguishable for
-  group sizes from 2 to ~12, never relies on colour alone (a count is always present, provisional
-  coverage is marked by shape/texture), and keeps invitee names — in both availability states —
-  readable against every step of the scale.
+- NFR-6: **Legible at a glance is the whole product.** At arm's length, one-handed, on a phone.
+  The wash stays distinguishable for group sizes from 2 to ~12 and never relies on colour alone:
+  the count is in every cell, and chosen and provisional days are marked by **shape**. Every
+  text/background pair meets 4.5:1, which is why the ink flips dark at the top of the ramp.
 
 ### Additional (Architecture) Requirements
 
@@ -224,8 +230,8 @@ cast as a removed invitee.
 | FR-10 | Epic 2 | Claiming a name, remembered per calendar in `localStorage` |
 | FR-11 | Epic 2 | The read-only state before a name is claimed |
 | FR-12 | Epic 3 | The month grid, prev/next arrows and the jump-to-today control |
-| FR-13 | Epic 3 | Day cells with names, if-needed styling and `+N` overflow |
-| FR-14 | Epic 3 | The coverage heat scale and its provisional marking |
+| FR-13 | Epic 3 | The day sheet — who is on a date, with if-needed styling |
+| FR-14 | Epic 3 | The coverage wash and its provisional marking |
 | FR-15 | Epic 3 | The none → available → if needed cycle, set optimistically |
 | FR-16 | Epic 3 | Past days frozen server-side and dimmed in the grid |
 | FR-17 | Epic 4 | Marking and unmarking chosen days, and surfacing them on the list |
@@ -253,9 +259,10 @@ Epic 3 gives them anything to click.
 **Also lands:** AR-6, AR-7
 
 ### Epic 3: The Month and Voting
-The product arrives. A month grid with arrows, day cells naming who is on them, a three-state click
-cycle for setting your own availability, and the coverage heat that makes the viable days obvious
-across a room. Past days are frozen and dimmed, so the grid is honest about what can still change.
+The product arrives. A month grid with arrows, day cells carrying the date and the coverage count,
+a day sheet one tap away for who is actually on a date, a three-state tap cycle for setting your
+own availability, and the wash that makes the viable days obvious at a glance. Past days are frozen
+and dimmed, so the grid is honest about what can still change.
 **FRs covered:** FR-12, FR-13, FR-14, FR-15, FR-16
 **Also lands:** NFR-6
 
@@ -547,14 +554,20 @@ so that my clicks are mine without anybody needing an account.
 
 **Given** a calendar opened with no claim yet
 **When** the page renders
-**Then** the roster is the most prominent element, asking who I am, with each active invitee shown
-as a chip in their own colour (FR-10).
+**Then** the **name dropdown in the month header** reads "Who are you?"; opening it lists every
+active invitee as a row — colour dot, name — each at least 44px tall. The month stays visible
+behind it, which is why this won over a bottom sheet (FR-10).
 
 **Given** the unclaimed state
 **When** anything asks whether I may vote
 **Then** the store reports that I may not, and any attempt to set a vote is refused before a
 request is made — the calendar is fully readable but read-only. The month grid's own handling of
 this state is Story 3.2's, which consumes this flag rather than re-deciding it (FR-11).
+
+**Given** the unclaimed state
+**When** I tap a day
+**Then** the **name dropdown opens** rather than the tap being rejected — the first tap teaches the
+model instead of refusing the user (FR-11).
 
 **Given** I pick a name
 **When** the claim is made
@@ -585,9 +598,10 @@ so that I am not stuck with a colour I cannot tell apart from someone else's.
 **Acceptance Criteria:**
 
 **Given** I have claimed a name
-**When** I open the colour control on my own chip
-**Then** I see the palette with colours already held by others on this calendar — tombstones
-included — shown as unavailable (FR-9, AR-7).
+**When** I open the **name dropdown**
+**Then** the colour swatches sit inside it, below the roster: colours already held by others on
+this calendar — tombstones included — are dimmed to 24%, and mine is ringed. There is no separate
+colour surface (FR-9, AR-7).
 
 **Given** I pick a free colour
 **When** it is submitted
@@ -600,9 +614,10 @@ appears updates without a reload (FR-9).
 
 ## Epic 3: The Month and Voting
 
-The product arrives. A month grid with arrows, day cells naming who is on them, a three-state click
-cycle for setting your own availability, and the coverage heat that makes the viable days obvious
-across a room. Past days are frozen and dimmed, so the grid is honest about what can still change.
+The product arrives. A month grid with arrows, day cells carrying the date and the coverage count,
+a day sheet one tap away for who is actually on a date, a three-state tap cycle for setting your
+own availability, and the wash that makes the viable days obvious at a glance. Past days are frozen
+and dimmed, so the grid is honest about what can still change.
 
 ### Story 3.1: The month grid and moving between months
 
@@ -620,7 +635,8 @@ trailing blanks for the month's shape, and today visibly marked (FR-12).
 **Given** the month header
 **When** I use the previous or next arrow
 **Then** the grid moves one month and the heading names the month and year; navigation works across
-a year boundary in both directions (December → January and back) (FR-12).
+a year boundary in both directions (December → January and back). **Arrows only — no swipe**: on a
+7×5 grid of tap targets a swipe is too easily triggered while aiming for a Tuesday (FR-12).
 
 **Given** I have navigated away from the current month
 **When** I use the jump-to-today control
@@ -661,16 +677,16 @@ in effect — sending the status it is already at leaves the document unchanged 
 on failure the cell rolls back to its previous state with the message surfaced in `error` (FR-15,
 NFR-4).
 
-**Given** a cell for a day I am on
+**Given** any day cell
 **When** it renders
-**Then** my own state is unmistakable — available and if-needed are visually distinct from each
-other and from a day I am not on — and the cell shows how many people are on the day in total
-(FR-13, FR-15).
+**Then** it carries the **date and the coverage count only** — never names, which do not fit at a
+phone's ~44px and live in the day sheet instead (Story 3.3). The count is not decoration: adjacent
+wash steps are genuinely close, and the number is what separates them (FR-13, FR-14, NFR-6).
 
 **Given** nobody has claimed a name on this calendar yet
-**When** I click a day
-**Then** nothing is written and I am prompted to say who I am first, using the flag from Story 2.3
-(FR-11).
+**When** I tap a day
+**Then** nothing is written and the **name dropdown opens** — the first tap teaches the model
+rather than refusing the user — using the flag from Story 2.3 (FR-11).
 
 **Given** a vote on a date **strictly before the server's today**
 **When** it reaches the API
@@ -685,37 +701,44 @@ other and from a day I am not on — and the cell shows how many people are on t
 **When** their requests interleave
 **Then** every vote survives, per the serialization from Story 1.2 (NFR-1).
 
-### Story 3.3: See who is on each day
+### Story 3.3: The day sheet — who is on this date
 
 As anyone looking at the calendar,
-I want each day to name the people who are available on it, marking who is only there if needed,
-so that I can read the shape of a day without clicking into anything.
+I want tapping a day to show me who can make it, marking who is only there if needed,
+so that I can read the shape of a day without the names having to fit inside a 44px cell.
 
 **Acceptance Criteria:**
 
+**Given** any day cell
+**When** I tap it
+**Then** a **day sheet** opens over the month showing that date in full, and it can be dismissed
+without changing anything (FR-13).
+
 **Given** a day with people on it
-**When** the cell renders
-**Then** it lists their names in small text, each in that invitee's own colour, ordered by the
-roster's `order` (FR-13, FR-9).
+**When** the sheet renders
+**Then** it lists them by the roster's `order`, each with their own colour as a dot beside their
+name — never as the row's background, so a person's colour is never mistaken for a wash step
+(FR-13, FR-9).
 
 **Given** a day carrying both freely-available and if-needed people
-**When** the cell renders
-**Then** the if-needed names are **visually distinguished** by weight or style — never by colour
-alone, since colour already means "which person" (FR-13, NFR-6).
-
-**Given** a day with more names than the cell's overflow threshold
-**When** it renders
-**Then** it shows the first few names plus a `+N` remainder, and the full list is available on
-hover or tap (FR-13).
+**When** the sheet renders
+**Then** the if-needed rows are **italic and slightly recessed** — set apart by weight and style,
+never by tinting that person's colour, which has to keep meaning *that person* (FR-13, NFR-6).
 
 **Given** a past day carrying a vote from an invitee who has since been removed
-**When** the cell renders
+**When** the sheet renders
 **Then** that person still appears, in their own name and colour, because their past was preserved
 (FR-8, AR-7).
 
-**Given** any cell at any step of the heat scale
-**When** names render on it
-**Then** they remain legible against that background (NFR-6).
+**Given** a day nobody has picked
+**When** the sheet renders
+**Then** it says so plainly rather than showing an empty list.
+
+**Given** the sheet is open on a future day and I have claimed a name
+**When** I look for my own answer
+**Then** the three states are **explicit labelled controls** — Free / If needed / Can't — showing
+my current answer, because this is where a person deliberately answers. (The grid's cycling tap is
+Story 3.2; both write the same vote.) (FR-15)
 
 ### Story 3.4: Light up the days that work
 
@@ -725,21 +748,23 @@ so that the answer is obvious before I have read a single name.
 
 **Acceptance Criteria:**
 
-**Given** `composables/useHeatScale.ts`
+**Given** `composables/useWashScale.ts`
 **When** it is given the available count, the if-needed count and the number of **active** invitees
-**Then** it returns a heat step and a provisional flag as a pure, side-effect-free function
+**Then** it returns a wash step and a provisional flag as a pure, side-effect-free function
 (FR-14, NFR-6).
 
 **Given** a day's coverage (available + if needed)
 **When** the cell is painted
-**Then** the heat step scales against the active invitee total: full coverage is the brightest
-step, one short is a clear step down, and the scale fades to no highlight at zero (FR-14).
+**Then** the wash step scales against the active invitee total, using the `wash-0`…`wash-6` tokens
+in `DESIGN.md`: full coverage is the lightest step (pastel lilac), falling through eggplant to the
+empty-cell ground at zero. Ink flips from pale to `ink-on-light` at the top two steps, where the
+field is too light for pale text (FR-14, NFR-6).
 
 **Given** a day at **full coverage that relies on at least one if-needed**
 **When** it is painted
-**Then** it takes the **same heat step** as an all-available day but is marked **provisional** —
-drawn as a treatment of the cell's edge, never as a fourth colour — so "everyone is free" and
-"everyone can be made to work" are equally loud and never confused (FR-14, NFR-6).
+**Then** it takes the **same wash step** as an all-available day but is marked **provisional** — a
+1px inset hairline in `wash-6`, never a fourth colour — so "everyone is free" and "everyone can be
+made to work" are equally loud and never confused (FR-14, NFR-6).
 
 **Given** an invitee is added or removed
 **When** the roster changes
@@ -812,8 +837,9 @@ free of duplicates, `updated_at` is refreshed, and votes are untouched (FR-17).
 
 **Given** a chosen day
 **When** it renders
-**Then** its marker is a **shape, not a colour**, so it stays legible at every step of the
-availability heat and through past-day dimming (FR-17, NFR-6).
+**Then** its marker is a **shape, not a colour** — a 5px diamond at the cell's top-right, flipping
+to `ink-on-light` on the top two wash steps — so it stays legible at every step of the ramp and
+through past-day dimming (FR-17, NFR-6).
 
 **Given** a **past** day
 **When** an admin marks or unmarks it

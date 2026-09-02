@@ -1,0 +1,202 @@
+---
+title: "KDH — Visual Identity (DESIGN.md)"
+status: draft
+created: 2026-09-03
+updated: 2026-09-03
+identity: "Eggplant Wash"
+sources:
+  - ../../../superpowers/specs/2026-09-02-kdh-design.md
+  - ../../epics-kdh.md
+  - .decision-log.md
+  - mockups/directions.html
+inherits_ui_system: "Vue 3 + Quasar v2 (Material-based)"
+name: KDH
+description: "A shared availability calendar for a small, fixed group. A violet-black field on which a month of days washes from deep eggplant to pastel lilac as more people say they are free — the days that work are simply the brightest thing on the screen. Restraint is the point: colour carries one idea, everything else is quiet."
+colors:
+  # --- Field (violet-black; the app's ground) ---
+  field: '#15111C'          # page
+  field-raise: '#1F1829'    # popovers, sheets, the name dropdown
+  field-line: '#332942'     # hairline borders on raised surfaces
+  # --- Ink ---
+  ink-hi: '#EBE4F4'         # primary text
+  ink-mid: '#A79BBC'        # secondary text, month label
+  ink-lo: '#7B6F91'         # tertiary, weekday initials, meta
+  ink-on-light: '#1A1024'   # ink placed on wash steps 5-6
+  # --- The coverage wash. ORDERED: answers "how many can come". ---
+  wash-0: '#221B2E'         # nobody
+  wash-1: '#31234A'         # lightened from the mock so one vote reads as a change
+  wash-2: '#3A2A56'
+  wash-3: '#4E3770'
+  wash-4: '#6C4C93'
+  wash-5: '#9773BC'
+  wash-6: '#C9AEE6'         # full coverage
+  # --- Invitee colours. CATEGORICAL: answer "which person". Deliberately
+  #     outside the purple family so a person never reads as a coverage level. ---
+  inv-rose: '#E9A6A0'
+  inv-sky: '#A9C8E8'
+  inv-mint: '#B9DCC2'
+  inv-sand: '#EBD3A0'
+  inv-lilac: '#D3B2E8'
+  inv-aqua: '#A8D8D8'
+  inv-clay: '#C9B8A0'
+  inv-steel: '#9FB8D8'
+  # --- Semantic (separate from the wash and from invitee colours) ---
+  danger: '#CF6679'
+typography:
+  font-stack:
+    ui: 'inherits the platform Roboto/system stack from Quasar'
+    numeric: 'ui-monospace, "SF Mono", "Spline Sans Mono", Menlo, Consolas, monospace'
+    note: 'No webfont is loaded. Spline Sans Mono was the specimen face in the mock; the app uses a system mono stack so KDH adds no font payload to the dock.'
+  month-label:
+    fontSize: 13px
+    letterSpacing: 0.1em
+    textTransform: uppercase
+    note: 'ink-mid'
+  day-number:
+    fontSize: 12.5px
+    fontWeight: '500'
+    fontFamily: numeric
+    note: 'tabular-nums; every cell'
+  day-count:
+    fontSize: 8.5px
+    fontFamily: numeric
+    note: 'tabular-nums; the backstop when two wash steps look alike'
+  weekday-initial:
+    fontSize: 9.5px
+    letterSpacing: 0.06em
+    note: 'ink-lo'
+  sheet-title:
+    fontSize: 16px
+  name-row:
+    fontSize: 14px
+  label-caps:
+    fontSize: 10.5px
+    letterSpacing: 0.14em
+    textTransform: uppercase
+rounded:
+  cell: 7px
+  panel: 12px      # dropdown, day sheet
+  chip: 999px
+  swatch: 999px
+spacing:
+  screen-pad-x: 15px
+  cell-gap: 4px
+  panel-pad: 12px
+  row-pad-y: 11px   # name rows; keeps the 44px touch target
+  touch-min: 44px
+components:
+  day-cell:
+    size: 'aspect-ratio 1 / 1.06, seven per row'
+    contains: 'date + coverage count only — never names'
+  name-dropdown:
+    placement: 'month header, left'
+    contains: 'roster rows + colour swatches'
+  day-sheet:
+    placement: 'over the month, dismissible'
+    contains: 'full roster for that date + the three-state control'
+---
+
+# KDH — Visual Identity
+
+> The how-it-looks contract. `EXPERIENCE.md` is the peer document and owns how it
+> works; it references these tokens by name. **Both spines win over any mock.**
+
+## Brand & Style
+
+KDH is a wall calendar for six people who cannot find an evening. Its whole job is
+to make the answer obvious before you have read anything, so exactly one idea is
+allowed to carry colour: **how many people can come**. Everything else — chrome,
+labels, navigation — stays quiet enough that the month is the only thing with
+presence.
+
+The world is a **violet-black field** washed with **eggplant through pastel
+lilac**. It is deliberately not the dock's Carbon theme: KDH is its own thing, the
+way Hotaru is. It is also deliberately not expressive the way Hotaru is — no
+atmosphere, no motion layer, no ornament. The restraint is the identity.
+
+Tone: unhurried. This is an app you open, glance at, tap once, and close.
+
+## Colors
+
+**One ordered ramp, one categorical set, and they must never be confused.**
+
+`wash-0` … `wash-6` are **ordered**: they answer *how many can come*, and their
+order is the meaning. They are the only purples in the interface.
+
+`inv-*` are **categorical**: they answer *which person*, and have no order at all.
+They sit outside the purple family for exactly that reason — a person rendered in
+purple would read as a coverage level. Assign them in listed order; the first
+eight cover any realistic group.
+
+The ramp is **relative to the number of active invitees**, not absolute. Five of
+six is `wash-5`; five of ten is not. Removed invitees leave the denominator but
+keep their colour reserved while they still hold past votes.
+
+`ink-on-light` replaces `ink-hi` at `wash-5` and `wash-6`, where the field has
+become light enough that pale text fails. This is a hard switch, not a fade.
+
+## Typography
+
+The interface is mostly digits, so the one typographic decision that matters is
+that they line up: every date and count uses the **numeric stack** with
+`font-variant-numeric: tabular-nums`. Everything else inherits the platform's
+Roboto/system stack from Quasar — KDH adds no font payload to the dock.
+
+## Layout & Spacing
+
+Seven columns, **Monday first**, `cell-gap` between cells, `screen-pad-x` at the
+edges. Cells are `aspect-ratio: 1 / 1.06` — very slightly taller than square, so
+the date and the count stack without crowding. On a 360px phone this yields
+roughly 44px cells, which is also the touch minimum; the cell *is* the target.
+
+Nothing else competes for vertical space above the month. The month header is one
+line: the name dropdown on the left, month label and arrows on the right.
+
+## Elevation & Depth
+
+Two levels only. The field is flat. Raised surfaces — the name dropdown, the day
+sheet — sit on `field-raise` with a `field-line` hairline and no shadow. Shadow is
+not used anywhere: on a near-black ground it reads as mud.
+
+## Shapes
+
+`rounded.cell` on day cells, `rounded.panel` on raised surfaces, `rounded.chip`
+on anything carrying a person's name.
+
+**Two marks are shapes, never colours**, because they must survive every step of
+the ramp and the past-day dimming:
+
+- **Chosen day** — a 5px diamond, top-right of the cell. `ink-hi` on
+  `wash-0`–`wash-4`, `ink-on-light` on `wash-5`–`wash-6`.
+- **Provisional coverage** — a 1px inset hairline in `wash-6` around a cell that
+  only reaches full coverage because someone answered *if needed*.
+
+## Components
+
+**Day cell.** Date, then coverage count beneath it, on a `wash-*` background.
+Nothing else fits and nothing else is allowed. Today carries a 1px `ink-mid`
+outline; past days drop to 30% opacity.
+
+**Name dropdown.** In the month header. Closed, it shows the claimed person's dot
+and name; unclaimed, it reads "Who are you?". Open, it lists every active invitee
+as a row — colour dot, name, tick on the claimed one — plus the colour swatches,
+with taken colours dimmed to 24% and the claimed person's ringed. Rows are
+`touch-min` tall.
+
+**Day sheet.** Opens on tapping a cell. The date, the full roster for that date
+with each person's colour, and the three-state control. *If needed* rows are
+italic and slightly recessed — set apart by weight and style, never by tinting the
+person's colour, which has to keep meaning *that person*.
+
+## Do's and Don'ts
+
+- **Do** let the wash be the loudest thing on screen. **Don't** add a second
+  saturated colour anywhere.
+- **Do** keep the count in the cell. **Don't** treat it as decoration — `wash-4`
+  and `wash-5` are genuinely close, and the number is what settles them.
+- **Do** mark chosen and provisional days with shape. **Don't** encode either in
+  colour; both must survive the ramp and the dimming.
+- **Don't** put names in a day cell. They do not fit at 44px, and the attempt is
+  what makes phone calendars unreadable.
+- **Don't** use the dock's gold `#C8960A` anywhere. It means "interactive" across
+  the rest of the platform and would fight the wash.

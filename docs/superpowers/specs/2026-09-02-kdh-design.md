@@ -38,8 +38,8 @@ long-running one — and can **add or remove invitees** at any time.
 
 **In v1:** the guest account and the admins-are-everyone-else rule, calendar create/rename/delete, invitee add/remove, claim-a-name
 identity with a colour, month grid with prev/next navigation, three-state day availability
-(available / if needed / none), overlap heat highlighting, per-day attendee names, chosen-day
-marking, greyed-out past.
+(available / if needed / none), overlap wash highlighting, a **day sheet** listing who is on a
+date, chosen-day marking, greyed-out past. **Phone only.**
 
 **Not in v1** (candidates for a later epic): **a secret share link** (`/kdh/j/{token}`) that opens
 a calendar vote-only with no login at all — the friction-free alternative to handing out guest
@@ -91,10 +91,11 @@ list from the UI, week or agenda views, an availability deadline.
 **F4 — The month view**
 - FR-12: The calendar renders the **current month** as a day grid, with **arrows** to the
   previous and next month and a control to jump back to today.
-- FR-13: Each day cell lists, in small text, the **names of the invitees on it**, with the
-  **if-needed names visually distinguished** from the freely-available ones (weight/style, not
-  colour alone). Above a per-calendar overflow threshold the cell shows the first few names plus
-  a `+N` remainder, with the full list on hover/tap.
+- FR-13: **Names are one tap away, not in the cell.** A day cell carries only what survives at a
+  phone's ~44px: the date and the coverage **count**. Tapping a day opens a **day sheet** listing
+  everyone on that date in their own colour, with the **if-needed people visually distinguished**
+  by weight and style — never by tinting their colour, which has to keep meaning *that person*.
+  The sheet is also where a claimed voter sets their own answer.
 - FR-14: Cells are **heat-highlighted by coverage** — how many invitees could be there at all
   (available + if needed) — scaled against the number of **active** invitees. Full coverage is
   the brightest step, one short is a clear step down, and the scale fades to no highlight at zero.
@@ -115,6 +116,10 @@ list from the UI, week or agenda views, an availability deadline.
 
 ### Non-functional
 
+- NFR-0: **Phone-only, one layout.** Everyone does everything on a phone, admins included. There
+  is no desktop variant and no wide breakpoint; a larger screen gets the phone layout centred. This
+  is the constraint every other interface decision follows from — it is why names cannot live in a
+  cell (FR-13) and why the day sheet exists at all.
 - NFR-1: **Concurrent voting is the normal case, so writes must not lose updates.** Six people
   share one login and click days on the same calendar at the same time. The platform's current
   read-modify-write over a whole JSON document (see Story 1.8, *Concurrency-safe JSON
@@ -133,10 +138,11 @@ list from the UI, week or agenda views, an availability deadline.
 - NFR-5: **Dates are calendar dates, never timestamps.** Availability is stored as `YYYY-MM-DD`
   strings with no timezone attached; "today" for the past/future boundary is resolved
   **server-side** so a traveller's laptop clock cannot unfreeze a past day for them alone.
-- NFR-6: **Legible at a glance is the whole product.** The heat scale must stay distinguishable
-  for group sizes from 2 to ~12, must not rely on colour alone (a count is always present, and
-  provisional coverage is marked by shape/texture), and must keep invitee names — in both
-  availability states — readable against every step of the scale.
+- NFR-6: **Legible at a glance is the whole product.** At arm's length, one-handed, on a phone —
+  the bar is a glance on a bus, not a shared screen. The wash must stay distinguishable for group
+  sizes from 2 to ~12 and must never rely on colour alone: the count is in every cell, and chosen
+  and provisional days are marked by **shape**. Every text/background pair meets 4.5:1, which is
+  why the ink flips dark at the top of the ramp.
 
 ### Architecture
 
@@ -256,11 +262,12 @@ src/apps/kdh/
   pages/CalendarListPage.vue    the picker / landing screen (FR-5)
   pages/CalendarPage.vue        month view for one calendar (FR-7, deep-linkable)
   components/MonthGrid.vue      the month, arrows, today control (FR-12)
-  components/DayCell.vue        names, count, heat, chosen badge, past dimming (FR-13, 14, 16, 17)
-  components/InviteePanel.vue   the roster, colours, claim-a-name (FR-9, 10)
-  components/AdminBar.vue       create/rename/delete, manage invitees, mark chosen
+  components/DayCell.vue        date, count, wash, chosen mark, past dimming (FR-14, 16, 17)
+  components/DaySheet.vue       who is on this date + the three-state control (FR-13, 15)
+  components/NameDropdown.vue   claim / switch a name, and the colour swatches (FR-9, 10, 11)
+  components/AdminMenu.vue      create/rename/delete, manage invitees, mark chosen
   composables/useClaimedName.ts localStorage-backed claim per calendar (FR-10)
-  composables/useHeatScale.ts   (yes, if_needed, active total) -> heat step + provisional flag,
+  composables/useWashScale.ts   (yes, if_needed, active total) -> wash step + provisional flag,
                                 pure and unit-testable (FR-14)
   stores/kdhStore.ts           Pinia; loading/error; optimistic vote toggle with rollback
   types.ts
@@ -268,42 +275,60 @@ src/apps/kdh/
 
 ## Interaction design
 
+Full contract: [`EXPERIENCE.md`](../../planning-artifacts/ux-designs/ux-kdh-2026-09-03/EXPERIENCE.md).
+That spine wins over this summary and over any mock.
+
 **Landing.** A plain list of calendars, each with its name and a one-line subtext (invitee count;
-the next or most recent chosen date). Admins get a **New calendar** button; non-admins get only
-the list, and an empty state that says to ask an admin rather than dangling a disabled control.
+the next or most recent chosen date). Admins get a **New calendar** button; guests get only the
+list, and an empty state that says to ask an admin rather than dangling a disabled control.
 
-**Claiming a name.** On first open the invitee panel is the loudest thing on the screen —
-"Who are you?" — with each name as a chip in its own colour. One click claims it, the panel
-settles into a quiet roster with the claimed name marked, and the month becomes clickable. A
-small control releases or switches the claim.
+**Claiming a name.** A dropdown in the month header. Unclaimed it reads "Who are you?"; open, it
+lists every active invitee as a row — colour dot, name, tick on the claimed one — and carries the
+colour swatches, taken ones dimmed and yours ringed. Chosen over a bottom sheet and a persistent
+chip rail because **the month stays visible while you pick**. The claim is remembered per calendar
+on that phone.
 
-**Voting.** A click on a day cycles it: nothing → available → if needed → nothing. The change
-lands instantly; the day's count, heat and name list update in place, and a failure snaps it back
-with the error in a banner. No save button anywhere. The cycle order puts the common answer one
-click away and the nuanced one two, and returning to blank never needs a separate control.
+**The first tap teaches.** Tapping a day while unclaimed opens the name dropdown rather than
+rejecting the tap — a newcomer learns the model by trying to use the app, not by reading a notice.
 
-**Reading the month.** Heat is the primary signal (how many could be there), the count is the
-confirmation, the names are the detail, and the if-needed styling is the caveat. A cell where
-everyone is freely available is unmistakable across a room; a cell that only reaches full
-coverage on the back of an if-needed carries the same weight of colour but is visibly
-provisional, so an admin choosing a day knows what they are asking of people. A chosen day
-carries a distinct persistent marker that reads even at reduced past-day emphasis.
+**Voting.** On the grid, a tap **cycles** `none → free → if needed → none`, for running down a
+month quickly. In the day sheet the three states are **explicit, labelled controls**, because that
+is where a person deliberately answers. Both write the same vote. Every write is optimistic and
+reverts on failure, with the message under the month header. No save button anywhere.
 
-**Admin actions** live in a bar that only admins see: rename, manage invitees, copy the share
+**Reading the month.** The wash is the primary signal (how many could come), the count is the
+confirmation, and the names are one tap away. A day at full coverage that leans on an *if needed*
+takes the same wash step but carries a hairline, so an admin can see what they are about to ask of
+people. A chosen day carries a diamond that survives every step of the ramp and the past dimming.
+
+**Navigation is arrows only.** No swipe: on a 7×5 grid of tap targets, a swipe is too easily
+triggered while aiming for a Tuesday.
+
+**Admin actions** live in a header menu only admins see: rename, manage invitees, copy the share
 link, delete. Marking a day chosen is a control in the day's own context, not a separate mode.
 
 ## Visual direction
 
-The month is the app; everything else recedes. A restrained dock-consistent frame around a grid
-that carries all the colour. Heat runs as a single hue's intensity ramp (not a rainbow) so
-"more people" reads as "more of the same thing" rather than "a different category" — full
-attendance saturated and confident, each step below it more translucent, zero left as plain
-background. Invitee colours are used for the small name text and the roster chips, never for the
-cell background, so the two colour systems never fight; an if-needed name is set apart by weight
-or style rather than by tinting its owner's colour. Provisional full coverage is drawn as a
-treatment of the cell's edge — a broken or hatched border — never as a fourth colour, so it
-stacks cleanly with both the heat ramp and past-day dimming. The chosen-day marker is likewise a
-shape, not a colour, for the same reason.
+Identity: **Eggplant Wash**. Full token set:
+[`DESIGN.md`](../../planning-artifacts/ux-designs/ux-kdh-2026-09-03/DESIGN.md), which wins over
+this summary.
+
+KDH is its own world — not the dock's Carbon theme, and not Hotaru's Neon Yūgure. A **violet-black
+field** (`#15111C`) on which the month washes from **deep eggplant** at one person to **pastel
+lilac** at all six. Exactly one idea carries colour: how many people can come. Everything else —
+chrome, labels, navigation — stays quiet enough that the month is the only thing with presence.
+
+**Two colour systems that must never be confused.** The wash is **ordered** and answers *how many*;
+it is the only purple in the interface. Invitee colours are **categorical** and answer *which
+person*, so they sit deliberately outside the purple family — rose, sky, mint, sand, lilac, aqua —
+or a person's colour would read as a coverage level.
+
+**Two marks are shapes, never colours**, so they survive both the ramp and the past-day dimming: a
+diamond for a chosen day, and a hairline inset for provisional full coverage. Ink flips from pale
+to dark at the top two wash steps, where the field becomes too light for pale text.
+
+No shadows (they read as mud on a near-black ground), no ambient motion, no second saturated
+colour, and never the dock's gold — it means "interactive" everywhere else on the platform.
 
 ## Testing
 
@@ -317,7 +342,7 @@ exhaustion; rejection of malformed dates, unknown statuses, past-date votes and 
 removed invitee; `404`s for unknown ids; and — the important one — a **concurrency test that
 fires simultaneous vote writes at one calendar and asserts every vote survives** (NFR-1).
 
-**Frontend** (co-located `*.spec.ts`): `useHeatScale.spec.ts` covers the counts-to-step mapping
+**Frontend** (co-located `*.spec.ts`): `useWashScale.spec.ts` covers the counts-to-step mapping
 exhaustively across group sizes — the 1-person and all-present edges, all-yes versus
 full-coverage-with-an-if-needed (same step, provisional flag set), and the denominator excluding
 tombstoned invitees; `useClaimedName.spec.ts` covers claim, release, switch and a corrupt/absent
@@ -339,7 +364,7 @@ Proposed shape — the authoritative breakdown will be generated into
   today-onward pruning and tombstoning (FR-8, AR-7), claiming a name, the read-only state before
   a claim.
 - **Epic 3 — The month:** the month grid and navigation, day cells with names and counts, the
-  three-state availability cycle set optimistically, and the coverage heat scale with its
+  three-state availability cycle set optimistically, the day sheet, and the coverage wash with its
   provisional marking.
 - **Epic 4 — Decisions & history:** marking a day chosen, the frozen and dimmed past, and the
   landing-page subtext that surfaces the next or most recent chosen date.
