@@ -320,3 +320,68 @@ def test_a_guest_cannot_delete(as_guest: None) -> None:
 def test_mutating_a_malformed_id_is_never_a_server_error(bad: str) -> None:
     assert client.put(f"/api/kdh/calendars/{bad}", json={"name": "X"}).status_code in (404, 422)
     assert client.delete(f"/api/kdh/calendars/{bad}").status_code in (404, 422)
+
+
+# ── add an invitee ───────────────────────────────────────────────────────────
+
+
+def add_invitee(calendar_id: str, name: str):
+    return client.post(f"/api/kdh/calendars/{calendar_id}/invitees", json={"name": name})
+
+
+def test_add_invitee_appends_with_a_free_colour_and_next_order() -> None:
+    created = create("DnD", ["Dani", "Jake"]).json()
+
+    body = add_invitee(created["id"], "Tom")
+    assert body.status_code == 201
+    invitees = body.json()["invitees"]
+
+    assert [i["name"] for i in invitees] == ["Dani", "Jake", "Tom"]
+    tom = invitees[-1]
+    assert tom["id"].startswith("inv-") and len(tom["id"]) == len("inv-") + 8
+    assert tom["order"] == 2
+    assert tom["removed_at"] is None
+    assert tom["color"] not in {i["color"] for i in invitees[:-1]}
+
+
+def test_add_invitee_trims_and_persists() -> None:
+    created = create("DnD", ["Dani"]).json()
+    add_invitee(created["id"], "  Jake  ")
+
+    stored = client.get(f"/api/kdh/calendars/{created['id']}").json()
+    assert [i["name"] for i in stored["invitees"]] == ["Dani", "Jake"]
+
+
+@pytest.mark.parametrize("bad", ["", "   ", "Dani", " dani "])
+def test_add_invitee_rejects_bad_names(bad: str) -> None:
+    created = create("DnD", ["Dani"]).json()
+
+    assert add_invitee(created["id"], bad).status_code == 422
+    stored = client.get(f"/api/kdh/calendars/{created['id']}").json()
+    assert len(stored["invitees"]) == 1
+
+
+def test_add_invitee_rejects_when_the_palette_is_exhausted() -> None:
+    from app.services.kdh_service import PALETTE
+
+    created = create("DnD", [f"P{i}" for i in range(len(PALETTE))]).json()
+
+    response = add_invitee(created["id"], "OneTooMany")
+    assert response.status_code == 422
+    assert "colours" in response.json()["detail"].lower()
+
+
+def test_a_guest_cannot_add_an_invitee(as_guest: None) -> None:
+    app.dependency_overrides[get_current_user] = lambda: "test_user"
+    created = create("DnD", ["Dani"]).json()
+    app.dependency_overrides[get_current_user] = lambda: "players"
+
+    assert add_invitee(created["id"], "Sneaky").status_code == 403
+
+    app.dependency_overrides[get_current_user] = lambda: "test_user"
+    stored = client.get(f"/api/kdh/calendars/{created['id']}").json()
+    assert [i["name"] for i in stored["invitees"]] == ["Dani"]
+
+
+def test_add_invitee_to_an_unknown_calendar_is_404() -> None:
+    assert add_invitee("cal-nope1234", "Tom").status_code == 404

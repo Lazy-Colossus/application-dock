@@ -203,3 +203,40 @@ def delete_calendar(username: str, calendar_id: str) -> None:
     """Delete a calendar and every vote on it. Admin only, and unrecoverable."""
     require_admin(username)
     repo.delete_calendar(calendar_id)
+
+
+# ── Invitees ─────────────────────────────────────────────────────────────────
+
+
+def _active(calendar: Calendar) -> list[Invitee]:
+    """The roster: everyone not tombstoned (AR-7)."""
+    return [i for i in calendar.invitees if i.removed_at is None]
+
+
+def add_invitee(username: str, calendar_id: str, name: str) -> Calendar:
+    """Append an invitee with the next free colour. Admin only.
+
+    Duplicate names are rejected against **active** invitees only: a removed
+    person's name is reusable, because "they came back" is a real case. Their
+    *colour* is not reusable while they hold past votes, which is why the colour
+    check below spans every record including tombstones (AR-7).
+    """
+    require_admin(username)
+    cleaned = _clean_name(name, "Invitee name")
+
+    with repo.calendar_transaction(calendar_id) as calendar:
+        if any(i.name.casefold() == cleaned.casefold() for i in _active(calendar)):
+            raise ValueError(f"Duplicate invitee name: {cleaned}")
+
+        calendar.invitees.append(
+            Invitee(
+                id=new_id("inv"),
+                name=cleaned,
+                color=assign_colour({i.color for i in calendar.invitees}),
+                # Past the highest existing order — a removal leaves gaps, so
+                # `len(invitees)` would collide with a survivor.
+                order=max((i.order for i in calendar.invitees), default=-1) + 1,
+            )
+        )
+        calendar.updated_at = now_iso()
+        return calendar

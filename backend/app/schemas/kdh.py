@@ -65,3 +65,7 @@ class CreateCalendarRequest(BaseModel):
 
 class UpdateCalendarRequest(BaseModel):
     name: str
+
+
+class AddInviteeRequest(BaseModel):
+    name: str

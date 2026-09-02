@@ -69,6 +69,14 @@
             <q-item
               v-ripple
               clickable
+              data-testid="invitees-action"
+              @click="openInvitees"
+            >
+              <q-item-section>Manage invitees</q-item-section>
+            </q-item>
+            <q-item
+              v-ripple
+              clickable
               data-testid="share-action"
               @click="copyLink"
             >
@@ -107,6 +115,59 @@
               :disable="!canRename"
               data-testid="rename-save"
               @click="submitRename"
+            />
+          </div>
+        </q-card>
+      </q-dialog>
+
+      <q-dialog v-model="managingInvitees">
+        <q-card class="kdh-dialog-card q-pa-md">
+          <div class="text-h6 q-mb-md">Who is invited?</div>
+
+          <div class="row q-gutter-xs q-mb-md" data-testid="roster">
+            <span
+              v-for="invitee in activeInvitees"
+              :key="invitee.id"
+              class="kdh-chip"
+              :style="{ borderColor: invitee.color }"
+              :data-testid="`roster-${invitee.id}`"
+            >
+              <span class="kdh-dot" :style="{ background: invitee.color }" />
+              {{ invitee.name }}
+            </span>
+          </div>
+
+          <q-input
+            v-model="newInviteeName"
+            dense
+            outlined
+            label="Add someone"
+            data-testid="invitee-name-input"
+            @keyup.enter="submitInvitee"
+          />
+          <div
+            v-if="duplicateInvitee"
+            class="text-negative q-mt-xs"
+            data-testid="invitee-duplicate"
+          >
+            {{ newInviteeName.trim() }} is already invited.
+          </div>
+
+          <div class="row justify-end q-gutter-sm q-mt-md">
+            <q-btn
+              flat
+              no-caps
+              label="Done"
+              @click="managingInvitees = false"
+            />
+            <q-btn
+              unelevated
+              no-caps
+              color="primary"
+              label="Add"
+              :disable="!canAddInvitee"
+              data-testid="invitee-add"
+              @click="submitInvitee"
             />
           </div>
         </q-card>
@@ -155,6 +216,8 @@ const notFound = computed(
 );
 
 const menuOpen = ref(false);
+const managingInvitees = ref(false);
+const newInviteeName = ref("");
 const renaming = ref(false);
 const deleting = ref(false);
 const draftName = ref("");
@@ -164,6 +227,25 @@ const copyNotice = ref<string | null>(null);
 
 const canRename = computed(() => draftName.value.trim() !== "");
 
+const activeInvitees = computed(() =>
+  [...(store.currentCalendar?.invitees ?? [])]
+    .filter((i) => i.removed_at === null)
+    .sort((a, b) => a.order - b.order),
+);
+
+/** The server's rule, applied here so the dialog never submits a known reject. */
+const duplicateInvitee = computed(() => {
+  const candidate = newInviteeName.value.trim().toLocaleLowerCase();
+  return (
+    candidate !== "" &&
+    activeInvitees.value.some((i) => i.name.toLocaleLowerCase() === candidate)
+  );
+});
+
+const canAddInvitee = computed(
+  () => newInviteeName.value.trim() !== "" && !duplicateInvitee.value,
+);
+
 function goToList(): void {
   void router.push("/kdh");
 }
@@ -172,6 +254,22 @@ function openRename(): void {
   draftName.value = store.currentCalendar?.name ?? "";
   menuOpen.value = false;
   renaming.value = true;
+}
+
+function openInvitees(): void {
+  newInviteeName.value = "";
+  menuOpen.value = false;
+  managingInvitees.value = true;
+}
+
+async function submitInvitee(): Promise<void> {
+  if (!canAddInvitee.value) return;
+  try {
+    await store.addInvitee(calendarId.value, newInviteeName.value.trim());
+    newInviteeName.value = "";
+  } catch {
+    // Message is in the store; keep the typed name so it can be corrected.
+  }
 }
 
 function openDelete(): void {
@@ -218,6 +316,20 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.kdh-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 13px;
+}
+.kdh-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
 .kdh-dialog-card {
   min-width: 320px;
 }

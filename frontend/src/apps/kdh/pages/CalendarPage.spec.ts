@@ -2,15 +2,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, putMock, delMock, push } = vi.hoisted(() => ({
+const { getMock, postMock, putMock, delMock, push } = vi.hoisted(() => ({
   getMock: vi.fn(),
+  postMock: vi.fn(),
   putMock: vi.fn(),
   delMock: vi.fn(),
   push: vi.fn(),
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
-  api: { get: getMock, post: vi.fn(), put: putMock, del: delMock },
+  api: { get: getMock, post: postMock, put: putMock, del: delMock },
 }));
 vi.mock("vue-router", () => ({
   useRouter: () => ({ push }),
@@ -201,5 +202,68 @@ describe("CalendarPage", () => {
 
     await wrapper.find('[data-testid="not-found-back"]').trigger("click");
     expect(push).toHaveBeenCalledWith("/kdh");
+  });
+
+  it("lists the roster and adds an invitee", async () => {
+    mockApi(true);
+    postMock.mockResolvedValueOnce({
+      ...CAL,
+      invitees: [
+        ...CAL.invitees,
+        {
+          id: "inv-2",
+          name: "Jake",
+          color: "#A9C8E8",
+          order: 1,
+          removed_at: null,
+        },
+      ],
+    });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="admin-menu-btn"]').trigger("click");
+    await wrapper.find('[data-testid="invitees-action"]').trigger("click");
+    expect(wrapper.find('[data-testid="roster"]').text()).toContain("Dani");
+
+    await wrapper
+      .find('[data-testid="invitee-name-input"] input')
+      .setValue("Jake");
+    await wrapper.find('[data-testid="invitee-add"]').trigger("click");
+    await flushPromises();
+
+    expect(postMock).toHaveBeenCalledWith(
+      "/kdh/calendars/cal-ab12cd34/invitees",
+      {
+        name: "Jake",
+      },
+    );
+    expect(wrapper.find('[data-testid="roster"]').text()).toContain("Jake");
+  });
+
+  it("will not submit a name already on the roster", async () => {
+    mockApi(true);
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="admin-menu-btn"]').trigger("click");
+    await wrapper.find('[data-testid="invitees-action"]').trigger("click");
+    await wrapper
+      .find('[data-testid="invitee-name-input"] input')
+      .setValue(" dani ");
+
+    expect(wrapper.find('[data-testid="invitee-duplicate"]').exists()).toBe(
+      true,
+    );
+    expect(
+      wrapper.find('[data-testid="invitee-add"]').attributes("disable"),
+    ).toBeDefined();
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it("gives a guest no way to manage invitees", async () => {
+    mockApi(false);
+    const wrapper = await mountPage();
+    expect(wrapper.find('[data-testid="invitees-action"]').exists()).toBe(
+      false,
+    );
   });
 });

@@ -88,6 +88,34 @@ export const useKdhStore = defineStore("kdh", () => {
     }
   }
 
+  /** Keep the cached summary's invitee count honest after a roster change. */
+  function syncSummary(calendar: Calendar): void {
+    const summary = calendars.value.find((c) => c.id === calendar.id);
+    if (summary) {
+      summary.invitee_count = calendar.invitees.filter(
+        (i) => i.removed_at === null,
+      ).length;
+    }
+  }
+
+  async function addInvitee(calendarId: string, name: string): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const updated = await api.post<Calendar>(
+        `/kdh/calendars/${calendarId}/invitees`,
+        { name },
+      );
+      currentCalendar.value = updated;
+      syncSummary(updated);
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   async function createCalendar(
     name: string,
     inviteeNames: string[],
@@ -125,6 +153,7 @@ export const useKdhStore = defineStore("kdh", () => {
     fetchCalendars,
     fetchCalendar,
     createCalendar,
+    addInvitee,
     renameCalendar,
     deleteCalendar,
   };
