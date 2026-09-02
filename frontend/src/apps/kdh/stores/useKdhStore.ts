@@ -116,6 +116,26 @@ export const useKdhStore = defineStore("kdh", () => {
     }
   }
 
+  async function removeInvitee(
+    calendarId: string,
+    inviteeId: string,
+  ): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const updated = await api.del<Calendar>(
+        `/kdh/calendars/${calendarId}/invitees/${inviteeId}`,
+      );
+      currentCalendar.value = updated;
+      syncSummary(updated);
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   async function createCalendar(
     name: string,
     inviteeNames: string[],
@@ -154,6 +174,7 @@ export const useKdhStore = defineStore("kdh", () => {
     fetchCalendar,
     createCalendar,
     addInvitee,
+    removeInvitee,
     renameCalendar,
     deleteCalendar,
   };

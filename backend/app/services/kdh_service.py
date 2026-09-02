@@ -240,3 +240,42 @@ def add_invitee(username: str, calendar_id: str, name: str) -> Calendar:
         )
         calendar.updated_at = now_iso()
         return calendar
+
+
+def remove_invitee(username: str, calendar_id: str, invitee_id: str) -> Calendar:
+    """Remove an invitee, clearing their FUTURE availability and keeping their past.
+
+    A long-running calendar is a record of sessions actually played, so a person
+    who was there in August is still shown on August's days after they leave
+    (FR-8). Concretely:
+
+    - their votes on dates **>= today** are deleted; dates **< today** are kept;
+    - a date left with an empty map is pruned, so `votes` never holds dead keys;
+    - `chosen_dates` is untouched — a session that happened still happened;
+    - if they end up holding no votes at all, the record is dropped outright, so
+      the common "added by mistake" case leaves no residue. Otherwise the record
+      is tombstoned with `removed_at`, keeping their name and colour so past
+      cells still render them (AR-7).
+    """
+    require_admin(username)
+
+    with repo.calendar_transaction(calendar_id) as calendar:
+        invitee = next((i for i in calendar.invitees if i.id == invitee_id), None)
+        if invitee is None or invitee.removed_at is not None:
+            raise FileNotFoundError(invitee_id)
+
+        boundary = today()
+        for day in list(calendar.votes):
+            if date.fromisoformat(day) >= boundary:
+                calendar.votes[day].pop(invitee_id, None)
+                if not calendar.votes[day]:
+                    del calendar.votes[day]
+
+        still_referenced = any(invitee_id in voters for voters in calendar.votes.values())
+        if still_referenced:
+            invitee.removed_at = now_iso()
+        else:
+            calendar.invitees = [i for i in calendar.invitees if i.id != invitee_id]
+
+        calendar.updated_at = now_iso()
+        return calendar

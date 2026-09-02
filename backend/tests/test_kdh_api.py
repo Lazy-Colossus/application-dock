@@ -385,3 +385,149 @@ def test_a_guest_cannot_add_an_invitee(as_guest: None) -> None:
 
 def test_add_invitee_to_an_unknown_calendar_is_404() -> None:
     assert add_invitee("cal-nope1234", "Tom").status_code == 404
+
+
+# ── remove an invitee: clear the future, keep the past ───────────────────────
+
+
+def seed_votes(calendar_id: str, votes: dict) -> None:
+    """Write votes straight through the repo — the vote endpoint is Epic 3."""
+    from app.repositories import kdh_repo
+
+    calendar = kdh_repo.read_calendar(calendar_id)
+    calendar.votes = votes
+    kdh_repo.write_calendar(calendar)
+
+
+def test_removal_clears_the_future_and_keeps_the_past(monkeypatch: pytest.MonkeyPatch) -> None:
+    from datetime import date
+
+    monkeypatch.setattr("app.services.kdh_service.today", lambda: date(2026, 9, 3))
+    created = create("DnD", ["Dani", "Jake"]).json()
+    dani, jake = (i["id"] for i in created["invitees"])
+    seed_votes(
+        created["id"],
+        {
+            "2026-08-10": {dani: "yes", jake: "yes"},  # past, both
+            "2026-09-02": {dani: "yes"},  # past, only Dani
+            "2026-09-03": {dani: "yes", jake: "yes"},  # today counts as future
+            "2026-09-20": {dani: "if_needed"},  # future, only Dani
+        },
+    )
+
+    body = client.delete(f"/api/kdh/calendars/{created['id']}/invitees/{dani}").json()
+
+    assert body["votes"]["2026-08-10"] == {dani: "yes", jake: "yes"}, "past untouched"
+    assert body["votes"]["2026-09-02"] == {dani: "yes"}, "past untouched"
+    assert body["votes"]["2026-09-03"] == {jake: "yes"}, "today is future — Dani cleared"
+    assert "2026-09-20" not in body["votes"], "emptied date pruned"
+
+
+def test_a_removed_invitee_is_tombstoned_with_name_and_colour(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from datetime import date
+
+    monkeypatch.setattr("app.services.kdh_service.today", lambda: date(2026, 9, 3))
+    created = create("DnD", ["Dani", "Jake"]).json()
+    dani = created["invitees"][0]
+    seed_votes(created["id"], {"2026-08-10": {dani["id"]: "yes"}})
+
+    body = client.delete(f"/api/kdh/calendars/{created['id']}/invitees/{dani['id']}").json()
+
+    tombstone = next(i for i in body["invitees"] if i["id"] == dani["id"])
+    assert tombstone["removed_at"] is not None
+    assert tombstone["name"] == "Dani"
+    assert tombstone["color"] == dani["color"]
+
+
+def test_an_invitee_with_no_past_votes_is_dropped_outright() -> None:
+    """The 'added by mistake' case must leave no residue."""
+    created = create("DnD", ["Dani", "Oops"]).json()
+    oops = created["invitees"][1]["id"]
+
+    body = client.delete(f"/api/kdh/calendars/{created['id']}/invitees/{oops}").json()
+
+    assert [i["name"] for i in body["invitees"]] == ["Dani"]
+
+
+def test_removal_never_touches_chosen_dates(monkeypatch: pytest.MonkeyPatch) -> None:
+    from datetime import date
+
+    from app.repositories import kdh_repo
+
+    monkeypatch.setattr("app.services.kdh_service.today", lambda: date(2026, 9, 3))
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+    calendar = kdh_repo.read_calendar(created["id"])
+    calendar.votes = {"2026-08-10": {dani: "yes"}}
+    calendar.chosen_dates = ["2026-08-10", "2026-09-14"]
+    kdh_repo.write_calendar(calendar)
+
+    body = client.delete(f"/api/kdh/calendars/{created['id']}/invitees/{dani}").json()
+
+    assert body["chosen_dates"] == ["2026-08-10", "2026-09-14"]
+
+
+def test_a_tombstone_leaves_the_roster_but_keeps_its_colour_reserved(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from datetime import date
+
+    monkeypatch.setattr("app.services.kdh_service.today", lambda: date(2026, 9, 3))
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]
+    seed_votes(created["id"], {"2026-08-10": {dani["id"]: "yes"}})
+    client.delete(f"/api/kdh/calendars/{created['id']}/invitees/{dani['id']}")
+
+    # Off the roster count...
+    assert client.get("/api/kdh/calendars").json()[0]["invitee_count"] == 0
+    # ...but their colour is not handed to the next person.
+    body = add_invitee(created["id"], "Newcomer").json()
+    newcomer = next(i for i in body["invitees"] if i["name"] == "Newcomer")
+    assert newcomer["color"] != dani["color"]
+
+
+def test_a_removed_name_can_be_reused_but_a_removed_colour_cannot(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from datetime import date
+
+    monkeypatch.setattr("app.services.kdh_service.today", lambda: date(2026, 9, 3))
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]
+    seed_votes(created["id"], {"2026-08-10": {dani["id"]: "yes"}})
+    client.delete(f"/api/kdh/calendars/{created['id']}/invitees/{dani['id']}")
+
+    response = add_invitee(created["id"], "Dani")
+    assert response.status_code == 201, "a returning person may reuse their name"
+    returned = next(i for i in response.json()["invitees"] if i["removed_at"] is None)
+    assert returned["color"] != dani["color"]
+
+
+def test_removing_an_already_removed_or_unknown_invitee_is_404(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from datetime import date
+
+    monkeypatch.setattr("app.services.kdh_service.today", lambda: date(2026, 9, 3))
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+    seed_votes(created["id"], {"2026-08-10": {dani: "yes"}})
+
+    client.delete(f"/api/kdh/calendars/{created['id']}/invitees/{dani}")
+    assert client.delete(f"/api/kdh/calendars/{created['id']}/invitees/{dani}").status_code == 404
+    assert client.delete(f"/api/kdh/calendars/{created['id']}/invitees/inv-nope").status_code == 404
+
+
+def test_a_guest_cannot_remove_an_invitee(as_guest: None) -> None:
+    app.dependency_overrides[get_current_user] = lambda: "test_user"
+    created = create("DnD", ["Dani", "Jake"]).json()
+    dani = created["invitees"][0]["id"]
+    app.dependency_overrides[get_current_user] = lambda: "players"
+
+    assert client.delete(f"/api/kdh/calendars/{created['id']}/invitees/{dani}").status_code == 403
+
+    app.dependency_overrides[get_current_user] = lambda: "test_user"
+    stored = client.get(f"/api/kdh/calendars/{created['id']}").json()
+    assert len(stored["invitees"]) == 2

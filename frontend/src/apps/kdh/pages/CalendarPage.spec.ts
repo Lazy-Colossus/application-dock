@@ -266,4 +266,51 @@ describe("CalendarPage", () => {
       false,
     );
   });
+
+  it("warns what is kept before removing an invitee", async () => {
+    mockApi(true);
+    delMock.mockResolvedValueOnce({ ...CAL, invitees: [] });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="admin-menu-btn"]').trigger("click");
+    await wrapper.find('[data-testid="invitees-action"]').trigger("click");
+    await wrapper.find('[data-testid="remove-inv-1"]').trigger("click");
+
+    const warning = wrapper.find('[data-testid="remove-warning"]').text();
+    expect(warning).toContain("from today onwards will be cleared");
+    expect(warning).toContain("past keep their answers");
+    expect(delMock).not.toHaveBeenCalled();
+
+    await wrapper.find('[data-testid="remove-confirm"]').trigger("click");
+    await flushPromises();
+
+    expect(delMock).toHaveBeenCalledWith(
+      "/kdh/calendars/cal-ab12cd34/invitees/inv-1",
+    );
+    expect(wrapper.find('[data-testid="roster"]').text()).not.toContain("Dani");
+  });
+
+  it("does not show tombstoned invitees on the roster", async () => {
+    mockApi(true, {
+      ...CAL,
+      invitees: [
+        ...CAL.invitees,
+        {
+          id: "inv-gone",
+          name: "Departed",
+          color: "#A9C8E8",
+          order: 1,
+          removed_at: "2026-08-20T18:00:00Z",
+        },
+      ],
+    });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="admin-menu-btn"]').trigger("click");
+    await wrapper.find('[data-testid="invitees-action"]').trigger("click");
+
+    const roster = wrapper.find('[data-testid="roster"]').text();
+    expect(roster).toContain("Dani");
+    expect(roster).not.toContain("Departed");
+  });
 });

@@ -134,6 +134,16 @@
             >
               <span class="kdh-dot" :style="{ background: invitee.color }" />
               {{ invitee.name }}
+              <q-btn
+                flat
+                dense
+                round
+                size="xs"
+                icon="close"
+                :aria-label="`Remove ${invitee.name}`"
+                :data-testid="`remove-${invitee.id}`"
+                @click="confirmRemove(invitee)"
+              />
             </span>
           </div>
 
@@ -173,6 +183,35 @@
         </q-card>
       </q-dialog>
 
+      <q-dialog v-model="removeDialogOpen">
+        <q-card class="kdh-dialog-card q-pa-md">
+          <div class="text-h6 q-mb-sm">Remove {{ removingInvitee?.name }}?</div>
+          <!-- Says plainly what is kept and what goes: the asymmetry is the whole
+               point of the feature and a surprise here is unrecoverable. -->
+          <div class="q-mb-md" data-testid="remove-warning">
+            Their availability from today onwards will be cleared. Days already
+            past keep their answers, so the record of sessions you have played
+            stays intact.
+          </div>
+          <div class="row justify-end q-gutter-sm">
+            <q-btn
+              flat
+              no-caps
+              label="Keep them"
+              @click="removingInvitee = null"
+            />
+            <q-btn
+              unelevated
+              no-caps
+              color="negative"
+              label="Remove"
+              data-testid="remove-confirm"
+              @click="submitRemove"
+            />
+          </div>
+        </q-card>
+      </q-dialog>
+
       <q-dialog v-model="deleting">
         <q-card class="kdh-dialog-card q-pa-md">
           <div class="text-h6 q-mb-sm">Delete this calendar?</div>
@@ -203,6 +242,7 @@
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useKdhStore } from "@/apps/kdh/stores/useKdhStore";
+import type { Invitee } from "@/apps/kdh/types";
 
 const store = useKdhStore();
 const route = useRoute();
@@ -218,6 +258,15 @@ const notFound = computed(
 const menuOpen = ref(false);
 const managingInvitees = ref(false);
 const newInviteeName = ref("");
+const removingInvitee = ref<Invitee | null>(null);
+// `v-model` needs an assignable target; the dialog's open state is derived from
+// which invitee is pending removal, and dismissing it clears that.
+const removeDialogOpen = computed({
+  get: () => removingInvitee.value !== null,
+  set: (open: boolean) => {
+    if (!open) removingInvitee.value = null;
+  },
+});
 const renaming = ref(false);
 const deleting = ref(false);
 const draftName = ref("");
@@ -269,6 +318,22 @@ async function submitInvitee(): Promise<void> {
     newInviteeName.value = "";
   } catch {
     // Message is in the store; keep the typed name so it can be corrected.
+  }
+}
+
+function confirmRemove(invitee: Invitee): void {
+  removingInvitee.value = invitee;
+}
+
+async function submitRemove(): Promise<void> {
+  const invitee = removingInvitee.value;
+  if (!invitee) return;
+  try {
+    await store.removeInvitee(calendarId.value, invitee.id);
+  } catch {
+    // Message is in the store.
+  } finally {
+    removingInvitee.value = null;
   }
 }
 

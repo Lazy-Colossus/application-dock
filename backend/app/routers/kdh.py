@@ -107,3 +107,19 @@ def add_invitee(
         raise HTTPException(status_code=404, detail="Calendar not found") from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.delete("/calendars/{calendar_id}/invitees/{invitee_id}", response_model=Calendar)
+def remove_invitee(
+    calendar_id: str,
+    invitee_id: str,
+    current_user: str = Depends(get_current_user),
+) -> Calendar:
+    try:
+        return service.remove_invitee(current_user, calendar_id, invitee_id)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
