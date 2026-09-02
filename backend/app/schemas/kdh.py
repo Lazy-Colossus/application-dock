@@ -45,11 +45,17 @@ class Calendar(BaseModel):
 
 
 class CalendarSummary(BaseModel):
-    """A calendar as the landing list needs it — never the full vote map."""
+    """A calendar as the landing list needs it — never the full vote map.
+
+    Carries the active invitees' names as well as their count: the list shows
+    who is invited, and fetching each calendar to find out would be a request
+    per row.
+    """
 
     id: str
     name: str
     invitee_count: int
+    invitee_names: list[str]
     created_at: str
 
 

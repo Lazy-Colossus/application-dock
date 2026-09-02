@@ -487,4 +487,51 @@ describe("CalendarPage", () => {
       "taken",
     );
   });
+
+  it("shows how many people are invited beside the calendar name", async () => {
+    mockApi(true, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    expect(wrapper.find('[data-testid="headcount"]').text()).toBe("2");
+  });
+
+  it("counts only active invitees in the headcount", async () => {
+    mockApi(true, {
+      ...CAL,
+      invitees: [
+        ...TWO_INVITEES,
+        {
+          id: "inv-gone",
+          name: "Departed",
+          color: "#B9DCC2",
+          order: 2,
+          removed_at: "2026-08-20T18:00:00Z",
+        },
+      ],
+    });
+    const wrapper = await mountPage();
+
+    expect(wrapper.find('[data-testid="headcount"]').text()).toBe("2");
+  });
+
+  it("marks the name control as unanswered until you claim one", async () => {
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    expect(wrapper.find('[data-testid="whoami-btn"]').classes()).toContain(
+      "unclaimed",
+    );
+  });
+
+  it("drops the unanswered treatment once a name is claimed", async () => {
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="whoami-btn"]').trigger("click");
+    await wrapper.find('[data-testid="claim-inv-1"]').trigger("click");
+
+    expect(wrapper.find('[data-testid="whoami-btn"]').classes()).not.toContain(
+      "unclaimed",
+    );
+  });
 });

@@ -88,13 +88,21 @@ export const useKdhStore = defineStore("kdh", () => {
     }
   }
 
-  /** Keep the cached summary's invitee count honest after a roster change. */
+  /** Active invitees in roster order — the shape the list summary carries. */
+  function roster(calendar: Calendar) {
+    return [...calendar.invitees]
+      .filter((i) => i.removed_at === null)
+      .sort((a, b) => a.order - b.order);
+  }
+
+  /** Keep the cached summary honest after a roster change, so returning to the
+   *  list does not show a stale headcount or a departed name. */
   function syncSummary(calendar: Calendar): void {
     const summary = calendars.value.find((c) => c.id === calendar.id);
     if (summary) {
-      summary.invitee_count = calendar.invitees.filter(
-        (i) => i.removed_at === null,
-      ).length;
+      const active = roster(calendar);
+      summary.invitee_count = active.length;
+      summary.invitee_names = active.map((i) => i.name);
     }
   }
 
@@ -167,10 +175,12 @@ export const useKdhStore = defineStore("kdh", () => {
         name,
         invitee_names: inviteeNames,
       });
+      const active = roster(created);
       calendars.value.unshift({
         id: created.id,
         name: created.name,
-        invitee_count: created.invitees.length,
+        invitee_count: active.length,
+        invitee_names: active.map((i) => i.name),
         created_at: created.created_at,
       });
       return created;

@@ -21,12 +21,14 @@ const SUMMARIES = [
     id: "cal-1",
     name: "DnD",
     invitee_count: 6,
+    invitee_names: ["Dani", "Jake", "Tom", "Ash", "Kit", "Rae"],
     created_at: "2026-09-03T10:00:00Z",
   },
   {
     id: "cal-2",
     name: "Movie night",
     invitee_count: 1,
+    invitee_names: ["Dani"],
     created_at: "2026-09-02T10:00:00Z",
   },
 ];
@@ -88,14 +90,52 @@ describe("KdhHomePage", () => {
     vi.clearAllMocks();
   });
 
-  it("lists every calendar with its invitee count", async () => {
+  it("shows a headcount beside the name and the roster beneath it", async () => {
     mockApi(true);
     const wrapper = await mountPage();
 
-    expect(wrapper.text()).toContain("DnD");
-    expect(wrapper.text()).toContain("6 people invited");
-    expect(wrapper.text()).toContain("Movie night");
-    expect(wrapper.text()).toContain("1 person invited");
+    expect(wrapper.find('[data-testid="headcount-cal-1"]').text()).toBe("6");
+    expect(wrapper.find('[data-testid="roster-cal-1"]').text()).toBe(
+      "Dani, Jake, Tom, Ash, Kit, Rae",
+    );
+
+    expect(wrapper.find('[data-testid="headcount-cal-2"]').text()).toBe("1");
+    expect(wrapper.find('[data-testid="roster-cal-2"]').text()).toBe("Dani");
+  });
+
+  it("trails off past the sixth name", async () => {
+    mockApi(true, [
+      {
+        id: "cal-big",
+        name: "Big group",
+        invitee_count: 8,
+        invitee_names: ["A", "B", "C", "D", "E", "F", "G", "H"],
+        created_at: "2026-09-03T10:00:00Z",
+      },
+    ]);
+    const wrapper = await mountPage();
+
+    expect(wrapper.find('[data-testid="roster-cal-big"]').text()).toBe(
+      "A, B, C, D, E, F…",
+    );
+    expect(wrapper.find('[data-testid="headcount-cal-big"]').text()).toBe("8");
+  });
+
+  it("says so when a calendar has nobody on it", async () => {
+    mockApi(true, [
+      {
+        id: "cal-empty",
+        name: "Nobody",
+        invitee_count: 0,
+        invitee_names: [],
+        created_at: "2026-09-03T10:00:00Z",
+      },
+    ]);
+    const wrapper = await mountPage();
+
+    expect(wrapper.find('[data-testid="roster-cal-empty"]').text()).toBe(
+      "Nobody invited yet",
+    );
   });
 
   it("opens a calendar on selection", async () => {

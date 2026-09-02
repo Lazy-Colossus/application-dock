@@ -171,16 +171,21 @@ def list_calendar_summaries() -> list[CalendarSummary]:
 
     Shared, not per-user: admins and guests see exactly the same list.
     """
-    return [
-        CalendarSummary(
-            id=calendar.id,
-            name=calendar.name,
-            # Tombstoned invitees are off the roster (AR-7), so they do not count.
-            invitee_count=sum(1 for i in calendar.invitees if i.removed_at is None),
-            created_at=calendar.created_at,
+    summaries = []
+    for calendar in repo.list_calendars():
+        # Tombstoned invitees are off the roster (AR-7), so they neither count
+        # nor appear.
+        roster = sorted(_active(calendar), key=lambda i: i.order)
+        summaries.append(
+            CalendarSummary(
+                id=calendar.id,
+                name=calendar.name,
+                invitee_count=len(roster),
+                invitee_names=[i.name for i in roster],
+                created_at=calendar.created_at,
+            )
         )
-        for calendar in repo.list_calendars()
-    ]
+    return summaries
 
 
 def rename_calendar(username: str, calendar_id: str, name: str) -> Calendar:

@@ -168,7 +168,13 @@ def test_list_returns_summaries_newest_first(monkeypatch: pytest.MonkeyPatch) ->
 
     body = client.get("/api/kdh/calendars").json()
     assert [c["name"] for c in body] == ["Third", "Second", "First"]
-    assert body[0].keys() == {"id", "name", "invitee_count", "created_at"}
+    assert body[0].keys() == {
+        "id",
+        "name",
+        "invitee_count",
+        "invitee_names",
+        "created_at",
+    }
 
 
 def test_list_carries_the_invitee_count() -> None:
@@ -610,3 +616,37 @@ def test_a_guest_may_recolour(as_guest: None) -> None:
     app.dependency_overrides[get_current_user] = lambda: "players"
 
     assert recolour(created["id"], dani, PALETTE[6]).status_code == 200
+
+
+# ── the list carries the roster, not just its size ───────────────────────────
+
+
+def test_summary_lists_invitee_names_in_roster_order() -> None:
+    create("DnD", ["Dani", "Jake", "Tom"])
+    summary = client.get("/api/kdh/calendars").json()[0]
+
+    assert summary["invitee_names"] == ["Dani", "Jake", "Tom"]
+    assert summary["invitee_count"] == 3
+
+
+def test_summary_excludes_tombstoned_invitees(monkeypatch: pytest.MonkeyPatch) -> None:
+    from datetime import date
+
+    monkeypatch.setattr("app.services.kdh_service.today", lambda: date(2026, 9, 3))
+    created = create("DnD", ["Dani", "Departing"]).json()
+    departing = created["invitees"][1]["id"]
+    seed_votes(created["id"], {"2026-08-10": {departing: "yes"}})
+    client.delete(f"/api/kdh/calendars/{created['id']}/invitees/{departing}")
+
+    summary = client.get("/api/kdh/calendars").json()[0]
+    assert summary["invitee_names"] == ["Dani"]
+    assert summary["invitee_count"] == 1
+
+
+def test_summary_names_survive_a_rename_of_the_calendar() -> None:
+    created = create("DnD", ["Dani"]).json()
+    client.put(f"/api/kdh/calendars/{created['id']}", json={"name": "Strahd"})
+
+    summary = client.get("/api/kdh/calendars").json()[0]
+    assert summary["name"] == "Strahd"
+    assert summary["invitee_names"] == ["Dani"]

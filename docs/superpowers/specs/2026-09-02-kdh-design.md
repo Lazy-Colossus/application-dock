@@ -67,8 +67,11 @@ list from the UI, week or agenda views, an availability deadline.
 
 **F2 — Calendars**
 - FR-4: An admin creates a **calendar** with a **name** and an initial **list of invitee names**.
-- FR-5: The app's landing screen lists all calendars, newest first, and opens one on selection;
-  an empty state prompts the first calendar (with the create action shown only to admins).
+- FR-5: The app's landing screen lists all calendars, newest first, and opens one on selection.
+  Each row shows the calendar's **name with a headcount beside it** (a person icon and the number)
+  and, in the subtext, **the invitees' names** — trailing off after the sixth, since a phone row
+  holds no more. An empty state prompts the first calendar (with the create action shown only to
+  admins).
 - FR-6: An admin can **rename** and **delete** a calendar (delete requires confirmation).
 - FR-7: A calendar has a **stable deep link** (`/kdh/c/{calendar_id}`) that an admin can copy
   and hand out; opening it lands directly on that calendar's month view.
@@ -229,7 +232,7 @@ All routes behind `Depends(get_current_user)`; admin-only routes marked **[A]**.
 | Method | Path | Purpose |
 |---|---|---|
 | `GET` | `/api/kdh/me` | `{ username, is_admin }` — drives which controls render (AR-2) |
-| `GET` | `/api/kdh/calendars` | Summaries (id, name, invitee count, next chosen date), newest first |
+| `GET` | `/api/kdh/calendars` | Summaries (id, name, invitee count, invitee names, next chosen date), newest first |
 | `POST` | `/api/kdh/calendars` | **[A]** Create from `{ name, invitee_names: [] }` |
 | `GET` | `/api/kdh/calendars/{id}` | The full calendar document |
 | `PUT` | `/api/kdh/calendars/{id}` | **[A]** Rename |
@@ -282,7 +285,11 @@ That spine wins over this summary and over any mock.
 the next or most recent chosen date). Admins get a **New calendar** button; guests get only the
 list, and an empty state that says to ask an admin rather than dangling a disabled control.
 
-**Claiming a name.** A dropdown in the month header. Unclaimed it reads "Who are you?"; open, it
+**Claiming a name.** A dropdown in the month header, and the loudest control on the page until it
+is answered: unclaimed it is styled like a **required field left blank** — negative border and
+text, with a warning glyph — because the calendar cannot be used until someone says who they are.
+Once claimed it settles into a quiet pill carrying that person's colour and name. Unclaimed it
+reads "Who are you?"; open, it
 lists every active invitee as a row — colour dot, name, tick on the claimed one — and carries the
 colour swatches, taken ones dimmed and yours ringed. Chosen over a bottom sheet and a persistent
 chip rail because **the month stays visible while you pick**. The claim is remembered per calendar

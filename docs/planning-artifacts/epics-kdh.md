@@ -1,3 +1,37 @@
+
+
+### Story 2.5: Make the roster visible and the name control unmissable
+
+As anyone opening a calendar,
+I want to see who is invited without opening anything, and to be told plainly when I have not said
+who I am,
+so that the app does not sit quietly read-only while I wonder why nothing responds.
+
+**Acceptance Criteria:**
+
+**Given** the calendar list
+**When** a row renders
+**Then** the calendar's name carries a **headcount beside it** — a person icon and the number of
+active invitees — and the subtext lists **the invitees' names** in roster order, trailing off with
+an ellipsis past the sixth. A calendar with nobody on it says so rather than showing an empty line
+(FR-5).
+
+**Given** `GET /api/kdh/calendars`
+**When** summaries are built
+**Then** each carries `invitee_names` — the active roster in order — so the list needs no request
+per row. Tombstoned invitees appear in neither the names nor the count (FR-5, AR-7).
+
+**Given** an open calendar
+**When** the header renders
+**Then** a headcount of active invitees sits beside the calendar's name (FR-5).
+
+**Given** nobody has claimed a name on this device
+**When** the header renders
+**Then** the name control is styled as a **required field left blank** — negative border and text
+with a warning glyph — and is large enough to read as the thing to answer first. Claiming a name
+drops the treatment and the control settles into a quiet pill carrying that person's colour
+(FR-10, FR-11).
+
 ---
 stepsCompleted: [1, 2, 3, 4]
 inputDocuments:
@@ -56,8 +90,10 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
 
 **F2 — Calendars**
 - FR-4: An admin creates a **calendar** with a **name** and an initial **list of invitee names**.
-- FR-5: The landing screen lists all calendars, newest first, and opens one on selection; an empty
-  state prompts the first calendar, with the create action shown only to admins.
+- FR-5: The landing screen lists all calendars, newest first, and opens one on selection. Each row
+  shows the calendar's **name with a headcount beside it** (a person icon and the number) and, in
+  the subtext, **the invitees' names** — trailing off after the sixth, since a phone row holds no
+  more. An empty state prompts the first calendar, with the create action shown only to admins.
 - FR-6: An admin can **rename** and **delete** a calendar (delete requires confirmation).
 - FR-7: A calendar has a **stable deep link** (`/kdh/c/{calendar_id}`) an admin can copy and hand
   out; opening it lands directly on that calendar's month view.

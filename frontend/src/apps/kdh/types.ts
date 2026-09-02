@@ -35,6 +35,8 @@ export interface CalendarSummary {
   id: string;
   name: string;
   invitee_count: number;
+  /** Active invitees in roster order — tombstoned people are excluded. */
+  invitee_names: string[];
   created_at: string;
 }
 

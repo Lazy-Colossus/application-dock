@@ -48,7 +48,13 @@ describe("useKdhStore", () => {
 
   it("loads the calendar list", async () => {
     getMock.mockResolvedValueOnce([
-      { id: "cal-1", name: "DnD", invitee_count: 3, created_at: "x" },
+      {
+        id: "cal-1",
+        name: "DnD",
+        invitee_count: 3,
+        invitee_names: ["Dani", "Jake", "Tom"],
+        created_at: "x",
+      },
     ]);
     const store = useKdhStore();
     await store.fetchCalendars();
@@ -70,7 +76,13 @@ describe("useKdhStore", () => {
     postMock.mockResolvedValueOnce(CREATED);
     const store = useKdhStore();
     store.calendars = [
-      { id: "cal-old", name: "Old", invitee_count: 1, created_at: "a" },
+      {
+        id: "cal-old",
+        name: "Old",
+        invitee_count: 1,
+        invitee_names: ["Kit"],
+        created_at: "a",
+      },
     ];
 
     const created = await store.createCalendar("DnD", ["Dani", "Jake"]);
@@ -121,7 +133,13 @@ describe("useKdhStore", () => {
     const store = useKdhStore();
     store.currentCalendar = CREATED;
     store.calendars = [
-      { id: "cal-ab12cd34", name: "DnD", invitee_count: 2, created_at: "x" },
+      {
+        id: "cal-ab12cd34",
+        name: "DnD",
+        invitee_count: 2,
+        invitee_names: ["Dani", "Jake"],
+        created_at: "x",
+      },
     ];
 
     await store.renameCalendar("cal-ab12cd34", "Strahd");
@@ -134,7 +152,13 @@ describe("useKdhStore", () => {
     putMock.mockRejectedValueOnce(new Error("nope"));
     const store = useKdhStore();
     store.calendars = [
-      { id: "cal-ab12cd34", name: "DnD", invitee_count: 2, created_at: "x" },
+      {
+        id: "cal-ab12cd34",
+        name: "DnD",
+        invitee_count: 2,
+        invitee_names: ["Dani", "Jake"],
+        created_at: "x",
+      },
     ];
 
     await expect(
@@ -149,8 +173,20 @@ describe("useKdhStore", () => {
     const store = useKdhStore();
     store.currentCalendar = CREATED;
     store.calendars = [
-      { id: "cal-ab12cd34", name: "DnD", invitee_count: 2, created_at: "x" },
-      { id: "cal-other", name: "Keep", invitee_count: 1, created_at: "y" },
+      {
+        id: "cal-ab12cd34",
+        name: "DnD",
+        invitee_count: 2,
+        invitee_names: ["Dani", "Jake"],
+        created_at: "x",
+      },
+      {
+        id: "cal-other",
+        name: "Keep",
+        invitee_count: 1,
+        invitee_names: ["Kit"],
+        created_at: "y",
+      },
     ];
 
     await store.deleteCalendar("cal-ab12cd34");
@@ -163,7 +199,13 @@ describe("useKdhStore", () => {
     delMock.mockRejectedValueOnce(new Error("403: forbidden"));
     const store = useKdhStore();
     store.calendars = [
-      { id: "cal-ab12cd34", name: "DnD", invitee_count: 2, created_at: "x" },
+      {
+        id: "cal-ab12cd34",
+        name: "DnD",
+        invitee_count: 2,
+        invitee_names: ["Dani", "Jake"],
+        created_at: "x",
+      },
     ];
 
     await expect(store.deleteCalendar("cal-ab12cd34")).rejects.toThrow();

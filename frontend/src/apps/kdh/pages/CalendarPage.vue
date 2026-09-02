@@ -12,24 +12,39 @@
         @click="goToList"
       />
       <div class="col column no-wrap">
-        <div class="text-h6 ellipsis" data-testid="calendar-name">
-          {{ store.currentCalendar?.name ?? "" }}
+        <div class="row items-center no-wrap q-gutter-xs">
+          <span class="text-h6 ellipsis" data-testid="calendar-name">
+            {{ store.currentCalendar?.name ?? "" }}
+          </span>
+          <span
+            v-if="store.currentCalendar"
+            class="kdh-headcount"
+            data-testid="headcount"
+          >
+            <q-icon name="person" size="15px" />{{ activeInvitees.length }}
+          </span>
         </div>
         <!-- Claiming lives in the header so the month stays visible while you
              pick — the reason this won over a bottom sheet (EXPERIENCE.md). -->
         <button
           v-if="store.currentCalendar"
           class="kdh-whoami"
+          :class="{ unclaimed: !claim.hasClaim.value }"
           data-testid="whoami-btn"
           @click="nameMenuOpen = true"
         >
+          <q-icon
+            v-if="!claim.hasClaim.value"
+            name="error_outline"
+            size="18px"
+          />
           <span
-            v-if="claim.claimed.value"
-            class="kdh-dot"
-            :style="{ background: claim.claimed.value.color }"
+            v-else
+            class="kdh-dot lg"
+            :style="{ background: claim.claimed.value?.color }"
           />
           {{ claim.claimed.value?.name ?? "Who are you?" }}
-          <span aria-hidden="true">▾</span>
+          <q-icon name="expand_more" size="18px" />
         </button>
       </div>
 
@@ -506,7 +521,29 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.kdh-whoami,
+.kdh-whoami {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 7px;
+  margin-top: 4px;
+  padding: 7px 13px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  font: inherit;
+  font-size: 15px;
+  color: inherit;
+  cursor: pointer;
+}
+/* Unanswered, and the app cannot be used until it is answered — so it reads
+   like a required field left blank rather than a quiet secondary control. */
+.kdh-whoami.unclaimed {
+  border-color: var(--q-negative);
+  background: rgba(207, 102, 121, 0.12);
+  color: var(--q-negative);
+  font-weight: 600;
+}
 .kdh-release {
   display: inline-flex;
   align-items: center;
@@ -519,6 +556,18 @@ onMounted(async () => {
   color: inherit;
   opacity: 0.75;
   cursor: pointer;
+}
+.kdh-headcount {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  font-size: 13px;
+  opacity: 0.7;
+}
+.kdh-dot.lg {
+  width: 12px;
+  height: 12px;
 }
 .kdh-swatch {
   width: 26px;

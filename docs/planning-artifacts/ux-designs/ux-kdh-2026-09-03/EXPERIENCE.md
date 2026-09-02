@@ -36,7 +36,7 @@ inherits_ui_system: "Vue 3 + Quasar v2 (Material-based)"
 
 | Surface | Reached from | Purpose | Realizes |
 |---|---|---|---|
-| Calendar list | Dock card → `/kdh` | Every calendar, newest first, with invitee count and next-or-last session | FR-5, FR-17 |
+| Calendar list | Dock card → `/kdh` | Every calendar, newest first: name + headcount, the invitees' names beneath, and the next-or-last session | FR-5, FR-17 |
 | Create calendar | List (admins only) | Name + initial roster | FR-4 |
 | Month | List, or a shared link to `/kdh/c/:id` | The month; the whole point of the app | FR-12, FR-14, FR-16 |
 | Name dropdown | Month header | Claim, switch or release your name; change your colour | FR-10, FR-11, FR-9 |
@@ -64,7 +64,10 @@ Plain, short, never coy. The app never nags and never celebrates.
 **Day cell.** Tap opens the day sheet. Long-press does nothing. A past cell is
 inert — no ripple, no feedback; it reads as finished rather than broken.
 
-**Name dropdown.** Closed by default once claimed. Selecting a row claims that
+**Name dropdown.** **Unclaimed, it is the loudest thing on the page** — styled as a required field
+left blank (negative border and text, warning glyph), because nothing else can be done until it is
+answered. Claimed, it settles into a quiet pill showing that person's colour and name. Closed by
+default once claimed. Selecting a row claims that
 person immediately and closes. The claim is stored per calendar in `localStorage`;
 a stored claim naming a since-removed invitee is discarded silently on load.
 

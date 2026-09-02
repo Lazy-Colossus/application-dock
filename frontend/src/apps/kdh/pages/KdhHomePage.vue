@@ -42,10 +42,23 @@
         @click="open(calendar.id)"
       >
         <q-item-section>
-          <q-item-label>{{ calendar.name }}</q-item-label>
-          <q-item-label caption>
-            {{ calendar.invitee_count }}
-            {{ calendar.invitee_count === 1 ? "person" : "people" }} invited
+          <q-item-label class="row items-center no-wrap q-gutter-xs">
+            <span class="ellipsis">{{ calendar.name }}</span>
+            <span
+              class="kdh-headcount"
+              :data-testid="`headcount-${calendar.id}`"
+            >
+              <q-icon name="person" size="14px" />{{ calendar.invitee_count }}
+            </span>
+          </q-item-label>
+          <!-- Who is invited, not how many — the count is already beside the
+               name. Six names is about what fits on a phone row. -->
+          <q-item-label
+            caption
+            class="ellipsis"
+            :data-testid="`roster-${calendar.id}`"
+          >
+            {{ rosterLine(calendar.invitee_names) }}
           </q-item-label>
         </q-item-section>
       </q-item>
@@ -174,6 +187,15 @@ function removeInviteeRow(index: number): void {
   inviteeNames.value.splice(index, 1);
 }
 
+const ROSTER_SHOWN = 6;
+
+/** Names, comma-separated, trailing off past the sixth. */
+function rosterLine(names: string[]): string {
+  if (names.length === 0) return "Nobody invited yet";
+  const shown = names.slice(0, ROSTER_SHOWN).join(", ");
+  return names.length > ROSTER_SHOWN ? `${shown}…` : shown;
+}
+
 function open(calendarId: string): void {
   void router.push(`/kdh/c/${calendarId}`);
 }
@@ -199,5 +221,13 @@ onMounted(async () => {
 <style scoped>
 .kdh-create-card {
   min-width: 380px;
+}
+.kdh-headcount {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  font-size: 12px;
+  opacity: 0.7;
 }
 </style>
