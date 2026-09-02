@@ -401,4 +401,90 @@ describe("CalendarPage", () => {
     expect(wrapper.find('[data-testid="whoami-btn"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="admin-menu-btn"]').exists()).toBe(false);
   });
+
+  it("shows no swatches until a name is claimed", async () => {
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="whoami-btn"]').trigger("click");
+    expect(wrapper.find('[data-testid="colour-swatches"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("dims colours other people hold and rings your own", async () => {
+    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="whoami-btn"]').trigger("click");
+
+    const jakes = wrapper.find('[data-testid="swatch-#A9C8E8"]');
+    expect(jakes.classes()).toContain("taken");
+    expect(jakes.attributes("disabled")).toBeDefined();
+
+    expect(wrapper.find('[data-testid="swatch-#E9A6A0"]').classes()).toContain(
+      "mine",
+    );
+    expect(
+      wrapper.find('[data-testid="swatch-#B9DCC2"]').classes(),
+    ).not.toContain("taken");
+  });
+
+  it("recolours to a free swatch", async () => {
+    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    putMock.mockResolvedValueOnce({
+      ...CAL,
+      invitees: [{ ...TWO_INVITEES[0], color: "#B9DCC2" }, TWO_INVITEES[1]],
+    });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="whoami-btn"]').trigger("click");
+    await wrapper.find('[data-testid="swatch-#B9DCC2"]').trigger("click");
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith(
+      "/kdh/calendars/cal-ab12cd34/invitees/inv-1/color",
+      { color: "#B9DCC2" },
+    );
+    expect(wrapper.find('[data-testid="swatch-#B9DCC2"]').classes()).toContain(
+      "mine",
+    );
+  });
+
+  it("does not request a colour someone else holds", async () => {
+    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="whoami-btn"]').trigger("click");
+    await wrapper.find('[data-testid="swatch-#A9C8E8"]').trigger("click");
+    await flushPromises();
+
+    expect(putMock).not.toHaveBeenCalled();
+  });
+
+  it("reserves a tombstoned invitee's colour", async () => {
+    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+    mockApi(false, {
+      ...CAL,
+      invitees: [
+        ...TWO_INVITEES,
+        {
+          id: "inv-gone",
+          name: "Departed",
+          color: "#B9DCC2",
+          order: 2,
+          removed_at: "2026-08-20T18:00:00Z",
+        },
+      ],
+    });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="whoami-btn"]').trigger("click");
+    expect(wrapper.find('[data-testid="swatch-#B9DCC2"]').classes()).toContain(
+      "taken",
+    );
+  });
 });

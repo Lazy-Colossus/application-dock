@@ -69,3 +69,7 @@ class UpdateCalendarRequest(BaseModel):
 
 class AddInviteeRequest(BaseModel):
     name: str
+
+
+class RecolourInviteeRequest(BaseModel):
+    color: str

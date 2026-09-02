@@ -97,7 +97,26 @@
           </q-item>
         </q-list>
 
+        <!-- Swatches live inside this dropdown rather than on a surface of
+             their own (FR-9). Taken colours are dimmed, not hidden, so the
+             palette stays a stable shape. -->
         <div v-if="claim.claimed.value" class="q-px-sm q-pb-sm">
+          <div class="row q-gutter-xs q-mb-sm" data-testid="colour-swatches">
+            <button
+              v-for="colour in INVITEE_PALETTE"
+              :key="colour"
+              class="kdh-swatch"
+              :class="{
+                taken: takenColours.has(colour),
+                mine: claim.claimed.value.color === colour,
+              }"
+              :style="{ background: colour }"
+              :disabled="takenColours.has(colour)"
+              :aria-label="`Use ${colour}`"
+              :data-testid="`swatch-${colour}`"
+              @click="pickColour(colour)"
+            />
+          </div>
           <button
             class="kdh-release"
             data-testid="release-claim"
@@ -300,6 +319,7 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useKdhStore } from "@/apps/kdh/stores/useKdhStore";
 import { useClaimedName } from "@/apps/kdh/composables/useClaimedName";
+import { INVITEE_PALETTE } from "@/apps/kdh/types";
 import type { Invitee } from "@/apps/kdh/types";
 
 const store = useKdhStore();
@@ -340,6 +360,17 @@ const claim = useClaimedName(
   () => store.currentCalendar?.invitees ?? [],
 );
 
+/** Colours held by anyone else, tombstones included — a removed person's colour
+ *  stays theirs while their name renders on past days (AR-7). */
+const takenColours = computed(
+  () =>
+    new Set(
+      (store.currentCalendar?.invitees ?? [])
+        .filter((i) => i.id !== claim.claimedId.value)
+        .map((i) => i.color),
+    ),
+);
+
 /** Story 3.2 consumes this rather than re-deciding it. */
 const canVote = computed(() => claim.hasClaim.value);
 
@@ -375,6 +406,16 @@ function openRename(): void {
 function claimName(inviteeId: string): void {
   claim.claim(inviteeId);
   nameMenuOpen.value = false;
+}
+
+async function pickColour(colour: string): Promise<void> {
+  const mine = claim.claimed.value;
+  if (!mine || takenColours.value.has(colour)) return;
+  try {
+    await store.recolourInvitee(calendarId.value, mine.id, colour);
+  } catch {
+    // Message is in the store; the chip keeps its previous colour.
+  }
 }
 
 function releaseName(): void {
@@ -478,6 +519,23 @@ onMounted(async () => {
   color: inherit;
   opacity: 0.75;
   cursor: pointer;
+}
+.kdh-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.kdh-swatch.taken {
+  opacity: 0.24;
+  cursor: not-allowed;
+}
+.kdh-swatch.mine {
+  box-shadow:
+    0 0 0 2px var(--q-dark-page, #141414),
+    0 0 0 4px currentColor;
 }
 .kdh-name-row {
   min-height: 44px;

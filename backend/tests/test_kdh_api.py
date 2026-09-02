@@ -531,3 +531,82 @@ def test_a_guest_cannot_remove_an_invitee(as_guest: None) -> None:
     app.dependency_overrides[get_current_user] = lambda: "test_user"
     stored = client.get(f"/api/kdh/calendars/{created['id']}").json()
     assert len(stored["invitees"]) == 2
+
+
+# ── recolour (not admin-gated: your own colour is yours) ─────────────────────
+
+
+def recolour(calendar_id: str, invitee_id: str, colour: str):
+    return client.put(
+        f"/api/kdh/calendars/{calendar_id}/invitees/{invitee_id}/color",
+        json={"color": colour},
+    )
+
+
+def test_recolour_to_a_free_palette_colour() -> None:
+    from app.services.kdh_service import PALETTE
+
+    created = create("DnD", ["Dani", "Jake"]).json()
+    dani = created["invitees"][0]["id"]
+    free = PALETTE[5]
+
+    body = recolour(created["id"], dani, free)
+    assert body.status_code == 200
+    assert next(i for i in body.json()["invitees"] if i["id"] == dani)["color"] == free
+
+
+def test_recolour_rejects_a_colour_someone_else_holds() -> None:
+    created = create("DnD", ["Dani", "Jake"]).json()
+    dani, jake = created["invitees"]
+
+    response = recolour(created["id"], dani["id"], jake["color"])
+    assert response.status_code == 422
+    stored = client.get(f"/api/kdh/calendars/{created['id']}").json()
+    assert stored["invitees"][0]["color"] == dani["color"]
+
+
+def test_recolour_rejects_a_colour_reserved_by_a_tombstone(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from datetime import date
+
+    monkeypatch.setattr("app.services.kdh_service.today", lambda: date(2026, 9, 3))
+    created = create("DnD", ["Dani", "Departing"]).json()
+    dani, departing = created["invitees"]
+    seed_votes(created["id"], {"2026-08-10": {departing["id"]: "yes"}})
+    client.delete(f"/api/kdh/calendars/{created['id']}/invitees/{departing['id']}")
+
+    assert recolour(created["id"], dani["id"], departing["color"]).status_code == 422
+
+
+def test_recolour_to_your_own_colour_is_allowed() -> None:
+    """Idempotent — the swatch you already have must not reject itself."""
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]
+    assert recolour(created["id"], dani["id"], dani["color"]).status_code == 200
+
+
+def test_recolour_rejects_a_colour_outside_the_palette() -> None:
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+    assert recolour(created["id"], dani, "#ff0000").status_code == 422
+
+
+def test_recolour_of_an_unknown_invitee_is_404() -> None:
+    created = create("DnD", ["Dani"]).json()
+    from app.services.kdh_service import PALETTE
+
+    assert recolour(created["id"], "inv-nope", PALETTE[3]).status_code == 404
+
+
+def test_a_guest_may_recolour(as_guest: None) -> None:
+    """Not an admin action: picking your own colour is how a guest makes the
+    roster readable to themselves."""
+    from app.services.kdh_service import PALETTE
+
+    app.dependency_overrides[get_current_user] = lambda: "test_user"
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+    app.dependency_overrides[get_current_user] = lambda: "players"
+
+    assert recolour(created["id"], dani, PALETTE[6]).status_code == 200

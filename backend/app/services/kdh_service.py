@@ -279,3 +279,29 @@ def remove_invitee(username: str, calendar_id: str, invitee_id: str) -> Calendar
 
         calendar.updated_at = now_iso()
         return calendar
+
+
+def recolour_invitee(calendar_id: str, invitee_id: str, colour: str) -> Calendar:
+    """Give an active invitee a different palette colour.
+
+    **Not admin-gated**: choosing your own colour is how a guest makes the roster
+    readable to themselves, and the claim that says which invitee you are is not
+    a security boundary anyway (AR-6). The server checks only that the invitee is
+    real and active and that the colour is a free palette entry.
+    """
+    with repo.calendar_transaction(calendar_id) as calendar:
+        invitee = next((i for i in calendar.invitees if i.id == invitee_id), None)
+        if invitee is None or invitee.removed_at is not None:
+            raise FileNotFoundError(invitee_id)
+
+        if colour not in PALETTE:
+            raise ValueError("That colour is not in the palette")
+        # Tombstones included: a removed person's colour stays theirs while their
+        # name still renders on past days (AR-7).
+        taken = {i.color for i in calendar.invitees if i.id != invitee_id}
+        if colour in taken:
+            raise ValueError("Someone else already has that colour")
+
+        invitee.color = colour
+        calendar.updated_at = now_iso()
+        return calendar

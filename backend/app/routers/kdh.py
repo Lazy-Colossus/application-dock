@@ -19,6 +19,7 @@ from app.schemas.kdh import (
     CalendarSummary,
     CreateCalendarRequest,
     Me,
+    RecolourInviteeRequest,
     UpdateCalendarRequest,
 )
 from app.services import kdh_service as service
@@ -119,6 +120,21 @@ def remove_invitee(
         return service.remove_invitee(current_user, calendar_id, invitee_id)
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.put("/calendars/{calendar_id}/invitees/{invitee_id}/color", response_model=Calendar)
+def recolour_invitee(
+    calendar_id: str,
+    invitee_id: str,
+    req: RecolourInviteeRequest,
+    _: str = Depends(get_current_user),
+) -> Calendar:
+    try:
+        return service.recolour_invitee(calendar_id, invitee_id, req.color)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Not found") from exc
     except ValueError as exc:

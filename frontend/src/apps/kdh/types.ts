@@ -42,3 +42,21 @@ export interface Me {
   username: string;
   is_admin: boolean;
 }
+
+/**
+ * The invitee colour palette, mirroring `kdh_service.PALETTE`.
+ *
+ * Categorical, not ordered: these answer "which person", while the coverage
+ * wash answers "how many". They sit outside the purple family for that reason —
+ * see DESIGN.md.
+ */
+export const INVITEE_PALETTE = [
+  "#E9A6A0", // rose
+  "#A9C8E8", // sky
+  "#B9DCC2", // mint
+  "#EBD3A0", // sand
+  "#D3B2E8", // lilac
+  "#A8D8D8", // aqua
+  "#C9B8A0", // clay
+  "#9FB8D8", // steel
+] as const;
