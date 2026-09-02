@@ -24,6 +24,11 @@ vi.mock("vue-router", () => ({
 import CalendarPage from "./CalendarPage.vue";
 import type { Calendar } from "@/apps/kdh/types";
 
+const TWO_INVITEES = [
+  { id: "inv-1", name: "Dani", color: "#E9A6A0", order: 0, removed_at: null },
+  { id: "inv-2", name: "Jake", color: "#A9C8E8", order: 1, removed_at: null },
+];
+
 const CAL: Calendar = {
   schema_version: 1,
   id: "cal-ab12cd34",
@@ -79,6 +84,7 @@ describe("CalendarPage", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    window.localStorage.clear();
     // `navigator.clipboard` is getter-only in jsdom, so it has to be redefined
     // rather than assigned.
     stubClipboard(vi.fn().mockResolvedValue(undefined));
@@ -312,5 +318,87 @@ describe("CalendarPage", () => {
     const roster = wrapper.find('[data-testid="roster"]').text();
     expect(roster).toContain("Dani");
     expect(roster).not.toContain("Departed");
+  });
+
+  it("asks who you are until a name is claimed", async () => {
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    expect(wrapper.find('[data-testid="whoami-btn"]').text()).toContain(
+      "Who are you?",
+    );
+  });
+
+  it("claims a name and remembers it", async () => {
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="whoami-btn"]').trigger("click");
+    await wrapper.find('[data-testid="claim-inv-2"]').trigger("click");
+
+    expect(wrapper.find('[data-testid="whoami-btn"]').text()).toContain("Jake");
+    expect(window.localStorage.getItem("kdh.claim.cal-ab12cd34")).toBe("inv-2");
+  });
+
+  it("restores a stored claim on a later visit", async () => {
+    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    expect(wrapper.find('[data-testid="whoami-btn"]').text()).toContain("Dani");
+  });
+
+  it("discards a stored claim naming someone since removed", async () => {
+    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-gone");
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    expect(wrapper.find('[data-testid="whoami-btn"]').text()).toContain(
+      "Who are you?",
+    );
+    expect(window.localStorage.getItem("kdh.claim.cal-ab12cd34")).toBeNull();
+  });
+
+  it("lets you say you are someone else", async () => {
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="whoami-btn"]').trigger("click");
+    await wrapper.find('[data-testid="claim-inv-1"]').trigger("click");
+    await wrapper.find('[data-testid="whoami-btn"]').trigger("click");
+    await wrapper.find('[data-testid="release-claim"]').trigger("click");
+
+    expect(wrapper.find('[data-testid="whoami-btn"]').text()).toContain(
+      "Who are you?",
+    );
+  });
+
+  it("offers only active invitees as names to claim", async () => {
+    mockApi(false, {
+      ...CAL,
+      invitees: [
+        ...TWO_INVITEES,
+        {
+          id: "inv-gone",
+          name: "Departed",
+          color: "#B9DCC2",
+          order: 2,
+          removed_at: "2026-08-20T18:00:00Z",
+        },
+      ],
+    });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="whoami-btn"]').trigger("click");
+    expect(wrapper.find('[data-testid="claim-inv-1"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="claim-inv-gone"]').exists()).toBe(false);
+  });
+
+  it("offers the name control to guests, since claiming is not an admin action", async () => {
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    expect(wrapper.find('[data-testid="whoami-btn"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="admin-menu-btn"]').exists()).toBe(false);
   });
 });

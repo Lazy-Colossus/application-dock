@@ -11,8 +11,26 @@
         data-testid="back-btn"
         @click="goToList"
       />
-      <div class="col text-h6 ellipsis" data-testid="calendar-name">
-        {{ store.currentCalendar?.name ?? "" }}
+      <div class="col column no-wrap">
+        <div class="text-h6 ellipsis" data-testid="calendar-name">
+          {{ store.currentCalendar?.name ?? "" }}
+        </div>
+        <!-- Claiming lives in the header so the month stays visible while you
+             pick — the reason this won over a bottom sheet (EXPERIENCE.md). -->
+        <button
+          v-if="store.currentCalendar"
+          class="kdh-whoami"
+          data-testid="whoami-btn"
+          @click="nameMenuOpen = true"
+        >
+          <span
+            v-if="claim.claimed.value"
+            class="kdh-dot"
+            :style="{ background: claim.claimed.value.color }"
+          />
+          {{ claim.claimed.value?.name ?? "Who are you?" }}
+          <span aria-hidden="true">▾</span>
+        </button>
       </div>
 
       <!-- Admin actions are a header menu, and are absent — not disabled — for
@@ -51,6 +69,45 @@
         Back to your calendars
       </a>
     </div>
+
+    <q-dialog v-model="nameMenuOpen">
+      <q-card class="kdh-dialog-card q-pa-sm">
+        <div class="text-subtitle2 q-px-sm q-pt-sm q-pb-xs">Who are you?</div>
+        <q-list>
+          <q-item
+            v-for="invitee in activeInvitees"
+            :key="invitee.id"
+            v-ripple
+            clickable
+            class="kdh-name-row"
+            :data-testid="`claim-${invitee.id}`"
+            @click="claimName(invitee.id)"
+          >
+            <q-item-section>
+              <span>
+                <span class="kdh-dot" :style="{ background: invitee.color }" />
+                {{ invitee.name }}
+                <span
+                  v-if="claim.claimedId.value === invitee.id"
+                  data-testid="claim-tick"
+                  >✓</span
+                >
+              </span>
+            </q-item-section>
+          </q-item>
+        </q-list>
+
+        <div v-if="claim.claimed.value" class="q-px-sm q-pb-sm">
+          <button
+            class="kdh-release"
+            data-testid="release-claim"
+            @click="releaseName"
+          >
+            I'm someone else
+          </button>
+        </div>
+      </q-card>
+    </q-dialog>
 
     <!-- Guarded as a group: a guest must not merely be unable to open these,
          their markup must not exist in the page at all (FR-3). -->
@@ -242,6 +299,7 @@
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useKdhStore } from "@/apps/kdh/stores/useKdhStore";
+import { useClaimedName } from "@/apps/kdh/composables/useClaimedName";
 import type { Invitee } from "@/apps/kdh/types";
 
 const store = useKdhStore();
@@ -256,6 +314,7 @@ const notFound = computed(
 );
 
 const menuOpen = ref(false);
+const nameMenuOpen = ref(false);
 const managingInvitees = ref(false);
 const newInviteeName = ref("");
 const removingInvitee = ref<Invitee | null>(null);
@@ -275,6 +334,14 @@ const draftName = ref("");
 const copyNotice = ref<string | null>(null);
 
 const canRename = computed(() => draftName.value.trim() !== "");
+
+const claim = useClaimedName(
+  () => calendarId.value,
+  () => store.currentCalendar?.invitees ?? [],
+);
+
+/** Story 3.2 consumes this rather than re-deciding it. */
+const canVote = computed(() => claim.hasClaim.value);
 
 const activeInvitees = computed(() =>
   [...(store.currentCalendar?.invitees ?? [])]
@@ -304,6 +371,21 @@ function openRename(): void {
   menuOpen.value = false;
   renaming.value = true;
 }
+
+function claimName(inviteeId: string): void {
+  claim.claim(inviteeId);
+  nameMenuOpen.value = false;
+}
+
+function releaseName(): void {
+  claim.release();
+}
+
+/** The month calls this when tapped while unclaimed (Story 3.2). */
+function promptForName(): void {
+  nameMenuOpen.value = true;
+}
+defineExpose({ canVote, promptForName });
 
 function openInvitees(): void {
   newInviteeName.value = "";
@@ -377,10 +459,29 @@ async function copyLink(): Promise<void> {
 
 onMounted(async () => {
   await Promise.all([store.fetchMe(), store.fetchCalendar(calendarId.value)]);
+  // After the roster is known, so a stale claim can be resolved immediately.
+  claim.restore();
 });
 </script>
 
 <style scoped>
+.kdh-whoami,
+.kdh-release {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  font: inherit;
+  font-size: 13px;
+  color: inherit;
+  opacity: 0.75;
+  cursor: pointer;
+}
+.kdh-name-row {
+  min-height: 44px;
+}
 .kdh-chip {
   display: inline-flex;
   align-items: center;
