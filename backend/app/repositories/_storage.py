@@ -8,17 +8,12 @@ partial write is never visible. Per-aggregate repos build on these two helpers.
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 from typing import Any
 
+from app.core.storage import atomic_write_json
 
-def atomic_write_json(path: Path, payload: Any) -> None:
-    """Write JSON to `path` atomically, creating parent dirs as needed."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    os.replace(tmp, path)
+__all__ = ["atomic_write_json", "read_json"]
 
 
 def read_json(path: Path, default: Any = None) -> Any:

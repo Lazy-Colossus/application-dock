@@ -11,14 +11,13 @@ Layering: callers MUST be services. Routers do not call this directly.
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 from app.core.config import settings
-
-# Reuse the platform atomic writer (write-.tmp-then-os.replace). Same precedent
-# as auth_repo; the "extract to a shared core util" cleanup is tracked but out
-# of scope here.
-from app.repositories.session_repo import _atomic_write_json
+from app.core.locks import key_lock
+from app.core.storage import atomic_write_json
 from app.schemas.context_switch import ContextSwitchDoc
 
 _APP_DIR = "context-switch"
@@ -70,4 +69,22 @@ def write_doc(username: str, doc: ContextSwitchDoc) -> None:
     """Persist a user's document atomically, creating `users/` on first write."""
     path = _user_path(username)
     path.parent.mkdir(parents=True, exist_ok=True)
-    _atomic_write_json(path, doc.model_dump(mode="json"))
+    atomic_write_json(path, doc.model_dump(mode="json"))
+
+
+@contextmanager
+def doc_transaction(username: str) -> Iterator[ContextSwitchDoc]:
+    """Read-modify-write a user's document under that file's lock.
+
+    The lock spans the whole block, so a concurrent request cannot read the same
+    stale document and overwrite the change made here (Story 1.8). Locking only
+    the write would not help — both writers would already hold stale reads.
+
+    The document is written when the block exits cleanly. If the block raises —
+    a validation `ValueError`, a missing-entity `FileNotFoundError` — nothing is
+    written, so a rejected request leaves no partial mutation behind.
+    """
+    with key_lock(str(_user_path(username))):
+        doc = read_doc(username)
+        yield doc
+        write_doc(username, doc)

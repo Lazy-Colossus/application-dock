@@ -10,6 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.core.config import settings
+from app.core.locks import key_lock
 from app.repositories import _storage
 from app.schemas.hotaru import ProgressEntry
 
@@ -30,6 +31,11 @@ def write_progress(user: str, entries: dict[str, ProgressEntry]) -> None:
     )
 
 
+def transaction(user: str):
+    """Serialize a read-modify-write of one user's progress file (Story 1.8)."""
+    return key_lock(str(_progress_path(user)))
+
+
 def clear_progress(user: str) -> None:
     """Reset the user's familiarity by emptying their progress map.
 
@@ -45,6 +51,7 @@ def get_entry(user: str, word_id: str) -> ProgressEntry | None:
 
 
 def set_entry(user: str, word_id: str, entry: ProgressEntry) -> None:
-    entries = read_progress(user)
-    entries[word_id] = entry
-    write_progress(user, entries)
+    with transaction(user):
+        entries = read_progress(user)
+        entries[word_id] = entry
+        write_progress(user, entries)

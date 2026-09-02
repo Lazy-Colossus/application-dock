@@ -153,12 +153,13 @@ def apply_grades(
     `ProgressEntry` has no due field, so nothing debt-like leaves the API.
     """
     now = now or datetime.now(UTC)
-    progress = progress_repo.read_progress(user)
     updated: dict[str, ProgressEntry] = {}
-    for item in grades:
-        entry = progress.get(item.word_id) or ProgressEntry()
-        entry = srs.next_review(entry, item.grade, now, replay=item.replay)
-        progress[item.word_id] = entry
-        updated[item.word_id] = entry
-    progress_repo.write_progress(user, progress)
+    with progress_repo.transaction(user):
+        progress = progress_repo.read_progress(user)
+        for item in grades:
+            entry = progress.get(item.word_id) or ProgressEntry()
+            entry = srs.next_review(entry, item.grade, now, replay=item.replay)
+            progress[item.word_id] = entry
+            updated[item.word_id] = entry
+        progress_repo.write_progress(user, progress)
     return updated

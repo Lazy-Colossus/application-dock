@@ -28,7 +28,7 @@
 
 - No test validates 7-day expiry claim in JWT — `test_login_success` checks only token presence; low risk, `jose.jwt.decode` validates `exp` at runtime [`backend/tests/test_auth.py:48–56`]
 - `restoreSession` retries `GET /auth/me` on every navigation when a non-401 error occurs — 401 path is safe (logout clears token); non-401 errors retry each nav; acceptable for self-hosted LAN [`frontend/src/stores/useAuthStore.ts`]
-- `_atomic_write_json` imported as private underscore-prefixed symbol from `session_repo` — P8 dedup fix; extract to shared `core/utils.py` when touching repositories again [`backend/app/repositories/auth_repo.py:14`]
+- ~~`_atomic_write_json` imported as private underscore-prefixed symbol from `session_repo`~~ — **CLOSED by Story 1.8 (2026-09-03):** extracted to `app/core/storage.py`; all three copies (session_repo, auth_repo, hotaru `_storage`) now delegate to it.
 - `conftest.py` exact `== "test_auth.py"` match would include a future `test_auth_helpers.py` in auth bypass — proper fix is a pytest marker; low probability currently [`backend/tests/conftest.py:16`]
 
 ## Deferred from: code review of 1.5.jwt-authentication (2026-06-18)
@@ -36,7 +36,7 @@
 - JWT token stored in `localStorage` — XSS-accessible; documented design decision ("acceptable for self-hosted personal use") [`frontend/src/stores/useAuthStore.ts:13`]
 - `isAuthenticated` based on token presence, not expiry/signature validity — by design; server 401s handle the expiry path [`frontend/src/stores/useAuthStore.ts:18`]
 - Cross-tab logout not reflected in current tab's Pinia store — `localStorage` is not watched for changes; out of scope for this story
-- World-readable tmp file permissions in `_atomic_write_json` — pre-existing in session_repo too; security hardening out of scope [`backend/app/repositories/auth_repo.py:29`]
+- ~~World-readable tmp file permissions in `_atomic_write_json`~~ — **CLOSED by Story 1.8 (2026-09-03):** the writer now stages via `tempfile.mkstemp`, which creates the file `0600`. Note the mode carries through `os.replace`, so **data files are now `0600` rather than `0644`** — intended, and fine for the single-user container.
 - AC5: no setup-script round-trip integration test — functional coverage via auth_repo unit paths; setup-script integration test is nice-to-have
 - No minimum password length/entropy validation — setup script validates non-empty; login schema correctly returns 401; out of scope
 - Concurrent 401 responses trigger multiple `logout()` calls — harmless (logout is idempotent); same root cause as the login-loop patch item
@@ -60,8 +60,8 @@
 
 - Build-time `RUN mkdir -p /data` creates root-owned layer in Docker image — latent failure when `USER` directive is added for security hardening [`backend/Dockerfile:18`]
 - `useApi.ts` 204→`undefined as T` cast is silent — callers typed to non-void receive `undefined` with no runtime diagnostic [`frontend/src/composables/useApi.ts:31`]
-- Race condition in session label generation: two concurrent `POST /api/archery/sessions` calls within the same millisecond can compute the same label; the second `write_in_progress` silently overwrites the first session [`backend/app/services/archery_service.py`] — found during edge-case sweep, not part of stories 1.1/1.2 diff
-- Deterministic `.tmp` path in `_atomic_write_json` (`path.with_suffix(".tmp")`) — two concurrent writes targeting the same label produce the same temp filename; one clobbers the other's payload before the rename [`backend/app/repositories/session_repo.py`] — found during edge-case sweep, not part of stories 1.1/1.2 diff
+- ~~Race condition in session label generation~~ — **CLOSED by Story 1.8 (2026-09-03):** `create_session` now allocates the label and writes inside one `sessions_transaction()`. Covered by `test_concurrent_session_creates_get_distinct_labels`.
+- ~~Deterministic `.tmp` path in `_atomic_write_json`~~ — **CLOSED by Story 1.8 (2026-09-03):** the temp file is now unique per write. Covered by `test_concurrent_writes_to_one_path_do_not_share_a_temp_file`.
 
 ## Deferred from: code review of story-1.5 (Hotaru Epic 1) — 2026-07-06
 
@@ -70,8 +70,8 @@
 ## Deferred from: code review of archery Chunk A (2026-06-10)
 
 - `_migrate_legacy_in_progress` TOCTOU — both `read_in_progress` and `list_in_progress` call it with no lock; a corrupt legacy file could leave an orphaned legacy file after successful migration [`session_repo.py:115–126`] (story 6.1)
-- `_pick_finalise_label` ignores in-progress labels — concurrent finalisation of two same-day sessions where a finalised file already exists can assign the same label to both; second write silently clobbers first [`archery_service.py:47–59`] (story 6.1)
-- `update_in_progress` check-then-write TOCTOU — concurrent `DELETE` between existence check and write silently recreates a discarded session [`archery_service.py:137–141`] (story 7.1)
+- ~~`_pick_finalise_label` ignores in-progress labels~~ — **CLOSED by Story 1.8 (2026-09-03):** the label pick now runs inside `finalise_in_progress`'s `sessions_transaction()`, so two same-day finalises cannot read the same taken-label set. Covered by `test_concurrent_finalises_that_both_need_a_suffix_get_distinct_labels`.
+- ~~`update_in_progress` check-then-write TOCTOU~~ — **CLOSED by Story 1.8 (2026-09-03):** the existence check and the write share one `sessions_transaction()`, and `discard_in_progress` takes the same lock, so a delete can no longer land between them.
 - `read_session`/`read_in_progress` do not catch `ValidationError` — corrupt-but-valid-JSON file returns 500 instead of 404; `list_*` functions handle this correctly [`session_repo.py:57–67, :140–147`] (stories 2.1/6.1)
 
 ## Deferred from: code review of archery Chunk B (2026-06-10)
@@ -105,7 +105,7 @@
 
 ## Deferred from: code review of context-switch Epic 2 (2026-08-15)
 
-- Concurrent same-user mutations (add / reorder / archive / update) are unguarded read-modify-write of the whole doc — now far more likely with drag-reorder + updates log; a concurrent write silently clobbers another. Same platform pattern already logged for Epic 1 / archery; needs a platform-level lock or optimistic-concurrency decision [`backend/app/services/context_switch_service.py`] (stories 2.1/2.3/2.5)
+- ~~Concurrent same-user mutations are unguarded read-modify-write of the whole doc~~ — **CLOSED by Story 1.8 (2026-09-03):** all nine `context_switch_service` mutators now run inside `repo.doc_transaction(username)`, which holds the per-file lock across read→write. Covered by `tests/test_context_switch_concurrency.py`, including a threaded run through the real API.
 - Dialogs (AddTodoDialog, TodoDetailDialog) close synchronously before the async persist resolves — on failure the dialog is gone and the user's typed input is lost; only an error banner remains. Test-encoded behavior; changing it (keep dialog open until resolve) needs spec updates [`frontend/src/apps/context-switch/components/AddTodoDialog.vue`, `TodoDetailDialog.vue`] (stories 2.1/2.4)
 - GridControl controlled number input desyncs from state when the typed value clamps to the current value or the setGrid request fails — field shows the invalid text while the grid stays correct, no revert [`frontend/src/apps/context-switch/components/GridControl.vue`] (story 2.2)
 - Board-switch / archive-open flashes the previous list's pills/archived items — singleton store state replaced only when the new fetch resolves; reset to null/[] at fetch start [`frontend/src/apps/context-switch/stores/useContextSwitchStore.ts`] (stories 2.1/2.7)

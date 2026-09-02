@@ -235,25 +235,22 @@ def create_sheet(username: str, name: str, columns: list[ColumnSpec]) -> Sheet:
             )
         ],
     )
-    doc = repo.read_doc(username)
-    doc.sheets.append(sheet)
-    repo.write_doc(username, doc)
+    with repo.doc_transaction(username) as doc:
+        doc.sheets.append(sheet)
     return sheet
 
 
 def update_sheet(username: str, sheet_id: str, name: str) -> Sheet:
-    doc = repo.read_doc(username)
-    sheet = find_sheet(doc.sheets, sheet_id)
-    sheet.name = _clean_name(name, "sheet name")
-    repo.write_doc(username, doc)
+    with repo.doc_transaction(username) as doc:
+        sheet = find_sheet(doc.sheets, sheet_id)
+        sheet.name = _clean_name(name, "sheet name")
     return sheet
 
 
 def delete_sheet(username: str, sheet_id: str) -> None:
-    doc = repo.read_doc(username)
-    sheet = find_sheet(doc.sheets, sheet_id)
-    doc.sheets.remove(sheet)
-    repo.write_doc(username, doc)
+    with repo.doc_transaction(username) as doc:
+        sheet = find_sheet(doc.sheets, sheet_id)
+        doc.sheets.remove(sheet)
 
 
 # ── rows ──────────────────────────────────────────────────────────────────────
@@ -287,21 +284,20 @@ def create_row(
     tab_id: str,
     cells: dict[str, object] | None = None,
 ) -> Row:
-    doc = repo.read_doc(username)
-    tab = find_tab(find_sheet(doc.sheets, sheet_id).tabs, tab_id)
+    with repo.doc_transaction(username) as doc:
+        tab = find_tab(find_sheet(doc.sheets, sheet_id).tabs, tab_id)
 
-    stamp = now_iso()
-    row = Row(
-        id=new_id("r"),
-        # Past the highest existing order, not `len(rows)`: a deletion leaves
-        # gaps, and `len` would collide with a surviving row's order.
-        order=max((r.order for r in tab.rows), default=-1) + 1,
-        cells=_coerce_cells(tab, cells or {}),
-        created_at=stamp,
-        updated_at=stamp,
-    )
-    tab.rows.append(row)
-    repo.write_doc(username, doc)
+        stamp = now_iso()
+        row = Row(
+            id=new_id("r"),
+            # Past the highest existing order, not `len(rows)`: a deletion leaves
+            # gaps, and `len` would collide with a surviving row's order.
+            order=max((r.order for r in tab.rows), default=-1) + 1,
+            cells=_coerce_cells(tab, cells or {}),
+            created_at=stamp,
+            updated_at=stamp,
+        )
+        tab.rows.append(row)
     return row
 
 
@@ -319,34 +315,32 @@ def update_row_cells(
     runs over the whole payload before anything is applied, so a rejected
     update leaves the row exactly as it was.
     """
-    doc = repo.read_doc(username)
-    tab = find_tab(find_sheet(doc.sheets, sheet_id).tabs, tab_id)
-    row = find_row(tab.rows, row_id)
+    with repo.doc_transaction(username) as doc:
+        tab = find_tab(find_sheet(doc.sheets, sheet_id).tabs, tab_id)
+        row = find_row(tab.rows, row_id)
 
-    by_id = {column.id: column for column in tab.columns}
-    validated: dict[str, CellValue] = {}
-    for column_id, value in cells.items():
-        column = by_id.get(column_id)
-        if column is None:
-            raise ValueError(f"unknown column: {column_id}")
-        validated[column_id] = coerce_value(value, column.type)
+        by_id = {column.id: column for column in tab.columns}
+        validated: dict[str, CellValue] = {}
+        for column_id, value in cells.items():
+            column = by_id.get(column_id)
+            if column is None:
+                raise ValueError(f"unknown column: {column_id}")
+            validated[column_id] = coerce_value(value, column.type)
 
-    for column_id, value in validated.items():
-        if value is None:
-            row.cells.pop(column_id, None)
-        else:
-            row.cells[column_id] = value
+        for column_id, value in validated.items():
+            if value is None:
+                row.cells.pop(column_id, None)
+            else:
+                row.cells[column_id] = value
 
-    row.updated_at = now_iso()
-    repo.write_doc(username, doc)
+        row.updated_at = now_iso()
     return row
 
 
 def delete_row(username: str, sheet_id: str, tab_id: str, row_id: str) -> None:
-    doc = repo.read_doc(username)
-    tab = find_tab(find_sheet(doc.sheets, sheet_id).tabs, tab_id)
-    tab.rows.remove(find_row(tab.rows, row_id))
-    repo.write_doc(username, doc)
+    with repo.doc_transaction(username) as doc:
+        tab = find_tab(find_sheet(doc.sheets, sheet_id).tabs, tab_id)
+        tab.rows.remove(find_row(tab.rows, row_id))
 
 
 # ── columns ───────────────────────────────────────────────────────────────────
@@ -364,29 +358,28 @@ def _check_name_is_free(tab: Tab, name: str, *, except_id: str | None = None) ->
             raise ValueError(f"duplicate column name: {name}")
 
 
-def _tab_of(username: str, sheet_id: str, tab_id: str) -> tuple[ListiesDoc, Tab]:
-    doc = repo.read_doc(username)
-    return doc, find_tab(find_sheet(doc.sheets, sheet_id).tabs, tab_id)
+def _tab_in(doc: ListiesDoc, sheet_id: str, tab_id: str) -> Tab:
+    return find_tab(find_sheet(doc.sheets, sheet_id).tabs, tab_id)
 
 
 def add_column(
     username: str, sheet_id: str, tab_id: str, name: str, column_type: ColumnType
 ) -> Tab:
-    doc, tab = _tab_of(username, sheet_id, tab_id)
-    cleaned = _clean_name(name, "column name")
-    _check_name_is_free(tab, cleaned)
+    with repo.doc_transaction(username) as doc:
+        tab = _tab_in(doc, sheet_id, tab_id)
+        cleaned = _clean_name(name, "column name")
+        _check_name_is_free(tab, cleaned)
 
-    tab.columns.append(
-        Column(
-            id=new_id("c"),
-            name=cleaned,
-            type=column_type,
-            # Past the highest existing order — a deletion leaves gaps, so
-            # `len(columns)` would collide with a survivor.
-            order=max((c.order for c in tab.columns), default=-1) + 1,
+        tab.columns.append(
+            Column(
+                id=new_id("c"),
+                name=cleaned,
+                type=column_type,
+                # Past the highest existing order — a deletion leaves gaps, so
+                # `len(columns)` would collide with a survivor.
+                order=max((c.order for c in tab.columns), default=-1) + 1,
+            )
         )
-    )
-    repo.write_doc(username, doc)
     return tab
 
 
@@ -403,48 +396,47 @@ def update_column(
     A retype re-coerces every row: values that still parse are kept, the rest
     are blanked. Returns the whole tab because one change can touch many rows.
     """
-    doc, tab = _tab_of(username, sheet_id, tab_id)
-    column = find_column(tab.columns, column_id)
+    with repo.doc_transaction(username) as doc:
+        tab = _tab_in(doc, sheet_id, tab_id)
+        column = find_column(tab.columns, column_id)
 
-    if name is not None:
-        cleaned = _clean_name(name, "column name")
-        _check_name_is_free(tab, cleaned, except_id=column_id)
-        column.name = cleaned
+        if name is not None:
+            cleaned = _clean_name(name, "column name")
+            _check_name_is_free(tab, cleaned, except_id=column_id)
+            column.name = cleaned
 
-    if column_type is not None and column_type != column.type:
-        column.type = column_type
-        recoerce_column(tab.rows, column_id, column_type)
+        if column_type is not None and column_type != column.type:
+            column.type = column_type
+            recoerce_column(tab.rows, column_id, column_type)
 
-    repo.write_doc(username, doc)
     return tab
 
 
 def reorder_columns(username: str, sheet_id: str, tab_id: str, column_ids: list[str]) -> Tab:
-    doc, tab = _tab_of(username, sheet_id, tab_id)
+    with repo.doc_transaction(username) as doc:
+        tab = _tab_in(doc, sheet_id, tab_id)
 
-    if sorted(column_ids) != sorted(c.id for c in tab.columns):
-        raise ValueError("column_ids must be a permutation of the tab's columns")
+        if sorted(column_ids) != sorted(c.id for c in tab.columns):
+            raise ValueError("column_ids must be a permutation of the tab's columns")
 
-    positions = {column_id: index for index, column_id in enumerate(column_ids)}
-    for column in tab.columns:
-        column.order = positions[column.id]
+        positions = {column_id: index for index, column_id in enumerate(column_ids)}
+        for column in tab.columns:
+            column.order = positions[column.id]
 
-    repo.write_doc(username, doc)
     return tab
 
 
 def delete_column(username: str, sheet_id: str, tab_id: str, column_id: str) -> None:
-    doc, tab = _tab_of(username, sheet_id, tab_id)
-    column = find_column(tab.columns, column_id)
+    with repo.doc_transaction(username) as doc:
+        tab = _tab_in(doc, sheet_id, tab_id)
+        column = find_column(tab.columns, column_id)
 
-    if len(tab.columns) == 1:
-        raise ValueError("a tab must keep at least one column")
+        if len(tab.columns) == 1:
+            raise ValueError("a tab must keep at least one column")
 
-    tab.columns.remove(column)
-    for row in tab.rows:
-        row.cells.pop(column_id, None)
-
-    repo.write_doc(username, doc)
+        tab.columns.remove(column)
+        for row in tab.rows:
+            row.cells.pop(column_id, None)
 
 
 # ── tabs ──────────────────────────────────────────────────────────────────────
@@ -479,24 +471,23 @@ def create_tab(
     if (columns is None) == (copy_columns_from is None):
         raise ValueError("provide exactly one of columns or copy_columns_from")
 
-    doc = repo.read_doc(username)
-    sheet = find_sheet(doc.sheets, sheet_id)
+    with repo.doc_transaction(username) as doc:
+        sheet = find_sheet(doc.sheets, sheet_id)
 
-    new_columns = (
-        _copied_columns(sheet, copy_columns_from)
-        if copy_columns_from is not None
-        else build_columns(columns or [])
-    )
+        new_columns = (
+            _copied_columns(sheet, copy_columns_from)
+            if copy_columns_from is not None
+            else build_columns(columns or [])
+        )
 
-    tab = Tab(
-        id=new_id("tb"),
-        name=_clean_name(name, "tab name"),
-        order=max((t.order for t in sheet.tabs), default=-1) + 1,
-        columns=new_columns,
-        rows=[],
-    )
-    sheet.tabs.append(tab)
-    repo.write_doc(username, doc)
+        tab = Tab(
+            id=new_id("tb"),
+            name=_clean_name(name, "tab name"),
+            order=max((t.order for t in sheet.tabs), default=-1) + 1,
+            columns=new_columns,
+            rows=[],
+        )
+        sheet.tabs.append(tab)
     return tab
 
 
@@ -518,15 +509,14 @@ def update_tab(
     color: str | None = None,
 ) -> Tab:
     """Rename and/or recolour a tab — only the fields provided are applied."""
-    doc = repo.read_doc(username)
-    tab = find_tab(find_sheet(doc.sheets, sheet_id).tabs, tab_id)
+    with repo.doc_transaction(username) as doc:
+        tab = find_tab(find_sheet(doc.sheets, sheet_id).tabs, tab_id)
 
-    if name is not None:
-        tab.name = _clean_name(name, "tab name")
-    if color is not None:
-        tab.color = _clean_color(color)
+        if name is not None:
+            tab.name = _clean_name(name, "tab name")
+        if color is not None:
+            tab.color = _clean_color(color)
 
-    repo.write_doc(username, doc)
     return tab
 
 
@@ -536,12 +526,11 @@ def delete_tab(username: str, sheet_id: str, tab_id: str) -> None:
     A sheet always keeps at least one tab — an empty sheet would have nowhere
     to put a row and no columns to define one.
     """
-    doc = repo.read_doc(username)
-    sheet = find_sheet(doc.sheets, sheet_id)
-    tab = find_tab(sheet.tabs, tab_id)
+    with repo.doc_transaction(username) as doc:
+        sheet = find_sheet(doc.sheets, sheet_id)
+        tab = find_tab(sheet.tabs, tab_id)
 
-    if len(sheet.tabs) == 1:
-        raise ValueError("a sheet must keep at least one tab")
+        if len(sheet.tabs) == 1:
+            raise ValueError("a sheet must keep at least one tab")
 
-    sheet.tabs.remove(tab)
-    repo.write_doc(username, doc)
+        sheet.tabs.remove(tab)

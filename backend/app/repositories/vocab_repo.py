@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 
 from app.core.config import settings
+from app.core.locks import key_lock
 from app.repositories import _storage
 from app.schemas.hotaru import Word
 
@@ -81,9 +82,21 @@ def is_seed_word(word_id: str) -> bool:
     return any(w.id == word_id for w in read_seed())
 
 
+def transaction():
+    """Serialize a read-modify-write of the vocab aggregate (Story 1.8).
+
+    One key covers both the shared file and every user's private file, because
+    changing a word's visibility moves it between them — per-file locks would
+    have to be taken in pairs and could deadlock. Vocab edits are rare, so the
+    coarse key costs nothing in practice.
+    """
+    return key_lock("hotaru:vocab")
+
+
 def remove_word(user: str, word_id: str, location: str) -> None:
     """Drop a word from its writable file atomically."""
-    if location == "private":
-        write_private(user, [w for w in read_private(user) if w.id != word_id])
-    else:
-        write_shared([w for w in read_shared() if w.id != word_id])
+    with transaction():
+        if location == "private":
+            write_private(user, [w for w in read_private(user) if w.id != word_id])
+        else:
+            write_shared([w for w in read_shared() if w.id != word_id])
