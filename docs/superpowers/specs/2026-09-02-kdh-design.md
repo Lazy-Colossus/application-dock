@@ -18,11 +18,12 @@ free; the overlap lights up; an admin circles the day that won.
 
 ## Scope
 
-Two **admins** — the fixed pair of dock accounts — create **calendars** — one per occasion: a
+**Admins** — anyone with their own dock account — create **calendars** — one per occasion: a
 long-running DnD campaign, an ad-hoc movie night, a birthday party. Creating a calendar means
 naming it and listing who is invited. The admin then hands out the calendar's link.
 
-Everyone else opens that link behind **one shared dock login**. They see the month, the list of
+Everyone else opens that link behind **one shared dock login** — a single configured **guest
+account** that can read, claim a name and vote, and nothing else. They see the month, the list of
 invitees each in their own colour, and they **claim a name** — that is the whole of identity in
 this app; there are no per-person accounts. Having claimed a name they click days to set their
 availability, marking as many days as they like.
@@ -35,16 +36,18 @@ brightest of all. Arrows move between months. Past days keep their votes but are
 frozen. Admins **mark days as chosen** — several per calendar, accumulating over the life of a
 long-running one — and can **add or remove invitees** at any time.
 
-**In v1:** the fixed admin pair, calendar create/rename/delete, invitee add/remove, claim-a-name
+**In v1:** the guest account and the admins-are-everyone-else rule, calendar create/rename/delete, invitee add/remove, claim-a-name
 identity with a colour, month grid with prev/next navigation, three-state day availability
 (available / if needed / none), overlap heat highlighting, per-day attendee names, chosen-day
 marking, greyed-out past.
 
-**Not in v1** (candidates for a later epic): time-of-day or partial-day availability,
+**Not in v1** (candidates for a later epic): **a secret share link** (`/kdh/j/{token}`) that opens
+a calendar vote-only with no login at all — the friction-free alternative to handing out guest
+credentials, deferred because it would add the platform's first unauthenticated endpoint;
+time-of-day or partial-day availability,
 notifications or reminders of any kind, iCal export or calendar
-subscription, per-invitee logins, recurring events, comments or chat, managing the admin
-allowlist from the UI, a public no-login share token, week or agenda views, an availability
-deadline.
+subscription, per-invitee logins, recurring events, comments or chat, managing the guest
+list from the UI, week or agenda views, an availability deadline.
 
 ## Requirements
 
@@ -55,10 +58,12 @@ deadline.
 - FR-2: Every route sits behind `Depends(get_current_user)`. Unlike the other dock apps, KDH's
   data is **shared, not per-user** — the group logs in with one shared account, so every
   authenticated user sees the same calendars. No `user` field is accepted in any path or body.
-- FR-3: A user is an **admin** if their JWT username is one of the **two fixed admin accounts**
-  (`jake`, `dani`). This is a closed set, not a managed list — nobody can be promoted from inside
-  the app. Admin-only routes reject non-admins with `403`; the frontend hides admin controls
-  rather than offering them and failing.
+- FR-3: Capability is decided by **which account you logged in as**, inverted from an allowlist of
+  admins to a denylist of one: a username in the configured **guest list** is a guest, and **every
+  other authenticated user is an admin**. The guest account is the shared credential handed to the
+  group; a guest may read any calendar, claim a name, set their own votes and change their own
+  colour, and nothing else. Admin-only routes reject a guest with `403`; the frontend hides admin
+  controls rather than offering them and failing.
 
 **F2 — Calendars**
 - FR-4: An admin creates a **calendar** with a **name** and an initial **list of invitee names**.
@@ -138,13 +143,18 @@ deadline.
 - AR-1: **App registration** — `registry.ts` entry, lazy routes, `_APPS` entry in
   `routers/shell.py`, backend `routers/kdh.py` under `/api/kdh`, `frontend/src/apps/kdh/`,
   `docs/stories/kdh/{for-review,done}/`.
-- AR-2: **The admin pair is a closed set** — `settings.kdh_admins`, whose **default is
-  `["jake", "dani"]`**. A `KDH_ADMINS` env var can override it, but only so tests and dev can
-  run as somebody else; there is no UI, no API and no promotion path, and an unset environment
-  yields the two real admins rather than an open door. `GET /api/kdh/me` returns
-  `{ username, is_admin }` so the frontend renders the right controls without guessing.
-  The two usernames must match the actual dock accounts **exactly** — confirm them against
-  `_auth.json` in the deployed volume before Epic 1 lands.
+- AR-2: **Guests are configured; admins are everyone else** — `settings.kdh_guests`, a
+  comma-separated `KDH_GUESTS` env var defaulting to `players`. The operator creates that account
+  from the dock's existing Settings page and shares its credentials with the group. There is no UI,
+  no API and no promotion path. `GET /api/kdh/me` returns `{ username, is_admin }` so the frontend
+  renders the right controls without guessing.
+
+  **This fails open, deliberately.** An allowlist of admins would fail closed — a misspelled or
+  unknown username silently leaves nobody able to administer anything — and it requires knowing the
+  real account names up front. The denylist inverts that: a misconfiguration grants the shared
+  account more than it should, rather than locking the owners out, and any dock account added later
+  is an admin without further configuration. For a six-person self-hosted dock behind a login that
+  is the right direction; it would not be for a public deployment.
 - AR-3: **Layer split** — `repositories/kdh_repo.py` (only FS access, atomic writes, per-file
   locking), `services/kdh_service.py` (all logic, stdlib exceptions), `schemas/kdh.py`
   (Pydantic v2). Stable ids: calendars `cal-{uuid8}`, invitees `inv-{uuid8}`. Top-level
@@ -236,7 +246,7 @@ app/routers/kdh.py            HTTP only; stdlib exceptions -> HTTPException here
 app/services/kdh_service.py   all logic; raises FileNotFoundError / ValueError / PermissionError
 app/repositories/kdh_repo.py  the only FS access; atomic writes; per-calendar lock (NFR-1)
 app/schemas/kdh.py            Pydantic v2 models + request/response shapes
-app/core/config.py             + `kdh_admins: list[str]` from KDH_ADMINS
+app/core/config.py             + `kdh_guests: str` from KDH_GUESTS
 ```
 
 ## Frontend structure
@@ -322,7 +332,7 @@ read-only state before a name is claimed.
 Proposed shape — the authoritative breakdown will be generated into
 `docs/planning-artifacts/epics-kdh.md`, with stories under `docs/stories/kdh/`.
 
-- **Epic 1 — Foundation & calendars:** register the app, the fixed admin pair and `me` endpoint,
+- **Epic 1 — Foundation & calendars:** register the app, the guest/admin rule and `me` endpoint,
   the shared data layer with per-calendar locking (NFR-1), create/list/open/rename/delete a
   calendar, the deep link.
 - **Epic 2 — Invitees & identity:** add invitees and the colour palette, removal with

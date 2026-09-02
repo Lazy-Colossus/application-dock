@@ -15,11 +15,11 @@ inputDocuments:
 This document is the complete epic and story breakdown for **KDH**, a shared availability
 calendar shipped as a new self-contained app inside the Application Dock platform.
 
-A small, fixed group needs to find the days they can all make a session. Two **admins** — the
-fixed pair of dock accounts `jake` and `dani` — create a **calendar** per occasion (a long-running
-DnD campaign, a one-off movie night, a birthday party), name it, list who is invited, and hand out
-its link. Everyone else opens that link behind **one shared dock login**, **claims a name** from
-the invitee roster, and clicks days. Each day carries one of three states per person: **available**,
+A small, fixed group needs to find the days they can all make a session. **Admins** — anyone with
+their own dock account — create a **calendar** per occasion (a long-running DnD campaign, a one-off
+movie night, a birthday party), name it, list who is invited, and hand out its link. Everyone else
+opens that link behind **one shared dock login** — a single configured **guest account** —
+**claims a name** from the invitee roster, and clicks days. Each day carries one of three states per person: **available**,
 **if needed**, or nothing. Day cells show who is on them and light up by **coverage**, brightest
 where everyone is freely available. Admins **mark days as chosen**, accumulating over the life of a
 calendar. Past days keep their votes but are frozen and dimmed.
@@ -46,9 +46,11 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
 - FR-1: Registered in the Application Dock shell (landing-page card + its own route).
 - FR-2: Every route sits behind `Depends(get_current_user)`. Data is **shared, not per-user** —
   every authenticated user sees the same calendars. No `user` field is accepted in any path or body.
-- FR-3: A user is an **admin** if their JWT username is one of the **two fixed admin accounts**
-  (`jake`, `dani`) — a closed set with no in-app promotion path. Admin-only routes reject
-  non-admins with `403`; the frontend hides admin controls rather than offering them and failing.
+- FR-3: Capability is decided by **which account you logged in as**: a username in the configured
+  **guest list** is a guest, and **every other authenticated user is an admin**. A guest may read
+  any calendar, claim a name, set their own votes and change their own colour, and nothing else.
+  Admin-only routes reject a guest with `403`; the frontend hides admin controls rather than
+  offering them and failing.
 
 **F2 — Calendars**
 - FR-4: An admin creates a **calendar** with a **name** and an initial **list of invitee names**.
@@ -123,11 +125,13 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
 - AR-1: **App registration** — `registry.ts` entry, lazy routes, `_APPS` entry in `routers/shell.py`,
   backend `routers/kdh.py` under `/api/kdh`, `frontend/src/apps/kdh/`,
   `docs/stories/kdh/{for-review,done}/`.
-- AR-2: **The admin pair is a closed set** — `settings.kdh_admins`, default `["jake", "dani"]`. A
-  `KDH_ADMINS` env var can override it so tests and dev can run as somebody else, but there is no
-  UI, no API and no promotion path, and an unset environment yields the two real admins rather than
-  an open door. `GET /api/kdh/me` returns `{ username, is_admin }`. The two usernames must match
-  the real dock accounts exactly — confirm against the deployed `_auth.json` before Epic 1 lands.
+- AR-2: **Guests are configured; admins are everyone else** — `settings.kdh_guests`, a
+  comma-separated `KDH_GUESTS` env var defaulting to `players`. The operator creates that account
+  from the dock's existing Settings page and shares its credentials with the group.
+  `GET /api/kdh/me` returns `{ username, is_admin }`. **This fails open by design:** an admin
+  allowlist fails closed — one wrong username and nobody can administer anything — and needs the
+  real account names up front. The denylist instead over-grants the shared account on
+  misconfiguration and needs no knowledge of who the owners are.
 - AR-3: **Layer split** — `repositories/kdh_repo.py` (only FS access, atomic writes, per-file
   locking), `services/kdh_service.py` (all logic, stdlib exceptions), `schemas/kdh.py`
   (Pydantic v2). Stable ids: calendars `cal-{uuid8}`, invitees `inv-{uuid8}`. Top-level
@@ -210,7 +214,7 @@ cast as a removed invitee.
 |---|---|---|
 | FR-1 | Epic 1 | The app card, route and backend router exist |
 | FR-2 | Epic 1 | Every route authenticated; storage shared, not per-user |
-| FR-3 | Epic 1 | The fixed admin pair, the `403` gate, and `GET /me` |
+| FR-3 | Epic 1 | The guest denylist, the `403` gate, and `GET /me` |
 | FR-4 | Epic 1 | Create a calendar with a name and initial invitee names |
 | FR-5 | Epic 1 | The landing list, newest first, with its empty state |
 | FR-6 | Epic 1 | Rename and delete a calendar |
@@ -235,7 +239,7 @@ the other epics build on); NFR-6 is exercised by Epic 3; AR-6 and AR-7 land in E
 Admins can create a calendar for an occasion, name it, seed it with who is invited, find it again
 in a list, rename or delete it, and copy a link to hand out. Non-admins can open that link and see
 the calendar exists. This epic also stands up everything the later epics rest on: the shared
-(not per-user) data layer, the fixed admin pair, and — critically — **write serialization per
+(not per-user) data layer, the guest/admin rule, and — critically — **write serialization per
 calendar file**, without which the voting in Epic 3 silently loses votes.
 **FRs covered:** FR-1, FR-2, FR-3, FR-4, FR-5, FR-6, FR-7
 **Also lands:** NFR-1, NFR-2, NFR-3, NFR-4, NFR-5, AR-1, AR-2, AR-3, AR-4, AR-5
@@ -270,11 +274,20 @@ nothing to vote as until a name can be claimed. Epic 4 depends on Epic 3 for the
 working calendars, Epic 2 alone gives a usable guest list, Epic 3 alone is a working availability
 poll, and Epic 4 is purely additive.
 
+### Deferred to a later epic
+
+**Secret share links.** A per-calendar token behind `/kdh/j/{token}`, opening a calendar vote-only
+with **no login at all** — so the group needs no credentials, only a URL. Chosen against for v1
+because it would add the platform's first unauthenticated endpoint; the guest account delivers the
+same capability split behind the existing login. If it is built later it slots in beside Epic 1
+without disturbing anything: the guest account and the token would simply be two routes to the same
+vote-only capability.
+
 ## Epic 1: Foundation & Calendars
 
 Admins can create a calendar for an occasion, name it, seed it with who is invited, find it again
 in a list, rename or delete it, and copy a link to hand out. This epic also stands up the shared
-(not per-user) data layer, the fixed admin pair, and write serialization per calendar file.
+(not per-user) data layer, the guest/admin rule, and write serialization per calendar file.
 
 ### Story 1.1: Register KDH in the Application Dock shell
 
@@ -377,17 +390,17 @@ so that each occasion gets its own place and I can find it again.
 
 **Acceptance Criteria:**
 
-**Given** `settings.kdh_admins`
-**When** the API boots with no `KDH_ADMINS` env var set
-**Then** it defaults to the two fixed admin accounts, and `GET /api/kdh/me` returns
-`{ username, is_admin }` for the caller (FR-3, AR-2).
+**Given** `settings.kdh_guests`
+**When** the API boots with no `KDH_GUESTS` env var set
+**Then** it defaults to the single guest account `players`, every other authenticated username is
+an admin, and `GET /api/kdh/me` returns `{ username, is_admin }` for the caller (FR-3, AR-2).
 
 **Given** an unauthenticated request to any `/api/kdh/*` route
 **When** it is made
 **Then** it is rejected with `401`, matching every other app on the platform. This is the first
 story with a real endpoint to assert it against, deferred here from Story 1.1 (FR-2).
 
-**Given** an authenticated non-admin
+**Given** an authenticated **guest**
 **When** they call any admin-only route
 **Then** it is rejected with `403` and a `{detail}` body; the frontend hides admin controls rather
 than rendering them and letting them fail (FR-3).
