@@ -242,13 +242,24 @@ const label = computed(() => {
      already close to full, which is how it ended up spilling out. Two lines
      tall, clipped, and allowed to shrink on a narrow window. */
   .cell-names {
-    display: block;
+    /* Two lines, and the browser adds its own ellipsis at the cut — so a day
+       whose names do not fit says so, rather than ending mid-word. The clamp
+       replaces `max-height`: it truncates at a line boundary and marks it,
+       where a height limit only ever cropped in silence.
+
+       This is separate from the explicit "…" appended past the sixth name.
+       That one means "more people are on this day"; this one means "more text
+       than fits". They rarely both show, and when they do the clamp's is the
+       one you see. */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
     flex: 0 1 auto;
     min-height: 0;
     margin-top: 4px;
     width: 100%;
     max-width: 100%;
-    max-height: 2.6em;
     font-size: clamp(8.5px, 0.75vw, 10px);
     line-height: 1.3;
     text-align: center;
