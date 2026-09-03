@@ -27,12 +27,18 @@
       <span v-if="row.total === 0" class="col counts" data-testid="none-yet"
         >nothing yet</span
       >
+      <!-- Total first and always in the same place, so the column can be read
+           straight down; the breakdown follows in the same shape on every row,
+           even when one half is all of it. "3 (3 current)" is mildly redundant,
+           but a column whose numbers land in different places is worse. -->
       <span v-else class="col counts">
-        <span v-if="row.upcoming > 0" class="to-come"
-          >{{ row.upcoming }} to come</span
-        >
-        <span v-if="row.upcoming > 0 && row.past > 0" class="sep">·</span>
-        <span v-if="row.past > 0" class="past">{{ row.past }} past</span>
+        <b class="total">{{ row.total }}</b>
+        <span class="split">
+          (<template v-if="row.upcoming > 0"
+            ><span class="current">{{ row.upcoming }} current</span></template
+          ><template v-if="row.upcoming > 0 && row.past > 0"> · </template
+          ><template v-if="row.past > 0">{{ row.past }} past</template>)
+        </span>
       </span>
     </div>
   </div>
@@ -127,12 +133,18 @@ const anyVotes = computed(() => rows.value.some((row) => row.total > 0));
   font-variant-numeric: tabular-nums;
   color: var(--kdh-ink-mid);
 }
-.to-come {
+.total {
   color: var(--kdh-ink-hi);
+  font-weight: 600;
 }
-.sep {
-  margin: 0 4px;
-  opacity: 0.5;
+/* The breakdown explains the total rather than competing with it. */
+.split {
+  margin-left: 5px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+.current {
+  color: var(--kdh-ink-hi);
 }
 .tag {
   flex: none;

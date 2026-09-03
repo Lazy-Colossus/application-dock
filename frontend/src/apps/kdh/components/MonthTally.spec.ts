@@ -41,7 +41,7 @@ describe("MonthTally", () => {
     );
   });
 
-  it("splits each person's votes into still-to-come and past", () => {
+  it("leads with the total, then breaks it down", () => {
     const wrapper = mountTally({
       votes: {
         "2026-09-03": { a: "yes", b: "yes" },
@@ -51,22 +51,30 @@ describe("MonthTally", () => {
       },
     });
 
-    // Today counts as still to come, so Dani has the 10th and the 21st.
-    const dani = wrapper.find('[data-testid="tally-a"]').text();
-    expect(dani).toContain("2 to come");
-    expect(dani).toContain("2 past");
+    // Today counts as current, so Dani has the 10th and the 21st ahead of her.
+    const dani = wrapper.find('[data-testid="tally-a"]');
+    expect(dani.find(".total").text()).toBe("4");
+    expect(dani.find(".split").text().replace(/\s+/g, " ")).toBe(
+      "(2 current · 2 past)",
+    );
 
-    const jake = wrapper.find('[data-testid="tally-b"]').text();
-    expect(jake).toContain("1 to come");
-    expect(jake).toContain("1 past");
+    const jake = wrapper.find('[data-testid="tally-b"]');
+    expect(jake.find(".total").text()).toBe("2");
+    expect(jake.find(".split").text().replace(/\s+/g, " ")).toBe(
+      "(1 current · 1 past)",
+    );
   });
 
-  it("drops the half of the split that is zero", () => {
-    const wrapper = mountTally({ votes: { "2026-09-21": { a: "yes" } } });
-    const dani = wrapper.find('[data-testid="tally-a"]').text();
+  it("names only the half that exists, never a zero", () => {
+    const ahead = mountTally({ votes: { "2026-09-21": { a: "yes" } } });
+    expect(
+      ahead.find('[data-testid="tally-a"] .split').text().replace(/\s+/g, " "),
+    ).toBe("(1 current)");
 
-    expect(dani).toContain("1 to come");
-    expect(dani).not.toContain("0 past");
+    const behind = mountTally({ votes: { "2026-09-03": { a: "yes" } } });
+    expect(
+      behind.find('[data-testid="tally-a"] .split').text().replace(/\s+/g, " "),
+    ).toBe("(1 past)");
   });
 
   it("surfaces the person who has said nothing", () => {
@@ -86,9 +94,7 @@ describe("MonthTally", () => {
       },
     });
 
-    expect(wrapper.find('[data-testid="tally-a"]').text()).toContain(
-      "1 to come",
-    );
+    expect(wrapper.find('[data-testid="tally-a"] .total').text()).toBe("1");
     expect(wrapper.find('[data-testid="tally-a"]').text()).not.toContain(
       "past",
     );
