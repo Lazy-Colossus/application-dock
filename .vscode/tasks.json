@@ -4,7 +4,7 @@
     {
       "label": "Mac Backend: dev server",
       "type": "shell",
-      "command": "set -a; [ -f \"${workspaceFolder}/.env\" ] && . \"${workspaceFolder}/.env\"; set +a; export DATA_DIR=./local-data; exec \"${workspaceFolder}/backend/.venv/bin/uvicorn\" app.main:app --reload --port 8000",
+      "command": "set -a; [ -f \"${workspaceFolder}/.env\" ] && . \"${workspaceFolder}/.env\"; set +a; export DATA_DIR=./local-data; exec \"${workspaceFolder}/backend/.venv/bin/uvicorn\" app.main:app --reload --port 9000",
       "options": {
         "cwd": "${workspaceFolder}/backend"
       },
