@@ -138,6 +138,10 @@ const label = computed(() => {
   position: relative;
   aspect-ratio: 1 / 1.06;
   width: 100%;
+  /* Without this a flex/grid item refuses to shrink below its content, which
+     is the other half of the uneven-column bug. */
+  min-width: 0;
+  overflow: hidden;
   border: none;
   border-radius: 7px;
   background: var(--kdh-wash-0);
@@ -225,17 +229,23 @@ const label = computed(() => {
      each person's colour: six colours on one line is a smear, and the colour
      already does its work in the day sheet and the hover list. */
   .cell-names {
-    display: block;
+    /* Wraps to a second line and is then clipped, rather than running on and
+       dragging the column wider. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-clamp: 2;
     margin-top: auto;
     padding-top: 6px;
     width: 100%;
+    max-width: 100%;
     font-size: 11px;
     line-height: 1.3;
     text-align: center;
     opacity: 0.85;
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
     overflow: hidden;
-    text-overflow: ellipsis;
   }
   /* Still set apart by style rather than colour, which is what NFR-6 asks for. */
   .tentative {

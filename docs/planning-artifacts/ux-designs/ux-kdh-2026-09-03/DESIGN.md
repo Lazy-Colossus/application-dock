@@ -150,7 +150,10 @@ Roboto/system stack from Quasar — KDH adds no font payload to the dock.
 ## Layout & Spacing
 
 Seven columns, **Monday first**, `cell-gap` between cells, `screen-pad-x` at the
-edges. Cells are `aspect-ratio: 1 / 1.06` — very slightly taller than square, so
+edges. The tracks are `minmax(0, 1fr)`, **not** `1fr` — a `1fr` track has an *auto*
+minimum, so one cell with a long line of names silently widens its whole column and
+the seven stop being equal. Cells carry `min-width: 0` and `overflow: hidden` for
+the same reason: content must fit the track, never the other way round. Cells are `aspect-ratio: 1 / 1.06` — very slightly taller than square, so
 the date and the count stack without crowding. On a 360px phone this yields
 roughly 44px cells, which is also the touch minimum; the cell *is* the target.
 

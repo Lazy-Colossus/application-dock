@@ -153,7 +153,10 @@ defineExpose({ monthLabel });
 .kdh-dow,
 .kdh-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  /* `minmax(0, 1fr)` and not `1fr`: a `1fr` track has an AUTO minimum, so any
+     cell whose content is wider than its share silently widens its whole
+     column and the seven stop being equal. */
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 4px;
 }
 .kdh-dow {
