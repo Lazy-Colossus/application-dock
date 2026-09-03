@@ -19,7 +19,7 @@ inherits_ui_system: "Vue 3 + Quasar v2 (Material-based)"
 
 ## Foundation
 
-- **Form factor: two layouts, phone and web**, splitting at **1024px**. The phone
+- **Form factor: two layouts, phone and web**, splitting at **700px**. The phone
   layout is primary and is the constraint the interface was designed against; the
   web layout is the same app given room — a centred band at 66% of the window,
   larger numerals, and cells tall enough to list the voters. There is no third

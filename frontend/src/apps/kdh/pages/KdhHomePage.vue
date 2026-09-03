@@ -257,10 +257,10 @@ import "./../css/kdh.sass";
 <style scoped>
 /* Same centred band as the calendar, so moving between the two screens does
    not move the content. */
-@media (min-width: 1024px) {
+@media (min-width: 700px) {
   .kdh-app {
-    padding-left: 17%;
-    padding-right: 17%;
+    padding-left: min(17%, 120px);
+    padding-right: min(17%, 120px);
   }
 }
 

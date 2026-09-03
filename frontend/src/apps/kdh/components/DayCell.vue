@@ -197,11 +197,11 @@ const label = computed(() => {
   display: none;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 700px) {
   .kdh-cell {
     aspect-ratio: 1 / 1;
     justify-content: flex-start;
-    padding: 7px 6px;
+    padding: 6px 5px;
   }
   .chosen {
     box-shadow: 0 0 0 2.5px var(--kdh-gold);
@@ -211,23 +211,27 @@ const label = computed(() => {
       inset 0 0 0 1px var(--kdh-wash-6),
       0 0 0 2.5px var(--kdh-gold);
   }
+  /* Fluid between the breakpoint and the cap: at 700px a square cell is only
+     ~89px tall, and fixed sizes would push the names straight back out of it.
+     Every piece scales with the viewport and stops at the size chosen for a
+     comfortable window. */
   .crown-slot {
-    height: 14px;
+    height: clamp(10px, 1.1vw, 14px);
   }
   .crown {
-    width: 14px;
-    height: 14px;
+    width: clamp(10px, 1.1vw, 14px);
+    height: clamp(10px, 1.1vw, 14px);
   }
   .d {
-    font-size: 21px;
+    font-size: clamp(16px, 1.6vw, 21px);
   }
   /* Generous on web because this is where hover exists at all, and the number
      alone was too small to aim at. Untouched on a phone, which has no hover and
      no room. */
   .n {
-    font-size: 14px;
-    padding: 4px 15px;
-    min-width: 46px;
+    font-size: clamp(12px, 1.1vw, 14px);
+    padding: 4px clamp(9px, 1.1vw, 15px);
+    min-width: clamp(34px, 3.4vw, 46px);
     border-radius: 8px;
   }
   /* One line at the foot of the cell, in the cell's own ink. Deliberately NOT
@@ -245,7 +249,7 @@ const label = computed(() => {
     width: 100%;
     max-width: 100%;
     max-height: 2.6em;
-    font-size: 10px;
+    font-size: clamp(8.5px, 0.75vw, 10px);
     line-height: 1.3;
     text-align: center;
     opacity: 0.85;

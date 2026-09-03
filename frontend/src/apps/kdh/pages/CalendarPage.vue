@@ -576,21 +576,23 @@ import "./../css/kdh.sass";
 .kdh-inner {
   width: 100%;
 }
-@media (min-width: 1024px) {
+@media (min-width: 700px) {
   .kdh-inner {
     /* `min-width` is the important one: below about 790px the square cells stop
        being tall enough to hold two lines of names, so a narrow window gets a
        wider band rather than losing the names. */
     width: 66%;
-    min-width: 790px;
+    /* `min()` so the floor can never exceed the window — below ~820px the band
+       is simply the full column. */
+    min-width: min(790px, 100%);
     max-width: 1080px;
     margin: 0 auto;
   }
   .kdh-title {
-    font-size: 34px;
+    font-size: clamp(24px, 2.6vw, 34px);
   }
   .kdh-headcount {
-    font-size: 26px;
+    font-size: clamp(19px, 2vw, 26px);
   }
   .kdh-whoami {
     font-size: 16px;

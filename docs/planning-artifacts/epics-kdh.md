@@ -145,10 +145,11 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
 
 - NFR-0: **Two layouts, phone and web.** The phone layout is the primary one and the
   constraint the interface was designed against; the web layout is the same app given
-  room. The breakpoint is **1024px**. Below it the calendar is the full width of the
+  room. The breakpoint is **700px**. Below it the calendar is the full width of the
   screen with a ~44px day cell; above it the calendar is a centred band at 66% of the
-  window (capped so it stays readable on a very wide monitor), the numerals grow, and
-  the day cells are tall enough to carry names.
+  window (with a floor so a narrow window keeps its content, and a cap so it stays
+  readable on a very wide monitor), the day cells are square, and the numerals scale
+  fluidly with the viewport rather than jumping at a second breakpoint.
 - NFR-1: **Concurrent voting is the normal case, so writes must not lose updates.** Six people share
   one login and click days on the same calendar at the same time. The platform's current
   read-modify-write over a whole JSON document (Story 1.8, still Draft) would silently clobber

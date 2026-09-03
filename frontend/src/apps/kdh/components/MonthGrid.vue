@@ -187,7 +187,7 @@ defineExpose({ monthLabel });
   margin-bottom: 4px;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 700px) {
   .kdh-month-label {
     font-size: 16px;
   }
