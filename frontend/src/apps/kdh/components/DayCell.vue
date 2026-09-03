@@ -53,6 +53,23 @@
       </q-tooltip>
     </span>
 
+    <!-- Phone only. This is the one job an invitee colour can do that a name
+         cannot: say WHO at 44px, where no name fits. On the web layout the names
+         themselves are here instead, so the dots are hidden. -->
+    <span v-if="voters.length > 0" class="dots" aria-hidden="true">
+      <span
+        v-for="voter in dotVoters"
+        :key="voter.invitee.id"
+        class="dot"
+        :class="{ tentative: voter.status === 'if_needed' }"
+        :style="{
+          background:
+            voter.status === 'if_needed' ? 'transparent' : voter.invitee.color,
+          borderColor: voter.invitee.color,
+        }"
+      />
+    </span>
+
     <!-- Wide layout only (hidden by CSS below the breakpoint): a phone cell is
          ~44px and cannot hold a name, which is why the day sheet exists. Given
          room, the names belong here — this is what FR-13 originally asked for. -->
@@ -115,6 +132,10 @@ const voters = computed(() =>
  */
 const shownVoters = computed(() => voters.value.slice(0, NAMES_SHOWN));
 
+/** As many dots as fit one row of a 44px cell; the count carries the true total. */
+const DOTS_SHOWN = 6;
+const dotVoters = computed(() => voters.value.slice(0, DOTS_SHOWN));
+
 const label = computed(() => {
   const parts = [`${dayOfMonth.value}`];
   parts.push(
@@ -136,7 +157,10 @@ const label = computed(() => {
 <style scoped>
 .kdh-cell {
   position: relative;
-  aspect-ratio: 1 / 1.06;
+  /* Taller than square on a phone, to hold the row of dots. The alternative was
+     shrinking the date and the count, which are the two things that were
+     deliberately enlarged. */
+  aspect-ratio: 1 / 1.28;
   width: 100%;
   /* Without this a flex/grid item refuses to shrink below its content, which
      is the other half of the uneven-column bug. */
@@ -192,6 +216,35 @@ const label = computed(() => {
   }
 }
 
+/* --- Who, as colour: phone only --------------------------------------- */
+.dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5px;
+  margin-top: 3px;
+  padding: 0 3px;
+  height: 5px;
+  max-width: 100%;
+}
+.dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  border: 1px solid;
+  flex: none;
+}
+/* Filled means free, hollow means if needed — a shape, so the distinction does
+   not rest on colour any more than the rest of the app does (NFR-6). */
+.dot.tentative {
+  background: transparent;
+}
+/* Pastels on pale lilac need an edge to be seen at all. */
+.w5 .dot,
+.w6 .dot {
+  box-shadow: 0 0 0 0.5px rgba(26, 16, 36, 0.45);
+}
+
 /* --- Names in the cell: wide layout only ------------------------------- */
 .cell-names {
   display: none;
@@ -241,6 +294,9 @@ const label = computed(() => {
      `margin-top: auto` pushed it against the bottom edge of a square that is
      already close to full, which is how it ended up spilling out. Two lines
      tall, clipped, and allowed to shrink on a narrow window. */
+  .dots {
+    display: none;
+  }
   .cell-names {
     /* Two lines, and the browser adds its own ellipsis at the cut — so a day
        whose names do not fit says so, rather than ending mid-word. The clamp

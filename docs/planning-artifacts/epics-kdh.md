@@ -123,7 +123,9 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
   layout the cell is large enough, so it also lists the voters beneath the count,
   comma-separated in the cell's own ink — not in each person's colour, since six
   colours on one line is a smear — trailing off past the sixth, and **ellipsised**
-  when they do not fit the two lines available. Either way the
+  when they do not fit the two lines available. On the phone layout, where no name fits,
+  the cell instead carries a **row of invitee-coloured dots**, filled for free and
+  hollow for *if needed*, so it still says *who* and not only *how many*. Either way the
   **if-needed people are visually distinguished** by weight and style, and the sheet
   remains the complete list.
 - FR-14: Cells are **heat-highlighted by coverage** (available + if needed), scaled against the

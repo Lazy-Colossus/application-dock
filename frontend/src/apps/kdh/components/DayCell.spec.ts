@@ -282,4 +282,53 @@ describe("DayCell", () => {
   it("renders no name list on a day nobody picked", () => {
     expect(mountCell().find('[data-testid="cell-names"]').exists()).toBe(false);
   });
+
+  it("shows a dot per voter, in roster order — the one job a name cannot do", () => {
+    // Phone only: at 44px there is no room for a name, so colour says who.
+    const wrapper = mountCell({ votes: { c: "yes", a: "yes" } });
+    const dots = wrapper.findAll(".dot");
+
+    expect(dots).toHaveLength(2);
+    expect(dots[0].attributes("style")).toContain("#E9A6A0"); // Dani
+    expect(dots[1].attributes("style")).toContain("#B9DCC2"); // Tom
+  });
+
+  it("hollows the dot of someone who is only free if needed", () => {
+    const wrapper = mountCell({ votes: { a: "yes", b: "if_needed" } });
+    const dots = wrapper.findAll(".dot");
+
+    expect(dots[0].classes()).not.toContain("tentative");
+    expect(dots[1].classes()).toContain("tentative");
+    // Their colour still identifies them; only the fill changes.
+    expect(dots[1].attributes("style")).toContain("#A9C8E8");
+  });
+
+  it("caps the dots at a row, leaving the count to carry the true total", () => {
+    const eight = [
+      ...ROSTER,
+      { id: "g", name: "Zoe", color: "#C9B8A0", order: 6, removed_at: null },
+      { id: "h", name: "Ivo", color: "#9FB8D8", order: 7, removed_at: null },
+    ];
+    const wrapper = mountCell({
+      activeTotal: 8,
+      invitees: eight,
+      votes: {
+        a: "yes",
+        b: "yes",
+        c: "yes",
+        d: "yes",
+        e: "yes",
+        f: "yes",
+        g: "yes",
+        h: "yes",
+      },
+    });
+
+    expect(wrapper.findAll(".dot")).toHaveLength(6);
+    expect(wrapper.find('[data-testid="count"]').text()).toBe("8");
+  });
+
+  it("shows no dots on a day nobody picked", () => {
+    expect(mountCell().find(".dots").exists()).toBe(false);
+  });
 });

@@ -132,6 +132,14 @@ They sit outside the purple family for exactly that reason — a person rendered
 purple would read as a coverage level. Assign them in listed order; the first
 eight cover any realistic group.
 
+**An invitee colour must earn its place by identifying someone whose name is not
+already there.** Beside a written name it is decoration, and the app very nearly
+lost the palette on those grounds. The job that justifies it is the **phone day
+cell**, where no name fits and a row of dots is the only way to say *who*. Every
+other appearance — the day sheet, the hover list, the dropdown, the roster chips —
+is a dot beside a name, and is a convenience rather than the reason the colours
+exist.
+
 The ramp is **relative to the number of active invitees**, not absolute. Five of
 six is `wash-5`; five of ten is not. Removed invitees leave the denominator but
 keep their colour reserved while they still hold past votes.
@@ -201,7 +209,9 @@ dock does not have — so the "never use the dock's gold" rule below is narrowed
 mean *never as an interactive accent*, which is what it was protecting against.
 The crown stays, so the marking never depends on colour alone.
 
-**Day cell.** **Square at both sizes.** A reserved crown slot, the date, then the
+**Day cell.** Square on the web layout, and slightly taller than square on a phone
+to carry the row of dots — the alternative was shrinking the date and the count,
+which exist at their sizes deliberately. A reserved crown slot, the date, then the
 coverage count beneath it, on a `wash-*` background; on the web layout the voter
 names sit **directly under the count**, not at the foot of the cell — a square this
 full has no bottom margin to spare, and anchoring them to it is what made them spill
