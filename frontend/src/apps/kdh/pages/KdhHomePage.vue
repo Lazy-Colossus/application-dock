@@ -255,6 +255,15 @@ import "./../css/kdh.sass";
 </script>
 
 <style scoped>
+/* Same centred band as the calendar, so moving between the two screens does
+   not move the content. */
+@media (min-width: 1024px) {
+  .kdh-app {
+    padding-left: 10%;
+    padding-right: 10%;
+  }
+}
+
 .kdh-create-card {
   min-width: 380px;
 }

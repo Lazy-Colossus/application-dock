@@ -228,4 +228,61 @@ describe("DayCell", () => {
     expect(area.find('[data-testid="count"]').text()).toBe("1");
     expect(area.find(".tip").exists()).toBe(true);
   });
+
+  it("lists the voters at the foot of the cell, in roster order", () => {
+    // Rendered at every size and hidden by CSS on a phone, where a 44px cell
+    // cannot hold a name — that is what the day sheet is for.
+    const wrapper = mountCell({ votes: { c: "yes", a: "yes" } });
+    const names = wrapper.findAll(".cell-name").map((n) => n.text());
+
+    expect(names).toEqual(["Dani", "Tom"]);
+  });
+
+  it("trails off past the sixth name", () => {
+    const wrapper = mountCell({
+      votes: { a: "yes", b: "yes", c: "yes", d: "yes", e: "yes", f: "yes" },
+      invitees: [
+        ...ROSTER,
+        { id: "g", name: "Zoe", color: "#C9B8A0", order: 6, removed_at: null },
+      ],
+    });
+    // Exactly six on the day: all shown, nothing trailing.
+    const names = wrapper.findAll(".cell-name").map((n) => n.text());
+    expect(names).toHaveLength(6);
+    expect(wrapper.find(".cell-name.more").exists()).toBe(false);
+
+    const withMore = mountCell({
+      activeTotal: 7,
+      votes: {
+        a: "yes",
+        b: "yes",
+        c: "yes",
+        d: "yes",
+        e: "yes",
+        f: "yes",
+        g: "yes",
+      },
+      invitees: [
+        ...ROSTER,
+        { id: "g", name: "Zoe", color: "#C9B8A0", order: 6, removed_at: null },
+      ],
+    });
+    const shown = withMore.findAll(".cell-name").map((n) => n.text());
+    expect(shown).toHaveLength(7);
+    expect(shown[6]).toBe("…");
+  });
+
+  it("colours each name as its owner, and italicises an if-needed one", () => {
+    const wrapper = mountCell({ votes: { a: "yes", b: "if_needed" } });
+    const names = wrapper.findAll(".cell-name");
+
+    expect(names[0].attributes("style")).toContain("#E9A6A0");
+    expect(names[1].classes()).toContain("tentative");
+    // Their colour is untouched — it still means "Jake".
+    expect(names[1].attributes("style")).toContain("#A9C8E8");
+  });
+
+  it("renders no name list on a day nobody picked", () => {
+    expect(mountCell().find('[data-testid="cell-names"]').exists()).toBe(false);
+  });
 });

@@ -52,6 +52,22 @@
         </div>
       </q-tooltip>
     </span>
+
+    <!-- Wide layout only (hidden by CSS below the breakpoint): a phone cell is
+         ~44px and cannot hold a name, which is why the day sheet exists. Given
+         room, the names belong here — this is what FR-13 originally asked for. -->
+    <span v-if="voters.length > 0" class="cell-names" data-testid="cell-names">
+      <span
+        v-for="voter in shownVoters"
+        :key="voter.invitee.id"
+        class="cell-name"
+        :class="{ tentative: voter.status === 'if_needed' }"
+        :style="{ color: voter.invitee.color }"
+      >
+        {{ voter.invitee.name }}
+      </span>
+      <span v-if="voters.length > NAMES_SHOWN" class="cell-name more">…</span>
+    </span>
   </button>
 </template>
 
@@ -86,6 +102,9 @@ const wash = computed(() =>
   washFor(free.value, ifNeeded.value, props.activeTotal),
 );
 
+/** About as many names as a wide cell holds before it stops being scannable. */
+const NAMES_SHOWN = 6;
+
 /** Who is on this day, in roster order — the same list the day sheet shows. */
 const voters = computed(() =>
   [...props.invitees]
@@ -98,6 +117,8 @@ const voters = computed(() =>
  * Spoken as date, then coverage, then state — so the grid is usable without
  * seeing the wash at all (EXPERIENCE.md, Accessibility Floor).
  */
+const shownVoters = computed(() => voters.value.slice(0, NAMES_SHOWN));
+
 const label = computed(() => {
   const parts = [`${dayOfMonth.value}`];
   parts.push(
@@ -168,6 +189,70 @@ const label = computed(() => {
 @media (prefers-reduced-motion: reduce) {
   .n {
     transition: none;
+  }
+}
+
+/* --- Names in the cell: wide layout only ------------------------------- */
+.cell-names {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .kdh-cell {
+    /* Height comes from the grid, not from the width — a cell now has to hold
+       six names, and an aspect ratio would either clip them or leave a crater
+       on an empty day. */
+    aspect-ratio: auto;
+    justify-content: flex-start;
+    padding: 8px 6px;
+  }
+  .crown-slot {
+    height: 16px;
+  }
+  .crown {
+    width: 16px;
+    height: 16px;
+  }
+  .d {
+    font-size: 26px;
+  }
+  .n {
+    font-size: 15px;
+    padding: 3px 10px;
+    min-width: 30px;
+  }
+  .cell-names {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    margin-top: 6px;
+    width: 100%;
+    font-size: 11px;
+    line-height: 1.25;
+  }
+  .cell-name {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* Weight and style, never a tint — the colour has to keep meaning "them". */
+  .cell-name.tentative {
+    font-style: italic;
+    opacity: 0.75;
+  }
+  .cell-name.more {
+    color: inherit;
+    opacity: 0.6;
+  }
+  /* Pastel names on pale lilac have almost no contrast, so they keep their
+     colour and gain a dark halo — the same fix the gold date uses. */
+  .w5 .cell-name,
+  .w6 .cell-name {
+    text-shadow:
+      0 1px 1px rgba(26, 16, 36, 0.9),
+      0 0 5px rgba(26, 16, 36, 0.7);
   }
 }
 

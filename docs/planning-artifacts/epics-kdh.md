@@ -117,11 +117,13 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
 **F4 — The month view**
 - FR-12: The calendar renders the **current month** as a day grid, with **arrows** to the previous
   and next month and a control to jump back to today.
-- FR-13: **Names are one tap away, not in the cell.** A day cell carries only the date and the
-  coverage **count** — all that survives at a phone's ~44px. Tapping a day opens a **day sheet**
-  listing everyone on that date in their own colour, with **if-needed people distinguished by
-  weight and style**, never by tinting their colour. The sheet is also where a claimed voter sets
-  their own answer.
+- FR-13: **How many names a cell shows depends on how much cell there is.** On a phone
+  a day cell carries only the date and the coverage **count** — a ~44px cell cannot hold
+  a name — and the names live in a **day sheet** opened by tapping the day. On the web
+  layout the cell is large enough, so it also lists the voters at its foot in small
+  text, trailing off past the sixth. Either way the **if-needed people are visually
+  distinguished** by weight and style, never by tinting their colour, and the sheet
+  remains the complete list.
 - FR-14: Cells are **heat-highlighted by coverage** (available + if needed), scaled against the
   number of **active** invitees. Full coverage is the brightest step, one short a clear step down,
   fading to no highlight at zero. A day at full coverage that **relies on any if-needed** is marked
@@ -140,9 +142,12 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
 
 ### NonFunctional Requirements
 
-- NFR-0: **Phone-only, one layout.** Everyone does everything on a phone, admins included. No
-  desktop variant, no wide breakpoint. This is the constraint the rest of the interface follows
-  from — it is why FR-13's names cannot live in a cell and why the day sheet exists.
+- NFR-0: **Two layouts, phone and web.** The phone layout is the primary one and the
+  constraint the interface was designed against; the web layout is the same app given
+  room. The breakpoint is **1024px**. Below it the calendar is the full width of the
+  screen with a ~44px day cell; above it the calendar is a centred band at 80% of the
+  window (capped so it stays readable on a very wide monitor), the numerals grow, and
+  the day cells are tall enough to carry names.
 - NFR-1: **Concurrent voting is the normal case, so writes must not lose updates.** Six people share
   one login and click days on the same calendar at the same time. The platform's current
   read-modify-write over a whole JSON document (Story 1.8, still Draft) would silently clobber

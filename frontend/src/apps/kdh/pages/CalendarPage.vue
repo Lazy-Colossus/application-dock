@@ -1,99 +1,100 @@
 <template>
   <q-page class="kdh-app kdh-calendar column no-wrap q-pa-md">
-    <!-- Header only. The month lands in Epic 3. -->
-    <div class="row items-center no-wrap q-gutter-sm q-mb-md">
-      <q-btn
-        flat
-        dense
-        round
-        icon="arrow_back"
-        aria-label="Back to calendars"
-        data-testid="back-btn"
-        @click="goToList"
-      />
-      <div class="col column no-wrap">
-        <div class="row items-center no-wrap q-gutter-xs">
-          <span class="text-h6 ellipsis" data-testid="calendar-name">
-            {{ store.currentCalendar?.name ?? "" }}
-          </span>
-          <span
+    <div class="kdh-inner column no-wrap">
+      <div class="row items-center no-wrap q-gutter-sm q-mb-md">
+        <q-btn
+          flat
+          dense
+          round
+          icon="arrow_back"
+          aria-label="Back to calendars"
+          data-testid="back-btn"
+          @click="goToList"
+        />
+        <div class="col column no-wrap">
+          <div class="row items-center no-wrap q-gutter-xs">
+            <span class="text-h6 ellipsis" data-testid="calendar-name">
+              {{ store.currentCalendar?.name ?? "" }}
+            </span>
+            <span
+              v-if="store.currentCalendar"
+              class="kdh-headcount"
+              data-testid="headcount"
+            >
+              <q-icon name="person" size="15px" />{{ activeInvitees.length }}
+            </span>
+          </div>
+          <!-- Claiming lives in the header so the month stays visible while you
+               pick — the reason this won over a bottom sheet (EXPERIENCE.md). -->
+          <button
             v-if="store.currentCalendar"
-            class="kdh-headcount"
-            data-testid="headcount"
+            class="kdh-whoami"
+            :class="{ unclaimed: !claim.hasClaim.value }"
+            data-testid="whoami-btn"
+            @click="nameMenuOpen = true"
           >
-            <q-icon name="person" size="15px" />{{ activeInvitees.length }}
-          </span>
+            <q-icon
+              v-if="!claim.hasClaim.value"
+              name="error_outline"
+              size="18px"
+            />
+            <span
+              v-else
+              class="kdh-dot lg"
+              :style="{ background: claim.claimed.value?.color }"
+            />
+            {{ claim.claimed.value?.name ?? "Who are you?" }}
+            <q-icon name="expand_more" size="18px" />
+          </button>
         </div>
-        <!-- Claiming lives in the header so the month stays visible while you
-             pick — the reason this won over a bottom sheet (EXPERIENCE.md). -->
-        <button
-          v-if="store.currentCalendar"
-          class="kdh-whoami"
-          :class="{ unclaimed: !claim.hasClaim.value }"
-          data-testid="whoami-btn"
-          @click="nameMenuOpen = true"
-        >
-          <q-icon
-            v-if="!claim.hasClaim.value"
-            name="error_outline"
-            size="18px"
-          />
-          <span
-            v-else
-            class="kdh-dot lg"
-            :style="{ background: claim.claimed.value?.color }"
-          />
-          {{ claim.claimed.value?.name ?? "Who are you?" }}
-          <q-icon name="expand_more" size="18px" />
-        </button>
+
+        <!-- Admin actions are a header menu, and are absent — not disabled — for
+             guests (EXPERIENCE.md, Component Patterns). -->
+        <q-btn
+          v-if="isAdmin && store.currentCalendar"
+          flat
+          dense
+          round
+          icon="more_vert"
+          aria-label="Calendar actions"
+          data-testid="admin-menu-btn"
+          @click="menuOpen = true"
+        />
       </div>
 
-      <!-- Admin actions are a header menu, and are absent — not disabled — for
-           guests (EXPERIENCE.md, Component Patterns). -->
-      <q-btn
-        v-if="isAdmin && store.currentCalendar"
-        flat
-        dense
-        round
-        icon="more_vert"
-        aria-label="Calendar actions"
-        data-testid="admin-menu-btn"
-        @click="menuOpen = true"
+      <div
+        v-if="store.error && !notFound"
+        class="text-negative q-mb-md"
+        data-testid="error"
+      >
+        {{ store.error }}
+      </div>
+
+      <div
+        v-if="copyNotice"
+        class="text-grey-6 q-mb-md"
+        data-testid="copy-notice"
+      >
+        {{ copyNotice }}
+      </div>
+
+      <div v-if="notFound" class="text-grey-6" data-testid="not-found">
+        That calendar no longer exists.
+        <a href="#" data-testid="not-found-back" @click.prevent="goToList">
+          Back to your calendars
+        </a>
+      </div>
+
+      <MonthGrid
+        v-if="store.currentCalendar && serverToday"
+        :votes="store.currentCalendar.votes"
+        :chosen-dates="store.currentCalendar.chosen_dates"
+        :active-total="activeInvitees.length"
+        :invitees="store.currentCalendar.invitees"
+        :server-today="serverToday"
+        @pick="onPickDay"
       />
     </div>
-
-    <div
-      v-if="store.error && !notFound"
-      class="text-negative q-mb-md"
-      data-testid="error"
-    >
-      {{ store.error }}
-    </div>
-
-    <div
-      v-if="copyNotice"
-      class="text-grey-6 q-mb-md"
-      data-testid="copy-notice"
-    >
-      {{ copyNotice }}
-    </div>
-
-    <div v-if="notFound" class="text-grey-6" data-testid="not-found">
-      That calendar no longer exists.
-      <a href="#" data-testid="not-found-back" @click.prevent="goToList">
-        Back to your calendars
-      </a>
-    </div>
-
-    <MonthGrid
-      v-if="store.currentCalendar && serverToday"
-      :votes="store.currentCalendar.votes"
-      :chosen-dates="store.currentCalendar.chosen_dates"
-      :active-total="activeInvitees.length"
-      :invitees="store.currentCalendar.invitees"
-      :server-today="serverToday"
-      @pick="onPickDay"
-    />
 
     <q-dialog v-model="daySheetOpen">
       <DaySheet
@@ -566,6 +567,22 @@ import "./../css/kdh.sass";
 </script>
 
 <style scoped>
+/* Two layouts, and only two: a phone, and a browser window. Below the
+   breakpoint the column is the full width of the screen; above it the calendar
+   is a centred band, because a month stretched across a 27" monitor is a row of
+   billboards, not something you read. The cap keeps it sane on very wide
+   screens — 80% of 2560px would be absurd. */
+.kdh-inner {
+  width: 100%;
+}
+@media (min-width: 1024px) {
+  .kdh-inner {
+    width: 80%;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+}
+
 .kdh-whoami {
   display: inline-flex;
   align-items: center;

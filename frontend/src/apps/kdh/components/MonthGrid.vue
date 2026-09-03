@@ -163,4 +163,23 @@ defineExpose({ monthLabel });
   color: var(--kdh-ink-lo);
   margin-bottom: 4px;
 }
+
+@media (min-width: 1024px) {
+  .kdh-month-label {
+    font-size: 16px;
+  }
+  .kdh-dow {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .kdh-dow,
+  .kdh-grid {
+    gap: 6px;
+  }
+  /* Rows carry the height now that cells hold names; `minmax` keeps every row
+     the same even when one week has no votes at all. */
+  .kdh-grid {
+    grid-auto-rows: minmax(150px, auto);
+  }
+}
 </style>
