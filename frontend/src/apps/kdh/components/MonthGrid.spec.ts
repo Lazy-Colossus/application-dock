@@ -28,6 +28,7 @@ function mountGrid(props: Partial<Record<string, unknown>> = {}) {
       chosenDates: [],
       activeTotal: 6,
       invitees: ROSTER,
+      claimedId: "a",
       serverToday: "2026-09-03",
       selectable: false,
       selectMode: false,

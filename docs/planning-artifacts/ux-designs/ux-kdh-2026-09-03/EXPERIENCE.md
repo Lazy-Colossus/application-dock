@@ -76,6 +76,18 @@ stays *readable*: the hover list above still names who was there. That is why a 
 cell is inert to the click rather than `disabled`; disabling a button suppresses
 pointer events on its children and would take the hover list with it.
 
+**Your own answer in the cell.** The leading corner of the reserved crown row is
+kept for the current person's own vote — filled for free, half-filled for if
+needed, in the same green and yellow the day sheet's answer buttons use. It is
+the only personal mark in a cell of group facts, which is why it gets a corner
+nothing else uses and why it is not folded into the count. Being in the same
+place in every cell, it makes the month scannable for your own days without
+reading a number. It shows at both sizes: on a phone nothing else identifies you,
+and on web scanning a corner still beats finding your name among six.
+
+Because a "can't" is stored as no vote, this mark means **days you said yes to**,
+not days you answered — a deliberate no is indistinguishable from silence here.
+
 **Name dropdown.** The control sits on the **right of the header**, beside the admin
 menu — it is a control, not part of the calendar's name, and the title needs the
 room. Selecting a row claims that person and closes the dropdown; **switching is
@@ -105,6 +117,7 @@ quickly. Both write the same vote.
 | Empty (no votes) | Every cell `{wash-0}`; a single line beneath: "Nobody has picked a day yet." |
 | Unclaimed | Month fully readable; cells inert; header reads "Who are you?" |
 | Past day | 30% opacity, inert, votes and chosen mark still visible |
+| Your answer, unset | No mark in the leading corner — the same as a deliberate "can't" |
 | Optimistic write | Cell updates immediately; on failure it reverts and the message appears beneath the header |
 | Error | One line under the month header. Never a toast — this app is often open for three seconds |
 | Palette exhausted | The add-invitee control explains the limit rather than failing on submit |

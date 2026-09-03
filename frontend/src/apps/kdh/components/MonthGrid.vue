@@ -64,6 +64,7 @@
         :chosen="chosenDates.includes(date)"
         :past="date < serverToday"
         :selected="selected.has(date)"
+        :claimed-id="claimedId"
         :today="date === serverToday"
         @pick="$emit('pick', $event)"
       />
@@ -87,6 +88,7 @@ const props = defineProps<{
   selectable: boolean;
   selectMode: boolean;
   selected: Set<string>;
+  claimedId: string | null;
 }>();
 
 defineEmits<{ pick: [date: string]; toggleSelectMode: [] }>();

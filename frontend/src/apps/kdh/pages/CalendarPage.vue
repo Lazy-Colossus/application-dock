@@ -111,6 +111,7 @@
         :invitees="store.currentCalendar.invitees"
         :server-today="serverToday"
         :selectable="claim.hasClaim.value"
+        :claimed-id="claim.claimed.value?.id ?? null"
         :selected="selected"
         :select-mode="selectMode"
         @pick="onPickDay"

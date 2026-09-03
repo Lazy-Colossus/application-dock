@@ -31,6 +31,7 @@ function mountCell(props: Partial<Record<string, unknown>> = {}) {
       past: false,
       today: false,
       selected: false,
+      claimedId: "inv-1",
       ...props,
     },
   });
@@ -286,5 +287,36 @@ describe("DayCell", () => {
 
   it("renders no name list on a day nobody picked", () => {
     expect(mountCell().find('[data-testid="cell-names"]').exists()).toBe(false);
+  });
+
+  it("shows you your own answer, in the corner reserved for it", () => {
+    const free = mountCell({ votes: { "inv-1": "yes", "inv-2": "yes" } });
+    expect(free.find(".mine-mark").classes()).toContain("free");
+
+    const maybe = mountCell({ votes: { "inv-1": "if_needed" } });
+    expect(maybe.find(".mine-mark").classes()).toContain("maybe");
+  });
+
+  it("marks nothing when the answer is not yours", () => {
+    // Someone else's vote is a group fact; it belongs to the count, not here.
+    expect(
+      mountCell({ votes: { "inv-2": "yes" } })
+        .find(".mine-mark")
+        .exists(),
+    ).toBe(false);
+    expect(
+      mountCell({ claimedId: null, votes: { "inv-1": "yes" } })
+        .find(".mine-mark")
+        .exists(),
+    ).toBe(false);
+  });
+
+  it("speaks your own answer too", () => {
+    const label = (v: Record<string, string>) =>
+      mountCell({ votes: v }).attributes("aria-label");
+
+    expect(label({ "inv-1": "yes" })).toContain("you are free");
+    expect(label({ "inv-1": "if_needed" })).toContain("you if needed");
+    expect(label({ "inv-2": "yes" })).not.toContain("you");
   });
 });

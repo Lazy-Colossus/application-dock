@@ -237,6 +237,15 @@ about to be pressed.
 **Silence is a no.** Anyone who has not answered is not listed; they are the bar's
 remainder. The sheet is who is coming, not a register of everyone.
 
+### Your own answer (day cell)
+
+A 7px dot (`clamp(8px, 0.85vw, 11px)` on web) in the leading corner of the day
+cell's reserved crown row, opposite the select-mode tick. Filled `{colors.yes}`
+for free; half-filled `{colors.maybe}` — a 50% linear-gradient with a 1.5px inset
+ring — for if needed. Green and yellow are reserved throughout KDH for *your own
+answer*; the group's marks are lilac and gold. Never fold this into the coverage
+pill.
+
 ## Do's and Don'ts
 
 - **Do** let the wash be the loudest thing on screen. **Don't** add a second

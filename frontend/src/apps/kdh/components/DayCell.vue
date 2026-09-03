@@ -12,6 +12,17 @@
     <!-- Reserved in EVERY cell, so the date sits on the same line right across
          the month whether or not a day is crowned. -->
     <span class="crown-slot" aria-hidden="true">
+      <!-- Your own answer, pinned to the leading edge while the crown stays
+           centred: they share the row but never the spot. This is the one
+           personal fact in a cell of group facts (the wash, the count, the
+           crown), so it gets a corner nothing else ever uses — which is what
+           makes a month scannable for "days I said yes to" without reading a
+           single number. -->
+      <span
+        v-if="mine"
+        class="mine-mark"
+        :class="mine === 'yes' ? 'free' : 'maybe'"
+      />
       <svg
         v-if="chosen"
         class="crown"
@@ -80,6 +91,8 @@ const props = defineProps<{
   past: boolean;
   today: boolean;
   selected: boolean;
+  /** Whoever is looking, so the cell can show their own answer back to them. */
+  claimedId: string | null;
 }>();
 
 const emit = defineEmits<{ pick: [date: string] }>();
@@ -96,6 +109,15 @@ function onClick(): void {
 }
 
 const dayOfMonth = computed(() => Number(props.date.slice(8, 10)));
+
+/**
+ * Only ever `yes` or `if_needed`: a "can't" is stored as no vote at all, so a
+ * deliberate no and an unanswered day are the same absence here. The mark reads
+ * as "days I said yes to", not "days I answered".
+ */
+const mine = computed(() =>
+  props.claimedId ? props.votes[props.claimedId] : undefined,
+);
 const statuses = computed(() => Object.values(props.votes));
 const free = computed(() => statuses.value.filter((s) => s === "yes").length);
 const ifNeeded = computed(
@@ -134,6 +156,8 @@ const label = computed(() => {
           : "everyone free"
         : `${coverage.value} of ${props.activeTotal} free`,
   );
+  if (mine.value)
+    parts.push(mine.value === "yes" ? "you are free" : "you if needed");
   if (props.chosen) parts.push("chosen");
   if (props.past) parts.push("past");
   if (props.today) parts.push("today");
@@ -230,6 +254,11 @@ const label = computed(() => {
   .crown {
     width: clamp(10px, 1.1vw, 14px);
     height: clamp(10px, 1.1vw, 14px);
+  }
+  .mine-mark {
+    left: 0;
+    width: clamp(8px, 0.85vw, 11px);
+    height: clamp(8px, 0.85vw, 11px);
   }
   .d {
     font-size: clamp(16px, 1.6vw, 21px);
@@ -329,11 +358,13 @@ const label = computed(() => {
 .selected {
   box-shadow: inset 0 0 0 2px var(--kdh-wash-5);
 }
+/* Trailing corner, because the leading one belongs to your own answer and the
+   two would otherwise sit on top of each other in select mode. */
 .selected::before {
   content: "✓";
   position: absolute;
   top: 2px;
-  left: 4px;
+  right: 4px;
   font-size: 9px;
   color: var(--kdh-wash-6);
 }
@@ -382,6 +413,8 @@ const label = computed(() => {
 /* The slot has a fixed height in every cell, crowned or not — that is what keeps
    the date on one line across the whole month. */
 .crown-slot {
+  position: relative;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -389,6 +422,26 @@ const label = computed(() => {
   margin-bottom: 1px;
   line-height: 0;
 }
+/* Green filled for free, yellow half for if-needed — the same glyphs and the
+   same two colours as the answer buttons in the day sheet, so there is nothing
+   new to learn. Green and yellow also read at every step of the ramp, which the
+   lilac used elsewhere would not at the pale top. Half versus whole carries it
+   without colour (NFR-6). */
+.mine-mark {
+  position: absolute;
+  left: 3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.mine-mark.free {
+  background: var(--kdh-yes);
+}
+.mine-mark.maybe {
+  background: linear-gradient(90deg, var(--kdh-maybe) 50%, transparent 50%);
+  box-shadow: inset 0 0 0 1.5px var(--kdh-maybe);
+}
+
 /* Filled gold with a dark stroke, so one crown reads at every step of the ramp —
    the same trick the gold date uses, rather than a second darker crown for the
    pale steps. It is also the signal that does not depend on colour (NFR-6). */
