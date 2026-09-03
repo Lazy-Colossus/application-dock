@@ -1,5 +1,5 @@
 <template>
-  <q-card class="kdh-sheet q-pa-md">
+  <q-card class="kdh-panel kdh-sheet q-pa-md">
     <div class="row items-center justify-between q-mb-md">
       <div class="text-subtitle1" data-testid="sheet-date">{{ heading }}</div>
       <q-btn
@@ -146,8 +146,6 @@ const myStatus = computed<VoteStatus | "none">(() =>
 <style scoped>
 .kdh-sheet {
   min-width: 300px;
-  background: var(--kdh-field-raise);
-  color: var(--kdh-ink-hi);
 }
 .kdh-muted {
   color: var(--kdh-ink-mid);

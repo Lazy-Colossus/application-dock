@@ -42,6 +42,7 @@ colors:
   inv-steel: '#9FB8D8'
   # --- Semantic (separate from the wash and from invitee colours) ---
   danger: '#CF6679'
+  # NB: there is deliberately NO accent hue. See Components → Buttons.
 typography:
   font-stack:
     ui: 'inherits the platform Roboto/system stack from Quasar'
@@ -182,6 +183,18 @@ and name; unclaimed, it reads "Who are you?". Open, it lists every active invite
 as a row — colour dot, name, tick on the claimed one — plus the colour swatches,
 with taken colours dimmed to 24% and the claimed person's ringed. Rows are
 `touch-min` tall.
+
+**Buttons.** KDH has **no accent colour**. A primary action is a raised surface —
+`wash-3` fill with `ink-hi` — not a bright fill, because the wash is the only thing
+allowed to compete for attention and a coloured button would be a second. A
+destructive action is `danger` text on a transparent ground. The dock's gold is
+never used.
+
+**Raised surfaces.** Dialogs and sheets take `field-raise` with a `field-line`
+hairline and **no shadow** — a shadow on a near-black ground reads as mud. The
+tokens are declared on both `.kdh-app` and `.kdh-panel`, because Quasar teleports
+dialogs to the body, outside the page; without the second root a dialog silently
+falls back to the shell's theme mid-flow.
 
 **Day sheet.** Opens on tapping a cell. The date, the full roster for that date
 with each person's colour, and the three-state control. *If needed* rows are

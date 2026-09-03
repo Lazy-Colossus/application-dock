@@ -112,7 +112,7 @@
     </q-dialog>
 
     <q-dialog v-model="nameMenuOpen">
-      <q-card class="kdh-dialog-card q-pa-sm">
+      <q-card class="kdh-panel kdh-dialog-card q-pa-sm">
         <div class="text-subtitle2 q-px-sm q-pt-sm q-pb-xs">Who are you?</div>
         <q-list>
           <q-item
@@ -166,7 +166,7 @@
          their markup must not exist in the page at all (FR-3). -->
     <template v-if="isAdmin">
       <q-dialog v-model="menuOpen">
-        <q-card class="kdh-menu-card">
+        <q-card class="kdh-panel kdh-menu-card">
           <q-list>
             <q-item
               v-ripple
@@ -205,7 +205,7 @@
       </q-dialog>
 
       <q-dialog v-model="renaming">
-        <q-card class="kdh-dialog-card q-pa-md">
+        <q-card class="kdh-panel kdh-dialog-card q-pa-md">
           <div class="text-h6 q-mb-md">Rename calendar</div>
           <q-input
             v-model="draftName"
@@ -231,7 +231,7 @@
       </q-dialog>
 
       <q-dialog v-model="managingInvitees">
-        <q-card class="kdh-dialog-card q-pa-md">
+        <q-card class="kdh-panel kdh-dialog-card q-pa-md">
           <div class="text-h6 q-mb-md">Who is invited?</div>
 
           <div class="row q-gutter-xs q-mb-md" data-testid="roster">
@@ -294,7 +294,7 @@
       </q-dialog>
 
       <q-dialog v-model="removeDialogOpen">
-        <q-card class="kdh-dialog-card q-pa-md">
+        <q-card class="kdh-panel kdh-dialog-card q-pa-md">
           <div class="text-h6 q-mb-sm">Remove {{ removingInvitee?.name }}?</div>
           <!-- Says plainly what is kept and what goes: the asymmetry is the whole
                point of the feature and a surprise here is unrecoverable. -->
@@ -323,7 +323,7 @@
       </q-dialog>
 
       <q-dialog v-model="deleting">
-        <q-card class="kdh-dialog-card q-pa-md">
+        <q-card class="kdh-panel kdh-dialog-card q-pa-md">
           <div class="text-h6 q-mb-sm">Delete this calendar?</div>
           <!-- Names the calendar and says what else goes: there is no undo, and a
                mis-tap on a phone must not quietly destroy a campaign's history. -->
@@ -411,8 +411,6 @@ const takenColours = computed(
 
 /** The past/future boundary, always the server's (NFR-5). */
 const serverToday = computed(() => store.me?.today ?? "");
-
-const canVote = computed(() => claim.hasClaim.value);
 
 const activeInvitees = computed(() =>
   [...(store.currentCalendar?.invitees ?? [])]
@@ -574,9 +572,9 @@ import "./../css/kdh.sass";
   gap: 7px;
   margin-top: 4px;
   padding: 7px 13px;
-  border: 1px solid transparent;
+  border: 1px solid var(--kdh-field-line);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--kdh-field-raise);
   font: inherit;
   font-size: 15px;
   color: inherit;
@@ -585,9 +583,9 @@ import "./../css/kdh.sass";
 /* Unanswered, and the app cannot be used until it is answered — so it reads
    like a required field left blank rather than a quiet secondary control. */
 .kdh-whoami.unclaimed {
-  border-color: var(--q-negative);
+  border-color: var(--kdh-danger);
   background: rgba(207, 102, 121, 0.12);
-  color: var(--q-negative);
+  color: var(--kdh-danger);
   font-weight: 600;
 }
 .kdh-headcount {

@@ -76,7 +76,7 @@
     </q-list>
 
     <q-dialog v-model="creating">
-      <q-card class="kdh-create-card q-pa-md">
+      <q-card class="kdh-panel kdh-create-card q-pa-md">
         <div class="text-h6 q-mb-md">New calendar</div>
 
         <q-input
