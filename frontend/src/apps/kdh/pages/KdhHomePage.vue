@@ -259,8 +259,8 @@ import "./../css/kdh.sass";
    not move the content. */
 @media (min-width: 1024px) {
   .kdh-app {
-    padding-left: 21%;
-    padding-right: 21%;
+    padding-left: 17%;
+    padding-right: 17%;
   }
 }
 

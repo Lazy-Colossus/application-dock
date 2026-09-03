@@ -578,7 +578,11 @@ import "./../css/kdh.sass";
 }
 @media (min-width: 1024px) {
   .kdh-inner {
-    width: 58%;
+    /* `min-width` is the important one: below about 790px the square cells stop
+       being tall enough to hold two lines of names, so a narrow window gets a
+       wider band rather than losing the names. */
+    width: 66%;
+    min-width: 790px;
     max-width: 1080px;
     margin: 0 auto;
   }
