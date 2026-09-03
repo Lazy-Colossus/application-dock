@@ -120,9 +120,10 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
 - FR-13: **How many names a cell shows depends on how much cell there is.** On a phone
   a day cell carries only the date and the coverage **count** — a ~44px cell cannot hold
   a name — and the names live in a **day sheet** opened by tapping the day. On the web
-  layout the cell is large enough, so it also lists the voters at its foot in small
-  text, trailing off past the sixth. Either way the **if-needed people are visually
-  distinguished** by weight and style, never by tinting their colour, and the sheet
+  layout the cell is large enough, so it also lists the voters **on one line at its
+  foot**, comma-separated in the cell's own ink — not in each person's colour, since
+  six colours on one line is a smear — trailing off past the sixth. Either way the
+  **if-needed people are visually distinguished** by weight and style, and the sheet
   remains the complete list.
 - FR-14: Cells are **heat-highlighted by coverage** (available + if needed), scaled against the
   number of **active** invitees. Full coverage is the brightest step, one short a clear step down,
@@ -145,7 +146,7 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
 - NFR-0: **Two layouts, phone and web.** The phone layout is the primary one and the
   constraint the interface was designed against; the web layout is the same app given
   room. The breakpoint is **1024px**. Below it the calendar is the full width of the
-  screen with a ~44px day cell; above it the calendar is a centred band at 80% of the
+  screen with a ~44px day cell; above it the calendar is a centred band at 70% of the
   window (capped so it stays readable on a very wide monitor), the numerals grow, and
   the day cells are tall enough to carry names.
 - NFR-1: **Concurrent voting is the normal case, so writes must not lose updates.** Six people share

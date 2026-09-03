@@ -57,16 +57,12 @@
          ~44px and cannot hold a name, which is why the day sheet exists. Given
          room, the names belong here — this is what FR-13 originally asked for. -->
     <span v-if="voters.length > 0" class="cell-names" data-testid="cell-names">
-      <span
-        v-for="voter in shownVoters"
-        :key="voter.invitee.id"
-        class="cell-name"
-        :class="{ tentative: voter.status === 'if_needed' }"
-        :style="{ color: voter.invitee.color }"
-      >
-        {{ voter.invitee.name }}
-      </span>
-      <span v-if="voters.length > NAMES_SHOWN" class="cell-name more">…</span>
+      <template v-for="(voter, i) in shownVoters" :key="voter.invitee.id">
+        <span v-if="i > 0">, </span
+        ><span :class="{ tentative: voter.status === 'if_needed' }">{{
+          voter.invitee.name
+        }}</span> </template
+      ><span v-if="voters.length > NAMES_SHOWN">…</span>
     </span>
   </button>
 </template>
@@ -216,43 +212,35 @@ const label = computed(() => {
   .d {
     font-size: 26px;
   }
+  /* Generous on web because this is where hover exists at all, and the number
+     alone was too small to aim at. Untouched on a phone, which has no hover and
+     no room. */
   .n {
-    font-size: 15px;
-    padding: 3px 10px;
-    min-width: 30px;
+    font-size: 17px;
+    padding: 8px 20px;
+    min-width: 58px;
+    border-radius: 8px;
   }
+  /* One line at the foot of the cell, in the cell's own ink. Deliberately NOT
+     each person's colour: six colours on one line is a smear, and the colour
+     already does its work in the day sheet and the hover list. */
   .cell-names {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1px;
-    margin-top: 6px;
+    display: block;
+    margin-top: auto;
+    padding-top: 6px;
     width: 100%;
     font-size: 11px;
-    line-height: 1.25;
-  }
-  .cell-name {
-    max-width: 100%;
+    line-height: 1.3;
+    text-align: center;
+    opacity: 0.85;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
   }
-  /* Weight and style, never a tint — the colour has to keep meaning "them". */
-  .cell-name.tentative {
+  /* Still set apart by style rather than colour, which is what NFR-6 asks for. */
+  .tentative {
     font-style: italic;
     opacity: 0.75;
-  }
-  .cell-name.more {
-    color: inherit;
-    opacity: 0.6;
-  }
-  /* Pastel names on pale lilac have almost no contrast, so they keep their
-     colour and gain a dark halo — the same fix the gold date uses. */
-  .w5 .cell-name,
-  .w6 .cell-name {
-    text-shadow:
-      0 1px 1px rgba(26, 16, 36, 0.9),
-      0 0 5px rgba(26, 16, 36, 0.7);
   }
 }
 

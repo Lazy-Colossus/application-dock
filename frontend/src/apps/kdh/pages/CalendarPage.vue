@@ -577,7 +577,7 @@ import "./../css/kdh.sass";
 }
 @media (min-width: 1024px) {
   .kdh-inner {
-    width: 80%;
+    width: 70%;
     max-width: 1400px;
     margin: 0 auto;
   }
