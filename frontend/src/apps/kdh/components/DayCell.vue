@@ -203,6 +203,14 @@ const label = computed(() => {
     justify-content: flex-start;
     padding: 7px 6px;
   }
+  .chosen {
+    box-shadow: 0 0 0 2.5px var(--kdh-gold);
+  }
+  .chosen.provisional {
+    box-shadow:
+      inset 0 0 0 1px var(--kdh-wash-6),
+      0 0 0 2.5px var(--kdh-gold);
+  }
   .crown-slot {
     height: 15px;
   }
@@ -308,33 +316,36 @@ const label = computed(() => {
    steps; on the light ones it drops to the deep gold and loses the text glow,
    because a bright halo on pale lilac is mud. The diamond stays regardless: gold
    carries the message, but colour must never be the only signal (NFR-6). */
+/* The mark lives in the gutter, not on the cell. A frame looks identical at
+   every step of the ramp, which is what nothing painted on the wash could do —
+   and because the frame carries the message, the number no longer has to. */
 .chosen {
   /* Above its neighbours: grid siblings paint in document order, so without
-     this the glow is covered by the backgrounds of every later cell. */
+     this the frame is covered by the backgrounds of every later cell. */
   z-index: 1;
-  box-shadow:
-    0 0 0 1.5px var(--kdh-gold),
-    0 0 12px var(--kdh-gold-glow);
+  /* Sized to the gutter it sits in: 2px of a 4px phone gap, 2.5px of a 6px web
+     one. Any thicker and the frame touches its neighbour. */
+  box-shadow: 0 0 0 2px var(--kdh-gold);
 }
-/* One treatment at every step: gold, bold, and a gold glow. No dark outline.
-   On `wash-5`/`wash-6` this is gold on pale lilac and the contrast is genuinely
-   low — the ring, the crown and the accessible name are what carry the marking
-   there (NFR-6), not the number. */
 .chosen .d {
   font-weight: 700;
   color: var(--kdh-gold);
-  text-shadow:
-    0 0 5px var(--kdh-gold),
-    0 0 12px var(--kdh-gold-glow),
-    0 0 22px var(--kdh-gold-glow);
+}
+/* Free to be legible again, now that the frame is doing the work: the deeper
+   gold on pale lilac, with no outline and no glow to prop it up. */
+.w5.chosen .d,
+.w6.chosen .d,
+.w5 .crown,
+.w6 .crown {
+  color: var(--kdh-gold-deep);
+  fill: var(--kdh-gold-deep);
 }
 /* Both marks at once: the provisional hairline is inset, the chosen ring is
    outside it, so they compose rather than one silently winning. */
 .chosen.provisional {
   box-shadow:
     inset 0 0 0 1px var(--kdh-wash-6),
-    0 0 0 1.5px var(--kdh-gold),
-    0 0 12px var(--kdh-gold-glow);
+    0 0 0 2px var(--kdh-gold);
 }
 /* The slot has a fixed height in every cell, crowned or not — that is what keeps
    the date on one line across the whole month. */
@@ -351,7 +362,5 @@ const label = computed(() => {
    pale steps. It is also the signal that does not depend on colour (NFR-6). */
 .crown {
   fill: var(--kdh-gold);
-  filter: drop-shadow(0 0 3px var(--kdh-gold))
-    drop-shadow(0 0 7px var(--kdh-gold-glow));
 }
 </style>

@@ -44,7 +44,6 @@ colors:
   danger: '#CF6679'
   # The decided day — a third colour dimension (see Components → Chosen day).
   gold: '#FFD54A'
-  gold-glow: 'rgba(255, 213, 74, 0.55)'
   gold-deep: '#5F4200'   # legible against the pale top of the ramp
   # NB: there is still no *accent* hue — gold carries a meaning, not a role.
 typography:
@@ -149,6 +148,11 @@ Roboto/system stack from Quasar — KDH adds no font payload to the dock.
 
 ## Layout & Spacing
 
+**Weekends** are a faint band painted **behind** the last two columns, so it shows
+only in the gutters and the grid's padding and never touches a cell. Not a
+stylistic preference: the wash is the only thing allowed to tint a cell, so a
+weekend fill *on* a cell would read as votes.
+
 Seven columns, **Monday first**, `cell-gap` between cells, `screen-pad-x` at the
 edges. The tracks are `minmax(0, 1fr)`, **not** `1fr` — a `1fr` track has an *auto*
 minimum, so one cell with a long line of names silently widens its whole column and
@@ -175,16 +179,16 @@ on anything carrying a person's name.
 the past-day dimming — and, for the chosen day, because the colour must not be the
 only signal:
 
-- **Chosen day** — a **`gold` ring and outer glow around the whole cell**, so it
-  pops at every step of the ramp; the date itself is **bold gold with its own
-  glow** on the dark steps, dropping to `gold-deep` with no text glow on
-  `wash-5`–`wash-6`, where a bright halo on pale lilac is mud — there the date keeps
-  the same bright gold and takes a **dark halo** instead, so the mark looks the same
-  at every step, with a **gold glow** and no dark outline. A small **gold crown**
-  sits directly above the date, filled gold with the same glow. **Its slot is reserved in every cell**, crowned or not:
-  that is what keeps the date on one line right across the month. The chosen cell is lifted a layer, or later grid siblings paint
-  over its glow. When a day is both chosen and provisional the two compose — the
-  provisional hairline inset, the chosen ring outside it.
+- **Chosen day** — a **`gold` frame in the gutter** around the cell: 2px of a 4px
+  phone gap, 2.5px of a 6px web one. It never touches the wash, so it looks the same
+  at `wash-0` and at `wash-6` — which nothing painted on the cell could manage.
+  Because the frame carries the message, the date does **not** have to: it is bold
+  `gold`, dropping to `gold-deep` on `wash-5`–`wash-6`, with no glow and no outline
+  propping it up. A small **crown** sits directly above the date in the same golds,
+  and **its slot is reserved in every cell**, crowned or not — that is what keeps
+  the dates on one line across the month. The chosen cell is lifted a layer, or
+  later grid siblings paint over its frame; and when a day is both chosen and
+  provisional the two compose — the provisional hairline inset, the frame outside.
 - **Provisional coverage** — a 1px inset hairline in `wash-6` around a cell that
   only reaches full coverage because someone answered *if needed*.
 
@@ -237,12 +241,11 @@ person's colour, which has to keep meaning *that person*.
 - **Do** keep the count in the cell, and sized to be read. **Don't** treat it as
   decoration — `wash-4` and `wash-5` are genuinely close, and the number is what
   settles them.
-- **Do** accept one contrast exception, knowingly: the chosen day's date is bright
-  `gold` with a gold glow at every step, and on `wash-5`–`wash-6` that is gold on
-  pale lilac — genuinely low contrast, with no dark outline to carry it. The
-  marking does not rest on the number: the cell's gold ring, the crown and the
-  accessible name each say "chosen" without it. **Don't** extend that licence to
-  anything else.
+- **Do** mark a day in a channel the wash does not use — the gutter, the frame,
+  elevation. **Don't** paint the marking onto the cell: its background is the
+  ordered wash and its text is categorical, and a third meaning laid on top is what
+  made every earlier attempt look loud. Marks should differ **in kind** — a frame,
+  a filled shape, a line — never be three variations on colour.
 - **Do** mark chosen and provisional days with shape. **Don't** encode either in
   colour; both must survive the ramp and the dimming.
 - **Don't** put names in a day cell. They do not fit at 44px, and the attempt is

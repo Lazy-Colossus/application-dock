@@ -1,0 +1,298 @@
+<title>Marking Days in KDH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Archivo:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --page:#FBFAFC; --ink:#1B181F; --ink-2:#585264; --ink-3:#8B8496;
+    --rule:#E2DEE8; --card:#FFFFFF;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --page:#131118; --ink:#ECE8F2; --ink-2:#A29BB0; --ink-3:#7A7288;
+      --rule:#2B2734; --card:#1A1722;
+    }
+  }
+  :root[data-theme="dark"]{
+    --page:#131118; --ink:#ECE8F2; --ink-2:#A29BB0; --ink-3:#7A7288;
+    --rule:#2B2734; --card:#1A1722;
+  }
+  :root{
+    --field:#15111C; --raise:#1F1829; --line:#332942;
+    --ink-hi:#EBE4F4; --ink-mid:#A79BBC; --ink-lo:#7B6F91; --on-light:#1A1024;
+    --w0:#221B2E; --w1:#31234A; --w2:#3A2A56; --w3:#4E3770;
+    --w4:#6C4C93; --w5:#9773BC; --w6:#C9AEE6;
+    --gold:#FFD54A;
+  }
+
+  *{box-sizing:border-box}
+  body{background:var(--page);color:var(--ink);font-family:Archivo,system-ui,sans-serif;line-height:1.5}
+  .wrap{max-width:1200px;margin:0 auto;padding:48px 24px 72px;display:flex;flex-direction:column;gap:40px}
+
+  header{display:flex;flex-direction:column;gap:12px;max-width:66ch}
+  .eyebrow{font-family:"Spline Sans Mono",monospace;font-size:11px;letter-spacing:.18em;
+           text-transform:uppercase;color:var(--ink-3)}
+  h1{font-family:Newsreader,Georgia,serif;font-weight:400;font-size:clamp(30px,4.4vw,42px);
+     line-height:1.1;margin:0;text-wrap:balance;letter-spacing:-.01em}
+  h2{font-family:Newsreader,Georgia,serif;font-weight:400;font-size:24px;margin:0;line-height:1.2}
+  p{margin:0;color:var(--ink-2);font-size:15px}
+  p b,li b{color:var(--ink);font-weight:600}
+
+  .diag{background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--w4);
+        border-radius:0 12px 12px 0;padding:18px 20px;display:flex;flex-direction:column;gap:10px;max-width:76ch}
+
+  .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:26px;align-items:start}
+  .opt{background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:22px 20px;
+       display:flex;flex-direction:column;gap:14px}
+  .opt-name{font-family:Newsreader,Georgia,serif;font-size:22px;line-height:1.15}
+  .opt-sub{font-size:13.5px;color:var(--ink-2)}
+
+  /* ---------------- the month ---------------- */
+  .cal{background:var(--field);border-radius:12px;padding:14px 12px;
+       font-family:"Spline Sans Mono",monospace;position:relative}
+  .cal-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px;
+           font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-mid)}
+  .dow,.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+  .dow{font-size:9.5px;text-align:center;color:var(--ink-lo);margin-bottom:5px;letter-spacing:.05em}
+  .days{position:relative}
+  .c{aspect-ratio:1/1;border-radius:6px;background:var(--w0);display:flex;flex-direction:column;
+     align-items:center;justify-content:center;gap:1px;position:relative}
+  .c .d{font-size:13px;font-weight:500;color:#CFC5DE;line-height:1;font-variant-numeric:tabular-nums}
+  .c .n{font-size:9px;color:#8A7DA2;line-height:1;font-variant-numeric:tabular-nums}
+  .blank{background:none}
+  .w1{background:var(--w1)}.w2{background:var(--w2)}.w3{background:var(--w3)}
+  .w4{background:var(--w4)}.w5{background:var(--w5)}.w6{background:var(--w6)}
+  .w5 .d,.w6 .d{color:var(--on-light)}.w5 .n,.w6 .n{color:#3F2B57}
+  .past{opacity:.32}
+
+  .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11px;
+          font-family:"Spline Sans Mono",monospace;color:var(--ink-2)}
+  .lg{display:flex;align-items:center;gap:6px}
+  .key{width:16px;height:16px;border-radius:4px;background:var(--w2);flex:none;position:relative}
+
+  .notes{display:flex;flex-direction:column;gap:7px;font-size:13px;color:var(--ink-2);
+         border-top:1px solid var(--rule);padding-top:13px}
+  .notes div{display:flex;gap:8px}
+  .mk{font-family:"Spline Sans Mono",monospace;flex:none;width:12px;color:var(--ink-3)}
+
+  /* ============ A — PASSE-PARTOUT (marks live in the gutter) ============ */
+  .A .days{background:
+      repeating-linear-gradient(to right,
+        transparent 0 calc((100% - 30px)/7*5 + 25px),
+        rgba(167,155,188,.10) calc((100% - 30px)/7*5 + 25px) 100%);
+      border-radius:6px}
+  .A .chosen{box-shadow:0 0 0 2.5px var(--gold)}
+  .A .chosen .d{color:var(--gold);font-weight:700}
+  .A .w5.chosen .d,.A .w6.chosen .d{color:#5F4200}
+  .A .today .d{box-shadow:0 3px 0 -1px var(--ink-hi)}
+
+  /* ============ B — LIFT (elevation, no added colour) ============ */
+  .B .weekend{border-radius:6px;background:rgba(167,155,188,.07)}
+  .B .chosen{transform:scale(1.14);z-index:2;
+             box-shadow:0 4px 14px rgba(0,0,0,.55),0 0 0 1px rgba(255,213,74,.9)}
+  .B .chosen .d{font-weight:700}
+  .B .today .d{background:var(--ink-hi);color:var(--field);border-radius:999px;
+               width:20px;height:20px;display:flex;align-items:center;justify-content:center}
+  .B .w5.today .d,.B .w6.today .d{background:var(--on-light);color:var(--w6)}
+
+  /* ============ C — RIBBON (a tab hanging into the gutter) ============ */
+  .C .weekend-hdr{color:var(--gold);opacity:.75}
+  .C .weekend::after{content:"";position:absolute;left:0;right:0;bottom:-3px;height:2px;
+                     background:rgba(167,155,188,.28);border-radius:2px}
+  .C .chosen::before{content:"";position:absolute;left:50%;transform:translateX(-50%);
+                     top:-5px;width:60%;height:4px;background:var(--gold);border-radius:2px}
+  .C .chosen{box-shadow:0 0 0 1px rgba(255,213,74,.55)}
+  .C .today{outline:2px dashed var(--ink-mid);outline-offset:-2px}
+
+  footer{border-top:1px solid var(--rule);padding-top:22px;display:flex;flex-direction:column;
+         gap:12px;max-width:78ch}
+  code{font-family:"Spline Sans Mono",monospace;font-size:.9em;color:var(--ink)}
+  ul{margin:0;padding-left:20px;color:var(--ink-2);font-size:14px;display:flex;flex-direction:column;gap:6px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">KDH · Sally · marking days · 2026-09-03</div>
+    <h1>Three ways to mark a day without touching the wash</h1>
+    <p>Same September, same votes: the <b>14th</b> is chosen, <b>today is the 3rd</b>, and the 1st and 2nd are past. What differs is <b>where each mark lives</b> — and none of them paints on the cell's background, because that background is already saying something.</p>
+  </header>
+
+  <div class="diag">
+    <h2>Why this has been hard</h2>
+    <p>The cell interior has two jobs already: its <b>background</b> is the ordered wash (how many can come) and its <b>text</b> is categorical (who). Gold numbers, glows and rings have all been competing for a surface with no room left — which is exactly why they read as loud rather than considered.</p>
+    <p><b>Chosen, today and weekend are not facts about coverage.</b> They are facts about the day. So they belong in the channels the wash does not use: the <b>gutter</b> between cells, the cell's <b>frame</b>, and <b>elevation</b>. That reframing also answers the weekend question for free — a signal drawn in the gutter cannot disturb vote information, because it never touches a cell.</p>
+  </div>
+
+  <div class="grid3">
+
+    <!-- ================= A ================= -->
+    <section class="opt A">
+      <div>
+        <div class="opt-name">Passe-partout</div>
+        <div class="opt-sub">Marks live in the mount, never on the picture. A gold frame around the chosen day, a bar under today's number, and a tinted band behind the weekend columns.</div>
+      </div>
+
+      <div class="cal">
+        <div class="cal-top"><span>September 2026</span><span>‹ ›</span></div>
+        <div class="dow"><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div><div>S</div></div>
+        <div class="days">
+          <div class="c blank"></div>
+          <div class="c w2 past"><span class="d">1</span><span class="n">2</span></div>
+          <div class="c w1 past"><span class="d">2</span><span class="n">1</span></div>
+          <div class="c today"><span class="d">3</span><span class="n">0</span></div>
+          <div class="c w3"><span class="d">4</span><span class="n">3</span></div>
+          <div class="c w5"><span class="d">5</span><span class="n">5</span></div>
+          <div class="c w2"><span class="d">6</span><span class="n">2</span></div>
+          <div class="c w1"><span class="d">7</span><span class="n">1</span></div>
+          <div class="c"><span class="d">8</span><span class="n">0</span></div>
+          <div class="c w4"><span class="d">9</span><span class="n">4</span></div>
+          <div class="c w2"><span class="d">10</span><span class="n">2</span></div>
+          <div class="c w3"><span class="d">11</span><span class="n">3</span></div>
+          <div class="c w5"><span class="d">12</span><span class="n">5</span></div>
+          <div class="c w4"><span class="d">13</span><span class="n">4</span></div>
+          <div class="c w6 chosen"><span class="d">14</span><span class="n">6</span></div>
+          <div class="c w5"><span class="d">15</span><span class="n">5</span></div>
+          <div class="c w2"><span class="d">16</span><span class="n">2</span></div>
+          <div class="c"><span class="d">17</span><span class="n">0</span></div>
+          <div class="c w1"><span class="d">18</span><span class="n">1</span></div>
+          <div class="c w3"><span class="d">19</span><span class="n">3</span></div>
+          <div class="c w4"><span class="d">20</span><span class="n">4</span></div>
+          <div class="c w6"><span class="d">21</span><span class="n">6</span></div>
+          <div class="c w2"><span class="d">22</span><span class="n">2</span></div>
+          <div class="c"><span class="d">23</span><span class="n">0</span></div>
+          <div class="c w1"><span class="d">24</span><span class="n">1</span></div>
+          <div class="c w3"><span class="d">25</span><span class="n">3</span></div>
+          <div class="c w4"><span class="d">26</span><span class="n">4</span></div>
+          <div class="c w2"><span class="d">27</span><span class="n">2</span></div>
+          <div class="c w1"><span class="d">28</span><span class="n">1</span></div>
+          <div class="c"><span class="d">29</span><span class="n">0</span></div>
+          <div class="c w3"><span class="d">30</span><span class="n">3</span></div>
+        </div>
+      </div>
+
+      <div class="notes">
+        <div><span class="mk">+</span><span><b>The wash is untouched.</b> The frame sits in the gutter, so a chosen day at any coverage looks like the same mark.</span></div>
+        <div><span class="mk">+</span><span>Weekend band reads as different paper, not more votes — it is behind the cells, visible only between them.</span></div>
+        <div><span class="mk">−</span><span>Two rectangles nested closely; on a small phone cell the frame can crowd the number.</span></div>
+        <div><span class="mk">−</span><span>Today's underline is quiet next to the chosen frame.</span></div>
+      </div>
+    </section>
+
+    <!-- ================= B ================= -->
+    <section class="opt B">
+      <div>
+        <div class="opt-name">Lift</div>
+        <div class="opt-sub">The chosen day rises out of the grid — scaled and shadowed, with almost no colour. Today's number is inverted into a filled disc. Weekend columns are a recessed panel.</div>
+      </div>
+
+      <div class="cal">
+        <div class="cal-top"><span>September 2026</span><span>‹ ›</span></div>
+        <div class="dow"><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div><div>S</div></div>
+        <div class="days">
+          <div class="c blank"></div>
+          <div class="c w2 past"><span class="d">1</span><span class="n">2</span></div>
+          <div class="c w1 past"><span class="d">2</span><span class="n">1</span></div>
+          <div class="c today"><span class="d">3</span><span class="n">0</span></div>
+          <div class="c w3"><span class="d">4</span><span class="n">3</span></div>
+          <div class="c w5 weekend"><span class="d">5</span><span class="n">5</span></div>
+          <div class="c w2 weekend"><span class="d">6</span><span class="n">2</span></div>
+          <div class="c w1"><span class="d">7</span><span class="n">1</span></div>
+          <div class="c"><span class="d">8</span><span class="n">0</span></div>
+          <div class="c w4"><span class="d">9</span><span class="n">4</span></div>
+          <div class="c w2"><span class="d">10</span><span class="n">2</span></div>
+          <div class="c w3"><span class="d">11</span><span class="n">3</span></div>
+          <div class="c w5 weekend"><span class="d">12</span><span class="n">5</span></div>
+          <div class="c w4 weekend"><span class="d">13</span><span class="n">4</span></div>
+          <div class="c w6 chosen"><span class="d">14</span><span class="n">6</span></div>
+          <div class="c w5"><span class="d">15</span><span class="n">5</span></div>
+          <div class="c w2"><span class="d">16</span><span class="n">2</span></div>
+          <div class="c"><span class="d">17</span><span class="n">0</span></div>
+          <div class="c w1"><span class="d">18</span><span class="n">1</span></div>
+          <div class="c w3 weekend"><span class="d">19</span><span class="n">3</span></div>
+          <div class="c w4 weekend"><span class="d">20</span><span class="n">4</span></div>
+          <div class="c w6"><span class="d">21</span><span class="n">6</span></div>
+          <div class="c w2"><span class="d">22</span><span class="n">2</span></div>
+          <div class="c"><span class="d">23</span><span class="n">0</span></div>
+          <div class="c w1"><span class="d">24</span><span class="n">1</span></div>
+          <div class="c w3"><span class="d">25</span><span class="n">3</span></div>
+          <div class="c w4 weekend"><span class="d">26</span><span class="n">4</span></div>
+          <div class="c w2 weekend"><span class="d">27</span><span class="n">2</span></div>
+          <div class="c w1"><span class="d">28</span><span class="n">1</span></div>
+          <div class="c"><span class="d">29</span><span class="n">0</span></div>
+          <div class="c w3"><span class="d">30</span><span class="n">3</span></div>
+        </div>
+      </div>
+
+      <div class="notes">
+        <div><span class="mk">+</span><span><b>The quietest of the three, and the most emphatic.</b> Nothing is added to the cell; it simply comes forward.</span></div>
+        <div><span class="mk">+</span><span>Today's inverted disc is unmistakable and costs no new colour.</span></div>
+        <div><span class="mk">−</span><span>A scaled cell overlaps its neighbours slightly — fine here, but it breaks the perfect grid you just asked for.</span></div>
+        <div><span class="mk">−</span><span>Shadow on a near-black ground is weak; the lift leans on the outline to read.</span></div>
+      </div>
+    </section>
+
+    <!-- ================= C ================= -->
+    <section class="opt C">
+      <div>
+        <div class="opt-name">Ribbon</div>
+        <div class="opt-sub">A gold tab clipped to the top of the chosen day, like a bookmark. Today is dashed. Weekends get an underline in the gutter and gold weekday letters.</div>
+      </div>
+
+      <div class="cal">
+        <div class="cal-top"><span>September 2026</span><span>‹ ›</span></div>
+        <div class="dow"><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div class="weekend-hdr">S</div><div class="weekend-hdr">S</div></div>
+        <div class="days">
+          <div class="c blank"></div>
+          <div class="c w2 past"><span class="d">1</span><span class="n">2</span></div>
+          <div class="c w1 past"><span class="d">2</span><span class="n">1</span></div>
+          <div class="c today"><span class="d">3</span><span class="n">0</span></div>
+          <div class="c w3"><span class="d">4</span><span class="n">3</span></div>
+          <div class="c w5 weekend"><span class="d">5</span><span class="n">5</span></div>
+          <div class="c w2 weekend"><span class="d">6</span><span class="n">2</span></div>
+          <div class="c w1"><span class="d">7</span><span class="n">1</span></div>
+          <div class="c"><span class="d">8</span><span class="n">0</span></div>
+          <div class="c w4"><span class="d">9</span><span class="n">4</span></div>
+          <div class="c w2"><span class="d">10</span><span class="n">2</span></div>
+          <div class="c w3"><span class="d">11</span><span class="n">3</span></div>
+          <div class="c w5 weekend"><span class="d">12</span><span class="n">5</span></div>
+          <div class="c w4 weekend"><span class="d">13</span><span class="n">4</span></div>
+          <div class="c w6 chosen"><span class="d">14</span><span class="n">6</span></div>
+          <div class="c w5"><span class="d">15</span><span class="n">5</span></div>
+          <div class="c w2"><span class="d">16</span><span class="n">2</span></div>
+          <div class="c"><span class="d">17</span><span class="n">0</span></div>
+          <div class="c w1"><span class="d">18</span><span class="n">1</span></div>
+          <div class="c w3 weekend"><span class="d">19</span><span class="n">3</span></div>
+          <div class="c w4 weekend"><span class="d">20</span><span class="n">4</span></div>
+          <div class="c w6"><span class="d">21</span><span class="n">6</span></div>
+          <div class="c w2"><span class="d">22</span><span class="n">2</span></div>
+          <div class="c"><span class="d">23</span><span class="n">0</span></div>
+          <div class="c w1"><span class="d">24</span><span class="n">1</span></div>
+          <div class="c w3"><span class="d">25</span><span class="n">3</span></div>
+          <div class="c w4 weekend"><span class="d">26</span><span class="n">4</span></div>
+          <div class="c w2 weekend"><span class="d">27</span><span class="n">2</span></div>
+          <div class="c w1"><span class="d">28</span><span class="n">1</span></div>
+          <div class="c"><span class="d">29</span><span class="n">0</span></div>
+          <div class="c w3"><span class="d">30</span><span class="n">3</span></div>
+        </div>
+      </div>
+
+      <div class="notes">
+        <div><span class="mk">+</span><span><b>Reads instantly as "bookmarked".</b> The tab is a familiar object, and it sits above the cell rather than on it.</span></div>
+        <div><span class="mk">+</span><span>Weekend underline is the lightest touch of the three, and stays out of the cell entirely.</span></div>
+        <div><span class="mk">−</span><span>The tab eats into the row gap; rows need a little more room.</span></div>
+        <div><span class="mk">−</span><span>A dashed today is fussy at small sizes and can read as "disabled".</span></div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <h2>My recommendation</h2>
+    <p><b>Take the chosen-day mark from A, today from B, and the weekend from C.</b> They are independent channels, so they mix — and each is the strongest answer to its own question:</p>
+    <ul>
+      <li><b>Chosen — A's frame.</b> A ring in the gutter is the only mark that looks identical at <code>wash-0</code> and <code>wash-6</code>. Keep the crown, drop the gold number and the glow entirely: with a gold frame around the cell, the number no longer has to carry the message, so it can go back to normal ink and be readable again.</li>
+      <li><b>Today — B's inverted disc.</b> Filling the number's own shape is louder than any outline, costs no colour, and cannot be confused with the frame that now means "chosen".</li>
+      <li><b>Weekend — C's gutter underline.</b> It never touches a cell, so the wash is untouched by construction; and because it is a line rather than a fill, it cannot be mistaken for a coverage step.</li>
+    </ul>
+    <p>That gives three marks that are <b>different in kind</b> — a frame, a filled shape, a line — rather than three variations on colour. Which is the real fix: they stop competing because they are no longer speaking the same language.</p>
+  </footer>
+</div>

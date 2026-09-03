@@ -157,7 +157,27 @@ defineExpose({ monthLabel });
      cell whose content is wider than its share silently widens its whole
      column and the seven stop being equal. */
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 4px;
+  gap: var(--gap);
+
+  /* The weekend band. It is painted BEHIND the cells, so it shows only in the
+     gutters and the padding — different paper under the last two columns, never
+     a change to any cell. That is the whole point: the wash is the only thing
+     allowed to tint a cell, so a weekend signal that touched one would read as
+     votes. Cells are opaque, so this cannot leak into them. */
+  --gap: 4px;
+  --weekend-edge: calc(
+    (100% - 8px - 6 * var(--gap)) / 7 * 5 + 4.5 * var(--gap) + 4px
+  );
+  padding: 4px;
+  background: linear-gradient(
+    to right,
+    transparent 0 var(--weekend-edge),
+    rgba(167, 155, 188, 0.1) var(--weekend-edge) 100%
+  );
+  border-radius: 8px;
+}
+.kdh-dow {
+  padding-bottom: 2px;
 }
 .kdh-dow {
   font-size: 9.5px;
@@ -177,7 +197,7 @@ defineExpose({ monthLabel });
   }
   .kdh-dow,
   .kdh-grid {
-    gap: 6px;
+    --gap: 6px;
   }
   /* Square cells govern their own height now, so the rows follow the columns
      and every box is the same shape. */
