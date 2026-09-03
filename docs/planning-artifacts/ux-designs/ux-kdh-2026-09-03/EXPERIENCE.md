@@ -61,8 +61,8 @@ Plain, short, never coy. The app never nags and never celebrates.
 
 ## Component Patterns
 
-**Day cell.** Hovering the coverage count shows a floating list of who is on that
-day, in roster order, with if-needed people marked — the day sheet's content
+**Day cell.** The coverage count sits in a padded target that highlights on hover;
+pointing at it shows a floating list of who is on that day, in roster order, with if-needed people marked — the day sheet's content
 without the tap. It is **hover-only**, so it does not exist on a phone; that is
 acceptable because the sheet already carries the same list one tap away, and a
 long-press equivalent would fight the tap that opens the sheet. A touch affordance

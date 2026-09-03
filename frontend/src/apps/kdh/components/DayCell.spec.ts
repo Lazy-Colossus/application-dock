@@ -217,4 +217,15 @@ describe("DayCell", () => {
     });
     expect(wrapper.find(".tip").text()).toContain("Departed");
   });
+
+  it("gives the count a target of its own to point at", () => {
+    // The number alone is a ~7px-wide thing to aim at; the tooltip hangs off
+    // this element, not the digits.
+    const wrapper = mountCell({ votes: { a: "yes" } });
+    const area = wrapper.find('[data-testid="count-area"]');
+
+    expect(area.exists()).toBe(true);
+    expect(area.find('[data-testid="count"]').text()).toBe("1");
+    expect(area.find(".tip").exists()).toBe(true);
+  });
 });

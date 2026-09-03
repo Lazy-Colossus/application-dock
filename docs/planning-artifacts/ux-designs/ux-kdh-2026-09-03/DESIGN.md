@@ -195,8 +195,12 @@ dock does not have — so the "never use the dock's gold" rule below is narrowed
 mean *never as an interactive accent*, which is what it was protecting against.
 The crown stays, so the marking never depends on colour alone.
 
-**Day cell.** Date, then coverage count beneath it, on a `wash-*` background.
-Nothing else fits and nothing else is allowed. Today carries a 1px `ink-mid`
+**Day cell.** A reserved crown slot, the date, then the coverage count beneath it,
+on a `wash-*` background. Nothing else fits and nothing else is allowed. The count
+sits in a padded target of its own — the digits alone are about 7px wide, which is
+not something to point at — which highlights on hover and anchors the list of who
+voted. The three pieces total ~42px in a ~46px cell, so there is no room for a
+fourth. Today carries a 1px `ink-mid`
 outline; past days drop to 30% opacity.
 
 **Name dropdown.** In the month header. Closed, it shows the claimed person's dot

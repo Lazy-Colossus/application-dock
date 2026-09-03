@@ -23,7 +23,7 @@
       </svg>
     </span>
     <span class="d">{{ dayOfMonth }}</span>
-    <span class="n">
+    <span class="n" data-testid="count-area">
       <span data-testid="count">{{ coverage }}</span>
       <!-- Hover only, for now: a phone has no hover, and the day sheet already
            carries this list one tap away. A touch equivalent is deliberately
@@ -129,7 +129,6 @@ const label = computed(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   cursor: pointer;
   padding: 0;
@@ -143,12 +142,33 @@ const label = computed(() => {
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
+/* The count sits in a target of its own: the number alone is a ~7px-wide thing
+   to aim at, which is not a hover target. Padding widens it without changing
+   where the number sits, and the highlight says it is worth pointing at. */
 .n {
   position: relative;
+  margin-top: 1px;
+  padding: 2px 7px;
+  min-width: 22px;
+  border-radius: 5px;
   font-size: 11.5px;
   line-height: 1;
   color: #8a7da2;
   font-variant-numeric: tabular-nums;
+  transition: background-color 0.12s ease;
+}
+.n:hover {
+  background: rgba(235, 228, 244, 0.14);
+}
+/* White on pale lilac is invisible; darken instead at the top of the ramp. */
+.w5 .n:hover,
+.w6 .n:hover {
+  background: rgba(26, 16, 36, 0.14);
+}
+@media (prefers-reduced-motion: reduce) {
+  .n {
+    transition: none;
+  }
 }
 
 .w1 {
@@ -245,6 +265,7 @@ const label = computed(() => {
   align-items: center;
   justify-content: center;
   height: 11px;
+  margin-bottom: 1px;
   line-height: 0;
 }
 /* Filled gold with a dark stroke, so one crown reads at every step of the ramp —
