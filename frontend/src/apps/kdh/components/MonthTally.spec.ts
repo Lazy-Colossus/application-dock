@@ -15,6 +15,10 @@ const SEPTEMBER = Array.from(
   { length: 30 },
   (_, i) => `2026-09-${String(i + 1).padStart(2, "0")}`,
 );
+const AUGUST = Array.from(
+  { length: 31 },
+  (_, i) => `2026-08-${String(i + 1).padStart(2, "0")}`,
+);
 
 function mountTally(props: Partial<Record<string, unknown>> = {}) {
   return mount(MonthTally, {
@@ -41,7 +45,7 @@ describe("MonthTally", () => {
     );
   });
 
-  it("leads with the total, then breaks it down", () => {
+  it("leads with the total, and says how much of it is already past", () => {
     const wrapper = mountTally({
       votes: {
         "2026-09-03": { a: "yes", b: "yes" },
@@ -51,30 +55,70 @@ describe("MonthTally", () => {
       },
     });
 
-    // Today counts as current, so Dani has the 10th and the 21st ahead of her.
+    // Today counts as current, so Dani's 10th and 21st are not in the bracket.
     const dani = wrapper.find('[data-testid="tally-a"]');
     expect(dani.find(".total").text()).toBe("4");
-    expect(dani.find(".split").text().replace(/\s+/g, " ")).toBe(
-      "(2 current · 2 past)",
-    );
+    expect(dani.find(".split").text()).toBe("(2 past)");
 
     const jake = wrapper.find('[data-testid="tally-b"]');
     expect(jake.find(".total").text()).toBe("2");
-    expect(jake.find(".split").text().replace(/\s+/g, " ")).toBe(
-      "(1 current · 1 past)",
-    );
+    expect(jake.find(".split").text()).toBe("(1 past)");
   });
 
-  it("names only the half that exists, never a zero", () => {
+  it("says nothing in brackets when none of it is past", () => {
     const ahead = mountTally({ votes: { "2026-09-21": { a: "yes" } } });
-    expect(
-      ahead.find('[data-testid="tally-a"] .split').text().replace(/\s+/g, " "),
-    ).toBe("(1 current)");
+    const row = ahead.find('[data-testid="tally-a"]');
 
-    const behind = mountTally({ votes: { "2026-09-03": { a: "yes" } } });
+    expect(row.find(".total").text()).toBe("1");
+    expect(row.find(".split").exists()).toBe(false);
+  });
+
+  it("drops the bracket entirely outside the current month", () => {
+    // A month gone by is all past and a month ahead is none of it, so the
+    // bracket would only ever restate the total or say nothing.
+    const wrapper = mountTally({
+      dates: AUGUST,
+      monthLabel: "August 2026",
+      votes: { "2026-08-04": { a: "yes" }, "2026-08-19": { a: "yes" } },
+    });
+
+    const row = wrapper.find('[data-testid="tally-a"]');
+    expect(row.find(".total").text()).toBe("2");
+    expect(row.find(".split").exists()).toBe(false);
+  });
+
+  it("draws each row against the busiest person", () => {
+    const wrapper = mountTally({
+      votes: {
+        "2026-09-03": { a: "yes", b: "yes" },
+        "2026-09-21": { a: "yes" },
+        "2026-09-22": { a: "yes" },
+      },
+    });
+
+    // Dani has 3 of a possible 3, so she fills the track and leaves no gap.
+    const dani = wrapper.findAll('[data-testid="tally-a"] .seg');
+    expect(dani.map((seg) => seg.attributes("style"))).toEqual([
+      "flex-grow: 2;", // current
+      "flex-grow: 1;", // past
+      "flex-grow: 0;", // unfilled
+    ]);
+
+    // Jake has 1, so two thirds of his track is empty.
+    const jake = wrapper.findAll('[data-testid="tally-b"] .seg');
+    expect(jake.map((seg) => seg.attributes("style"))).toEqual([
+      "flex-grow: 0;",
+      "flex-grow: 1;",
+      "flex-grow: 2;",
+    ]);
+  });
+
+  it("gives someone who has said nothing an empty track, not a missing one", () => {
+    const wrapper = mountTally({ votes: { "2026-09-21": { a: "yes" } } });
+    expect(wrapper.find('[data-testid="tally-c"] .bar').exists()).toBe(true);
     expect(
-      behind.find('[data-testid="tally-a"] .split').text().replace(/\s+/g, " "),
-    ).toBe("(1 past)");
+      wrapper.find('[data-testid="tally-c"] .gap').attributes("style"),
+    ).toBe("flex-grow: 1;");
   });
 
   it("surfaces the person who has said nothing", () => {
@@ -130,11 +174,28 @@ describe("MonthTally", () => {
     expect(row.text()).toContain("1 past");
   });
 
-  it("keeps the roster's order", () => {
-    const names = mountTally({ votes: { "2026-09-21": { a: "yes" } } })
+  it("puts the busiest first and the silent last", () => {
+    const rows = mountTally({
+      votes: {
+        "2026-09-03": { b: "yes", c: "yes" },
+        "2026-09-21": { b: "yes" },
+        "2026-09-22": { b: "yes" },
+      },
+    })
       .findAll('[data-testid^="tally-"]')
       .map((r) => r.text());
-    expect(names[0]).toContain("Dani");
-    expect(names[2]).toContain("Kit");
+
+    expect(rows[0]).toContain("Jake"); // 3
+    expect(rows[1]).toContain("Kit"); // 1
+    expect(rows[2]).toContain("Dani"); // nothing
+  });
+
+  it("breaks a tie on roster order, so equal counts never shuffle", () => {
+    const rows = mountTally({ votes: { "2026-09-21": { c: "yes", a: "yes" } } })
+      .findAll('[data-testid^="tally-"]')
+      .map((r) => r.text());
+
+    expect(rows[0]).toContain("Dani"); // order 0
+    expect(rows[1]).toContain("Kit"); // order 2, same count
   });
 });

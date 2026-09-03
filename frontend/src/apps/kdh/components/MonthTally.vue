@@ -18,27 +18,43 @@
       :class="{ mine: row.invitee.id === claimedId, silent: row.total === 0 }"
       :data-testid="`tally-${row.invitee.id}`"
     >
-      <span class="nm ellipsis">{{ row.invitee.name }}</span>
-      <span v-if="row.invitee.id === claimedId" class="tag">YOU</span>
-      <span v-if="row.invitee.removed_at" class="tag">LEFT</span>
+      <span class="who">
+        <span class="nm ellipsis">{{ row.invitee.name }}</span>
+        <span v-if="row.invitee.id === claimedId" class="tag">YOU</span>
+        <span v-if="row.invitee.removed_at" class="tag">LEFT</span>
+      </span>
+
+      <!-- Scaled against the busiest person, not against the days in the month:
+           the question this answers is who has answered and who has not, and a
+           bar that is 11/30 full of everything answers it worse than one that
+           is 11/11 of the most anyone managed. Decorative — the number sits
+           right beside it, so a screen reader gains nothing from the shape.
+
+           Grow factors are strings because Vue drops a falsy style value, and a
+           zero-length segment is exactly the case that has to survive. -->
+      <span class="bar" aria-hidden="true" data-testid="bar">
+        <i class="seg cur" :style="{ flexGrow: String(row.upcoming) }" />
+        <i class="seg old" :style="{ flexGrow: String(row.past) }" />
+        <i
+          class="seg gap"
+          :style="{ flexGrow: String(maxTotal - row.total) }"
+        />
+      </span>
 
       <!-- Nothing at all reads better as a sentence than as two zeroes: a person
            who has not voted is the one thing this summary exists to surface. -->
       <span v-if="row.total === 0" class="col counts" data-testid="none-yet"
         >nothing yet</span
       >
-      <!-- Total first and always in the same place, so the column can be read
-           straight down; the breakdown follows in the same shape on every row,
-           even when one half is all of it. "3 (3 current)" is mildly redundant,
-           but a column whose numbers land in different places is worse. -->
+      <!-- The count, and behind it how much of it has already been and gone.
+           Only in the month that straddles today: in a month gone by every vote
+           is past and in a month ahead none is, so the bracket would restate
+           the total or say nothing at all. -->
       <span v-else class="col counts">
         <b class="total">{{ row.total }}</b>
-        <span class="split">
-          (<template v-if="row.upcoming > 0"
-            ><span class="current">{{ row.upcoming }} current</span></template
-          ><template v-if="row.upcoming > 0 && row.past > 0"> · </template
-          ><template v-if="row.past > 0">{{ row.past }} past</template>)
-        </span>
+        <span v-if="isCurrentMonth && row.past > 0" class="split"
+          >({{ row.past }} past)</span
+        >
       </span>
     </div>
   </div>
@@ -62,7 +78,10 @@ const props = defineProps<{
 }>();
 
 /**
- * One line per person, in roster order.
+ * One line per person, busiest first — which makes the bars a ranked chart
+ * rather than a roster with decoration, and puts whoever has said nothing at
+ * the bottom where the gap is easiest to see. Roster order breaks ties, so
+ * equal counts never shuffle between renders.
  *
  * Today counts as still to come, the same as it does everywhere else — a day
  * you can still answer is not yet history.
@@ -71,10 +90,8 @@ const props = defineProps<{
  * votes are a record the grid already shows, but an empty row for a person no
  * longer in the group is just noise.
  */
-const rows = computed(() => {
-  const all = [...props.invitees].sort((a, b) => a.order - b.order);
-
-  return all
+const rows = computed(() =>
+  [...props.invitees]
     .map((invitee) => {
       let upcoming = 0;
       let past = 0;
@@ -85,10 +102,21 @@ const rows = computed(() => {
       }
       return { invitee, upcoming, past, total: upcoming + past };
     })
-    .filter((row) => !row.invitee.removed_at || row.total > 0);
-});
+    .filter((row) => !row.invitee.removed_at || row.total > 0)
+    .sort((a, b) => b.total - a.total || a.invitee.order - b.invitee.order),
+);
 
 const anyVotes = computed(() => rows.value.some((row) => row.total > 0));
+
+/** The busiest person sets the scale; 1 keeps an untouched month from /0. */
+const maxTotal = computed(() =>
+  Math.max(1, ...rows.value.map((row) => row.total)),
+);
+
+/** Today falls inside the month on screen — the only month with two halves. */
+const isCurrentMonth = computed(
+  () => props.dates[0]?.slice(0, 7) === props.serverToday.slice(0, 7),
+);
 </script>
 
 <style scoped>
@@ -110,12 +138,42 @@ const anyVotes = computed(() => rows.value.some((row) => row.total > 0));
 .tally-empty {
   color: var(--kdh-ink-mid);
 }
+/* Three tracks so the bars share one baseline and one scale down the column —
+   a chart whose bars start in different places is not a chart. */
 .tally-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(44px, 22%, 120px) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 3px 0;
+}
+.who {
   display: flex;
   align-items: baseline;
   gap: 6px;
   min-width: 0;
-  padding: 3px 0;
+}
+.bar {
+  display: flex;
+  height: 7px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--kdh-wash-0);
+}
+.seg {
+  display: block;
+  min-width: 0;
+}
+.cur {
+  background: var(--kdh-wash-4);
+}
+/* Already been and gone: the same bar, spent. */
+.old {
+  background: var(--kdh-wash-2);
+}
+.gap {
+  background: transparent;
 }
 .nm {
   min-width: 0;
@@ -129,6 +187,7 @@ const anyVotes = computed(() => rows.value.some((row) => row.total > 0));
   color: var(--kdh-ink-lo);
 }
 .counts {
+  justify-self: end;
   text-align: right;
   font-variant-numeric: tabular-nums;
   color: var(--kdh-ink-mid);
@@ -137,14 +196,11 @@ const anyVotes = computed(() => rows.value.some((row) => row.total > 0));
   color: var(--kdh-ink-hi);
   font-weight: 600;
 }
-/* The breakdown explains the total rather than competing with it. */
+/* The bracket explains the total rather than competing with it. */
 .split {
   margin-left: 5px;
   font-size: 12px;
   opacity: 0.8;
-}
-.current {
-  color: var(--kdh-ink-hi);
 }
 .tag {
   flex: none;

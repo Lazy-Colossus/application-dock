@@ -44,7 +44,7 @@ inherits_ui_system: "Vue 3 + Quasar v2 (Material-based)"
 | Name dropdown | Month header | Claim, switch or release your name; change your colour | FR-10, FR-11, FR-9 |
 | Day sheet | Tapping a day cell | Who is on that date; set your own answer | FR-13, FR-15 |
 | Roster management | Month header menu (admins only) | Add and remove invitees | FR-8 |
-| Month tally | Beneath the grid, always | Per-person vote totals for the visible month, broken into current / past | FR-14 |
+| Month tally | Beneath the grid, always | Per-person vote totals for the visible month, ranked, with bars | FR-14 |
 | Clear my month | Month header menu (anyone claimed) | Drop your own votes and notes across the visible month | FR-15 |
 
 The IA gained the **day sheet** during this session: FR-13 as written put names in
@@ -129,11 +129,12 @@ sheet or across a selection — always keeps them, which is exactly when a note
 earns its place.
 
 **Month tally.** Under the grid and moving with it: one line per invitee giving
-how many days in the visible month they have voted on — the **total first**, then
-the breakdown behind it: `11 (10 current · 1 past)`. Today counts as current. The
-parenthesis keeps its shape even when one half is all of it (`3 (3 current)`) so
-the total lands in the same place on every row; a half that is zero is never
-named. It answers *who has not said anything yet*, which the
+how many days in the visible month they have voted on, **busiest first**, each with
+a bar scaled to the busiest person's count. The total leads; `(N past)` follows it
+only in the month containing today, since no other month has two halves. Today
+counts as current. The bar splits current from past in the same two shades, and
+someone who has said nothing keeps an **empty track** — the visible gap is the
+point. Bars are decorative (`aria-hidden`); the number is right beside them. It answers *who has not said anything yet*, which the
 grid cannot show at a glance: a thin day is visible, but whose silence made it thin
 is not. Someone who has not voted reads "nothing yet", quieter than the rest — this
 app does not nag. Before anyone has voted the whole thing collapses to a single

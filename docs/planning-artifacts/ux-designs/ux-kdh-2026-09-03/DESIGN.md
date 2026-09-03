@@ -237,6 +237,14 @@ about to be pressed.
 **Silence is a no.** Anyone who has not answered is not listed; they are the bar's
 remainder. The sheet is who is coming, not a register of everyone.
 
+### Tally bar
+
+A 7px pill-radius track on `{wash-0}`, one per person, all on a shared scale set by
+the highest count. Two segments: current votes in `{wash-4}`, past ones in
+`{wash-2}` — the same bar, spent. The remainder is transparent, so an unanswered
+row shows an empty track rather than nothing. Rows are a three-track grid
+(name / bar / counts) so every bar starts at the same x. `aria-hidden`.
+
 ### Name pill (header)
 
 Claimed: `{wash-3}` fill, 1px `{wash-4}` hairline, `{ink-hi}` text, pill radius,
