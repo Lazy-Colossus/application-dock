@@ -221,6 +221,52 @@ export const useKdhStore = defineStore("kdh", () => {
     }
   }
 
+  /**
+   * Answer many days at once.
+   *
+   * Not optimistic, unlike a single vote: this is one deliberate action rather
+   * than a thumb running down a month, a spinner is honest here, and the server
+   * applies it all-or-nothing so a half-updated grid is not a state that exists.
+   */
+  async function setVotesBulk(
+    calendarId: string,
+    inviteeId: string,
+    dates: string[],
+    status: VoteStatus | "none",
+  ): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      currentCalendar.value = await api.put<Calendar>(
+        `/kdh/calendars/${calendarId}/votes/bulk`,
+        { invitee_id: inviteeId, dates, status },
+      );
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+      throw e;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function setNote(
+    calendarId: string,
+    inviteeId: string,
+    date: string,
+    text: string,
+  ): Promise<void> {
+    error.value = null;
+    try {
+      currentCalendar.value = await api.put<Calendar>(
+        `/kdh/calendars/${calendarId}/notes`,
+        { invitee_id: inviteeId, date, text },
+      );
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+      throw e;
+    }
+  }
+
   async function createCalendar(
     name: string,
     inviteeNames: string[],
@@ -266,6 +312,8 @@ export const useKdhStore = defineStore("kdh", () => {
     removeInvitee,
     setVote,
     setChosen,
+    setVotesBulk,
+    setNote,
     renameCalendar,
     deleteCalendar,
   };

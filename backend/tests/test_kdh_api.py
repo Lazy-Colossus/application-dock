@@ -820,3 +820,169 @@ def test_summary_has_no_session_when_nothing_is_chosen(fixed_today) -> None:
     create("DnD", ["Dani"])
     summary = client.get("/api/kdh/calendars").json()[0]
     assert summary["next_session"] is None and summary["last_session"] is None
+
+
+# ── bulk voting ──────────────────────────────────────────────────────────────
+
+
+def vote_bulk(calendar_id: str, invitee_id: str, dates: list[str], status: str):
+    return client.put(
+        f"/api/kdh/calendars/{calendar_id}/votes/bulk",
+        json={"invitee_id": invitee_id, "dates": dates, "status": status},
+    )
+
+
+def test_bulk_marks_every_day(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+
+    body = vote_bulk(created["id"], dani, ["2026-09-14", "2026-09-15", "2026-09-21"], "yes")
+
+    assert body.status_code == 200
+    votes = body.json()["votes"]
+    assert set(votes) == {"2026-09-14", "2026-09-15", "2026-09-21"}
+    assert all(v == {dani: "yes"} for v in votes.values())
+
+
+def test_bulk_leaves_other_people_alone(fixed_today) -> None:
+    created = create("DnD", ["Dani", "Jake"]).json()
+    dani, jake = (i["id"] for i in created["invitees"])
+    vote(created["id"], jake, "2026-09-14", "if_needed")
+
+    body = vote_bulk(created["id"], dani, ["2026-09-14"], "yes").json()
+    assert body["votes"]["2026-09-14"] == {jake: "if_needed", dani: "yes"}
+
+
+def test_bulk_can_clear_a_run_of_days(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+    vote_bulk(created["id"], dani, ["2026-09-14", "2026-09-15"], "yes")
+
+    body = vote_bulk(created["id"], dani, ["2026-09-14", "2026-09-15"], "none").json()
+    assert body["votes"] == {}, "emptied days are pruned, as for a single vote"
+
+
+def test_bulk_is_all_or_nothing(fixed_today) -> None:
+    """One bad day must not leave the rest half-applied."""
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+
+    response = vote_bulk(created["id"], dani, ["2026-09-14", "2026-09-02", "2026-09-15"], "yes")
+
+    assert response.status_code == 422, "the 2nd is past"
+    assert client.get(f"/api/kdh/calendars/{created['id']}").json()["votes"] == {}
+
+
+def test_bulk_rejects_an_empty_selection(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+    assert vote_bulk(created["id"], dani, [], "yes").status_code == 422
+
+
+def test_bulk_rejects_a_removed_invitee(fixed_today) -> None:
+    created = create("DnD", ["Dani", "Departing"]).json()
+    departing = created["invitees"][1]["id"]
+    seed_votes(created["id"], {"2026-08-10": {departing: "yes"}})
+    client.delete(f"/api/kdh/calendars/{created['id']}/invitees/{departing}")
+
+    assert vote_bulk(created["id"], departing, ["2026-09-14"], "yes").status_code == 422
+
+
+def test_a_guest_may_bulk_vote(as_guest: None, fixed_today) -> None:
+    app.dependency_overrides[get_current_user] = lambda: "test_user"
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+    app.dependency_overrides[get_current_user] = lambda: "players"
+
+    assert vote_bulk(created["id"], dani, ["2026-09-14"], "yes").status_code == 200
+
+
+# ── notes ────────────────────────────────────────────────────────────────────
+
+
+def set_note(calendar_id: str, invitee_id: str, day: str, text: str):
+    return client.put(
+        f"/api/kdh/calendars/{calendar_id}/notes",
+        json={"invitee_id": invitee_id, "date": day, "text": text},
+    )
+
+
+def test_a_note_is_stored_against_the_person_and_the_day(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+
+    body = set_note(created["id"], dani, "2026-09-14", "  Only after 8pm  ").json()
+
+    assert body["notes"] == {"2026-09-14": {dani: "Only after 8pm"}}, "trimmed"
+
+
+def test_a_note_is_independent_of_a_vote(fixed_today) -> None:
+    """The point of the feature: someone who cannot come can still say why."""
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+
+    body = set_note(created["id"], dani, "2026-09-14", "Away that week").json()
+
+    assert body["notes"]["2026-09-14"][dani] == "Away that week"
+    assert body["votes"] == {}, "no vote was implied"
+
+
+def test_a_blank_note_clears_it_and_prunes_the_day(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+    set_note(created["id"], dani, "2026-09-14", "Something")
+
+    body = set_note(created["id"], dani, "2026-09-14", "   ").json()
+    assert body["notes"] == {}
+
+
+def test_a_note_can_be_edited(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+    set_note(created["id"], dani, "2026-09-14", "First")
+
+    body = set_note(created["id"], dani, "2026-09-14", "Second").json()
+    assert body["notes"]["2026-09-14"][dani] == "Second"
+
+
+def test_notes_and_votes_do_not_disturb_each_other(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+
+    set_note(created["id"], dani, "2026-09-14", "Bring dice")
+    body = vote(created["id"], dani, "2026-09-14", "yes").json()
+    assert body["notes"]["2026-09-14"][dani] == "Bring dice"
+
+    body = vote(created["id"], dani, "2026-09-14", "none").json()
+    assert body["notes"]["2026-09-14"][dani] == "Bring dice", "clearing a vote keeps the note"
+
+
+def test_a_note_that_is_too_long_is_refused(fixed_today) -> None:
+    from app.schemas.kdh import NOTE_MAX_LENGTH
+
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+
+    response = set_note(created["id"], dani, "2026-09-14", "x" * (NOTE_MAX_LENGTH + 1))
+    assert response.status_code == 422
+    assert set_note(created["id"], dani, "2026-09-14", "x" * NOTE_MAX_LENGTH).status_code == 200
+
+
+def test_a_note_on_a_past_day_is_refused(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+    assert set_note(created["id"], dani, "2026-09-02", "Too late").status_code == 422
+
+
+def test_anyone_may_edit_or_clear_a_note(as_guest: None, fixed_today) -> None:
+    """No ownership: everyone shares a login, so the claim was never a boundary."""
+    app.dependency_overrides[get_current_user] = lambda: "test_user"
+    created = create("DnD", ["Dani", "Jake"]).json()
+    dani, jake = (i["id"] for i in created["invitees"])
+    set_note(created["id"], dani, "2026-09-14", "Dani's note")
+    app.dependency_overrides[get_current_user] = lambda: "players"
+
+    body = set_note(created["id"], dani, "2026-09-14", "edited by someone else")
+    assert body.status_code == 200
+    assert body.json()["notes"]["2026-09-14"][dani] == "edited by someone else"
+    assert jake  # roster untouched

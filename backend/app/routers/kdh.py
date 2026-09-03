@@ -20,7 +20,9 @@ from app.schemas.kdh import (
     CreateCalendarRequest,
     Me,
     SetChosenRequest,
+    SetNoteRequest,
     SetVoteRequest,
+    SetVotesBulkRequest,
     UpdateCalendarRequest,
 )
 from app.services import kdh_service as service
@@ -157,5 +159,33 @@ def set_chosen(
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Calendar not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.put("/calendars/{calendar_id}/votes/bulk", response_model=Calendar)
+def set_votes_bulk(
+    calendar_id: str,
+    req: SetVotesBulkRequest,
+    _: str = Depends(get_current_user),
+) -> Calendar:
+    try:
+        return service.set_votes_bulk(calendar_id, req.invitee_id, req.dates, req.status)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.put("/calendars/{calendar_id}/notes", response_model=Calendar)
+def set_note(
+    calendar_id: str,
+    req: SetNoteRequest,
+    _: str = Depends(get_current_user),
+) -> Calendar:
+    try:
+        return service.set_note(calendar_id, req.invitee_id, req.date, req.text)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Not found") from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

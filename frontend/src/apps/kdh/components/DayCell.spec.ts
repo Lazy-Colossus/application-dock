@@ -30,6 +30,7 @@ function mountCell(props: Partial<Record<string, unknown>> = {}) {
       chosen: false,
       past: false,
       today: false,
+      selected: false,
       ...props,
     },
   });

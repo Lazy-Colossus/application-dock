@@ -34,7 +34,7 @@
 
       <div class="grp" data-testid="sheet-roster">
         <div class="grp-h">
-          Coming<span class="cnt">{{ rows.length }}</span>
+          Coming<span class="cnt">{{ answered.length }}</span>
         </div>
         <div
           v-for="row in rows"
@@ -46,12 +46,26 @@
           }"
           :data-testid="`sheet-row-${row.invitee.id}`"
         >
-          <span
-            class="g"
-            :class="row.status === 'if_needed' ? 'maybe' : 'free'"
-          />
+          <span class="g" :class="glyphFor(row.status)" />
           <span>{{ row.invitee.name }}</span>
+
+          <!-- Hover peeks on a pointer; the click-through menu is what makes it
+               reachable on a touch screen, which has no hover at all. -->
+          <button
+            v-if="row.note"
+            class="note-pip"
+            :aria-label="`Note from ${row.invitee.name}`"
+            :data-testid="`note-${row.invitee.id}`"
+          >
+            <q-icon name="sticky_note_2" size="14px" />
+            <q-tooltip class="kdh-panel kdh-note-pop" :delay="120">{{
+              row.note
+            }}</q-tooltip>
+            <q-menu class="kdh-panel kdh-note-pop">{{ row.note }}</q-menu>
+          </button>
+
           <span v-if="row.status === 'if_needed'" class="tag">IF NEEDED</span>
+          <span v-else-if="!row.status" class="tag">NOTE ONLY</span>
           <span v-else-if="row.invitee.id === claimedId" class="tag">YOU</span>
         </div>
       </div>
@@ -75,6 +89,30 @@
           @click="$emit('set', option.value)"
         >
           <span class="g" :class="option.glyph" />{{ option.label }}
+        </button>
+      </div>
+
+      <div v-if="!noteOpen">
+        <button class="ans-btn full" data-testid="note-open" @click="openNote">
+          {{ myNote ? "Edit note" : "Add note" }}
+        </button>
+      </div>
+      <!-- Revealed in the space the button occupied, rather than opening another
+           surface on top of a sheet that is already one. -->
+      <div v-else class="note-edit">
+        <q-input
+          v-model="noteDraft"
+          dense
+          outlined
+          autofocus
+          class="col"
+          :maxlength="NOTE_MAX_LENGTH"
+          placeholder="Only after 8pm…"
+          data-testid="note-input"
+          @keyup.enter="saveNote"
+        />
+        <button class="ans-btn" data-testid="note-save" @click="saveNote">
+          Save
         </button>
       </div>
     </template>
@@ -110,24 +148,27 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
+import { NOTE_MAX_LENGTH } from "@/apps/kdh/types";
 import type { Invitee, VoteStatus } from "@/apps/kdh/types";
 
 const props = defineProps<{
   date: string;
   invitees: Invitee[];
   votes: Record<string, VoteStatus>;
+  notes: Record<string, string>;
   claimedId: string | null;
   past: boolean;
   chosen: boolean;
   isAdmin: boolean;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   close: [];
   set: [status: VoteStatus | "none"];
   chosen: [chosen: boolean];
   claim: [];
+  note: [text: string];
 }>();
 
 const OPTIONS = [
@@ -146,34 +187,67 @@ const heading = computed(() => {
 });
 
 /**
- * Only the people who answered. No answer is taken as "not coming", so silence
- * is counted in the bar's remainder rather than listed as a row — the roster is
- * who is coming, not a register of everyone.
+ * Everyone with an answer **or** a note. A note is why someone who cannot come
+ * still belongs in the list — saying why is the whole point of it. The bar's
+ * counts stay vote-only, so a note never moves the day's shape.
  */
 const rows = computed(() =>
   [...props.invitees]
-    .filter((i) => props.votes[i.id] !== undefined)
+    .filter(
+      (i) => props.votes[i.id] !== undefined || props.notes[i.id] !== undefined,
+    )
     .sort((a, b) => a.order - b.order)
-    .map((invitee) => ({ invitee, status: props.votes[invitee.id] })),
+    .map((invitee) => ({
+      invitee,
+      status: props.votes[invitee.id],
+      note: props.notes[invitee.id],
+    })),
+);
+
+const answered = computed(() =>
+  props.invitees.filter((i) => props.votes[i.id] !== undefined),
 );
 
 const activeTotal = computed(
   () => props.invitees.filter((i) => i.removed_at === null).length,
 );
 const freeCount = computed(
-  () => rows.value.filter((r) => r.status === "yes").length,
+  () => answered.value.filter((i) => props.votes[i.id] === "yes").length,
 );
 const ifNeededCount = computed(
-  () => rows.value.filter((r) => r.status === "if_needed").length,
+  () => answered.value.filter((i) => props.votes[i.id] === "if_needed").length,
 );
 /** Everyone else on the roster: silent or not coming, which are the same thing. */
 const awayCount = computed(() =>
-  Math.max(0, activeTotal.value - rows.value.length),
+  Math.max(0, activeTotal.value - answered.value.length),
 );
 
 const myStatus = computed<VoteStatus | "none">(() =>
   props.claimedId ? (props.votes[props.claimedId] ?? "none") : "none",
 );
+
+const noteOpen = ref(false);
+const noteDraft = ref("");
+
+const myNote = computed(() =>
+  props.claimedId ? (props.notes[props.claimedId] ?? "") : "",
+);
+
+function openNote(): void {
+  noteDraft.value = myNote.value;
+  noteOpen.value = true;
+}
+
+function saveNote(): void {
+  emit("note", noteDraft.value);
+  noteOpen.value = false;
+}
+
+function glyphFor(status: VoteStatus | undefined): string {
+  if (status === "yes") return "free";
+  if (status === "if_needed") return "maybe";
+  return "no";
+}
 </script>
 
 <style scoped>
@@ -287,6 +361,15 @@ const myStatus = computed<VoteStatus | "none">(() =>
 .tentative {
   font-style: italic;
 }
+.note-pip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border: none;
+  background: none;
+  color: var(--kdh-wash-6);
+  cursor: pointer;
+}
 
 /* --- status glyphs: filled, half, hollow --- */
 .g {
@@ -318,6 +401,11 @@ const myStatus = computed<VoteStatus | "none">(() =>
 }
 .ans {
   display: flex;
+  gap: 6px;
+}
+.note-edit {
+  display: flex;
+  align-items: center;
   gap: 6px;
 }
 .ans-btn {

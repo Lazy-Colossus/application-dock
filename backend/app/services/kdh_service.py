@@ -14,7 +14,7 @@ from datetime import UTC, date, datetime
 
 from app.core.config import settings
 from app.repositories import kdh_repo as repo
-from app.schemas.kdh import Calendar, CalendarSummary, Invitee
+from app.schemas.kdh import NOTE_MAX_LENGTH, Calendar, CalendarSummary, Invitee
 
 
 def now_iso() -> str:
@@ -253,6 +253,26 @@ def remove_invitee(username: str, calendar_id: str, invitee_id: str) -> Calendar
 # ── Votes ────────────────────────────────────────────────────────────────────
 
 
+def _parse_future_day(day: str) -> date:
+    """A well-formed date that has not been and gone. Shared by votes and notes."""
+    try:
+        parsed = date.fromisoformat(day)
+    except ValueError as exc:
+        raise ValueError("Date must be YYYY-MM-DD") from exc
+    if parsed < today():
+        raise ValueError("That day has already been and gone")
+    return parsed
+
+
+def _active_invitee(calendar: Calendar, invitee_id: str) -> None:
+    """Raise unless `invitee_id` is on the roster and has not been removed."""
+    invitee = next((i for i in calendar.invitees if i.id == invitee_id), None)
+    if invitee is None:
+        raise FileNotFoundError(invitee_id)
+    if invitee.removed_at is not None:
+        raise ValueError("That person is no longer on this calendar")
+
+
 def set_vote(calendar_id: str, invitee_id: str, day: str, status: str) -> Calendar:
     """Set one person's answer for one day.
 
@@ -264,20 +284,10 @@ def set_vote(calendar_id: str, invitee_id: str, day: str, status: str) -> Calend
     checks that the invitee is real and active and that the day is not past; the
     claim saying *which* invitee you are was never a security boundary (AR-6).
     """
-    try:
-        parsed = date.fromisoformat(day)
-    except ValueError as exc:
-        raise ValueError("Date must be YYYY-MM-DD") from exc
-
-    if parsed < today():
-        raise ValueError("That day has already been and gone")
+    _parse_future_day(day)
 
     with repo.calendar_transaction(calendar_id) as calendar:
-        invitee = next((i for i in calendar.invitees if i.id == invitee_id), None)
-        if invitee is None:
-            raise FileNotFoundError(invitee_id)
-        if invitee.removed_at is not None:
-            raise ValueError("That person is no longer on this calendar")
+        _active_invitee(calendar, invitee_id)
 
         if status == "none":
             calendar.votes.get(day, {}).pop(invitee_id, None)
@@ -316,5 +326,66 @@ def set_chosen(username: str, calendar_id: str, day: str, chosen: bool) -> Calen
         else:
             marked.discard(day)
         calendar.chosen_dates = sorted(marked)
+        calendar.updated_at = now_iso()
+        return calendar
+
+
+def set_votes_bulk(calendar_id: str, invitee_id: str, days: list[str], status: str) -> Calendar:
+    """Set one person's answer across many days, in a single transaction.
+
+    All or nothing: every date is validated before anything is written, so a
+    selection containing one bad day leaves the calendar untouched rather than
+    half-applied. One transaction also means one lock rather than N, which
+    matters when this is how a person answers a whole month at once (NFR-1).
+    """
+    if not days:
+        raise ValueError("No days selected")
+    for day in days:
+        _parse_future_day(day)
+
+    with repo.calendar_transaction(calendar_id) as calendar:
+        _active_invitee(calendar, invitee_id)
+
+        for day in days:
+            if status == "none":
+                calendar.votes.get(day, {}).pop(invitee_id, None)
+            else:
+                calendar.votes.setdefault(day, {})[invitee_id] = status
+            if day in calendar.votes and not calendar.votes[day]:
+                del calendar.votes[day]
+
+        calendar.updated_at = now_iso()
+        return calendar
+
+
+# ── Notes ────────────────────────────────────────────────────────────────────
+
+
+def set_note(calendar_id: str, invitee_id: str, day: str, text: str) -> Calendar:
+    """Attach a short note to one person's day, or clear it with blank text.
+
+    Deliberately independent of the vote: someone who cannot come may still say
+    why, and that is exactly when a note is most useful — which is why the day
+    sheet lists a person who has a note even when they have no answer.
+
+    Not gated on who you claim to be: everyone shares a login, so the claim was
+    never a boundary and pretending otherwise here would be theatre (AR-6).
+    """
+    _parse_future_day(day)
+
+    cleaned = text.strip()
+    if len(cleaned) > NOTE_MAX_LENGTH:
+        raise ValueError(f"A note is at most {NOTE_MAX_LENGTH} characters")
+
+    with repo.calendar_transaction(calendar_id) as calendar:
+        _active_invitee(calendar, invitee_id)
+
+        if cleaned:
+            calendar.notes.setdefault(day, {})[invitee_id] = cleaned
+        else:
+            calendar.notes.get(day, {}).pop(invitee_id, None)
+        if day in calendar.notes and not calendar.notes[day]:
+            del calendar.notes[day]
+
         calendar.updated_at = now_iso()
         return calendar

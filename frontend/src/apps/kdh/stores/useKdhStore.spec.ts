@@ -27,6 +27,7 @@ const CREATED: Calendar = {
     { id: "inv-2", name: "Jake", order: 1, removed_at: null },
   ],
   votes: {},
+  notes: {},
   chosen_dates: [],
 };
 

@@ -123,6 +123,17 @@ list from the UI, week or agenda views, an availability deadline.
   availability heat — it survives into the past, which is what makes the calendar a record of
   sessions actually held.
 
+- FR-18: A claimed voter can **select several days and answer them at once** — enter a selection
+  mode from the month header, tap the days, and mark them all free. Past days cannot be selected.
+  The write is **all-or-nothing**: one bad day leaves the calendar untouched rather than
+  half-applied.
+- FR-19: Anyone can attach a **short note** (200 characters) to a person's day — added from the day
+  sheet, revealed in the space the button occupied. A note is **independent of an answer**: someone
+  who cannot come may still say why, and the day sheet therefore lists a person who has a note even
+  when they have no answer. Notes show as a small mark beside the name, peeked on hover and opened
+  by tap. Notes never move the day's coverage. There is no ownership — everyone shares one login,
+  so anyone may edit or clear any note.
+
 ### Non-functional
 
 - NFR-0: **Two layouts, phone and web.** The phone layout is the primary one and the
@@ -249,6 +260,8 @@ All routes behind `Depends(get_current_user)`; admin-only routes marked **[A]**.
 | `POST` | `/api/kdh/calendars/{id}/invitees` | **[A]** Add `{ name }` |
 | `DELETE` | `/api/kdh/calendars/{id}/invitees/{inv}` | **[A]** Remove; prune votes from today onward, keep the past (FR-8) |
 | `PUT` | `/api/kdh/calendars/{id}/votes` | Set one vote: `{ invitee_id, date, status: "yes" \| "if_needed" \| "none" }` (AR-5) |
+| `PUT` | `/api/kdh/calendars/{id}/votes/bulk` | Answer many days at once: `{ invitee_id, dates, status }`, all-or-nothing (FR-18) |
+| `PUT` | `/api/kdh/calendars/{id}/notes` | Set or clear a note: `{ invitee_id, date, text }` (FR-19) |
 | `PUT` | `/api/kdh/calendars/{id}/chosen` | **[A]** Mark/unmark a date: `{ date, chosen }` |
 
 `404` for an unknown calendar or invitee, `403` for an admin route without admin, `422` for a

@@ -143,6 +143,17 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
   the marking is visually distinct from the availability heat. It survives into the past, which is
   what makes the calendar a record of sessions actually held.
 
+- FR-18: A claimed voter can **select several days and answer them at once** — enter a selection
+  mode from the month header, tap the days, and mark them all free. Past days cannot be selected.
+  The write is **all-or-nothing**: one bad day leaves the calendar untouched rather than
+  half-applied.
+- FR-19: Anyone can attach a **short note** (200 characters) to a person's day — added from the day
+  sheet, revealed in the space the button occupied. A note is **independent of an answer**: someone
+  who cannot come may still say why, and the day sheet therefore lists a person who has a note even
+  when they have no answer. Notes show as a small mark beside the name, peeked on hover and opened
+  by tap. Notes never move the day's coverage. There is no ownership — everyone shares one login,
+  so anyone may edit or clear any note.
+
 ### NonFunctional Requirements
 
 - NFR-0: **Two layouts, phone and web.** The phone layout is the primary one and the
@@ -328,6 +339,12 @@ nothing to vote as until a name can be claimed. Epic 4 depends on Epic 3 for the
 **No epic depends on a later one**, and each is shippable on its own: Epic 1 alone gives admins
 working calendars, Epic 2 alone gives a usable guest list, Epic 3 alone is a working availability
 poll, and Epic 4 is purely additive.
+
+### Epic 5: Answering Faster, and Saying Why
+Two things a real group wants once it has used the calendar for a week: answering a
+run of days in one go instead of tapping each, and being able to say *why* — which
+matters most from the person who cannot come.
+**FRs covered:** FR-18, FR-19
 
 ### Deferred to a later epic
 
@@ -1573,3 +1590,66 @@ recent past** chosen date, otherwise nothing (FR-5, FR-17).
 **When** it is computed
 **Then** it uses the **server's** today, consistent with every other past/future boundary in the
 app (NFR-5).
+
+## Epic 5: Answering Faster, and Saying Why
+
+### Story 5.1: Answer several days at once
+
+As an invitee,
+I want to select a run of days and mark them all free,
+so that offering a month's availability is not thirty separate taps.
+
+**Acceptance Criteria:**
+
+**Given** I have claimed a name
+**When** I open the month
+**Then** the month header offers a **selection mode**; someone who has not claimed a name is not
+offered it, because they cannot answer at all (FR-18, FR-11).
+
+**Given** selection mode is on
+**When** I tap a day
+**Then** it is collected rather than opened, tapping it again releases it, and a bar shows how many
+are collected. **A past day cannot be collected** (FR-18, FR-16).
+
+**Given** a collection
+**When** I mark it free
+**Then** `PUT /api/kdh/calendars/{id}/votes/bulk` applies every day in **one transaction**; a
+selection containing one bad day is rejected whole and the calendar is left untouched (FR-18,
+NFR-1).
+
+**Given** the write fails
+**When** the error is shown
+**Then** the selection survives so it can be retried, and the mode stays open.
+
+### Story 5.2: Say why, with a note
+
+As anyone on a calendar,
+I want to leave a short note on a day,
+so that "I can't" can carry a reason and a "yes" can carry a caveat.
+
+**Acceptance Criteria:**
+
+**Given** the day sheet and a claimed name
+**When** I use **Add note**
+**Then** a field is revealed **in the space the button occupied**, prefilled if a note exists, and
+saving stores it; blank clears it. At most 200 characters (FR-19).
+
+**Given** a note
+**When** the roster renders
+**Then** it shows as a small mark beside that person's name — **peeked on hover, opened on tap** —
+so it works on a pointer and on a touch screen without either being a special case (FR-19).
+
+**Given** someone with a note but no answer
+**When** the sheet renders
+**Then** they are **listed**, with a hollow glyph and a NOTE ONLY tag; but they are still counted
+as not coming, so a note never moves the day's shape (FR-19, FR-13).
+
+**Given** any note
+**When** anyone edits or clears it
+**Then** it is allowed. There is no ownership: everyone shares one login, so the claim was never a
+boundary (FR-19, AR-6).
+
+**Given** a note on a past day
+**When** it is submitted
+**Then** it is refused with `422`, matching voting — a day that has been cannot be answered or
+annotated (FR-16).

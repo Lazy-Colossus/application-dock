@@ -6,6 +6,19 @@
       </div>
       <div class="row items-center q-gutter-xs">
         <q-btn
+          v-if="selectable"
+          flat
+          dense
+          round
+          size="sm"
+          :icon="selectMode ? 'close' : 'checklist'"
+          :aria-label="
+            selectMode ? 'Stop selecting days' : 'Select several days'
+          "
+          data-testid="select-toggle"
+          @click="$emit('toggleSelectMode')"
+        />
+        <q-btn
           flat
           dense
           round
@@ -53,6 +66,7 @@
         :invitees="invitees"
         :chosen="chosenDates.includes(date)"
         :past="date < serverToday"
+        :selected="selected.has(date)"
         :today="date === serverToday"
         @pick="$emit('pick', $event)"
       />
@@ -72,9 +86,13 @@ const props = defineProps<{
   invitees: Invitee[];
   /** YYYY-MM-DD from the server — never the device's clock (NFR-5). */
   serverToday: string;
+  /** Only someone who has claimed a name can answer, so only they can bulk-answer. */
+  selectable: boolean;
+  selectMode: boolean;
+  selected: Set<string>;
 }>();
 
-defineEmits<{ pick: [date: string] }>();
+defineEmits<{ pick: [date: string]; toggleSelectMode: [] }>();
 
 // Monday first: this is a European group, and a weekend that straddles the
 // grid's edge makes "are we free on Saturday" harder to read than it should be.

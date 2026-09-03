@@ -24,6 +24,7 @@ function mountSheet(props: Partial<Record<string, unknown>> = {}) {
       date: "2026-09-14",
       invitees: ROSTER,
       votes: {},
+      notes: {},
       claimedId: "inv-1",
       past: false,
       chosen: false,
@@ -232,5 +233,90 @@ describe("DaySheet", () => {
     expect(
       wrapper.find('[data-testid="set-none"]').find(".g").classes(),
     ).toContain("no");
+  });
+
+  it("lists someone who left a note but did not answer", () => {
+    // The reason the feature exists: saying why you cannot come is worth as
+    // much as saying you can.
+    const wrapper = mountSheet({
+      votes: { "inv-1": "yes" },
+      notes: { "inv-2": "Away that week" },
+    });
+
+    const row = wrapper.find('[data-testid="sheet-row-inv-2"]');
+    expect(row.exists()).toBe(true);
+    expect(row.text()).toContain("NOTE ONLY");
+    expect(row.find(".g").classes()).toContain("no");
+  });
+
+  it("does not let a note move the day's shape", () => {
+    const wrapper = mountSheet({
+      votes: { "inv-1": "yes" },
+      notes: { "inv-2": "Away that week" },
+    });
+
+    // One free, two not coming — the note-only person is still not coming.
+    expect(wrapper.find(".bar-key").text()).toContain("1 free");
+    expect(wrapper.find(".bar-key").text()).toContain("2 not coming");
+    expect(wrapper.find(".grp-h .cnt").text()).toBe("1");
+  });
+
+  it("shows a note behind a pip, reachable by hover or by tap", () => {
+    const wrapper = mountSheet({
+      votes: { "inv-1": "yes" },
+      notes: { "inv-1": "Bring dice" },
+    });
+
+    const pip = wrapper.find('[data-testid="note-inv-1"]');
+    expect(pip.exists()).toBe(true);
+    expect(pip.attributes("aria-label")).toBe("Note from Dani");
+    expect(wrapper.find('[data-testid="note-inv-2"]').exists()).toBe(false);
+  });
+
+  it("offers to add a note, and to edit one that exists", async () => {
+    const adding = mountSheet({ votes: { "inv-1": "yes" } });
+    expect(adding.find('[data-testid="note-open"]').text()).toContain(
+      "Add note",
+    );
+
+    const editing = mountSheet({ notes: { "inv-1": "Bring dice" } });
+    expect(editing.find('[data-testid="note-open"]').text()).toContain(
+      "Edit note",
+    );
+  });
+
+  it("reveals the field in the button's own space and emits on save", async () => {
+    const wrapper = mountSheet({ votes: { "inv-1": "yes" } });
+
+    await wrapper.find('[data-testid="note-open"]').trigger("click");
+    expect(wrapper.find('[data-testid="note-open"]').exists()).toBe(false);
+
+    await wrapper
+      .find('[data-testid="note-input"] input')
+      .setValue("Only after 8pm");
+    await wrapper.find('[data-testid="note-save"]').trigger("click");
+
+    expect(wrapper.emitted("note")?.[0]).toEqual(["Only after 8pm"]);
+    expect(wrapper.find('[data-testid="note-open"]').exists()).toBe(true);
+  });
+
+  it("prefills the editor with the existing note", async () => {
+    const wrapper = mountSheet({ notes: { "inv-1": "Bring dice" } });
+    await wrapper.find('[data-testid="note-open"]').trigger("click");
+
+    expect(
+      (
+        wrapper.find('[data-testid="note-input"] input')
+          .element as HTMLInputElement
+      ).value,
+    ).toBe("Bring dice");
+  });
+
+  it("offers no note control to someone who has not claimed a name", () => {
+    expect(
+      mountSheet({ claimedId: null })
+        .find('[data-testid="note-open"]')
+        .exists(),
+    ).toBe(false);
   });
 });

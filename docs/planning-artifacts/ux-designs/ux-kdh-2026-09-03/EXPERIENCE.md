@@ -115,8 +115,10 @@ quickly. Both write the same vote.
   sheet stays reachable for reading and for admin marking.
 - **Arrows** move one month. There is no swipe: a swipe on a 7×5 grid of tap
   targets is too easy to trigger while aiming for a Tuesday.
-- **No drag, no multi-select, no range.** Marking a stretch of days is repeated
-  taps by design; ranges are a v2 idea, not a missing feature.
+- **A selection mode, not a drag.** The month header toggles into selecting; a tap
+  then collects a day rather than opening it, and the collected days are answered
+  together. Still no drag and no range: a drag over a grid of tap targets is too
+  easily started by accident, the same reason there is no swipe.
 - Every write is optimistic and reverts on failure.
 
 ## Accessibility Floor

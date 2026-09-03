@@ -46,6 +46,7 @@ const CREATED: Calendar = {
   updated_at: "2026-09-03T12:00:00Z",
   invitees: [{ id: "inv-1", name: "Dani", order: 0, removed_at: null }],
   votes: {},
+  notes: {},
   chosen_dates: [],
 };
 

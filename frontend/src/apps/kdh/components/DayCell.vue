@@ -3,7 +3,7 @@
     class="kdh-cell"
     :class="[
       `w${wash.step}`,
-      { past, today, chosen, provisional: wash.provisional },
+      { past, today, chosen, selected, provisional: wash.provisional },
     ]"
     :aria-label="label"
     :data-testid="`day-${date}`"
@@ -79,6 +79,7 @@ const props = defineProps<{
   chosen: boolean;
   past: boolean;
   today: boolean;
+  selected: boolean;
 }>();
 
 defineEmits<{ pick: [date: string] }>();
@@ -310,6 +311,19 @@ const label = computed(() => {
 .today {
   outline: 1px solid var(--kdh-ink-mid);
   outline-offset: -1px;
+}
+/* Collected for a bulk answer. A fill rather than a frame, so it cannot be
+   mistaken for the gold frame that means "this is the day". */
+.selected {
+  box-shadow: inset 0 0 0 2px var(--kdh-wash-5);
+}
+.selected::before {
+  content: "✓";
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 9px;
+  color: var(--kdh-wash-6);
 }
 .past {
   opacity: 0.3;

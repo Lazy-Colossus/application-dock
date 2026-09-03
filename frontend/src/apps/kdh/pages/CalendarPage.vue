@@ -81,6 +81,28 @@
         </a>
       </div>
 
+      <div v-if="selectMode" class="kdh-selbar" data-testid="select-bar">
+        <span class="col"
+          >{{ selected.size }}
+          {{ selected.size === 1 ? "day" : "days" }} selected</span
+        >
+        <button
+          class="sel-btn"
+          data-testid="select-cancel"
+          @click="toggleSelectMode"
+        >
+          Cancel
+        </button>
+        <button
+          class="sel-btn go"
+          :disabled="selected.size === 0"
+          data-testid="select-apply"
+          @click="markSelectedFree"
+        >
+          Mark free
+        </button>
+      </div>
+
       <MonthGrid
         v-if="store.currentCalendar && serverToday"
         :votes="store.currentCalendar.votes"
@@ -88,7 +110,11 @@
         :active-total="activeInvitees.length"
         :invitees="store.currentCalendar.invitees"
         :server-today="serverToday"
+        :selectable="claim.hasClaim.value"
+        :selected="selected"
+        :select-mode="selectMode"
         @pick="onPickDay"
+        @toggle-select-mode="toggleSelectMode"
       />
     </div>
 
@@ -98,6 +124,7 @@
         :date="openDate"
         :invitees="store.currentCalendar.invitees"
         :votes="store.currentCalendar.votes[openDate] ?? {}"
+        :notes="store.currentCalendar.notes[openDate] ?? {}"
         :claimed-id="claim.claimed.value?.id ?? null"
         :past="openDate < serverToday"
         :chosen="store.currentCalendar.chosen_dates.includes(openDate)"
@@ -106,6 +133,7 @@
         @set="onSetStatus"
         @chosen="onSetChosen"
         @claim="nameMenuOpen = true"
+        @note="onSetNote"
       />
     </q-dialog>
 
@@ -345,6 +373,8 @@ const menuOpen = ref(false);
 const nameMenuOpen = ref(false);
 const daySheetOpen = ref(false);
 const openDate = ref<string | null>(null);
+const selectMode = ref(false);
+const selected = ref<Set<string>>(new Set());
 const managingInvitees = ref(false);
 const newInviteeName = ref("");
 const removingInvitee = ref<Invitee | null>(null);
@@ -421,8 +451,46 @@ function claimName(inviteeId: string): void {
  * survives without the sheet being unreachable.
  */
 function onPickDay(date: string): void {
+  // In select mode a tap collects days instead of opening one. Past days are
+  // never collectable: they cannot be voted on, so selecting them would only
+  // build a request the server is going to refuse.
+  if (selectMode.value) {
+    if (date < serverToday.value) return;
+    const next = new Set(selected.value);
+    if (!next.delete(date)) next.add(date);
+    selected.value = next;
+    return;
+  }
   openDate.value = date;
   daySheetOpen.value = true;
+}
+
+function toggleSelectMode(): void {
+  selectMode.value = !selectMode.value;
+  selected.value = new Set();
+}
+
+async function markSelectedFree(): Promise<void> {
+  const mine = claim.claimed.value;
+  if (!mine || selected.value.size === 0) return;
+  try {
+    await store.setVotesBulk(
+      calendarId.value,
+      mine.id,
+      [...selected.value].sort(),
+      "yes",
+    );
+    selectMode.value = false;
+    selected.value = new Set();
+  } catch {
+    // The store surfaced it; the selection survives so it can be retried.
+  }
+}
+
+async function onSetNote(text: string): Promise<void> {
+  const mine = claim.claimed.value;
+  if (!mine || !openDate.value) return;
+  await store.setNote(calendarId.value, mine.id, openDate.value, text);
 }
 
 async function onSetChosen(chosen: boolean): Promise<void> {
@@ -516,6 +584,37 @@ import "./../css/kdh.sass";
 </script>
 
 <style scoped>
+.kdh-selbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--kdh-field-raise);
+  border: 1px solid var(--kdh-field-line);
+  font-size: 13px;
+}
+.sel-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--kdh-field-line);
+  background: transparent;
+  color: var(--kdh-ink-hi);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.sel-btn.go {
+  background: var(--kdh-wash-3);
+  border-color: transparent;
+  font-weight: 600;
+}
+.sel-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* Two layouts, and only two: a phone, and a browser window. Below the
    breakpoint the column is the full width of the screen; above it the calendar
    is a centred band, because a month stretched across a 27" monitor is a row of

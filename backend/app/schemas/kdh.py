@@ -38,6 +38,10 @@ class Calendar(BaseModel):
     # date (YYYY-MM-DD) -> invitee id -> status. Keyed by date because the month
     # view reads a cell at a time; a date with an empty map is pruned (AR-4).
     votes: dict[str, dict[str, VoteStatus]] = Field(default_factory=dict)
+    # date -> invitee id -> a short note. Same shape as `votes` and pruned the
+    # same way. A note is independent of an answer: someone who cannot come may
+    # still say why, and someone free may add a caveat.
+    notes: dict[str, dict[str, str]] = Field(default_factory=dict)
     # Admin-marked days, ascending. Any number: a long-running calendar
     # accumulates them, and they survive into the past (FR-17).
     chosen_dates: list[str] = Field(default_factory=list)
@@ -99,3 +103,19 @@ class SetVoteRequest(BaseModel):
 class SetChosenRequest(BaseModel):
     date: str
     chosen: bool
+
+
+NOTE_MAX_LENGTH = 200
+
+
+class SetNoteRequest(BaseModel):
+    invitee_id: str
+    date: str
+    # Blank clears the note. There is no separate delete.
+    text: str
+
+
+class SetVotesBulkRequest(BaseModel):
+    invitee_id: str
+    dates: list[str]
+    status: Literal["yes", "if_needed", "none"]

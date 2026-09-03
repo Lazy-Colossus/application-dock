@@ -27,6 +27,8 @@ export interface Calendar {
   invitees: Invitee[];
   /** date (YYYY-MM-DD) -> invitee id -> status. */
   votes: Record<string, Record<string, VoteStatus>>;
+  /** date -> invitee id -> a short note, independent of any answer. */
+  notes: Record<string, Record<string, string>>;
   chosen_dates: string[];
 }
 
@@ -49,3 +51,6 @@ export interface Me {
   /** The server's date. The client never decides "past" from its own clock. */
   today: string;
 }
+
+/** Matches `NOTE_MAX_LENGTH` on the server, which is authoritative. */
+export const NOTE_MAX_LENGTH = 200;

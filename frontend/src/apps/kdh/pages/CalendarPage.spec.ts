@@ -38,6 +38,7 @@ const CAL: Calendar = {
   updated_at: "2026-09-03T10:00:00Z",
   invitees: [{ id: "inv-1", name: "Dani", order: 0, removed_at: null }],
   votes: {},
+  notes: {},
   chosen_dates: [],
 };
 
@@ -622,6 +623,132 @@ describe("CalendarPage", () => {
     expect(putMock).toHaveBeenCalledWith("/kdh/calendars/cal-ab12cd34/chosen", {
       date: "2026-09-01",
       chosen: true,
+    });
+  });
+
+  it("offers bulk selection only to someone who has claimed a name", async () => {
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const unclaimed = await mountPage();
+    expect(unclaimed.find('[data-testid="select-toggle"]').exists()).toBe(
+      false,
+    );
+
+    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+    const claimed = await mountPage();
+    expect(claimed.find('[data-testid="select-toggle"]').exists()).toBe(true);
+  });
+
+  it("collects days instead of opening them, and marks them all free", async () => {
+    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    putMock.mockResolvedValueOnce({
+      ...CAL,
+      invitees: TWO_INVITEES,
+      votes: {
+        "2026-09-14": { "inv-1": "yes" },
+        "2026-09-15": { "inv-1": "yes" },
+      },
+    });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="select-toggle"]').trigger("click");
+    await wrapper.find('[data-testid="day-2026-09-14"]').trigger("click");
+    await wrapper.find('[data-testid="day-2026-09-15"]').trigger("click");
+
+    // No sheet: a tap collects rather than opens.
+    expect(wrapper.find('[data-testid="sheet-date"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="select-bar"]').text()).toContain(
+      "2 days selected",
+    );
+
+    await wrapper.find('[data-testid="select-apply"]').trigger("click");
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith(
+      "/kdh/calendars/cal-ab12cd34/votes/bulk",
+      {
+        invitee_id: "inv-1",
+        dates: ["2026-09-14", "2026-09-15"],
+        status: "yes",
+      },
+    );
+    // Mode closes on success.
+    expect(wrapper.find('[data-testid="select-bar"]').exists()).toBe(false);
+  });
+
+  it("deselects a day that is tapped twice", async () => {
+    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="select-toggle"]').trigger("click");
+    await wrapper.find('[data-testid="day-2026-09-14"]').trigger("click");
+    await wrapper.find('[data-testid="day-2026-09-14"]').trigger("click");
+
+    expect(wrapper.find('[data-testid="select-bar"]').text()).toContain(
+      "0 days selected",
+    );
+    expect(
+      wrapper.find('[data-testid="select-apply"]').attributes("disabled"),
+    ).toBeDefined();
+  });
+
+  it("will not collect a past day", async () => {
+    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="select-toggle"]').trigger("click");
+    await wrapper.find('[data-testid="day-2026-09-01"]').trigger("click");
+
+    expect(wrapper.find('[data-testid="select-bar"]').text()).toContain(
+      "0 days selected",
+    );
+  });
+
+  it("keeps the selection when the bulk write fails, so it can be retried", async () => {
+    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    putMock.mockRejectedValueOnce(
+      new Error("That day has already been and gone"),
+    );
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="select-toggle"]').trigger("click");
+    await wrapper.find('[data-testid="day-2026-09-14"]').trigger("click");
+    await wrapper.find('[data-testid="select-apply"]').trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="select-bar"]').text()).toContain(
+      "1 day selected",
+    );
+    expect(wrapper.find('[data-testid="error"]').text()).toContain(
+      "been and gone",
+    );
+  });
+
+  it("saves a note from the day sheet", async () => {
+    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    putMock.mockResolvedValueOnce({
+      ...CAL,
+      invitees: TWO_INVITEES,
+      notes: { "2026-09-14": { "inv-1": "Only after 8pm" } },
+    });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="day-2026-09-14"]').trigger("click");
+    await wrapper.find('[data-testid="note-open"]').trigger("click");
+    await wrapper
+      .find('[data-testid="note-input"] input')
+      .setValue("Only after 8pm");
+    await wrapper.find('[data-testid="note-save"]').trigger("click");
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith("/kdh/calendars/cal-ab12cd34/notes", {
+      invitee_id: "inv-1",
+      date: "2026-09-14",
+      text: "Only after 8pm",
     });
   });
 });
