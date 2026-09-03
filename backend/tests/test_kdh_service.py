@@ -45,26 +45,3 @@ def test_require_admin_raises_for_a_guest(monkeypatch: pytest.MonkeyPatch) -> No
     with pytest.raises(PermissionError):
         service.require_admin("players")
     service.require_admin("jake")  # does not raise
-
-
-# ── the colour palette ───────────────────────────────────────────────────────
-
-
-def test_palette_colours_are_unique() -> None:
-    assert len(set(service.PALETTE)) == len(service.PALETTE)
-
-
-def test_assign_colour_returns_the_first_free_one() -> None:
-    assert service.assign_colour(set()) == service.PALETTE[0]
-    assert service.assign_colour({service.PALETTE[0]}) == service.PALETTE[1]
-
-
-def test_assign_colour_skips_gaps() -> None:
-    """A removed invitee keeps their colour reserved, so gaps are normal (AR-7)."""
-    taken = {service.PALETTE[0], service.PALETTE[2]}
-    assert service.assign_colour(taken) == service.PALETTE[1]
-
-
-def test_assign_colour_raises_when_the_palette_is_exhausted() -> None:
-    with pytest.raises(ValueError, match="No colours left"):
-        service.assign_colour(set(service.PALETTE))

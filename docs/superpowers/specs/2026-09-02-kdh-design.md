@@ -24,7 +24,7 @@ naming it and listing who is invited. The admin then hands out the calendar's li
 
 Everyone else opens that link behind **one shared dock login** — a single configured **guest
 account** that can read, claim a name and vote, and nothing else. They see the month, the list of
-invitees each in their own colour, and they **claim a name** — that is the whole of identity in
+invitees, and they **claim a name** — that is the whole of identity in
 this app; there are no per-person accounts. Having claimed a name they click days to set their
 availability, marking as many days as they like.
 
@@ -37,7 +37,7 @@ frozen. Admins **mark days as chosen** — several per calendar, accumulating ov
 long-running one — and can **add or remove invitees** at any time.
 
 **In v1:** the guest account and the admins-are-everyone-else rule, calendar create/rename/delete, invitee add/remove, claim-a-name
-identity with a colour, month grid with prev/next navigation, three-state day availability
+identity, month grid with prev/next navigation, three-state day availability
 (available / if needed / none), overlap wash highlighting, a **day sheet** listing who is on a
 date, chosen-day marking, greyed-out past. **Phone only.**
 
@@ -62,7 +62,7 @@ list from the UI, week or agenda views, an availability deadline.
   admins to a denylist of one: a username in the configured **guest list** is a guest, and **every
   other authenticated user is an admin**. The guest account is the shared credential handed to the
   group; a guest may read any calendar, claim a name, set their own votes and change their own
-  colour, and nothing else. Admin-only routes reject a guest with `403`; the frontend hides admin
+  and nothing else. Admin-only routes reject a guest with `403`; the frontend hides admin
   controls rather than offering them and failing.
 
 **F2 — Calendars**
@@ -81,10 +81,8 @@ list from the UI, week or agenda views, an availability deadline.
   confirms first and **prunes that person's votes from today onward only** — their votes on past
   dates stay exactly as they were, so a long-running calendar keeps an honest record of who was
   actually around for the sessions already played. A removed invitee therefore still renders on
-  past day cells, in their own name and colour, but is gone from the roster, from the claimable
-  names, and from the availability denominator (FR-14).
-- FR-9: Each invitee is assigned a **distinct colour** from a fixed palette when added; a person
-  who has claimed that name may change it to another colour that is still free on that calendar.
+  past day cells, under their own name, but is gone from the roster, from the claimable names,
+  and from the availability denominator (FR-14).
 - FR-10: A visitor **claims a name** by picking an invitee from the roster. The claim is remembered
   in `localStorage` keyed by calendar id, survives a reload, and can be **switched** at any time by
   picking someone else. There is no "release to nobody" — switching is the real case, and an
@@ -100,11 +98,10 @@ list from the UI, week or agenda views, an availability deadline.
   a day cell carries only the date and the coverage **count** — a ~44px cell cannot hold
   a name — and the names live in a **day sheet** opened by tapping the day. On the web
   layout the cell is large enough, so it also lists the voters beneath the count,
-  comma-separated in the cell's own ink — not in each person's colour, since six
-  colours on one line is a smear — trailing off past the sixth, and **ellipsised**
+  comma-separated in the cell's own ink, trailing off past the sixth, and **ellipsised**
   when they do not fit the two lines available. On the phone layout, where no name fits,
-  the cell instead carries a **row of invitee-coloured dots**, filled for free and
-  hollow for *if needed*, so it still says *who* and not only *how many*. Either way the
+  On the phone layout, where no name fits, the cell carries the date and the count
+  alone; the day sheet is the answer to *who*. Either way the
   **if-needed people are visually distinguished** by weight and style, and the sheet
   remains the complete list.
 - FR-14: Cells are **heat-highlighted by coverage** — how many invitees could be there at all
@@ -189,9 +186,9 @@ list from the UI, week or agenda views, an availability deadline.
   says only "this invitee, this date, this status", which keeps the write small, makes the lock
   window short, and makes a lost update impossible to express in the API.
 - AR-7: **Removed invitees are tombstoned, not erased** (FR-8). The record keeps its name and
-  colour with a `removed_at` stamp so past cells still render correctly, and its colour stays
-  reserved for as long as it does. An invitee removed while holding no past votes at all is
-  dropped outright, so the common "added by mistake" case leaves no residue.
+  `removed_at` stamp so past cells still render their name correctly. An invitee removed while
+  holding no past votes at all is dropped outright, so the common "added by mistake" case leaves
+  no residue.
 - AR-6: **Claimed identity never reaches the server as authority.** The client sends an
   `invitee_id`; the server validates it exists on that calendar and nothing more. There is no
   pretence that a person cannot vote as someone else — the trust boundary is the shared login,
@@ -249,9 +246,8 @@ All routes behind `Depends(get_current_user)`; admin-only routes marked **[A]**.
 | `GET` | `/api/kdh/calendars/{id}` | The full calendar document |
 | `PUT` | `/api/kdh/calendars/{id}` | **[A]** Rename |
 | `DELETE` | `/api/kdh/calendars/{id}` | **[A]** Delete |
-| `POST` | `/api/kdh/calendars/{id}/invitees` | **[A]** Add `{ name }`, colour auto-assigned |
+| `POST` | `/api/kdh/calendars/{id}/invitees` | **[A]** Add `{ name }` |
 | `DELETE` | `/api/kdh/calendars/{id}/invitees/{inv}` | **[A]** Remove; prune votes from today onward, keep the past (FR-8) |
-| `PUT` | `/api/kdh/calendars/{id}/invitees/{inv}/color` | Recolour to a free palette colour (FR-9) |
 | `PUT` | `/api/kdh/calendars/{id}/votes` | Set one vote: `{ invitee_id, date, status: "yes" \| "if_needed" \| "none" }` (AR-5) |
 | `PUT` | `/api/kdh/calendars/{id}/chosen` | **[A]** Mark/unmark a date: `{ date, chosen }` |
 
@@ -279,7 +275,7 @@ src/apps/kdh/
   components/MonthGrid.vue      the month, arrows, today control (FR-12)
   components/DayCell.vue        date, count, wash, chosen mark, past dimming (FR-14, 16, 17)
   components/DaySheet.vue       who is on this date + the three-state control (FR-13, 15)
-  components/NameDropdown.vue   claim / switch a name, and the colour swatches (FR-9, 10, 11)
+  components/NameDropdown.vue   claim / switch a name (FR-10, 11)
   components/AdminMenu.vue      create/rename/delete, manage invitees, mark chosen
   composables/useClaimedName.ts localStorage-backed claim per calendar (FR-10)
   composables/useWashScale.ts   (yes, if_needed, active total) -> wash step + provisional flag,
@@ -300,10 +296,9 @@ list, and an empty state that says to ask an admin rather than dangling a disabl
 **Claiming a name.** A dropdown in the month header, and the loudest control on the page until it
 is answered: unclaimed it is styled like a **required field left blank** — negative border and
 text, with a warning glyph — because the calendar cannot be used until someone says who they are.
-Once claimed it settles into a quiet pill carrying that person's colour and name. Unclaimed it
+Once claimed it settles into a quiet pill carrying that person's name. Unclaimed it
 reads "Who are you?"; open, it
-lists every active invitee as a row — colour dot, name, tick on the claimed one — and carries the
-colour swatches, taken ones dimmed and yours ringed. Chosen over a bottom sheet and a persistent
+lists every active invitee as a row with a tick on the claimed one. Chosen over a bottom sheet and a persistent
 chip rail because **the month stays visible while you pick**. The claim is remembered per calendar
 on that phone.
 
@@ -338,10 +333,9 @@ field** (`#15111C`) on which the month washes from **deep eggplant** at one pers
 lilac** at all six. Exactly one idea carries colour: how many people can come. Everything else —
 chrome, labels, navigation — stays quiet enough that the month is the only thing with presence.
 
-**Two colour systems that must never be confused.** The wash is **ordered** and answers *how many*;
-it is the only purple in the interface. Invitee colours are **categorical** and answer *which
-person*, so they sit deliberately outside the purple family — rose, sky, mint, sand, lilac, aqua —
-or a person's colour would read as a coverage level.
+**One colour system, and only one.** The wash is the only colour with meaning: it answers *how
+many can come*. Invitees have no colours — they had them, and every appearance turned out to be a
+dot beside the name it identified, which is decoration rather than information.
 
 **Two marks are shapes, never colours**, so they survive both the ramp and the past-day dimming: a
 a gold ring and a crown for a chosen day, and a hairline inset for provisional full coverage. Ink flips from pale

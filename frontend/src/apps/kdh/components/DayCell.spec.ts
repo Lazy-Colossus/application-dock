@@ -5,12 +5,12 @@ import DayCell from "./DayCell.vue";
 import type { Invitee } from "@/apps/kdh/types";
 
 const ROSTER: Invitee[] = [
-  { id: "a", name: "Dani", color: "#E9A6A0", order: 0, removed_at: null },
-  { id: "b", name: "Jake", color: "#A9C8E8", order: 1, removed_at: null },
-  { id: "c", name: "Tom", color: "#B9DCC2", order: 2, removed_at: null },
-  { id: "d", name: "Ash", color: "#EBD3A0", order: 3, removed_at: null },
-  { id: "e", name: "Kit", color: "#D3B2E8", order: 4, removed_at: null },
-  { id: "f", name: "Rae", color: "#A8D8D8", order: 5, removed_at: null },
+  { id: "a", name: "Dani", order: 0, removed_at: null },
+  { id: "b", name: "Jake", order: 1, removed_at: null },
+  { id: "c", name: "Tom", order: 2, removed_at: null },
+  { id: "d", name: "Ash", order: 3, removed_at: null },
+  { id: "e", name: "Kit", order: 4, removed_at: null },
+  { id: "f", name: "Rae", order: 5, removed_at: null },
 ];
 
 const STUBS = {
@@ -184,15 +184,13 @@ describe("DayCell", () => {
     expect(tip.text()).not.toContain("Jake");
   });
 
-  it("marks an if-needed voter in the hover list without recolouring them", () => {
+  it("marks an if-needed voter in the hover list by style alone", () => {
     const wrapper = mountCell({ votes: { a: "yes", b: "if_needed" } });
     const rows = wrapper.findAll(".kdh-voter");
 
+    expect(rows[1].text()).toContain("Jake");
     expect(rows[1].text()).toContain("if needed");
     expect(rows[1].classes()).toContain("tentative");
-    expect(rows[1].find(".kdh-voter-dot").attributes("style")).toContain(
-      "#A9C8E8",
-    );
     expect(rows[0].classes()).not.toContain("tentative");
   });
 
@@ -209,7 +207,6 @@ describe("DayCell", () => {
         {
           id: "g",
           name: "Departed",
-          color: "#C9B8A0",
           order: 6,
           removed_at: "2026-08-20T18:00:00Z",
         },
@@ -239,7 +236,7 @@ describe("DayCell", () => {
   it("trails off past the sixth name", () => {
     const seven = [
       ...ROSTER,
-      { id: "g", name: "Zoe", color: "#C9B8A0", order: 6, removed_at: null },
+      { id: "g", name: "Zoe", order: 6, removed_at: null },
     ];
 
     const exactlySix = mountCell({
@@ -281,54 +278,5 @@ describe("DayCell", () => {
 
   it("renders no name list on a day nobody picked", () => {
     expect(mountCell().find('[data-testid="cell-names"]').exists()).toBe(false);
-  });
-
-  it("shows a dot per voter, in roster order — the one job a name cannot do", () => {
-    // Phone only: at 44px there is no room for a name, so colour says who.
-    const wrapper = mountCell({ votes: { c: "yes", a: "yes" } });
-    const dots = wrapper.findAll(".dot");
-
-    expect(dots).toHaveLength(2);
-    expect(dots[0].attributes("style")).toContain("#E9A6A0"); // Dani
-    expect(dots[1].attributes("style")).toContain("#B9DCC2"); // Tom
-  });
-
-  it("hollows the dot of someone who is only free if needed", () => {
-    const wrapper = mountCell({ votes: { a: "yes", b: "if_needed" } });
-    const dots = wrapper.findAll(".dot");
-
-    expect(dots[0].classes()).not.toContain("tentative");
-    expect(dots[1].classes()).toContain("tentative");
-    // Their colour still identifies them; only the fill changes.
-    expect(dots[1].attributes("style")).toContain("#A9C8E8");
-  });
-
-  it("caps the dots at a row, leaving the count to carry the true total", () => {
-    const eight = [
-      ...ROSTER,
-      { id: "g", name: "Zoe", color: "#C9B8A0", order: 6, removed_at: null },
-      { id: "h", name: "Ivo", color: "#9FB8D8", order: 7, removed_at: null },
-    ];
-    const wrapper = mountCell({
-      activeTotal: 8,
-      invitees: eight,
-      votes: {
-        a: "yes",
-        b: "yes",
-        c: "yes",
-        d: "yes",
-        e: "yes",
-        f: "yes",
-        g: "yes",
-        h: "yes",
-      },
-    });
-
-    expect(wrapper.findAll(".dot")).toHaveLength(6);
-    expect(wrapper.find('[data-testid="count"]').text()).toBe("8");
-  });
-
-  it("shows no dots on a day nobody picked", () => {
-    expect(mountCell().find(".dots").exists()).toBe(false);
   });
 });

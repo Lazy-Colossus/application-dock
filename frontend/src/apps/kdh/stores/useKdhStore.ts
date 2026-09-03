@@ -163,26 +163,6 @@ export const useKdhStore = defineStore("kdh", () => {
     }
   }
 
-  async function recolourInvitee(
-    calendarId: string,
-    inviteeId: string,
-    color: string,
-  ): Promise<void> {
-    loading.value = true;
-    error.value = null;
-    try {
-      currentCalendar.value = await api.put<Calendar>(
-        `/kdh/calendars/${calendarId}/invitees/${inviteeId}/color`,
-        { color },
-      );
-    } catch (e) {
-      error.value = e instanceof Error ? e.message : String(e);
-      throw e;
-    } finally {
-      loading.value = false;
-    }
-  }
-
   /**
    * Set one vote, optimistically.
    *
@@ -284,7 +264,6 @@ export const useKdhStore = defineStore("kdh", () => {
     createCalendar,
     addInvitee,
     removeInvitee,
-    recolourInvitee,
     setVote,
     setChosen,
     renameCalendar,

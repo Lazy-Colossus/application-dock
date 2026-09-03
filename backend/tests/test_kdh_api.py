@@ -113,12 +113,6 @@ def test_create_returns_201_and_a_seeded_calendar() -> None:
     assert all(i["id"].startswith("inv-") for i in body["invitees"])
 
 
-def test_every_invitee_gets_a_distinct_colour() -> None:
-    body = create(invitees=[f"P{i}" for i in range(8)]).json()
-    colours = [i["color"] for i in body["invitees"]]
-    assert len(set(colours)) == len(colours)
-
-
 def test_invitee_names_are_stored_as_typed() -> None:
     """Trimmed, but not case-folded — the name renders in every day cell."""
     body = create(invitees=["  Dani  "]).json()
@@ -150,14 +144,6 @@ def test_create_rejects_bad_input(name: str, invitees: list[str], because: str) 
     assert response.status_code == 422, because
     assert "detail" in response.json()
     assert client.get("/api/kdh/calendars").json() == []
-
-
-def test_create_rejects_more_invitees_than_the_palette_holds() -> None:
-    from app.services.kdh_service import PALETTE
-
-    response = create(invitees=[f"P{i}" for i in range(len(PALETTE) + 1)])
-    assert response.status_code == 422
-    assert "colours" in response.json()["detail"].lower()
 
 
 # ── list ─────────────────────────────────────────────────────────────────────
@@ -347,7 +333,7 @@ def add_invitee(calendar_id: str, name: str):
     return client.post(f"/api/kdh/calendars/{calendar_id}/invitees", json={"name": name})
 
 
-def test_add_invitee_appends_with_a_free_colour_and_next_order() -> None:
+def test_add_invitee_appends_with_the_next_order() -> None:
     created = create("DnD", ["Dani", "Jake"]).json()
 
     body = add_invitee(created["id"], "Tom")
@@ -359,7 +345,14 @@ def test_add_invitee_appends_with_a_free_colour_and_next_order() -> None:
     assert tom["id"].startswith("inv-") and len(tom["id"]) == len("inv-") + 8
     assert tom["order"] == 2
     assert tom["removed_at"] is None
-    assert tom["color"] not in {i["color"] for i in invitees[:-1]}
+
+
+def test_a_roster_is_not_capped() -> None:
+    """The eight-colour palette used to cap a calendar at eight people; with the
+    colours gone there is no reason to."""
+    body = create("Big", [f"P{i}" for i in range(14)])
+    assert body.status_code == 201
+    assert len(body.json()["invitees"]) == 14
 
 
 def test_add_invitee_trims_and_persists() -> None:
@@ -377,16 +370,6 @@ def test_add_invitee_rejects_bad_names(bad: str) -> None:
     assert add_invitee(created["id"], bad).status_code == 422
     stored = client.get(f"/api/kdh/calendars/{created['id']}").json()
     assert len(stored["invitees"]) == 1
-
-
-def test_add_invitee_rejects_when_the_palette_is_exhausted() -> None:
-    from app.services.kdh_service import PALETTE
-
-    created = create("DnD", [f"P{i}" for i in range(len(PALETTE))]).json()
-
-    response = add_invitee(created["id"], "OneTooMany")
-    assert response.status_code == 422
-    assert "colours" in response.json()["detail"].lower()
 
 
 def test_a_guest_cannot_add_an_invitee(as_guest: None) -> None:
@@ -441,7 +424,7 @@ def test_removal_clears_the_future_and_keeps_the_past(monkeypatch: pytest.Monkey
     assert "2026-09-20" not in body["votes"], "emptied date pruned"
 
 
-def test_a_removed_invitee_is_tombstoned_with_name_and_colour(
+def test_a_removed_invitee_is_tombstoned_with_their_name(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from datetime import date
@@ -456,7 +439,6 @@ def test_a_removed_invitee_is_tombstoned_with_name_and_colour(
     tombstone = next(i for i in body["invitees"] if i["id"] == dani["id"])
     assert tombstone["removed_at"] is not None
     assert tombstone["name"] == "Dani"
-    assert tombstone["color"] == dani["color"]
 
 
 def test_an_invitee_with_no_past_votes_is_dropped_outright() -> None:
@@ -487,9 +469,7 @@ def test_removal_never_touches_chosen_dates(monkeypatch: pytest.MonkeyPatch) -> 
     assert body["chosen_dates"] == ["2026-08-10", "2026-09-14"]
 
 
-def test_a_tombstone_leaves_the_roster_but_keeps_its_colour_reserved(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_a_tombstone_leaves_the_roster(monkeypatch: pytest.MonkeyPatch) -> None:
     from datetime import date
 
     monkeypatch.setattr("app.services.kdh_service.today", lambda: date(2026, 9, 3))
@@ -498,17 +478,10 @@ def test_a_tombstone_leaves_the_roster_but_keeps_its_colour_reserved(
     seed_votes(created["id"], {"2026-08-10": {dani["id"]: "yes"}})
     client.delete(f"/api/kdh/calendars/{created['id']}/invitees/{dani['id']}")
 
-    # Off the roster count...
     assert client.get("/api/kdh/calendars").json()[0]["invitee_count"] == 0
-    # ...but their colour is not handed to the next person.
-    body = add_invitee(created["id"], "Newcomer").json()
-    newcomer = next(i for i in body["invitees"] if i["name"] == "Newcomer")
-    assert newcomer["color"] != dani["color"]
 
 
-def test_a_removed_name_can_be_reused_but_a_removed_colour_cannot(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_a_removed_name_can_be_reused(monkeypatch: pytest.MonkeyPatch) -> None:
     from datetime import date
 
     monkeypatch.setattr("app.services.kdh_service.today", lambda: date(2026, 9, 3))
@@ -519,8 +492,6 @@ def test_a_removed_name_can_be_reused_but_a_removed_colour_cannot(
 
     response = add_invitee(created["id"], "Dani")
     assert response.status_code == 201, "a returning person may reuse their name"
-    returned = next(i for i in response.json()["invitees"] if i["removed_at"] is None)
-    assert returned["color"] != dani["color"]
 
 
 def test_removing_an_already_removed_or_unknown_invitee_is_404(
@@ -549,85 +520,6 @@ def test_a_guest_cannot_remove_an_invitee(as_guest: None) -> None:
     app.dependency_overrides[get_current_user] = lambda: "test_user"
     stored = client.get(f"/api/kdh/calendars/{created['id']}").json()
     assert len(stored["invitees"]) == 2
-
-
-# ── recolour (not admin-gated: your own colour is yours) ─────────────────────
-
-
-def recolour(calendar_id: str, invitee_id: str, colour: str):
-    return client.put(
-        f"/api/kdh/calendars/{calendar_id}/invitees/{invitee_id}/color",
-        json={"color": colour},
-    )
-
-
-def test_recolour_to_a_free_palette_colour() -> None:
-    from app.services.kdh_service import PALETTE
-
-    created = create("DnD", ["Dani", "Jake"]).json()
-    dani = created["invitees"][0]["id"]
-    free = PALETTE[5]
-
-    body = recolour(created["id"], dani, free)
-    assert body.status_code == 200
-    assert next(i for i in body.json()["invitees"] if i["id"] == dani)["color"] == free
-
-
-def test_recolour_rejects_a_colour_someone_else_holds() -> None:
-    created = create("DnD", ["Dani", "Jake"]).json()
-    dani, jake = created["invitees"]
-
-    response = recolour(created["id"], dani["id"], jake["color"])
-    assert response.status_code == 422
-    stored = client.get(f"/api/kdh/calendars/{created['id']}").json()
-    assert stored["invitees"][0]["color"] == dani["color"]
-
-
-def test_recolour_rejects_a_colour_reserved_by_a_tombstone(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    from datetime import date
-
-    monkeypatch.setattr("app.services.kdh_service.today", lambda: date(2026, 9, 3))
-    created = create("DnD", ["Dani", "Departing"]).json()
-    dani, departing = created["invitees"]
-    seed_votes(created["id"], {"2026-08-10": {departing["id"]: "yes"}})
-    client.delete(f"/api/kdh/calendars/{created['id']}/invitees/{departing['id']}")
-
-    assert recolour(created["id"], dani["id"], departing["color"]).status_code == 422
-
-
-def test_recolour_to_your_own_colour_is_allowed() -> None:
-    """Idempotent — the swatch you already have must not reject itself."""
-    created = create("DnD", ["Dani"]).json()
-    dani = created["invitees"][0]
-    assert recolour(created["id"], dani["id"], dani["color"]).status_code == 200
-
-
-def test_recolour_rejects_a_colour_outside_the_palette() -> None:
-    created = create("DnD", ["Dani"]).json()
-    dani = created["invitees"][0]["id"]
-    assert recolour(created["id"], dani, "#ff0000").status_code == 422
-
-
-def test_recolour_of_an_unknown_invitee_is_404() -> None:
-    created = create("DnD", ["Dani"]).json()
-    from app.services.kdh_service import PALETTE
-
-    assert recolour(created["id"], "inv-nope", PALETTE[3]).status_code == 404
-
-
-def test_a_guest_may_recolour(as_guest: None) -> None:
-    """Not an admin action: picking your own colour is how a guest makes the
-    roster readable to themselves."""
-    from app.services.kdh_service import PALETTE
-
-    app.dependency_overrides[get_current_user] = lambda: "test_user"
-    created = create("DnD", ["Dani"]).json()
-    dani = created["invitees"][0]["id"]
-    app.dependency_overrides[get_current_user] = lambda: "players"
-
-    assert recolour(created["id"], dani, PALETTE[6]).status_code == 200
 
 
 # ── the list carries the roster, not just its size ───────────────────────────

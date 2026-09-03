@@ -25,8 +25,8 @@ import CalendarPage from "./CalendarPage.vue";
 import type { Calendar } from "@/apps/kdh/types";
 
 const TWO_INVITEES = [
-  { id: "inv-1", name: "Dani", color: "#E9A6A0", order: 0, removed_at: null },
-  { id: "inv-2", name: "Jake", color: "#A9C8E8", order: 1, removed_at: null },
+  { id: "inv-1", name: "Dani", order: 0, removed_at: null },
+  { id: "inv-2", name: "Jake", order: 1, removed_at: null },
 ];
 
 const CAL: Calendar = {
@@ -36,9 +36,7 @@ const CAL: Calendar = {
   created_at: "2026-09-03T10:00:00Z",
   created_by: "jake",
   updated_at: "2026-09-03T10:00:00Z",
-  invitees: [
-    { id: "inv-1", name: "Dani", color: "#E9A6A0", order: 0, removed_at: null },
-  ],
+  invitees: [{ id: "inv-1", name: "Dani", order: 0, removed_at: null }],
   votes: {},
   chosen_dates: [],
 };
@@ -220,7 +218,6 @@ describe("CalendarPage", () => {
         {
           id: "inv-2",
           name: "Jake",
-          color: "#A9C8E8",
           order: 1,
           removed_at: null,
         },
@@ -305,7 +302,6 @@ describe("CalendarPage", () => {
         {
           id: "inv-gone",
           name: "Departed",
-          color: "#A9C8E8",
           order: 1,
           removed_at: "2026-08-20T18:00:00Z",
         },
@@ -394,7 +390,6 @@ describe("CalendarPage", () => {
         {
           id: "inv-gone",
           name: "Departed",
-          color: "#B9DCC2",
           order: 2,
           removed_at: "2026-08-20T18:00:00Z",
         },
@@ -415,92 +410,6 @@ describe("CalendarPage", () => {
     expect(wrapper.find('[data-testid="admin-menu-btn"]').exists()).toBe(false);
   });
 
-  it("shows no swatches until a name is claimed", async () => {
-    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
-    const wrapper = await mountPage();
-
-    await wrapper.find('[data-testid="whoami-btn"]').trigger("click");
-    expect(wrapper.find('[data-testid="colour-swatches"]').exists()).toBe(
-      false,
-    );
-  });
-
-  it("dims colours other people hold and rings your own", async () => {
-    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
-    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
-    const wrapper = await mountPage();
-
-    await wrapper.find('[data-testid="whoami-btn"]').trigger("click");
-
-    const jakes = wrapper.find('[data-testid="swatch-#A9C8E8"]');
-    expect(jakes.classes()).toContain("taken");
-    expect(jakes.attributes("disabled")).toBeDefined();
-
-    expect(wrapper.find('[data-testid="swatch-#E9A6A0"]').classes()).toContain(
-      "mine",
-    );
-    expect(
-      wrapper.find('[data-testid="swatch-#B9DCC2"]').classes(),
-    ).not.toContain("taken");
-  });
-
-  it("recolours to a free swatch", async () => {
-    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
-    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
-    putMock.mockResolvedValueOnce({
-      ...CAL,
-      invitees: [{ ...TWO_INVITEES[0], color: "#B9DCC2" }, TWO_INVITEES[1]],
-    });
-    const wrapper = await mountPage();
-
-    await wrapper.find('[data-testid="whoami-btn"]').trigger("click");
-    await wrapper.find('[data-testid="swatch-#B9DCC2"]').trigger("click");
-    await flushPromises();
-
-    expect(putMock).toHaveBeenCalledWith(
-      "/kdh/calendars/cal-ab12cd34/invitees/inv-1/color",
-      { color: "#B9DCC2" },
-    );
-    expect(wrapper.find('[data-testid="swatch-#B9DCC2"]').classes()).toContain(
-      "mine",
-    );
-  });
-
-  it("does not request a colour someone else holds", async () => {
-    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
-    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
-    const wrapper = await mountPage();
-
-    await wrapper.find('[data-testid="whoami-btn"]').trigger("click");
-    await wrapper.find('[data-testid="swatch-#A9C8E8"]').trigger("click");
-    await flushPromises();
-
-    expect(putMock).not.toHaveBeenCalled();
-  });
-
-  it("reserves a tombstoned invitee's colour", async () => {
-    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
-    mockApi(false, {
-      ...CAL,
-      invitees: [
-        ...TWO_INVITEES,
-        {
-          id: "inv-gone",
-          name: "Departed",
-          color: "#B9DCC2",
-          order: 2,
-          removed_at: "2026-08-20T18:00:00Z",
-        },
-      ],
-    });
-    const wrapper = await mountPage();
-
-    await wrapper.find('[data-testid="whoami-btn"]').trigger("click");
-    expect(wrapper.find('[data-testid="swatch-#B9DCC2"]').classes()).toContain(
-      "taken",
-    );
-  });
-
   it("shows how many people are invited beside the calendar name", async () => {
     mockApi(true, { ...CAL, invitees: TWO_INVITEES });
     const wrapper = await mountPage();
@@ -516,7 +425,6 @@ describe("CalendarPage", () => {
         {
           id: "inv-gone",
           name: "Departed",
-          color: "#B9DCC2",
           order: 2,
           removed_at: "2026-08-20T18:00:00Z",
         },

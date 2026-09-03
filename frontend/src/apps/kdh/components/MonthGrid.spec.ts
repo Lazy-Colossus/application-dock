@@ -13,12 +13,12 @@ const STUBS = {
 };
 
 const ROSTER: Invitee[] = [
-  { id: "a", name: "Dani", color: "#E9A6A0", order: 0, removed_at: null },
-  { id: "b", name: "Jake", color: "#A9C8E8", order: 1, removed_at: null },
-  { id: "c", name: "Tom", color: "#B9DCC2", order: 2, removed_at: null },
-  { id: "d", name: "Ash", color: "#EBD3A0", order: 3, removed_at: null },
-  { id: "e", name: "Kit", color: "#D3B2E8", order: 4, removed_at: null },
-  { id: "f", name: "Rae", color: "#A8D8D8", order: 5, removed_at: null },
+  { id: "a", name: "Dani", order: 0, removed_at: null },
+  { id: "b", name: "Jake", order: 1, removed_at: null },
+  { id: "c", name: "Tom", order: 2, removed_at: null },
+  { id: "d", name: "Ash", order: 3, removed_at: null },
+  { id: "e", name: "Kit", order: 4, removed_at: null },
+  { id: "f", name: "Rae", order: 5, removed_at: null },
 ];
 
 function mountGrid(props: Partial<Record<string, unknown>> = {}) {

@@ -20,7 +20,6 @@ VoteStatus = Literal["yes", "if_needed"]
 class Invitee(BaseModel):
     id: str
     name: str
-    color: str
     order: int
     # Set when an admin removes them. The record survives so past day cells can
     # still render their name and colour, and their colour stays reserved while
@@ -84,10 +83,6 @@ class UpdateCalendarRequest(BaseModel):
 
 class AddInviteeRequest(BaseModel):
     name: str
-
-
-class RecolourInviteeRequest(BaseModel):
-    color: str
 
 
 VOTE_STATUSES = ("yes", "if_needed", "none")

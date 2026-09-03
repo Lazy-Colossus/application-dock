@@ -67,40 +67,6 @@ def require_admin(username: str) -> None:
         raise PermissionError("This action is only available to an admin.")
 
 
-# ── The invitee colour palette ───────────────────────────────────────────────
-
-# Invitee colours are CATEGORICAL — they answer "which person", not "how many".
-# They sit deliberately outside the purple family used by the coverage wash
-# (DESIGN.md `wash-0`…`wash-6`): a person rendered in purple would read as a
-# coverage level. Pastels, so they hold against the violet-black field without
-# competing with the wash for attention.
-#
-# Source of truth: docs/planning-artifacts/ux-designs/ux-kdh-2026-09-03/DESIGN.md
-PALETTE: tuple[str, ...] = (
-    "#E9A6A0",  # rose
-    "#A9C8E8",  # sky
-    "#B9DCC2",  # mint
-    "#EBD3A0",  # sand
-    "#D3B2E8",  # lilac
-    "#A8D8D8",  # aqua
-    "#C9B8A0",  # clay
-    "#9FB8D8",  # steel
-)
-
-
-def assign_colour(taken: set[str]) -> str:
-    """The first palette colour not in `taken`.
-
-    `taken` must include tombstoned invitees still holding past votes (AR-7), so
-    a removed person's colour is never reused while their name still renders on
-    past days.
-    """
-    for colour in PALETTE:
-        if colour not in taken:
-            return colour
-    raise ValueError(f"No colours left — a calendar holds at most {len(PALETTE)} invitees.")
-
-
 # ── Calendars ────────────────────────────────────────────────────────────────
 
 
@@ -129,14 +95,7 @@ def _build_invitees(names: list[str]) -> list[Invitee]:
         if key in seen:
             raise ValueError(f"Duplicate invitee name: {name}")
         seen.add(key)
-        invitees.append(
-            Invitee(
-                id=new_id("inv"),
-                name=name,
-                color=assign_colour({i.color for i in invitees}),
-                order=order,
-            )
-        )
+        invitees.append(Invitee(id=new_id("inv"), name=name, order=order))
     return invitees
 
 
@@ -230,9 +189,7 @@ def add_invitee(username: str, calendar_id: str, name: str) -> Calendar:
     """Append an invitee with the next free colour. Admin only.
 
     Duplicate names are rejected against **active** invitees only: a removed
-    person's name is reusable, because "they came back" is a real case. Their
-    *colour* is not reusable while they hold past votes, which is why the colour
-    check below spans every record including tombstones (AR-7).
+    person's name is reusable, because "they came back" is a real case.
     """
     require_admin(username)
     cleaned = _clean_name(name, "Invitee name")
@@ -245,7 +202,6 @@ def add_invitee(username: str, calendar_id: str, name: str) -> Calendar:
             Invitee(
                 id=new_id("inv"),
                 name=cleaned,
-                color=assign_colour({i.color for i in calendar.invitees}),
                 # Past the highest existing order — a removal leaves gaps, so
                 # `len(invitees)` would collide with a survivor.
                 order=max((i.order for i in calendar.invitees), default=-1) + 1,
@@ -267,8 +223,8 @@ def remove_invitee(username: str, calendar_id: str, invitee_id: str) -> Calendar
     - `chosen_dates` is untouched — a session that happened still happened;
     - if they end up holding no votes at all, the record is dropped outright, so
       the common "added by mistake" case leaves no residue. Otherwise the record
-      is tombstoned with `removed_at`, keeping their name and colour so past
-      cells still render them (AR-7).
+      is tombstoned with `removed_at`, keeping their name so past cells still
+      render them (AR-7).
     """
     require_admin(username)
 
@@ -290,32 +246,6 @@ def remove_invitee(username: str, calendar_id: str, invitee_id: str) -> Calendar
         else:
             calendar.invitees = [i for i in calendar.invitees if i.id != invitee_id]
 
-        calendar.updated_at = now_iso()
-        return calendar
-
-
-def recolour_invitee(calendar_id: str, invitee_id: str, colour: str) -> Calendar:
-    """Give an active invitee a different palette colour.
-
-    **Not admin-gated**: choosing your own colour is how a guest makes the roster
-    readable to themselves, and the claim that says which invitee you are is not
-    a security boundary anyway (AR-6). The server checks only that the invitee is
-    real and active and that the colour is a free palette entry.
-    """
-    with repo.calendar_transaction(calendar_id) as calendar:
-        invitee = next((i for i in calendar.invitees if i.id == invitee_id), None)
-        if invitee is None or invitee.removed_at is not None:
-            raise FileNotFoundError(invitee_id)
-
-        if colour not in PALETTE:
-            raise ValueError("That colour is not in the palette")
-        # Tombstones included: a removed person's colour stays theirs while their
-        # name still renders on past days (AR-7).
-        taken = {i.color for i in calendar.invitees if i.id != invitee_id}
-        if colour in taken:
-            raise ValueError("Someone else already has that colour")
-
-        invitee.color = colour
         calendar.updated_at = now_iso()
         return calendar
 

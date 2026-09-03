@@ -23,8 +23,8 @@ const CREATED: Calendar = {
   created_by: "jake",
   updated_at: "2026-09-03T10:00:00Z",
   invitees: [
-    { id: "inv-1", name: "Dani", color: "#e8643a", order: 0, removed_at: null },
-    { id: "inv-2", name: "Jake", color: "#3a86e8", order: 1, removed_at: null },
+    { id: "inv-1", name: "Dani", order: 0, removed_at: null },
+    { id: "inv-2", name: "Jake", order: 1, removed_at: null },
   ],
   votes: {},
   chosen_dates: [],

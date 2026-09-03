@@ -25,7 +25,6 @@
         :class="{ tentative: row.status === 'if_needed' }"
         :data-testid="`sheet-row-${row.invitee.id}`"
       >
-        <span class="kdh-dot" :style="{ background: row.invitee.color }" />
         <span class="col">{{ row.invitee.name }}</span>
         <span v-if="row.status === 'if_needed'" class="kdh-muted caveat">
           if needed
@@ -163,12 +162,6 @@ const myStatus = computed<VoteStatus | "none">(() =>
 }
 .caveat {
   font-style: italic;
-}
-.kdh-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex: none;
 }
 .kdh-chosen-state {
   background: var(--kdh-wash-6);

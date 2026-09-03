@@ -141,7 +141,7 @@ Tom plays in the campaign, has no dock account, and has never opened KDH.
 3. The month is already there and readable — a few days glowing, most dark. He can
    see the shape of it before he has done anything.
 4. He taps the 14th. Instead of the day sheet, the header dropdown opens: *Who are
-   you?* Six names, each with a colour dot.
+   you?* Six names.
 5. He taps **Tom**. The dropdown closes; the header now shows his mint dot.
 6. He taps the 14th again. The sheet opens: Dani, Jake, Ash and Rae are free, Kit
    is *if needed*. He taps **Free**. The 14th goes to `{wash-6}` behind the sheet.

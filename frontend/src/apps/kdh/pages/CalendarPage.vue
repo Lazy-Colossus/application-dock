@@ -38,11 +38,6 @@
             name="error_outline"
             size="18px"
           />
-          <span
-            v-else
-            class="kdh-dot lg"
-            :style="{ background: claim.claimed.value?.color }"
-          />
           <span class="ellipsis">{{
             claim.claimed.value?.name ?? "Who are you?"
           }}</span>
@@ -129,7 +124,6 @@
           >
             <q-item-section>
               <span>
-                <span class="kdh-dot" :style="{ background: invitee.color }" />
                 {{ invitee.name }}
                 <span
                   v-if="claim.claimedId.value === invitee.id"
@@ -140,28 +134,6 @@
             </q-item-section>
           </q-item>
         </q-list>
-
-        <!-- Swatches live inside this dropdown rather than on a surface of
-             their own (FR-9). Taken colours are dimmed, not hidden, so the
-             palette stays a stable shape. -->
-        <div v-if="claim.claimed.value" class="q-px-sm q-pb-sm">
-          <div class="row q-gutter-xs q-mb-sm" data-testid="colour-swatches">
-            <button
-              v-for="colour in INVITEE_PALETTE"
-              :key="colour"
-              class="kdh-swatch"
-              :class="{
-                taken: takenColours.has(colour),
-                mine: claim.claimed.value.color === colour,
-              }"
-              :style="{ background: colour }"
-              :disabled="takenColours.has(colour)"
-              :aria-label="`Use ${colour}`"
-              :data-testid="`swatch-${colour}`"
-              @click="pickColour(colour)"
-            />
-          </div>
-        </div>
       </q-card>
     </q-dialog>
 
@@ -242,10 +214,8 @@
               v-for="invitee in activeInvitees"
               :key="invitee.id"
               class="kdh-chip"
-              :style="{ borderColor: invitee.color }"
               :data-testid="`roster-${invitee.id}`"
             >
-              <span class="kdh-dot" :style="{ background: invitee.color }" />
               {{ invitee.name }}
               <q-btn
                 flat
@@ -358,7 +328,6 @@ import { useKdhStore } from "@/apps/kdh/stores/useKdhStore";
 import { useClaimedName } from "@/apps/kdh/composables/useClaimedName";
 import MonthGrid from "@/apps/kdh/components/MonthGrid.vue";
 import DaySheet from "@/apps/kdh/components/DaySheet.vue";
-import { INVITEE_PALETTE } from "@/apps/kdh/types";
 import type { Invitee, VoteStatus } from "@/apps/kdh/types";
 
 const store = useKdhStore();
@@ -401,17 +370,6 @@ const claim = useClaimedName(
   () => store.currentCalendar?.invitees ?? [],
 );
 
-/** Colours held by anyone else, tombstones included — a removed person's colour
- *  stays theirs while their name renders on past days (AR-7). */
-const takenColours = computed(
-  () =>
-    new Set(
-      (store.currentCalendar?.invitees ?? [])
-        .filter((i) => i.id !== claim.claimedId.value)
-        .map((i) => i.color),
-    ),
-);
-
 /** The past/future boundary, always the server's (NFR-5). */
 const serverToday = computed(() => store.me?.today ?? "");
 
@@ -447,16 +405,6 @@ function openRename(): void {
 function claimName(inviteeId: string): void {
   claim.claim(inviteeId);
   nameMenuOpen.value = false;
-}
-
-async function pickColour(colour: string): Promise<void> {
-  const mine = claim.claimed.value;
-  if (!mine || takenColours.value.has(colour)) return;
-  try {
-    await store.recolourInvitee(calendarId.value, mine.id, colour);
-  } catch {
-    // Message is in the store; the chip keeps its previous colour.
-  }
 }
 
 /**
@@ -637,27 +585,6 @@ import "./../css/kdh.sass";
   font-size: 19px;
   opacity: 0.7;
 }
-.kdh-dot.lg {
-  width: 12px;
-  height: 12px;
-}
-.kdh-swatch {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-}
-.kdh-swatch.taken {
-  opacity: 0.24;
-  cursor: not-allowed;
-}
-.kdh-swatch.mine {
-  box-shadow:
-    0 0 0 2px var(--q-dark-page, #141414),
-    0 0 0 4px currentColor;
-}
 .kdh-name-row {
   min-height: 44px;
 }
@@ -669,11 +596,6 @@ import "./../css/kdh.sass";
   border: 1px solid;
   border-radius: 999px;
   font-size: 13px;
-}
-.kdh-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
 }
 .kdh-dialog-card {
   min-width: 320px;

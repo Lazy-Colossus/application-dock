@@ -30,17 +30,7 @@ colors:
   wash-4: '#6C4C93'
   wash-5: '#9773BC'
   wash-6: '#C9AEE6'         # full coverage
-  # --- Invitee colours. CATEGORICAL: answer "which person". Deliberately
-  #     outside the purple family so a person never reads as a coverage level. ---
-  inv-rose: '#E9A6A0'
-  inv-sky: '#A9C8E8'
-  inv-mint: '#B9DCC2'
-  inv-sand: '#EBD3A0'
-  inv-lilac: '#D3B2E8'
-  inv-aqua: '#A8D8D8'
-  inv-clay: '#C9B8A0'
-  inv-steel: '#9FB8D8'
-  # --- Semantic (separate from the wash and from invitee colours) ---
+  # --- Semantic (separate from the wash) ---
   danger: '#CF6679'
   # The decided day — a third colour dimension (see Components → Chosen day).
   gold: '#FFD54A'
@@ -94,7 +84,7 @@ components:
     contains: 'date + coverage count only — never names'
   name-dropdown:
     placement: 'month header, left'
-    contains: 'roster rows + colour swatches'
+    contains: 'roster rows'
   day-sheet:
     placement: 'over the month, dismissible'
     contains: 'full roster for that date + the three-state control'
@@ -127,18 +117,10 @@ Tone: unhurried. This is an app you open, glance at, tap once, and close.
 `wash-0` … `wash-6` are **ordered**: they answer *how many can come*, and their
 order is the meaning. They are the only purples in the interface.
 
-`inv-*` are **categorical**: they answer *which person*, and have no order at all.
-They sit outside the purple family for exactly that reason — a person rendered in
-purple would read as a coverage level. Assign them in listed order; the first
-eight cover any realistic group.
-
-**An invitee colour must earn its place by identifying someone whose name is not
-already there.** Beside a written name it is decoration, and the app very nearly
-lost the palette on those grounds. The job that justifies it is the **phone day
-cell**, where no name fits and a row of dots is the only way to say *who*. Every
-other appearance — the day sheet, the hover list, the dropdown, the roster chips —
-is a dot beside a name, and is a convenience rather than the reason the colours
-exist.
+**There is only one colour system.** Invitees have no colours. They had them, and
+every appearance turned out to be a dot beside the name it identified — decoration,
+not information. The rule that replaced them: a colour must earn its place by
+saying something no other element on screen is already saying.
 
 The ramp is **relative to the number of active invitees**, not absolute. Five of
 six is `wash-5`; five of ten is not. Removed invitees leave the denominator but
@@ -226,9 +208,7 @@ outline; past days drop to 30% opacity.
 
 **Name dropdown.** In the month header. Closed, it shows the claimed person's dot
 and name; unclaimed, it reads "Who are you?". Open, it lists every active invitee
-as a row — colour dot, name, tick on the claimed one — plus the colour swatches,
-with taken colours dimmed to 24% and the claimed person's ringed. Rows are
-`touch-min` tall.
+as a row with a tick on the claimed one. Rows are `touch-min` tall.
 
 **Buttons.** KDH has **no accent colour**. A primary action is a raised surface —
 `wash-3` fill with `ink-hi` — not a bright fill, because the wash is the only thing

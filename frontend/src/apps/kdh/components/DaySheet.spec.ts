@@ -5,9 +5,9 @@ import DaySheet from "./DaySheet.vue";
 import type { Invitee } from "@/apps/kdh/types";
 
 const ROSTER: Invitee[] = [
-  { id: "inv-1", name: "Dani", color: "#E9A6A0", order: 0, removed_at: null },
-  { id: "inv-2", name: "Jake", color: "#A9C8E8", order: 1, removed_at: null },
-  { id: "inv-3", name: "Kit", color: "#B9DCC2", order: 2, removed_at: null },
+  { id: "inv-1", name: "Dani", order: 0, removed_at: null },
+  { id: "inv-2", name: "Jake", order: 1, removed_at: null },
+  { id: "inv-3", name: "Kit", order: 2, removed_at: null },
 ];
 
 const STUBS = {
@@ -59,16 +59,15 @@ describe("DaySheet", () => {
     );
   });
 
-  it("sets an if-needed person apart by style, not by their colour", () => {
+  it("sets an if-needed person apart by style", () => {
     const wrapper = mountSheet({
       votes: { "inv-1": "yes", "inv-2": "if_needed" },
     });
 
     const tentative = wrapper.find('[data-testid="sheet-row-inv-2"]');
     expect(tentative.classes()).toContain("tentative");
+    expect(tentative.text()).toContain("Jake");
     expect(tentative.text()).toContain("if needed");
-    // Their own colour is untouched — it still means "Jake".
-    expect(tentative.find(".kdh-dot").attributes("style")).toContain("#A9C8E8");
 
     expect(
       wrapper.find('[data-testid="sheet-row-inv-1"]').classes(),
@@ -84,7 +83,6 @@ describe("DaySheet", () => {
         {
           id: "inv-gone",
           name: "Departed",
-          color: "#EBD3A0",
           order: 3,
           removed_at: "2026-08-20T18:00:00Z",
         },

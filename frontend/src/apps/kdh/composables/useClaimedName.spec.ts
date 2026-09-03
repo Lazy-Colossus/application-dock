@@ -7,14 +7,12 @@ import type { Invitee } from "@/apps/kdh/types";
 const DANI: Invitee = {
   id: "inv-1",
   name: "Dani",
-  color: "#E9A6A0",
   order: 0,
   removed_at: null,
 };
 const GONE: Invitee = {
   id: "inv-gone",
   name: "Departed",
-  color: "#A9C8E8",
   order: 1,
   removed_at: "2026-08-20T18:00:00Z",
 };
