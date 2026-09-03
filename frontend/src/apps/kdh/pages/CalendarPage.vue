@@ -131,6 +131,19 @@
         @pick="onPickDay"
         @toggle-select-mode="toggleSelectMode"
       />
+
+      <!-- Under the month it summarises, and moving with it: this answers "who
+           still has not said anything", which is the question the grid itself
+           cannot show at a glance. -->
+      <MonthTally
+        v-if="store.currentCalendar && serverToday && monthGrid"
+        :invitees="store.currentCalendar.invitees"
+        :votes="store.currentCalendar.votes"
+        :dates="monthGrid.dates"
+        :month-label="visibleMonthLabel"
+        :server-today="serverToday"
+        :claimed-id="claim.claimed.value?.id ?? null"
+      />
     </div>
 
     <q-dialog v-model="daySheetOpen">
@@ -434,6 +447,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useKdhStore } from "@/apps/kdh/stores/useKdhStore";
 import { useClaimedName } from "@/apps/kdh/composables/useClaimedName";
 import MonthGrid from "@/apps/kdh/components/MonthGrid.vue";
+import MonthTally from "@/apps/kdh/components/MonthTally.vue";
 import DaySheet from "@/apps/kdh/components/DaySheet.vue";
 import type { Invitee, VoteStatus } from "@/apps/kdh/types";
 
