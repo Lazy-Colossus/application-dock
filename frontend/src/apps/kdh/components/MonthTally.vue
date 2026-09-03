@@ -10,52 +10,58 @@
       Nobody has voted this month yet.
     </div>
 
-    <div
-      v-for="row in rows"
-      v-else
-      :key="row.invitee.id"
-      class="tally-row"
-      :class="{ mine: row.invitee.id === claimedId, silent: row.total === 0 }"
-      :data-testid="`tally-${row.invitee.id}`"
-    >
-      <span class="who">
-        <span class="nm ellipsis">{{ row.invitee.name }}</span>
-        <span v-if="row.invitee.id === claimedId" class="tag">YOU</span>
-        <span v-if="row.invitee.removed_at" class="tag">LEFT</span>
-      </span>
-
-      <!-- Scaled against the busiest person, not against the days in the month:
-           the question this answers is who has answered and who has not, and a
-           bar that is 11/30 full of everything answers it worse than one that
-           is 11/11 of the most anyone managed. Decorative — the number sits
-           right beside it, so a screen reader gains nothing from the shape.
-
-           Grow factors are strings because Vue drops a falsy style value, and a
-           zero-length segment is exactly the case that has to survive. -->
-      <span class="bar" aria-hidden="true" data-testid="bar">
-        <i class="seg cur" :style="{ flexGrow: String(row.upcoming) }" />
-        <i class="seg old" :style="{ flexGrow: String(row.past) }" />
-        <i
-          class="seg gap"
-          :style="{ flexGrow: String(maxTotal - row.total) }"
-        />
-      </span>
-
-      <!-- Nothing at all reads better as a sentence than as two zeroes: a person
-           who has not voted is the one thing this summary exists to surface. -->
-      <span v-if="row.total === 0" class="col counts" data-testid="none-yet"
-        >nothing yet</span
+    <!-- ONE grid for the whole list, not one per row: a row that sized its own
+         columns let a long "11 (1 past)" pull that row's bar left of its
+         neighbour's, and bars that start in different places are not a chart.
+         The rows are `display: contents`, so every cell lands in the shared
+         tracks above. -->
+    <div v-else class="rows">
+      <div
+        v-for="row in rows"
+        :key="row.invitee.id"
+        class="tally-row"
+        :class="{ mine: row.invitee.id === claimedId, silent: row.total === 0 }"
+        :data-testid="`tally-${row.invitee.id}`"
       >
-      <!-- The count, and behind it how much of it has already been and gone.
-           Only in the month that straddles today: in a month gone by every vote
-           is past and in a month ahead none is, so the bracket would restate
-           the total or say nothing at all. -->
-      <span v-else class="col counts">
-        <b class="total">{{ row.total }}</b>
-        <span v-if="isCurrentMonth && row.past > 0" class="split"
-          >({{ row.past }} past)</span
+        <span class="who">
+          <span class="nm ellipsis">{{ row.invitee.name }}</span>
+          <span v-if="row.invitee.id === claimedId" class="tag">YOU</span>
+          <span v-if="row.invitee.removed_at" class="tag">LEFT</span>
+        </span>
+
+        <!-- Scaled against the busiest person, not against the days in the month:
+             the question this answers is who has answered and who has not, and a
+             bar that is 11/30 full of everything answers it worse than one that
+             is 11/11 of the most anyone managed. Decorative — the number sits
+             right beside it, so a screen reader gains nothing from the shape.
+
+             Grow factors are strings because Vue drops a falsy style value, and a
+             zero-length segment is exactly the case that has to survive. -->
+        <span class="bar" aria-hidden="true" data-testid="bar">
+          <i class="seg cur" :style="{ flexGrow: String(row.upcoming) }" />
+          <i class="seg old" :style="{ flexGrow: String(row.past) }" />
+          <i
+            class="seg gap"
+            :style="{ flexGrow: String(maxTotal - row.total) }"
+          />
+        </span>
+
+        <!-- Nothing at all reads better as a sentence than as two zeroes: a person
+             who has not voted is the one thing this summary exists to surface. -->
+        <span v-if="row.total === 0" class="col counts" data-testid="none-yet"
+          >nothing yet</span
         >
-      </span>
+        <!-- The count, and behind it how much of it has already been and gone.
+             Only in the month that straddles today: in a month gone by every vote
+             is past and in a month ahead none is, so the bracket would restate
+             the total or say nothing at all. -->
+        <span v-else class="col counts">
+          <b class="total">{{ row.total }}</b>
+          <span v-if="isCurrentMonth && row.past > 0" class="split"
+            >({{ row.past }} past)</span
+          >
+        </span>
+      </div>
     </div>
   </div>
 </template>
@@ -138,15 +144,18 @@ const isCurrentMonth = computed(
 .tally-empty {
   color: var(--kdh-ink-mid);
 }
-/* Three tracks so the bars share one baseline and one scale down the column —
-   a chart whose bars start in different places is not a chart. */
-.tally-row {
+/* Three tracks, declared once for the whole list, so every bar starts at the
+   same x and they share one scale down the column. */
+.rows {
   display: grid;
   grid-template-columns: minmax(0, 1fr) clamp(44px, 22%, 120px) auto;
   align-items: center;
-  gap: 8px;
-  min-width: 0;
-  padding: 3px 0;
+  column-gap: 8px;
+  row-gap: 6px;
+}
+/* A class carrier, not a box: its cells belong to the grid above. */
+.tally-row {
+  display: contents;
 }
 .who {
   display: flex;

@@ -198,4 +198,17 @@ describe("MonthTally", () => {
     expect(rows[0]).toContain("Dani"); // order 0
     expect(rows[1]).toContain("Kit"); // order 2, same count
   });
+
+  it("puts every row in one shared grid, so the bars start at the same x", () => {
+    // Layout is not computed here, so the structure is the assertion: when each
+    // row was its own grid, a longer "11 (1 past)" sized that row's own columns
+    // and pulled its bar out of line with the row above.
+    const wrapper = mountTally({
+      votes: { "2026-09-21": { a: "yes" }, "2026-09-03": { b: "yes" } },
+    });
+
+    const grids = wrapper.findAll(".rows");
+    expect(grids).toHaveLength(1);
+    expect(grids[0].findAll('[data-testid^="tally-"]')).toHaveLength(3);
+  });
 });
