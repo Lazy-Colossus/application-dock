@@ -44,7 +44,7 @@ inherits_ui_system: "Vue 3 + Quasar v2 (Material-based)"
 | Name dropdown | Month header | Claim, switch or release your name; change your colour | FR-10, FR-11, FR-9 |
 | Day sheet | Tapping a day cell | Who is on that date; set your own answer | FR-13, FR-15 |
 | Roster management | Month header menu (admins only) | Add and remove invitees | FR-8 |
-| Clear my month | Month header menu (anyone claimed) | Drop your own answers across the visible month | FR-15 |
+| Clear my month | Month header menu (anyone claimed) | Drop your own votes and notes across the visible month | FR-15 |
 
 The IA gained the **day sheet** during this session: FR-13 as written put names in
 the cell, which a 44px cell cannot hold. Names moved one tap away.
@@ -59,6 +59,9 @@ Plain, short, never coy. The app never nags and never celebrates.
 - Availability states read as a person would say them: **Free** · **If needed** ·
   **Can't**. The stored values are `yes` / `if_needed` / absent; those names never
   reach the screen.
+- What you left on a day is a **vote**. The day sheet still *asks* ("Can you make
+  it?") and names the three states in plain words — that is the moment of
+  answering — but everywhere else the app calls the thing by one name.
 - Never "due", "overdue", "streak", or any count of days remaining. Nothing in KDH
   is an obligation.
 
@@ -109,12 +112,20 @@ a tap **cycles** `none → free → if needed → none` for running down a month
 quickly. Both write the same vote.
 
 **Header menu.** Open to anyone who has claimed a name, because it carries one
-action of their own: *Clear my answers for {Month}*. That clears only the current
-person's answers, only in the month on screen, and only from today onward — past
-answers are records and stay. Days you never answered are not counted, so the
-confirmation's number is the number of answers that will actually go. It confirms
-first, where bulk answering does not: collecting days by hand states intent, but
-one tap in a menu can undo a month. Notes survive a cleared vote.
+action of their own: *Clear my votes for {Month}*. It clears only the current
+person's marks, only in the month on screen, and only from today onward — past
+days are records and stay. **Notes go with the votes**, and a day carrying only a
+note is swept too: this is a person erasing their mark on the month, and leaving
+the notes would make "clear" a lie. Days holding nothing of yours are not counted,
+so the confirmation's number is the number of days that will actually change.
+
+It confirms first, where bulk answering does not: collecting days by hand states
+intent, but one tap in a menu can undo a month. The confirmation puts what goes
+and what is safe on **separate lines**, the reassurance quieter than the warning.
+
+Clearing a month is the one place notes are swept. Answering **Can't** — in the
+sheet or across a selection — always keeps them, which is exactly when a note
+earns its place.
 
 **Admin controls.** Absent for guests. Never rendered disabled. They live in the
 same menu, so a guest opens a shorter one rather than a different surface.

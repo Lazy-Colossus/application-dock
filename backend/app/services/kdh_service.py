@@ -330,13 +330,24 @@ def set_chosen(username: str, calendar_id: str, day: str, chosen: bool) -> Calen
         return calendar
 
 
-def set_votes_bulk(calendar_id: str, invitee_id: str, days: list[str], status: str) -> Calendar:
+def set_votes_bulk(
+    calendar_id: str,
+    invitee_id: str,
+    days: list[str],
+    status: str,
+    clear_notes: bool = False,
+) -> Calendar:
     """Set one person's answer across many days, in a single transaction.
 
     All or nothing: every date is validated before anything is written, so a
     selection containing one bad day leaves the calendar untouched rather than
     half-applied. One transaction also means one lock rather than N, which
     matters when this is how a person answers a whole month at once (NFR-1).
+
+    `clear_notes` drops the person's notes on those days as well. It is off by
+    default because a note usually outlives the vote it came with — saying "away
+    that week" belongs with a "Can't", not deleted by it. Only clearing a whole
+    month, which erases your presence on those days outright, passes it.
     """
     if not days:
         raise ValueError("No days selected")
@@ -353,6 +364,11 @@ def set_votes_bulk(calendar_id: str, invitee_id: str, days: list[str], status: s
                 calendar.votes.setdefault(day, {})[invitee_id] = status
             if day in calendar.votes and not calendar.votes[day]:
                 del calendar.votes[day]
+
+            if clear_notes:
+                calendar.notes.get(day, {}).pop(invitee_id, None)
+                if day in calendar.notes and not calendar.notes[day]:
+                    del calendar.notes[day]
 
         calendar.updated_at = now_iso()
         return calendar

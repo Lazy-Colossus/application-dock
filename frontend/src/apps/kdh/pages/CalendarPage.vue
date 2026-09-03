@@ -54,7 +54,7 @@
           dense
           round
           icon="more_vert"
-          :aria-label="isAdmin ? 'Calendar actions' : 'Your answers'"
+          :aria-label="isAdmin ? 'Calendar actions' : 'Your votes'"
           data-testid="admin-menu-btn"
           @click="menuOpen = true"
         />
@@ -198,7 +198,7 @@
             @click="openClearMonth"
           >
             <q-item-section
-              >Clear my answers for {{ visibleMonthLabel }}</q-item-section
+              >Clear my votes for {{ visibleMonthLabel }}</q-item-section
             >
           </q-item>
           <q-item
@@ -243,18 +243,26 @@
 
     <q-dialog v-model="clearingMonth">
       <q-card class="kdh-panel kdh-dialog-card q-pa-md">
-        <div class="text-h6 q-mb-sm">Clear your answers?</div>
-        <!-- Says the month, the number of days and that past ones are safe.
-             One tap from a menu can undo a month of answering, which is far
-             less deliberate than collecting days by hand, so it asks first. -->
+        <div class="text-h6 q-mb-sm">Clear your votes?</div>
+        <!-- Says the month, the number of days, that notes go too, and that
+               past days are safe. One tap from a menu can undo a month of
+               voting, which is far less deliberate than collecting days by
+               hand, so it asks first. What goes and what stays are separate
+               sentences on separate lines: the reassurance is easy to miss when
+               it trails the warning on the same line. -->
         <div class="q-mb-md" data-testid="clear-month-warning">
-          Your answer on
-          <b
-            >{{ clearableDates.length }}
-            {{ clearableDates.length === 1 ? "day" : "days" }}</b
-          >
-          in <b>{{ visibleMonthLabel }}</b> will be cleared. Days already past
-          are left alone, and nobody else's answers change.
+          <div>
+            Your votes on
+            <b
+              >{{ clearableDates.length }}
+              {{ clearableDates.length === 1 ? "day" : "days" }}</b
+            >
+            in <b>{{ visibleMonthLabel }}</b> will be cleared, along with any
+            notes you left on them.
+          </div>
+          <div class="clear-reassure q-mt-sm">
+            Days already past are left alone, and nobody else's votes change.
+          </div>
         </div>
         <div class="row justify-end q-gutter-sm">
           <q-btn
@@ -456,11 +464,16 @@ const BULK_OPTIONS = [
 const visibleMonthLabel = computed(() => monthGrid.value?.monthLabel ?? "");
 
 /**
- * My own answers in the month on screen, from today onward. Past days are
- * excluded because a past answer is a record: the server refuses to write one
- * (`_parse_future_day`), and clearing history is not what "clear this month"
- * means to anyone. Days I never answered are excluded too, so the count in the
- * confirmation is the number of answers that will actually disappear.
+ * Every day in the month on screen that carries something of mine — a vote, a
+ * note, or both — from today onward.
+ *
+ * Past days are excluded because a past day is a record: the server refuses to
+ * rewrite one (`_parse_future_day`), and "clear this month" has never meant
+ * "erase history". Days holding nothing of mine are excluded so the number in
+ * the confirmation is the number of days that will actually change.
+ *
+ * Notes count, not just votes: a day where I left only a note is still my mark
+ * on the month, and leaving it behind would make "clear" a lie.
  */
 const clearableDates = computed(() => {
   const mine = claim.claimed.value;
@@ -469,7 +482,8 @@ const clearableDates = computed(() => {
   return (monthGrid.value?.dates ?? []).filter(
     (date: string) =>
       date >= serverToday.value! &&
-      calendar.votes[date]?.[mine.id] !== undefined,
+      (calendar.votes[date]?.[mine.id] !== undefined ||
+        calendar.notes[date]?.[mine.id] !== undefined),
   );
 });
 
@@ -604,7 +618,7 @@ async function submitClearMonth(): Promise<void> {
   const dates = clearableDates.value;
   if (!mine || dates.length === 0) return;
   try {
-    await store.setVotesBulk(calendarId.value, mine.id, dates, "none");
+    await store.setVotesBulk(calendarId.value, mine.id, dates, "none", true);
     clearingMonth.value = false;
   } catch {
     // The store surfaced it; the dialog stays open so it can be retried.
@@ -815,6 +829,13 @@ import "./../css/kdh.sass";
   font-weight: 600;
   line-height: 1.15;
   min-width: 0;
+}
+/* The half of the confirmation that says what is SAFE, quieter than the half
+   that says what goes. Not `.kdh-muted` — that lives in DaySheet's scoped
+   styles and would do nothing here. */
+.clear-reassure {
+  color: var(--kdh-ink-mid);
+  font-size: 13px;
 }
 .kdh-whoami {
   display: inline-flex;

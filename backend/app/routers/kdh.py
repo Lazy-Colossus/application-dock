@@ -170,7 +170,9 @@ def set_votes_bulk(
     _: str = Depends(get_current_user),
 ) -> Calendar:
     try:
-        return service.set_votes_bulk(calendar_id, req.invitee_id, req.dates, req.status)
+        return service.set_votes_bulk(
+            calendar_id, req.invitee_id, req.dates, req.status, req.clear_notes
+        )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Not found") from exc
     except ValueError as exc:

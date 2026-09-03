@@ -825,11 +825,47 @@ def test_summary_has_no_session_when_nothing_is_chosen(fixed_today) -> None:
 # ── bulk voting ──────────────────────────────────────────────────────────────
 
 
-def vote_bulk(calendar_id: str, invitee_id: str, dates: list[str], status: str):
+def vote_bulk(
+    calendar_id: str,
+    invitee_id: str,
+    dates: list[str],
+    status: str,
+    clear_notes: bool = False,
+):
     return client.put(
         f"/api/kdh/calendars/{calendar_id}/votes/bulk",
-        json={"invitee_id": invitee_id, "dates": dates, "status": status},
+        json={
+            "invitee_id": invitee_id,
+            "dates": dates,
+            "status": status,
+            "clear_notes": clear_notes,
+        },
     )
+
+
+def test_bulk_keeps_notes_by_default(fixed_today) -> None:
+    """A note saying why you cannot come must survive answering "Can't"."""
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+    set_note(created["id"], dani, "2026-09-14", "Away that week")
+
+    body = vote_bulk(created["id"], dani, ["2026-09-14"], "none").json()
+
+    assert body["notes"]["2026-09-14"] == {dani: "Away that week"}
+
+
+def test_bulk_can_take_the_notes_with_it(fixed_today) -> None:
+    created = create("DnD", ["Dani", "Jake"]).json()
+    dani, jake = (i["id"] for i in created["invitees"])
+    set_note(created["id"], dani, "2026-09-14", "Away that week")
+    set_note(created["id"], jake, "2026-09-14", "Bring dice")
+    vote(created["id"], dani, "2026-09-14", "yes")
+
+    body = vote_bulk(created["id"], dani, ["2026-09-14"], "none", clear_notes=True).json()
+
+    assert body["votes"] == {}
+    # Only mine: someone else's note on the same day is untouched.
+    assert body["notes"]["2026-09-14"] == {jake: "Bring dice"}
 
 
 def test_bulk_marks_every_day(fixed_today) -> None:

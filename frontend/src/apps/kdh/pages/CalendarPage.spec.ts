@@ -654,6 +654,7 @@ describe("CalendarPage", () => {
         invitee_id: "inv-1",
         dates: ["2026-09-14", "2026-09-15"],
         status: "yes",
+        clear_notes: false,
       },
     );
     // Mode closes on success.
@@ -691,7 +692,12 @@ describe("CalendarPage", () => {
 
     expect(putMock).toHaveBeenCalledWith(
       "/kdh/calendars/cal-ab12cd34/votes/bulk",
-      { invitee_id: "inv-1", dates: ["2026-09-14"], status: "if_needed" },
+      {
+        invitee_id: "inv-1",
+        dates: ["2026-09-14"],
+        status: "if_needed",
+        clear_notes: false,
+      },
     );
   });
 
@@ -707,7 +713,13 @@ describe("CalendarPage", () => {
 
     expect(putMock).toHaveBeenCalledWith(
       "/kdh/calendars/cal-ab12cd34/votes/bulk",
-      { invitee_id: "inv-1", dates: ["2026-09-14"], status: "none" },
+      {
+        invitee_id: "inv-1",
+        dates: ["2026-09-14"],
+        status: "none",
+        // A note saying why you cannot come outlives answering "Can't".
+        clear_notes: false,
+      },
     );
   });
 
@@ -782,6 +794,11 @@ describe("CalendarPage", () => {
         "2026-09-20": { "inv-2": "yes" }, // not mine
         "2026-10-05": { "inv-1": "yes" }, // another month
       },
+      notes: {
+        "2026-09-02": { "inv-1": "Past note" }, // past: a record, left alone
+        "2026-09-18": { "inv-1": "Only after 8pm" }, // a note with no vote
+        "2026-09-25": { "inv-2": "Bring dice" }, // not mine
+      },
     };
 
     async function openMenuAs(admin: boolean, calendar: Calendar = VOTED) {
@@ -818,9 +835,12 @@ describe("CalendarPage", () => {
       await wrapper.find('[data-testid="clear-month-action"]').trigger("click");
 
       // The count is what will actually disappear, not every day in the month.
-      expect(
-        wrapper.find('[data-testid="clear-month-warning"]').text(),
-      ).toContain("2 days");
+      const warning = wrapper
+        .find('[data-testid="clear-month-warning"]')
+        .text();
+      // Three, not two: the 18th carries a note and no vote, and it still goes.
+      expect(warning).toContain("3 days");
+      expect(warning).toContain("notes you left");
 
       await wrapper
         .find('[data-testid="clear-month-confirm"]')
@@ -831,9 +851,11 @@ describe("CalendarPage", () => {
         "/kdh/calendars/cal-ab12cd34/votes/bulk",
         {
           invitee_id: "inv-1",
-          // Not 09-01 (past), not 09-20 (Jake's), not 10-05 (another month).
-          dates: ["2026-09-03", "2026-09-14"],
+          // Not 09-01/09-02 (past), not 09-20/09-25 (Jake's), not 10-05
+          // (another month). 09-18 is in on the strength of its note alone.
+          dates: ["2026-09-03", "2026-09-14", "2026-09-18"],
           status: "none",
+          clear_notes: true,
         },
       );
     });
@@ -843,6 +865,7 @@ describe("CalendarPage", () => {
         ...CAL,
         invitees: TWO_INVITEES,
         votes: { "2026-09-01": { "inv-1": "yes" } },
+        notes: { "2026-09-25": { "inv-2": "Bring dice" } },
       });
 
       expect(

@@ -233,13 +233,14 @@ export const useKdhStore = defineStore("kdh", () => {
     inviteeId: string,
     dates: string[],
     status: VoteStatus | "none",
+    clearNotes = false,
   ): Promise<void> {
     loading.value = true;
     error.value = null;
     try {
       currentCalendar.value = await api.put<Calendar>(
         `/kdh/calendars/${calendarId}/votes/bulk`,
-        { invitee_id: inviteeId, dates, status },
+        { invitee_id: inviteeId, dates, status, clear_notes: clearNotes },
       );
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e);

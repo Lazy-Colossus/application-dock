@@ -119,3 +119,7 @@ class SetVotesBulkRequest(BaseModel):
     invitee_id: str
     dates: list[str]
     status: Literal["yes", "if_needed", "none"]
+    # Opt-in, and defaults off: answering "Can't" across a run of days must KEEP
+    # the note saying why, which is exactly when a note earns its place. Only
+    # "clear my month", which erases your presence outright, asks for this.
+    clear_notes: bool = False
