@@ -43,7 +43,7 @@
       >
         <q-item-section>
           <q-item-label class="row items-center no-wrap q-gutter-xs">
-            <span class="ellipsis">{{ calendar.name }}</span>
+            <span class="kdh-calendar-name ellipsis">{{ calendar.name }}</span>
             <span
               class="kdh-headcount"
               :data-testid="`headcount-${calendar.id}`"
@@ -221,6 +221,10 @@ onMounted(async () => {
 <style scoped>
 .kdh-create-card {
   min-width: 380px;
+}
+.kdh-calendar-name {
+  /* Three larger than the list's own size, whatever that turns out to be. */
+  font-size: calc(1em + 3px);
 }
 .kdh-headcount {
   display: inline-flex;

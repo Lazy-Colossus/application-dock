@@ -359,18 +359,30 @@ describe("CalendarPage", () => {
     expect(window.localStorage.getItem("kdh.claim.cal-ab12cd34")).toBeNull();
   });
 
-  it("lets you say you are someone else", async () => {
+  it("switches to a different name by picking one", async () => {
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="whoami-btn"]').trigger("click");
+    await wrapper.find('[data-testid="claim-inv-1"]').trigger("click");
+    expect(wrapper.find('[data-testid="whoami-btn"]').text()).toContain("Dani");
+
+    await wrapper.find('[data-testid="whoami-btn"]').trigger("click");
+    await wrapper.find('[data-testid="claim-inv-2"]').trigger("click");
+
+    expect(wrapper.find('[data-testid="whoami-btn"]').text()).toContain("Jake");
+    expect(window.localStorage.getItem("kdh.claim.cal-ab12cd34")).toBe("inv-2");
+  });
+
+  it("has no release control — switching is done by picking someone else", async () => {
     mockApi(false, { ...CAL, invitees: TWO_INVITEES });
     const wrapper = await mountPage();
 
     await wrapper.find('[data-testid="whoami-btn"]').trigger("click");
     await wrapper.find('[data-testid="claim-inv-1"]').trigger("click");
     await wrapper.find('[data-testid="whoami-btn"]').trigger("click");
-    await wrapper.find('[data-testid="release-claim"]').trigger("click");
 
-    expect(wrapper.find('[data-testid="whoami-btn"]').text()).toContain(
-      "Who are you?",
-    );
+    expect(wrapper.find('[data-testid="release-claim"]').exists()).toBe(false);
   });
 
   it("offers only active invitees as names to claim", async () => {

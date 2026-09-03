@@ -107,8 +107,10 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
 - FR-9: Each invitee is assigned a **distinct colour** from a fixed palette when added; a person
   who has claimed that name may change it to another colour still free on that calendar.
 - FR-10: A visitor **claims a name** by picking an invitee from the roster. The claim is remembered
-  in `localStorage` keyed by calendar id, survives a reload, and can be released or switched. It is
-  a convenience, not a security boundary.
+  in `localStorage` keyed by calendar id, survives a reload, and can be **switched** at any time by
+  picking someone else. There is no "release to nobody" — switching is the real case, and an
+  unclaimed state a person chose would only make the app read-only for them. It is a convenience,
+  not a security boundary.
 - FR-11: Until a name is claimed the calendar is **read-only** — all overlap is visible, but
   clicking a day prompts the visitor to say who they are first.
 

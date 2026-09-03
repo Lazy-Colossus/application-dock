@@ -64,7 +64,9 @@ Plain, short, never coy. The app never nags and never celebrates.
 **Day cell.** Tap opens the day sheet. Long-press does nothing. A past cell is
 inert — no ripple, no feedback; it reads as finished rather than broken.
 
-**Name dropdown.** **Unclaimed, it is the loudest thing on the page** — styled as a required field
+**Name dropdown.** Selecting a row claims that person and closes the dropdown; **switching is
+picking someone else**, and there is no release-to-nobody control. **Unclaimed, it is the loudest
+thing on the page** — styled as a required field
 left blank (negative border and text, warning glyph), because nothing else can be done until it is
 answered. Claimed, it settles into a quiet pill showing that person's colour and name. Closed by
 default once claimed. Selecting a row claims that
@@ -151,4 +153,5 @@ Dani is an admin with her own dock account.
 - Is the day sheet a bottom sheet or a full screen? Sheet assumed.
 - What does the month header hold for an admin — an overflow menu, or controls
   inline? Menu assumed.
-- Does releasing a claim need a confirmation, or is it instant with an undo?
+- ~~Does releasing a claim need a confirmation?~~ **Resolved 2026-09-03:** there is no release
+  control. Switching by picking another name covers the real case.

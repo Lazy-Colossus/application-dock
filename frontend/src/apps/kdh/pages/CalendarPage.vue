@@ -132,13 +132,6 @@
               @click="pickColour(colour)"
             />
           </div>
-          <button
-            class="kdh-release"
-            data-testid="release-claim"
-            @click="releaseName"
-          >
-            I'm someone else
-          </button>
         </div>
       </q-card>
     </q-dialog>
@@ -433,10 +426,6 @@ async function pickColour(colour: string): Promise<void> {
   }
 }
 
-function releaseName(): void {
-  claim.release();
-}
-
 /** The month calls this when tapped while unclaimed (Story 3.2). */
 function promptForName(): void {
   nameMenuOpen.value = true;
@@ -543,19 +532,6 @@ onMounted(async () => {
   background: rgba(207, 102, 121, 0.12);
   color: var(--q-negative);
   font-weight: 600;
-}
-.kdh-release {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: none;
-  border: none;
-  padding: 4px 0;
-  font: inherit;
-  font-size: 13px;
-  color: inherit;
-  opacity: 0.75;
-  cursor: pointer;
 }
 .kdh-headcount {
   display: inline-flex;
