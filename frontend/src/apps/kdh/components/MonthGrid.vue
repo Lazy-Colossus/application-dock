@@ -157,7 +157,8 @@ function goToToday(): void {
   };
 }
 
-defineExpose({ monthLabel });
+/** The page needs both to offer "clear my answers for <month>". */
+defineExpose({ monthLabel, dates });
 </script>
 
 <style scoped>

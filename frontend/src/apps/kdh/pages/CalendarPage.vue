@@ -44,15 +44,17 @@
           <q-icon name="expand_more" size="18px" />
         </button>
 
-        <!-- Admin actions are a header menu, and are absent — not disabled — for
-             guests (EXPERIENCE.md, Component Patterns). -->
+        <!-- The menu now holds one thing anybody with a claim can do, so it is
+             no longer admin-only. The ADMIN ITEMS inside it are still absent —
+             not disabled — for guests (EXPERIENCE.md, Component Patterns);
+             a guest simply opens a shorter menu. -->
         <q-btn
-          v-if="isAdmin && store.currentCalendar"
+          v-if="(isAdmin || claim.hasClaim.value) && store.currentCalendar"
           flat
           dense
           round
           icon="more_vert"
-          aria-label="Calendar actions"
+          :aria-label="isAdmin ? 'Calendar actions' : 'Your answers'"
           data-testid="admin-menu-btn"
           @click="menuOpen = true"
         />
@@ -116,6 +118,7 @@
 
       <MonthGrid
         v-if="store.currentCalendar && serverToday"
+        ref="monthGrid"
         :votes="store.currentCalendar.votes"
         :chosen-dates="store.currentCalendar.chosen_dates"
         :active-total="activeInvitees.length"
@@ -177,48 +180,104 @@
       </q-card>
     </q-dialog>
 
+    <!-- Not admin-only: the menu holds one action for anybody with a claim,
+         and the clear dialog belongs to that action. The ADMIN ITEMS inside
+         the menu carry their own v-if, so a guest still never receives their
+         markup (FR-3) — the guard moved from the group to each item. -->
+    <q-dialog v-model="menuOpen">
+      <q-card class="kdh-panel kdh-menu-card">
+        <q-list>
+          <!-- Yours, not the calendar's — so it comes first for a guest, who
+               has nothing else in here. -->
+          <q-item
+            v-if="claim.hasClaim.value"
+            v-ripple
+            clickable
+            :disable="clearableDates.length === 0"
+            data-testid="clear-month-action"
+            @click="openClearMonth"
+          >
+            <q-item-section
+              >Clear my answers for {{ visibleMonthLabel }}</q-item-section
+            >
+          </q-item>
+          <q-item
+            v-if="isAdmin"
+            v-ripple
+            clickable
+            data-testid="rename-action"
+            @click="openRename"
+          >
+            <q-item-section>Rename</q-item-section>
+          </q-item>
+          <q-item
+            v-if="isAdmin"
+            v-ripple
+            clickable
+            data-testid="invitees-action"
+            @click="openInvitees"
+          >
+            <q-item-section>Manage invitees</q-item-section>
+          </q-item>
+          <q-item
+            v-if="isAdmin"
+            v-ripple
+            clickable
+            data-testid="share-action"
+            @click="copyLink"
+          >
+            <q-item-section>Copy link</q-item-section>
+          </q-item>
+          <q-item
+            v-if="isAdmin"
+            v-ripple
+            clickable
+            data-testid="delete-action"
+            @click="openDelete"
+          >
+            <q-item-section class="text-negative">Delete</q-item-section>
+          </q-item>
+        </q-list>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="clearingMonth">
+      <q-card class="kdh-panel kdh-dialog-card q-pa-md">
+        <div class="text-h6 q-mb-sm">Clear your answers?</div>
+        <!-- Says the month, the number of days and that past ones are safe.
+             One tap from a menu can undo a month of answering, which is far
+             less deliberate than collecting days by hand, so it asks first. -->
+        <div class="q-mb-md" data-testid="clear-month-warning">
+          Your answer on
+          <b
+            >{{ clearableDates.length }}
+            {{ clearableDates.length === 1 ? "day" : "days" }}</b
+          >
+          in <b>{{ visibleMonthLabel }}</b> will be cleared. Days already past
+          are left alone, and nobody else's answers change.
+        </div>
+        <div class="row justify-end q-gutter-sm">
+          <q-btn
+            flat
+            no-caps
+            label="Keep them"
+            @click="clearingMonth = false"
+          />
+          <q-btn
+            unelevated
+            no-caps
+            color="negative"
+            label="Clear"
+            data-testid="clear-month-confirm"
+            @click="submitClearMonth"
+          />
+        </div>
+      </q-card>
+    </q-dialog>
+
     <!-- Guarded as a group: a guest must not merely be unable to open these,
          their markup must not exist in the page at all (FR-3). -->
     <template v-if="isAdmin">
-      <q-dialog v-model="menuOpen">
-        <q-card class="kdh-panel kdh-menu-card">
-          <q-list>
-            <q-item
-              v-ripple
-              clickable
-              data-testid="rename-action"
-              @click="openRename"
-            >
-              <q-item-section>Rename</q-item-section>
-            </q-item>
-            <q-item
-              v-ripple
-              clickable
-              data-testid="invitees-action"
-              @click="openInvitees"
-            >
-              <q-item-section>Manage invitees</q-item-section>
-            </q-item>
-            <q-item
-              v-ripple
-              clickable
-              data-testid="share-action"
-              @click="copyLink"
-            >
-              <q-item-section>Copy link</q-item-section>
-            </q-item>
-            <q-item
-              v-ripple
-              clickable
-              data-testid="delete-action"
-              @click="openDelete"
-            >
-              <q-item-section class="text-negative">Delete</q-item-section>
-            </q-item>
-          </q-list>
-        </q-card>
-      </q-dialog>
-
       <q-dialog v-model="renaming">
         <q-card class="kdh-panel kdh-dialog-card q-pa-md">
           <div class="text-h6 q-mb-md">Rename calendar</div>
@@ -382,6 +441,8 @@ const notFound = computed(
 );
 
 const menuOpen = ref(false);
+const clearingMonth = ref(false);
+const monthGrid = ref<InstanceType<typeof MonthGrid> | null>(null);
 const nameMenuOpen = ref(false);
 const daySheetOpen = ref(false);
 const openDate = ref<string | null>(null);
@@ -391,6 +452,26 @@ const BULK_OPTIONS = [
   { value: "if_needed" as const, label: "If needed", glyph: "maybe" },
   { value: "none" as const, label: "Can't", glyph: "no" },
 ];
+
+const visibleMonthLabel = computed(() => monthGrid.value?.monthLabel ?? "");
+
+/**
+ * My own answers in the month on screen, from today onward. Past days are
+ * excluded because a past answer is a record: the server refuses to write one
+ * (`_parse_future_day`), and clearing history is not what "clear this month"
+ * means to anyone. Days I never answered are excluded too, so the count in the
+ * confirmation is the number of answers that will actually disappear.
+ */
+const clearableDates = computed(() => {
+  const mine = claim.claimed.value;
+  const calendar = store.currentCalendar;
+  if (!mine || !calendar || !serverToday.value) return [];
+  return (monthGrid.value?.dates ?? []).filter(
+    (date: string) =>
+      date >= serverToday.value! &&
+      calendar.votes[date]?.[mine.id] !== undefined,
+  );
+});
 
 const selectMode = ref(false);
 const selected = ref<Set<string>>(new Set());
@@ -509,6 +590,24 @@ async function applyToSelected(status: VoteStatus | "none"): Promise<void> {
     selected.value = new Set();
   } catch {
     // The store surfaced it; the selection survives so it can be retried.
+  }
+}
+
+function openClearMonth(): void {
+  if (clearableDates.value.length === 0) return;
+  menuOpen.value = false;
+  clearingMonth.value = true;
+}
+
+async function submitClearMonth(): Promise<void> {
+  const mine = claim.claimed.value;
+  const dates = clearableDates.value;
+  if (!mine || dates.length === 0) return;
+  try {
+    await store.setVotesBulk(calendarId.value, mine.id, dates, "none");
+    clearingMonth.value = false;
+  } catch {
+    // The store surfaced it; the dialog stays open so it can be retried.
   }
 }
 

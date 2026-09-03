@@ -769,4 +769,113 @@ describe("CalendarPage", () => {
       text: "Only after 8pm",
     });
   });
+
+  describe("clearing a month of your own answers", () => {
+    // Today is 2026-09-03, so September is the month on screen.
+    const VOTED: Calendar = {
+      ...CAL,
+      invitees: TWO_INVITEES,
+      votes: {
+        "2026-09-01": { "inv-1": "yes" }, // past: a record, left alone
+        "2026-09-03": { "inv-1": "if_needed" }, // today counts as still to come
+        "2026-09-14": { "inv-1": "yes", "inv-2": "yes" },
+        "2026-09-20": { "inv-2": "yes" }, // not mine
+        "2026-10-05": { "inv-1": "yes" }, // another month
+      },
+    };
+
+    async function openMenuAs(admin: boolean, calendar: Calendar = VOTED) {
+      window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+      mockApi(admin, calendar);
+      const wrapper = await mountPage();
+      await wrapper.find('[data-testid="admin-menu-btn"]').trigger("click");
+      return wrapper;
+    }
+
+    it("gives a claimed guest the menu, holding only what is theirs", async () => {
+      const wrapper = await openMenuAs(false);
+
+      expect(
+        wrapper.find('[data-testid="clear-month-action"]').text(),
+      ).toContain("September 2026");
+      for (const admin of ["rename", "invitees", "share", "delete"]) {
+        expect(wrapper.find(`[data-testid="${admin}-action"]`).exists()).toBe(
+          false,
+        );
+      }
+    });
+
+    it("keeps the menu away from a guest who has not said who they are", async () => {
+      mockApi(false, VOTED);
+      const wrapper = await mountPage();
+      expect(wrapper.find('[data-testid="admin-menu-btn"]').exists()).toBe(
+        false,
+      );
+    });
+
+    it("clears only your own future answers in the month on screen", async () => {
+      const wrapper = await openMenuAs(true);
+      await wrapper.find('[data-testid="clear-month-action"]').trigger("click");
+
+      // The count is what will actually disappear, not every day in the month.
+      expect(
+        wrapper.find('[data-testid="clear-month-warning"]').text(),
+      ).toContain("2 days");
+
+      await wrapper
+        .find('[data-testid="clear-month-confirm"]')
+        .trigger("click");
+      await flushPromises();
+
+      expect(putMock).toHaveBeenCalledWith(
+        "/kdh/calendars/cal-ab12cd34/votes/bulk",
+        {
+          invitee_id: "inv-1",
+          // Not 09-01 (past), not 09-20 (Jake's), not 10-05 (another month).
+          dates: ["2026-09-03", "2026-09-14"],
+          status: "none",
+        },
+      );
+    });
+
+    it("offers nothing to clear in a month you have not answered", async () => {
+      const wrapper = await openMenuAs(true, {
+        ...CAL,
+        invitees: TWO_INVITEES,
+        votes: { "2026-09-01": { "inv-1": "yes" } },
+      });
+
+      expect(
+        wrapper
+          .find('[data-testid="clear-month-action"]')
+          .attributes("disable"),
+      ).toBeDefined();
+
+      await wrapper.find('[data-testid="clear-month-action"]').trigger("click");
+      await wrapper
+        .find('[data-testid="clear-month-confirm"]')
+        .trigger("click");
+      await flushPromises();
+
+      // Nothing of mine is left in September to clear, so nothing is written.
+      // (Dialog visibility itself is not observable: q-dialog is a passthrough
+      // stub in test/setup.ts, so its content is in the DOM either way.)
+      expect(putMock).not.toHaveBeenCalled();
+    });
+
+    it("surfaces a failed clear instead of swallowing it", async () => {
+      putMock.mockRejectedValueOnce(new Error("Calendar not found"));
+      const wrapper = await openMenuAs(true);
+
+      await wrapper.find('[data-testid="clear-month-action"]').trigger("click");
+      await wrapper
+        .find('[data-testid="clear-month-confirm"]')
+        .trigger("click");
+      await flushPromises();
+
+      expect(wrapper.find('[data-testid="error"]').text()).toContain(
+        "Calendar not found",
+      );
+    });
+  });
 });

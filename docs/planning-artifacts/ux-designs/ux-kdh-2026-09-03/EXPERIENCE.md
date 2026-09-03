@@ -44,6 +44,7 @@ inherits_ui_system: "Vue 3 + Quasar v2 (Material-based)"
 | Name dropdown | Month header | Claim, switch or release your name; change your colour | FR-10, FR-11, FR-9 |
 | Day sheet | Tapping a day cell | Who is on that date; set your own answer | FR-13, FR-15 |
 | Roster management | Month header menu (admins only) | Add and remove invitees | FR-8 |
+| Clear my month | Month header menu (anyone claimed) | Drop your own answers across the visible month | FR-15 |
 
 The IA gained the **day sheet** during this session: FR-13 as written put names in
 the cell, which a 44px cell cannot hold. Names moved one tap away.
@@ -107,7 +108,16 @@ a person deliberately answers. On the grid itself
 a tap **cycles** `none → free → if needed → none` for running down a month
 quickly. Both write the same vote.
 
-**Admin controls.** Absent for guests. Never rendered disabled.
+**Header menu.** Open to anyone who has claimed a name, because it carries one
+action of their own: *Clear my answers for {Month}*. That clears only the current
+person's answers, only in the month on screen, and only from today onward — past
+answers are records and stay. Days you never answered are not counted, so the
+confirmation's number is the number of answers that will actually go. It confirms
+first, where bulk answering does not: collecting days by hand states intent, but
+one tap in a menu can undo a month. Notes survive a cleared vote.
+
+**Admin controls.** Absent for guests. Never rendered disabled. They live in the
+same menu, so a guest opens a shorter one rather than a different surface.
 
 ## State Patterns
 
