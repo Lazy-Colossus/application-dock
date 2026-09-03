@@ -237,6 +237,13 @@ about to be pressed.
 **Silence is a no.** Anyone who has not answered is not listed; they are the bar's
 remainder. The sheet is who is coming, not a register of everyone.
 
+### Name pill (header)
+
+Claimed: `{wash-3}` fill, 1px `{wash-4}` hairline, `{ink-hi}` text, pill radius,
+lifting to `{wash-4}` on hover. One step below the "Select Multiple" button so
+identity and action read as two ranks of the same family. Unclaimed: `{danger}`
+border and text on a 12% `{danger}` tint, weight 600 — a required field left blank.
+
 ### Your own answer (day cell)
 
 A 7px dot (`clamp(8px, 0.85vw, 11px)` on web) in the leading corner of the day

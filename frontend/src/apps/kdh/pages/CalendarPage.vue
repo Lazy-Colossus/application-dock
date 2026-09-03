@@ -724,13 +724,20 @@ import "./../css/kdh.sass";
   flex: none;
   max-width: 45vw;
   padding: 7px 13px;
-  border: 1px solid var(--kdh-field-line);
+  /* Purple, but a step below the "Select Multiple" button at wash-4: this is a
+     standing statement of who you are, not a call to act, and the spine asks a
+     claimed pill to settle rather than compete. Two steps apart reads as two
+     ranks of the same family rather than two unrelated controls. */
+  border: 1px solid var(--kdh-wash-4);
   border-radius: 999px;
-  background: var(--kdh-field-raise);
+  background: var(--kdh-wash-3);
   font: inherit;
   font-size: 15px;
-  color: inherit;
+  color: var(--kdh-ink-hi);
   cursor: pointer;
+}
+.kdh-whoami:hover {
+  background: var(--kdh-wash-4);
 }
 /* Unanswered, and the app cannot be used until it is answered — so it reads
    like a required field left blank rather than a quiet secondary control. */
