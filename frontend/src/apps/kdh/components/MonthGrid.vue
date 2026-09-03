@@ -1,23 +1,20 @@
 <template>
   <div class="kdh-month">
     <div class="row items-center justify-between q-mb-sm">
-      <div class="kdh-month-label" data-testid="month-label">
+      <div class="kdh-month-label col" data-testid="month-label">
         {{ monthLabel }}
       </div>
       <div class="row items-center q-gutter-xs">
-        <q-btn
-          v-if="selectable"
-          flat
-          dense
-          round
-          size="sm"
-          :icon="selectMode ? 'close' : 'checklist'"
-          :aria-label="
-            selectMode ? 'Stop selecting days' : 'Select several days'
-          "
+        <!-- Only on the way in: leaving is the Cancel on the selection bar, and
+             two ways out of one mode is one too many. -->
+        <button
+          v-if="selectable && !selectMode"
+          class="kdh-select-btn"
           data-testid="select-toggle"
           @click="$emit('toggleSelectMode')"
-        />
+        >
+          <q-icon name="checklist" size="16px" />Select Multiple
+        </button>
         <q-btn
           flat
           dense
@@ -162,7 +159,32 @@ defineExpose({ monthLabel });
 </script>
 
 <style scoped>
+/* The invitee's main road into the app, so it looks like a button rather than
+   another piece of month furniture. */
+.kdh-select-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 999px;
+  background: var(--kdh-wash-4);
+  color: var(--kdh-ink-hi);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.kdh-select-btn:hover {
+  background: var(--kdh-wash-5);
+  color: var(--kdh-ink-on-light);
+}
 .kdh-month-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 13px;
   letter-spacing: 0.1em;
   text-transform: uppercase;

@@ -128,4 +128,24 @@ describe("MonthGrid", () => {
       wrapper.find('[data-testid="day-2026-09-14"]').classes(),
     ).not.toContain("past");
   });
+
+  it("offers a labelled way into selecting, only to someone who can answer", () => {
+    expect(mountGrid().find('[data-testid="select-toggle"]').exists()).toBe(
+      false,
+    );
+
+    const claimed = mountGrid({ selectable: true });
+    expect(claimed.find('[data-testid="select-toggle"]').text()).toContain(
+      "Select Multiple",
+    );
+  });
+
+  it("hides the way in once you are already selecting", () => {
+    // Leaving is the Cancel on the selection bar; two exits from one mode is
+    // one too many.
+    const selecting = mountGrid({ selectable: true, selectMode: true });
+    expect(selecting.find('[data-testid="select-toggle"]').exists()).toBe(
+      false,
+    );
+  });
 });
