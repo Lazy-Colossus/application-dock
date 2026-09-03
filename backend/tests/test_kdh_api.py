@@ -853,6 +853,18 @@ def test_bulk_leaves_other_people_alone(fixed_today) -> None:
     assert body["votes"]["2026-09-14"] == {jake: "if_needed", dani: "yes"}
 
 
+def test_bulk_overwrites_whatever_was_there(fixed_today) -> None:
+    """Answering many days at once settles them; it does not fill in the blanks."""
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+    vote(created["id"], dani, "2026-09-14", "yes")
+
+    body = vote_bulk(created["id"], dani, ["2026-09-14", "2026-09-15"], "if_needed").json()
+
+    assert body["votes"]["2026-09-14"] == {dani: "if_needed"}
+    assert body["votes"]["2026-09-15"] == {dani: "if_needed"}
+
+
 def test_bulk_can_clear_a_run_of_days(fixed_today) -> None:
     created = create("DnD", ["Dani"]).json()
     dani = created["invitees"][0]["id"]

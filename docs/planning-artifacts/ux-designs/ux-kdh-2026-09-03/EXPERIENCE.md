@@ -132,7 +132,10 @@ quickly. Both write the same vote.
   targets is too easy to trigger while aiming for a Tuesday.
 - **A selection mode, not a drag.** The month header toggles into selecting; a tap
   then collects a day rather than opening it, and the collected days are answered
-  together. Still no drag and no range: a drag over a grid of tap targets is too
+  together — with the **same three answers as the day sheet**, in the same words
+  and glyphs, presented as equal thirds so none reads as the default. Applying one
+  **overwrites** every collected day: bulk settles a day rather than filling in
+  only the ones you had not answered, and **Can't** clears the answer outright. Still no drag and no range: a drag over a grid of tap targets is too
   easily started by accident, the same reason there is no swipe.
 - Every write is optimistic and reverts on failure.
 

@@ -645,7 +645,7 @@ describe("CalendarPage", () => {
       "2 days selected",
     );
 
-    await wrapper.find('[data-testid="select-apply"]').trigger("click");
+    await wrapper.find('[data-testid="select-apply-yes"]').trigger("click");
     await flushPromises();
 
     expect(putMock).toHaveBeenCalledWith(
@@ -673,8 +673,42 @@ describe("CalendarPage", () => {
       "0 days selected",
     );
     expect(
-      wrapper.find('[data-testid="select-apply"]').attributes("disabled"),
+      wrapper.find('[data-testid="select-apply-yes"]').attributes("disabled"),
     ).toBeDefined();
+  });
+
+  it("offers every answer to a selection, not just free", async () => {
+    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="select-toggle"]').trigger("click");
+    await wrapper.find('[data-testid="day-2026-09-14"]').trigger("click");
+    await wrapper
+      .find('[data-testid="select-apply-if_needed"]')
+      .trigger("click");
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith(
+      "/kdh/calendars/cal-ab12cd34/votes/bulk",
+      { invitee_id: "inv-1", dates: ["2026-09-14"], status: "if_needed" },
+    );
+  });
+
+  it("clears the days outright when the answer is Can't", async () => {
+    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="select-toggle"]').trigger("click");
+    await wrapper.find('[data-testid="day-2026-09-14"]').trigger("click");
+    await wrapper.find('[data-testid="select-apply-none"]').trigger("click");
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith(
+      "/kdh/calendars/cal-ab12cd34/votes/bulk",
+      { invitee_id: "inv-1", dates: ["2026-09-14"], status: "none" },
+    );
   });
 
   it("will not collect a past day", async () => {
@@ -700,7 +734,7 @@ describe("CalendarPage", () => {
 
     await wrapper.find('[data-testid="select-toggle"]').trigger("click");
     await wrapper.find('[data-testid="day-2026-09-14"]').trigger("click");
-    await wrapper.find('[data-testid="select-apply"]').trigger("click");
+    await wrapper.find('[data-testid="select-apply-yes"]').trigger("click");
     await flushPromises();
 
     expect(wrapper.find('[data-testid="select-bar"]').text()).toContain(

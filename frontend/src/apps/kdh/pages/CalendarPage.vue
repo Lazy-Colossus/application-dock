@@ -82,25 +82,36 @@
       </div>
 
       <div v-if="selectMode" class="kdh-selbar" data-testid="select-bar">
-        <span class="col"
-          >{{ selected.size }}
-          {{ selected.size === 1 ? "day" : "days" }} selected</span
-        >
-        <button
-          class="sel-btn"
-          data-testid="select-cancel"
-          @click="toggleSelectMode"
-        >
-          Cancel
-        </button>
-        <button
-          class="sel-btn go"
-          :disabled="selected.size === 0"
-          data-testid="select-apply"
-          @click="markSelectedFree"
-        >
-          Mark free
-        </button>
+        <div class="sel-head">
+          <span class="col"
+            >{{ selected.size }}
+            {{ selected.size === 1 ? "day" : "days" }} selected</span
+          >
+          <button
+            class="sel-btn"
+            data-testid="select-cancel"
+            @click="toggleSelectMode"
+          >
+            Cancel
+          </button>
+        </div>
+
+        <!-- The same three answers, glyphs and words as the day sheet: this is
+             the sheet's question asked of many days at once, so it must not
+             look like a different question. On their own row because three
+             answers plus Cancel do not fit across a phone. -->
+        <div class="sel-answers">
+          <button
+            v-for="option in BULK_OPTIONS"
+            :key="option.value"
+            class="sel-btn go"
+            :disabled="selected.size === 0"
+            :data-testid="`select-apply-${option.value}`"
+            @click="applyToSelected(option.value)"
+          >
+            <span class="g" :class="option.glyph" />{{ option.label }}
+          </button>
+        </div>
       </div>
 
       <MonthGrid
@@ -374,6 +385,13 @@ const menuOpen = ref(false);
 const nameMenuOpen = ref(false);
 const daySheetOpen = ref(false);
 const openDate = ref<string | null>(null);
+/** The day sheet's three answers, verbatim — one question, asked two ways. */
+const BULK_OPTIONS = [
+  { value: "yes" as const, label: "Free", glyph: "free" },
+  { value: "if_needed" as const, label: "If needed", glyph: "maybe" },
+  { value: "none" as const, label: "Can't", glyph: "no" },
+];
+
 const selectMode = ref(false);
 const selected = ref<Set<string>>(new Set());
 const managingInvitees = ref(false);
@@ -471,7 +489,13 @@ function toggleSelectMode(): void {
   selected.value = new Set();
 }
 
-async function markSelectedFree(): Promise<void> {
+/**
+ * Answering many days at once REPLACES whatever was on each of them — a day you
+ * had already marked "if needed" becomes whatever you just picked, and "Can't"
+ * clears the answer outright. Bulk is the same act as answering in the sheet,
+ * so it settles the day rather than filling in only the blanks.
+ */
+async function applyToSelected(status: VoteStatus | "none"): Promise<void> {
   const mine = claim.claimed.value;
   if (!mine || selected.value.size === 0) return;
   try {
@@ -479,7 +503,7 @@ async function markSelectedFree(): Promise<void> {
       calendarId.value,
       mine.id,
       [...selected.value].sort(),
-      "yes",
+      status,
     );
     selectMode.value = false;
     selected.value = new Set();
@@ -587,7 +611,7 @@ import "./../css/kdh.sass";
 <style scoped>
 .kdh-selbar {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
   margin-bottom: 10px;
   padding: 8px 10px;
@@ -610,6 +634,45 @@ import "./../css/kdh.sass";
   background: var(--kdh-wash-3);
   border-color: transparent;
   font-weight: 600;
+}
+.sel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* Equal thirds, so no answer looks like the default one. */
+.sel-answers {
+  display: flex;
+  gap: 8px;
+}
+.sel-answers .sel-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+/* The day sheet's glyphs, to the pixel — see DaySheet.vue. Free and if-needed
+   carry their own colour because green and yellow mean "your own answer"
+   everywhere in KDH; a "can't" is a hollow ring, which is what an absent answer
+   looks like on the roster. */
+.g {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  flex: none;
+}
+.g.free {
+  background: var(--kdh-yes);
+}
+.g.maybe {
+  background: linear-gradient(90deg, var(--kdh-maybe) 50%, transparent 50%);
+  box-shadow: inset 0 0 0 1.5px var(--kdh-maybe);
+}
+.g.no {
+  box-shadow: inset 0 0 0 1.5px var(--kdh-ink-lo);
+  opacity: 0.55;
 }
 .sel-btn:disabled {
   opacity: 0.45;
