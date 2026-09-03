@@ -57,6 +57,11 @@ class CalendarSummary(BaseModel):
     invitee_count: int
     invitee_names: list[str]
     created_at: str
+    # The next chosen day still to come, and the most recent one already past.
+    # Both are sent so the row can say "next" or fall back to "last" without
+    # needing to compare dates itself.
+    next_session: str | None = None
+    last_session: str | None = None
 
 
 class Me(BaseModel):
@@ -94,3 +99,8 @@ class SetVoteRequest(BaseModel):
     # "none" is not a stored status — it clears the vote. Absence is how "not
     # available" is represented (AR-4).
     status: Literal["yes", "if_needed", "none"]
+
+
+class SetChosenRequest(BaseModel):
+    date: str
+    chosen: bool

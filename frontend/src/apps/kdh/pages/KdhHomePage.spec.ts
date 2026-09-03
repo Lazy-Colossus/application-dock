@@ -23,6 +23,8 @@ const SUMMARIES = [
     invitee_count: 6,
     invitee_names: ["Dani", "Jake", "Tom", "Ash", "Kit", "Rae"],
     created_at: "2026-09-03T10:00:00Z",
+    next_session: null,
+    last_session: null,
   },
   {
     id: "cal-2",
@@ -30,6 +32,8 @@ const SUMMARIES = [
     invitee_count: 1,
     invitee_names: ["Dani"],
     created_at: "2026-09-02T10:00:00Z",
+    next_session: null,
+    last_session: null,
   },
 ];
 
@@ -111,6 +115,8 @@ describe("KdhHomePage", () => {
         invitee_count: 8,
         invitee_names: ["A", "B", "C", "D", "E", "F", "G", "H"],
         created_at: "2026-09-03T10:00:00Z",
+        next_session: null,
+        last_session: null,
       },
     ]);
     const wrapper = await mountPage();
@@ -129,6 +135,8 @@ describe("KdhHomePage", () => {
         invitee_count: 0,
         invitee_names: [],
         created_at: "2026-09-03T10:00:00Z",
+        next_session: null,
+        last_session: null,
       },
     ]);
     const wrapper = await mountPage();
@@ -252,5 +260,49 @@ describe("KdhHomePage", () => {
     expect(wrapper.find('[data-testid="error"]').text()).toContain(
       "network down",
     );
+  });
+
+  it("shows the next session when one is coming", async () => {
+    mockApi(true, [
+      {
+        id: "cal-s",
+        name: "DnD",
+        invitee_count: 1,
+        invitee_names: ["Dani"],
+        created_at: "2026-09-03T10:00:00Z",
+        next_session: "2026-09-14",
+        last_session: "2026-08-10",
+      },
+    ]);
+    const wrapper = await mountPage();
+
+    const session = wrapper.find('[data-testid="session-cal-s"]').text();
+    expect(session).toContain("Next");
+    expect(session).toContain("14");
+  });
+
+  it("falls back to the last session once they are all behind you", async () => {
+    mockApi(true, [
+      {
+        id: "cal-s",
+        name: "DnD",
+        invitee_count: 1,
+        invitee_names: ["Dani"],
+        created_at: "2026-09-03T10:00:00Z",
+        next_session: null,
+        last_session: "2026-08-10",
+      },
+    ]);
+    const wrapper = await mountPage();
+
+    const session = wrapper.find('[data-testid="session-cal-s"]').text();
+    expect(session).toContain("Last");
+    expect(session).toContain("10");
+  });
+
+  it("shows nothing rather than a placeholder when no day is chosen", async () => {
+    mockApi(true);
+    const wrapper = await mountPage();
+    expect(wrapper.find('[data-testid="session-cal-1"]').exists()).toBe(false);
   });
 });

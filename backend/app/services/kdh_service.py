@@ -176,6 +176,9 @@ def list_calendar_summaries() -> list[CalendarSummary]:
         # Tombstoned invitees are off the roster (AR-7), so they neither count
         # nor appear.
         roster = sorted(_active(calendar), key=lambda i: i.order)
+        boundary = today().isoformat()
+        upcoming = [d for d in calendar.chosen_dates if d >= boundary]
+        past = [d for d in calendar.chosen_dates if d < boundary]
         summaries.append(
             CalendarSummary(
                 id=calendar.id,
@@ -183,6 +186,11 @@ def list_calendar_summaries() -> list[CalendarSummary]:
                 invitee_count=len(roster),
                 invitee_names=[i.name for i in roster],
                 created_at=calendar.created_at,
+                # Dates sort lexically because they are all YYYY-MM-DD, so the
+                # nearest upcoming is the first and the most recent past is the
+                # last (AR-4, NFR-5).
+                next_session=min(upcoming) if upcoming else None,
+                last_session=max(past) if past else None,
             )
         )
     return summaries
@@ -351,5 +359,32 @@ def set_vote(calendar_id: str, invitee_id: str, day: str, status: str) -> Calend
         if day in calendar.votes and not calendar.votes[day]:
             del calendar.votes[day]
 
+        calendar.updated_at = now_iso()
+        return calendar
+
+
+# ── Chosen days ──────────────────────────────────────────────────────────────
+
+
+def set_chosen(username: str, calendar_id: str, day: str, chosen: bool) -> Calendar:
+    """Mark or unmark the day the group settled on. Admin only.
+
+    Unlike voting, this is **allowed on a past day**: it is a record of what
+    happened, and a record may be corrected after the fact (FR-16, FR-17).
+    """
+    require_admin(username)
+
+    try:
+        date.fromisoformat(day)
+    except ValueError as exc:
+        raise ValueError("Date must be YYYY-MM-DD") from exc
+
+    with repo.calendar_transaction(calendar_id) as calendar:
+        marked = set(calendar.chosen_dates)
+        if chosen:
+            marked.add(day)
+        else:
+            marked.discard(day)
+        calendar.chosen_dates = sorted(marked)
         calendar.updated_at = now_iso()
         return calendar

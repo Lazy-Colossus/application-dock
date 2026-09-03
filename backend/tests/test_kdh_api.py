@@ -184,6 +184,8 @@ def test_list_returns_summaries_newest_first(monkeypatch: pytest.MonkeyPatch) ->
         "invitee_count",
         "invitee_names",
         "created_at",
+        "next_session",
+        "last_session",
     }
 
 
@@ -802,3 +804,127 @@ def test_concurrent_votes_on_one_day_all_survive(fixed_today) -> None:
 
     stored = client.get(f"/api/kdh/calendars/{created['id']}").json()
     assert set(stored["votes"]["2026-09-14"]) == set(ids)
+
+
+# ── chosen days ──────────────────────────────────────────────────────────────
+
+
+def set_chosen(calendar_id: str, day: str, chosen: bool):
+    return client.put(
+        f"/api/kdh/calendars/{calendar_id}/chosen",
+        json={"date": day, "chosen": chosen},
+    )
+
+
+def test_mark_and_unmark_a_chosen_day(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+
+    marked = set_chosen(created["id"], "2026-09-14", True).json()
+    assert marked["chosen_dates"] == ["2026-09-14"]
+
+    unmarked = set_chosen(created["id"], "2026-09-14", False).json()
+    assert unmarked["chosen_dates"] == []
+
+
+def test_chosen_days_accumulate_sorted_and_deduped(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+
+    set_chosen(created["id"], "2026-10-05", True)
+    set_chosen(created["id"], "2026-09-14", True)
+    body = set_chosen(created["id"], "2026-09-14", True).json()
+
+    assert body["chosen_dates"] == ["2026-09-14", "2026-10-05"]
+
+
+def test_unmarking_a_day_that_was_never_chosen_is_harmless(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    assert set_chosen(created["id"], "2026-09-14", False).status_code == 200
+
+
+def test_a_past_day_may_be_marked(fixed_today) -> None:
+    """Unlike voting: this is a record, and a record may be corrected."""
+    created = create("DnD", ["Dani"]).json()
+
+    body = set_chosen(created["id"], "2026-08-10", True)
+    assert body.status_code == 200
+    assert body.json()["chosen_dates"] == ["2026-08-10"]
+
+
+def test_marking_never_touches_votes(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+    vote(created["id"], dani, "2026-09-14", "yes")
+
+    body = set_chosen(created["id"], "2026-09-14", True).json()
+    assert body["votes"]["2026-09-14"] == {dani: "yes"}
+
+
+@pytest.mark.parametrize("bad", ["14-09-2026", "2026-13-01", "nope", ""])
+def test_marking_a_malformed_date_is_refused(fixed_today, bad: str) -> None:
+    created = create("DnD", ["Dani"]).json()
+    assert set_chosen(created["id"], bad, True).status_code == 422
+
+
+def test_a_guest_cannot_mark_a_day(as_guest: None, fixed_today) -> None:
+    app.dependency_overrides[get_current_user] = lambda: "test_user"
+    created = create("DnD", ["Dani"]).json()
+    app.dependency_overrides[get_current_user] = lambda: "players"
+
+    assert set_chosen(created["id"], "2026-09-14", True).status_code == 403
+
+    app.dependency_overrides[get_current_user] = lambda: "test_user"
+    assert client.get(f"/api/kdh/calendars/{created['id']}").json()["chosen_dates"] == []
+
+
+def test_marking_an_unknown_calendar_is_404(fixed_today) -> None:
+    assert set_chosen("cal-nope1234", "2026-09-14", True).status_code == 404
+
+
+# ── sessions on the calendar list ────────────────────────────────────────────
+
+
+def test_summary_carries_the_next_session(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    set_chosen(created["id"], "2026-10-05", True)
+    set_chosen(created["id"], "2026-09-14", True)
+
+    summary = client.get("/api/kdh/calendars").json()[0]
+    assert summary["next_session"] == "2026-09-14", "the nearest one still to come"
+    assert summary["last_session"] is None
+
+
+def test_summary_falls_back_to_the_most_recent_past_session(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    set_chosen(created["id"], "2026-07-01", True)
+    set_chosen(created["id"], "2026-08-10", True)
+
+    summary = client.get("/api/kdh/calendars").json()[0]
+    assert summary["next_session"] is None
+    assert summary["last_session"] == "2026-08-10", "the most recent one"
+
+
+def test_summary_carries_both_when_a_calendar_has_history_and_a_plan(
+    fixed_today,
+) -> None:
+    created = create("DnD", ["Dani"]).json()
+    set_chosen(created["id"], "2026-08-10", True)
+    set_chosen(created["id"], "2026-09-14", True)
+
+    summary = client.get("/api/kdh/calendars").json()[0]
+    assert summary["next_session"] == "2026-09-14"
+    assert summary["last_session"] == "2026-08-10"
+
+
+def test_today_counts_as_a_session_still_to_come(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    set_chosen(created["id"], "2026-09-03", True)
+
+    summary = client.get("/api/kdh/calendars").json()[0]
+    assert summary["next_session"] == "2026-09-03"
+    assert summary["last_session"] is None
+
+
+def test_summary_has_no_session_when_nothing_is_chosen(fixed_today) -> None:
+    create("DnD", ["Dani"])
+    summary = client.get("/api/kdh/calendars").json()[0]
+    assert summary["next_session"] is None and summary["last_session"] is None

@@ -61,6 +61,17 @@
             {{ rosterLine(calendar.invitee_names) }}
           </q-item-label>
         </q-item-section>
+        <q-item-section v-if="sessionOf(calendar)" side>
+          <q-item-label
+            caption
+            class="text-right"
+            :data-testid="`session-${calendar.id}`"
+          >
+            {{ sessionOf(calendar)?.label }}<br />{{
+              sessionOf(calendar)?.date
+            }}
+          </q-item-label>
+        </q-item-section>
       </q-item>
     </q-list>
 
@@ -140,6 +151,7 @@
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useKdhStore } from "@/apps/kdh/stores/useKdhStore";
+import type { CalendarSummary } from "@/apps/kdh/types";
 
 const store = useKdhStore();
 const router = useRouter();
@@ -185,6 +197,28 @@ function addInviteeRow(): void {
 
 function removeInviteeRow(index: number): void {
   inviteeNames.value.splice(index, 1);
+}
+
+/**
+ * The session worth showing: the next one if there is one, otherwise the last.
+ * A calendar with no chosen day shows nothing rather than a placeholder.
+ */
+function sessionOf(
+  calendar: CalendarSummary,
+): { label: string; date: string } | null {
+  if (calendar.next_session)
+    return { label: "Next", date: shortDate(calendar.next_session) };
+  if (calendar.last_session)
+    return { label: "Last", date: shortDate(calendar.last_session) };
+  return null;
+}
+
+function shortDate(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+  });
 }
 
 const ROSTER_SHOWN = 6;

@@ -558,14 +558,29 @@ describe("CalendarPage", () => {
     expect(wrapper.find('[data-testid="day-2026-09-14"]').exists()).toBe(true);
   });
 
-  it("an unclaimed tap on a day opens the name dropdown instead of refusing", async () => {
+  it("prompts an unclaimed visitor from inside the day they tapped", async () => {
     mockApi(false, { ...CAL, invitees: TWO_INVITEES });
     const wrapper = await mountPage();
 
     await wrapper.find('[data-testid="day-2026-09-14"]').trigger("click");
 
-    expect(wrapper.find('[data-testid="sheet-roster"]').exists()).toBe(false);
+    // The sheet opens either way — it is useful to read. What is missing is the
+    // ability to answer, and the prompt says so in the day's own context.
+    expect(wrapper.find('[data-testid="sheet-date"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="set-yes"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="claim-prompt"]').exists()).toBe(true);
+
+    await wrapper.find('[data-testid="claim-prompt"]').trigger("click");
     expect(wrapper.find('[data-testid="claim-inv-1"]').exists()).toBe(true);
+  });
+
+  it("offers no claim prompt on a day nobody can answer any more", async () => {
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="day-2026-09-01"]').trigger("click");
+    expect(wrapper.find('[data-testid="claim-prompt"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="sheet-past"]').exists()).toBe(true);
   });
 
   it("opens the day sheet once a name is claimed", async () => {
@@ -611,17 +626,25 @@ describe("CalendarPage", () => {
     );
   });
 
-  it("freezes days before the server's today", async () => {
+  it("opens a past day read-only — no vote controls", async () => {
     window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
-    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    mockApi(false, {
+      ...CAL,
+      invitees: TWO_INVITEES,
+      votes: { "2026-09-01": { "inv-2": "yes" } },
+    });
     const wrapper = await mountPage();
 
     const past = wrapper.find('[data-testid="day-2026-09-01"]');
     expect(past.classes()).toContain("past");
-    expect(past.attributes("disabled")).toBeDefined();
 
     await past.trigger("click");
-    expect(wrapper.find('[data-testid="sheet-date"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="sheet-past"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="set-yes"]').exists()).toBe(false);
+    // ...but it still shows who was there.
+    expect(wrapper.find('[data-testid="sheet-row-inv-2"]').text()).toContain(
+      "Jake",
+    );
   });
 
   it("leaves today votable", async () => {
@@ -635,5 +658,62 @@ describe("CalendarPage", () => {
 
     await today.trigger("click");
     expect(wrapper.find('[data-testid="sheet-date"]').exists()).toBe(true);
+  });
+
+  it("an admin marks the day from the sheet, and the cell shows it", async () => {
+    mockApi(true, { ...CAL, invitees: TWO_INVITEES });
+    putMock.mockResolvedValueOnce({
+      ...CAL,
+      invitees: TWO_INVITEES,
+      chosen_dates: ["2026-09-14"],
+    });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="day-2026-09-14"]').trigger("click");
+    await wrapper.find('[data-testid="toggle-chosen"]').trigger("click");
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith("/kdh/calendars/cal-ab12cd34/chosen", {
+      date: "2026-09-14",
+      chosen: true,
+    });
+    expect(
+      wrapper.find('[data-testid="day-2026-09-14"]').find(".chosen").exists(),
+    ).toBe(true);
+  });
+
+  it("shows a guest the chosen day but no way to change it", async () => {
+    mockApi(false, {
+      ...CAL,
+      invitees: TWO_INVITEES,
+      chosen_dates: ["2026-09-14"],
+    });
+    const wrapper = await mountPage();
+
+    expect(
+      wrapper.find('[data-testid="day-2026-09-14"]').find(".chosen").exists(),
+    ).toBe(true);
+
+    await wrapper.find('[data-testid="day-2026-09-14"]').trigger("click");
+    expect(wrapper.find('[data-testid="toggle-chosen"]').exists()).toBe(false);
+  });
+
+  it("an admin may mark a past day", async () => {
+    mockApi(true, { ...CAL, invitees: TWO_INVITEES });
+    putMock.mockResolvedValueOnce({
+      ...CAL,
+      invitees: TWO_INVITEES,
+      chosen_dates: ["2026-09-01"],
+    });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="day-2026-09-01"]').trigger("click");
+    await wrapper.find('[data-testid="toggle-chosen"]').trigger("click");
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith("/kdh/calendars/cal-ab12cd34/chosen", {
+      date: "2026-09-01",
+      chosen: true,
+    });
   });
 });

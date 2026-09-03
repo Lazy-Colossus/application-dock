@@ -102,8 +102,12 @@
         :votes="store.currentCalendar.votes[openDate] ?? {}"
         :claimed-id="claim.claimed.value?.id ?? null"
         :past="openDate < serverToday"
+        :chosen="store.currentCalendar.chosen_dates.includes(openDate)"
+        :is-admin="isAdmin"
         @close="daySheetOpen = false"
         @set="onSetStatus"
+        @chosen="onSetChosen"
+        @claim="nameMenuOpen = true"
       />
     </q-dialog>
 
@@ -458,13 +462,23 @@ async function pickColour(colour: string): Promise<void> {
  * The first tap teaches: with no name claimed, tapping a day opens the name
  * dropdown rather than refusing the tap.
  */
+/**
+ * Tapping a day always opens its sheet.
+ *
+ * The sheet is useful to everyone: a past day shows who came, and an admin can
+ * mark any day chosen without having claimed a name — quite likely, since an
+ * admin need not be an invitee. The "say who you are" prompt therefore lives
+ * *inside* the sheet rather than intercepting the tap, so the teaching moment
+ * survives without the sheet being unreachable.
+ */
 function onPickDay(date: string): void {
-  if (!canVote.value) {
-    nameMenuOpen.value = true;
-    return;
-  }
   openDate.value = date;
   daySheetOpen.value = true;
+}
+
+async function onSetChosen(chosen: boolean): Promise<void> {
+  if (!openDate.value) return;
+  await store.setChosen(calendarId.value, openDate.value, chosen);
 }
 
 async function onSetStatus(status: VoteStatus | "none"): Promise<void> {

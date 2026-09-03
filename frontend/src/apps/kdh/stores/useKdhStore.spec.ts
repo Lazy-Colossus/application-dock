@@ -54,6 +54,8 @@ describe("useKdhStore", () => {
         invitee_count: 3,
         invitee_names: ["Dani", "Jake", "Tom"],
         created_at: "x",
+        next_session: null,
+        last_session: null,
       },
     ]);
     const store = useKdhStore();
@@ -82,6 +84,8 @@ describe("useKdhStore", () => {
         invitee_count: 1,
         invitee_names: ["Kit"],
         created_at: "a",
+        next_session: null,
+        last_session: null,
       },
     ];
 
@@ -139,6 +143,8 @@ describe("useKdhStore", () => {
         invitee_count: 2,
         invitee_names: ["Dani", "Jake"],
         created_at: "x",
+        next_session: null,
+        last_session: null,
       },
     ];
 
@@ -158,6 +164,8 @@ describe("useKdhStore", () => {
         invitee_count: 2,
         invitee_names: ["Dani", "Jake"],
         created_at: "x",
+        next_session: null,
+        last_session: null,
       },
     ];
 
@@ -179,6 +187,8 @@ describe("useKdhStore", () => {
         invitee_count: 2,
         invitee_names: ["Dani", "Jake"],
         created_at: "x",
+        next_session: null,
+        last_session: null,
       },
       {
         id: "cal-other",
@@ -186,6 +196,8 @@ describe("useKdhStore", () => {
         invitee_count: 1,
         invitee_names: ["Kit"],
         created_at: "y",
+        next_session: null,
+        last_session: null,
       },
     ];
 
@@ -205,6 +217,8 @@ describe("useKdhStore", () => {
         invitee_count: 2,
         invitee_names: ["Dani", "Jake"],
         created_at: "x",
+        next_session: null,
+        last_session: null,
       },
     ];
 

@@ -38,6 +38,10 @@ export interface CalendarSummary {
   /** Active invitees in roster order — tombstoned people are excluded. */
   invitee_names: string[];
   created_at: string;
+  /** The nearest chosen day still to come, if any. */
+  next_session: string | null;
+  /** The most recent chosen day already past, if any. */
+  last_session: string | null;
 }
 
 export interface Me {

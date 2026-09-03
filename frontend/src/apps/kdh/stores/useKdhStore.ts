@@ -100,6 +100,20 @@ export const useKdhStore = defineStore("kdh", () => {
       .sort((a, b) => a.order - b.order);
   }
 
+  /** Keep the cached summary's session dates honest after a marking, so the
+   *  list does not still advertise a session that was called off. Needs the
+   *  server's date, which `me` carries. */
+  function syncSessions(calendar: Calendar): void {
+    const summary = calendars.value.find((c) => c.id === calendar.id);
+    const boundary = me.value?.today;
+    if (!summary || !boundary) return;
+
+    const upcoming = calendar.chosen_dates.filter((d) => d >= boundary);
+    const past = calendar.chosen_dates.filter((d) => d < boundary);
+    summary.next_session = upcoming.length > 0 ? upcoming[0] : null;
+    summary.last_session = past.length > 0 ? past[past.length - 1] : null;
+  }
+
   /** Keep the cached summary honest after a roster change, so returning to the
    *  list does not show a stale headcount or a departed name. */
   function syncSummary(calendar: Calendar): void {
@@ -209,6 +223,24 @@ export const useKdhStore = defineStore("kdh", () => {
     }
   }
 
+  async function setChosen(
+    calendarId: string,
+    date: string,
+    chosen: boolean,
+  ): Promise<void> {
+    error.value = null;
+    try {
+      const updated = await api.put<Calendar>(
+        `/kdh/calendars/${calendarId}/chosen`,
+        { date, chosen },
+      );
+      currentCalendar.value = updated;
+      syncSessions(updated);
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+    }
+  }
+
   async function createCalendar(
     name: string,
     inviteeNames: string[],
@@ -227,6 +259,8 @@ export const useKdhStore = defineStore("kdh", () => {
         invitee_count: active.length,
         invitee_names: active.map((i) => i.name),
         created_at: created.created_at,
+        next_session: null,
+        last_session: null,
       });
       return created;
     } catch (e) {
@@ -252,6 +286,7 @@ export const useKdhStore = defineStore("kdh", () => {
     removeInvitee,
     recolourInvitee,
     setVote,
+    setChosen,
     renameCalendar,
     deleteCalendar,
   };

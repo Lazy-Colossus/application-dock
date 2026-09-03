@@ -26,6 +26,8 @@ function mountSheet(props: Partial<Record<string, unknown>> = {}) {
       votes: {},
       claimedId: "inv-1",
       past: false,
+      chosen: false,
+      isAdmin: false,
       ...props,
     },
     global: { stubs: STUBS },
@@ -124,14 +126,51 @@ describe("DaySheet", () => {
     expect(wrapper.find('[data-testid="sheet-past"]').exists()).toBe(true);
   });
 
-  it("offers no controls to someone who has not claimed a name", () => {
+  it("asks an unclaimed visitor to say who they are, instead of the controls", () => {
     const wrapper = mountSheet({ claimedId: null });
     expect(wrapper.find('[data-testid="set-yes"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="claim-prompt"]').exists()).toBe(true);
+  });
+
+  it("emits when the claim prompt is used", async () => {
+    const wrapper = mountSheet({ claimedId: null });
+    await wrapper.find('[data-testid="claim-prompt"]').trigger("click");
+    expect(wrapper.emitted("claim")).toBeTruthy();
   });
 
   it("closes", async () => {
     const wrapper = mountSheet();
     await wrapper.find('[data-testid="sheet-close"]').trigger("click");
     expect(wrapper.emitted("close")).toBeTruthy();
+  });
+
+  it("offers no marking control to a non-admin", () => {
+    expect(mountSheet().find('[data-testid="toggle-chosen"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("lets an admin make this the day", async () => {
+    const wrapper = mountSheet({ isAdmin: true });
+    await wrapper.find('[data-testid="toggle-chosen"]').trigger("click");
+    expect(wrapper.emitted("chosen")?.[0]).toEqual([true]);
+  });
+
+  it("lets an admin take it back", async () => {
+    const wrapper = mountSheet({ isAdmin: true, chosen: true });
+    expect(wrapper.find('[data-testid="toggle-chosen"]').text()).toContain(
+      "This is the day",
+    );
+
+    await wrapper.find('[data-testid="toggle-chosen"]').trigger("click");
+    expect(wrapper.emitted("chosen")?.[0]).toEqual([false]);
+  });
+
+  it("lets an admin mark a past day — a record may be corrected", async () => {
+    const wrapper = mountSheet({ isAdmin: true, past: true, claimedId: null });
+
+    expect(wrapper.find('[data-testid="set-yes"]').exists()).toBe(false);
+    await wrapper.find('[data-testid="toggle-chosen"]').trigger("click");
+    expect(wrapper.emitted("chosen")?.[0]).toEqual([true]);
   });
 });

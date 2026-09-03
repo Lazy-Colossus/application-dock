@@ -20,6 +20,7 @@ from app.schemas.kdh import (
     CreateCalendarRequest,
     Me,
     RecolourInviteeRequest,
+    SetChosenRequest,
     SetVoteRequest,
     UpdateCalendarRequest,
 )
@@ -156,5 +157,21 @@ def set_vote(
         return service.set_vote(calendar_id, req.invitee_id, req.date, req.status)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.put("/calendars/{calendar_id}/chosen", response_model=Calendar)
+def set_chosen(
+    calendar_id: str,
+    req: SetChosenRequest,
+    current_user: str = Depends(get_current_user),
+) -> Calendar:
+    try:
+        return service.set_chosen(current_user, calendar_id, req.date, req.chosen)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Calendar not found") from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

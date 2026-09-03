@@ -55,8 +55,38 @@
       </div>
     </div>
 
-    <div v-else-if="past" class="kdh-muted q-mt-md" data-testid="sheet-past">
+    <!-- Unclaimed on a day you could still answer: the prompt is here, in the
+         context of the day you just tapped, rather than intercepting the tap. -->
+    <div v-else-if="!past" class="q-mt-md">
+      <q-btn
+        outline
+        no-caps
+        dense
+        class="full-width"
+        label="Say who you are to answer"
+        data-testid="claim-prompt"
+        @click="$emit('claim')"
+      />
+    </div>
+
+    <div v-else class="kdh-muted q-mt-md" data-testid="sheet-past">
       This day has been and gone.
+    </div>
+
+    <!-- In the day's own context, not a separate mode. Allowed on a past day:
+         unlike a vote, this is a record, and a record may be corrected. -->
+    <div v-if="isAdmin" class="q-mt-md">
+      <q-btn
+        unelevated
+        no-caps
+        dense
+        class="full-width"
+        :outline="!chosen"
+        :class="{ 'kdh-chosen-state': chosen }"
+        :label="chosen ? 'This is the day ✓' : 'Make this the day'"
+        data-testid="toggle-chosen"
+        @click="$emit('chosen', !chosen)"
+      />
     </div>
   </q-card>
 </template>
@@ -71,9 +101,16 @@ const props = defineProps<{
   votes: Record<string, VoteStatus>;
   claimedId: string | null;
   past: boolean;
+  chosen: boolean;
+  isAdmin: boolean;
 }>();
 
-defineEmits<{ close: []; set: [status: VoteStatus | "none"] }>();
+defineEmits<{
+  close: [];
+  set: [status: VoteStatus | "none"];
+  chosen: [chosen: boolean];
+  claim: [];
+}>();
 
 const OPTIONS = [
   { value: "yes" as const, label: "Free" },

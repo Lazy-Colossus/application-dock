@@ -111,9 +111,10 @@ list from the UI, week or agenda views, an availability deadline.
   **none → available → if needed → none**. The change is immediate and optimistic; a failure
   rolls the day back and surfaces the error. There is no limit on how many days one person marks
   — for a one-off occasion the expectation is that everybody offers several.
-- FR-16: **Past days are frozen and dimmed** — their votes and any chosen marking remain visible
-  and correctly coloured, but at reduced emphasis, and they cannot be toggled. "Past" means
-  strictly before the server's current date.
+- FR-16: **Past days are frozen and dimmed** — votes and chosen markings stay visible and correctly
+  coloured at reduced emphasis, and **cannot be voted on**. They can still be opened: a past day
+  shows who was there, and an admin can still mark or unmark it chosen, because that is a record
+  rather than an answer. "Past" means strictly before the **server's** current date.
 - FR-17: An admin can **mark a day as chosen** and unmark it. Any number of days may be chosen
   (a long-running campaign accumulates them), and the marking is visually distinct from the
   availability heat — it survives into the past, which is what makes the calendar a record of

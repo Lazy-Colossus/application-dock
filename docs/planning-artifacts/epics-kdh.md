@@ -131,8 +131,9 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
   the error. There is no limit on how many days one person marks — for a one-off occasion the
   expectation is that everybody offers several.
 - FR-16: **Past days are frozen and dimmed** — votes and chosen markings stay visible and correctly
-  coloured at reduced emphasis, and cannot be toggled. "Past" means strictly before the **server's**
-  current date.
+  coloured at reduced emphasis, and **cannot be voted on**. They can still be opened: a past day
+  shows who was there, and an admin can still mark or unmark it chosen, because that is a record
+  rather than an answer. "Past" means strictly before the **server's** current date.
 - FR-17: An admin can **mark a day as chosen** and unmark it. Any number of days may be chosen, and
   the marking is visually distinct from the availability heat. It survives into the past, which is
   what makes the calendar a record of sessions actually held.

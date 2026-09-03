@@ -61,8 +61,9 @@ Plain, short, never coy. The app never nags and never celebrates.
 
 ## Component Patterns
 
-**Day cell.** Tap opens the day sheet. Long-press does nothing. A past cell is
-inert — no ripple, no feedback; it reads as finished rather than broken.
+**Day cell.** Tap always opens the day sheet — a past day is worth reading, and an
+admin can mark any day chosen without having claimed a name. What a past day loses
+is the ability to *answer*, not to be opened; it is dimmed, and its sheet says so.
 
 **Name dropdown.** Selecting a row claims that person and closes the dropdown; **switching is
 picking someone else**, and there is no release-to-nobody control. **Unclaimed, it is the loudest
@@ -95,8 +96,9 @@ quickly. Both write the same vote.
 ## Interaction Primitives
 
 - **Tap a cell** → day sheet. **Tap a state in the sheet** → write, sheet stays open.
-- **Tap a cell when unclaimed** → the dropdown opens instead, so the first tap
-  teaches the model rather than rejecting the user.
+- **Tap a cell when unclaimed** → the sheet opens with a "say who you are" prompt
+  in place of the answer controls, so the first tap still teaches the model but the
+  sheet stays reachable for reading and for admin marking.
 - **Arrows** move one month. There is no swipe: a swipe on a 7×5 grid of tap
   targets is too easy to trigger while aiming for a Tuesday.
 - **No drag, no multi-select, no range.** Marking a stretch of days is repeated

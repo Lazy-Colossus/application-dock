@@ -99,9 +99,19 @@ describe("MonthGrid", () => {
     expect(wrapper.emitted("pick")?.[0]).toEqual(["2026-09-14"]);
   });
 
-  it("never emits for a past day", async () => {
+  it("emits for a past day too, so it can be read", async () => {
     const wrapper = mountGrid();
     await wrapper.find('[data-testid="day-2026-09-01"]').trigger("click");
-    expect(wrapper.emitted("pick")).toBeUndefined();
+    expect(wrapper.emitted("pick")?.[0]).toEqual(["2026-09-01"]);
+  });
+
+  it("still dims a past day", () => {
+    const wrapper = mountGrid();
+    expect(wrapper.find('[data-testid="day-2026-09-01"]').classes()).toContain(
+      "past",
+    );
+    expect(
+      wrapper.find('[data-testid="day-2026-09-14"]').classes(),
+    ).not.toContain("past");
   });
 });

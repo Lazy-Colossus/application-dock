@@ -2,7 +2,6 @@
   <button
     class="kdh-cell"
     :class="[`w${wash.step}`, { past, today, provisional: wash.provisional }]"
-    :disabled="past"
     :aria-label="label"
     :data-testid="`day-${date}`"
     @click="$emit('pick', date)"

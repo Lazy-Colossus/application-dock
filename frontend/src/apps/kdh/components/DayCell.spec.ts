@@ -71,13 +71,15 @@ describe("DayCell", () => {
     ).toBe(true);
   });
 
-  it("dims a past day and refuses the tap", async () => {
+  it("dims a past day but still opens it", async () => {
+    // Not votable, but readable: who came to the September session is worth
+    // seeing, and an admin can still mark it chosen.
     const wrapper = mountCell({ past: true, votes: { a: "yes" } });
     expect(wrapper.classes()).toContain("past");
-    expect(wrapper.attributes("disabled")).toBeDefined();
+    expect(wrapper.attributes("disabled")).toBeUndefined();
 
     await wrapper.trigger("click");
-    expect(wrapper.emitted("pick")).toBeUndefined();
+    expect(wrapper.emitted("pick")?.[0]).toEqual(["2026-09-14"]);
   });
 
   it("keeps a past day's votes and its wash", () => {
