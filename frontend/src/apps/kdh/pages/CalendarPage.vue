@@ -11,42 +11,43 @@
           data-testid="back-btn"
           @click="goToList"
         />
-        <div class="col column no-wrap">
-          <div class="row items-center no-wrap q-gutter-xs">
-            <span class="text-h6 ellipsis" data-testid="calendar-name">
-              {{ store.currentCalendar?.name ?? "" }}
-            </span>
-            <span
-              v-if="store.currentCalendar"
-              class="kdh-headcount"
-              data-testid="headcount"
-            >
-              <q-icon name="person" size="15px" />{{ activeInvitees.length }}
-            </span>
-          </div>
-          <!-- Claiming lives in the header so the month stays visible while you
-               pick — the reason this won over a bottom sheet (EXPERIENCE.md). -->
-          <button
+        <div class="col row items-center no-wrap q-gutter-sm">
+          <span class="kdh-title ellipsis" data-testid="calendar-name">
+            {{ store.currentCalendar?.name ?? "" }}
+          </span>
+          <span
             v-if="store.currentCalendar"
-            class="kdh-whoami"
-            :class="{ unclaimed: !claim.hasClaim.value }"
-            data-testid="whoami-btn"
-            @click="nameMenuOpen = true"
+            class="kdh-headcount"
+            data-testid="headcount"
           >
-            <q-icon
-              v-if="!claim.hasClaim.value"
-              name="error_outline"
-              size="18px"
-            />
-            <span
-              v-else
-              class="kdh-dot lg"
-              :style="{ background: claim.claimed.value?.color }"
-            />
-            {{ claim.claimed.value?.name ?? "Who are you?" }}
-            <q-icon name="expand_more" size="18px" />
-          </button>
+            <q-icon name="person" size="1em" />{{ activeInvitees.length }}
+          </span>
         </div>
+
+        <!-- Who you are sits with the other controls, on the right, rather than
+             under the title — it is a control, not part of the calendar's name. -->
+        <button
+          v-if="store.currentCalendar"
+          class="kdh-whoami"
+          :class="{ unclaimed: !claim.hasClaim.value }"
+          data-testid="whoami-btn"
+          @click="nameMenuOpen = true"
+        >
+          <q-icon
+            v-if="!claim.hasClaim.value"
+            name="error_outline"
+            size="18px"
+          />
+          <span
+            v-else
+            class="kdh-dot lg"
+            :style="{ background: claim.claimed.value?.color }"
+          />
+          <span class="ellipsis">{{
+            claim.claimed.value?.name ?? "Who are you?"
+          }}</span>
+          <q-icon name="expand_more" size="18px" />
+        </button>
 
         <!-- Admin actions are a header menu, and are absent — not disabled — for
              guests (EXPERIENCE.md, Component Patterns). -->
@@ -577,18 +578,34 @@ import "./../css/kdh.sass";
 }
 @media (min-width: 1024px) {
   .kdh-inner {
-    width: 70%;
-    max-width: 1400px;
+    width: 58%;
+    max-width: 1080px;
     margin: 0 auto;
+  }
+  .kdh-title {
+    font-size: 34px;
+  }
+  .kdh-headcount {
+    font-size: 26px;
+  }
+  .kdh-whoami {
+    font-size: 16px;
+    max-width: none;
   }
 }
 
+.kdh-title {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.15;
+  min-width: 0;
+}
 .kdh-whoami {
   display: inline-flex;
   align-items: center;
-  align-self: flex-start;
   gap: 7px;
-  margin-top: 4px;
+  flex: none;
+  max-width: 45vw;
   padding: 7px 13px;
   border: 1px solid var(--kdh-field-line);
   border-radius: 999px;
@@ -609,9 +626,9 @@ import "./../css/kdh.sass";
 .kdh-headcount {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
   flex: none;
-  font-size: 13px;
+  font-size: 19px;
   opacity: 0.7;
 }
 .kdh-dot.lg {

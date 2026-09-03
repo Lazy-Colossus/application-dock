@@ -199,30 +199,27 @@ const label = computed(() => {
 
 @media (min-width: 1024px) {
   .kdh-cell {
-    /* Height comes from the grid, not from the width — a cell now has to hold
-       six names, and an aspect ratio would either clip them or leave a crater
-       on an empty day. */
-    aspect-ratio: auto;
+    aspect-ratio: 1 / 1;
     justify-content: flex-start;
-    padding: 8px 6px;
+    padding: 7px 6px;
   }
   .crown-slot {
-    height: 16px;
+    height: 15px;
   }
   .crown {
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
   }
   .d {
-    font-size: 26px;
+    font-size: 21px;
   }
   /* Generous on web because this is where hover exists at all, and the number
      alone was too small to aim at. Untouched on a phone, which has no hover and
      no room. */
   .n {
-    font-size: 17px;
-    padding: 8px 20px;
-    min-width: 58px;
+    font-size: 14px;
+    padding: 5px 15px;
+    min-width: 46px;
     border-radius: 8px;
   }
   /* One line at the foot of the cell, in the cell's own ink. Deliberately NOT
@@ -236,10 +233,16 @@ const label = computed(() => {
     -webkit-box-orient: vertical;
     line-clamp: 2;
     margin-top: auto;
-    padding-top: 6px;
+    /* Shrinks and clips at a line boundary rather than spilling past the
+       square. On a narrow desktop window this shows one line instead of two —
+       the day sheet is still the complete list. */
+    flex: 0 1 auto;
+    min-height: 0;
+    padding-top: 5px;
     width: 100%;
     max-width: 100%;
-    font-size: 11px;
+    max-height: 2.6em;
+    font-size: 10px;
     line-height: 1.3;
     text-align: center;
     opacity: 0.85;
@@ -313,25 +316,17 @@ const label = computed(() => {
     0 0 0 1.5px var(--kdh-gold),
     0 0 12px var(--kdh-gold-glow);
 }
+/* One treatment at every step: gold, bold, and a gold glow. No dark outline.
+   On `wash-5`/`wash-6` this is gold on pale lilac and the contrast is genuinely
+   low — the ring, the crown and the accessible name are what carry the marking
+   there (NFR-6), not the number. */
 .chosen .d {
   font-weight: 700;
   color: var(--kdh-gold);
   text-shadow:
-    0 0 6px var(--kdh-gold-glow),
-    0 0 14px var(--kdh-gold-glow);
-}
-/* The pale top of the ramp. The gold stays bright — it is the same mark
-   everywhere — and legibility comes from a dark halo behind it instead of from
-   darkening the colour. Bright gold on pale lilac does not reach 4.5:1 on its
-   own; the halo is what carries it, and the diamond plus the cell's ring remain
-   as signals that do not depend on colour at all (NFR-6). */
-.w5.chosen .d,
-.w6.chosen .d {
-  color: var(--kdh-gold);
-  text-shadow:
-    0 1px 2px rgba(26, 16, 36, 0.95),
-    0 0 7px rgba(26, 16, 36, 0.8),
-    0 0 14px rgba(26, 16, 36, 0.5);
+    0 0 5px var(--kdh-gold),
+    0 0 12px var(--kdh-gold-glow),
+    0 0 22px var(--kdh-gold-glow);
 }
 /* Both marks at once: the provisional hairline is inset, the chosen ring is
    outside it, so they compose rather than one silently winning. */
@@ -356,14 +351,7 @@ const label = computed(() => {
    pale steps. It is also the signal that does not depend on colour (NFR-6). */
 .crown {
   fill: var(--kdh-gold);
-  stroke: rgba(26, 16, 36, 0.85);
-  stroke-width: 1.4;
-  stroke-linejoin: round;
-  paint-order: stroke fill;
-  filter: drop-shadow(0 0 4px var(--kdh-gold-glow));
-}
-.w5 .crown,
-.w6 .crown {
-  filter: none;
+  filter: drop-shadow(0 0 3px var(--kdh-gold))
+    drop-shadow(0 0 7px var(--kdh-gold-glow));
 }
 </style>

@@ -21,7 +21,7 @@ inherits_ui_system: "Vue 3 + Quasar v2 (Material-based)"
 
 - **Form factor: two layouts, phone and web**, splitting at **1024px**. The phone
   layout is primary and is the constraint the interface was designed against; the
-  web layout is the same app given room — a centred band at 70% of the window,
+  web layout is the same app given room — a centred band at 58% of the window,
   larger numerals, and cells tall enough to list the voters. There is no third
   size: a tablet takes whichever side of the breakpoint it falls on.
 - **UI system:** Vue 3 + Quasar v2, inherited from the dock. `DESIGN.md` defines
@@ -74,7 +74,9 @@ Tap always opens the day sheet — a past day is worth reading, and an
 admin can mark any day chosen without having claimed a name. What a past day loses
 is the ability to *answer*, not to be opened; it is dimmed, and its sheet says so.
 
-**Name dropdown.** Selecting a row claims that person and closes the dropdown; **switching is
+**Name dropdown.** The control sits on the **right of the header**, beside the admin
+menu — it is a control, not part of the calendar's name, and the title needs the
+room. Selecting a row claims that person and closes the dropdown; **switching is
 picking someone else**, and there is no release-to-nobody control. **Unclaimed, it is the loudest
 thing on the page** — styled as a required field
 left blank (negative border and text, warning glyph), because nothing else can be done until it is

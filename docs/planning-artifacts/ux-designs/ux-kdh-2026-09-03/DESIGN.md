@@ -180,9 +180,8 @@ only signal:
   glow** on the dark steps, dropping to `gold-deep` with no text glow on
   `wash-5`–`wash-6`, where a bright halo on pale lilac is mud — there the date keeps
   the same bright gold and takes a **dark halo** instead, so the mark looks the same
-  at every step. A small **gold crown** sits directly above the date — filled gold
-  with a dark stroke so one crown reads at every step, rather than a second darker
-  one for the pale end. **Its slot is reserved in every cell**, crowned or not:
+  at every step, with a **gold glow** and no dark outline. A small **gold crown**
+  sits directly above the date, filled gold with the same glow. **Its slot is reserved in every cell**, crowned or not:
   that is what keeps the date on one line right across the month. The chosen cell is lifted a layer, or later grid siblings paint
   over its glow. When a day is both chosen and provisional the two compose — the
   provisional hairline inset, the chosen ring outside it.
@@ -198,8 +197,10 @@ dock does not have — so the "never use the dock's gold" rule below is narrowed
 mean *never as an interactive accent*, which is what it was protecting against.
 The crown stays, so the marking never depends on colour alone.
 
-**Day cell.** A reserved crown slot, the date, then the coverage count beneath it,
-on a `wash-*` background. Nothing else fits and nothing else is allowed. The count
+**Day cell.** **Square at both sizes.** A reserved crown slot, the date, then the
+coverage count beneath it, on a `wash-*` background; on the web layout a line of
+voter names sits at the foot, shrinking from two lines to one on a narrow window
+rather than spilling past the square. Nothing else fits and nothing else is allowed. The count
 sits in a padded target of its own — the digits alone are about 7px wide, which is
 not something to point at — which highlights on hover and anchors the list of who
 voted. The three pieces total ~42px in a ~46px cell, so there is no room for a
@@ -237,10 +238,11 @@ person's colour, which has to keep meaning *that person*.
   decoration — `wash-4` and `wash-5` are genuinely close, and the number is what
   settles them.
 - **Do** accept one contrast exception, knowingly: the chosen day's date is bright
-  `gold` at every step, and on `wash-5`–`wash-6` that does not reach 4.5:1 on
-  colour alone. A dark halo carries it, and the marking never rests on it — the
-  cell's gold ring, the crown and the accessible name each say "chosen" without
-  the text. **Don't** extend that licence to anything else.
+  `gold` with a gold glow at every step, and on `wash-5`–`wash-6` that is gold on
+  pale lilac — genuinely low contrast, with no dark outline to carry it. The
+  marking does not rest on the number: the cell's gold ring, the crown and the
+  accessible name each say "chosen" without it. **Don't** extend that licence to
+  anything else.
 - **Do** mark chosen and provisional days with shape. **Don't** encode either in
   colour; both must survive the ramp and the dimming.
 - **Don't** put names in a day cell. They do not fit at 44px, and the attempt is

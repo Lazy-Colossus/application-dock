@@ -179,10 +179,10 @@ defineExpose({ monthLabel });
   .kdh-grid {
     gap: 6px;
   }
-  /* Rows carry the height now that cells hold names; `minmax` keeps every row
-     the same even when one week has no votes at all. */
+  /* Square cells govern their own height now, so the rows follow the columns
+     and every box is the same shape. */
   .kdh-grid {
-    grid-auto-rows: minmax(150px, auto);
+    grid-auto-rows: auto;
   }
 }
 </style>

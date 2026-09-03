@@ -146,7 +146,7 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
 - NFR-0: **Two layouts, phone and web.** The phone layout is the primary one and the
   constraint the interface was designed against; the web layout is the same app given
   room. The breakpoint is **1024px**. Below it the calendar is the full width of the
-  screen with a ~44px day cell; above it the calendar is a centred band at 70% of the
+  screen with a ~44px day cell; above it the calendar is a centred band at 58% of the
   window (capped so it stays readable on a very wide monitor), the numerals grow, and
   the day cells are tall enough to carry names.
 - NFR-1: **Concurrent voting is the normal case, so writes must not lose updates.** Six people share
