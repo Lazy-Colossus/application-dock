@@ -88,13 +88,13 @@ const label = computed(() => {
   cursor: default;
 }
 .d {
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 500;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 .n {
-  font-size: 10px;
+  font-size: 11.5px;
   line-height: 1;
   color: #8a7da2;
   font-variant-numeric: tabular-nums;
@@ -166,10 +166,18 @@ const label = computed(() => {
     0 0 6px var(--kdh-gold-glow),
     0 0 14px var(--kdh-gold-glow);
 }
+/* The pale top of the ramp. The gold stays bright — it is the same mark
+   everywhere — and legibility comes from a dark halo behind it instead of from
+   darkening the colour. Bright gold on pale lilac does not reach 4.5:1 on its
+   own; the halo is what carries it, and the diamond plus the cell's ring remain
+   as signals that do not depend on colour at all (NFR-6). */
 .w5.chosen .d,
 .w6.chosen .d {
-  color: var(--kdh-gold-deep);
-  text-shadow: none;
+  color: var(--kdh-gold);
+  text-shadow:
+    0 1px 2px rgba(26, 16, 36, 0.95),
+    0 0 7px rgba(26, 16, 36, 0.8),
+    0 0 14px rgba(26, 16, 36, 0.5);
 }
 /* Both marks at once: the provisional hairline is inset, the chosen ring is
    outside it, so they compose rather than one silently winning. */

@@ -58,12 +58,12 @@ typography:
     textTransform: uppercase
     note: 'ink-mid'
   day-number:
-    fontSize: 12.5px
+    fontSize: 14px
     fontWeight: '500'
     fontFamily: numeric
-    note: 'tabular-nums; every cell'
+    note: 'tabular-nums; every cell. 700 and gold on the chosen day.'
   day-count:
-    fontSize: 8.5px
+    fontSize: 11.5px
     fontFamily: numeric
     note: 'tabular-nums; the backstop when two wash steps look alike'
   weekday-initial:
@@ -175,8 +175,10 @@ only signal:
 - **Chosen day** — a **`gold` ring and outer glow around the whole cell**, so it
   pops at every step of the ramp; the date itself is **bold gold with its own
   glow** on the dark steps, dropping to `gold-deep` with no text glow on
-  `wash-5`–`wash-6`, where a bright halo on pale lilac is mud. A 5px gold diamond
-  sits top-right. The chosen cell is lifted a layer, or later grid siblings paint
+  `wash-5`–`wash-6`, where a bright halo on pale lilac is mud — there the date keeps
+  the same bright gold and takes a **dark halo** instead, so the mark looks the same
+  at every step. A 5px gold diamond sits top-right (`gold-deep` on the pale steps,
+  where a bright shape would vanish). The chosen cell is lifted a layer, or later grid siblings paint
   over its glow. When a day is both chosen and provisional the two compose — the
   provisional hairline inset, the chosen ring outside it.
 - **Provisional coverage** — a 1px inset hairline in `wash-6` around a cell that
@@ -222,8 +224,14 @@ person's colour, which has to keep meaning *that person*.
 
 - **Do** let the wash be the loudest thing on screen. **Don't** add a second
   saturated colour anywhere.
-- **Do** keep the count in the cell. **Don't** treat it as decoration — `wash-4`
-  and `wash-5` are genuinely close, and the number is what settles them.
+- **Do** keep the count in the cell, and sized to be read. **Don't** treat it as
+  decoration — `wash-4` and `wash-5` are genuinely close, and the number is what
+  settles them.
+- **Do** accept one contrast exception, knowingly: the chosen day's date is bright
+  `gold` at every step, and on `wash-5`–`wash-6` that does not reach 4.5:1 on
+  colour alone. A dark halo carries it, and the marking never rests on it — the
+  cell's gold ring, the diamond and the accessible name each say "chosen" without
+  the text. **Don't** extend that licence to anything else.
 - **Do** mark chosen and provisional days with shape. **Don't** encode either in
   colour; both must survive the ramp and the dimming.
 - **Don't** put names in a day cell. They do not fit at 44px, and the attempt is
