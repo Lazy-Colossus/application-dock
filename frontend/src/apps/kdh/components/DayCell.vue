@@ -144,16 +144,40 @@ const label = computed(() => {
   opacity: 0.3;
 }
 
-/* The decided day. Gold and bold on the date itself, plus the diamond — the
-   shape is what keeps the marking readable for someone who cannot see the
-   colour, so it stays even though the gold now carries the message. */
+/* The decided day.
+   A gold ring and outer glow on the cell, so it pops at EVERY step of the ramp —
+   including the pale top, where gold text alone disappears and where the chosen
+   day most often lives. The date is bold gold with its own glow on the dark
+   steps; on the light ones it drops to the deep gold and loses the text glow,
+   because a bright halo on pale lilac is mud. The diamond stays regardless: gold
+   carries the message, but colour must never be the only signal (NFR-6). */
+.chosen {
+  /* Above its neighbours: grid siblings paint in document order, so without
+     this the glow is covered by the backgrounds of every later cell. */
+  z-index: 1;
+  box-shadow:
+    0 0 0 1.5px var(--kdh-gold),
+    0 0 12px var(--kdh-gold-glow);
+}
 .chosen .d {
   font-weight: 700;
   color: var(--kdh-gold);
+  text-shadow:
+    0 0 6px var(--kdh-gold-glow),
+    0 0 14px var(--kdh-gold-glow);
 }
 .w5.chosen .d,
 .w6.chosen .d {
   color: var(--kdh-gold-deep);
+  text-shadow: none;
+}
+/* Both marks at once: the provisional hairline is inset, the chosen ring is
+   outside it, so they compose rather than one silently winning. */
+.chosen.provisional {
+  box-shadow:
+    inset 0 0 0 1px var(--kdh-wash-6),
+    0 0 0 1.5px var(--kdh-gold),
+    0 0 12px var(--kdh-gold-glow);
 }
 .chosen-mark {
   position: absolute;

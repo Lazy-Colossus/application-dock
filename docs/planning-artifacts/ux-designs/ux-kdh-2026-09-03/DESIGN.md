@@ -43,8 +43,9 @@ colors:
   # --- Semantic (separate from the wash and from invitee colours) ---
   danger: '#CF6679'
   # The decided day — a third colour dimension (see Components → Chosen day).
-  gold: '#F0C14B'
-  gold-deep: '#6E4E05'   # legible against the pale top of the ramp
+  gold: '#FFD54A'
+  gold-glow: 'rgba(255, 213, 74, 0.55)'
+  gold-deep: '#5F4200'   # legible against the pale top of the ramp
   # NB: there is still no *accent* hue — gold carries a meaning, not a role.
 typography:
   font-stack:
@@ -171,9 +172,13 @@ on anything carrying a person's name.
 the past-day dimming — and, for the chosen day, because the colour must not be the
 only signal:
 
-- **Chosen day** — the date itself goes **bold and `gold`** (`gold-deep` on
-  `wash-5`–`wash-6`, where the bright gold washes out against pale lilac), and a
-  5px gold diamond sits top-right.
+- **Chosen day** — a **`gold` ring and outer glow around the whole cell**, so it
+  pops at every step of the ramp; the date itself is **bold gold with its own
+  glow** on the dark steps, dropping to `gold-deep` with no text glow on
+  `wash-5`–`wash-6`, where a bright halo on pale lilac is mud. A 5px gold diamond
+  sits top-right. The chosen cell is lifted a layer, or later grid siblings paint
+  over its glow. When a day is both chosen and provisional the two compose — the
+  provisional hairline inset, the chosen ring outside it.
 - **Provisional coverage** — a 1px inset hairline in `wash-6` around a cell that
   only reaches full coverage because someone answered *if needed*.
 

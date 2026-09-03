@@ -71,6 +71,25 @@ describe("DayCell", () => {
     expect(mountCell().find(".chosen-mark").exists()).toBe(false);
   });
 
+  it("wears both marks at once when the chosen day is provisional", () => {
+    // The two are composed in one box-shadow; if the classes ever stop
+    // co-existing, one marking silently disappears.
+    const wrapper = mountCell({
+      chosen: true,
+      votes: {
+        a: "yes",
+        b: "yes",
+        c: "yes",
+        d: "yes",
+        e: "yes",
+        f: "if_needed",
+      },
+    });
+    expect(wrapper.classes()).toContain("chosen");
+    expect(wrapper.classes()).toContain("provisional");
+    expect(wrapper.find(".chosen-mark").exists()).toBe(true);
+  });
+
   it("marks the cell itself as chosen, so the date can be styled", () => {
     // The gold and the bold live on `.chosen .d`; the diamond stays as the
     // signal that does not depend on colour at all.
