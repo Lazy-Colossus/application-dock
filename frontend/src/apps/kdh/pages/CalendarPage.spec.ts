@@ -67,6 +67,7 @@ function mockApi(isAdmin: boolean, calendar: unknown = CAL, fails = false) {
       return Promise.resolve({
         username: isAdmin ? "jake" : "players",
         is_admin: isAdmin,
+        today: "2026-09-03",
       });
     return fails
       ? Promise.reject(new Error("Calendar not found"))
@@ -545,5 +546,94 @@ describe("CalendarPage", () => {
     expect(wrapper.find('[data-testid="whoami-btn"]').classes()).not.toContain(
       "unclaimed",
     );
+  });
+
+  it("renders the month on the server's current month", async () => {
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    expect(wrapper.find('[data-testid="month-label"]').text()).toBe(
+      "September 2026",
+    );
+    expect(wrapper.find('[data-testid="day-2026-09-14"]').exists()).toBe(true);
+  });
+
+  it("an unclaimed tap on a day opens the name dropdown instead of refusing", async () => {
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="day-2026-09-14"]').trigger("click");
+
+    expect(wrapper.find('[data-testid="sheet-roster"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="claim-inv-1"]').exists()).toBe(true);
+  });
+
+  it("opens the day sheet once a name is claimed", async () => {
+    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+    mockApi(false, {
+      ...CAL,
+      invitees: TWO_INVITEES,
+      votes: { "2026-09-14": { "inv-2": "yes" } },
+    });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="day-2026-09-14"]').trigger("click");
+
+    expect(wrapper.find('[data-testid="sheet-date"]').text()).toContain(
+      "September",
+    );
+    expect(wrapper.find('[data-testid="sheet-row-inv-2"]').text()).toContain(
+      "Jake",
+    );
+  });
+
+  it("votes from the day sheet", async () => {
+    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    putMock.mockResolvedValueOnce({
+      ...CAL,
+      invitees: TWO_INVITEES,
+      votes: { "2026-09-14": { "inv-1": "yes" } },
+    });
+    const wrapper = await mountPage();
+
+    await wrapper.find('[data-testid="day-2026-09-14"]').trigger("click");
+    await wrapper.find('[data-testid="set-yes"]').trigger("click");
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith("/kdh/calendars/cal-ab12cd34/votes", {
+      invitee_id: "inv-1",
+      date: "2026-09-14",
+      status: "yes",
+    });
+    expect(wrapper.find('[data-testid="day-2026-09-14"]').text()).toContain(
+      "1",
+    );
+  });
+
+  it("freezes days before the server's today", async () => {
+    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    const past = wrapper.find('[data-testid="day-2026-09-01"]');
+    expect(past.classes()).toContain("past");
+    expect(past.attributes("disabled")).toBeDefined();
+
+    await past.trigger("click");
+    expect(wrapper.find('[data-testid="sheet-date"]').exists()).toBe(false);
+  });
+
+  it("leaves today votable", async () => {
+    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+    const wrapper = await mountPage();
+
+    const today = wrapper.find('[data-testid="day-2026-09-03"]');
+    expect(today.classes()).toContain("today");
+    expect(today.classes()).not.toContain("past");
+
+    await today.trigger("click");
+    expect(wrapper.find('[data-testid="sheet-date"]').exists()).toBe(true);
   });
 });

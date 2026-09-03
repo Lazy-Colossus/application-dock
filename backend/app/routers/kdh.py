@@ -20,6 +20,7 @@ from app.schemas.kdh import (
     CreateCalendarRequest,
     Me,
     RecolourInviteeRequest,
+    SetVoteRequest,
     UpdateCalendarRequest,
 )
 from app.services import kdh_service as service
@@ -34,7 +35,11 @@ def get_me(current_user: str = Depends(get_current_user)) -> Me:
     The frontend uses this to hide admin controls rather than render them and
     let them fail; the `403` below is what actually enforces it.
     """
-    return Me(username=current_user, is_admin=service.is_admin(current_user))
+    return Me(
+        username=current_user,
+        is_admin=service.is_admin(current_user),
+        today=service.today().isoformat(),
+    )
 
 
 @router.get("/calendars", response_model=list[CalendarSummary])
@@ -135,6 +140,20 @@ def recolour_invitee(
 ) -> Calendar:
     try:
         return service.recolour_invitee(calendar_id, invitee_id, req.color)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.put("/calendars/{calendar_id}/votes", response_model=Calendar)
+def set_vote(
+    calendar_id: str,
+    req: SetVoteRequest,
+    _: str = Depends(get_current_user),
+) -> Calendar:
+    try:
+        return service.set_vote(calendar_id, req.invitee_id, req.date, req.status)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Not found") from exc
     except ValueError as exc:

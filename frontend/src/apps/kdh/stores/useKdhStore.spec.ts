@@ -212,4 +212,69 @@ describe("useKdhStore", () => {
     expect(store.calendars).toHaveLength(1);
     expect(store.error).toContain("forbidden");
   });
+
+  it("moves the cell before the server answers", async () => {
+    let resolve!: (v: unknown) => void;
+    putMock.mockReturnValueOnce(new Promise((r) => (resolve = r)));
+    const store = useKdhStore();
+    store.currentCalendar = { ...CREATED, votes: {} };
+
+    const pending = store.setVote("cal-ab12cd34", "inv-1", "2026-09-14", "yes");
+    // Not awaited yet — the grid has already changed.
+    expect(store.currentCalendar?.votes["2026-09-14"]).toEqual({
+      "inv-1": "yes",
+    });
+
+    resolve({ ...CREATED, votes: { "2026-09-14": { "inv-1": "yes" } } });
+    await pending;
+  });
+
+  it("clears a vote and prunes the emptied day", async () => {
+    putMock.mockResolvedValueOnce({ ...CREATED, votes: {} });
+    const store = useKdhStore();
+    store.currentCalendar = {
+      ...CREATED,
+      votes: { "2026-09-14": { "inv-1": "yes" } },
+    };
+
+    await store.setVote("cal-ab12cd34", "inv-1", "2026-09-14", "none");
+    expect(store.currentCalendar?.votes["2026-09-14"]).toBeUndefined();
+  });
+
+  it("leaves other people on the day when one clears their vote", async () => {
+    putMock.mockResolvedValueOnce({
+      ...CREATED,
+      votes: { "2026-09-14": { "inv-2": "yes" } },
+    });
+    const store = useKdhStore();
+    store.currentCalendar = {
+      ...CREATED,
+      votes: { "2026-09-14": { "inv-1": "yes", "inv-2": "yes" } },
+    };
+
+    await store.setVote("cal-ab12cd34", "inv-1", "2026-09-14", "none");
+    expect(store.currentCalendar?.votes["2026-09-14"]).toEqual({
+      "inv-2": "yes",
+    });
+  });
+
+  it("puts the month back exactly when the write fails", async () => {
+    putMock.mockRejectedValueOnce(
+      new Error("That day has already been and gone"),
+    );
+    const store = useKdhStore();
+    const before = { "2026-09-20": { "inv-2": "if_needed" as const } };
+    store.currentCalendar = { ...CREATED, votes: { ...before } };
+
+    await store.setVote("cal-ab12cd34", "inv-1", "2026-09-14", "yes");
+
+    expect(store.currentCalendar?.votes).toEqual(before);
+    expect(store.error).toContain("been and gone");
+  });
+
+  it("does nothing without a loaded calendar", async () => {
+    const store = useKdhStore();
+    await store.setVote("cal-ab12cd34", "inv-1", "2026-09-14", "yes");
+    expect(putMock).not.toHaveBeenCalled();
+  });
 });

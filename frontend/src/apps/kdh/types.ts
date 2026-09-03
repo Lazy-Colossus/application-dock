@@ -43,6 +43,8 @@ export interface CalendarSummary {
 export interface Me {
   username: string;
   is_admin: boolean;
+  /** The server's date. The client never decides "past" from its own clock. */
+  today: string;
 }
 
 /**

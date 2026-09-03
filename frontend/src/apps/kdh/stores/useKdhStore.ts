@@ -1,7 +1,12 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
 import { api } from "@/composables/useApi";
-import type { Calendar, CalendarSummary, Me } from "@/apps/kdh/types";
+import type {
+  Calendar,
+  CalendarSummary,
+  Me,
+  VoteStatus,
+} from "@/apps/kdh/types";
 
 export const useKdhStore = defineStore("kdh", () => {
   const calendars = ref<CalendarSummary[]>([]);
@@ -164,6 +169,46 @@ export const useKdhStore = defineStore("kdh", () => {
     }
   }
 
+  /**
+   * Set one vote, optimistically.
+   *
+   * The cell has to move under the thumb — a round trip before anything visible
+   * happens makes a month of taps feel broken. The previous vote map is kept so
+   * a failure can put it back exactly.
+   */
+  async function setVote(
+    calendarId: string,
+    inviteeId: string,
+    date: string,
+    status: VoteStatus | "none",
+  ): Promise<void> {
+    const calendar = currentCalendar.value;
+    if (!calendar) return;
+
+    const previous = calendar.votes;
+    const votes: Record<string, Record<string, VoteStatus>> = {
+      ...previous,
+      [date]: { ...(previous[date] ?? {}) },
+    };
+    if (status === "none") delete votes[date][inviteeId];
+    else votes[date][inviteeId] = status;
+    if (Object.keys(votes[date]).length === 0) delete votes[date];
+    calendar.votes = votes;
+
+    error.value = null;
+    try {
+      currentCalendar.value = await api.put<Calendar>(
+        `/kdh/calendars/${calendarId}/votes`,
+        { invitee_id: inviteeId, date, status },
+      );
+    } catch (e) {
+      // Put the month back exactly as it was; a half-applied grid is worse
+      // than no change at all.
+      if (currentCalendar.value) currentCalendar.value.votes = previous;
+      error.value = e instanceof Error ? e.message : String(e);
+    }
+  }
+
   async function createCalendar(
     name: string,
     inviteeNames: string[],
@@ -206,6 +251,7 @@ export const useKdhStore = defineStore("kdh", () => {
     addInvitee,
     removeInvitee,
     recolourInvitee,
+    setVote,
     renameCalendar,
     deleteCalendar,
   };

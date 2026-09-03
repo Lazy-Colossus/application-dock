@@ -310,3 +310,46 @@ def recolour_invitee(calendar_id: str, invitee_id: str, colour: str) -> Calendar
         invitee.color = colour
         calendar.updated_at = now_iso()
         return calendar
+
+
+# ── Votes ────────────────────────────────────────────────────────────────────
+
+
+def set_vote(calendar_id: str, invitee_id: str, day: str, status: str) -> Calendar:
+    """Set one person's answer for one day.
+
+    Narrow on purpose (AR-5): the request says only who, when and what, so the
+    write is small, the lock is held briefly, and a lost update is not
+    expressible in the API at all.
+
+    **Not admin-gated** — voting is the thing guests are here to do. The server
+    checks that the invitee is real and active and that the day is not past; the
+    claim saying *which* invitee you are was never a security boundary (AR-6).
+    """
+    try:
+        parsed = date.fromisoformat(day)
+    except ValueError as exc:
+        raise ValueError("Date must be YYYY-MM-DD") from exc
+
+    if parsed < today():
+        raise ValueError("That day has already been and gone")
+
+    with repo.calendar_transaction(calendar_id) as calendar:
+        invitee = next((i for i in calendar.invitees if i.id == invitee_id), None)
+        if invitee is None:
+            raise FileNotFoundError(invitee_id)
+        if invitee.removed_at is not None:
+            raise ValueError("That person is no longer on this calendar")
+
+        if status == "none":
+            calendar.votes.get(day, {}).pop(invitee_id, None)
+        else:
+            calendar.votes.setdefault(day, {})[invitee_id] = status
+
+        # A date nobody is on is dropped rather than kept as an empty map, so
+        # `votes` never accumulates dead keys.
+        if day in calendar.votes and not calendar.votes[day]:
+            del calendar.votes[day]
+
+        calendar.updated_at = now_iso()
+        return calendar

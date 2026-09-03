@@ -77,12 +77,22 @@ def test_every_route_rejects_an_unauthenticated_caller(
 
 def test_me_reports_an_admin() -> None:
     body = client.get("/api/kdh/me").json()
-    assert body == {"username": "test_user", "is_admin": True}
+    assert body["username"] == "test_user"
+    assert body["is_admin"] is True
 
 
 def test_me_reports_a_guest(as_guest: None) -> None:
     body = client.get("/api/kdh/me").json()
-    assert body == {"username": "players", "is_admin": False}
+    assert body["username"] == "players"
+    assert body["is_admin"] is False
+
+
+def test_me_carries_the_server_date(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The client must not decide "past" from its own clock (NFR-5)."""
+    from datetime import date
+
+    monkeypatch.setattr("app.services.kdh_service.today", lambda: date(2026, 9, 3))
+    assert client.get("/api/kdh/me").json()["today"] == "2026-09-03"
 
 
 # ── create ───────────────────────────────────────────────────────────────────
@@ -650,3 +660,145 @@ def test_summary_names_survive_a_rename_of_the_calendar() -> None:
     summary = client.get("/api/kdh/calendars").json()[0]
     assert summary["name"] == "Strahd"
     assert summary["invitee_names"] == ["Dani"]
+
+
+# ── voting ───────────────────────────────────────────────────────────────────
+
+
+@pytest.fixture()
+def fixed_today(monkeypatch: pytest.MonkeyPatch):
+    from datetime import date
+
+    monkeypatch.setattr("app.services.kdh_service.today", lambda: date(2026, 9, 3))
+    return date(2026, 9, 3)
+
+
+def vote(calendar_id: str, invitee_id: str, day: str, status: str):
+    return client.put(
+        f"/api/kdh/calendars/{calendar_id}/votes",
+        json={"invitee_id": invitee_id, "date": day, "status": status},
+    )
+
+
+def test_vote_records_free_and_if_needed(fixed_today) -> None:
+    created = create("DnD", ["Dani", "Jake"]).json()
+    dani, jake = (i["id"] for i in created["invitees"])
+
+    vote(created["id"], dani, "2026-09-14", "yes")
+    body = vote(created["id"], jake, "2026-09-14", "if_needed").json()
+
+    assert body["votes"]["2026-09-14"] == {dani: "yes", jake: "if_needed"}
+
+
+def test_vote_none_clears_and_prunes_the_date(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+
+    vote(created["id"], dani, "2026-09-14", "yes")
+    body = vote(created["id"], dani, "2026-09-14", "none").json()
+
+    assert "2026-09-14" not in body["votes"]
+
+
+def test_vote_none_leaves_other_people_on_the_day(fixed_today) -> None:
+    created = create("DnD", ["Dani", "Jake"]).json()
+    dani, jake = (i["id"] for i in created["invitees"])
+    vote(created["id"], dani, "2026-09-14", "yes")
+    vote(created["id"], jake, "2026-09-14", "yes")
+
+    body = vote(created["id"], dani, "2026-09-14", "none").json()
+    assert body["votes"]["2026-09-14"] == {jake: "yes"}
+
+
+def test_repeating_the_same_vote_changes_nothing(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+
+    first = vote(created["id"], dani, "2026-09-14", "yes").json()
+    second = vote(created["id"], dani, "2026-09-14", "yes").json()
+    assert first["votes"] == second["votes"]
+
+
+def test_clearing_a_vote_that_was_never_set_is_harmless(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+
+    assert vote(created["id"], dani, "2026-09-14", "none").status_code == 200
+
+
+def test_today_is_still_votable(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+
+    body = vote(created["id"], dani, "2026-09-03", "yes")
+    assert body.status_code == 200, "today is not past — it is still votable"
+
+
+def test_a_past_day_is_refused(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+
+    response = vote(created["id"], dani, "2026-09-02", "yes")
+    assert response.status_code == 422
+    assert client.get(f"/api/kdh/calendars/{created['id']}").json()["votes"] == {}
+
+
+@pytest.mark.parametrize("bad", ["03-09-2026", "2026-13-01", "not-a-date", ""])
+def test_a_malformed_date_is_refused(fixed_today, bad: str) -> None:
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+    assert vote(created["id"], dani, bad, "yes").status_code == 422
+
+
+def test_an_unknown_status_is_refused(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+    assert vote(created["id"], dani, "2026-09-14", "maybe").status_code == 422
+
+
+def test_an_unknown_invitee_is_404(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    assert vote(created["id"], "inv-nope", "2026-09-14", "yes").status_code == 404
+
+
+def test_a_removed_invitee_cannot_vote(fixed_today) -> None:
+    created = create("DnD", ["Dani", "Departing"]).json()
+    departing = created["invitees"][1]["id"]
+    seed_votes(created["id"], {"2026-08-10": {departing: "yes"}})
+    client.delete(f"/api/kdh/calendars/{created['id']}/invitees/{departing}")
+
+    response = vote(created["id"], departing, "2026-09-14", "yes")
+    assert response.status_code == 422
+    assert "no longer" in response.json()["detail"]
+
+
+def test_a_guest_may_vote(as_guest: None, fixed_today) -> None:
+    """Voting is the thing guests are here to do."""
+    app.dependency_overrides[get_current_user] = lambda: "test_user"
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+    app.dependency_overrides[get_current_user] = lambda: "players"
+
+    assert vote(created["id"], dani, "2026-09-14", "yes").status_code == 200
+
+
+def test_concurrent_votes_on_one_day_all_survive(fixed_today) -> None:
+    """The case the whole app was serialized for (NFR-1)."""
+    import threading
+
+    created = create("DnD", [f"P{i}" for i in range(6)]).json()
+    ids = [i["id"] for i in created["invitees"]]
+    barrier = threading.Barrier(len(ids))
+
+    def cast(invitee_id: str) -> None:
+        barrier.wait()
+        vote(created["id"], invitee_id, "2026-09-14", "yes")
+
+    threads = [threading.Thread(target=cast, args=(i,)) for i in ids]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    stored = client.get(f"/api/kdh/calendars/{created['id']}").json()
+    assert set(stored["votes"]["2026-09-14"]) == set(ids)

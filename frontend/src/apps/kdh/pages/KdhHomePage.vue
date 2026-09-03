@@ -216,6 +216,8 @@ async function submit(): Promise<void> {
 onMounted(async () => {
   await Promise.all([store.fetchMe(), store.fetchCalendars()]);
 });
+
+import "./../css/kdh.sass";
 </script>
 
 <style scoped>

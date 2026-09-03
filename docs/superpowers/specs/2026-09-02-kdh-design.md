@@ -233,7 +233,7 @@ All routes behind `Depends(get_current_user)`; admin-only routes marked **[A]**.
 
 | Method | Path | Purpose |
 |---|---|---|
-| `GET` | `/api/kdh/me` | `{ username, is_admin }` — drives which controls render (AR-2) |
+| `GET` | `/api/kdh/me` | `{ username, is_admin, today }` — which controls render (AR-2), and the server's date as the only past/future boundary (NFR-5) |
 | `GET` | `/api/kdh/calendars` | Summaries (id, name, invitee count, invitee names, next chosen date), newest first |
 | `POST` | `/api/kdh/calendars` | **[A]** Create from `{ name, invitee_names: [] }` |
 | `GET` | `/api/kdh/calendars/{id}` | The full calendar document |

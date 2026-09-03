@@ -1,5 +1,5 @@
 <template>
-  <q-page class="kdh-calendar column no-wrap q-pa-md">
+  <q-page class="kdh-app kdh-calendar column no-wrap q-pa-md">
     <!-- Header only. The month lands in Epic 3. -->
     <div class="row items-center no-wrap q-gutter-sm q-mb-md">
       <q-btn
@@ -84,6 +84,28 @@
         Back to your calendars
       </a>
     </div>
+
+    <MonthGrid
+      v-if="store.currentCalendar && serverToday"
+      :votes="store.currentCalendar.votes"
+      :chosen-dates="store.currentCalendar.chosen_dates"
+      :active-total="activeInvitees.length"
+      :server-today="serverToday"
+      @pick="onPickDay"
+    />
+
+    <q-dialog v-model="daySheetOpen">
+      <DaySheet
+        v-if="openDate && store.currentCalendar"
+        :date="openDate"
+        :invitees="store.currentCalendar.invitees"
+        :votes="store.currentCalendar.votes[openDate] ?? {}"
+        :claimed-id="claim.claimed.value?.id ?? null"
+        :past="openDate < serverToday"
+        @close="daySheetOpen = false"
+        @set="onSetStatus"
+      />
+    </q-dialog>
 
     <q-dialog v-model="nameMenuOpen">
       <q-card class="kdh-dialog-card q-pa-sm">
@@ -327,8 +349,10 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useKdhStore } from "@/apps/kdh/stores/useKdhStore";
 import { useClaimedName } from "@/apps/kdh/composables/useClaimedName";
+import MonthGrid from "@/apps/kdh/components/MonthGrid.vue";
+import DaySheet from "@/apps/kdh/components/DaySheet.vue";
 import { INVITEE_PALETTE } from "@/apps/kdh/types";
-import type { Invitee } from "@/apps/kdh/types";
+import type { Invitee, VoteStatus } from "@/apps/kdh/types";
 
 const store = useKdhStore();
 const route = useRoute();
@@ -343,6 +367,8 @@ const notFound = computed(
 
 const menuOpen = ref(false);
 const nameMenuOpen = ref(false);
+const daySheetOpen = ref(false);
+const openDate = ref<string | null>(null);
 const managingInvitees = ref(false);
 const newInviteeName = ref("");
 const removingInvitee = ref<Invitee | null>(null);
@@ -379,7 +405,9 @@ const takenColours = computed(
     ),
 );
 
-/** Story 3.2 consumes this rather than re-deciding it. */
+/** The past/future boundary, always the server's (NFR-5). */
+const serverToday = computed(() => store.me?.today ?? "");
+
 const canVote = computed(() => claim.hasClaim.value);
 
 const activeInvitees = computed(() =>
@@ -426,11 +454,24 @@ async function pickColour(colour: string): Promise<void> {
   }
 }
 
-/** The month calls this when tapped while unclaimed (Story 3.2). */
-function promptForName(): void {
-  nameMenuOpen.value = true;
+/**
+ * The first tap teaches: with no name claimed, tapping a day opens the name
+ * dropdown rather than refusing the tap.
+ */
+function onPickDay(date: string): void {
+  if (!canVote.value) {
+    nameMenuOpen.value = true;
+    return;
+  }
+  openDate.value = date;
+  daySheetOpen.value = true;
 }
-defineExpose({ canVote, promptForName });
+
+async function onSetStatus(status: VoteStatus | "none"): Promise<void> {
+  const mine = claim.claimed.value;
+  if (!mine || !openDate.value) return;
+  await store.setVote(calendarId.value, mine.id, openDate.value, status);
+}
 
 function openInvitees(): void {
   newInviteeName.value = "";
@@ -507,6 +548,8 @@ onMounted(async () => {
   // After the roster is known, so a stale claim can be resolved immediately.
   claim.restore();
 });
+
+import "./../css/kdh.sass";
 </script>
 
 <style scoped>

@@ -1,0 +1,33 @@
+// KDH "Eggplant Wash" theme — SCOPED to the KDH app only.
+//
+// Applied via the `.kdh-app` root class so the shell landing page and every
+// other app keep the global Carbon theme untouched. Same seam Hotaru uses.
+//
+// One idea carries colour: how many people can come. The wash is ORDERED and
+// is the only purple in the interface; invitee colours are CATEGORICAL and sit
+// outside the purple family, so a person is never mistaken for a coverage
+// level. Token values from ux-designs/ux-kdh-2026-09-03/DESIGN.md.
+
+.kdh-app
+  // Field
+  --kdh-field: #15111C
+  --kdh-field-raise: #1F1829
+  --kdh-field-line: #332942
+  // Ink
+  --kdh-ink-hi: #EBE4F4
+  --kdh-ink-mid: #A79BBC
+  --kdh-ink-lo: #7B6F91
+  // Ink for the top two wash steps, where the field is too light for pale text
+  --kdh-ink-on-light: #1A1024
+  // The coverage wash, low to high
+  --kdh-wash-0: #221B2E
+  --kdh-wash-1: #31234A
+  --kdh-wash-2: #3A2A56
+  --kdh-wash-3: #4E3770
+  --kdh-wash-4: #6C4C93
+  --kdh-wash-5: #9773BC
+  --kdh-wash-6: #C9AEE6
+
+  background: var(--kdh-field)
+  color: var(--kdh-ink-hi)
+  min-height: 100%

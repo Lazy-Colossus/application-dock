@@ -62,6 +62,10 @@ class CalendarSummary(BaseModel):
 class Me(BaseModel):
     username: str
     is_admin: bool
+    # The client must never decide "past" from its own clock (NFR-5), and this
+    # is the request every page already makes — so the boundary rides along
+    # rather than costing a second round trip.
+    today: str
 
 
 class CreateCalendarRequest(BaseModel):
@@ -79,3 +83,14 @@ class AddInviteeRequest(BaseModel):
 
 class RecolourInviteeRequest(BaseModel):
     color: str
+
+
+VOTE_STATUSES = ("yes", "if_needed", "none")
+
+
+class SetVoteRequest(BaseModel):
+    invitee_id: str
+    date: str
+    # "none" is not a stored status — it clears the vote. Absence is how "not
+    # available" is represented (AR-4).
+    status: Literal["yes", "if_needed", "none"]
