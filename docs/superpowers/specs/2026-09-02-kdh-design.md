@@ -309,7 +309,8 @@ reverts on failure, with the message under the month header. No save button anyw
 **Reading the month.** The wash is the primary signal (how many could come), the count is the
 confirmation, and the names are one tap away. A day at full coverage that leans on an *if needed*
 takes the same wash step but carries a hairline, so an admin can see what they are about to ask of
-people. A chosen day carries a diamond that survives every step of the ramp and the past dimming.
+people. A chosen day is ringed in gold and carries a crown above its date, both of which survive
+every step of the ramp and the past dimming.
 
 **Navigation is arrows only.** No swipe: on a 7×5 grid of tap targets, a swipe is too easily
 triggered while aiming for a Tuesday.
@@ -334,7 +335,7 @@ person*, so they sit deliberately outside the purple family — rose, sky, mint,
 or a person's colour would read as a coverage level.
 
 **Two marks are shapes, never colours**, so they survive both the ramp and the past-day dimming: a
-diamond for a chosen day, and a hairline inset for provisional full coverage. Ink flips from pale
+a gold ring and a crown for a chosen day, and a hairline inset for provisional full coverage. Ink flips from pale
 to dark at the top two wash steps, where the field becomes too light for pale text.
 
 No shadows (they read as mud on a near-black ground), no ambient motion, no second saturated

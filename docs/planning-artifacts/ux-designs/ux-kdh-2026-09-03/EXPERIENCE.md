@@ -61,7 +61,14 @@ Plain, short, never coy. The app never nags and never celebrates.
 
 ## Component Patterns
 
-**Day cell.** Tap always opens the day sheet — a past day is worth reading, and an
+**Day cell.** Hovering the coverage count shows a floating list of who is on that
+day, in roster order, with if-needed people marked — the day sheet's content
+without the tap. It is **hover-only**, so it does not exist on a phone; that is
+acceptable because the sheet already carries the same list one tap away, and a
+long-press equivalent would fight the tap that opens the sheet. A touch affordance
+is an open question, not an oversight.
+
+Tap always opens the day sheet — a past day is worth reading, and an
 admin can mark any day chosen without having claimed a name. What a past day loses
 is the ability to *answer*, not to be opened; it is dimmed, and its sheet says so.
 
@@ -146,12 +153,15 @@ Dani is an admin with her own dock account.
 1. She opens KDH from the dock and picks the DnD calendar.
 2. Two days are at full coverage. One carries a lilac hairline — provisional.
 3. She taps it: Kit is only *if needed*. She taps the other.
-4. Everyone is freely available. She marks it chosen; a diamond appears.
+4. Everyone is freely available. She marks it chosen; a crown appears above the date.
 5. **The climax beat:** she does not message anyone. The next person to open the
-   calendar sees the diamond and knows.
+   calendar sees the crown and knows.
 
 ## Open Questions
 
+- How should the hover list of voters be reached on a touch screen, where there is
+  no hover? Nothing is lost today — the day sheet shows the same list on tap — so
+  this is a convenience to add, not a gap to close.
 - Is the day sheet a bottom sheet or a full screen? Sheet assumed.
 - What does the month header hold for an admin — an overflow menu, or controls
   inline? Menu assumed.

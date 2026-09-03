@@ -678,10 +678,7 @@ describe("CalendarPage", () => {
       chosen: true,
     });
     expect(
-      wrapper
-        .find('[data-testid="day-2026-09-14"]')
-        .find(".chosen-mark")
-        .exists(),
+      wrapper.find('[data-testid="day-2026-09-14"]').find(".crown").exists(),
     ).toBe(true);
   });
 
@@ -694,10 +691,7 @@ describe("CalendarPage", () => {
     const wrapper = await mountPage();
 
     expect(
-      wrapper
-        .find('[data-testid="day-2026-09-14"]')
-        .find(".chosen-mark")
-        .exists(),
+      wrapper.find('[data-testid="day-2026-09-14"]').find(".crown").exists(),
     ).toBe(true);
 
     await wrapper.find('[data-testid="day-2026-09-14"]').trigger("click");

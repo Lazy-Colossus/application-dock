@@ -177,8 +177,10 @@ only signal:
   glow** on the dark steps, dropping to `gold-deep` with no text glow on
   `wash-5`–`wash-6`, where a bright halo on pale lilac is mud — there the date keeps
   the same bright gold and takes a **dark halo** instead, so the mark looks the same
-  at every step. A 5px gold diamond sits top-right (`gold-deep` on the pale steps,
-  where a bright shape would vanish). The chosen cell is lifted a layer, or later grid siblings paint
+  at every step. A small **gold crown** sits directly above the date — filled gold
+  with a dark stroke so one crown reads at every step, rather than a second darker
+  one for the pale end. **Its slot is reserved in every cell**, crowned or not:
+  that is what keeps the date on one line right across the month. The chosen cell is lifted a layer, or later grid siblings paint
   over its glow. When a day is both chosen and provisional the two compose — the
   provisional hairline inset, the chosen ring outside it.
 - **Provisional coverage** — a 1px inset hairline in `wash-6` around a cell that
@@ -191,7 +193,7 @@ direction: the wash says *how many can come*, an invitee colour says *who*, and
 gold says *this is the one*. It is the dock's family of gold used for a meaning the
 dock does not have — so the "never use the dock's gold" rule below is narrowed to
 mean *never as an interactive accent*, which is what it was protecting against.
-The diamond stays, so the marking never depends on colour alone.
+The crown stays, so the marking never depends on colour alone.
 
 **Day cell.** Date, then coverage count beneath it, on a `wash-*` background.
 Nothing else fits and nothing else is allowed. Today carries a 1px `ink-mid`
@@ -230,7 +232,7 @@ person's colour, which has to keep meaning *that person*.
 - **Do** accept one contrast exception, knowingly: the chosen day's date is bright
   `gold` at every step, and on `wash-5`–`wash-6` that does not reach 4.5:1 on
   colour alone. A dark halo carries it, and the marking never rests on it — the
-  cell's gold ring, the diamond and the accessible name each say "chosen" without
+  cell's gold ring, the crown and the accessible name each say "chosen" without
   the text. **Don't** extend that licence to anything else.
 - **Do** mark chosen and provisional days with shape. **Don't** encode either in
   colour; both must survive the ramp and the dimming.

@@ -2,13 +2,31 @@ import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 
 import DayCell from "./DayCell.vue";
+import type { Invitee } from "@/apps/kdh/types";
+
+const ROSTER: Invitee[] = [
+  { id: "a", name: "Dani", color: "#E9A6A0", order: 0, removed_at: null },
+  { id: "b", name: "Jake", color: "#A9C8E8", order: 1, removed_at: null },
+  { id: "c", name: "Tom", color: "#B9DCC2", order: 2, removed_at: null },
+  { id: "d", name: "Ash", color: "#EBD3A0", order: 3, removed_at: null },
+  { id: "e", name: "Kit", color: "#D3B2E8", order: 4, removed_at: null },
+  { id: "f", name: "Rae", color: "#A8D8D8", order: 5, removed_at: null },
+];
+
+const STUBS = {
+  // Rendered inline so its contents can be inspected; in the app Quasar
+  // teleports this to the body.
+  "q-tooltip": { template: '<div class="tip"><slot /></div>' },
+};
 
 function mountCell(props: Partial<Record<string, unknown>> = {}) {
   return mount(DayCell, {
+    global: { stubs: STUBS },
     props: {
       date: "2026-09-14",
       votes: {},
       activeTotal: 6,
+      invitees: ROSTER,
       chosen: false,
       past: false,
       today: false,
@@ -21,7 +39,7 @@ describe("DayCell", () => {
   it("shows the day of the month and the coverage count", () => {
     const wrapper = mountCell({ votes: { a: "yes", b: "if_needed" } });
     expect(wrapper.find(".d").text()).toBe("14");
-    expect(wrapper.find(".n").text()).toBe("2");
+    expect(wrapper.find('[data-testid="count"]').text()).toBe("2");
   });
 
   it("climbs the wash as more people join", () => {
@@ -62,13 +80,20 @@ describe("DayCell", () => {
     expect(wrapper.classes()).not.toContain("provisional");
   });
 
+  it("reserves the crown slot in every cell, so the dates stay aligned", () => {
+    // The slot is what keeps a crowned day's number on the same line as its
+    // neighbours; without it the crown would push the date down.
+    expect(mountCell().find(".crown-slot").exists()).toBe(true);
+    expect(mountCell({ chosen: true }).find(".crown-slot").exists()).toBe(true);
+  });
+
   it("shows the chosen mark as a shape, at any wash step", () => {
     for (const votes of [{}, { a: "yes" }, { a: "yes", b: "yes", c: "yes" }]) {
-      expect(
-        mountCell({ chosen: true, votes }).find(".chosen-mark").exists(),
-      ).toBe(true);
+      expect(mountCell({ chosen: true, votes }).find(".crown").exists()).toBe(
+        true,
+      );
     }
-    expect(mountCell().find(".chosen-mark").exists()).toBe(false);
+    expect(mountCell().find(".crown").exists()).toBe(false);
   });
 
   it("wears both marks at once when the chosen day is provisional", () => {
@@ -87,7 +112,7 @@ describe("DayCell", () => {
     });
     expect(wrapper.classes()).toContain("chosen");
     expect(wrapper.classes()).toContain("provisional");
-    expect(wrapper.find(".chosen-mark").exists()).toBe(true);
+    expect(wrapper.find(".crown").exists()).toBe(true);
   });
 
   it("marks the cell itself as chosen, so the date can be styled", () => {
@@ -110,7 +135,7 @@ describe("DayCell", () => {
 
   it("keeps a past day's votes and its wash", () => {
     const wrapper = mountCell({ past: true, votes: { a: "yes", b: "yes" } });
-    expect(wrapper.find(".n").text()).toBe("2");
+    expect(wrapper.find('[data-testid="count"]').text()).toBe("2");
     expect(wrapper.classes()).toContain("w2");
   });
 
@@ -146,5 +171,50 @@ describe("DayCell", () => {
         },
       }).attributes("aria-label"),
     ).toBe("14, everyone, one only if needed");
+  });
+
+  it("lists who voted, in roster order, on hover over the count", () => {
+    const wrapper = mountCell({ votes: { c: "yes", a: "yes" } });
+    const tip = wrapper.find(".tip");
+
+    expect(tip.exists()).toBe(true);
+    const names = wrapper.findAll(".kdh-voter").map((r) => r.text());
+    expect(names[0]).toContain("Dani");
+    expect(names[1]).toContain("Tom");
+    expect(tip.text()).not.toContain("Jake");
+  });
+
+  it("marks an if-needed voter in the hover list without recolouring them", () => {
+    const wrapper = mountCell({ votes: { a: "yes", b: "if_needed" } });
+    const rows = wrapper.findAll(".kdh-voter");
+
+    expect(rows[1].text()).toContain("if needed");
+    expect(rows[1].classes()).toContain("tentative");
+    expect(rows[1].find(".kdh-voter-dot").attributes("style")).toContain(
+      "#A9C8E8",
+    );
+    expect(rows[0].classes()).not.toContain("tentative");
+  });
+
+  it("shows no hover list on a day nobody picked", () => {
+    expect(mountCell().find(".tip").exists()).toBe(false);
+  });
+
+  it("still lists someone since removed, on a past day they answered", () => {
+    const wrapper = mountCell({
+      past: true,
+      votes: { g: "yes" },
+      invitees: [
+        ...ROSTER,
+        {
+          id: "g",
+          name: "Departed",
+          color: "#C9B8A0",
+          order: 6,
+          removed_at: "2026-08-20T18:00:00Z",
+        },
+      ],
+    });
+    expect(wrapper.find(".tip").text()).toContain("Departed");
   });
 });

@@ -90,6 +90,7 @@
       :votes="store.currentCalendar.votes"
       :chosen-dates="store.currentCalendar.chosen_dates"
       :active-total="activeInvitees.length"
+      :invitees="store.currentCalendar.invitees"
       :server-today="serverToday"
       @pick="onPickDay"
     />

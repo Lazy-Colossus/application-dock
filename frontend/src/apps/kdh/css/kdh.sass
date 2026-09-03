@@ -57,6 +57,30 @@
   border-radius: 12px
   box-shadow: none
 
+// --- The hover list of who voted -------------------------------------------
+.kdh-voters
+  padding: 8px 10px
+  font-size: 12px
+
+  .kdh-voter
+    display: flex
+    align-items: center
+    gap: 6px
+    padding: 2px 0
+    white-space: nowrap
+
+  // Set apart by weight and style, never by tinting their colour — the same
+  // rule the day sheet follows, since the colour has to keep meaning "them".
+  .tentative
+    font-style: italic
+    opacity: 0.72
+
+  .kdh-voter-dot
+    width: 8px
+    height: 8px
+    border-radius: 50%
+    flex: none
+
 // --- Type ------------------------------------------------------------------
 .kdh-app,
 .kdh-panel

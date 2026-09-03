@@ -876,9 +876,9 @@ free of duplicates, `updated_at` is refreshed, and votes are untouched (FR-17).
 
 **Given** a chosen day
 **When** it renders
-**Then** its marker is a **shape, not a colour** — a 5px diamond at the cell's top-right, flipping
-to `ink-on-light` on the top two wash steps — so it stays legible at every step of the ramp and
-through past-day dimming (FR-17, NFR-6).
+**Then** its marking keeps a **shape as well as a colour** — a gold ring around the cell and a gold
+crown above the date, whose slot is reserved in every cell so the dates stay aligned — so it stays
+legible at every step of the ramp and through past-day dimming (FR-17, NFR-6).
 
 **Given** a **past** day
 **When** an admin marks or unmarks it

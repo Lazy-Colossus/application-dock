@@ -50,6 +50,7 @@
         :date="date"
         :votes="votes[date] ?? {}"
         :active-total="activeTotal"
+        :invitees="invitees"
         :chosen="chosenDates.includes(date)"
         :past="date < serverToday"
         :today="date === serverToday"
@@ -62,12 +63,13 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import DayCell from "./DayCell.vue";
-import type { VoteStatus } from "@/apps/kdh/types";
+import type { Invitee, VoteStatus } from "@/apps/kdh/types";
 
 const props = defineProps<{
   votes: Record<string, Record<string, VoteStatus>>;
   chosenDates: string[];
   activeTotal: number;
+  invitees: Invitee[];
   /** YYYY-MM-DD from the server — never the device's clock (NFR-5). */
   serverToday: string;
 }>();

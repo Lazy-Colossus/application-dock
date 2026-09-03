@@ -9,16 +9,56 @@
     :data-testid="`day-${date}`"
     @click="$emit('pick', date)"
   >
+    <!-- Reserved in EVERY cell, so the date sits on the same line right across
+         the month whether or not a day is crowned. -->
+    <span class="crown-slot" aria-hidden="true">
+      <svg
+        v-if="chosen"
+        class="crown"
+        viewBox="0 0 24 24"
+        width="11"
+        height="11"
+      >
+        <path d="M5 19h14l1.6-10-5.3 3.7L12 4 8.7 12.7 3.4 9z" />
+      </svg>
+    </span>
     <span class="d">{{ dayOfMonth }}</span>
-    <span class="n">{{ coverage }}</span>
-    <span v-if="chosen" class="chosen-mark" aria-hidden="true" />
+    <span class="n">
+      <span data-testid="count">{{ coverage }}</span>
+      <!-- Hover only, for now: a phone has no hover, and the day sheet already
+           carries this list one tap away. A touch equivalent is deliberately
+           left open rather than faked with a long-press that would fight the
+           tap that opens the sheet. -->
+      <q-tooltip
+        v-if="voters.length > 0"
+        class="kdh-panel kdh-voters"
+        anchor="top middle"
+        self="bottom middle"
+        :offset="[0, 6]"
+        :delay="120"
+      >
+        <div
+          v-for="voter in voters"
+          :key="voter.invitee.id"
+          class="kdh-voter"
+          :class="{ tentative: voter.status === 'if_needed' }"
+        >
+          <span
+            class="kdh-voter-dot"
+            :style="{ background: voter.invitee.color }"
+          />
+          {{ voter.invitee.name
+          }}<span v-if="voter.status === 'if_needed'"> — if needed</span>
+        </div>
+      </q-tooltip>
+    </span>
   </button>
 </template>
 
 <script setup lang="ts">
 import { computed } from "vue";
 import { washFor } from "@/apps/kdh/composables/useWashScale";
-import type { VoteStatus } from "@/apps/kdh/types";
+import type { Invitee, VoteStatus } from "@/apps/kdh/types";
 
 const props = defineProps<{
   /** YYYY-MM-DD. */
@@ -26,6 +66,8 @@ const props = defineProps<{
   /** invitee id -> status, for this date only. */
   votes: Record<string, VoteStatus>;
   activeTotal: number;
+  /** The full roster, tombstones included — a past day may hold their vote. */
+  invitees: Invitee[];
   chosen: boolean;
   past: boolean;
   today: boolean;
@@ -42,6 +84,14 @@ const ifNeeded = computed(
 const coverage = computed(() => statuses.value.length);
 const wash = computed(() =>
   washFor(free.value, ifNeeded.value, props.activeTotal),
+);
+
+/** Who is on this day, in roster order — the same list the day sheet shows. */
+const voters = computed(() =>
+  [...props.invitees]
+    .filter((i) => props.votes[i.id] !== undefined)
+    .sort((a, b) => a.order - b.order)
+    .map((invitee) => ({ invitee, status: props.votes[invitee.id] })),
 );
 
 /**
@@ -94,6 +144,7 @@ const label = computed(() => {
   font-variant-numeric: tabular-nums;
 }
 .n {
+  position: relative;
   font-size: 11.5px;
   line-height: 1;
   color: #8a7da2;
@@ -187,17 +238,28 @@ const label = computed(() => {
     0 0 0 1.5px var(--kdh-gold),
     0 0 12px var(--kdh-gold-glow);
 }
-.chosen-mark {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 5px;
-  height: 5px;
-  background: var(--kdh-gold);
-  transform: rotate(45deg);
+/* The slot has a fixed height in every cell, crowned or not — that is what keeps
+   the date on one line across the whole month. */
+.crown-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 11px;
+  line-height: 0;
 }
-.w5 .chosen-mark,
-.w6 .chosen-mark {
-  background: var(--kdh-gold-deep);
+/* Filled gold with a dark stroke, so one crown reads at every step of the ramp —
+   the same trick the gold date uses, rather than a second darker crown for the
+   pale steps. It is also the signal that does not depend on colour (NFR-6). */
+.crown {
+  fill: var(--kdh-gold);
+  stroke: rgba(26, 16, 36, 0.85);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+  filter: drop-shadow(0 0 4px var(--kdh-gold-glow));
+}
+.w5 .crown,
+.w6 .crown {
+  filter: none;
 }
 </style>

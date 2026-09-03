@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 
 import MonthGrid from "./MonthGrid.vue";
+import type { Invitee } from "@/apps/kdh/types";
 
 const STUBS = {
   "q-btn": {
@@ -11,12 +12,22 @@ const STUBS = {
   },
 };
 
+const ROSTER: Invitee[] = [
+  { id: "a", name: "Dani", color: "#E9A6A0", order: 0, removed_at: null },
+  { id: "b", name: "Jake", color: "#A9C8E8", order: 1, removed_at: null },
+  { id: "c", name: "Tom", color: "#B9DCC2", order: 2, removed_at: null },
+  { id: "d", name: "Ash", color: "#EBD3A0", order: 3, removed_at: null },
+  { id: "e", name: "Kit", color: "#D3B2E8", order: 4, removed_at: null },
+  { id: "f", name: "Rae", color: "#A8D8D8", order: 5, removed_at: null },
+];
+
 function mountGrid(props: Partial<Record<string, unknown>> = {}) {
   return mount(MonthGrid, {
     props: {
       votes: {},
       chosenDates: [],
       activeTotal: 6,
+      invitees: ROSTER,
       serverToday: "2026-09-03",
       ...props,
     },
