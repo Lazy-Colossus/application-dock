@@ -32,6 +32,9 @@ colors:
   wash-6: '#C9AEE6'         # full coverage
   # --- Semantic (separate from the wash) ---
   danger: '#CF6679'
+  # The two answers, used ONLY on the control where you give yours.
+  yes: '#6FD08C'
+  maybe: '#F2C94C'
   # The decided day — a third colour dimension (see Components → Chosen day).
   gold: '#FFD54A'
   gold-deep: '#5F4200'   # legible against the pale top of the ramp
@@ -222,10 +225,17 @@ tokens are declared on both `.kdh-app` and `.kdh-panel`, because Quasar teleport
 dialogs to the body, outside the page; without the second root a dialog silently
 falls back to the shell's theme mid-flow.
 
-**Day sheet.** Opens on tapping a cell. The date, the full roster for that date
-with each person's colour, and the three-state control. *If needed* rows are
-italic and slightly recessed — set apart by weight and style, never by tinting the
-person's colour, which has to keep meaning *that person*.
+**Day sheet.** Opens on tapping a cell. A **proportional bar** first — free,
+if-needed hatched, and the remainder — so the day's shape reads before any name.
+Then the people who answered, in roster order, each with a **status glyph**: filled
+for free, half-filled for if needed, with the row italic as well so the distinction
+never rests on one signal. Finally the three-state control, carrying the **same
+glyphs** as the rows so list and control speak one language — and there alone the
+glyphs are `yes` green and `maybe` yellow, everyday language on the one element
+about to be pressed.
+
+**Silence is a no.** Anyone who has not answered is not listed; they are the bar's
+remainder. The sheet is who is coming, not a register of everyone.
 
 ## Do's and Don'ts
 

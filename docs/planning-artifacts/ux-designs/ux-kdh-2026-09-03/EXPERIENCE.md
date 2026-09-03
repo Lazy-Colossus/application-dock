@@ -85,8 +85,11 @@ default once claimed. Selecting a row claims that
 person immediately and closes. The claim is stored per calendar in `localStorage`;
 a stored claim naming a since-removed invitee is discarded silently on load.
 
-**Day sheet.** The three-state control is **explicit** here — three labelled
-options — because this is where a person deliberately answers. On the grid itself
+**Day sheet.** Opens with the day's shape as a proportional bar, then the people who
+answered — filled glyph for free, half-filled for if needed, and nobody else, since
+an unanswered day is treated as a no. The three-state control is **explicit** here —
+three labelled options carrying the same glyphs as the rows — because this is where
+a person deliberately answers. On the grid itself
 a tap **cycles** `none → free → if needed → none` for running down a month
 quickly. Both write the same vote.
 

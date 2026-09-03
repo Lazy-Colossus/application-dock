@@ -67,7 +67,12 @@ describe("DaySheet", () => {
     const tentative = wrapper.find('[data-testid="sheet-row-inv-2"]');
     expect(tentative.classes()).toContain("tentative");
     expect(tentative.text()).toContain("Jake");
-    expect(tentative.text()).toContain("if needed");
+    expect(tentative.text()).toContain("IF NEEDED");
+    // Shape as well as style: half-filled, against filled for a free person.
+    expect(tentative.find(".g").classes()).toContain("maybe");
+    expect(
+      wrapper.find('[data-testid="sheet-row-inv-1"]').find(".g").classes(),
+    ).toContain("free");
 
     expect(
       wrapper.find('[data-testid="sheet-row-inv-1"]').classes(),
@@ -98,7 +103,10 @@ describe("DaySheet", () => {
   it("marks which row is you", () => {
     const wrapper = mountSheet({ votes: { "inv-1": "yes" } });
     expect(wrapper.find('[data-testid="sheet-row-inv-1"]').text()).toContain(
-      "you",
+      "YOU",
+    );
+    expect(wrapper.find('[data-testid="sheet-row-inv-1"]').classes()).toContain(
+      "mine",
     );
   });
 
@@ -108,7 +116,10 @@ describe("DaySheet", () => {
     expect(wrapper.find('[data-testid="set-yes"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="set-none"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="set-if_needed"]').classes()).toContain(
-      "kdh-chosen-state",
+      "on",
+    );
+    expect(wrapper.find('[data-testid="set-yes"]').classes()).not.toContain(
+      "on",
     );
   });
 
@@ -170,5 +181,56 @@ describe("DaySheet", () => {
     expect(wrapper.find('[data-testid="set-yes"]').exists()).toBe(false);
     await wrapper.find('[data-testid="toggle-chosen"]').trigger("click");
     expect(wrapper.emitted("chosen")?.[0]).toEqual([true]);
+  });
+
+  it("shows the day's shape before any name", () => {
+    const wrapper = mountSheet({
+      votes: { "inv-1": "yes", "inv-2": "yes", "inv-3": "if_needed" },
+    });
+
+    const bar = wrapper.find('[data-testid="sheet-bar"]');
+    expect(bar.exists()).toBe(true);
+    // Two free, one if needed, and nobody left over on a roster of three.
+    // jsdom expands the shorthand, so match the grow factor it actually sets.
+    const segments = bar.findAll("i").map((i) => i.attributes("style"));
+    expect(segments[0]).toContain("flex-grow: 2");
+    expect(segments[1]).toContain("flex-grow: 1");
+    expect(segments[2]).toContain("flex-grow: 0");
+
+    expect(wrapper.find(".bar-key").text()).toContain("2 free");
+    expect(wrapper.find(".bar-key").text()).toContain("1 if needed");
+  });
+
+  it("counts everyone who did not answer as not coming", () => {
+    // Silence is a no: they are in the bar's remainder, not in the roster.
+    const wrapper = mountSheet({ votes: { "inv-1": "yes" } });
+
+    expect(wrapper.find(".bar-key").text()).toContain("2 not coming");
+    expect(wrapper.findAll('[data-testid^="sheet-row-"]')).toHaveLength(1);
+    expect(wrapper.find('[data-testid="sheet-roster"]').text()).not.toContain(
+      "Jake",
+    );
+  });
+
+  it("heads the roster with how many are coming", () => {
+    const wrapper = mountSheet({
+      votes: { "inv-1": "yes", "inv-2": "if_needed" },
+    });
+    expect(wrapper.find(".grp-h").text()).toContain("Coming");
+    expect(wrapper.find(".grp-h .cnt").text()).toBe("2");
+  });
+
+  it("gives the answer buttons the same glyphs as the rows", () => {
+    const wrapper = mountSheet({ votes: { "inv-1": "yes" } });
+
+    expect(
+      wrapper.find('[data-testid="set-yes"]').find(".g").classes(),
+    ).toContain("free");
+    expect(
+      wrapper.find('[data-testid="set-if_needed"]').find(".g").classes(),
+    ).toContain("maybe");
+    expect(
+      wrapper.find('[data-testid="set-none"]').find(".g").classes(),
+    ).toContain("no");
   });
 });

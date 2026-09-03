@@ -1,0 +1,249 @@
+<title>The KDH Day Sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Archivo:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --page:#FBFAFC;--ink:#1B181F;--ink-2:#585264;--ink-3:#8B8496;--rule:#E2DEE8;--card:#FFFFFF;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --page:#131118;--ink:#ECE8F2;--ink-2:#A29BB0;--ink-3:#7A7288;--rule:#2B2734;--card:#1A1722;}}
+  :root[data-theme="dark"]{
+    --page:#131118;--ink:#ECE8F2;--ink-2:#A29BB0;--ink-3:#7A7288;--rule:#2B2734;--card:#1A1722;}
+  :root{
+    --field:#15111C;--raise:#1F1829;--line:#332942;
+    --ink-hi:#EBE4F4;--ink-mid:#A79BBC;--ink-lo:#7B6F91;
+    --w3:#4E3770;--w5:#9773BC;--w6:#C9AEE6;--gold:#FFD54A;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--page);color:var(--ink);font-family:Archivo,system-ui,sans-serif;line-height:1.5}
+  .wrap{max-width:1180px;margin:0 auto;padding:48px 24px 72px;display:flex;flex-direction:column;gap:36px}
+  header{display:flex;flex-direction:column;gap:12px;max-width:68ch}
+  .eyebrow{font-family:"Spline Sans Mono",monospace;font-size:11px;letter-spacing:.18em;
+           text-transform:uppercase;color:var(--ink-3)}
+  h1{font-family:Newsreader,Georgia,serif;font-weight:400;font-size:clamp(30px,4.4vw,42px);
+     line-height:1.1;margin:0;letter-spacing:-.01em;text-wrap:balance}
+  h2{font-family:Newsreader,Georgia,serif;font-weight:400;font-size:23px;margin:0;line-height:1.2}
+  p{margin:0;color:var(--ink-2);font-size:15px}
+  p b,li b{color:var(--ink);font-weight:600}
+  .diag{background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--w5);
+        border-radius:0 12px 12px 0;padding:18px 20px;display:flex;flex-direction:column;gap:10px;max-width:76ch}
+
+  .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:26px;align-items:start}
+  .opt{background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:22px 20px;
+       display:flex;flex-direction:column;gap:14px}
+  .opt-name{font-family:Newsreader,Georgia,serif;font-size:22px;line-height:1.15}
+  .opt-sub{font-size:13.5px;color:var(--ink-2)}
+
+  /* ---------- the sheet ---------- */
+  .sheet{background:var(--raise);border:1px solid var(--line);border-radius:12px;
+         padding:16px 15px;color:var(--ink-hi);display:flex;flex-direction:column;gap:13px}
+  .s-head{display:flex;justify-content:space-between;align-items:baseline}
+  .s-date{font-size:16px;font-weight:600}
+  .s-x{color:var(--ink-lo)}
+  .s-sub{font-size:12px;color:var(--ink-mid);font-family:"Spline Sans Mono",monospace}
+
+  .grp{display:flex;flex-direction:column;gap:2px}
+  .grp-h{display:flex;align-items:center;gap:7px;font-size:10.5px;letter-spacing:.13em;
+         text-transform:uppercase;color:var(--ink-lo);margin:5px 0 3px;
+         font-family:"Spline Sans Mono",monospace}
+  .grp-h .cnt{margin-left:auto;color:var(--ink-mid)}
+  .row2{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:7px;font-size:14px}
+  .row2 .you{margin-left:auto;font-size:10.5px;letter-spacing:.1em;color:var(--ink-lo);
+             font-family:"Spline Sans Mono",monospace}
+  .mine{background:rgba(201,174,230,.10);box-shadow:inset 0 0 0 1px rgba(201,174,230,.28)}
+
+  /* status glyphs — shape first, so free / if needed / silent differ in kind */
+  .g{width:13px;height:13px;border-radius:50%;flex:none;position:relative}
+  .g.free{background:var(--w6)}
+  .g.maybe{background:linear-gradient(90deg,var(--w6) 50%,transparent 50%);
+           box-shadow:inset 0 0 0 1.5px var(--w6)}
+  .g.silent{box-shadow:inset 0 0 0 1.5px var(--ink-lo)}
+  .g.no{box-shadow:inset 0 0 0 1.5px var(--ink-lo);opacity:.55}
+  .g.no::after{content:"";position:absolute;inset:5px 1px;border-top:1.5px solid var(--ink-lo)}
+
+  .dim{color:var(--ink-mid)}
+  .tent{font-style:italic}
+
+  /* the answer control */
+  .ans{display:flex;gap:6px;margin-top:3px}
+  .ans button{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
+              padding:9px 6px;border-radius:8px;font:inherit;font-size:12.5px;cursor:pointer;
+              background:transparent;color:var(--ink-mid);border:1px solid var(--line)}
+  .ans button.on{background:var(--w3);color:var(--ink-hi);border-color:transparent;font-weight:600}
+  .ans-label{font-size:11px;color:var(--ink-lo);font-family:"Spline Sans Mono",monospace;
+             letter-spacing:.1em;text-transform:uppercase}
+
+  /* C: the bar */
+  .bar{display:flex;height:9px;border-radius:5px;overflow:hidden;background:rgba(167,155,188,.16)}
+  .bar i{display:block}
+  .bar .b-free{background:var(--w6)}
+  .bar .b-maybe{background:repeating-linear-gradient(135deg,var(--w6) 0 3px,rgba(201,174,230,.35) 3px 6px)}
+  .bar-key{display:flex;gap:12px;font-size:11px;color:var(--ink-mid);
+           font-family:"Spline Sans Mono",monospace}
+  .bar-key span{display:flex;align-items:center;gap:5px}
+  .swatch{width:10px;height:10px;border-radius:3px;flex:none}
+
+  .notes{display:flex;flex-direction:column;gap:7px;font-size:13px;color:var(--ink-2);
+         border-top:1px solid var(--rule);padding-top:13px}
+  .notes div{display:flex;gap:8px}
+  .mk{font-family:"Spline Sans Mono",monospace;flex:none;width:12px;color:var(--ink-3)}
+  footer{border-top:1px solid var(--rule);padding-top:22px;display:flex;flex-direction:column;gap:12px;max-width:78ch}
+  ul{margin:0;padding-left:20px;color:var(--ink-2);font-size:14px;display:flex;flex-direction:column;gap:7px}
+  code{font-family:"Spline Sans Mono",monospace;font-size:.9em;color:var(--ink)}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">KDH · Sally · the day sheet · 2026-09-03</div>
+    <h1>Three day sheets, and the question the current one cannot answer</h1>
+    <p>Monday 14 September on <b>Ta'ilar Ana</b>: Jakub, Lenka and Ada are free, Erika only if needed, Dusan is free, and <b>Dani has not answered at all</b>. Every version below shows that last fact. The one in the app today does not.</p>
+  </header>
+
+  <div class="diag">
+    <h2>What is actually wrong with it</h2>
+    <p><b>The sheet lists only the people who answered.</b> Open the 14th today and you see five names — and you cannot tell whether the sixth said no or simply never looked. "Who still hasn't voted?" is the question a group asks constantly while trying to settle a date, and this is the surface that should answer it.</p>
+    <p><b>Free and if-needed differ only in italics and a trailing caveat.</b> That was carrying weight when each person also had a colour; with the colours gone it is the only distinction left, and it is the faintest one available. It should differ in <b>kind</b> — a shape, a group, a position — not in slant.</p>
+  </div>
+
+  <div class="grid3">
+
+    <!-- ============ A ============ -->
+    <section class="opt">
+      <div>
+        <div class="opt-name">Sections</div>
+        <div class="opt-sub">Three headed groups with counts. The distinction is structural, not typographic — and the people who never answered finally have somewhere to appear.</div>
+      </div>
+
+      <div class="sheet">
+        <div class="s-head"><span class="s-date">Monday 14 September</span><span class="s-x">✕</span></div>
+
+        <div class="grp">
+          <div class="grp-h"><span class="g free"></span>Free<span class="cnt">4</span></div>
+          <div class="row2"><span>Jakub</span></div>
+          <div class="row2"><span>Lenka</span></div>
+          <div class="row2"><span>Ada</span></div>
+          <div class="row2 mine"><span>Dusan</span><span class="you">YOU</span></div>
+
+          <div class="grp-h"><span class="g maybe"></span>If needed<span class="cnt">1</span></div>
+          <div class="row2 tent"><span>Erika</span></div>
+
+          <div class="grp-h"><span class="g silent"></span>No answer yet<span class="cnt">1</span></div>
+          <div class="row2 dim"><span>Dani</span></div>
+        </div>
+
+        <div class="ans-label">Can you make it?</div>
+        <div class="ans">
+          <button class="on"><span class="g free"></span>Free</button>
+          <button><span class="g maybe"></span>If needed</button>
+          <button><span class="g no"></span>Can't</button>
+        </div>
+      </div>
+
+      <div class="notes">
+        <div><span class="mk">+</span><span><b>The day's shape is legible without counting.</b> Group sizes do the work.</span></div>
+        <div><span class="mk">+</span><span>"No answer yet" is a nudge list — the thing an admin actually wants.</span></div>
+        <div><span class="mk">−</span><span>Roster order is lost, so finding one particular person means scanning three groups.</span></div>
+        <div><span class="mk">−</span><span>Tallest of the three; a six-person day is three headers plus six rows.</span></div>
+      </div>
+    </section>
+
+    <!-- ============ B ============ -->
+    <section class="opt">
+      <div>
+        <div class="opt-name">Ledger</div>
+        <div class="opt-sub">One list in roster order, every person present, each with a status glyph. Differs in shape rather than slant, and you always know where to look for a given name.</div>
+      </div>
+
+      <div class="sheet">
+        <div class="s-head"><span class="s-date">Monday 14 September</span><span class="s-x">✕</span></div>
+        <div class="s-sub">4 free · 1 if needed · 1 no answer</div>
+
+        <div class="grp">
+          <div class="row2"><span class="g free"></span><span>Jakub</span></div>
+          <div class="row2"><span class="g free"></span><span>Lenka</span></div>
+          <div class="row2"><span class="g free"></span><span>Ada</span></div>
+          <div class="row2 tent"><span class="g maybe"></span><span>Erika</span><span class="you">IF NEEDED</span></div>
+          <div class="row2 mine"><span class="g free"></span><span>Dusan</span><span class="you">YOU</span></div>
+          <div class="row2 dim"><span class="g silent"></span><span>Dani</span><span class="you">NO ANSWER</span></div>
+        </div>
+
+        <div class="ans-label">Can you make it?</div>
+        <div class="ans">
+          <button class="on"><span class="g free"></span>Free</button>
+          <button><span class="g maybe"></span>If needed</button>
+          <button><span class="g no"></span>Can't</button>
+        </div>
+      </div>
+
+      <div class="notes">
+        <div><span class="mk">+</span><span><b>Roster order is stable</b>, so a person is always in the same place on every day you open.</span></div>
+        <div><span class="mk">+</span><span>Shortest of the three, and the glyph column scans vertically like a checklist.</span></div>
+        <div><span class="mk">+</span><span>The same glyph appears on your own answer buttons, so both speak one language.</span></div>
+        <div><span class="mk">−</span><span>The shape of the day is a summary line rather than something you see.</span></div>
+      </div>
+    </section>
+
+    <!-- ============ C ============ -->
+    <section class="opt">
+      <div>
+        <div class="opt-name">Shape first</div>
+        <div class="opt-sub">A proportional bar answers "how good is this day" before any name is read; the roster follows underneath, grouped only into coming and not.</div>
+      </div>
+
+      <div class="sheet">
+        <div class="s-head"><span class="s-date">Monday 14 September</span><span class="s-x">✕</span></div>
+
+        <div class="bar">
+          <i class="b-free" style="flex:4"></i>
+          <i class="b-maybe" style="flex:1"></i>
+          <i style="flex:1"></i>
+        </div>
+        <div class="bar-key">
+          <span><i class="swatch b-free" style="background:var(--w6)"></i>4 free</span>
+          <span><i class="swatch b-maybe"></i>1 if needed</span>
+          <span><i class="swatch" style="box-shadow:inset 0 0 0 1.5px var(--ink-lo)"></i>1 silent</span>
+        </div>
+
+        <div class="grp">
+          <div class="grp-h">Coming<span class="cnt">5</span></div>
+          <div class="row2"><span class="g free"></span><span>Jakub</span></div>
+          <div class="row2"><span class="g free"></span><span>Lenka</span></div>
+          <div class="row2"><span class="g free"></span><span>Ada</span></div>
+          <div class="row2 mine"><span class="g free"></span><span>Dusan</span><span class="you">YOU</span></div>
+          <div class="row2 tent"><span class="g maybe"></span><span>Erika</span><span class="you">IF NEEDED</span></div>
+
+          <div class="grp-h">Still to answer<span class="cnt">1</span></div>
+          <div class="row2 dim"><span class="g silent"></span><span>Dani</span></div>
+        </div>
+
+        <div class="ans-label">Can you make it?</div>
+        <div class="ans">
+          <button class="on"><span class="g free"></span>Free</button>
+          <button><span class="g maybe"></span>If needed</button>
+          <button><span class="g no"></span>Can't</button>
+        </div>
+      </div>
+
+      <div class="notes">
+        <div><span class="mk">+</span><span><b>Answers the real question first</b> — is this day any good — before you read a single name.</span></div>
+        <div><span class="mk">+</span><span>The hatched segment says "this part is provisional" in the same language the grid uses.</span></div>
+        <div><span class="mk">−</span><span>The bar restates what the cell you just tapped already told you.</span></div>
+        <div><span class="mk">−</span><span>Most parts of any of the three; the busiest sheet for the least new information.</span></div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <h2>My recommendation</h2>
+    <p><b>Ledger (B), with the summary line kept.</b> Reasons, in order of how much they matter:</p>
+    <ul>
+      <li><b>Everyone is listed, always.</b> That is the actual fix. Silence becomes visible, and "who do I still need to chase" is answerable without leaving the sheet.</li>
+      <li><b>Roster order never changes.</b> You open a day looking for one person as often as you open it to read the whole roster, and grouping makes that a search rather than a glance. On a phone especially, stable position beats sorted position.</li>
+      <li><b>The glyph is a shape, so free / if-needed / silent differ in kind</b> — the same principle that fixed the chosen day. Filled, half-filled, hollow. Italics can stay as reinforcement, but they stop being the only signal.</li>
+      <li><b>Your answer buttons carry the same glyphs as the rows</b>, so the control and the list speak one language instead of two.</li>
+    </ul>
+    <p>What I would take from the others: <b>the counts</b> from A, as the one-line summary already in B; and nothing from C — the bar is genuinely handsome, but the cell you tapped to get here already told you how good the day is, and repeating it is decoration.</p>
+    <p class="dim" style="color:var(--ink-2);font-size:14px"><b>One thing to decide, because it changes the backend:</b> "no answer" and "can't" are the same thing in the data — absence. If you want the sheet to distinguish <em>declined</em> from <em>never looked</em>, that needs a third stored status, which means a schema change and a migration. My advice is not to: for six friends, silence and no are close enough, and the row can simply read "no answer".</p>
+  </footer>
+</div>
