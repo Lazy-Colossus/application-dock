@@ -11,18 +11,22 @@
   >
     <!-- Reserved in EVERY cell, so the date sits on the same line right across
          the month whether or not a day is crowned. -->
+    <!-- Your own answer, in the cell's own leading corner. It is the one
+         personal fact in a cell of group facts (the wash, the count, the crown),
+         so it gets a corner nothing else ever uses — which is what makes a month
+         scannable for "days I said yes to" without reading a single number.
+         Anchored to the cell rather than to the crown slot: the slot is a
+         centred flex row that carries no in-flow content on an uncrowned day,
+         and a mark hung off it drifts toward the middle when its width does not
+         resolve. The cell's own box cannot drift. -->
+    <span
+      v-if="mine"
+      class="mine-mark"
+      :class="mine === 'yes' ? 'free' : 'maybe'"
+      aria-hidden="true"
+    />
+
     <span class="crown-slot" aria-hidden="true">
-      <!-- Your own answer, pinned to the leading edge while the crown stays
-           centred: they share the row but never the spot. This is the one
-           personal fact in a cell of group facts (the wash, the count, the
-           crown), so it gets a corner nothing else ever uses — which is what
-           makes a month scannable for "days I said yes to" without reading a
-           single number. -->
-      <span
-        v-if="mine"
-        class="mine-mark"
-        :class="mine === 'yes' ? 'free' : 'maybe'"
-      />
       <svg
         v-if="chosen"
         class="crown"
@@ -248,17 +252,14 @@ const label = computed(() => {
      ~89px tall, and fixed sizes would push the names straight back out of it.
      Every piece scales with the viewport and stops at the size chosen for a
      comfortable window. */
-  .crown-slot {
+  /* Outranks the base rule below, which would otherwise win on source order
+     alone and pin the slot to its phone height while the crown inside it grew. */
+  .kdh-cell .crown-slot {
     height: clamp(10px, 1.1vw, 14px);
   }
   .crown {
     width: clamp(10px, 1.1vw, 14px);
     height: clamp(10px, 1.1vw, 14px);
-  }
-  .mine-mark {
-    left: 0;
-    width: clamp(8px, 0.85vw, 11px);
-    height: clamp(8px, 0.85vw, 11px);
   }
   .d {
     font-size: clamp(16px, 1.6vw, 21px);
@@ -413,8 +414,6 @@ const label = computed(() => {
 /* The slot has a fixed height in every cell, crowned or not — that is what keeps
    the date on one line across the whole month. */
 .crown-slot {
-  position: relative;
-  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -429,9 +428,13 @@ const label = computed(() => {
    without colour (NFR-6). */
 .mine-mark {
   position: absolute;
-  left: 3px;
-  width: 7px;
-  height: 7px;
+  top: 3px;
+  left: 4px;
+  /* Opposite the select-mode tick, which owns the trailing corner. Sized in one
+     rule for both layouts: below ~820px the viewport term is under the floor, so
+     a phone gets a flat 7px and a wide window grows it with everything else. */
+  width: clamp(7px, 0.85vw, 11px);
+  height: clamp(7px, 0.85vw, 11px);
   border-radius: 50%;
 }
 .mine-mark.free {

@@ -319,4 +319,16 @@ describe("DayCell", () => {
     expect(label({ "inv-1": "if_needed" })).toContain("you if needed");
     expect(label({ "inv-2": "yes" })).not.toContain("you");
   });
+
+  it("hangs the mark off the cell, not off the crown slot", () => {
+    // The slot is a centred flex row with no in-flow content on an uncrowned
+    // day; a mark anchored to it drifts toward the middle of the cell when its
+    // width does not resolve. Structure is the fix, so structure is the test.
+    const wrapper = mountCell({ votes: { "inv-1": "yes" } });
+
+    expect(wrapper.find(".crown-slot .mine-mark").exists()).toBe(false);
+    expect(wrapper.find(".mine-mark").element.parentElement).toBe(
+      wrapper.element,
+    );
+  });
 });
