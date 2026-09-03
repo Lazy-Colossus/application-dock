@@ -42,7 +42,10 @@ colors:
   inv-steel: '#9FB8D8'
   # --- Semantic (separate from the wash and from invitee colours) ---
   danger: '#CF6679'
-  # NB: there is deliberately NO accent hue. See Components → Buttons.
+  # The decided day — a third colour dimension (see Components → Chosen day).
+  gold: '#F0C14B'
+  gold-deep: '#6E4E05'   # legible against the pale top of the ramp
+  # NB: there is still no *accent* hue — gold carries a meaning, not a role.
 typography:
   font-stack:
     ui: 'inherits the platform Roboto/system stack from Quasar'
@@ -164,15 +167,24 @@ not used anywhere: on a near-black ground it reads as mud.
 `rounded.cell` on day cells, `rounded.panel` on raised surfaces, `rounded.chip`
 on anything carrying a person's name.
 
-**Two marks are shapes, never colours**, because they must survive every step of
-the ramp and the past-day dimming:
+**Both marks keep a shape**, because they must survive every step of the ramp and
+the past-day dimming — and, for the chosen day, because the colour must not be the
+only signal:
 
-- **Chosen day** — a 5px diamond, top-right of the cell. `ink-hi` on
-  `wash-0`–`wash-4`, `ink-on-light` on `wash-5`–`wash-6`.
+- **Chosen day** — the date itself goes **bold and `gold`** (`gold-deep` on
+  `wash-5`–`wash-6`, where the bright gold washes out against pale lilac), and a
+  5px gold diamond sits top-right.
 - **Provisional coverage** — a 1px inset hairline in `wash-6` around a cell that
   only reaches full coverage because someone answered *if needed*.
 
 ## Components
+
+**Chosen day.** Gold is a **third colour dimension**, added at the user's
+direction: the wash says *how many can come*, an invitee colour says *who*, and
+gold says *this is the one*. It is the dock's family of gold used for a meaning the
+dock does not have — so the "never use the dock's gold" rule below is narrowed to
+mean *never as an interactive accent*, which is what it was protecting against.
+The diamond stays, so the marking never depends on colour alone.
 
 **Day cell.** Date, then coverage count beneath it, on a `wash-*` background.
 Nothing else fits and nothing else is allowed. Today carries a 1px `ink-mid`
@@ -211,5 +223,6 @@ person's colour, which has to keep meaning *that person*.
   colour; both must survive the ramp and the dimming.
 - **Don't** put names in a day cell. They do not fit at 44px, and the attempt is
   what makes phone calendars unreadable.
-- **Don't** use the dock's gold `#C8960A` anywhere. It means "interactive" across
-  the rest of the platform and would fight the wash.
+- **Don't** use gold as an *interactive* accent. It means "clickable" across the
+  rest of the platform, and in KDH it means "this is the decided day" — one meaning
+  each, and neither is "press me".

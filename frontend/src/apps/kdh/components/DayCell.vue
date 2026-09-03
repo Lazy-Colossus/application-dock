@@ -1,14 +1,17 @@
 <template>
   <button
     class="kdh-cell"
-    :class="[`w${wash.step}`, { past, today, provisional: wash.provisional }]"
+    :class="[
+      `w${wash.step}`,
+      { past, today, chosen, provisional: wash.provisional },
+    ]"
     :aria-label="label"
     :data-testid="`day-${date}`"
     @click="$emit('pick', date)"
   >
     <span class="d">{{ dayOfMonth }}</span>
     <span class="n">{{ coverage }}</span>
-    <span v-if="chosen" class="chosen" aria-hidden="true" />
+    <span v-if="chosen" class="chosen-mark" aria-hidden="true" />
   </button>
 </template>
 
@@ -91,7 +94,7 @@ const label = computed(() => {
   font-variant-numeric: tabular-nums;
 }
 .n {
-  font-size: 8.5px;
+  font-size: 10px;
   line-height: 1;
   color: #8a7da2;
   font-variant-numeric: tabular-nums;
@@ -141,18 +144,28 @@ const label = computed(() => {
   opacity: 0.3;
 }
 
-/* A shape, not a colour — so it survives every wash step and the dimming. */
-.chosen {
+/* The decided day. Gold and bold on the date itself, plus the diamond — the
+   shape is what keeps the marking readable for someone who cannot see the
+   colour, so it stays even though the gold now carries the message. */
+.chosen .d {
+  font-weight: 700;
+  color: var(--kdh-gold);
+}
+.w5.chosen .d,
+.w6.chosen .d {
+  color: var(--kdh-gold-deep);
+}
+.chosen-mark {
   position: absolute;
   top: 4px;
   right: 4px;
   width: 5px;
   height: 5px;
-  background: #f2ecf8;
+  background: var(--kdh-gold);
   transform: rotate(45deg);
 }
-.w5 .chosen,
-.w6 .chosen {
-  background: var(--kdh-ink-on-light);
+.w5 .chosen-mark,
+.w6 .chosen-mark {
+  background: var(--kdh-gold-deep);
 }
 </style>

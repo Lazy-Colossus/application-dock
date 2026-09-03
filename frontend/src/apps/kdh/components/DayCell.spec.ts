@@ -63,12 +63,19 @@ describe("DayCell", () => {
   });
 
   it("shows the chosen mark as a shape, at any wash step", () => {
-    expect(mountCell({ chosen: true }).find(".chosen").exists()).toBe(true);
-    expect(
-      mountCell({ chosen: true, votes: { a: "yes" } })
-        .find(".chosen")
-        .exists(),
-    ).toBe(true);
+    for (const votes of [{}, { a: "yes" }, { a: "yes", b: "yes", c: "yes" }]) {
+      expect(
+        mountCell({ chosen: true, votes }).find(".chosen-mark").exists(),
+      ).toBe(true);
+    }
+    expect(mountCell().find(".chosen-mark").exists()).toBe(false);
+  });
+
+  it("marks the cell itself as chosen, so the date can be styled", () => {
+    // The gold and the bold live on `.chosen .d`; the diamond stays as the
+    // signal that does not depend on colour at all.
+    expect(mountCell({ chosen: true }).classes()).toContain("chosen");
+    expect(mountCell().classes()).not.toContain("chosen");
   });
 
   it("dims a past day but still opens it", async () => {
