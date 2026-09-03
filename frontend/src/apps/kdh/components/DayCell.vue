@@ -7,7 +7,7 @@
     ]"
     :aria-label="label"
     :data-testid="`day-${date}`"
-    @click="$emit('pick', date)"
+    @click="onClick"
   >
     <!-- Reserved in EVERY cell, so the date sits on the same line right across
          the month whether or not a day is crowned. -->
@@ -82,7 +82,18 @@ const props = defineProps<{
   selected: boolean;
 }>();
 
-defineEmits<{ pick: [date: string] }>();
+const emit = defineEmits<{ pick: [date: string] }>();
+
+/**
+ * A past day is inert to the click but NOT disabled: `disabled` suppresses
+ * pointer events on a button's children in every browser, which would take the
+ * hover list of who was there with it — and that list is the reason a past day
+ * is still worth looking at.
+ */
+function onClick(): void {
+  if (props.past) return;
+  emit("pick", props.date);
+}
 
 const dayOfMonth = computed(() => Number(props.date.slice(8, 10)));
 const statuses = computed(() => Object.values(props.votes));
@@ -151,7 +162,8 @@ const label = computed(() => {
   cursor: pointer;
   padding: 0;
 }
-.kdh-cell:disabled {
+.kdh-cell:disabled,
+.kdh-cell.past {
   cursor: default;
 }
 .d {

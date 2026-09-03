@@ -70,9 +70,11 @@ acceptable because the sheet already carries the same list one tap away, and a
 long-press equivalent would fight the tap that opens the sheet. A touch affordance
 is an open question, not an oversight.
 
-Tap always opens the day sheet — a past day is worth reading, and an
-admin can mark any day chosen without having claimed a name. What a past day loses
-is the ability to *answer*, not to be opened; it is dimmed, and its sheet says so.
+Tap opens the day sheet on any day that is not past. A **past day does not open at
+all** — its sheet had nothing to offer but a "this has been and gone" line — but it
+stays *readable*: the hover list above still names who was there. That is why a past
+cell is inert to the click rather than `disabled`; disabling a button suppresses
+pointer events on its children and would take the hover list with it.
 
 **Name dropdown.** The control sits on the **right of the header**, beside the admin
 menu — it is a control, not part of the calendar's name, and the title needs the

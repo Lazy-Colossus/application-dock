@@ -123,15 +123,22 @@ describe("DayCell", () => {
     expect(mountCell().classes()).not.toContain("chosen");
   });
 
-  it("dims a past day but still opens it", async () => {
-    // Not votable, but readable: who came to the September session is worth
-    // seeing, and an admin can still mark it chosen.
+  it("dims a past day and does not open it", () => {
     const wrapper = mountCell({ past: true, votes: { a: "yes" } });
     expect(wrapper.classes()).toContain("past");
-    expect(wrapper.attributes("disabled")).toBeUndefined();
 
-    await wrapper.trigger("click");
-    expect(wrapper.emitted("pick")?.[0]).toEqual(["2026-09-14"]);
+    wrapper.trigger("click");
+    expect(wrapper.emitted("pick")).toBeUndefined();
+  });
+
+  it("leaves a past day hoverable, so who was there can still be read", () => {
+    // Deliberately NOT `disabled`: that suppresses pointer events on a
+    // button's children, and would take the hover list with it.
+    const wrapper = mountCell({ past: true, votes: { a: "yes", b: "yes" } });
+
+    expect(wrapper.attributes("disabled")).toBeUndefined();
+    expect(wrapper.find(".tip").exists()).toBe(true);
+    expect(wrapper.find(".tip").text()).toContain("Dani");
   });
 
   it("keeps a past day's votes and its wash", () => {

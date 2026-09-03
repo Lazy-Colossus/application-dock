@@ -43,6 +43,8 @@ const CAL: Calendar = {
 };
 
 const STUBS = {
+  // Rendered inline so the hover list can be inspected; Quasar teleports it.
+  "q-tooltip": { template: '<div class="tip"><slot /></div>' },
   "q-list": { template: "<div><slot /></div>" },
   "q-item": {
     template:
@@ -483,13 +485,21 @@ describe("CalendarPage", () => {
     expect(wrapper.find('[data-testid="claim-inv-1"]').exists()).toBe(true);
   });
 
-  it("offers no claim prompt on a day nobody can answer any more", async () => {
-    mockApi(false, { ...CAL, invitees: TWO_INVITEES });
+  it("does not open a past day at all", async () => {
+    mockApi(false, {
+      ...CAL,
+      invitees: TWO_INVITEES,
+      votes: { "2026-09-01": { "inv-2": "yes" } },
+    });
     const wrapper = await mountPage();
 
-    await wrapper.find('[data-testid="day-2026-09-01"]').trigger("click");
-    expect(wrapper.find('[data-testid="claim-prompt"]').exists()).toBe(false);
-    expect(wrapper.find('[data-testid="sheet-past"]').exists()).toBe(true);
+    const past = wrapper.find('[data-testid="day-2026-09-01"]');
+    expect(past.classes()).toContain("past");
+
+    await past.trigger("click");
+    expect(wrapper.find('[data-testid="sheet-date"]').exists()).toBe(false);
+    // But who was there is still readable, on hover.
+    expect(past.find(".kdh-voter").text()).toContain("Jake");
   });
 
   it("opens the day sheet once a name is claimed", async () => {
@@ -532,27 +542,6 @@ describe("CalendarPage", () => {
     });
     expect(wrapper.find('[data-testid="day-2026-09-14"]').text()).toContain(
       "1",
-    );
-  });
-
-  it("opens a past day read-only — no vote controls", async () => {
-    window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
-    mockApi(false, {
-      ...CAL,
-      invitees: TWO_INVITEES,
-      votes: { "2026-09-01": { "inv-2": "yes" } },
-    });
-    const wrapper = await mountPage();
-
-    const past = wrapper.find('[data-testid="day-2026-09-01"]');
-    expect(past.classes()).toContain("past");
-
-    await past.trigger("click");
-    expect(wrapper.find('[data-testid="sheet-past"]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid="set-yes"]').exists()).toBe(false);
-    // ...but it still shows who was there.
-    expect(wrapper.find('[data-testid="sheet-row-inv-2"]').text()).toContain(
-      "Jake",
     );
   });
 
@@ -607,22 +596,17 @@ describe("CalendarPage", () => {
     expect(wrapper.find('[data-testid="toggle-chosen"]').exists()).toBe(false);
   });
 
-  it("an admin may mark a past day", async () => {
+  it("does not let even an admin open a past day", () => {
+    // Consequence of past days being inert: marking a past day chosen was
+    // reachable only through its sheet, so that capability is gone with it.
+    // Restoring it means letting an admin through the guard in `DayCell`.
     mockApi(true, { ...CAL, invitees: TWO_INVITEES });
-    putMock.mockResolvedValueOnce({
-      ...CAL,
-      invitees: TWO_INVITEES,
-      chosen_dates: ["2026-09-01"],
-    });
-    const wrapper = await mountPage();
-
-    await wrapper.find('[data-testid="day-2026-09-01"]').trigger("click");
-    await wrapper.find('[data-testid="toggle-chosen"]').trigger("click");
-    await flushPromises();
-
-    expect(putMock).toHaveBeenCalledWith("/kdh/calendars/cal-ab12cd34/chosen", {
-      date: "2026-09-01",
-      chosen: true,
+    return mountPage().then(async (wrapper) => {
+      await wrapper.find('[data-testid="day-2026-09-01"]').trigger("click");
+      expect(wrapper.find('[data-testid="toggle-chosen"]').exists()).toBe(
+        false,
+      );
+      expect(wrapper.find('[data-testid="sheet-date"]').exists()).toBe(false);
     });
   });
 
