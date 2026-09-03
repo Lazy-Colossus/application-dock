@@ -202,9 +202,10 @@ mean *never as an interactive accent*, which is what it was protecting against.
 The crown stays, so the marking never depends on colour alone.
 
 **Day cell.** **Square at both sizes.** A reserved crown slot, the date, then the
-coverage count beneath it, on a `wash-*` background; on the web layout a line of
-voter names sits at the foot, shrinking from two lines to one on a narrow window
-rather than spilling past the square. Nothing else fits and nothing else is allowed. The count
+coverage count beneath it, on a `wash-*` background; on the web layout the voter
+names sit **directly under the count**, not at the foot of the cell — a square this
+full has no bottom margin to spare, and anchoring them to it is what made them spill
+out. Two lines, clipped, shrinking to one on a narrow window. Nothing else fits and nothing else is allowed. The count
 sits in a padded target of its own — the digits alone are about 7px wide, which is
 not something to point at — which highlights on hover and anchors the list of who
 voted. The three pieces total ~42px in a ~46px cell, so there is no room for a

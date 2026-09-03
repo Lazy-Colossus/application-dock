@@ -212,11 +212,11 @@ const label = computed(() => {
       0 0 0 2.5px var(--kdh-gold);
   }
   .crown-slot {
-    height: 15px;
+    height: 14px;
   }
   .crown {
-    width: 15px;
-    height: 15px;
+    width: 14px;
+    height: 14px;
   }
   .d {
     font-size: 21px;
@@ -226,27 +226,22 @@ const label = computed(() => {
      no room. */
   .n {
     font-size: 14px;
-    padding: 5px 15px;
+    padding: 4px 15px;
     min-width: 46px;
     border-radius: 8px;
   }
   /* One line at the foot of the cell, in the cell's own ink. Deliberately NOT
      each person's colour: six colours on one line is a smear, and the colour
      already does its work in the day sheet and the hover list. */
+  /* Sits directly under the count rather than at the foot of the cell.
+     `margin-top: auto` pushed it against the bottom edge of a square that is
+     already close to full, which is how it ended up spilling out. Two lines
+     tall, clipped, and allowed to shrink on a narrow window. */
   .cell-names {
-    /* Wraps to a second line and is then clipped, rather than running on and
-       dragging the column wider. */
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    line-clamp: 2;
-    margin-top: auto;
-    /* Shrinks and clips at a line boundary rather than spilling past the
-       square. On a narrow desktop window this shows one line instead of two —
-       the day sheet is still the complete list. */
+    display: block;
     flex: 0 1 auto;
     min-height: 0;
-    padding-top: 5px;
+    margin-top: 4px;
     width: 100%;
     max-width: 100%;
     max-height: 2.6em;
