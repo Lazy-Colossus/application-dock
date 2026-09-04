@@ -44,6 +44,12 @@ _APPS: list[AppDescriptor] = [
         icon="table_chart",
         route="/listies",
     ),
+    AppDescriptor(
+        id="kdh",
+        label="KDH",
+        icon="event_available",
+        route="/kdh",
+    ),
 ]
 
 

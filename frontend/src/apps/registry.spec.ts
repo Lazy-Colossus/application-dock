@@ -26,6 +26,14 @@ describe("app registry", () => {
     expect(listies?.route).toBe("/listies");
   });
 
+  it("registers the KDH app (Story 1.1)", () => {
+    const kdh = apps.find((a) => a.id === "kdh");
+    expect(kdh).toBeDefined();
+    expect(kdh?.label).toBe("KDH");
+    expect(kdh?.icon).toBe("event_available");
+    expect(kdh?.route).toBe("/kdh");
+  });
+
   it("registers the Context-Switch app (Story 1.1)", () => {
     const cs = apps.find((a) => a.id === "context-switch");
     expect(cs).toBeDefined();

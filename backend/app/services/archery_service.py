@@ -89,22 +89,25 @@ def finalise_in_progress(label: str) -> SessionData:
     Raises:
         FileNotFoundError: if no in-progress session exists for `label`.
     """
-    current = session_repo.read_in_progress(label)
-    if current is None:
-        raise FileNotFoundError(label)
+    with session_repo.sessions_transaction():
+        current = session_repo.read_in_progress(label)
+        if current is None:
+            raise FileNotFoundError(label)
 
-    base = current.label[:10]  # YYYY-MM-DD prefix
-    final_label = _pick_finalise_label(base, current.label)
+        base = current.label[:10]  # YYYY-MM-DD prefix
+        # Inside the transaction so two same-day finalises cannot read the same
+        # set of taken labels and both claim it.
+        final_label = _pick_finalise_label(base, current.label)
 
-    finalised = current.model_copy(
-        update={
-            "status": "finalised",
-            "label": final_label,
-            "targets": _materialise_targets(current),
-        }
-    )
-    session_repo.write_session(settings.data_dir / f"{final_label}.json", finalised)
-    session_repo.delete_in_progress(label)
+        finalised = current.model_copy(
+            update={
+                "status": "finalised",
+                "label": final_label,
+                "targets": _materialise_targets(current),
+            }
+        )
+        session_repo.write_session(settings.data_dir / f"{final_label}.json", finalised)
+        session_repo.delete_in_progress(label)
     return finalised
 
 
@@ -126,7 +129,8 @@ def list_in_progress_summaries() -> list[InProgressSummary]:
 
 
 def discard_in_progress(label: str) -> None:
-    session_repo.delete_in_progress(label)
+    with session_repo.sessions_transaction():
+        session_repo.delete_in_progress(label)
 
 
 def update_in_progress(session: SessionData) -> SessionData:
@@ -135,11 +139,12 @@ def update_in_progress(session: SessionData) -> SessionData:
     Raises:
         FileNotFoundError: if no in-progress session exists for the label.
     """
-    if session_repo.read_in_progress(session.label) is None:
-        raise FileNotFoundError(session.label)
+    with session_repo.sessions_transaction():
+        if session_repo.read_in_progress(session.label) is None:
+            raise FileNotFoundError(session.label)
 
-    updated = session.model_copy(update={"status": "in_progress"})
-    session_repo.write_in_progress(updated)
+        updated = session.model_copy(update={"status": "in_progress"})
+        session_repo.write_in_progress(updated)
     return updated
 
 
@@ -149,22 +154,26 @@ def create_session(archers: list[str], name: str | None = None) -> SessionData:
     Multiple concurrent in-progress sessions are allowed (Story 6.1). `name`
     defaults to the label (the date) when omitted or blank.
     """
-    label = generate_session_label()
     now = datetime.now(UTC)
     created = now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    resolved_name = (name or "").strip() or label
+    # Label allocation reads every taken label, so it has to be inside the
+    # transaction with the write — otherwise two concurrent creates read the same
+    # set and both claim the same label, and the second overwrites the first.
+    with session_repo.sessions_transaction():
+        label = generate_session_label()
+        resolved_name = (name or "").strip() or label
 
-    session = SessionData(
-        label=label,
-        name=resolved_name,
-        date=now.date().isoformat(),
-        created=created,
-        status="in_progress",
-        archers=archers,
-        targets=[],
-    )
-    session_repo.write_in_progress(session)
+        session = SessionData(
+            label=label,
+            name=resolved_name,
+            date=now.date().isoformat(),
+            created=created,
+            status="in_progress",
+            archers=archers,
+            targets=[],
+        )
+        session_repo.write_in_progress(session)
     return session
 
 
@@ -239,18 +248,20 @@ def add_recurring_player(name: str) -> list[str]:
     normalised = name.strip().lower()
     if not normalised:
         raise ValueError("player name must be non-empty")
-    players = session_repo.read_recurring_players()
-    if normalised not in players:
-        players.append(normalised)
-        session_repo.write_recurring_players(players)
+    with session_repo.recurring_players_transaction():
+        players = session_repo.read_recurring_players()
+        if normalised not in players:
+            players.append(normalised)
+            session_repo.write_recurring_players(players)
     return players
 
 
 def remove_recurring_player(name: str) -> list[str]:
     """Remove a player from the recurring list. Idempotent."""
     normalised = name.strip().lower()
-    players = session_repo.read_recurring_players()
-    if normalised in players:
-        players = [p for p in players if p != normalised]
-        session_repo.write_recurring_players(players)
+    with session_repo.recurring_players_transaction():
+        players = session_repo.read_recurring_players()
+        if normalised in players:
+            players = [p for p in players if p != normalised]
+            session_repo.write_recurring_players(players)
     return players

@@ -122,3 +122,18 @@ def test_listies_router_is_mounted() -> None:
     from app.routers import listies
 
     assert listies.router.prefix == "/api/listies"
+
+
+def test_list_apps_includes_kdh() -> None:
+    response = client.get("/api/apps")
+    kdh = next((a for a in response.json() if a["id"] == "kdh"), None)
+    assert kdh is not None
+    assert kdh["label"] == "KDH"
+    assert kdh["icon"] == "event_available"
+    assert kdh["route"] == "/kdh"
+
+
+def test_kdh_router_is_mounted() -> None:
+    from app.routers import kdh
+
+    assert kdh.router.prefix == "/api/kdh"

@@ -1,0 +1,393 @@
+<title>KDH Month Directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Archivo:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --page:#FBFAFC; --ink:#1B181F; --ink-2:#585264; --ink-3:#8B8496;
+    --rule:#E2DEE8; --card:#FFFFFF; --shadow:0 1px 2px rgba(27,24,31,.06),0 8px 24px rgba(27,24,31,.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --page:#131118; --ink:#ECE8F2; --ink-2:#A29BB0; --ink-3:#7A7288;
+      --rule:#2B2734; --card:#1A1722; --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --page:#131118; --ink:#ECE8F2; --ink-2:#A29BB0; --ink-3:#7A7288;
+    --rule:#2B2734; --card:#1A1722; --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 24px rgba(0,0,0,.35);
+  }
+
+  /* ---- KDH's own world. Fixed: these are specimens, not page chrome. ---- */
+  :root{
+    --k-field:#15111C; --k-raise:#1F1829; --k-cell:#221B2E; --k-line:#332942;
+    --k-ink:#EBE4F4; --k-ink2:#A79BBC; --k-ink3:#7B6F91;
+    --w1:#2B2040; --w2:#3A2A56; --w3:#4E3770; --w4:#6C4C93; --w5:#9773BC; --w6:#C9AEE6;
+    --k-on-light:#1A1024;
+    --inv-1:#E9A6A0; --inv-2:#A9C8E8; --inv-3:#B9DCC2;
+    --inv-4:#EBD3A0; --inv-5:#D3B2E8; --inv-6:#A8D8D8;
+  }
+
+  *{box-sizing:border-box}
+  body{background:var(--page);color:var(--ink);font-family:Archivo,system-ui,-apple-system,"Segoe UI",sans-serif;
+       -webkit-font-smoothing:antialiased;line-height:1.5}
+  .wrap{max-width:1180px;margin:0 auto;padding:48px 24px 72px;display:flex;flex-direction:column;gap:44px}
+
+  header{display:flex;flex-direction:column;gap:12px;max-width:66ch}
+  .eyebrow{font-family:"Spline Sans Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.18em;
+           text-transform:uppercase;color:var(--ink-3)}
+  h1{font-family:Newsreader,Georgia,serif;font-weight:400;font-size:clamp(30px,4.4vw,44px);line-height:1.1;
+     margin:0;text-wrap:balance;letter-spacing:-.01em}
+  h2{font-family:Newsreader,Georgia,serif;font-weight:400;font-size:26px;line-height:1.15;margin:0;
+     letter-spacing:-.01em}
+  .lede{color:var(--ink-2);font-size:15.5px;margin:0}
+  .lede b,p b{color:var(--ink);font-weight:600}
+  section{display:flex;flex-direction:column;gap:18px}
+  .sec-head{display:flex;flex-direction:column;gap:6px;max-width:70ch}
+  .sec-head p{margin:0;color:var(--ink-2);font-size:14px}
+
+  /* ---------------- phone specimen ---------------- */
+  .phone{background:var(--k-field);color:var(--k-ink);border-radius:14px;padding:18px 15px 16px;
+         display:flex;flex-direction:column;gap:12px;font-family:"Spline Sans Mono",ui-monospace,monospace;
+         width:100%;max-width:344px}
+  .ph-top{display:flex;align-items:baseline;justify-content:space-between}
+  .ph-month{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--k-ink2)}
+  .ph-nav{font-size:14px;color:var(--k-ink2);letter-spacing:.3em}
+  .ph-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:9.5px;letter-spacing:.06em;
+          text-align:center;color:var(--k-ink3)}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .cell{aspect-ratio:1/1.06;border-radius:7px;position:relative;display:flex;flex-direction:column;
+        align-items:center;justify-content:center;gap:2px;background:var(--k-cell)}
+  .cell .d{font-size:12.5px;font-weight:500;line-height:1;color:#CFC5DE}
+  .cell .n{font-size:8.5px;line-height:1;color:#8A7DA2;font-variant-numeric:tabular-nums}
+  .cell.blank{background:none}
+  .w1{background:var(--w1)}.w2{background:var(--w2)}.w3{background:var(--w3)}
+  .w4{background:var(--w4)}.w5{background:var(--w5)}.w6{background:var(--w6)}
+  .w1 .d,.w2 .d,.w3 .d{color:#DCD2EA}.w1 .n,.w2 .n,.w3 .n{color:#A797C0}
+  .w4 .d{color:#F1EAF8}.w4 .n{color:#C6B4DC}
+  .w5 .d,.w6 .d{color:var(--k-on-light)}.w5 .n,.w6 .n{color:#3F2B57}
+  .past{opacity:.3}
+  .today{outline:1px solid var(--k-ink2);outline-offset:-1px}
+  .prov{box-shadow:inset 0 0 0 1px var(--w6)}
+  .chosen::after{content:"";position:absolute;top:4px;right:4px;width:5px;height:5px;background:#F2ECF8;
+                 transform:rotate(45deg)}
+  .w5.chosen::after,.w6.chosen::after{background:var(--k-on-light)}
+
+  /* ---------------- ramp + palette strips ---------------- */
+  .ramp{display:flex;gap:6px;flex-wrap:wrap}
+  .step{flex:1;min-width:74px;border-radius:8px;padding:11px 10px;display:flex;flex-direction:column;gap:3px;
+        font-family:"Spline Sans Mono",ui-monospace,monospace}
+  .step .lv{font-size:15px;font-weight:600;line-height:1}
+  .step .hx{font-size:9.5px;letter-spacing:.03em;opacity:.8}
+  .dark-ink{color:#DCD2EA}.light-ink{color:var(--k-on-light)}
+
+  .people{display:flex;gap:8px;flex-wrap:wrap}
+  .person{background:var(--k-field);border-radius:999px;padding:7px 13px 7px 9px;display:flex;align-items:center;
+          gap:7px;font-family:"Spline Sans Mono",ui-monospace,monospace;font-size:12px;color:var(--k-ink)}
+  .dot{width:10px;height:10px;border-radius:50%;flex:none}
+
+  /* ---------------- picker variants ---------------- */
+  .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;align-items:start}
+  .opt{background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:20px;
+       display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow)}
+  .opt-name{font-family:Newsreader,Georgia,serif;font-size:21px;line-height:1.15}
+  .opt-thesis{font-size:13px;color:var(--ink-2);margin:0}
+  .states{display:flex;flex-direction:column;gap:12px}
+  .state-label{font-family:"Spline Sans Mono",ui-monospace,monospace;font-size:9.5px;letter-spacing:.14em;
+               text-transform:uppercase;color:var(--ink-3)}
+
+  .mini{background:var(--k-field);border-radius:12px;padding:13px 12px;display:flex;flex-direction:column;gap:10px;
+        font-family:"Spline Sans Mono",ui-monospace,monospace;color:var(--k-ink)}
+  .mini-bar{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--k-ink2)}
+  .mini-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+  .mini-strip div{aspect-ratio:1;border-radius:4px;background:var(--k-cell)}
+
+  .prompt{background:var(--k-raise);border:1px solid var(--k-line);border-radius:10px;padding:12px;
+          display:flex;flex-direction:column;gap:9px}
+  .prompt-q{font-size:12.5px;color:var(--k-ink)}
+  .rows{display:flex;flex-direction:column;gap:2px}
+  .row{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;font-size:12.5px;
+       background:transparent;color:var(--k-ink)}
+  .row.sel{background:rgba(201,174,230,.14);box-shadow:inset 0 0 0 1px rgba(201,174,230,.4)}
+  .row .tick{margin-left:auto;font-size:11px;color:var(--w6)}
+
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip-p{display:flex;align-items:center;gap:6px;padding:6px 11px 6px 8px;border-radius:999px;font-size:11.5px;
+          background:var(--k-raise);color:var(--k-ink2);border:1px solid var(--k-line)}
+  .chip-p.on{color:var(--k-on-light);border-color:transparent;font-weight:600}
+
+  .claimed{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--k-ink)}
+  .swap{margin-left:auto;font-size:10.5px;color:var(--k-ink3);letter-spacing:.06em}
+
+  .colourpick{display:flex;gap:5px;padding-top:2px}
+  .colourpick div{width:19px;height:19px;border-radius:50%}
+  .colourpick .taken{opacity:.24}
+  .colourpick .mine{box-shadow:0 0 0 2px var(--k-field),0 0 0 3.5px var(--k-ink)}
+
+  .tradeoffs{display:flex;flex-direction:column;gap:7px;font-size:12.5px;color:var(--ink-2);
+             border-top:1px solid var(--rule);padding-top:12px}
+  .tradeoffs div{display:flex;gap:8px}
+  .mark{font-family:"Spline Sans Mono",ui-monospace,monospace;flex:none;width:12px;color:var(--ink-3)}
+
+  .two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:26px;align-items:start}
+  .note{color:var(--ink-2);font-size:14px;margin:0;max-width:70ch}
+  code{font-family:"Spline Sans Mono",ui-monospace,monospace;font-size:.9em;color:var(--ink)}
+  footer{border-top:1px solid var(--rule);padding-top:22px;display:flex;flex-direction:column;gap:11px;max-width:74ch}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">KDH · UX session · 2026-09-03 · direction locked</div>
+    <h1>Wash, in eggplant and lilac</h1>
+    <p class="lede">Coverage is the cell's background: a violet-black field where the days that work are simply brighter, running from <b>deep eggplant</b> at one person to <b>pastel lilac</b> at all six. Same September 2026 data throughout — the 14th chosen, everything before the 3rd frozen.</p>
+  </header>
+
+  <section>
+    <div class="two">
+      <div class="phone">
+        <div class="ph-top"><span class="ph-month">September 2026</span><span class="ph-nav">‹ ›</span></div>
+        <div class="ph-dow"><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div><div>S</div></div>
+        <div class="cal">
+          <div class="cell blank"></div>
+          <div class="cell past w2"><div class="d">1</div><div class="n">2</div></div>
+          <div class="cell past w1"><div class="d">2</div><div class="n">1</div></div>
+          <div class="cell today"><div class="d">3</div><div class="n">0</div></div>
+          <div class="cell w3"><div class="d">4</div><div class="n">3</div></div>
+          <div class="cell w5"><div class="d">5</div><div class="n">5</div></div>
+          <div class="cell w2"><div class="d">6</div><div class="n">2</div></div>
+          <div class="cell w1"><div class="d">7</div><div class="n">1</div></div>
+          <div class="cell"><div class="d">8</div><div class="n">0</div></div>
+          <div class="cell w4"><div class="d">9</div><div class="n">4</div></div>
+          <div class="cell w2"><div class="d">10</div><div class="n">2</div></div>
+          <div class="cell w3"><div class="d">11</div><div class="n">3</div></div>
+          <div class="cell w5 prov"><div class="d">12</div><div class="n">5</div></div>
+          <div class="cell w4"><div class="d">13</div><div class="n">4</div></div>
+          <div class="cell w6 chosen"><div class="d">14</div><div class="n">6</div></div>
+          <div class="cell w5 prov"><div class="d">15</div><div class="n">5</div></div>
+          <div class="cell w2"><div class="d">16</div><div class="n">2</div></div>
+          <div class="cell"><div class="d">17</div><div class="n">0</div></div>
+          <div class="cell w1"><div class="d">18</div><div class="n">1</div></div>
+          <div class="cell w3"><div class="d">19</div><div class="n">3</div></div>
+          <div class="cell w4"><div class="d">20</div><div class="n">4</div></div>
+          <div class="cell w6"><div class="d">21</div><div class="n">6</div></div>
+          <div class="cell w2"><div class="d">22</div><div class="n">2</div></div>
+          <div class="cell"><div class="d">23</div><div class="n">0</div></div>
+          <div class="cell w1"><div class="d">24</div><div class="n">1</div></div>
+          <div class="cell w3"><div class="d">25</div><div class="n">3</div></div>
+          <div class="cell w4"><div class="d">26</div><div class="n">4</div></div>
+          <div class="cell w2"><div class="d">27</div><div class="n">2</div></div>
+          <div class="cell w1"><div class="d">28</div><div class="n">1</div></div>
+          <div class="cell"><div class="d">29</div><div class="n">0</div></div>
+          <div class="cell w3"><div class="d">30</div><div class="n">3</div></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:22px">
+        <div class="sec-head">
+          <h2>The ramp</h2>
+          <p>Seven steps for a six-person calendar. The scale is relative to the number of active invitees, so it re-computes when someone is added or removed.</p>
+        </div>
+        <div class="ramp">
+          <div class="step dark-ink" style="background:#221B2E"><span class="lv">0</span><span class="hx">#221B2E</span></div>
+          <div class="step dark-ink" style="background:#2B2040"><span class="lv">1</span><span class="hx">#2B2040</span></div>
+          <div class="step dark-ink" style="background:#3A2A56"><span class="lv">2</span><span class="hx">#3A2A56</span></div>
+          <div class="step dark-ink" style="background:#4E3770"><span class="lv">3</span><span class="hx">#4E3770</span></div>
+          <div class="step dark-ink" style="background:#6C4C93"><span class="lv">4</span><span class="hx">#6C4C93</span></div>
+          <div class="step light-ink" style="background:#9773BC"><span class="lv">5</span><span class="hx">#9773BC</span></div>
+          <div class="step light-ink" style="background:#C9AEE6"><span class="lv">6</span><span class="hx">#C9AEE6</span></div>
+        </div>
+        <p class="note">The date and the count stay in every cell. Four and five are close by wash alone — that's the accepted cost of this encoding, and the number is what settles it. <b>The 12th and 15th</b> carry a lilac hairline: full coverage that leans on an <em>if needed</em>, so an admin can see what they're about to ask of people. <b>The 14th</b> is chosen — a small diamond, a shape rather than a colour, so it reads at any point on the ramp and through the past dimming.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Invitee colours leave the purple family</h2>
+      <p>Two different things are being said in colour, and they must not be confused. The <b>ramp</b> answers <em>how many can come</em> — purple, ordered, low to high. An <b>invitee colour</b> answers <em>which person</em> — categorical, no order at all. If people were purple too, someone's colour would read as a coverage level. So the roster runs on varied pastels, desaturated enough to sit on the violet ground without competing with the ramp.</p>
+    </div>
+    <div class="people">
+      <div class="person"><span class="dot" style="background:var(--inv-1)"></span>Dani<span style="color:var(--k-ink3);margin-left:4px">#E9A6A0</span></div>
+      <div class="person"><span class="dot" style="background:var(--inv-2)"></span>Jake<span style="color:var(--k-ink3);margin-left:4px">#A9C8E8</span></div>
+      <div class="person"><span class="dot" style="background:var(--inv-3)"></span>Tom<span style="color:var(--k-ink3);margin-left:4px">#B9DCC2</span></div>
+      <div class="person"><span class="dot" style="background:var(--inv-4)"></span>Ash<span style="color:var(--k-ink3);margin-left:4px">#EBD3A0</span></div>
+      <div class="person"><span class="dot" style="background:var(--inv-5)"></span>Kit<span style="color:var(--k-ink3);margin-left:4px">#D3B2E8</span></div>
+      <div class="person"><span class="dot" style="background:var(--inv-6)"></span>Rae<span style="color:var(--k-ink3);margin-left:4px">#A8D8D8</span></div>
+    </div>
+    <p class="note">Kit's lilac is the one to watch — it is the closest any person gets to the ramp, and it earns its place only because a name always appears as a dot beside text, never as a cell fill.</p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Claiming a name</h2>
+      <p>Nobody has an account. You arrive at a shared link and say which of these people you are, and the app remembers it on that phone. Until you do, the month is fully readable but nothing is tappable — so this control is the first thing a newcomer meets, and the thing a returning voter should barely notice.</p>
+    </div>
+
+    <div class="grid3">
+
+      <div class="opt">
+        <div class="opt-name">Bottom sheet</div>
+        <p class="opt-thesis">The month dims and a sheet rises with the roster. Big targets, thumb-reachable, one job at a time.</p>
+        <div class="states">
+          <div>
+            <div class="state-label">First visit</div>
+            <div class="mini">
+              <div class="mini-bar"><span>September 2026</span><span>‹ ›</span></div>
+              <div class="mini-strip" style="opacity:.32">
+                <div></div><div style="background:#3A2A56"></div><div style="background:#4E3770"></div>
+                <div style="background:#9773BC"></div><div></div><div style="background:#2B2040"></div><div></div>
+              </div>
+              <div class="prompt">
+                <div class="prompt-q">Who are you?</div>
+                <div class="rows">
+                  <div class="row"><span class="dot" style="background:var(--inv-1)"></span>Dani</div>
+                  <div class="row"><span class="dot" style="background:var(--inv-2)"></span>Jake</div>
+                  <div class="row"><span class="dot" style="background:var(--inv-3)"></span>Tom</div>
+                  <div class="row"><span class="dot" style="background:var(--inv-4)"></span>Ash</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="state-label">After claiming</div>
+            <div class="mini">
+              <div class="claimed"><span class="dot" style="background:var(--inv-3)"></span>You are Tom<span class="swap">SWAP</span></div>
+              <div class="mini-strip">
+                <div></div><div style="background:#3A2A56"></div><div style="background:#4E3770"></div>
+                <div style="background:#9773BC"></div><div></div><div style="background:#2B2040"></div><div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tradeoffs">
+          <div><span class="mark">+</span><span>Largest touch targets of the three; works one-handed.</span></div>
+          <div><span class="mark">+</span><span>Scales past six people without redesign.</span></div>
+          <div><span class="mark">−</span><span>Covers the month at the moment you most want to see it.</span></div>
+        </div>
+      </div>
+
+      <div class="opt">
+        <div class="opt-name">Header dropdown</div>
+        <p class="opt-thesis">A line at the top of the month opens into the roster in place. Nothing moves, nothing is covered.</p>
+        <div class="states">
+          <div>
+            <div class="state-label">Open</div>
+            <div class="mini">
+              <div class="mini-bar"><span style="color:var(--k-ink)">Who are you? ▾</span><span>‹ ›</span></div>
+              <div class="prompt" style="padding:6px">
+                <div class="rows">
+                  <div class="row"><span class="dot" style="background:var(--inv-1)"></span>Dani</div>
+                  <div class="row"><span class="dot" style="background:var(--inv-2)"></span>Jake</div>
+                  <div class="row sel"><span class="dot" style="background:var(--inv-3)"></span>Tom<span class="tick">✓</span></div>
+                  <div class="row"><span class="dot" style="background:var(--inv-4)"></span>Ash</div>
+                  <div class="row"><span class="dot" style="background:var(--inv-5)"></span>Kit</div>
+                  <div class="row"><span class="dot" style="background:var(--inv-6)"></span>Rae</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="state-label">Closed, with your colour offered</div>
+            <div class="mini">
+              <div class="mini-bar"><span style="color:var(--k-ink)"><span class="dot" style="background:var(--inv-3);display:inline-block;margin-right:6px"></span>Tom ▾</span><span>‹ ›</span></div>
+              <div class="colourpick">
+                <div style="background:var(--inv-1)" class="taken"></div>
+                <div style="background:var(--inv-2)" class="taken"></div>
+                <div style="background:var(--inv-3)" class="mine"></div>
+                <div style="background:var(--inv-4)" class="taken"></div>
+                <div style="background:#C9B8A0"></div><div style="background:#9FB8D8"></div>
+              </div>
+              <div class="mini-strip">
+                <div></div><div style="background:#3A2A56"></div><div style="background:#4E3770"></div>
+                <div style="background:#9773BC"></div><div></div><div style="background:#2B2040"></div><div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tradeoffs">
+          <div><span class="mark">+</span><span>The month stays visible while you pick.</span></div>
+          <div><span class="mark">+</span><span>Natural home for the colour swatches — taken ones dimmed, yours ringed.</span></div>
+          <div><span class="mark">−</span><span>Smallest targets; a six-row list at the top of a phone is a stretch for a thumb.</span></div>
+        </div>
+      </div>
+
+      <div class="opt">
+        <div class="opt-name">Chip rail</div>
+        <p class="opt-thesis">The roster is never hidden. Everyone sits in a row above the month; yours is simply the lit one.</p>
+        <div class="states">
+          <div>
+            <div class="state-label">Nobody claimed yet</div>
+            <div class="mini">
+              <div class="prompt-q" style="font-size:11.5px;color:var(--k-ink3)">TAP YOUR NAME TO VOTE</div>
+              <div class="chips">
+                <span class="chip-p"><span class="dot" style="background:var(--inv-1)"></span>Dani</span>
+                <span class="chip-p"><span class="dot" style="background:var(--inv-2)"></span>Jake</span>
+                <span class="chip-p"><span class="dot" style="background:var(--inv-3)"></span>Tom</span>
+                <span class="chip-p"><span class="dot" style="background:var(--inv-4)"></span>Ash</span>
+                <span class="chip-p"><span class="dot" style="background:var(--inv-5)"></span>Kit</span>
+                <span class="chip-p"><span class="dot" style="background:var(--inv-6)"></span>Rae</span>
+              </div>
+              <div class="mini-strip" style="opacity:.5">
+                <div></div><div style="background:#3A2A56"></div><div style="background:#4E3770"></div>
+                <div style="background:#9773BC"></div><div></div><div style="background:#2B2040"></div><div></div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="state-label">Claimed — yours stays lit</div>
+            <div class="mini">
+              <div class="chips">
+                <span class="chip-p"><span class="dot" style="background:var(--inv-1)"></span>Dani</span>
+                <span class="chip-p"><span class="dot" style="background:var(--inv-2)"></span>Jake</span>
+                <span class="chip-p on" style="background:var(--inv-3)">Tom</span>
+                <span class="chip-p"><span class="dot" style="background:var(--inv-4)"></span>Ash</span>
+                <span class="chip-p"><span class="dot" style="background:var(--inv-5)"></span>Kit</span>
+              </div>
+              <div class="mini-strip">
+                <div></div><div style="background:#3A2A56"></div><div style="background:#4E3770"></div>
+                <div style="background:#9773BC"></div><div></div><div style="background:#2B2040"></div><div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tradeoffs">
+          <div><span class="mark">+</span><span>You can always see who you are voting as — no hidden state.</span></div>
+          <div><span class="mark">+</span><span>Doubles as the roster, so the calendar shows who is invited without a second surface.</span></div>
+          <div><span class="mark">−</span><span>Eats vertical space above the month, permanently, on the smallest screens.</span></div>
+          <div><span class="mark">−</span><span>Wraps awkwardly past about eight people or with long names.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Where the names actually live</h2>
+      <p>Whichever picker wins, a 48px cell can't hold six names — so tapping a day opens it. This is where the roster colours do their real work, and where a claimed voter sets their own answer.</p>
+    </div>
+    <div class="two">
+      <div class="mini" style="max-width:344px">
+        <div class="mini-bar"><span style="color:var(--k-ink);font-size:14px">Mon 14 September</span><span>✕</span></div>
+        <div class="rows">
+          <div class="row"><span class="dot" style="background:var(--inv-1)"></span>Dani</div>
+          <div class="row"><span class="dot" style="background:var(--inv-2)"></span>Jake</div>
+          <div class="row"><span class="dot" style="background:var(--inv-3)"></span>Tom<span class="swap" style="margin-left:auto">YOU</span></div>
+          <div class="row"><span class="dot" style="background:var(--inv-4)"></span>Ash</div>
+          <div class="row" style="opacity:.72"><span class="dot" style="background:var(--inv-5)"></span><em style="font-style:italic">Kit — if needed</em></div>
+          <div class="row"><span class="dot" style="background:var(--inv-6)"></span>Rae</div>
+        </div>
+        <div style="display:flex;gap:6px;padding-top:2px">
+          <span class="chip-p" style="background:var(--w6);color:var(--k-on-light);border-color:transparent;font-weight:600">Free</span>
+          <span class="chip-p">If needed</span>
+          <span class="chip-p">Can't</span>
+        </div>
+      </div>
+      <p class="note">The three-state control is explicit here rather than a cycling tap, because this sheet is where a person deliberately answers. On the grid itself a tap still cycles <code>none → free → if needed → none</code> for quick passes down a month. <b>Kit's row</b> shows the <em>if needed</em> treatment: italic and slightly recessed, distinguished by weight and style rather than by tinting her colour — her colour has to keep meaning "Kit".</p>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>Still open.</b> Which picker; whether the day sheet is a sheet or a full screen; and what an empty month looks like before anyone has voted at all.</p>
+    <p class="note">The six pastels above replace the twelve saturated hues currently in <code>kdh_service.PALETTE</code>, which were chosen before any visual direction existed. That's a one-tuple change to code already merged — noted, not yet made.</p>
+  </footer>
+</div>

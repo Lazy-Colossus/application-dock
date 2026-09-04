@@ -7,6 +7,7 @@ HTTPException. The only filesystem code for topics.
 from __future__ import annotations
 
 from app.core.config import settings
+from app.core.locks import key_lock
 from app.repositories import _storage
 from app.schemas.hotaru import Topic
 
@@ -29,10 +30,17 @@ def find_topic(topic_id: str) -> Topic | None:
     return None
 
 
+def transaction():
+    """Serialize a read-modify-write of the topics file (Story 1.8)."""
+    return key_lock(str(_TOPICS_PATH))
+
+
 def add(topic: Topic) -> None:
-    write_topics(read_topics() + [topic])
+    with transaction():
+        write_topics(read_topics() + [topic])
 
 
 def replace(topic: Topic) -> None:
     """Persist `topic` in place of the existing one with the same id."""
-    write_topics([topic if t.id == topic.id else t for t in read_topics()])
+    with transaction():
+        write_topics([topic if t.id == topic.id else t for t in read_topics()])

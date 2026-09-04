@@ -8,19 +8,29 @@ All writes use the atomic write-then-rename pattern under a module-level lock.
 from __future__ import annotations
 
 import json
-import os
-import threading
 from pathlib import Path
 
 from pydantic import BaseModel
 
 from app.core.config import settings
+from app.core.locks import key_lock
+from app.core.storage import atomic_write_json
 
 _AUTH_FILENAME = "_auth.json"
 
-# Protects all read-modify-write operations so concurrent requests
-# (FastAPI runs sync handlers in a threadpool) cannot race each other.
-_auth_lock = threading.Lock()
+
+def _auth_lock():
+    """The shared per-file lock for the credentials file (Story 1.8).
+
+    Auth already serialized its own writes behind a private module lock; it now
+    uses the platform primitive so every persistence module shares one mechanism.
+
+    `read_users` deliberately stays outside this lock: the only write it can make
+    is the legacy-format migration, which is idempotent and atomic, and locking it
+    would deadlock the read-modify-write helpers below that call it while holding
+    the lock.
+    """
+    return key_lock(str(_auth_path()))
 
 
 class UserRecord(BaseModel):
@@ -30,12 +40,6 @@ class UserRecord(BaseModel):
 
 def _auth_path() -> Path:
     return settings.data_dir / _AUTH_FILENAME
-
-
-def _atomic_write_json(path: Path, payload: dict[str, object] | list[object]) -> None:
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    os.replace(tmp, path)
 
 
 def read_users() -> list[UserRecord]:
@@ -49,7 +53,7 @@ def read_users() -> list[UserRecord]:
     if isinstance(raw, dict):
         # Migrate legacy single-object format → list format
         records = [raw]
-        _atomic_write_json(path, records)
+        atomic_write_json(path, records)
         raw = records
 
     return [UserRecord.model_validate(entry) for entry in raw]
@@ -57,8 +61,8 @@ def read_users() -> list[UserRecord]:
 
 def write_users(records: list[UserRecord]) -> None:
     """Atomically persist the full user list."""
-    with _auth_lock:
-        _atomic_write_json(_auth_path(), [r.model_dump() for r in records])
+    with _auth_lock():
+        atomic_write_json(_auth_path(), [r.model_dump() for r in records])
 
 
 def read_user(username: str) -> UserRecord | None:
@@ -71,20 +75,20 @@ def write_user(record: UserRecord) -> None:
 
     Preserves all other user accounts — used by setup_auth.py and change_password.
     """
-    with _auth_lock:
+    with _auth_lock():
         current = read_users()
         updated = [record if r.username == record.username else r for r in current]
         if not any(r.username == record.username for r in current):
             updated.append(record)
-        _atomic_write_json(_auth_path(), [r.model_dump() for r in updated])
+        atomic_write_json(_auth_path(), [r.model_dump() for r in updated])
 
 
 def add_user_if_not_exists(record: UserRecord) -> bool:
     """Atomically check for duplicate then append. Returns False if username is taken."""
-    with _auth_lock:
+    with _auth_lock():
         users = read_users()
         if any(r.username == record.username for r in users):
             return False
         users.append(record)
-        _atomic_write_json(_auth_path(), [r.model_dump() for r in users])
+        atomic_write_json(_auth_path(), [r.model_dump() for r in users])
         return True

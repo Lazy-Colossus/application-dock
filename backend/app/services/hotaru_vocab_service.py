@@ -100,10 +100,11 @@ def create_word(
         drill_caps=_drill_caps(kanji),
     )
 
-    if visibility == "private":
-        vocab_repo.write_private(user, vocab_repo.read_private(user) + [word])
-    else:
-        vocab_repo.write_shared(vocab_repo.read_shared() + [word])
+    with vocab_repo.transaction():
+        if visibility == "private":
+            vocab_repo.write_private(user, vocab_repo.read_private(user) + [word])
+        else:
+            vocab_repo.write_shared(vocab_repo.read_shared() + [word])
     return word
 
 
@@ -167,23 +168,25 @@ def update_word(
     )
 
     new_location = "private" if visibility == "private" else "shared"
-    if new_location == location:
-        # Replace in place within the same file.
-        if location == "private":
-            vocab_repo.write_private(
-                user, [updated if w.id == word_id else w for w in vocab_repo.read_private(user)]
-            )
+    with vocab_repo.transaction():
+        if new_location == location:
+            # Replace in place within the same file.
+            if location == "private":
+                vocab_repo.write_private(
+                    user, [updated if w.id == word_id else w for w in vocab_repo.read_private(user)]
+                )
+            else:
+                vocab_repo.write_shared(
+                    [updated if w.id == word_id else w for w in vocab_repo.read_shared()]
+                )
         else:
-            vocab_repo.write_shared(
-                [updated if w.id == word_id else w for w in vocab_repo.read_shared()]
-            )
-    else:
-        # Visibility changed → remove from the old file, append to the new one.
-        vocab_repo.remove_word(user, word_id, location)
-        if new_location == "private":
-            vocab_repo.write_private(user, vocab_repo.read_private(user) + [updated])
-        else:
-            vocab_repo.write_shared(vocab_repo.read_shared() + [updated])
+            # Visibility changed → remove from the old file, append to the new one.
+            # `remove_word` re-enters this same lock; see `core.locks._lock_for`.
+            vocab_repo.remove_word(user, word_id, location)
+            if new_location == "private":
+                vocab_repo.write_private(user, vocab_repo.read_private(user) + [updated])
+            else:
+                vocab_repo.write_shared(vocab_repo.read_shared() + [updated])
     return updated
 
 

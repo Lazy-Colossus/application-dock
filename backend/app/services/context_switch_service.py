@@ -65,10 +65,9 @@ def create_list(username: str, name: str) -> TodoList:
     if not clean:
         raise ValueError("List name must not be empty")
 
-    doc = repo.read_doc(username)
-    new_list = TodoList(id=_new_id("l"), name=clean, created_at=_now_iso(), todos=[])
-    doc.lists.append(new_list)
-    repo.write_doc(username, doc)
+    with repo.doc_transaction(username) as doc:
+        new_list = TodoList(id=_new_id("l"), name=clean, created_at=_now_iso(), todos=[])
+        doc.lists.append(new_list)
     return _board_view(new_list)
 
 
@@ -90,30 +89,28 @@ def update_list(
 
     Raises ValueError on a blank name, FileNotFoundError if the list is absent.
     """
-    doc = repo.read_doc(username)
-    lst = _find_list(doc, list_id)
+    with repo.doc_transaction(username) as doc:
+        lst = _find_list(doc, list_id)
 
-    if name is not None:
-        clean = name.strip()
-        if not clean:
-            raise ValueError("List name must not be empty")
-        lst.name = clean
+        if name is not None:
+            clean = name.strip()
+            if not clean:
+                raise ValueError("List name must not be empty")
+            lst.name = clean
 
-    if grid is not None:
-        lst.grid = grid
+        if grid is not None:
+            lst.grid = grid
 
-    repo.write_doc(username, doc)
     return _board_view(lst)
 
 
 def delete_list(username: str, list_id: str) -> None:
     """Delete a list and its todos. Raises FileNotFoundError if absent."""
-    doc = repo.read_doc(username)
-    remaining = [lst for lst in doc.lists if lst.id != list_id]
-    if len(remaining) == len(doc.lists):
-        raise FileNotFoundError(f"list {list_id} not found")
-    doc.lists = remaining
-    repo.write_doc(username, doc)
+    with repo.doc_transaction(username) as doc:
+        remaining = [lst for lst in doc.lists if lst.id != list_id]
+        if len(remaining) == len(doc.lists):
+            raise FileNotFoundError(f"list {list_id} not found")
+        doc.lists = remaining
 
 
 def get_list(username: str, list_id: str) -> TodoList:
@@ -142,26 +139,25 @@ def add_todo(
     if not clean:
         raise ValueError("Todo header must not be empty")
 
-    doc = repo.read_doc(username)
-    lst = _find_list(doc, list_id)
+    with repo.doc_transaction(username) as doc:
+        lst = _find_list(doc, list_id)
 
-    now = _now_iso()
-    todo = Todo(
-        id=_new_id("t"),
-        header=clean,
-        color=color,
-        status="active",
-        order=max((t.order for t in lst.todos if t.status == "active"), default=-1) + 1,
-        created_at=now,
-        updated_at=now,
-    )
+        now = _now_iso()
+        todo = Todo(
+            id=_new_id("t"),
+            header=clean,
+            color=color,
+            status="active",
+            order=max((t.order for t in lst.todos if t.status == "active"), default=-1) + 1,
+            created_at=now,
+            updated_at=now,
+        )
 
-    seed = (first_update or "").strip()
-    if seed:
-        todo.updates.append(TodoUpdate(id=_new_id("u"), text=seed, created_at=now))
+        seed = (first_update or "").strip()
+        if seed:
+            todo.updates.append(TodoUpdate(id=_new_id("u"), text=seed, created_at=now))
 
-    lst.todos.append(todo)
-    repo.write_doc(username, doc)
+        lst.todos.append(todo)
     return todo
 
 
@@ -189,30 +185,31 @@ def update_todo(
     (Story 3.3). Raises ValueError on a blank header, FileNotFoundError if the
     list or todo is absent.
     """
-    doc = repo.read_doc(username)
-    lst = _find_list(doc, list_id)
-    todo = _find_todo(lst, todo_id)
+    with repo.doc_transaction(username) as doc:
+        lst = _find_list(doc, list_id)
+        todo = _find_todo(lst, todo_id)
 
-    if header is not None:
-        clean = header.strip()
-        if not clean:
-            raise ValueError("Todo header must not be empty")
-        todo.header = clean
+        if header is not None:
+            clean = header.strip()
+            if not clean:
+                raise ValueError("Todo header must not be empty")
+            todo.header = clean
 
-    if color is not None:
-        todo.color = color
+        if color is not None:
+            todo.color = color
 
-    if status is not None:
-        # A restored todo re-enters at the end of the board (Story 3.3): the
-        # order it held when archived is very likely taken by now, and
-        # `activeTodos` sorts on `order` alone, so a tie would resolve at random.
-        if status == "active" and todo.status != "active":
-            todo.order = max((t.order for t in lst.todos if t.status == "active"), default=-1) + 1
-        todo.status = status
-        todo.archived_at = _now_iso() if status == "archived" else None
+        if status is not None:
+            # A restored todo re-enters at the end of the board (Story 3.3): the
+            # order it held when archived is very likely taken by now, and
+            # `activeTodos` sorts on `order` alone, so a tie would resolve at random.
+            if status == "active" and todo.status != "active":
+                todo.order = (
+                    max((t.order for t in lst.todos if t.status == "active"), default=-1) + 1
+                )
+            todo.status = status
+            todo.archived_at = _now_iso() if status == "archived" else None
 
-    todo.updated_at = _now_iso()
-    repo.write_doc(username, doc)
+        todo.updated_at = _now_iso()
     return todo
 
 
@@ -235,13 +232,12 @@ def delete_todo(username: str, list_id: str, todo_id: str) -> None:
     Drops the record from the todos array regardless of status; in v1 the UI only
     ever calls this from the archive view (Story 2.7).
     """
-    doc = repo.read_doc(username)
-    lst = _find_list(doc, list_id)
-    remaining = [t for t in lst.todos if t.id != todo_id]
-    if len(remaining) == len(lst.todos):
-        raise FileNotFoundError(f"todo {todo_id} not found")
-    lst.todos = remaining
-    repo.write_doc(username, doc)
+    with repo.doc_transaction(username) as doc:
+        lst = _find_list(doc, list_id)
+        remaining = [t for t in lst.todos if t.id != todo_id]
+        if len(remaining) == len(lst.todos):
+            raise FileNotFoundError(f"todo {todo_id} not found")
+        lst.todos = remaining
 
 
 def add_update(username: str, list_id: str, todo_id: str, text: str) -> Todo:
@@ -255,11 +251,9 @@ def add_update(username: str, list_id: str, todo_id: str, text: str) -> Todo:
     if not clean:
         raise ValueError("Update text must not be empty")
 
-    doc = repo.read_doc(username)
-    todo = _find_todo(_find_list(doc, list_id), todo_id)
-
-    todo.updates.append(TodoUpdate(id=_new_id("u"), text=clean, created_at=_now_iso()))
-    repo.write_doc(username, doc)
+    with repo.doc_transaction(username) as doc:
+        todo = _find_todo(_find_list(doc, list_id), todo_id)
+        todo.updates.append(TodoUpdate(id=_new_id("u"), text=clean, created_at=_now_iso()))
     return todo
 
 
@@ -273,21 +267,19 @@ def move_todo(username: str, list_id: str, todo_id: str, target_list_id: str) ->
     a same-list or archived-todo move, FileNotFoundError if either list or the
     todo is absent.
     """
-    doc = repo.read_doc(username)
-    source = _find_list(doc, list_id)
-    target = _find_list(doc, target_list_id)
-    todo = _find_todo(source, todo_id)
+    with repo.doc_transaction(username) as doc:
+        source = _find_list(doc, list_id)
+        target = _find_list(doc, target_list_id)
+        todo = _find_todo(source, todo_id)
 
-    if target.id == source.id:
-        raise ValueError("A todo cannot be moved to the list it is already in")
-    if todo.status != "active":
-        raise ValueError("Only an active todo can be moved")
+        if target.id == source.id:
+            raise ValueError("A todo cannot be moved to the list it is already in")
+        if todo.status != "active":
+            raise ValueError("Only an active todo can be moved")
 
-    source.todos = [t for t in source.todos if t.id != todo_id]
-    todo.order = max((t.order for t in target.todos if t.status == "active"), default=-1) + 1
-    target.todos.append(todo)
-
-    repo.write_doc(username, doc)
+        source.todos = [t for t in source.todos if t.id != todo_id]
+        todo.order = max((t.order for t in target.todos if t.status == "active"), default=-1) + 1
+        target.todos.append(todo)
     return todo
 
 
@@ -299,19 +291,18 @@ def reorder_todos(username: str, list_id: str, ordered_ids: list[str]) -> TodoLi
     ValueError before a single field is touched, so a rejected request is
     never a partial write. Raises FileNotFoundError if the list is absent.
     """
-    doc = repo.read_doc(username)
-    lst = _find_list(doc, list_id)
+    with repo.doc_transaction(username) as doc:
+        lst = _find_list(doc, list_id)
 
-    active_ids = {t.id for t in lst.todos if t.status == "active"}
-    if len(ordered_ids) != len(set(ordered_ids)):
-        raise ValueError("ordered_ids must not repeat a todo")
-    if set(ordered_ids) != active_ids:
-        raise ValueError("ordered_ids must list exactly the active todos of this list")
+        active_ids = {t.id for t in lst.todos if t.status == "active"}
+        if len(ordered_ids) != len(set(ordered_ids)):
+            raise ValueError("ordered_ids must not repeat a todo")
+        if set(ordered_ids) != active_ids:
+            raise ValueError("ordered_ids must list exactly the active todos of this list")
 
-    position = {todo_id: index for index, todo_id in enumerate(ordered_ids)}
-    for todo in lst.todos:
-        if todo.status == "active":
-            todo.order = position[todo.id]
+        position = {todo_id: index for index, todo_id in enumerate(ordered_ids)}
+        for todo in lst.todos:
+            if todo.status == "active":
+                todo.order = position[todo.id]
 
-    repo.write_doc(username, doc)
     return _board_view(lst)

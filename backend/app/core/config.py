@@ -38,6 +38,22 @@ class Settings(BaseSettings):
     google_maps_server_key: str = ""
     google_maps_browser_key: str = ""
 
+    # KDH decides capability by which account you logged in as, read as a
+    # DENYLIST: these usernames are guests (vote-only) and every other
+    # authenticated user is an admin. See the spec's AR-2 — this fails open on
+    # purpose, because an admin allowlist fails closed and needs the real
+    # account names up front.
+    #
+    # A plain string, not `list[str]`: pydantic-settings parses a complex-typed
+    # field as JSON from the environment, which would make the natural
+    # `KDH_GUESTS=players,guest` a boot failure.
+    kdh_guests: str = "players"
+
+    @property
+    def kdh_guest_usernames(self) -> list[str]:
+        """`kdh_guests` split on commas, blanks and padding discarded."""
+        return [name.strip() for name in self.kdh_guests.split(",") if name.strip()]
+
 
 settings = Settings()
 try:

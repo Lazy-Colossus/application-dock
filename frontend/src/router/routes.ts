@@ -144,6 +144,28 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/apps/listies/pages/SheetPage.vue"),
         meta: { title: "Listies", requiresAuth: true },
       },
+      {
+        path: "kdh",
+        name: "kdh-home",
+        component: () => import("@/apps/kdh/pages/KdhHomePage.vue"),
+        meta: { title: "KDH", requiresAuth: true },
+      },
+      {
+        path: "kdh/c/:calendarId",
+        name: "kdh-calendar",
+        component: () => import("@/apps/kdh/pages/CalendarPage.vue"),
+        meta: { title: "KDH", requiresAuth: true },
+      },
+      {
+        // The invitee link. Deliberately NOT `requiresAuth`: an invitee arrives
+        // from a group chat with no account, and bouncing them to a login they
+        // cannot pass would be the whole feature failing. The token in the path
+        // is the authorisation, and the server enforces what it buys.
+        path: "kdh/s/:shareToken",
+        name: "kdh-shared-calendar",
+        component: () => import("@/apps/kdh/pages/CalendarPage.vue"),
+        meta: { title: "KDH" },
+      },
     ],
   },
   {

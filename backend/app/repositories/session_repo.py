@@ -11,11 +11,12 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import re
 from pathlib import Path
 
 from app.core.config import settings
+from app.core.locks import key_lock
+from app.core.storage import atomic_write_json
 from app.schemas.session import SessionData
 
 # Per-session in-progress files: `_ip_{label}.json` (Story 6.1). The leading
@@ -36,13 +37,20 @@ _SESSION_LABEL_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})(?:-(\d+))?$")
 logger = logging.getLogger(__name__)
 
 
-def _atomic_write_json(path: Path, payload: dict[str, object] | list[object]) -> None:
-    # `os.replace` is atomic on POSIX (best-effort on Windows). If the process
-    # is killed between writing .tmp and the rename, the previous file at
-    # `path` (if any) remains intact and uncorrupted.
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    os.replace(tmp, path)
+def sessions_transaction():
+    """Serialize any mutation of the archery session files (Story 1.8).
+
+    One coarse key, not one per file, because a session's *label* is allocated by
+    reading every existing label across many files — a per-file lock would leave
+    two concurrent creates (or two same-day finalises) free to pick the same one.
+    Archery is single-operator in practice, so the coarse key costs nothing.
+    """
+    return key_lock("archery:sessions")
+
+
+def recurring_players_transaction():
+    """Serialize a read-modify-write of the recurring players file (Story 1.8)."""
+    return key_lock(str(settings.data_dir / _RECURRING_PLAYERS_FILENAME))
 
 
 def write_session(path: Path, session: SessionData) -> None:
@@ -51,7 +59,7 @@ def write_session(path: Path, session: SessionData) -> None:
     Path-agnostic so callers (Story 2.5 finalise, Story 3.1 auto-save)
     can decide the destination.
     """
-    _atomic_write_json(path, session.model_dump(mode="json"))
+    atomic_write_json(path, session.model_dump(mode="json"))
 
 
 def read_session(label: str) -> SessionData:
@@ -134,7 +142,7 @@ def write_in_progress(session: SessionData) -> None:
     """
     payload = session.model_dump(mode="json")
     payload["status"] = "in_progress"
-    _atomic_write_json(_ip_path(session.label), payload)
+    atomic_write_json(_ip_path(session.label), payload)
 
 
 def read_in_progress(label: str) -> SessionData | None:
@@ -219,4 +227,4 @@ def read_recurring_players() -> list[str]:
 
 def write_recurring_players(names: list[str]) -> None:
     """Persist the recurring-players list atomically."""
-    _atomic_write_json(settings.data_dir / _RECURRING_PLAYERS_FILENAME, names)
+    atomic_write_json(settings.data_dir / _RECURRING_PLAYERS_FILENAME, names)

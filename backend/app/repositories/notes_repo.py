@@ -11,6 +11,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.core.config import settings
+from app.core.locks import key_lock
 from app.repositories import _storage
 from app.schemas.hotaru import Note, Visibility
 
@@ -40,13 +41,25 @@ def write_private(user: str, notes: list[Note]) -> None:
     _storage.atomic_write_json(_private_path(user), [n.model_dump(mode="json") for n in notes])
 
 
+def transaction():
+    """Serialize a read-modify-write of the notes aggregate (Story 1.8).
+
+    One key covers the shared file and every user's private file, because
+    changing a note's visibility moves it between them and `remove_for_word`
+    sweeps all of them at once — per-file locks would have to be taken in sets
+    and could deadlock.
+    """
+    return key_lock("hotaru:notes")
+
+
 def add(note: Note) -> None:
     """Append a note to the file its visibility dictates — shared to the shared
     file, private to the author's own private file (path boundary)."""
-    if note.visibility == "shared":
-        write_shared([*read_shared(), note])
-    else:
-        write_private(note.author, [*read_private(note.author), note])
+    with transaction():
+        if note.visibility == "shared":
+            write_shared([*read_shared(), note])
+        else:
+            write_private(note.author, [*read_private(note.author), note])
 
 
 def find(note_id: str, user: str) -> Note | None:
@@ -72,45 +85,48 @@ def set_visibility(note_id: str, user: str, visibility: Visibility) -> Note:
     fails or the process dies between them, the note survives in BOTH files (a
     recoverable duplicate) rather than being lost — the safe failure direction,
     since the JSON-file store has no cross-file transaction."""
-    note = find(note_id, user)
-    if note is None:
-        raise FileNotFoundError(note_id)
-    if note.author != user:
-        raise PermissionError(f"Note {note_id} is not yours to change.")
-    if note.visibility == visibility:
-        return note
+    with transaction():
+        note = find(note_id, user)
+        if note is None:
+            raise FileNotFoundError(note_id)
+        if note.author != user:
+            raise PermissionError(f"Note {note_id} is not yours to change.")
+        if note.visibility == visibility:
+            return note
 
-    moved = note.model_copy(update={"visibility": visibility})
-    # Add to the destination FIRST (add() routes by moved.visibility), THEN drop
-    # it from the source — so a crash in between duplicates, never drops.
-    add(moved)
-    if note.visibility == "shared":
-        write_shared([n for n in read_shared() if n.id != note_id])
-    else:
-        write_private(user, [n for n in read_private(user) if n.id != note_id])
-    return moved
+        moved = note.model_copy(update={"visibility": visibility})
+        # Add to the destination FIRST (add() routes by moved.visibility), THEN drop
+        # it from the source — so a crash in between duplicates, never drops.
+        add(moved)
+        if note.visibility == "shared":
+            write_shared([n for n in read_shared() if n.id != note_id])
+        else:
+            write_private(user, [n for n in read_private(user) if n.id != note_id])
+        return moved
 
 
 def replace(note: Note) -> None:
     """Rewrite a note (matched by id) in place in the file its visibility
     dictates. For a text edit that doesn't change which file holds it."""
-    if note.visibility == "shared":
-        write_shared([note if n.id == note.id else n for n in read_shared()])
-    else:
-        write_private(
-            note.author, [note if n.id == note.id else n for n in read_private(note.author)]
-        )
+    with transaction():
+        if note.visibility == "shared":
+            write_shared([note if n.id == note.id else n for n in read_shared()])
+        else:
+            write_private(
+                note.author, [note if n.id == note.id else n for n in read_private(note.author)]
+            )
 
 
 def remove(note_id: str, user: str) -> None:
     """Delete a note from wherever the caller can see it — the shared file if it's
     there, else the caller's own private file. Never the partner's private file
     (NFR-2). The note lives in exactly one file, so this is unambiguous."""
-    shared = read_shared()
-    if any(n.id == note_id for n in shared):
-        write_shared([n for n in shared if n.id != note_id])
-        return
-    write_private(user, [n for n in read_private(user) if n.id != note_id])
+    with transaction():
+        shared = read_shared()
+        if any(n.id == note_id for n in shared):
+            write_shared([n for n in shared if n.id != note_id])
+            return
+        write_private(user, [n for n in read_private(user) if n.id != note_id])
 
 
 def remove_for_word(word_id: str) -> None:
@@ -119,19 +135,20 @@ def remove_for_word(word_id: str) -> None:
     private ones) linger. This is the one notes-repo operation that touches other
     users' private files; it only ever REMOVES, never reads them into a response
     (so NFR-2's read-boundary is intact). Writes a file only if it changed."""
-    shared = read_shared()
-    kept = [n for n in shared if n.word_id != word_id]
-    if len(kept) != len(shared):
-        write_shared(kept)
+    with transaction():
+        shared = read_shared()
+        kept = [n for n in shared if n.word_id != word_id]
+        if len(kept) != len(shared):
+            write_shared(kept)
 
-    users_dir = _HOTARU_DIR / "users"
-    if not users_dir.is_dir():
-        return
-    for user_dir in users_dir.iterdir():
-        if not user_dir.is_dir():
-            continue
-        user = user_dir.name
-        notes = read_private(user)
-        remaining = [n for n in notes if n.word_id != word_id]
-        if len(remaining) != len(notes):
-            write_private(user, remaining)
+        users_dir = _HOTARU_DIR / "users"
+        if not users_dir.is_dir():
+            return
+        for user_dir in users_dir.iterdir():
+            if not user_dir.is_dir():
+                continue
+            user = user_dir.name
+            notes = read_private(user)
+            remaining = [n for n in notes if n.word_id != word_id]
+            if len(remaining) != len(notes):
+                write_private(user, remaining)

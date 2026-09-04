@@ -39,22 +39,6 @@ def _session(
 # ─── _atomic_write_json ──────────────────────────────────────────────────────
 
 
-def test_atomic_write_creates_file_and_removes_tmp(isolate_data_dir: Path) -> None:
-    path = isolate_data_dir / "test.json"
-    session_repo._atomic_write_json(path, {"hello": "world"})
-    assert path.exists()
-    assert json.loads(path.read_text()) == {"hello": "world"}
-    # No .tmp leftover
-    assert not (isolate_data_dir / "test.json.tmp").exists()
-
-
-def test_atomic_write_replaces_existing_file(isolate_data_dir: Path) -> None:
-    path = isolate_data_dir / "test.json"
-    session_repo._atomic_write_json(path, {"v": 1})
-    session_repo._atomic_write_json(path, {"v": 2})
-    assert json.loads(path.read_text()) == {"v": 2}
-
-
 # ─── write_session / read_session ────────────────────────────────────────────
 
 
@@ -254,29 +238,3 @@ def test_legacy_in_progress_file_is_migrated(isolate_data_dir: Path) -> None:
     assert result.date == "2026-05-29"
     assert (isolate_data_dir / "_ip_2026-05-29.json").exists()
     assert not (isolate_data_dir / "_in_progress.json").exists()
-
-
-# ─── atomicity (best effort) ─────────────────────────────────────────────────
-
-
-def test_failed_replace_preserves_previous_file(
-    isolate_data_dir: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """If os.replace raises mid-write, the previous file content survives."""
-    path = isolate_data_dir / "test.json"
-    session_repo._atomic_write_json(path, {"v": 1})
-
-    import os as _os
-
-    real_replace = _os.replace
-
-    def failing_replace(*args: Any, **kwargs: Any) -> None:
-        raise OSError("simulated disk failure")
-
-    monkeypatch.setattr("app.repositories.session_repo.os.replace", failing_replace)
-    with pytest.raises(OSError, match="simulated disk failure"):
-        session_repo._atomic_write_json(path, {"v": 2})
-
-    monkeypatch.setattr("app.repositories.session_repo.os.replace", real_replace)
-    # Original v=1 still there.
-    assert json.loads(path.read_text()) == {"v": 1}

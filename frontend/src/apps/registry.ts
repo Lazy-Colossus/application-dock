@@ -36,4 +36,10 @@ export const apps: AppDescriptor[] = [
     icon: "table_chart",
     route: "/listies",
   },
+  {
+    id: "kdh",
+    label: "KDH",
+    icon: "event_available",
+    route: "/kdh",
+  },
 ];
