@@ -1463,3 +1463,150 @@ def test_a_document_written_before_places_still_reads() -> None:
 
     assert doc.schema_version == 1
     assert doc.sheets[0].tabs[0].rows[0].cells["c-1"] == "Tent"
+
+
+# ── the `place_group` column type and place groups (Story 4.6) ─────────────────
+
+GROUPS = [
+    {"id": "g-1", "name": "Must see", "color": "#e5484d"},
+    {"id": "g-2", "name": "Maybe", "color": "#3e63dd"},
+]
+
+
+def _sheet_with_group() -> tuple[str, str, str, str]:
+    """A sheet with a text column and a place_group column, and one row."""
+    resp = _create(
+        columns=[{"name": "Cafe", "type": "text"}, {"name": "Bucket", "type": "place_group"}]
+    )
+    sheet = resp.json()
+    tab_id = sheet["tabs"][0]["id"]
+    _text_id, group_id = (c["id"] for c in sheet["tabs"][0]["columns"])
+    row_id = client.post(f"/api/listies/sheets/{sheet['id']}/tabs/{tab_id}/rows", json={}).json()[
+        "id"
+    ]
+    return sheet["id"], tab_id, row_id, group_id
+
+
+def test_a_place_group_column_can_be_created() -> None:
+    resp = _create(columns=[{"name": "Bucket", "type": "place_group"}])
+
+    assert resp.status_code == 200
+    assert resp.json()["tabs"][0]["columns"][0]["type"] == "place_group"
+
+
+def test_place_groups_persist_through_the_tab_update_endpoint() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+
+    resp = client.put(_tab_url(sheet_id, tab_id), json={"place_groups": GROUPS})
+
+    assert resp.status_code == 200
+    assert resp.json()["place_groups"] == GROUPS
+    assert _tabs(sheet_id)[0]["place_groups"] == GROUPS
+
+
+def test_setting_place_groups_leaves_the_name_and_colour_alone() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+    client.put(_tab_url(sheet_id, tab_id), json={"name": "Trip", "color": "#00aaff"})
+
+    body = client.put(_tab_url(sheet_id, tab_id), json={"place_groups": GROUPS}).json()
+
+    assert (body["name"], body["color"]) == ("Trip", "#00aaff")
+
+
+def test_a_group_id_round_trips_in_a_place_group_cell() -> None:
+    sheet_id, tab_id, row_id, group_col = _sheet_with_group()
+
+    resp = _put_cells(sheet_id, tab_id, row_id, {group_col: "g-1"})
+
+    assert resp.status_code == 200
+    assert resp.json()["cells"][group_col] == "g-1"
+
+
+def test_a_dangling_group_id_is_stored_not_rejected() -> None:
+    """A group can be deleted out from under a cell; the id simply persists."""
+    sheet_id, tab_id, row_id, group_col = _sheet_with_group()
+
+    resp = _put_cells(sheet_id, tab_id, row_id, {group_col: "g-does-not-exist"})
+
+    assert resp.status_code == 200
+    assert resp.json()["cells"][group_col] == "g-does-not-exist"
+
+
+def test_a_place_in_a_group_column_is_rejected() -> None:
+    sheet_id, tab_id, row_id, group_col = _sheet_with_group()
+
+    resp = _put_cells(sheet_id, tab_id, row_id, {group_col: PLACE})
+
+    assert resp.status_code == 422
+    assert "detail" in resp.json()
+
+
+def test_a_number_in_a_group_column_is_rejected() -> None:
+    sheet_id, tab_id, row_id, group_col = _sheet_with_group()
+    assert _put_cells(sheet_id, tab_id, row_id, {group_col: 3}).status_code == 422
+
+
+def test_a_group_that_is_not_a_hex_colour_is_rejected() -> None:
+    sheet_id, tab_id = _sheet_and_tab()
+    bad = [{"id": "g-1", "name": "X", "color": "red"}]
+    assert client.put(_tab_url(sheet_id, tab_id), json={"place_groups": bad}).status_code == 422
+
+
+def test_retyping_place_group_to_text_keeps_the_group_name() -> None:
+    sheet_id, tab_id, row_id, group_col = _sheet_with_group()
+    client.put(_tab_url(sheet_id, tab_id), json={"place_groups": GROUPS})
+    _put_cells(sheet_id, tab_id, row_id, {group_col: "g-1"})
+
+    body = client.put(
+        f"{_tab_url(sheet_id, tab_id)}/columns/{group_col}", json={"type": "text"}
+    ).json()
+
+    assert body["rows"][0]["cells"][group_col] == "Must see"
+
+
+@pytest.mark.parametrize("target", ["number", "date"])
+def test_retyping_place_group_to_a_scalar_blanks_it(target: str) -> None:
+    sheet_id, tab_id, row_id, group_col = _sheet_with_group()
+    client.put(_tab_url(sheet_id, tab_id), json={"place_groups": GROUPS})
+    _put_cells(sheet_id, tab_id, row_id, {group_col: "g-1"})
+
+    body = client.put(
+        f"{_tab_url(sheet_id, tab_id)}/columns/{group_col}", json={"type": target}
+    ).json()
+
+    assert group_col not in body["rows"][0]["cells"]
+
+
+def test_retyping_text_to_place_group_blanks_it() -> None:
+    sheet_id, tab_id, row_id, _ = _sheet_with_group()
+    text_col = _columns(sheet_id)[0]["id"]
+    _put_cells(sheet_id, tab_id, row_id, {text_col: "hello"})
+
+    body = client.put(
+        f"{_tab_url(sheet_id, tab_id)}/columns/{text_col}", json={"type": "place_group"}
+    ).json()
+
+    assert text_col not in body["rows"][0]["cells"]
+
+
+def test_a_document_written_before_groups_still_reads() -> None:
+    """`place_groups` is additive — an older file has no key at all."""
+    from app.repositories import listies_repo
+    from app.schemas.listies import ListiesDoc
+
+    raw = {
+        "schema_version": 1,
+        "sheets": [
+            {
+                "id": "s-old",
+                "name": "Old",
+                "created_at": "t",
+                "tabs": [{"id": "tb-old", "name": "Tab 1", "order": 0, "columns": [], "rows": []}],
+            }
+        ],
+    }
+
+    doc = ListiesDoc.model_validate(listies_repo.migrate(raw))
+
+    assert doc.schema_version == 1
+    assert doc.sheets[0].tabs[0].place_groups == []

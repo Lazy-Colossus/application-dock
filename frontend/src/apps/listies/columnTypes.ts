@@ -14,12 +14,19 @@ const SCALAR_TYPES: ColumnTypeOption[] = [
   { label: "Date", value: "date" },
 ];
 
+// A group is just a label until there is a map to colour, so — unlike `place`
+// — it is offered whether or not Google Maps is configured (Story 4.6).
+const GROUP_TYPE: ColumnTypeOption = { label: "Group", value: "place_group" };
+
 const PLACE_TYPE: ColumnTypeOption = { label: "Place", value: "place" };
 
 /**
  * `place` is offered only when the server has Google Maps configured —
- * otherwise it is a column that can never be filled in.
+ * otherwise it is a column that can never be filled in. `place_group` is always
+ * offered.
  */
 export function columnTypeOptions(allowPlace: boolean): ColumnTypeOption[] {
-  return allowPlace ? [...SCALAR_TYPES, PLACE_TYPE] : SCALAR_TYPES;
+  return allowPlace
+    ? [...SCALAR_TYPES, GROUP_TYPE, PLACE_TYPE]
+    : [...SCALAR_TYPES, GROUP_TYPE];
 }

@@ -51,6 +51,7 @@ function mountCell(
     value: Place | null;
     enabled: boolean;
     near: string | null;
+    initialQuery: string | null;
   }> = {},
 ) {
   return mount(PlaceCell, {
@@ -91,6 +92,11 @@ describe("PlaceCell — searching", () => {
     expect((wrapper.find("input").element as HTMLInputElement).value).toBe(
       "Blue Bottle",
     );
+  });
+
+  it("opens seeded with a typed character (Story 2.8), keeping the first letter", () => {
+    const wrapper = mountCell({ initialQuery: "t" });
+    expect((wrapper.find("input").element as HTMLInputElement).value).toBe("t");
   });
 
   it("searches once the query is worth searching for", async () => {

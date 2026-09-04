@@ -34,7 +34,7 @@ def _auth_path() -> Path:
 
 def _atomic_write_json(path: Path, payload: dict[str, object] | list[object]) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2))
+    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     os.replace(tmp, path)
 
 
@@ -42,7 +42,7 @@ def read_users() -> list[UserRecord]:
     """Return all stored user records. Migrates old single-object format on first read."""
     path = _auth_path()
     try:
-        raw = json.loads(path.read_text())
+        raw = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
         return []
 

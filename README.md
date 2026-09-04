@@ -54,7 +54,7 @@ GOOGLE_MAPS_BROWSER_KEY=AIza...
 
 Prerequisites: Node 20+, Python 3.12+.
 
-**Terminal 1 — Backend** (FastAPI on port 8000, with hot reload):
+**Terminal 1 — Backend** (FastAPI on port 9000, with hot reload):
 
 ```bash
 cd backend
@@ -63,7 +63,7 @@ source .venv/bin/activate
 pip install -r requirements-dev.txt
 export DATA_DIR=./local-data   # local writable path; /data isn't writable outside Docker
 export JWT_SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(32))")
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 9000
 ```
 
 **First-time auth setup** — run once to create login credentials:
@@ -72,7 +72,7 @@ uvicorn app.main:app --reload --port 8000
 DATA_DIR=./local-data python scripts/setup_auth.py
 ```
 
-**Terminal 2 — Frontend** (Quasar dev server on port 9000, proxies `/api/*` to backend):
+**Terminal 2 — Frontend** (Quasar dev server on port 9100, proxies `/api/*` to backend):
 
 ```bash
 cd frontend
@@ -80,9 +80,9 @@ npm install
 npm run dev
 ```
 
-Open <http://localhost:9000>.
+Open <http://localhost:9100>.
 
-> If port 9000 is taken on your machine, pass `--port 9100` to `npm run dev` and adjust manually.
+> If port 9100 is taken on your machine, pass `--port <free-port>` to `npm run dev` and adjust manually.
 
 ## Project layout
 

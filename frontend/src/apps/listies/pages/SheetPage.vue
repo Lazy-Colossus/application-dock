@@ -31,8 +31,43 @@
         {{ store.error }}
       </div>
 
-      <div v-if="canShowMap" class="listies-sheet__toolbar row justify-end">
+      <div
+        v-if="canShowMap || hasGroupColumn || filterCount > 0"
+        class="listies-sheet__toolbar row justify-end q-gutter-xs"
+      >
         <q-btn
+          v-if="filterCount > 0"
+          dense
+          flat
+          no-caps
+          icon="filter_list"
+          :label="`Filters (${filterCount})`"
+          color="primary"
+          data-testid="clear-filters"
+          @click="clearFilters"
+        />
+        <q-btn
+          v-if="hasGroupColumn"
+          dense
+          flat
+          no-caps
+          icon="palette"
+          label="Groups"
+          data-testid="toggle-groups"
+        >
+          <q-menu
+            anchor="bottom right"
+            self="top right"
+            data-testid="groups-menu"
+          >
+            <GroupManager
+              :groups="store.activeTab?.place_groups ?? []"
+              @save="saveGroups"
+            />
+          </q-menu>
+        </q-btn>
+        <q-btn
+          v-if="canShowMap"
           dense
           flat
           no-caps
@@ -57,6 +92,7 @@
           :place-centroid="store.placeCentroid"
           :highlighted-row-id="selectedRowId"
           :mapped-row-ids="mapOpen ? shownRowIds : null"
+          :filters="filters"
           @add-row="store.addRow($event)"
           @delete-row="store.deleteRow($event)"
           @add-column="store.addColumn($event.name, $event.type)"
@@ -69,6 +105,7 @@
           "
           @select-row="selectedRowId = $event"
           @toggle-mapped="toggleMapped"
+          @set-filter="onSetFilter"
         />
 
         <MapPane
@@ -109,13 +146,16 @@
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import CreateTabDialog from "@/apps/listies/components/CreateTabDialog.vue";
+import GroupManager from "@/apps/listies/components/GroupManager.vue";
 import MapPane from "@/apps/listies/components/MapPane.vue";
 import SheetGrid from "@/apps/listies/components/SheetGrid.vue";
 import TabBar from "@/apps/listies/components/TabBar.vue";
 import { useListiesStore } from "@/apps/listies/stores/useListiesStore";
 import { isPlace } from "@/apps/listies/types";
+import { activeFilterCount, isActive } from "@/apps/listies/filter";
+import type { FilterSpec } from "@/apps/listies/filter";
 import { usePageDetailStore } from "@/stores/usePageDetailStore";
-import type { ColumnSpec } from "@/apps/listies/types";
+import type { ColumnSpec, PlaceGroup } from "@/apps/listies/types";
 
 const store = useListiesStore();
 const pageDetail = usePageDetailStore();
@@ -134,6 +174,40 @@ const canShowMap = computed(
     (store.activeTab?.columns.some((column) => column.type === "place") ??
       false),
 );
+
+// The Groups button appears whenever the tab has a group column — whether or
+// not maps are configured, since a group is a label until there is a map.
+const hasGroupColumn = computed(
+  () =>
+    store.activeTab?.columns.some((column) => column.type === "place_group") ??
+    false,
+);
+
+function saveGroups(groups: PlaceGroup[]): void {
+  if (store.activeTabId) void store.setPlaceGroups(store.activeTabId, groups);
+}
+
+// Active filters by column id — a view, held here so the toolbar can show the
+// count and clear them (Story 2.9). Reset when the tab changes.
+const filters = ref<Record<string, FilterSpec>>({});
+const filterCount = computed(() => activeFilterCount(filters.value));
+
+function onSetFilter(payload: {
+  columnId: string;
+  spec: FilterSpec | null;
+}): void {
+  const next = { ...filters.value };
+  if (payload.spec && isActive(payload.spec)) {
+    next[payload.columnId] = payload.spec;
+  } else {
+    delete next[payload.columnId];
+  }
+  filters.value = next;
+}
+
+function clearFilters(): void {
+  filters.value = {};
+}
 
 // Closed until asked for: the Maps SDK is the heaviest thing this app loads,
 // and most tabs never want it.
@@ -172,12 +246,13 @@ function toggleMapped(rowId: string): void {
   hiddenRowIds.value = next;
 }
 
-// Like the sort, the ticks belong to the tab being looked at.
+// Like the sort, the ticks and the filters belong to the tab being looked at.
 watch(
   () => store.activeTabId,
   () => {
     hiddenRowIds.value = new Set();
     selectedRowId.value = null;
+    filters.value = {};
   },
 );
 

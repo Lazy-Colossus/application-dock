@@ -215,10 +215,17 @@ def update_tab(
     req: UpdateTabRequest,
     current_user: str = Depends(get_current_user),
 ) -> Tab:
-    if req.name is None and req.color is None:
+    if req.name is None and req.color is None and req.place_groups is None:
         raise HTTPException(status_code=422, detail="No updatable fields provided")
     try:
-        return service.update_tab(current_user, sheet_id, tab_id, name=req.name, color=req.color)
+        return service.update_tab(
+            current_user,
+            sheet_id,
+            tab_id,
+            name=req.name,
+            color=req.color,
+            place_groups=req.place_groups,
+        )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:

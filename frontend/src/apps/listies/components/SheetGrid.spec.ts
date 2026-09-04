@@ -3,6 +3,7 @@ import { mount } from "@vue/test-utils";
 import { componentAt } from "@/test-utils";
 
 import SheetGrid from "./SheetGrid.vue";
+import type { FilterSpec } from "@/apps/listies/filter";
 import type { Tab } from "@/apps/listies/types";
 
 const STUBS = {
@@ -68,8 +69,16 @@ const STUBS = {
   ColumnHeaderMenu: {
     name: "ColumnHeaderMenu",
     template: "<div />",
-    props: ["column", "rows", "canMoveLeft", "canMoveRight", "canDelete"],
-    emits: ["rename", "retype", "move", "delete"],
+    props: [
+      "column",
+      "rows",
+      "canMoveLeft",
+      "canMoveRight",
+      "canDelete",
+      "groups",
+      "currentFilter",
+    ],
+    emits: ["rename", "retype", "move", "filter", "delete"],
   },
 };
 
@@ -396,6 +405,102 @@ describe("SheetGrid — keyboard and the ghost row (Story 2.3)", () => {
     await cellsOf(wrapper, "ghost-row")[0]!.vm.$emit("commit", "Pillow");
 
     expect(wrapper.emitted("add-row")).toHaveLength(2);
+  });
+});
+
+describe("SheetGrid — type to edit a highlighted cell (Story 2.8)", () => {
+  const cellsOf = (w: ReturnType<typeof mountGrid>, rowTestId: string) =>
+    w
+      .find(`[data-testid="${rowTestId}"]`)
+      .findAllComponents({ name: "GridCell" });
+
+  const gridBody = (w: ReturnType<typeof mountGrid>) =>
+    w.find('[data-testid="grid-body"]');
+
+  // Highlight a cell without leaving it in edit mode: click enters edit, then
+  // Escape drops back to focused-only (the same path Story 2.3 tests use).
+  async function highlight(
+    wrapper: ReturnType<typeof mountGrid>,
+    rowTestId: string,
+    columnIndex: number,
+  ) {
+    const cell = cellsOf(wrapper, rowTestId)[columnIndex]!;
+    await cell.trigger("click");
+    await gridBody(wrapper).trigger("keydown", { key: "Escape" });
+    return cell;
+  }
+
+  it("enters edit mode on a printable key and shows that character", async () => {
+    const wrapper = mountGrid();
+    const cell = await highlight(wrapper, "row-r-1", 0);
+
+    await gridBody(wrapper).trigger("keydown", { key: "a" });
+
+    expect(cell.props("editing")).toBe(true);
+    expect((cell.find("input").element as HTMLInputElement).value).toBe("a");
+  });
+
+  it("replaces the cell's existing content rather than appending", async () => {
+    const wrapper = mountGrid();
+    const cell = await highlight(wrapper, "row-r-1", 0); // holds "Tent"
+
+    await gridBody(wrapper).trigger("keydown", { key: "z" });
+
+    expect((cell.find("input").element as HTMLInputElement).value).toBe("z");
+  });
+
+  it("type-to-edits on a capital letter (Shift held)", async () => {
+    const wrapper = mountGrid();
+    const cell = await highlight(wrapper, "row-r-1", 0);
+
+    await gridBody(wrapper).trigger("keydown", { key: "A", shiftKey: true });
+
+    expect(cell.props("editing")).toBe(true);
+    expect((cell.find("input").element as HTMLInputElement).value).toBe("A");
+  });
+
+  it("does not type-to-edit on a Ctrl or Cmd shortcut", async () => {
+    const wrapper = mountGrid();
+    const cell = await highlight(wrapper, "row-r-1", 0);
+
+    await gridBody(wrapper).trigger("keydown", { key: "c", ctrlKey: true });
+    await gridBody(wrapper).trigger("keydown", { key: "v", metaKey: true });
+
+    expect(cell.props("editing")).toBe(false);
+  });
+
+  it("does not type-to-edit on navigation or command keys", async () => {
+    const wrapper = mountGrid();
+    await highlight(wrapper, "row-r-1", 0);
+
+    // ArrowRight keeps its Story 2.3 behaviour: it moves, and does not edit.
+    await gridBody(wrapper).trigger("keydown", { key: "ArrowRight" });
+
+    expect(cellsOf(wrapper, "row-r-1")[1]!.props("focused")).toBe(true);
+    expect(cellsOf(wrapper, "row-r-1")[1]!.props("editing")).toBe(false);
+  });
+
+  it("commits a type-to-edit through the ordinary commit path", async () => {
+    const wrapper = mountGrid();
+    await highlight(wrapper, "row-r-1", 0);
+
+    await gridBody(wrapper).trigger("keydown", { key: "z" });
+    await cellsOf(wrapper, "row-r-1")[0]!.find("input").trigger("blur");
+
+    expect(wrapper.emitted("commit-cell")).toEqual([
+      [{ rowId: "r-1", columnId: "c-1", value: "z" }],
+    ]);
+  });
+
+  it("materialises a row when typing into the highlighted ghost cell", async () => {
+    const wrapper = mountGrid();
+    await highlight(wrapper, "ghost-row", 0);
+
+    await gridBody(wrapper).trigger("keydown", { key: "M" });
+    await cellsOf(wrapper, "ghost-row")[0]!.find("input").trigger("blur");
+
+    expect(wrapper.emitted("add-row")).toEqual([[{ "c-1": "M" }]]);
+    expect(wrapper.emitted("commit-cell")).toBeUndefined();
   });
 });
 
@@ -1004,5 +1109,125 @@ describe("SheetGrid — choosing what is on the map (Story 4.5)", () => {
         .find('input[type="checkbox"]')
         .exists(),
     ).toBe(false);
+  });
+});
+
+describe("SheetGrid — filtering (Story 2.9)", () => {
+  const filterable = () =>
+    tab({
+      rows: [
+        { id: "r-1", order: 0, cells: { "c-1": "Tent", "c-2": 3 }, created_at: "t", updated_at: "t" },
+        { id: "r-2", order: 1, cells: { "c-1": "Stove", "c-2": 1 }, created_at: "t", updated_at: "t" },
+        { id: "r-3", order: 2, cells: { "c-1": "Rope", "c-2": 2 }, created_at: "t", updated_at: "t" },
+      ],
+    });
+
+  const rowOrder = (w: ReturnType<typeof mountGrid>) =>
+    w
+      .findAll('[data-testid^="row-"]')
+      .map((r) => r.attributes("data-testid"));
+
+  const mountFiltered = (
+    filters: Record<string, FilterSpec>,
+    t = filterable(),
+  ) => mount(SheetGrid, { props: { tab: t, filters }, global: { stubs: STUBS } });
+
+  const clickHeader = (w: ReturnType<typeof mountGrid>, columnId: string) =>
+    w.find(`[data-testid="header-name-${columnId}"]`).trigger("click");
+
+  it("shows only the rows matching an active filter", () => {
+    const wrapper = mountFiltered({
+      "c-1": { kind: "text", contains: "o" },
+    });
+    // "Stove" and "Rope" contain "o"; "Tent" does not.
+    expect(rowOrder(wrapper)).toEqual(["row-r-2", "row-r-3"]);
+  });
+
+  it("writes nothing when a filter narrows the view", () => {
+    const wrapper = mountFiltered({
+      "c-2": { kind: "number", op: "gt", value: 1 },
+    });
+    expect(wrapper.emitted("commit-cell")).toBeUndefined();
+    expect(rowOrder(wrapper)).toEqual(["row-r-1", "row-r-3"]);
+  });
+
+  it("composes as sort(filter(...)) — filter first, then order the survivors", async () => {
+    const wrapper = mountFiltered({
+      "c-2": { kind: "number", op: "gt", value: 1 },
+    });
+    // Filter keeps r-1 (3) and r-3 (2); sort c-2 ascending → r-3, r-1.
+    await clickHeader(wrapper, "c-2");
+    expect(rowOrder(wrapper)).toEqual(["row-r-3", "row-r-1"]);
+  });
+
+  it("marks a filtered column in its header", () => {
+    const wrapper = mountFiltered({
+      "c-1": { kind: "text", contains: "o" },
+    });
+    expect(wrapper.find('[data-testid="filter-indicator-c-1"]').exists()).toBe(
+      true,
+    );
+    expect(wrapper.find('[data-testid="filter-indicator-c-2"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("does not drop or reorder a row when its filtered cell is edited", async () => {
+    const wrapper = mountFiltered({
+      "c-1": { kind: "text", contains: "tent" },
+    });
+    expect(rowOrder(wrapper)).toEqual(["row-r-1"]);
+
+    // Edit r-1 so it no longer matches; the view is frozen until the spec
+    // changes, so the row must stay put (not vanish mid-edit).
+    const edited = filterable();
+    edited.rows[0]!.cells["c-1"] = "Zebra";
+    await wrapper.setProps({ tab: edited });
+
+    expect(rowOrder(wrapper)).toEqual(["row-r-1"]);
+  });
+
+  it("appends a newly added row at the end of the filtered view", async () => {
+    const wrapper = mountFiltered({
+      "c-1": { kind: "text", contains: "tent" },
+    });
+    expect(rowOrder(wrapper)).toEqual(["row-r-1"]);
+
+    const withNew = filterable();
+    withNew.rows.push({
+      id: "r-9",
+      order: 3,
+      cells: { "c-1": "Kettle" },
+      created_at: "t",
+      updated_at: "t",
+    });
+    await wrapper.setProps({ tab: withNew });
+
+    // The new row appends even though it does not match — not re-filtered out.
+    expect(rowOrder(wrapper)).toEqual(["row-r-1", "row-r-9"]);
+  });
+
+  it("restores every row when the filter is cleared", async () => {
+    const wrapper = mountFiltered({
+      "c-1": { kind: "text", contains: "tent" },
+    });
+    expect(rowOrder(wrapper)).toEqual(["row-r-1"]);
+
+    await wrapper.setProps({ filters: {} });
+
+    expect(rowOrder(wrapper)).toEqual(["row-r-1", "row-r-2", "row-r-3"]);
+  });
+
+  it("re-emits a menu filter change as set-filter", async () => {
+    const wrapper = mountGrid(filterable());
+    const spec = { kind: "text", contains: "tent" };
+
+    await wrapper
+      .findAllComponents({ name: "ColumnHeaderMenu" })[0]!
+      .vm.$emit("filter", spec);
+
+    expect(wrapper.emitted("set-filter")).toEqual([
+      [{ columnId: "c-1", spec }],
+    ]);
   });
 });

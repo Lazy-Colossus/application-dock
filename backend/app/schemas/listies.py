@@ -15,7 +15,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-ColumnType = Literal["text", "number", "date", "place"]
+ColumnType = Literal["text", "number", "date", "place", "place_group"]
 
 
 class Place(BaseModel):
@@ -58,11 +58,26 @@ class Row(BaseModel):
 HEX_COLOR_PATTERN = r"^#[0-9a-fA-F]{6}$"
 
 
+class PlaceGroup(BaseModel):
+    """A named, coloured bucket a row's places can belong to (Story 4.6).
+
+    Groups live on the tab; a `place_group` cell stores only a group **id**, so
+    recolouring or renaming a group updates every pin without touching a cell.
+    """
+
+    id: str
+    name: str
+    color: str = Field(pattern=HEX_COLOR_PATTERN)
+
+
 class Tab(BaseModel):
     id: str
     name: str
     order: int = 0
     color: str | None = None
+    # Optional and additive: a document written before groups has no key, which
+    # reads as an empty list, so `schema_version` stays 1.
+    place_groups: list[PlaceGroup] = Field(default_factory=list)
     columns: list[Column] = Field(default_factory=list)
     rows: list[Row] = Field(default_factory=list)
 
@@ -146,6 +161,8 @@ class UpdateTabRequest(BaseModel):
     # An empty string clears the colour; `None` means "leave it alone", which
     # is why the two are not the same thing here.
     color: str | None = None
+    # `None` means "leave the groups alone"; a list (even empty) replaces them.
+    place_groups: list[PlaceGroup] | None = None
 
 
 # ── places (Story 4.1) ────────────────────────────────────────────────────────

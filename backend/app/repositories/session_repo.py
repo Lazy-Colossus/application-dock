@@ -41,7 +41,7 @@ def _atomic_write_json(path: Path, payload: dict[str, object] | list[object]) ->
     # is killed between writing .tmp and the rename, the previous file at
     # `path` (if any) remains intact and uncorrupted.
     tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2))
+    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     os.replace(tmp, path)
 
 
@@ -63,7 +63,7 @@ def read_session(label: str) -> SessionData:
     path = settings.data_dir / f"{label}.json"
     if not path.exists():
         raise FileNotFoundError(label)
-    raw = json.loads(path.read_text())
+    raw = json.loads(path.read_text(encoding="utf-8"))
     return SessionData.model_validate(raw)
 
 
@@ -94,7 +94,7 @@ def list_sessions() -> list[SessionData]:
     sessions: list[SessionData] = []
     for path, _date_str, _suffix in candidates:
         try:
-            raw = json.loads(path.read_text())
+            raw = json.loads(path.read_text(encoding="utf-8"))
             sessions.append(SessionData.model_validate(raw))
         except (json.JSONDecodeError, ValueError) as exc:
             logger.warning("skipping malformed session file %s: %s", path.name, exc)
@@ -115,7 +115,7 @@ def _migrate_legacy_in_progress() -> None:
     if not legacy.exists():
         return
     try:
-        raw = json.loads(legacy.read_text())
+        raw = json.loads(legacy.read_text(encoding="utf-8"))
         raw.setdefault("name", raw.get("label", ""))
         raw.setdefault("date", str(raw.get("label", ""))[:10])
         session = SessionData.model_validate(raw)
@@ -143,7 +143,7 @@ def read_in_progress(label: str) -> SessionData | None:
     path = _ip_path(label)
     if not path.exists():
         return None
-    raw = json.loads(path.read_text())
+    raw = json.loads(path.read_text(encoding="utf-8"))
     return SessionData.model_validate(raw)
 
 
@@ -168,7 +168,7 @@ def list_in_progress() -> list[SessionData]:
     sessions: list[SessionData] = []
     for path, _date_str, _suffix in candidates:
         try:
-            raw = json.loads(path.read_text())
+            raw = json.loads(path.read_text(encoding="utf-8"))
             sessions.append(SessionData.model_validate(raw))
         except (json.JSONDecodeError, ValueError) as exc:
             logger.warning("skipping malformed in-progress file %s: %s", path.name, exc)
@@ -208,7 +208,7 @@ def read_recurring_players() -> list[str]:
     if not path.exists():
         return []
     try:
-        data = json.loads(path.read_text())
+        data = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         logger.warning("malformed recurring players file, treating as empty: %s", exc)
         return []

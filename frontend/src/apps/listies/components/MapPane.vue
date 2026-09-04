@@ -54,20 +54,17 @@
       <div ref="canvas" class="map-pane__canvas" data-testid="map-canvas" />
 
       <div
-        v-if="placeColumns.length > 1"
+        v-if="groupsInUse.length > 0"
         class="map-pane__legend"
         data-testid="map-legend"
       >
         <span
-          v-for="column in placeColumns"
-          :key="column.id"
+          v-for="group in groupsInUse"
+          :key="group.id"
           class="map-pane__legend-item"
         >
-          <span
-            class="map-pane__swatch"
-            :style="{ background: colourFor(column.id) }"
-          />
-          {{ column.name }}
+          <span class="map-pane__swatch" :style="{ background: group.color }" />
+          {{ group.name }}
         </span>
       </div>
     </template>
@@ -79,7 +76,7 @@ import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { loadMapsSdk } from "@/apps/listies/maps";
 import type { GoogleMap, GoogleMarker, MapsApi } from "@/apps/listies/maps";
 import { isPlace } from "@/apps/listies/types";
-import type { Place, Tab } from "@/apps/listies/types";
+import type { Place, PlaceGroup, Tab } from "@/apps/listies/types";
 
 const props = withDefaults(
   defineProps<{
@@ -98,16 +95,11 @@ const emit = defineEmits<{
   "show-none": [];
 }>();
 
-// One colour per place column, so a tab with "Hotel" and "Dinner" columns
-// reads at a glance. Distinct hues rather than a gradient.
-const COLUMN_COLOURS = ["#e5484d", "#3e63dd", "#46a758", "#f76b15", "#8e4ec6"];
-
 const DEFAULT_ZOOM = 14;
 
 interface Pin {
   key: string;
   rowId: string;
-  columnId: string;
   label: string;
   place: Place;
 }
@@ -125,6 +117,25 @@ const placeColumns = computed(() =>
     .sort((a, b) => a.order - b.order)
     .filter((column) => column.type === "place"),
 );
+
+const placeGroups = computed<PlaceGroup[]>(() => props.tab.place_groups ?? []);
+
+// A row's group colour comes from one group column — the first by order if a
+// tab somehow has several (Story 4.6). No group column means no colouring.
+const groupColumn = computed(() =>
+  [...props.tab.columns]
+    .sort((a, b) => a.order - b.order)
+    .find((column) => column.type === "place_group"),
+);
+
+/** The group a row belongs to, or undefined when ungrouped / id is dangling. */
+function groupForRow(rowId: string): PlaceGroup | undefined {
+  const column = groupColumn.value;
+  if (!column) return undefined;
+  const id = props.tab.rows.find((r) => r.id === rowId)?.cells[column.id];
+  if (typeof id !== "string") return undefined;
+  return placeGroups.value.find((group) => group.id === id);
+}
 
 /** The row's first text value names the pin; the place names itself otherwise. */
 function labelFor(rowId: string, place: Place): string {
@@ -145,7 +156,6 @@ const pins = computed<Pin[]>(() => {
       found.push({
         key: `${row.id}:${column.id}`,
         rowId: row.id,
-        columnId: column.id,
         label: labelFor(row.id, value),
         place: value,
       });
@@ -162,17 +172,24 @@ const shownPins = computed(() => {
   return pins.value.filter((pin) => allowed.has(pin.rowId));
 });
 
-function colourFor(columnId: string): string {
-  const index = placeColumns.value.findIndex((c) => c.id === columnId);
-  return COLUMN_COLOURS[index % COLUMN_COLOURS.length]!;
-}
+// The groups actually plotted right now, in tab order — the legend's contents.
+// A group with no shown pin does not appear; no groups in use, no legend.
+const groupsInUse = computed<PlaceGroup[]>(() => {
+  const usedIds = new Set<string>();
+  for (const pin of shownPins.value) {
+    const group = groupForRow(pin.rowId);
+    if (group) usedIds.add(group.id);
+  }
+  return placeGroups.value.filter((group) => usedIds.has(group.id));
+});
 
-function iconFor(columnId: string): Record<string, unknown> | undefined {
-  // A single place column needs no colour coding; the default pin is clearer.
-  if (placeColumns.value.length < 2) return undefined;
+/** A coloured pin for a row in a group; the default pin when ungrouped. */
+function iconFor(rowId: string): Record<string, unknown> | undefined {
+  const group = groupForRow(rowId);
+  if (!group) return undefined;
   return {
     path: "M 0,0 m -8,0 a 8,8 0 1,0 16,0 a 8,8 0 1,0 -16,0",
-    fillColor: colourFor(columnId),
+    fillColor: group.color,
     fillOpacity: 1,
     strokeColor: "#ffffff",
     strokeWeight: 2,
@@ -180,10 +197,17 @@ function iconFor(columnId: string): Record<string, unknown> | undefined {
   };
 }
 
+// The marker's identity folds in its group colour, so recolouring a group makes
+// the old-coloured marker stale and a fresh one take its place — the SDK marker
+// has no `setIcon`, and this reuses the same add/remove diff (AC 7).
+function markerKey(pin: Pin): string {
+  return `${pin.key}#${groupForRow(pin.rowId)?.color ?? ""}`;
+}
+
 function syncMarkers(): void {
   if (!map || !api) return;
 
-  const wanted = new Set(shownPins.value.map((pin) => pin.key));
+  const wanted = new Set(shownPins.value.map(markerKey));
 
   for (const [key, marker] of markers) {
     if (!wanted.has(key)) {
@@ -193,15 +217,16 @@ function syncMarkers(): void {
   }
 
   for (const pin of shownPins.value) {
-    if (markers.has(pin.key)) continue;
+    const key = markerKey(pin);
+    if (markers.has(key)) continue;
     const marker = new api.Marker({
       map,
       position: { lat: pin.place.lat, lng: pin.place.lng },
       title: pin.label,
-      icon: iconFor(pin.columnId),
+      icon: iconFor(pin.rowId),
     });
     marker.addListener("click", () => emit("select-row", pin.rowId));
-    markers.set(pin.key, marker);
+    markers.set(key, marker);
   }
 }
 
@@ -275,7 +300,9 @@ void build();
 // Data changes move pins, never the viewport: re-framing while someone is
 // typing would make the map lurch under them (Story 4.5 adds an explicit
 // "fit to shown" control instead).
-watch([pins, shownPins], () => {
+// `placeGroups` is watched too: recolouring a group changes no pin's position
+// but must repaint it (via the colour-folded marker key above).
+watch([pins, shownPins, placeGroups], () => {
   if (map) syncMarkers();
   else void build();
 });

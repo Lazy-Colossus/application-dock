@@ -880,6 +880,47 @@ describe("useListiesStore — tab colour", () => {
   });
 });
 
+describe("useListiesStore — setPlaceGroups (Story 4.6)", () => {
+  const GROUPS = [
+    { id: "g-1", name: "Must see", color: "#e5484d" },
+    { id: "g-2", name: "Maybe", color: "#3e63dd" },
+  ];
+
+  beforeEach(() => {
+    getMock.mockImplementation(() => Promise.resolve(sheet()));
+    putMock.mockReset().mockResolvedValue({
+      id: "tb-1",
+      name: "Tab 1",
+      order: 0,
+      place_groups: GROUPS,
+      columns: [],
+      rows: [],
+    });
+  });
+
+  it("sends the groups and replaces the tab's groups from the response", async () => {
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.setPlaceGroups("tb-1", GROUPS);
+
+    expect(putMock).toHaveBeenCalledWith("/listies/sheets/s-2/tabs/tb-1", {
+      place_groups: GROUPS,
+    });
+    expect(store.currentSheet!.tabs[0]!.place_groups).toEqual(GROUPS);
+  });
+
+  it("surfaces the error when the write fails", async () => {
+    putMock.mockRejectedValue(new Error("nope"));
+    const store = useListiesStore();
+    await store.fetchSheet("s-2");
+
+    await store.setPlaceGroups("tb-1", GROUPS);
+
+    expect(store.error).toBe("nope");
+  });
+});
+
 describe("useListiesStore — maps configuration (Story 4.2)", () => {
   beforeEach(() => {
     getMock.mockReset();

@@ -7,6 +7,7 @@ import type {
   ColumnSpec,
   ColumnType,
   Place,
+  PlaceGroup,
   Row,
   Sheet,
   SheetSummary,
@@ -335,6 +336,33 @@ export const useListiesStore = defineStore("listies", () => {
     }
   }
 
+  /**
+   * Replace a tab's place groups (Story 4.6).
+   *
+   * Rides the same `PUT .../tabs/{id}` endpoint as the accent colour, mirroring
+   * `recolourTab`. Setting groups never rewrites cells: a cell holding a
+   * now-deleted group's id simply reads as ungrouped.
+   */
+  async function setPlaceGroups(
+    tabId: string,
+    groups: PlaceGroup[],
+  ): Promise<void> {
+    const sheet = currentSheet.value;
+    if (!sheet) return;
+
+    error.value = null;
+    try {
+      const updated = await api.put<Tab>(
+        `/listies/sheets/${sheet.id}/tabs/${tabId}`,
+        { place_groups: groups },
+      );
+      const tab = sheet.tabs.find((t) => t.id === tabId);
+      if (tab) tab.place_groups = updated.place_groups ?? [];
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+    }
+  }
+
   async function deleteTab(tabId: string): Promise<void> {
     const sheet = currentSheet.value;
     if (!sheet) return;
@@ -462,6 +490,7 @@ export const useListiesStore = defineStore("listies", () => {
     createTabFrom,
     renameTab,
     recolourTab,
+    setPlaceGroups,
     deleteTab,
     deleteRow,
     addColumn,

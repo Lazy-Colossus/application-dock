@@ -14,7 +14,7 @@ Stack: FastAPI (Python 3.12) backend + Vue 3 / Quasar v2 / Vite / TypeScript / P
 ```bash
 source .venv/bin/activate                 # venv lives at backend/.venv (Python 3.12)
 export DATA_DIR=./local-data              # REQUIRED outside Docker — default /data isn't writable
-uvicorn app.main:app --reload --port 8000 # dev server
+uvicorn app.main:app --reload --port 9000 # dev server
 
 .venv/bin/pytest                          # all tests
 .venv/bin/pytest tests/test_archery_finalise.py            # one file
@@ -25,7 +25,7 @@ Tests set `DATA_DIR` to a temp dir automatically via `conftest.py`, so pytest ne
 
 ### Frontend (`frontend/`)
 ```bash
-npm run dev          # Quasar dev server on :9000, proxies /api/* → localhost:8000
+npm run dev          # Quasar dev server on :9100, proxies /api/* → localhost:9000
 npm test             # vitest run (one-shot)
 npm run test:watch   # vitest watch
 npx vitest run src/apps/archery/pages/ResultsPage.spec.ts   # one file

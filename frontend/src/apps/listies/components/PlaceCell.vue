@@ -96,6 +96,9 @@ const props = defineProps<{
   value: Place | null;
   enabled: boolean;
   near: string | null;
+  /** A character the cell was opened with by typing, seeding the search box so
+   *  the first keystroke is not lost (Story 2.8). Null for an ordinary open. */
+  initialQuery?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -112,7 +115,7 @@ const MIN_QUERY_LENGTH = 2;
 
 const store = useListiesStore();
 
-const query = ref(props.value?.name ?? "");
+const query = ref(props.initialQuery ?? props.value?.name ?? "");
 const results = ref<Place[]>([]);
 const highlighted = ref(0);
 const searching = ref(false);
@@ -141,7 +144,18 @@ let timer: ReturnType<typeof setTimeout> | null = null;
 let latest = 0;
 
 void nextTick(() => {
-  inputEl.value?.select();
+  const el = inputEl.value;
+  if (el) {
+    // A seeded open (type-to-edit) keeps the first character with the caret
+    // after it, so the next keystroke extends it; an ordinary open selects the
+    // existing name so it can be replaced wholesale (Story 2.8).
+    el.focus();
+    if (props.initialQuery) {
+      el.setSelectionRange(el.value.length, el.value.length);
+    } else {
+      el.select();
+    }
+  }
   positionDropdown();
 });
 

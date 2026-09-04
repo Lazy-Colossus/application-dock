@@ -80,7 +80,7 @@
     {
       "label": "Win Start Backend",
       "type": "shell",
-      "command": "if (Test-Path '${workspaceFolder}\\.env') { Get-Content '${workspaceFolder}\\.env' | Where-Object { $_ -match '^\\s*[^#\\s][^=]*=' } | ForEach-Object { $k, $v = $_ -split '=', 2; [Environment]::SetEnvironmentVariable($k.Trim(), $v.Trim().Trim('\"').Trim(\"'\")) } }; $env:DATA_DIR='./local-data'; ..\\.venv\\Scripts\\uvicorn.exe app.main:app --reload --port 8000",
+      "command": "Get-Content '${workspaceFolder}\\.env' | Where-Object { $_ -match '^\\s*[^#].*=' } | ForEach-Object { $k, $v = $_ -split '=', 2; Set-Item -Path \"env:$($k.Trim())\" -Value $v.Trim().Trim([char]34).Trim([char]39) }; $env:DATA_DIR='./local-data'; ..\\.venv\\Scripts\\uvicorn.exe app.main:app --reload --port 9000",
       "options": {
         "cwd": "${workspaceFolder}/backend"
       },

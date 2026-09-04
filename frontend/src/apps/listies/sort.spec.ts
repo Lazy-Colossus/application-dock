@@ -1,7 +1,13 @@
 import { describe, it, expect } from "vitest";
 
 import { compareValues, sortRowIds } from "./sort";
-import type { CellValue, Column, ColumnType, Row } from "@/apps/listies/types";
+import type {
+  CellValue,
+  Column,
+  ColumnType,
+  PlaceGroup,
+  Row,
+} from "@/apps/listies/types";
 
 const column = (type: ColumnType): Column => ({
   id: "c-1",
@@ -168,5 +174,40 @@ describe("sorting a place column (Story 4.2)", () => {
       "asc",
     );
     expect(ids).toEqual(["r-2", "r-0", "r-1"]);
+  });
+});
+
+describe("sorting a place_group column (Story 4.6)", () => {
+  const groups: PlaceGroup[] = [
+    { id: "g-1", name: "Bravo", color: "#e5484d" },
+    { id: "g-2", name: "Alpha", color: "#3e63dd" },
+  ];
+  const groupRows = (ids: (string | null)[]): Row[] =>
+    ids.map((id, i) => ({
+      id: `r-${i}`,
+      order: i,
+      cells: (id === null ? {} : { "c-1": id }) as Record<string, CellValue>,
+      created_at: "t",
+      updated_at: "t",
+    }));
+
+  it("compares by the resolved group name, not the id", () => {
+    // g-1 → "Bravo", g-2 → "Alpha": Alpha sorts before Bravo.
+    const ids = sortRowIds(groupRows(["g-1", "g-2"]), column("place_group"), "asc", groups);
+    expect(ids).toEqual(["r-1", "r-0"]);
+  });
+
+  it("reverses on descending", () => {
+    const ids = sortRowIds(groupRows(["g-1", "g-2"]), column("place_group"), "desc", groups);
+    expect(ids).toEqual(["r-0", "r-1"]);
+  });
+
+  it("keeps empty group cells last in both directions", () => {
+    expect(
+      sortRowIds(groupRows(["g-1", null, "g-2"]), column("place_group"), "asc", groups),
+    ).toEqual(["r-2", "r-0", "r-1"]);
+    expect(
+      sortRowIds(groupRows(["g-1", null, "g-2"]), column("place_group"), "desc", groups),
+    ).toEqual(["r-0", "r-2", "r-1"]);
   });
 });

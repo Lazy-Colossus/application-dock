@@ -166,7 +166,7 @@ describe("ColumnBuilder", () => {
       .find('[data-testid="column-type-0"]')
       .findAll("option")
       .map((o) => o.attributes("value"));
-    expect(options).toEqual(["text", "number", "date"]);
+    expect(options).toEqual(["text", "number", "date", "place_group"]);
   });
 });
 
@@ -182,6 +182,7 @@ describe("ColumnBuilder — the place type (Story 4.2)", () => {
       "text",
       "number",
       "date",
+      "place_group",
     ]);
   });
 
@@ -196,6 +197,6 @@ describe("ColumnBuilder — the place type (Story 4.2)", () => {
         .find('[data-testid="column-type-0"]')
         .findAll("option")
         .map((o) => o.attributes("value")),
-    ).toEqual(["text", "number", "date", "place"]);
+    ).toEqual(["text", "number", "date", "place_group", "place"]);
   });
 });

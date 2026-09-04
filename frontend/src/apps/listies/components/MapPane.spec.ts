@@ -114,6 +114,41 @@ function tabWith(
   };
 }
 
+// A tab with a place column and a group column, plus two defined groups
+// (Story 4.6). `group` is a row's group id, `other` a second place cell.
+function tabWithGroups(
+  rows: { id: string; where?: Place; other?: Place; group?: string }[],
+  opts: { extraPlaceColumn?: boolean } = {},
+): Tab {
+  return {
+    id: "tb-1",
+    name: "Cafés",
+    order: 0,
+    place_groups: [
+      { id: "g-1", name: "Must see", color: "#e5484d" },
+      { id: "g-2", name: "Maybe", color: "#3e63dd" },
+    ],
+    columns: [
+      { id: "c-where", name: "Where", type: "place", order: 0 },
+      { id: "c-group", name: "Bucket", type: "place_group", order: 1 },
+      ...(opts.extraPlaceColumn
+        ? [{ id: "c-other", name: "Also", type: "place" as const, order: 2 }]
+        : []),
+    ],
+    rows: rows.map((r, i) => ({
+      id: r.id,
+      order: i,
+      cells: {
+        ...(r.where ? { "c-where": r.where } : {}),
+        ...(r.other ? { "c-other": r.other } : {}),
+        ...(r.group ? { "c-group": r.group } : {}),
+      },
+      created_at: "t",
+      updated_at: "t",
+    })),
+  };
+}
+
 const STUBS = {
   "q-spinner": { template: '<div data-testid="map-loading" />' },
   "q-space": { template: "<span />" },
@@ -219,7 +254,101 @@ describe("MapPane — plotting", () => {
     expect(mapState.markers).toHaveLength(2);
   });
 
-  it("colours markers per column, with a legend, when a tab has several", async () => {
+  it("colours a pin by its row's group (Story 4.6)", async () => {
+    mountPane(tabWithGroups([{ id: "r-1", where: place("A", 1, 1), group: "g-1" }]));
+    await flushPromises();
+
+    const icon = mapState.markers[0]!.options.icon as { fillColor: string };
+    expect(icon.fillColor).toBe("#e5484d");
+  });
+
+  it("gives every place pin in a row the same group colour", async () => {
+    const tab = tabWithGroups(
+      [
+        {
+          id: "r-1",
+          where: place("A", 1, 1),
+          other: place("B", 2, 2),
+          group: "g-2",
+        },
+      ],
+      { extraPlaceColumn: true },
+    );
+    mountPane(tab);
+    await flushPromises();
+
+    expect(mapState.markers).toHaveLength(2);
+    const colours = mapState.markers.map(
+      (m) => (m.options.icon as { fillColor: string }).fillColor,
+    );
+    expect(colours).toEqual(["#3e63dd", "#3e63dd"]);
+  });
+
+  it("leaves an ungrouped row the plain default pin", async () => {
+    mountPane(tabWithGroups([{ id: "r-1", where: place("A", 1, 1) }]));
+    await flushPromises();
+
+    expect(mapState.markers[0]!.options.icon).toBeUndefined();
+  });
+
+  it("treats a dangling group id as ungrouped (default pin)", async () => {
+    mountPane(
+      tabWithGroups([{ id: "r-1", where: place("A", 1, 1), group: "g-gone" }]),
+    );
+    await flushPromises();
+
+    expect(mapState.markers[0]!.options.icon).toBeUndefined();
+  });
+
+  it("lists the groups in use in the legend", async () => {
+    const wrapper = mountPane(
+      tabWithGroups([
+        { id: "r-1", where: place("A", 1, 1), group: "g-1" },
+        { id: "r-2", where: place("B", 2, 2), group: "g-2" },
+      ]),
+    );
+    await flushPromises();
+
+    const legend = wrapper.find('[data-testid="map-legend"]');
+    expect(legend.exists()).toBe(true);
+    expect(legend.text()).toContain("Must see");
+    expect(legend.text()).toContain("Maybe");
+  });
+
+  it("shows no legend when no group is in use", async () => {
+    const wrapper = mountPane(
+      tabWithGroups([{ id: "r-1", where: place("A", 1, 1) }]),
+    );
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="map-legend"]').exists()).toBe(false);
+  });
+
+  it("repaints a pin when its group is recoloured", async () => {
+    const tab = tabWithGroups([{ id: "r-1", where: place("A", 1, 1), group: "g-1" }]);
+    const wrapper = mountPane(tab);
+    await flushPromises();
+
+    await wrapper.setProps({
+      tab: {
+        ...tab,
+        place_groups: [
+          { id: "g-1", name: "Must see", color: "#123456" },
+          { id: "g-2", name: "Maybe", color: "#3e63dd" },
+        ],
+      },
+    });
+    await flushPromises();
+
+    const attached = mapState.markers.filter((m) => m.attached);
+    expect(attached).toHaveLength(1);
+    expect((attached[0]!.options.icon as { fillColor: string }).fillColor).toBe(
+      "#123456",
+    );
+  });
+
+  it("no longer colours by column — the old scheme is gone (Story 4.6)", async () => {
+    // Multiple place columns, no group column: every pin is the default now.
     const tab = tabWith(
       [{ id: "r-1", where: place("A", 1, 1), other: place("B", 2, 2) }],
       true,
@@ -227,17 +356,9 @@ describe("MapPane — plotting", () => {
     const wrapper = mountPane(tab);
     await flushPromises();
 
-    const colours = mapState.markers.map((m) =>
-      JSON.stringify(m.options.icon ?? ""),
+    expect(mapState.markers.every((m) => m.options.icon === undefined)).toBe(
+      true,
     );
-    expect(new Set(colours).size).toBe(2);
-    expect(wrapper.find('[data-testid="map-legend"]').exists()).toBe(true);
-  });
-
-  it("shows no legend when there is only one place column to explain", async () => {
-    const wrapper = mountPane(TWO_CAFES());
-    await flushPromises();
-
     expect(wrapper.find('[data-testid="map-legend"]').exists()).toBe(false);
   });
 });

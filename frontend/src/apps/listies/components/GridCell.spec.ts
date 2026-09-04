@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 
 import GridCell from "./GridCell.vue";
+import { formatCell } from "@/apps/listies/coerce";
 import type { CellValue, Column, ColumnType } from "@/apps/listies/types";
 
 function column(type: ColumnType): Column {
@@ -86,15 +87,17 @@ describe("GridCell — editing (Stories 2.2, 2.3)", () => {
     expect(input.attributes("inputmode")).toBe("decimal");
   });
 
-  it("uses the native picker for a date", () => {
-    expect(editor("2026-09-02", "date").find("input").attributes("type")).toBe(
-      "date",
-    );
+  it("opens a popout calendar for a date, not a text box (Story 2.7)", () => {
+    const wrapper = editor("2026-09-02", "date");
+    expect(wrapper.findComponent({ name: "QDate" }).exists()).toBe(true);
+    expect(wrapper.find("input").exists()).toBe(false);
   });
 
-  it("edits a date in ISO form, not the display form", () => {
-    const input = editor("2026-09-02", "date").find("input");
-    expect((input.element as HTMLInputElement).value).toBe("2026-09-02");
+  it("opens the picker on the stored ISO date, not the display form", () => {
+    const picker = editor("2026-09-02", "date").findComponent({
+      name: "QDate",
+    });
+    expect(picker.props("modelValue")).toBe("2026-09-02");
   });
 
   it("commits the parsed value on blur", async () => {
@@ -198,6 +201,103 @@ describe("GridCell — editing (Stories 2.2, 2.3)", () => {
   });
 });
 
+describe("GridCell — type to edit a highlighted cell (Story 2.8)", () => {
+  function cell(
+    value: CellValue,
+    type: ColumnType,
+    props: { editable?: boolean; editing?: boolean; focused?: boolean } = {},
+  ) {
+    return mount(GridCell, {
+      props: { value, column: column(type), editable: true, ...props },
+    });
+  }
+
+  it("opens the editor holding just the typed character, replacing the value", async () => {
+    const wrapper = cell("Tent", "text", { editing: false });
+
+    (wrapper.vm as unknown as { seedDraft: (c: string) => void }).seedDraft(
+      "a",
+    );
+    await wrapper.setProps({ editing: true });
+
+    const input = wrapper.find("input");
+    expect((input.element as HTMLInputElement).value).toBe("a");
+  });
+
+  it("focuses the input so typing continues into the cell, not just the first letter", async () => {
+    const wrapper = mount(GridCell, {
+      props: {
+        value: "Tent",
+        column: column("text"),
+        editable: true,
+        editing: false,
+      },
+      attachTo: document.body,
+    });
+
+    (wrapper.vm as unknown as { seedDraft: (c: string) => void }).seedDraft(
+      "a",
+    );
+    await wrapper.setProps({ editing: true });
+    await wrapper.vm.$nextTick();
+
+    const input = wrapper.find("input").element as HTMLInputElement;
+    expect(document.activeElement).toBe(input);
+
+    wrapper.unmount();
+  });
+
+  it("puts the caret after the typed character rather than selecting all", async () => {
+    const wrapper = cell("Tent", "text", { editing: false });
+
+    (wrapper.vm as unknown as { seedDraft: (c: string) => void }).seedDraft(
+      "a",
+    );
+    await wrapper.setProps({ editing: true });
+    await wrapper.vm.$nextTick();
+
+    const input = wrapper.find("input").element as HTMLInputElement;
+    expect(input.selectionStart).toBe(1);
+    expect(input.selectionEnd).toBe(1);
+  });
+
+  it("seeds a number cell as validated text so a typed digit is kept", async () => {
+    const wrapper = cell(12, "number", { editing: false });
+
+    (wrapper.vm as unknown as { seedDraft: (c: string) => void }).seedDraft(
+      "7",
+    );
+    await wrapper.setProps({ editing: true });
+
+    expect((wrapper.find("input").element as HTMLInputElement).value).toBe("7");
+  });
+
+  it("still opens a clicked cell pre-filled with its value — click is not seeded", async () => {
+    const wrapper = cell("Tent", "text", { editing: false });
+
+    // No seedDraft: entering edit the ordinary way keeps the existing value.
+    await wrapper.setProps({ editing: true });
+
+    expect((wrapper.find("input").element as HTMLInputElement).value).toBe(
+      "Tent",
+    );
+  });
+
+  it("ignores a seed on a date cell — the picker opens on its own value", async () => {
+    const wrapper = cell("2026-09-02", "date", { editing: false });
+
+    (wrapper.vm as unknown as { seedDraft: (c: string) => void }).seedDraft(
+      "a",
+    );
+    await wrapper.setProps({ editing: true });
+
+    expect(wrapper.find("input").exists()).toBe(false);
+    expect(wrapper.findComponent({ name: "QDate" }).props("modelValue")).toBe(
+      "2026-09-02",
+    );
+  });
+});
+
 describe("GridCell — place cells delegate to the place editor (Story 4.3)", () => {
   const PLACE = {
     place_id: "ChIJ_blue",
@@ -218,7 +318,7 @@ describe("GridCell — place cells delegate to the place editor (Story 4.3)", ()
     PlaceCell: {
       name: "PlaceCell",
       template: "<div />",
-      props: ["value", "enabled", "near"],
+      props: ["value", "enabled", "near", "initialQuery"],
       emits: ["select", "clear", "cancel"],
     },
   };
@@ -255,6 +355,27 @@ describe("GridCell — place cells delegate to the place editor (Story 4.3)", ()
 
     expect(wrapper.findComponent({ name: "PlaceCell" }).exists()).toBe(true);
     expect(wrapper.find("input").exists()).toBe(false);
+  });
+
+  it("hands a typed character to the place editor as its initial query (Story 2.8)", async () => {
+    const wrapper = placeCell({ editing: false });
+
+    (wrapper.vm as unknown as { seedDraft: (c: string) => void }).seedDraft(
+      "t",
+    );
+    await wrapper.setProps({ editing: true });
+
+    expect(
+      wrapper.findComponent({ name: "PlaceCell" }).props("initialQuery"),
+    ).toBe("t");
+  });
+
+  it("opens the place editor with no seed when clicked (not typed)", () => {
+    const wrapper = placeCell({ editing: true });
+
+    expect(
+      wrapper.findComponent({ name: "PlaceCell" }).props("initialQuery"),
+    ).toBeNull();
   });
 
   it("commits the place that was chosen", async () => {
@@ -314,5 +435,172 @@ describe("GridCell — place cells delegate to the place editor (Story 4.3)", ()
     const editor = wrapper.findComponent({ name: "PlaceCell" });
     expect(editor.props("enabled")).toBe(true);
     expect(editor.props("near")).toBe("38.7,-9.1");
+  });
+});
+
+describe("GridCell — date cells pick from a popout calendar (Story 2.7)", () => {
+  function dateCell(value: CellValue, props: { editing?: boolean } = {}) {
+    return mount(GridCell, {
+      props: {
+        value,
+        column: column("date"),
+        editable: true,
+        editing: false,
+        ...props,
+      },
+    });
+  }
+
+  function picker(wrapper: ReturnType<typeof dateCell>) {
+    return wrapper.findComponent({ name: "QDate" });
+  }
+
+  it("opens the picker when the cell enters edit mode", async () => {
+    const wrapper = dateCell(null);
+    expect(picker(wrapper).exists()).toBe(false);
+
+    await wrapper.setProps({ editing: true });
+
+    expect(picker(wrapper).exists()).toBe(true);
+  });
+
+  it("defaults an empty cell's picker to no selection, so it lands on today", () => {
+    // A null model makes q-date navigate to the current month (AC 2).
+    expect(picker(dateCell(null, { editing: true })).props("modelValue")).toBe(
+      null,
+    );
+  });
+
+  it("emits the picked ISO string as a commit, then ends the edit", async () => {
+    const wrapper = dateCell(null, { editing: true });
+
+    await picker(wrapper).vm.$emit("update:modelValue", "2026-09-02");
+
+    expect(wrapper.emitted("commit")).toEqual([["2026-09-02"]]);
+    expect(wrapper.emitted("end-edit")).toHaveLength(1);
+  });
+
+  it("emits the canonical ISO shape that formatCell renders compactly", async () => {
+    const wrapper = dateCell(null, { editing: true });
+
+    await picker(wrapper).vm.$emit("update:modelValue", "2026-09-02");
+    const [committed] = wrapper.emitted("commit")![0] as [CellValue];
+
+    // Round-trips through the display formatter (AC 8).
+    expect(formatCell(committed, "date")).toBe("02 Sep 26");
+  });
+
+  it("commits null when the selection is cleared", async () => {
+    const wrapper = dateCell("2026-09-02", { editing: true });
+
+    await picker(wrapper).vm.$emit("update:modelValue", null);
+
+    expect(wrapper.emitted("commit")).toEqual([[null]]);
+    expect(wrapper.emitted("end-edit")).toHaveLength(1);
+  });
+
+  it("ends the edit with no commit when the menu closes without a pick", async () => {
+    const wrapper = dateCell("2026-09-02", { editing: true });
+
+    await wrapper
+      .findComponent({ name: "QMenu" })
+      .vm.$emit("update:modelValue", false);
+
+    expect(wrapper.emitted("commit")).toBeUndefined();
+    expect(wrapper.emitted("end-edit")).toHaveLength(1);
+  });
+
+  it("moving away from a date cell just leaves it — there is nothing to save", async () => {
+    // The grid commits the focused cell before moving (Story 2.3); for a date
+    // cell that must be a no-op, not a validation failure that traps the cursor.
+    const wrapper = dateCell("2026-09-02", { editing: true });
+
+    (wrapper.vm as unknown as { commit: () => void }).commit();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.emitted("commit")).toBeUndefined();
+    expect(wrapper.classes()).not.toContain("grid-cell--invalid");
+    expect(wrapper.emitted("end-edit")).toHaveLength(1);
+  });
+});
+
+describe("GridCell — group cells pick from a dropdown (Story 4.6)", () => {
+  const groupColumn = {
+    id: "c-1",
+    name: "Bucket",
+    type: "place_group" as const,
+    order: 0,
+  };
+  const GROUPS = [
+    { id: "g-1", name: "Must see", color: "#e5484d" },
+    { id: "g-2", name: "Maybe", color: "#3e63dd" },
+  ];
+
+  function groupCell(
+    props: { value?: CellValue; editing?: boolean } = {},
+  ) {
+    return mount(GridCell, {
+      props: {
+        value: null,
+        column: groupColumn,
+        editable: true,
+        editing: false,
+        groups: GROUPS,
+        ...props,
+      },
+    });
+  }
+
+  it("shows the group's name when not editing", () => {
+    expect(groupCell({ value: "g-1" }).text()).toContain("Must see");
+  });
+
+  it("shows a dash for an empty group cell", () => {
+    expect(groupCell().text()).toBe("—");
+  });
+
+  it("shows a dash for a dangling id — it reads as ungrouped", () => {
+    expect(groupCell({ value: "g-gone" }).text()).toBe("—");
+  });
+
+  it("opens a dropdown of groups rather than a text input", () => {
+    const wrapper = groupCell({ editing: true });
+
+    expect(wrapper.find('[data-testid="group-menu"]').exists()).toBe(true);
+    expect(wrapper.find("input").exists()).toBe(false);
+    expect(wrapper.find('[data-testid="group-option-g-1"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="group-option-g-2"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="group-option-none"]').exists()).toBe(
+      true,
+    );
+  });
+
+  it("commits the chosen group id, then ends the edit", async () => {
+    const wrapper = groupCell({ editing: true });
+
+    await wrapper.find('[data-testid="group-option-g-2"]').trigger("click");
+
+    expect(wrapper.emitted("commit")).toEqual([["g-2"]]);
+    expect(wrapper.emitted("end-edit")).toHaveLength(1);
+  });
+
+  it("commits null when None is chosen on a filled cell", async () => {
+    const wrapper = groupCell({ value: "g-1", editing: true });
+
+    await wrapper.find('[data-testid="group-option-none"]').trigger("click");
+
+    expect(wrapper.emitted("commit")).toEqual([[null]]);
+    expect(wrapper.emitted("end-edit")).toHaveLength(1);
+  });
+
+  it("moving away from a group cell just leaves it — there is nothing to save", async () => {
+    const wrapper = groupCell({ value: "g-1", editing: true });
+
+    (wrapper.vm as unknown as { commit: () => void }).commit();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.emitted("commit")).toBeUndefined();
+    expect(wrapper.classes()).not.toContain("grid-cell--invalid");
+    expect(wrapper.emitted("end-edit")).toHaveLength(1);
   });
 });

@@ -22,6 +22,7 @@ from app.schemas.listies import (
     ColumnType,
     ListiesDoc,
     Place,
+    PlaceGroup,
     Row,
     Sheet,
     SheetSummary,
@@ -55,6 +56,14 @@ def coerce_value(value: object, column_type: ColumnType) -> CellValue:
     # A place is never a valid scalar: it would silently become "Place(...)".
     if isinstance(value, Place) or _looks_like_place(value):
         raise ValueError(f"expected {column_type}, got a place")
+
+    if column_type == "place_group":
+        # A group cell holds a group id (a string). Whether that id still names
+        # a live group is not checked here — a dangling id reads as ungrouped,
+        # not an error (Story 4.6). Empty is `None`, like every other type.
+        if not isinstance(value, str):
+            raise ValueError(f"expected a group id, got {type(value).__name__}")
+        return value if value.strip() else None
 
     if column_type == "text":
         if not isinstance(value, str):
@@ -97,10 +106,31 @@ def _as_place(value: object) -> Place | None:
         raise ValueError("expected a place with place_id, name, lat and lng") from exc
 
 
-def _reparse(value: CellValue, new_type: ColumnType) -> CellValue:
+def _group_name(group_id: object, groups: list[PlaceGroup] | None) -> str | None:
+    """Resolve a group id to its name, or `None` for a dangling/absent id."""
+    for group in groups or []:
+        if group.id == group_id:
+            return group.name
+    return None
+
+
+def _reparse(
+    value: CellValue,
+    new_type: ColumnType,
+    *,
+    old_type: ColumnType | None = None,
+    groups: list[PlaceGroup] | None = None,
+) -> CellValue:
     """Best-effort conversion used by a retype: keep what parses, else `None`."""
     if value is None:
         return None
+    # A group id cannot be reconstructed from a scalar or a place.
+    if new_type == "place_group":
+        return None
+    # Leaving a group: only text survives, carrying the group's name; a dangling
+    # id (no longer among the tab's groups) blanks. Everything else blanks too.
+    if old_type == "place_group":
+        return _group_name(value, groups) if new_type == "text" else None
     if new_type == "place":
         # A place cannot be reconstructed from a string or a number.
         return value if isinstance(value, Place) else None
@@ -129,12 +159,23 @@ def _reparse(value: CellValue, new_type: ColumnType) -> CellValue:
     return None
 
 
-def recoerce_column(rows: list[Row], column_id: str, new_type: ColumnType) -> None:
-    """Convert every row's value for `column_id` in place, blanking what cannot."""
+def recoerce_column(
+    rows: list[Row],
+    column_id: str,
+    new_type: ColumnType,
+    *,
+    old_type: ColumnType | None = None,
+    groups: list[PlaceGroup] | None = None,
+) -> None:
+    """Convert every row's value for `column_id` in place, blanking what cannot.
+
+    `old_type` and `groups` are only consulted when leaving a `place_group`
+    column, so a `place_group` → text retype can keep each group's name.
+    """
     for row in rows:
         if column_id not in row.cells:
             continue
-        converted = _reparse(row.cells[column_id], new_type)
+        converted = _reparse(row.cells[column_id], new_type, old_type=old_type, groups=groups)
         if converted is None:
             del row.cells[column_id]
         else:
@@ -412,8 +453,11 @@ def update_column(
         column.name = cleaned
 
     if column_type is not None and column_type != column.type:
+        old_type = column.type
         column.type = column_type
-        recoerce_column(tab.rows, column_id, column_type)
+        recoerce_column(
+            tab.rows, column_id, column_type, old_type=old_type, groups=tab.place_groups
+        )
 
     repo.write_doc(username, doc)
     return tab
@@ -516,8 +560,14 @@ def update_tab(
     tab_id: str,
     name: str | None = None,
     color: str | None = None,
+    place_groups: list[PlaceGroup] | None = None,
 ) -> Tab:
-    """Rename and/or recolour a tab — only the fields provided are applied."""
+    """Rename, recolour and/or set a tab's place groups — only provided fields.
+
+    Setting `place_groups` does NOT rewrite cells: a cell holding the id of a
+    now-deleted group simply reads as ungrouped (Story 4.6), so there is no
+    cascade write here.
+    """
     doc = repo.read_doc(username)
     tab = find_tab(find_sheet(doc.sheets, sheet_id).tabs, tab_id)
 
@@ -525,6 +575,8 @@ def update_tab(
         tab.name = _clean_name(name, "tab name")
     if color is not None:
         tab.color = _clean_color(color)
+    if place_groups is not None:
+        tab.place_groups = place_groups
 
     repo.write_doc(username, doc)
     return tab
