@@ -58,6 +58,7 @@ describe("useKdhStore", () => {
         created_at: "x",
         next_session: null,
         last_session: null,
+        share_token: "tok-secret",
       },
     ]);
     const store = useKdhStore();
@@ -88,6 +89,7 @@ describe("useKdhStore", () => {
         created_at: "a",
         next_session: null,
         last_session: null,
+        share_token: "tok-secret",
       },
     ];
 
@@ -147,6 +149,7 @@ describe("useKdhStore", () => {
         created_at: "x",
         next_session: null,
         last_session: null,
+        share_token: "tok-secret",
       },
     ];
 
@@ -168,6 +171,7 @@ describe("useKdhStore", () => {
         created_at: "x",
         next_session: null,
         last_session: null,
+        share_token: "tok-secret",
       },
     ];
 
@@ -191,6 +195,7 @@ describe("useKdhStore", () => {
         created_at: "x",
         next_session: null,
         last_session: null,
+        share_token: "tok-secret",
       },
       {
         id: "cal-other",
@@ -200,6 +205,7 @@ describe("useKdhStore", () => {
         created_at: "y",
         next_session: null,
         last_session: null,
+        share_token: "tok-secret",
       },
     ];
 
@@ -221,6 +227,7 @@ describe("useKdhStore", () => {
         created_at: "x",
         next_session: null,
         last_session: null,
+        share_token: "tok-secret",
       },
     ];
 

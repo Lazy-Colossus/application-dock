@@ -328,6 +328,9 @@ export const useKdhStore = defineStore("kdh", () => {
         created_at: created.created_at,
         next_session: null,
         last_session: null,
+        // Carried through so the new row's link button works immediately,
+        // without a refetch of the list.
+        share_token: created.share_token,
       });
       return created;
     } catch (e) {

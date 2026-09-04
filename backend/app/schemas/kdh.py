@@ -82,6 +82,10 @@ class CalendarSummary(BaseModel):
     # needing to compare dates itself.
     next_session: str | None = None
     last_session: str | None = None
+    # So the list can hand over an invitee link without opening the calendar
+    # first. Safe here and nowhere else: this schema is only ever served to a
+    # logged-in caller, and the public share routes never return a summary.
+    share_token: str = ""
 
 
 class Me(BaseModel):

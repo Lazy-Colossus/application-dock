@@ -174,6 +174,9 @@ def test_list_returns_summaries_newest_first(monkeypatch: pytest.MonkeyPatch) ->
         "created_at",
         "next_session",
         "last_session",
+        # So a row can hand over an invitee link without opening the calendar
+        # first. Only ever served to a logged-in caller.
+        "share_token",
     }
 
 
@@ -1209,3 +1212,26 @@ def test_the_link_needs_no_login_at_all(fixed_today, monkeypatch) -> None:
         ).status_code
         == 200
     )
+
+
+def test_the_list_carries_each_calendar_s_link(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+
+    summary = client.get("/api/kdh/calendars").json()[0]
+
+    assert summary["share_token"] == created["share_token"]
+    # And it is the one that actually opens the calendar.
+    assert shared(summary["share_token"]).json()["calendar"]["id"] == created["id"]
+
+
+def test_the_list_mints_a_link_for_a_calendar_that_lacks_one(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    path = Path(kdh_repo._calendar_path(created["id"]))
+    stored = json.loads(path.read_text())
+    del stored["share_token"]
+    path.write_text(json.dumps(stored))
+
+    # A row whose share button did nothing would be worse than no button.
+    summary = client.get("/api/kdh/calendars").json()[0]
+    assert summary["share_token"]
+    assert shared(summary["share_token"]).status_code == 200

@@ -44,7 +44,7 @@ inherits_ui_system: "Vue 3 + Quasar v2 (Material-based)"
 
 | Surface | Reached from | Purpose | Realizes |
 |---|---|---|---|
-| Calendar list | Dock card → `/kdh` | Every calendar, newest first: name + headcount, the invitees' names beneath, and the next-or-last session | FR-5, FR-17 |
+| Calendar list | Dock card → `/kdh` | Every calendar, newest first: name + headcount, the invitees' names beneath, the next-or-last session, and a link button that copies that calendar's invitee link (admins only) | FR-5, FR-17 |
 | Create calendar | List (admins only) | Name + initial roster | FR-4 |
 | Month | List (admin), or the invitee link `/kdh/s/:token` | The month; the whole point of the app | FR-12, FR-14, FR-16 |
 | Name dropdown | Month header | Claim, switch or release your name; change your colour | FR-10, FR-11, FR-9 |

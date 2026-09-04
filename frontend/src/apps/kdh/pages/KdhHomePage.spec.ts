@@ -25,6 +25,7 @@ const SUMMARIES = [
     created_at: "2026-09-03T10:00:00Z",
     next_session: null,
     last_session: null,
+    share_token: "tok-dnd",
   },
   {
     id: "cal-2",
@@ -34,6 +35,7 @@ const SUMMARIES = [
     created_at: "2026-09-02T10:00:00Z",
     next_session: null,
     last_session: null,
+    share_token: "tok-movie",
   },
 ];
 
@@ -62,6 +64,11 @@ const STUBS = {
     emits: ["click"],
   },
   "q-item-section": { template: "<div><slot /></div>" },
+  "q-btn": {
+    template:
+      "<button :data-testid=\"$attrs['data-testid']\" :aria-label=\"$attrs['aria-label']\" @click=\"$emit('click', $event)\">{{ $attrs.label }}</button>",
+    emits: ["click"],
+  },
   "q-item-label": { template: "<div><slot /></div>" },
 };
 
@@ -304,5 +311,77 @@ describe("KdhHomePage", () => {
     mockApi(true);
     const wrapper = await mountPage();
     expect(wrapper.find('[data-testid="session-cal-1"]').exists()).toBe(false);
+  });
+
+  describe("the invitee link on a row", () => {
+    function stubClipboard(writeText: ReturnType<typeof vi.fn>) {
+      Object.defineProperty(navigator, "clipboard", {
+        value: { writeText },
+        configurable: true,
+      });
+    }
+
+    it("copies the link an invitee follows, not this page's address", async () => {
+      stubClipboard(vi.fn().mockResolvedValue(undefined));
+      mockApi(true);
+      const wrapper = await mountPage();
+
+      await wrapper.find('[data-testid="copy-link-cal-1"]').trigger("click");
+      await flushPromises();
+
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+        `${window.location.origin}/kdh/s/tok-dnd`,
+      );
+      expect(wrapper.find('[data-testid="copy-notice"]').text()).toContain(
+        "DnD",
+      );
+    });
+
+    it("copies the right row's link", async () => {
+      stubClipboard(vi.fn().mockResolvedValue(undefined));
+      mockApi(true);
+      const wrapper = await mountPage();
+
+      await wrapper.find('[data-testid="copy-link-cal-2"]').trigger("click");
+      await flushPromises();
+
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+        `${window.location.origin}/kdh/s/tok-movie`,
+      );
+    });
+
+    it("does not open the calendar it copies", async () => {
+      // The row navigates on click; copying is emphatically not "open this".
+      stubClipboard(vi.fn().mockResolvedValue(undefined));
+      mockApi(true);
+      const wrapper = await mountPage();
+
+      await wrapper.find('[data-testid="copy-link-cal-1"]').trigger("click");
+      await flushPromises();
+
+      expect(push).not.toHaveBeenCalled();
+    });
+
+    it("shows the link to copy by hand when the clipboard is unavailable", async () => {
+      // No secure context on plain HTTP over a LAN, which is how this is run.
+      stubClipboard(vi.fn().mockRejectedValue(new Error("insecure context")));
+      mockApi(true);
+      const wrapper = await mountPage();
+
+      await wrapper.find('[data-testid="copy-link-cal-1"]').trigger("click");
+      await flushPromises();
+
+      expect(wrapper.find('[data-testid="copy-notice"]').text()).toContain(
+        "/kdh/s/tok-dnd",
+      );
+    });
+
+    it("is not offered to a guest", async () => {
+      mockApi(false);
+      const wrapper = await mountPage();
+      expect(wrapper.find('[data-testid="copy-link-cal-1"]').exists()).toBe(
+        false,
+      );
+    });
   });
 });

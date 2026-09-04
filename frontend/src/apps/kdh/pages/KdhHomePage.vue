@@ -17,6 +17,16 @@
       {{ store.error }}
     </div>
 
+    <!-- One notice for the whole list rather than one per row: on a phone the
+         fallback is a full URL, and a row is nowhere near wide enough. -->
+    <div
+      v-if="copyNotice"
+      class="text-grey-6 q-mb-md kdh-copy-notice"
+      data-testid="copy-notice"
+    >
+      {{ copyNotice }}
+    </div>
+
     <!-- The two empty states differ by role: a guest is never shown a control
          they cannot use, disabled or otherwise (FR-3, FR-5). -->
     <div
@@ -60,6 +70,21 @@
           >
             {{ rosterLine(calendar.invitee_names) }}
           </q-item-label>
+        </q-item-section>
+        <!-- The link is what gets handed out, so it is reachable without
+             opening the calendar. `.stop` because the row itself navigates,
+             and copying is emphatically not "open this". -->
+        <q-item-section v-if="isAdmin" side>
+          <q-btn
+            flat
+            dense
+            round
+            size="sm"
+            icon="link"
+            :aria-label="`Copy invitee link for ${calendar.name}`"
+            :data-testid="`copy-link-${calendar.id}`"
+            @click.stop="copyInviteeLink(calendar)"
+          />
         </q-item-section>
         <q-item-section v-if="sessionOf(calendar)" side>
           <q-item-label
@@ -161,6 +186,7 @@ const newName = ref("");
 const inviteeNames = ref<string[]>([""]);
 
 const isAdmin = computed(() => store.me?.is_admin === true);
+const copyNotice = ref("");
 
 const filledInvitees = computed(() =>
   inviteeNames.value.map((n) => n.trim()).filter((n) => n !== ""),
@@ -230,6 +256,23 @@ function rosterLine(names: string[]): string {
   return names.length > ROSTER_SHOWN ? `${shown}…` : shown;
 }
 
+/**
+ * Copy the link an invitee follows — never this page's own address, which needs
+ * a login they do not have.
+ */
+async function copyInviteeLink(calendar: CalendarSummary): Promise<void> {
+  if (!calendar.share_token) return;
+  const url = `${window.location.origin}/kdh/s/${calendar.share_token}`;
+  try {
+    // Undefined on plain HTTP over a LAN — it needs a secure context — so show
+    // the link to copy by hand rather than failing silently.
+    await navigator.clipboard.writeText(url);
+    copyNotice.value = `Invitee link for ${calendar.name} copied.`;
+  } catch {
+    copyNotice.value = url;
+  }
+}
+
 function open(calendarId: string): void {
   void router.push(`/kdh/c/${calendarId}`);
 }
@@ -255,6 +298,10 @@ import "./../css/kdh.sass";
 </script>
 
 <style scoped>
+/* A copied URL is long; let it wrap rather than push the list sideways. */
+.kdh-copy-notice {
+  overflow-wrap: anywhere;
+}
 /* Same centred band as the calendar, so moving between the two screens does
    not move the content. */
 @media (min-width: 700px) {

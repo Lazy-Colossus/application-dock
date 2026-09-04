@@ -45,6 +45,8 @@ export interface CalendarSummary {
   next_session: string | null;
   /** The most recent chosen day already past, if any. */
   last_session: string | null;
+  /** So a row can offer the invitee link without opening the calendar first. */
+  share_token: string;
 }
 
 export interface Me {

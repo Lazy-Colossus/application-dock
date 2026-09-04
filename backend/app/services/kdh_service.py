@@ -166,6 +166,10 @@ def list_calendar_summaries() -> list[CalendarSummary]:
     """
     summaries = []
     for calendar in repo.list_calendars():
+        # Made before invitee links existed: mint one now so the list can offer
+        # the link, rather than showing a row whose share button does nothing.
+        if not calendar.share_token:
+            calendar = get_calendar(calendar.id)
         # Tombstoned invitees are off the roster (AR-7), so they neither count
         # nor appear.
         roster = sorted(_active(calendar), key=lambda i: i.order)
@@ -184,6 +188,7 @@ def list_calendar_summaries() -> list[CalendarSummary]:
                 # last (AR-4, NFR-5).
                 next_session=min(upcoming) if upcoming else None,
                 last_session=max(past) if past else None,
+                share_token=calendar.share_token,
             )
         )
     return summaries
