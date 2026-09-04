@@ -23,6 +23,8 @@ app.include_router(hotaru.router)
 app.include_router(context_switch.router)
 app.include_router(listies.router)
 app.include_router(kdh.router)
+# Unauthenticated by design — the invitee link. See the note in routers/kdh.py.
+app.include_router(kdh.share_router)
 app.include_router(archery.router)
 
 

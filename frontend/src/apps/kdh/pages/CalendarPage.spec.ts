@@ -13,12 +13,17 @@ vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
   api: { get: getMock, post: postMock, put: putMock, del: delMock },
 }));
+const { routeRef } = vi.hoisted(() => ({
+  routeRef: {
+    current: {
+      params: { calendarId: "cal-ab12cd34" } as Record<string, string>,
+      path: "/kdh/c/cal-ab12cd34",
+    },
+  },
+}));
 vi.mock("vue-router", () => ({
   useRouter: () => ({ push }),
-  useRoute: () => ({
-    params: { calendarId: "cal-ab12cd34" },
-    path: "/kdh/c/cal-ab12cd34",
-  }),
+  useRoute: () => routeRef.current,
 }));
 
 import CalendarPage from "./CalendarPage.vue";
@@ -40,6 +45,7 @@ const CAL: Calendar = {
   votes: {},
   notes: {},
   chosen_dates: [],
+  share_token: "tok-secret",
 };
 
 const STUBS = {
@@ -90,6 +96,10 @@ describe("CalendarPage", () => {
     // `navigator.clipboard` is getter-only in jsdom, so it has to be redefined
     // rather than assigned.
     stubClipboard(vi.fn().mockResolvedValue(undefined));
+    routeRef.current = {
+      params: { calendarId: "cal-ab12cd34" },
+      path: "/kdh/c/cal-ab12cd34",
+    };
   });
 
   it("shows the calendar's name", async () => {
@@ -170,7 +180,7 @@ describe("CalendarPage", () => {
     expect(push).toHaveBeenCalledWith("/kdh");
   });
 
-  it("copies an absolute link", async () => {
+  it("copies the invitee link, not the admin address bar", async () => {
     mockApi(true);
     const wrapper = await mountPage();
 
@@ -178,8 +188,10 @@ describe("CalendarPage", () => {
     await wrapper.find('[data-testid="share-action"]').trigger("click");
     await flushPromises();
 
+    // The address bar needs a login the invitees do not have; pasting it into
+    // the group chat would send everyone to a login screen.
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      `${window.location.origin}/kdh/c/cal-ab12cd34`,
+      `${window.location.origin}/kdh/s/tok-secret`,
     );
     expect(wrapper.find('[data-testid="copy-notice"]').text()).toContain(
       "copied",
@@ -196,7 +208,7 @@ describe("CalendarPage", () => {
     await flushPromises();
 
     expect(wrapper.find('[data-testid="copy-notice"]').text()).toContain(
-      "/kdh/c/cal-ab12cd34",
+      "/kdh/s/tok-secret",
     );
   });
 
@@ -898,6 +910,144 @@ describe("CalendarPage", () => {
 
       expect(wrapper.find('[data-testid="error"]').text()).toContain(
         "Calendar not found",
+      );
+    });
+  });
+
+  describe("opened from an invitee link", () => {
+    /** Arrive as somebody with no account, holding only the token. */
+    async function mountShared(
+      calendar: Calendar = { ...CAL, invitees: TWO_INVITEES },
+    ) {
+      routeRef.current = {
+        params: { shareToken: "tok-secret" },
+        path: "/kdh/s/tok-secret",
+      };
+      getMock.mockImplementation((path: string) => {
+        if (path === "/kdh/share/tok-secret")
+          return Promise.resolve({ calendar, today: "2026-09-03" });
+        return Promise.reject(new Error("should not be called"));
+      });
+      return mountPage();
+    }
+
+    it("asks once, unauthenticated, and never for /kdh/me", async () => {
+      await mountShared();
+
+      expect(getMock).toHaveBeenCalledWith("/kdh/share/tok-secret");
+      // There is no logged-in user on this path; the date rides along instead.
+      expect(getMock).not.toHaveBeenCalledWith("/kdh/me");
+      expect(getMock).not.toHaveBeenCalledWith("/kdh/calendars/cal-ab12cd34");
+    });
+
+    it("shows the calendar itself", async () => {
+      const wrapper = await mountShared();
+      expect(wrapper.find('[data-testid="calendar-name"]').text()).toBe("DnD");
+      expect(wrapper.find('[data-testid="day-2026-09-14"]').exists()).toBe(
+        true,
+      );
+    });
+
+    it("offers no way back to a list they cannot open", async () => {
+      const wrapper = await mountShared();
+      expect(wrapper.find('[data-testid="back-btn"]').exists()).toBe(false);
+    });
+
+    it("hides the group summary", async () => {
+      // Whose silence is whose is the organiser's question, and this names
+      // every person to anyone holding the link.
+      const wrapper = await mountShared();
+      expect(wrapper.find('[data-testid="month-tally"]').exists()).toBe(false);
+    });
+
+    it("gives them none of the admin surface", async () => {
+      window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+      const wrapper = await mountShared();
+
+      for (const action of ["rename", "invitees", "share", "delete"]) {
+        expect(wrapper.find(`[data-testid="${action}-action"]`).exists()).toBe(
+          false,
+        );
+      }
+      // Nor the marking control, which lives in the day sheet.
+      await wrapper.find('[data-testid="day-2026-09-14"]').trigger("click");
+      expect(wrapper.find('[data-testid="toggle-chosen"]').exists()).toBe(
+        false,
+      );
+    });
+
+    it("lets them vote, through the public route", async () => {
+      window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+      const wrapper = await mountShared();
+
+      await wrapper.find('[data-testid="day-2026-09-14"]').trigger("click");
+      await wrapper.find('[data-testid="set-yes"]').trigger("click");
+      await flushPromises();
+
+      expect(putMock).toHaveBeenCalledWith("/kdh/share/tok-secret/votes", {
+        invitee_id: "inv-1",
+        date: "2026-09-14",
+        status: "yes",
+      });
+    });
+
+    it("lets them leave a note, through the public route", async () => {
+      window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+      const wrapper = await mountShared();
+
+      await wrapper.find('[data-testid="day-2026-09-14"]').trigger("click");
+      await wrapper.find('[data-testid="note-open"]').trigger("click");
+      await wrapper
+        .find('[data-testid="note-input"] input')
+        .setValue("Only after 8pm");
+      await wrapper.find('[data-testid="note-save"]').trigger("click");
+      await flushPromises();
+
+      expect(putMock).toHaveBeenCalledWith("/kdh/share/tok-secret/notes", {
+        invitee_id: "inv-1",
+        date: "2026-09-14",
+        text: "Only after 8pm",
+      });
+    });
+
+    it("lets them clear their own month, through the public route", async () => {
+      window.localStorage.setItem("kdh.claim.cal-ab12cd34", "inv-1");
+      const wrapper = await mountShared({
+        ...CAL,
+        invitees: TWO_INVITEES,
+        votes: { "2026-09-14": { "inv-1": "yes" } },
+      });
+
+      await wrapper.find('[data-testid="admin-menu-btn"]').trigger("click");
+      await wrapper.find('[data-testid="clear-month-action"]').trigger("click");
+      await wrapper
+        .find('[data-testid="clear-month-confirm"]')
+        .trigger("click");
+      await flushPromises();
+
+      expect(putMock).toHaveBeenCalledWith("/kdh/share/tok-secret/votes/bulk", {
+        invitee_id: "inv-1",
+        dates: ["2026-09-14"],
+        status: "none",
+        clear_notes: true,
+      });
+    });
+
+    it("says a dead link is dead without saying why", async () => {
+      routeRef.current = {
+        params: { shareToken: "tok-gone" },
+        path: "/kdh/s/tok-gone",
+      };
+      getMock.mockRejectedValue(new Error("Not found"));
+      const wrapper = await mountPage();
+
+      const text = wrapper.find('[data-testid="not-found"]').text();
+      expect(text).toContain("This link no longer works");
+      // A revoked token and a deleted calendar read the same, so probing
+      // cannot tell them apart.
+      expect(text).not.toContain("no longer exists");
+      expect(wrapper.find('[data-testid="not-found-back"]').exists()).toBe(
+        false,
       );
     });
   });

@@ -4,6 +4,7 @@
 current user with `test_user`; tests that need a specific caller re-override it.
 """
 
+import json
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,7 @@ from fastapi.testclient import TestClient
 
 from app.core.dependencies import get_current_user
 from app.main import app
+from app.repositories import kdh_repo
 
 client = TestClient(app)
 
@@ -1034,3 +1036,176 @@ def test_anyone_may_edit_or_clear_a_note(as_guest: None, fixed_today) -> None:
     assert body.status_code == 200
     assert body.json()["notes"]["2026-09-14"][dani] == "edited by someone else"
     assert jake  # roster untouched
+
+
+# ── the invitee link ─────────────────────────────────────────────────────────
+
+
+def test_a_new_calendar_gets_a_link(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    assert len(created["share_token"]) >= 30, "long enough not to be guessable"
+
+
+def test_two_calendars_get_different_links(fixed_today) -> None:
+    assert create("DnD").json()["share_token"] != create("Poker").json()["share_token"]
+
+
+def test_a_calendar_made_before_links_existed_gets_one_on_first_read(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    path = Path(kdh_repo._calendar_path(created["id"]))
+    stored = json.loads(path.read_text())
+    del stored["share_token"]
+    path.write_text(json.dumps(stored))
+
+    first = client.get(f"/api/kdh/calendars/{created['id']}").json()["share_token"]
+    assert first
+
+    # Minted once and kept: a fresh token per read would break every link
+    # already pasted into the group chat.
+    second = client.get(f"/api/kdh/calendars/{created['id']}").json()["share_token"]
+    assert second == first
+
+
+def shared(token: str):
+    return client.get(f"/api/kdh/share/{token}")
+
+
+def test_the_link_opens_the_calendar_without_logging_in(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+
+    body = shared(created["share_token"]).json()
+
+    assert body["calendar"]["id"] == created["id"]
+    assert body["calendar"]["name"] == "DnD"
+    # The page cannot ask /kdh/me for the date on this path (NFR-5).
+    assert body["today"] == "2026-09-03"
+
+
+def test_an_unknown_link_is_a_plain_404(fixed_today) -> None:
+    create("DnD")
+    response = shared("not-a-real-token")
+
+    assert response.status_code == 404
+    # The same answer as a calendar that never existed: probing must not be able
+    # to tell a wrong token from a missing calendar.
+    assert response.json()["detail"] == "Not found"
+
+
+def test_an_empty_token_opens_nothing(fixed_today) -> None:
+    # A calendar whose stored token is blank must not be reachable by sending
+    # nothing — that would make every un-migrated calendar public.
+    created = create("DnD").json()
+    path = Path(kdh_repo._calendar_path(created["id"]))
+    stored = json.loads(path.read_text())
+    stored["share_token"] = ""
+    path.write_text(json.dumps(stored))
+
+    assert shared("").status_code in {404, 405}
+
+
+def test_the_link_can_vote(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    dani = created["invitees"][0]["id"]
+
+    body = client.put(
+        f"/api/kdh/share/{created['share_token']}/votes",
+        json={"invitee_id": dani, "date": "2026-09-14", "status": "yes"},
+    )
+
+    assert body.status_code == 200
+    assert body.json()["votes"]["2026-09-14"] == {dani: "yes"}
+
+
+def test_the_link_can_note_and_clear_a_month(fixed_today) -> None:
+    created = create("DnD", ["Dani"]).json()
+    token, dani = created["share_token"], created["invitees"][0]["id"]
+
+    noted = client.put(
+        f"/api/kdh/share/{token}/notes",
+        json={"invitee_id": dani, "date": "2026-09-14", "text": "Only after 8pm"},
+    )
+    assert noted.json()["notes"]["2026-09-14"] == {dani: "Only after 8pm"}
+
+    cleared = client.put(
+        f"/api/kdh/share/{token}/votes/bulk",
+        json={
+            "invitee_id": dani,
+            "dates": ["2026-09-14"],
+            "status": "none",
+            "clear_notes": True,
+        },
+    )
+    assert cleared.json()["notes"] == {}
+
+
+def test_the_link_still_refuses_a_past_day(fixed_today) -> None:
+    """The token buys an invitee's rights, not extra ones."""
+    created = create("DnD", ["Dani"]).json()
+
+    response = client.put(
+        f"/api/kdh/share/{created['share_token']}/votes",
+        json={
+            "invitee_id": created["invitees"][0]["id"],
+            "date": "2026-08-01",
+            "status": "yes",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_the_link_reaches_nothing_but_those_four_verbs(fixed_today) -> None:
+    """The admin surface is ABSENT from the share router, not guarded inside it.
+
+    A route that was never written cannot be reached by a bug in a guard, so
+    this asserts the shape of the API rather than the behaviour of a check.
+    """
+    created = create("DnD", ["Dani"]).json()
+    token = created["share_token"]
+
+    forbidden = [
+        client.patch(f"/api/kdh/share/{token}", json={"name": "Renamed"}),
+        client.delete(f"/api/kdh/share/{token}"),
+        client.post(f"/api/kdh/share/{token}/invitees", json={"name": "Tom"}),
+        client.put(
+            f"/api/kdh/share/{token}/chosen",
+            json={"date": "2026-09-14", "chosen": True},
+        ),
+        client.get("/api/kdh/share"),
+    ]
+
+    for response in forbidden:
+        assert response.status_code in {404, 405, 422}, response.request.url
+
+    # And the calendar is untouched by any of it.
+    after = shared(token).json()["calendar"]
+    assert after["name"] == "DnD"
+    assert after["chosen_dates"] == []
+    assert [i["name"] for i in after["invitees"]] == ["Dani"]
+
+
+def test_the_link_needs_no_login_at_all(fixed_today, monkeypatch) -> None:
+    """The point of the feature, and the one thing the rest of this file cannot show.
+
+    Every other test here runs with `get_current_user` overridden, so it proves
+    nothing about who may call what. This one drops the override and configures
+    a real secret, which is what a deployment looks like: the authenticated
+    routes then answer 401, and the invitee link still opens.
+    """
+    created = create("DnD", ["Dani"]).json()
+    token, dani = created["share_token"], created["invitees"][0]["id"]
+
+    app.dependency_overrides.pop(get_current_user, None)
+    monkeypatch.setattr("app.core.config.settings.jwt_secret_key", "a-real-secret")
+
+    assert client.get(f"/api/kdh/calendars/{created['id']}").status_code == 401
+    assert client.get("/api/kdh/calendars").status_code == 401
+
+    assert shared(token).status_code == 200
+    assert (
+        client.put(
+            f"/api/kdh/share/{token}/votes",
+            json={"invitee_id": dani, "date": "2026-09-14", "status": "yes"},
+        ).status_code
+        == 200
+    )

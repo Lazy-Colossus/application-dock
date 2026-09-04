@@ -2,7 +2,10 @@
   <q-page class="kdh-app kdh-calendar column no-wrap q-pa-md">
     <div class="kdh-inner column no-wrap">
       <div class="row items-center no-wrap q-gutter-sm q-mb-md">
+        <!-- An invitee has no list to go back to: the link names one calendar
+             and the list needs a login they do not have. -->
         <q-btn
+          v-if="!isShared"
           flat
           dense
           round
@@ -77,10 +80,18 @@
       </div>
 
       <div v-if="notFound" class="text-grey-6" data-testid="not-found">
-        That calendar no longer exists.
-        <a href="#" data-testid="not-found-back" @click.prevent="goToList">
-          Back to your calendars
-        </a>
+        <template v-if="isShared">
+          <!-- A dead link and a deleted calendar look the same from here, on
+               purpose: telling them apart would let anyone with a guess probe
+               for which tokens are real. -->
+          This link no longer works. Ask whoever shared it for a new one.
+        </template>
+        <template v-else>
+          That calendar no longer exists.
+          <a href="#" data-testid="not-found-back" @click.prevent="goToList">
+            Back to your calendars
+          </a>
+        </template>
       </div>
 
       <div v-if="selectMode" class="kdh-selbar" data-testid="select-bar">
@@ -134,9 +145,13 @@
 
       <!-- Under the month it summarises, and moving with it: this answers "who
            still has not said anything", which is the question the grid itself
-           cannot show at a glance. -->
+           cannot show at a glance.
+
+           Not on the invitee link: it is a view of how the group is doing,
+           which is the organiser's question, and it names every person's
+           silence to anyone holding the link. -->
       <MonthTally
-        v-if="store.currentCalendar && serverToday && monthGrid"
+        v-if="!isShared && store.currentCalendar && serverToday && monthGrid"
         :invitees="store.currentCalendar.invitees"
         :votes="store.currentCalendar.votes"
         :dates="monthGrid.dates"
@@ -239,7 +254,7 @@
             data-testid="share-action"
             @click="copyLink"
           >
-            <q-item-section>Copy link</q-item-section>
+            <q-item-section>Copy invitee link</q-item-section>
           </q-item>
           <q-item
             v-if="isAdmin"
@@ -455,7 +470,25 @@ const store = useKdhStore();
 const route = useRoute();
 const router = useRouter();
 
-const calendarId = computed(() => String(route.params.calendarId));
+/**
+ * Opened from an invitee link rather than from the calendar list.
+ *
+ * The visitor has no account, so the page shows them the calendar and the three
+ * things they can do to it — vote, note, clear their own month — and nothing
+ * that belongs to running it. The server enforces the same boundary; this is
+ * the half of it that stops a control appearing at all.
+ */
+const shareToken = computed(() =>
+  route.params.shareToken ? String(route.params.shareToken) : null,
+);
+const isShared = computed(() => shareToken.value !== null);
+
+/** In share mode the id arrives with the calendar, not from the URL. */
+const calendarId = computed(() =>
+  isShared.value
+    ? (store.currentCalendar?.id ?? "")
+    : String(route.params.calendarId),
+);
 const isAdmin = computed(() => store.me?.is_admin === true);
 const notFound = computed(
   () =>
@@ -712,9 +745,18 @@ async function submitDelete(): Promise<void> {
   }
 }
 
+/**
+ * Copies the INVITEE link, not the address bar.
+ *
+ * The address bar holds the admin route, which needs a login the people being
+ * invited do not have — pasting it into the group chat sends everyone to a
+ * login screen. What gets shared is the token link.
+ */
 async function copyLink(): Promise<void> {
+  const token = store.currentCalendar?.share_token;
+  if (!token) return;
   // An absolute URL: a bare path is useless pasted into a group chat.
-  const url = `${window.location.origin}${route.path}`;
+  const url = `${window.location.origin}/kdh/s/${token}`;
   menuOpen.value = false;
   try {
     // `navigator.clipboard` is undefined on plain HTTP over a LAN — it needs a
@@ -727,7 +769,11 @@ async function copyLink(): Promise<void> {
 }
 
 onMounted(async () => {
-  await Promise.all([store.fetchMe(), store.fetchCalendar(calendarId.value)]);
+  // One unauthenticated request on the share path: it carries the calendar and
+  // the server's date together, because there is no `/kdh/me` to ask.
+  if (shareToken.value) await store.fetchSharedCalendar(shareToken.value);
+  else
+    await Promise.all([store.fetchMe(), store.fetchCalendar(calendarId.value)]);
   // After the roster is known, so a stale claim can be resolved immediately.
   claim.restore();
 });

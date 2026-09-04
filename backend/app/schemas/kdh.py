@@ -45,6 +45,23 @@ class Calendar(BaseModel):
     # Admin-marked days, ascending. Any number: a long-running calendar
     # accumulates them, and they survive into the past (FR-17).
     chosen_dates: list[str] = Field(default_factory=list)
+    # The invitee link's secret. Knowing it is the whole of the authorisation to
+    # vote on this calendar, which is why it is long and random rather than
+    # derived from the id. Empty on a calendar made before share links existed;
+    # `get_calendar` fills one in on first read.
+    share_token: str = ""
+
+
+class SharedCalendar(BaseModel):
+    """What an invitee following a link needs, in one unauthenticated request.
+
+    Carries `today` because the page cannot ask `/kdh/me` for it — there is no
+    logged-in user on this path — and every past-versus-future decision in the
+    UI must use the server's date, never the device's (NFR-5).
+    """
+
+    calendar: Calendar
+    today: str
 
 
 class CalendarSummary(BaseModel):

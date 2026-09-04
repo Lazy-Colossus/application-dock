@@ -29,10 +29,16 @@ inherits_ui_system: "Vue 3 + Quasar v2 (Material-based)"
   world, like Hotaru, and does not inherit Hotaru's.
 - **Lives inside the shell.** One card on the dock landing page, its own route,
   platform conventions for identity, persistence and the HTTP boundary.
-- **Two capabilities, decided by login.** A guest (the shared account) reads,
-  claims a name, votes, and recolours themselves. Everyone else additionally
-  creates, renames and deletes calendars, manages invitees, and marks chosen days.
-  Admin controls are **hidden** from guests, not disabled.
+- **Two capabilities, decided by how you arrived.** An **invitee** follows a public
+  link (`/kdh/s/:token`) with no account at all: they see one calendar, claim a
+  name, vote, leave notes, and clear their own votes for a month. An **admin** logs
+  into the dock and additionally creates, renames and deletes calendars, manages
+  invitees, marks chosen days, and reads the month tally. Admin controls are
+  **hidden** from invitees, not disabled — and on the server they are absent from
+  the public router rather than guarded inside it.
+- **The token is the authorisation.** One secret per calendar, in the link. It buys
+  exactly four verbs on exactly one calendar. A dead link and a deleted calendar
+  are indistinguishable, deliberately.
 
 ## Information Architecture
 
@@ -40,11 +46,11 @@ inherits_ui_system: "Vue 3 + Quasar v2 (Material-based)"
 |---|---|---|---|
 | Calendar list | Dock card → `/kdh` | Every calendar, newest first: name + headcount, the invitees' names beneath, and the next-or-last session | FR-5, FR-17 |
 | Create calendar | List (admins only) | Name + initial roster | FR-4 |
-| Month | List, or a shared link to `/kdh/c/:id` | The month; the whole point of the app | FR-12, FR-14, FR-16 |
+| Month | List (admin), or the invitee link `/kdh/s/:token` | The month; the whole point of the app | FR-12, FR-14, FR-16 |
 | Name dropdown | Month header | Claim, switch or release your name; change your colour | FR-10, FR-11, FR-9 |
 | Day sheet | Tapping a day cell | Who is on that date; set your own answer | FR-13, FR-15 |
 | Roster management | Month header menu (admins only) | Add and remove invitees | FR-8 |
-| Month tally | Beneath the grid, always | Per-person vote totals for the visible month, ranked, with bars | FR-14 |
+| Month tally | Beneath the grid (admins only) | Per-person vote totals for the visible month, ranked, with bars | FR-14 |
 | Clear my month | Month header menu (anyone claimed) | Drop your own votes and notes across the visible month | FR-15 |
 
 The IA gained the **day sheet** during this session: FR-13 as written put names in

@@ -48,6 +48,7 @@ const CREATED: Calendar = {
   votes: {},
   notes: {},
   chosen_dates: [],
+  share_token: "tok-secret",
 };
 
 // Quasar list components are not in the global stub set (test/setup.ts); the

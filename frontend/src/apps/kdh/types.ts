@@ -30,6 +30,8 @@ export interface Calendar {
   /** date -> invitee id -> a short note, independent of any answer. */
   notes: Record<string, Record<string, string>>;
   chosen_dates: string[];
+  /** The secret in the invitee link. Only an admin ever receives a calendar. */
+  share_token: string;
 }
 
 export interface CalendarSummary {

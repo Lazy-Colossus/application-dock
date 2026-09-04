@@ -14,6 +14,46 @@ export const useKdhStore = defineStore("kdh", () => {
   const me = ref<Me | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  /**
+   * Set when the page was opened from an invitee link. While it is set, the
+   * three writes an invitee is allowed go to the public routes; everything else
+   * keeps its authenticated path, so an admin action attempted in share mode
+   * fails at the server rather than quietly finding a way through.
+   */
+  const shareToken = ref<string | null>(null);
+
+  /** Where an invitee's writes go: the token's calendar, or the named one. */
+  function writeBase(calendarId: string): string {
+    return shareToken.value
+      ? `/kdh/share/${shareToken.value}`
+      : `/kdh/calendars/${calendarId}`;
+  }
+
+  /**
+   * Open a calendar from its invitee link, with no login.
+   *
+   * The response carries the server's date because there is no `/kdh/me` to ask
+   * on this path (NFR-5), and it is stored as a `me` with no name and no admin
+   * rights — which is exactly what the visitor is, and lets every consumer of
+   * `me` stay as it was.
+   */
+  async function fetchSharedCalendar(token: string): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    currentCalendar.value = null;
+    shareToken.value = token;
+    try {
+      const view = await api.get<{ calendar: Calendar; today: string }>(
+        `/kdh/share/${token}`,
+      );
+      currentCalendar.value = view.calendar;
+      me.value = { username: "", is_admin: false, today: view.today };
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+    } finally {
+      loading.value = false;
+    }
+  }
 
   async function fetchMe(): Promise<void> {
     loading.value = true;
@@ -192,7 +232,7 @@ export const useKdhStore = defineStore("kdh", () => {
     error.value = null;
     try {
       currentCalendar.value = await api.put<Calendar>(
-        `/kdh/calendars/${calendarId}/votes`,
+        `${writeBase(calendarId)}/votes`,
         { invitee_id: inviteeId, date, status },
       );
     } catch (e) {
@@ -239,7 +279,7 @@ export const useKdhStore = defineStore("kdh", () => {
     error.value = null;
     try {
       currentCalendar.value = await api.put<Calendar>(
-        `/kdh/calendars/${calendarId}/votes/bulk`,
+        `${writeBase(calendarId)}/votes/bulk`,
         { invitee_id: inviteeId, dates, status, clear_notes: clearNotes },
       );
     } catch (e) {
@@ -259,7 +299,7 @@ export const useKdhStore = defineStore("kdh", () => {
     error.value = null;
     try {
       currentCalendar.value = await api.put<Calendar>(
-        `/kdh/calendars/${calendarId}/notes`,
+        `${writeBase(calendarId)}/notes`,
         { invitee_id: inviteeId, date, text },
       );
     } catch (e) {
@@ -315,6 +355,8 @@ export const useKdhStore = defineStore("kdh", () => {
     setChosen,
     setVotesBulk,
     setNote,
+    shareToken,
+    fetchSharedCalendar,
     renameCalendar,
     deleteCalendar,
   };

@@ -23,6 +23,7 @@ from app.schemas.kdh import (
     SetNoteRequest,
     SetVoteRequest,
     SetVotesBulkRequest,
+    SharedCalendar,
     UpdateCalendarRequest,
 )
 from app.services import kdh_service as service
@@ -187,6 +188,73 @@ def set_note(
 ) -> Calendar:
     try:
         return service.set_note(calendar_id, req.invitee_id, req.date, req.text)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+# ── The invitee link ─────────────────────────────────────────────────────────
+#
+# Everything below is UNAUTHENTICATED, deliberately: an invitee follows a link
+# out of a group chat and has no account here. The token in the path is the
+# whole of the authorisation, so these routes are written to a rule —
+#
+#   the token buys exactly the four verbs an invitee needs, on the one calendar
+#   it names, and nothing else.
+#
+# Renaming, deleting, the roster and the chosen day are absent from this router
+# rather than guarded inside it. A route that is not written cannot be reached
+# by a bug in a guard, and the shape of the file is then the security argument.
+#
+# An unknown or stale token is a 404 with no detail — the same answer as a
+# calendar that never existed — so probing cannot tell the two apart.
+
+
+share_router = APIRouter(prefix="/api/kdh/share", tags=["kdh-share"])
+
+
+def _shared(token: str) -> Calendar:
+    try:
+        return service.get_shared_calendar(token)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Not found") from exc
+
+
+@share_router.get("/{token}", response_model=SharedCalendar)
+def get_shared(token: str) -> SharedCalendar:
+    return SharedCalendar(calendar=_shared(token), today=service.today().isoformat())
+
+
+@share_router.put("/{token}/votes", response_model=Calendar)
+def set_shared_vote(token: str, req: SetVoteRequest) -> Calendar:
+    calendar = _shared(token)
+    try:
+        return service.set_vote(calendar.id, req.invitee_id, req.date, req.status)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@share_router.put("/{token}/votes/bulk", response_model=Calendar)
+def set_shared_votes_bulk(token: str, req: SetVotesBulkRequest) -> Calendar:
+    calendar = _shared(token)
+    try:
+        return service.set_votes_bulk(
+            calendar.id, req.invitee_id, req.dates, req.status, req.clear_notes
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@share_router.put("/{token}/notes", response_model=Calendar)
+def set_shared_note(token: str, req: SetNoteRequest) -> Calendar:
+    calendar = _shared(token)
+    try:
+        return service.set_note(calendar.id, req.invitee_id, req.date, req.text)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Not found") from exc
     except ValueError as exc:

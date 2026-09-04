@@ -9,6 +9,7 @@ and the admin gate arrive with the first endpoints in Story 1.3.
 
 from __future__ import annotations
 
+import secrets
 import uuid
 from datetime import UTC, date, datetime
 
@@ -39,6 +40,17 @@ def is_past(day: str) -> bool:
     Today itself is never past — it is still votable.
     """
     return date.fromisoformat(day) < today()
+
+
+def new_share_token() -> str:
+    """The secret in an invitee link.
+
+    Long because it is the ONLY thing standing between the public internet and
+    writing to this calendar — there is no second factor and no account behind
+    it. `token_urlsafe(24)` is 192 bits, which is not guessable and still fits
+    in a link somebody pastes into a group chat.
+    """
+    return secrets.token_urlsafe(24)
 
 
 def new_id(prefix: str) -> str:
@@ -115,6 +127,7 @@ def create_calendar(username: str, name: str, invitee_names: list[str]) -> Calen
         created_by=username,
         updated_at=stamp,
         invitees=invitees,
+        share_token=new_share_token(),
     )
     repo.write_calendar(calendar)
     return calendar
@@ -122,7 +135,28 @@ def create_calendar(username: str, name: str, invitee_names: list[str]) -> Calen
 
 def get_calendar(calendar_id: str) -> Calendar:
     """One calendar. Raises FileNotFoundError if unknown, ValueError if malformed."""
-    return repo.read_calendar(calendar_id)
+    calendar = repo.read_calendar(calendar_id)
+    if calendar.share_token:
+        return calendar
+
+    # Made before invitee links existed. Minted once and persisted, rather than
+    # defaulted in the schema: a token generated fresh on every read would give
+    # a different link each time the page loaded, and every link already shared
+    # would stop working on the next write.
+    with repo.calendar_transaction(calendar_id) as stored:
+        if not stored.share_token:
+            stored.share_token = new_share_token()
+        return stored
+
+
+def get_shared_calendar(token: str) -> Calendar:
+    """The calendar an invitee link points at.
+
+    The token IS the authorisation — there is no user on this path. Everything
+    reachable with it is scoped to one calendar, and the destructive verbs
+    (rename, delete, roster, chosen days) are not exposed to it at all.
+    """
+    return repo.find_by_share_token(token)
 
 
 def list_calendar_summaries() -> list[CalendarSummary]:

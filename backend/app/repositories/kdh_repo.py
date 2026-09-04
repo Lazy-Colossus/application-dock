@@ -16,6 +16,7 @@ Layering: callers MUST be services. Routers do not call this directly.
 from __future__ import annotations
 
 import json
+import secrets
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -97,6 +98,23 @@ def list_calendars() -> list[Calendar]:
     # varies by filesystem. Ordering within one second is arbitrary either way;
     # this at least makes it the same arbitrary order everywhere.
     return sorted(calendars, key=lambda c: (c.created_at, c.id), reverse=True)
+
+
+def find_by_share_token(token: str) -> Calendar:
+    """The calendar whose invitee link carries `token`.
+
+    A scan, like `list_calendars`: an index keyed by token would be a second
+    file to keep in step and a contention point the per-file locking exists to
+    avoid. Compared with `compare_digest` because this token IS the credential —
+    a plain `==` leaks its prefix through timing, and the scan makes the
+    comparison count once per calendar rather than once.
+    """
+    if not token:
+        raise FileNotFoundError("no share token")
+    for calendar in list_calendars():
+        if calendar.share_token and secrets.compare_digest(calendar.share_token, token):
+            return calendar
+    raise FileNotFoundError("no calendar for share token")
 
 
 @contextmanager

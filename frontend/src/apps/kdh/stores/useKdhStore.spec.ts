@@ -29,6 +29,7 @@ const CREATED: Calendar = {
   votes: {},
   notes: {},
   chosen_dates: [],
+  share_token: "tok-secret",
 };
 
 describe("useKdhStore", () => {
