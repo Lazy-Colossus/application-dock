@@ -22,11 +22,11 @@ export default defineConfig((/* ctx */) => {
     },
 
     devServer: {
-      port: 9000,
+      port: 9100,
       open: false,
       proxy: {
         '/api': {
-          target: 'http://localhost:8000',
+          target: 'http://localhost:9000',
           changeOrigin: true
         }
       }

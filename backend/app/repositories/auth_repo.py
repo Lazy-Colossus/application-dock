@@ -46,7 +46,7 @@ def read_users() -> list[UserRecord]:
     """Return all stored user records. Migrates old single-object format on first read."""
     path = _auth_path()
     try:
-        raw = json.loads(path.read_text())
+        raw = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
         return []
 

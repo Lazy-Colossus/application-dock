@@ -230,7 +230,12 @@ describe("ColumnHeaderMenu — the place type (Story 4.2)", () => {
   };
 
   it("does not offer retyping to place when maps are not configured", async () => {
-    expect(await retypeOptions(false)).toEqual(["text", "number", "date"]);
+    expect(await retypeOptions(false)).toEqual([
+      "text",
+      "number",
+      "date",
+      "place_group",
+    ]);
   });
 
   it("offers retyping to place when maps are configured", async () => {
@@ -238,7 +243,139 @@ describe("ColumnHeaderMenu — the place type (Story 4.2)", () => {
       "text",
       "number",
       "date",
+      "place_group",
       "place",
     ]);
+  });
+
+  it("offers retyping to a group whether or not maps are configured (Story 4.6)", async () => {
+    expect(await retypeOptions(false)).toContain("place_group");
+    expect(await retypeOptions(true)).toContain("place_group");
+  });
+});
+
+describe("ColumnHeaderMenu — filtering (Story 2.9)", () => {
+  const GROUPS = [
+    { id: "g-1", name: "Must see", color: "#e5484d" },
+    { id: "g-2", name: "Maybe", color: "#3e63dd" },
+  ];
+
+  function mountFilter(
+    props: Record<string, unknown> = {},
+  ): ReturnType<typeof mount> {
+    return mount(ColumnHeaderMenu, {
+      props: {
+        column: COLUMN,
+        rows: ROWS,
+        canMoveLeft: true,
+        canMoveRight: true,
+        canDelete: true,
+        ...props,
+      },
+      global: { stubs: STUBS },
+    });
+  }
+
+  const openFilter = (w: ReturnType<typeof mount>) =>
+    w.find('[data-testid="menu-filter"]').trigger("click");
+
+  it("filters a text column by a contains term", async () => {
+    const wrapper = mountFilter();
+    await openFilter(wrapper);
+
+    await wrapper.find('[data-testid="filter-text"]').setValue("tent");
+    await wrapper.find('[data-testid="filter-apply"]').trigger("click");
+
+    expect(wrapper.emitted("filter")).toEqual([
+      [{ kind: "text", contains: "tent" }],
+    ]);
+  });
+
+  it("filters a number column with an operator and value", async () => {
+    const wrapper = mountFilter({
+      column: { id: "c-1", name: "Qty", type: "number", order: 0 },
+    });
+    await openFilter(wrapper);
+
+    await wrapper.find('[data-testid="filter-number-op"]').setValue("gt");
+    await wrapper.find('[data-testid="filter-number-value"]').setValue("5");
+    await wrapper.find('[data-testid="filter-apply"]').trigger("click");
+
+    expect(wrapper.emitted("filter")).toEqual([
+      [{ kind: "number", op: "gt", value: 5 }],
+    ]);
+  });
+
+  it("offers a min/max range for a number between filter", async () => {
+    const wrapper = mountFilter({
+      column: { id: "c-1", name: "Qty", type: "number", order: 0 },
+    });
+    await openFilter(wrapper);
+
+    await wrapper.find('[data-testid="filter-number-op"]').setValue("between");
+    await wrapper.find('[data-testid="filter-number-min"]').setValue("2");
+    await wrapper.find('[data-testid="filter-number-max"]').setValue("4");
+    await wrapper.find('[data-testid="filter-apply"]').trigger("click");
+
+    expect(wrapper.emitted("filter")).toEqual([
+      [{ kind: "number", op: "between", min: 2, max: 4 }],
+    ]);
+  });
+
+  it("filters a date column chronologically", async () => {
+    const wrapper = mountFilter({
+      column: { id: "c-1", name: "Due", type: "date", order: 0 },
+    });
+    await openFilter(wrapper);
+
+    await wrapper.find('[data-testid="filter-date-op"]').setValue("after");
+    await wrapper
+      .find('[data-testid="filter-date-value"]')
+      .setValue("2026-09-01");
+    await wrapper.find('[data-testid="filter-apply"]').trigger("click");
+
+    expect(wrapper.emitted("filter")).toEqual([
+      [{ kind: "date", op: "after", value: "2026-09-01" }],
+    ]);
+  });
+
+  it("filters a group column by selecting groups, including Ungrouped", async () => {
+    const wrapper = mountFilter({
+      column: { id: "c-1", name: "Bucket", type: "place_group", order: 0 },
+      groups: GROUPS,
+    });
+    await openFilter(wrapper);
+
+    await wrapper.find('[data-testid="filter-group-g-1"]').trigger("click");
+    await wrapper
+      .find('[data-testid="filter-group-ungrouped"]')
+      .trigger("click");
+    await wrapper.find('[data-testid="filter-apply"]').trigger("click");
+
+    expect(wrapper.emitted("filter")).toEqual([
+      [{ kind: "place_group", groupIds: ["g-1", null] }],
+    ]);
+  });
+
+  it("clears a filter by emitting null", async () => {
+    const wrapper = mountFilter({
+      currentFilter: { kind: "text", contains: "tent" },
+    });
+    await openFilter(wrapper);
+
+    await wrapper.find('[data-testid="filter-clear"]').trigger("click");
+
+    expect(wrapper.emitted("filter")).toEqual([[null]]);
+  });
+
+  it("pre-fills the editor from the currently-applied filter", async () => {
+    const wrapper = mountFilter({
+      currentFilter: { kind: "text", contains: "existing" },
+    });
+    await openFilter(wrapper);
+
+    expect(
+      wrapper.find('[data-testid="filter-text"]').element,
+    ).toHaveProperty("value", "existing");
   });
 });

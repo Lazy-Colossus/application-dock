@@ -249,9 +249,64 @@ simply absent rather than broken.
 **FRs covered:** FR-15, FR-16, FR-17, FR-18, FR-19, FR-20
 **Supporting:** AR-6, AR-7; NFR-1, NFR-4, NFR-5, NFR-6.
 
+### Epic 5: Live Collaboration
+A sheet stops being one person's. The owner shares a sheet with chosen dock users, and it becomes a
+single **shared document** they all edit at once — not a copy each of them drifts out of sync.
+Changes propagate **live** over Server-Sent Events: a member's edit appears to every other member
+with the sheet open within a moment. The owner alone manages the member list and can delete the
+sheet; every member edits all content. A shared sheet is promoted out of its owner's per-user file
+into a shared, per-sheet store so multiple users can safely resolve and write the same sheet.
+**FRs covered:** FR-22, FR-23, FR-24, FR-25, FR-26
+**Supporting:** NFR-2, NFR-3, NFR-4, NFR-5.
+
+**New requirements introduced by this epic:**
+- FR-22 — A sheet's owner can **share** it with chosen dock users, **add/remove** members, and
+  **stop sharing** (demoting it back to a private sheet). Sharing produces one shared document, not
+  a copy.
+- FR-23 — **Flat editor permissions**: every member (owner included) edits all content
+  (rows/cells/columns/tabs); only the **owner** manages membership and deletes the sheet. A
+  non-owner's manage/delete attempt is `403`.
+- FR-24 — **Live propagation via SSE**: a member's change reaches every other member with the sheet
+  open within a moment; a member's own change never triggers a redundant refetch (`actor`/`rev`
+  guard).
+- FR-25 — The home lists shared sheets **distinctly** — shared-with-me shows the owner's name;
+  shared-by-me carries a shared indicator.
+- FR-26 — **Membership/lifecycle changes propagate live**: an added member sees the roster update; a
+  removed member (or on stop-sharing / delete) has their open view closed with a reason.
+
+**Data & architecture notes:**
+- A shared sheet is promoted to `DATA_DIR/listies/shared/{sheet_id}.json` — the existing `Sheet`
+  wrapped with `owner`, `members`, `rev`, timestamps and its own `schema_version`. The owner's
+  per-user doc stays schema v1 (the sheet is simply removed from its `sheets` list).
+- Every existing sheet/tab/column/row operation resolves a `sheet_id` to either the caller's private
+  doc or a shared file they are a member of; a non-member gets the same `404` as a non-existent id
+  (preserves FR-2/NFR-2 isolation).
+- Liveness is a process-local `asyncio` event bus + an SSE endpoint (`GET
+  /api/listies/sheets/{sheet_id}/events`), authenticated via `?token=` because `EventSource` cannot
+  send a header. Single-worker deployment assumption (per CLAUDE.md). Coarse `sheet.changed { rev }`
+  events drive a client refetch rather than delta replay.
+- Concurrency is atomic-write, last-write-wins per operation — an accepted limitation at this scale;
+  see `docs/stories/application-dock-general/1.8.concurrency-safe-json-persistence.story.md`.
+
 **Dependencies:** Epic 2 builds on Epic 1 (needs the data layer and an open sheet). Epic 3 builds
 on both (needs a sheet whose grid already renders one tab). Epic 4 builds on Epics 1–2 (needs
-columns and a rendered grid) but not on Epic 3. No epic depends on a later epic.
+columns and a rendered grid) but not on Epic 3. **Epic 5 builds on Epics 1–2** (needs the data
+layer and a working grid to collaborate on) and is independent of Epics 3–4. No epic depends on a
+later epic.
+
+**Epic 5 stories (implemented in order, each depends on the previous):**
+- **Story 5.1 — Shared storage and the sharing lifecycle (backend).** Promote a shared sheet to its
+  own per-sheet file, add the resolver that routes every existing operation to the right store, and
+  the owner-only share/add-member/remove-member/stop-sharing endpoints. After 5.1, sharing works
+  end-to-end via the API and members edit one document; other members' edits are seen on the next
+  fetch. Covers FR-22, FR-23, FR-25 (backend); NFR-2, NFR-3.
+- **Story 5.2 — Live propagation over SSE.** An in-process event bus + an authenticated
+  `text/event-stream` endpoint, `sheet.changed`/`members.changed`/`sheet.closed` emission, and the
+  client `useSheetEvents` composable + store reconciliation so a member's edit appears on every open
+  member's screen within a moment. Covers FR-24, FR-26 (live channel); NFR-5.
+- **Story 5.3 — Sharing UI and live membership.** The share dialog, home badges (shared-by-me /
+  shared-with-me), the sheet-page collaborators affordance, and live reactions to membership/lifecycle
+  events. Covers FR-22, FR-23, FR-25, FR-26 (user-facing).
 
 ---
 

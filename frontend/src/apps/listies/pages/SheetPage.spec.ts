@@ -54,7 +54,7 @@ const STUBS = {
   },
   "q-btn": {
     template:
-      "<button :data-testid=\"$attrs['data-testid']\" @click=\"$emit('click', $event)\">{{ label }}</button>",
+      "<button :data-testid=\"$attrs['data-testid']\" @click=\"$emit('click', $event)\">{{ label }}<slot /></button>",
     props: [
       "label",
       "disable",
@@ -99,6 +99,12 @@ const STUBS = {
     template: "<div />",
     props: ["tab", "browserKey", "selectedRowId", "shownRowIds"],
     emits: ["select-row", "show-all", "show-none"],
+  },
+  GroupManager: {
+    name: "GroupManager",
+    template: '<div data-testid="group-manager-stub" />',
+    props: ["groups"],
+    emits: ["save"],
   },
   CreateTabDialog: {
     name: "CreateTabDialog",
@@ -891,5 +897,173 @@ describe("SheetPage — which places are plotted (Story 4.5)", () => {
     await flushPromises();
 
     expect(pane(wrapper).props("shownRowIds")).toContain("r-3");
+  });
+});
+
+describe("SheetPage — place groups (Story 4.6)", () => {
+  const withGroupColumn = (): Sheet => {
+    const s = sheet();
+    s.tabs = [
+      {
+        id: "tb-1",
+        name: "Cafés",
+        order: 0,
+        place_groups: [{ id: "g-1", name: "Must see", color: "#e5484d" }],
+        columns: [
+          { id: "c-1", name: "Cafe", type: "text", order: 0 },
+          { id: "c-2", name: "Bucket", type: "place_group", order: 1 },
+        ],
+        rows: [],
+      },
+      {
+        id: "tb-2",
+        name: "Plain",
+        order: 1,
+        columns: [{ id: "c-9", name: "Item", type: "text", order: 0 }],
+        rows: [],
+      },
+    ];
+    return s;
+  };
+
+  const groupsSheet = () =>
+    getMock.mockImplementation((path: string) =>
+      path === "/listies/maps-config"
+        ? Promise.resolve({ enabled: false })
+        : Promise.resolve(withGroupColumn()),
+    );
+
+  beforeEach(() => {
+    groupsSheet();
+    putMock.mockReset().mockResolvedValue({
+      id: "tb-1",
+      name: "Cafés",
+      order: 0,
+      place_groups: [],
+      columns: [],
+      rows: [],
+    });
+  });
+
+  it("shows the Groups button when the tab has a group column — even with maps off", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="toggle-groups"]').exists()).toBe(true);
+  });
+
+  it("hides the Groups button on a tab with no group column", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    await wrapper.findComponent({ name: "TabBar" }).vm.$emit("select", "tb-2");
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="toggle-groups"]').exists()).toBe(false);
+  });
+
+  it("hands the tab's groups to the manager", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    const manager = wrapper.findComponent({ name: "GroupManager" });
+    expect(manager.exists()).toBe(true);
+    expect(manager.props("groups")).toEqual([
+      { id: "g-1", name: "Must see", color: "#e5484d" },
+    ]);
+  });
+
+  it("persists a group change through the store", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    const next = [
+      { id: "g-1", name: "Must see", color: "#e5484d" },
+      { id: "g-2", name: "Maybe", color: "#3e63dd" },
+    ];
+    await wrapper.findComponent({ name: "GroupManager" }).vm.$emit("save", next);
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith("/listies/sheets/s-1/tabs/tb-1", {
+      place_groups: next,
+    });
+  });
+});
+
+describe("SheetPage — filtering (Story 2.9)", () => {
+  const grid = (wrapper: ReturnType<typeof mount>) =>
+    wrapper.findComponent({ name: "SheetGrid" });
+
+  const setFilter = async (
+    wrapper: ReturnType<typeof mount>,
+    columnId: string,
+    spec: unknown,
+  ) => {
+    await grid(wrapper).vm.$emit("set-filter", { columnId, spec });
+    await flushPromises();
+  };
+
+  it("shows no Filters chip until a filter is active", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="clear-filters"]').exists()).toBe(false);
+  });
+
+  it("shows a Filters chip with the active count and passes the filter to the grid", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    await setFilter(wrapper, "c-1", { kind: "text", contains: "tent" });
+
+    const chip = wrapper.find('[data-testid="clear-filters"]');
+    expect(chip.exists()).toBe(true);
+    expect(chip.text()).toContain("1");
+    expect(grid(wrapper).props("filters")).toEqual({
+      "c-1": { kind: "text", contains: "tent" },
+    });
+  });
+
+  it("drops an inactive filter spec instead of counting it", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    await setFilter(wrapper, "c-1", { kind: "text", contains: "" });
+
+    expect(wrapper.find('[data-testid="clear-filters"]').exists()).toBe(false);
+    expect(grid(wrapper).props("filters")).toEqual({});
+  });
+
+  it("clears every filter from the toolbar", async () => {
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+    await setFilter(wrapper, "c-1", { kind: "text", contains: "tent" });
+
+    await wrapper.find('[data-testid="clear-filters"]').trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="clear-filters"]').exists()).toBe(false);
+    expect(grid(wrapper).props("filters")).toEqual({});
+  });
+
+  it("clears filters when the tab changes", async () => {
+    const twoTabs = (): Sheet => {
+      const s = sheet();
+      s.tabs = [
+        { id: "tb-1", name: "One", order: 0, columns: [{ id: "c-1", name: "Item", type: "text", order: 0 }], rows: [] },
+        { id: "tb-2", name: "Two", order: 1, columns: [{ id: "c-9", name: "Item", type: "text", order: 0 }], rows: [] },
+      ];
+      return s;
+    };
+    getMock.mockImplementation(() => Promise.resolve(twoTabs()));
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+    await setFilter(wrapper, "c-1", { kind: "text", contains: "tent" });
+    expect(wrapper.find('[data-testid="clear-filters"]').exists()).toBe(true);
+
+    await wrapper.findComponent({ name: "TabBar" }).vm.$emit("select", "tb-2");
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="clear-filters"]').exists()).toBe(false);
   });
 });

@@ -2,7 +2,12 @@
 // the fiddly per-type rules are unit-tested without mounting a grid.
 
 import { isPlace } from "@/apps/listies/types";
-import type { CellValue, ColumnType, Row } from "@/apps/listies/types";
+import type {
+  CellValue,
+  ColumnType,
+  PlaceGroup,
+  Row,
+} from "@/apps/listies/types";
 
 // An unfilled cell reads as a muted dash rather than blank space, so an empty
 // cell is visibly empty rather than ambiguous.
@@ -30,7 +35,17 @@ const GLYPHS: Record<ColumnType, string> = {
   number: "#",
   date: "▤",
   place: "📍",
+  place_group: "◈",
 };
+
+/** Resolve a group id to its group, or `undefined` for a dangling/absent id. */
+export function findGroup(
+  id: CellValue,
+  groups: PlaceGroup[] | undefined,
+): PlaceGroup | undefined {
+  if (typeof id !== "string") return undefined;
+  return groups?.find((group) => group.id === id);
+}
 
 /** "2026-09-02" → "02 Sep 26". A malformed value is passed through untouched. */
 function formatDate(value: string): string {
@@ -42,8 +57,17 @@ function formatDate(value: string): string {
   return `${day} ${monthName} ${year!.slice(2)}`;
 }
 
-export function formatCell(value: CellValue, type: ColumnType): string {
+export function formatCell(
+  value: CellValue,
+  type: ColumnType,
+  groups?: PlaceGroup[],
+): string {
   if (value === null || value === undefined) return EMPTY_DISPLAY;
+  // A group cell holds an id; it shows the group's name, and a dangling id
+  // (group deleted out from under it) reads as ungrouped — the muted dash.
+  if (type === "place_group") {
+    return findGroup(value, groups)?.name ?? EMPTY_DISPLAY;
+  }
   // A place is an object: `String(place)` would print "[object Object]".
   if (isPlace(value)) return value.name;
   if (type === "date" && typeof value === "string") return formatDate(value);
@@ -88,6 +112,11 @@ export function parseCell(input: string, type: ColumnType): ParseResult {
     return { ok: false, error: "Pick a place from the search results" };
   }
 
+  // A group is chosen from the dropdown (Story 4.6), never typed in.
+  if (type === "place_group") {
+    return { ok: false, error: "Pick a group" };
+  }
+
   if (type === "text") return { ok: true, value: input };
 
   if (type === "number") {
@@ -120,10 +149,20 @@ export function countBlankedByRetype(
   rows: Row[],
   columnId: string,
   newType: ColumnType,
+  fromType?: ColumnType,
+  groups?: PlaceGroup[],
 ): number {
   return rows.filter((row) => {
     const value = row.cells[columnId];
     if (value === null || value === undefined) return false;
+    // Leaving a group: only text survives (carrying the group's name), and a
+    // dangling id blanks even then; everything else blanks (Story 4.6).
+    if (fromType === "place_group") {
+      if (newType === "text") return findGroup(value, groups) === undefined;
+      return true;
+    }
+    // A group id cannot be reconstructed from a scalar or a place.
+    if (newType === "place_group") return true;
     // A place survives only as text (its name) or as a place.
     if (isPlace(value)) return newType !== "text" && newType !== "place";
     // A scalar can never become a place.

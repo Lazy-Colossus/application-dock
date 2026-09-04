@@ -10,7 +10,7 @@ import re
 
 import pytest
 
-from app.schemas.listies import Column, Row
+from app.schemas.listies import Column, PlaceGroup, Row
 from app.services import listies_service as service
 
 # ── coerce_value: text ────────────────────────────────────────────────────────
@@ -81,9 +81,32 @@ def test_date_normalises_empty_to_none() -> None:
 # ── coerce_value: empty is empty for every type ───────────────────────────────
 
 
-@pytest.mark.parametrize("column_type", ["text", "number", "date"])
+@pytest.mark.parametrize("column_type", ["text", "number", "date", "place_group"])
 def test_none_stays_none(column_type: str) -> None:
     assert service.coerce_value(None, column_type) is None
+
+
+# ── coerce_value: place_group (Story 4.6) ─────────────────────────────────────
+
+
+def test_place_group_keeps_a_group_id_string() -> None:
+    assert service.coerce_value("g-abc123", "place_group") == "g-abc123"
+
+
+def test_place_group_normalises_empty_to_none() -> None:
+    assert service.coerce_value("", "place_group") is None
+    assert service.coerce_value("   ", "place_group") is None
+
+
+def test_place_group_rejects_a_number() -> None:
+    with pytest.raises(ValueError):
+        service.coerce_value(3, "place_group")
+
+
+def test_place_group_rejects_a_place() -> None:
+    place = {"place_id": "p1", "name": "Café", "address": "", "lat": 1.0, "lng": 2.0}
+    with pytest.raises(ValueError):
+        service.coerce_value(place, "place_group")
 
 
 # ── recoerce_column ───────────────────────────────────────────────────────────
@@ -118,6 +141,36 @@ def test_retype_prunes_blanked_cells_rather_than_storing_null() -> None:
     rows = _rows(["abc"])
     service.recoerce_column(rows, "c-1", "number")
     assert "c-1" not in rows[0].cells
+
+
+# ── recoerce_column: place_group directions (Story 4.6) ───────────────────────
+
+_GROUPS = [PlaceGroup(id="g-1", name="Must see", color="#e5484d")]
+
+
+def test_retype_place_group_to_text_keeps_the_group_name() -> None:
+    rows = _rows(["g-1"])
+    service.recoerce_column(rows, "c-1", "text", old_type="place_group", groups=_GROUPS)
+    assert rows[0].cells["c-1"] == "Must see"
+
+
+def test_retype_place_group_to_text_blanks_a_dangling_id() -> None:
+    rows = _rows(["g-gone"])
+    service.recoerce_column(rows, "c-1", "text", old_type="place_group", groups=_GROUPS)
+    assert "c-1" not in rows[0].cells
+
+
+@pytest.mark.parametrize("new_type", ["number", "date", "place"])
+def test_retype_place_group_to_a_scalar_or_place_blanks(new_type: str) -> None:
+    rows = _rows(["g-1"])
+    service.recoerce_column(rows, "c-1", new_type, old_type="place_group", groups=_GROUPS)
+    assert "c-1" not in rows[0].cells
+
+
+def test_retype_anything_to_place_group_blanks() -> None:
+    rows = _rows(["some text", 5, "2026-09-02"])
+    service.recoerce_column(rows, "c-1", "place_group")
+    assert all("c-1" not in r.cells for r in rows)
 
 
 def test_retype_leaves_other_columns_untouched() -> None:

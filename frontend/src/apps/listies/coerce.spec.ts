@@ -213,3 +213,97 @@ describe("countBlankedByRetype — place (Story 4.2)", () => {
     expect(countBlankedByRetype(rowWith(BLUE_BOTTLE), "c-1", "place")).toBe(0);
   });
 });
+
+import { findGroup } from "./coerce";
+import type { PlaceGroup } from "@/apps/listies/types";
+
+const GROUPS: PlaceGroup[] = [
+  { id: "g-1", name: "Must see", color: "#e5484d" },
+  { id: "g-2", name: "Maybe", color: "#3e63dd" },
+];
+
+describe("findGroup", () => {
+  it("resolves a live id to its group", () => {
+    expect(findGroup("g-2", GROUPS)?.name).toBe("Maybe");
+  });
+
+  it("returns undefined for a dangling id, null, or a non-string", () => {
+    expect(findGroup("g-gone", GROUPS)).toBeUndefined();
+    expect(findGroup(null, GROUPS)).toBeUndefined();
+    expect(findGroup(3, GROUPS)).toBeUndefined();
+  });
+});
+
+describe("formatCell — place_group (Story 4.6)", () => {
+  it("shows the group's name for a live id", () => {
+    expect(formatCell("g-1", "place_group", GROUPS)).toBe("Must see");
+  });
+
+  it("shows the muted dash for a dangling id (reads as ungrouped)", () => {
+    expect(formatCell("g-gone", "place_group", GROUPS)).toBe(EMPTY_DISPLAY);
+  });
+
+  it("shows the muted dash for an empty group cell", () => {
+    expect(formatCell(null, "place_group", GROUPS)).toBe(EMPTY_DISPLAY);
+  });
+});
+
+describe("parseCell — place_group (Story 4.6)", () => {
+  it("refuses free text — a group is chosen from the dropdown", () => {
+    expect(parseCell("Must see", "place_group").ok).toBe(false);
+  });
+
+  it("treats empty as clearing the cell", () => {
+    expect(parseCell("", "place_group")).toEqual({ ok: true, value: null });
+  });
+});
+
+describe("countBlankedByRetype — place_group (Story 4.6)", () => {
+  const rowWith = (value: CellValue) => [
+    {
+      id: "r-1",
+      order: 0,
+      cells: { "c-1": value } as Record<string, CellValue>,
+      created_at: "t",
+      updated_at: "t",
+    },
+  ];
+
+  it("keeps a live group when converting to text — it keeps the name", () => {
+    expect(
+      countBlankedByRetype(rowWith("g-1"), "c-1", "text", "place_group", GROUPS),
+    ).toBe(0);
+  });
+
+  it("loses a dangling group even when converting to text", () => {
+    expect(
+      countBlankedByRetype(
+        rowWith("g-gone"),
+        "c-1",
+        "text",
+        "place_group",
+        GROUPS,
+      ),
+    ).toBe(1);
+  });
+
+  it("loses a group when converting to a number or a date", () => {
+    expect(
+      countBlankedByRetype(
+        rowWith("g-1"),
+        "c-1",
+        "number",
+        "place_group",
+        GROUPS,
+      ),
+    ).toBe(1);
+    expect(
+      countBlankedByRetype(rowWith("g-1"), "c-1", "date", "place_group", GROUPS),
+    ).toBe(1);
+  });
+
+  it("loses every filled scalar when converting to a group", () => {
+    expect(countBlankedByRetype(rowWith("hello"), "c-1", "place_group")).toBe(1);
+    expect(countBlankedByRetype(rowWith(42), "c-1", "place_group")).toBe(1);
+  });
+});

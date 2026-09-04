@@ -1,7 +1,7 @@
 // Shared types for the Listies app. Mirrors backend/app/schemas/listies.py —
 // snake_case field names are the API contract, not an oversight.
 
-export type ColumnType = "text" | "number" | "date" | "place";
+export type ColumnType = "text" | "number" | "date" | "place" | "place_group";
 
 /**
  * A snapshot of somewhere, as Google Places returned it — not a reference.
@@ -13,6 +13,18 @@ export interface Place {
   address: string;
   lat: number;
   lng: number;
+}
+
+/**
+ * A named, coloured bucket a row's places belong to (Story 4.6). Groups live on
+ * the tab; a `place_group` cell stores only the group's `id`, so recolouring or
+ * renaming a group updates every pin without touching a cell.
+ */
+export interface PlaceGroup {
+  id: string;
+  name: string;
+  // `#rrggbb`, matching the tab-colour pattern.
+  color: string;
 }
 
 // A cell holds a string (text / date), a number, a place, or nothing at all.
@@ -46,6 +58,9 @@ export interface Tab {
   // `#rrggbb`, or null when the tab has no accent. Optional so a document
   // written before colours still satisfies the type.
   color?: string | null;
+  // The tab's place groups (Story 4.6). Optional and additive: a tab written
+  // before groups simply has no key.
+  place_groups?: PlaceGroup[];
   columns: Column[];
   rows: Row[];
 }

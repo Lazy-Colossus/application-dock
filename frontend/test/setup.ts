@@ -18,6 +18,19 @@ config.global.stubs = {
   'q-spinner': true,
   'q-dialog': { template: '<div><slot /></div>' },
   'q-bottom-sheet': { template: '<div><slot /></div>' },
+  'q-menu': {
+    name: 'QMenu',
+    template: '<div><slot /></div>',
+    props: ['modelValue', 'noParentEvent', 'anchor', 'self'],
+    emits: ['update:modelValue']
+  },
+  'q-popup-proxy': { template: '<div><slot /></div>' },
+  'q-date': {
+    name: 'QDate',
+    template: '<div class="q-date"></div>',
+    props: ['modelValue', 'mask'],
+    emits: ['update:modelValue']
+  },
   'q-input': {
     template: '<div><input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" /><div v-if="errorMessage">{{ errorMessage }}</div></div>',
     props: ['modelValue', 'error', 'errorMessage'],

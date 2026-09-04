@@ -36,6 +36,13 @@
                 :data-testid="`sort-indicator-${column.id}`"
                 >{{ sortSpec.direction === "asc" ? "▲" : "▼" }}</span
               >
+              <span
+                v-if="isColumnFiltered(column.id)"
+                class="sheet-grid__filter-mark"
+                title="Filtered"
+                :data-testid="`filter-indicator-${column.id}`"
+                >▾</span
+              >
               <q-btn
                 dense
                 flat
@@ -52,6 +59,8 @@
                   :can-move-right="columnIndex < orderedColumns.length - 1"
                   :can-delete="orderedColumns.length > 1"
                   :allow-place="allowPlace"
+                  :groups="placeGroups"
+                  :current-filter="filters[column.id] ?? null"
                   @rename="
                     emit('rename-column', { columnId: column.id, name: $event })
                   "
@@ -60,6 +69,9 @@
                   "
                   @move="
                     emit('move-column', { columnId: column.id, delta: $event })
+                  "
+                  @filter="
+                    emit('set-filter', { columnId: column.id, spec: $event })
                   "
                   @delete="emit('delete-column', column.id)"
                 />
@@ -166,6 +178,7 @@
               :editing="nav.isEditing(rowIndex, columnIndex)"
               :maps-enabled="mapsEnabled"
               :near="biasFor(column)"
+              :groups="placeGroups"
               @begin-edit="startEdit(rowIndex, columnIndex)"
               @end-edit="nav.endEdit()"
               @commit="
@@ -229,6 +242,7 @@
               :editing="nav.isEditing(orderedRows.length, columnIndex)"
               :maps-enabled="mapsEnabled"
               :near="biasFor(column)"
+              :groups="placeGroups"
               @begin-edit="startEdit(orderedRows.length, columnIndex)"
               @end-edit="nav.endEdit()"
               @commit="materialise(column.id, $event)"
@@ -271,6 +285,8 @@ import { typeGlyph } from "@/apps/listies/coerce";
 import { columnTypeOptions } from "@/apps/listies/columnTypes";
 import { sortRowIds } from "@/apps/listies/sort";
 import type { SortSpec } from "@/apps/listies/sort";
+import { filterRowIds, isActive } from "@/apps/listies/filter";
+import type { FilterSpec } from "@/apps/listies/filter";
 import { useGridNavigation } from "@/apps/listies/composables/useGridNavigation";
 import { isPlace } from "@/apps/listies/types";
 import type {
@@ -292,6 +308,8 @@ const props = withDefaults(
     highlightedRowId?: string | null;
     /** Rows currently plotted; `null` means the map is closed, so no ticks. */
     mappedRowIds?: string[] | null;
+    /** Active filters by column id — a view, owned by the page (Story 2.9). */
+    filters?: Record<string, FilterSpec>;
   }>(),
   {
     allowPlace: false,
@@ -299,6 +317,7 @@ const props = withDefaults(
     placeCentroid: () => null,
     highlightedRowId: null,
     mappedRowIds: null,
+    filters: () => ({}),
   },
 );
 
@@ -324,6 +343,7 @@ const emit = defineEmits<{
   "delete-column": [columnId: string];
   "select-row": [rowId: string];
   "toggle-mapped": [rowId: string];
+  "set-filter": [payload: { columnId: string; spec: FilterSpec | null }];
   "commit-cell": [
     payload: { rowId: string; columnId: string; value: CellValue },
   ];
@@ -338,14 +358,28 @@ const storedOrder = computed(() =>
   [...props.tab.rows].sort((a, b) => a.order - b.order),
 );
 
-// ── sorting (Story 2.6) ──────────────────────────────────────────────────
+// The tab's place groups, threaded to each cell (for its swatch/name) and to
+// the sort comparator (a group sorts by its resolved name) — Story 4.6.
+const placeGroups = computed(() => props.tab.place_groups ?? []);
+
+// ── filtering + sorting (Stories 2.6, 2.9) ───────────────────────────────
 //
-// A sort is a view: it produces a display order of row ids and never writes.
-// That order is recomputed only when the sort *spec* changes — not when a cell
-// value changes — so a row never jumps out from under the cursor mid-edit.
+// Both are views: they produce a display order of row ids and never write.
+// That order is `sort(filter(storedOrder))`, recomputed only when the filter or
+// sort *spec* changes — not when a cell value changes — so a row never jumps or
+// vanishes out from under the cursor mid-edit.
 
 const sortSpec = ref<SortSpec | null>(null);
 const displayRowIds = ref<string[] | null>(null);
+
+const hasActiveFilter = computed(() =>
+  Object.values(props.filters).some(isActive),
+);
+
+function isColumnFiltered(columnId: string): boolean {
+  const spec = props.filters[columnId];
+  return spec !== undefined && isActive(spec);
+}
 
 const orderedRows = computed(() => {
   const ids = displayRowIds.value;
@@ -357,18 +391,36 @@ const orderedRows = computed(() => {
   });
 });
 
-function recomputeSort(): void {
+// Filter first (which rows show), then sort (their order). With neither active
+// the display order is left as `null` — the grid falls back to `storedOrder`.
+function recompute(): void {
   const spec = sortSpec.value;
-  if (!spec) {
+  if (!spec && !hasActiveFilter.value) {
     displayRowIds.value = null;
     return;
   }
-  const column = props.tab.columns.find((c) => c.id === spec.columnId);
-  if (!column) {
-    displayRowIds.value = null;
-    return;
+
+  let visible = storedOrder.value;
+  if (hasActiveFilter.value) {
+    const kept = new Set(
+      filterRowIds(visible, props.filters, placeGroups.value),
+    );
+    visible = visible.filter((row) => kept.has(row.id));
   }
-  displayRowIds.value = sortRowIds(storedOrder.value, column, spec.direction);
+
+  if (spec) {
+    const column = props.tab.columns.find((c) => c.id === spec.columnId);
+    if (column) {
+      displayRowIds.value = sortRowIds(
+        visible,
+        column,
+        spec.direction,
+        placeGroups.value,
+      );
+      return;
+    }
+  }
+  displayRowIds.value = visible.map((row) => row.id);
 }
 
 /** Cycle a header: unsorted → ascending → descending → unsorted. */
@@ -381,22 +433,30 @@ function cycleSort(columnId: string): void {
   } else {
     sortSpec.value = null;
   }
-  recomputeSort();
+  recompute();
 }
 
-// Rows arriving or leaving adjust the display order in place: a new row goes
-// to the end rather than jumping into its sorted position, and a removed one
-// is spliced out. Neither re-sorts what is already on screen.
+// A change to the filter spec recomputes the view — exactly like a sort change,
+// and never on a cell edit (the filters object identity only changes when the
+// page sets it). Immediate so a filter present at mount is applied at once.
+watch(() => props.filters, recompute, { immediate: true });
+
+// Rows arriving or leaving adjust the display order in place: a genuinely new
+// row goes to the end rather than jumping into its sorted/filtered position, and
+// a removed one is spliced out. Neither re-sorts nor re-filters what is on
+// screen. "New" is judged against the *previous* row set — not against
+// `displayRowIds` — so rows a filter is hiding are not mistaken for new arrivals.
 watch(
   () => props.tab.rows.map((row) => row.id).join("|"),
-  () => {
+  (_now, before) => {
     const ids = displayRowIds.value;
     if (!ids) return;
     const present = new Set(props.tab.rows.map((row) => row.id));
+    const knownBefore = new Set(before ? before.split("|") : []);
     const kept = ids.filter((id) => present.has(id));
     const added = props.tab.rows
       .map((row) => row.id)
-      .filter((id) => !ids.includes(id));
+      .filter((id) => !knownBefore.has(id) && !ids.includes(id));
     displayRowIds.value = [...kept, ...added];
   },
 );
@@ -407,9 +467,11 @@ const nav = useGridNavigation(
   () => orderedColumns.value.length,
 );
 
-// Only what the grid needs from a cell: commit the editor, and focus the <td>.
+// Only what the grid needs from a cell: commit the editor, seed it with a
+// typed character (Story 2.8), and focus the <td>.
 interface CellInstance {
   commit: () => void;
+  seedDraft: (char: string) => void;
   $el: HTMLElement;
 }
 
@@ -487,6 +549,25 @@ function onKeydown(event: KeyboardEvent): void {
       focusFocusedCell();
       break;
     default:
+      // Type-to-edit: a printable key on a highlighted (not yet editing) cell
+      // opens its editor seeded with that character, like a spreadsheet (Story
+      // 2.8). A named key ("ArrowRight", "Enter", …) is longer than one char,
+      // so length-1 excludes them; excluding the modifiers leaves Ctrl+C /
+      // Cmd+V and the like alone. A bare Shift is fine — its key is the capital.
+      if (
+        !nav.editing.value &&
+        event.key.length === 1 &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey
+      ) {
+        event.preventDefault();
+        const at = nav.focused.value;
+        if (at) {
+          cells.get(key(at.rowIndex, at.columnIndex))?.seedDraft(event.key);
+          nav.beginEdit();
+        }
+      }
       break;
   }
 }
@@ -648,6 +729,12 @@ watch(
 
 .sheet-grid__menu-btn {
   opacity: 0.5;
+}
+
+.sheet-grid__filter-mark {
+  margin-left: 0.2rem;
+  font-size: 0.7em;
+  color: var(--q-primary, #1976d2);
 }
 
 .sheet-grid__header:hover .sheet-grid__header-name {

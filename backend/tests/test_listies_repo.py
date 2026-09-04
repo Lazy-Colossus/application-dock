@@ -102,6 +102,19 @@ def test_null_and_absent_cells_survive_a_round_trip() -> None:
     assert row.cells.get("c-4d5e6f70") is None
 
 
+def test_non_ascii_cell_survives_a_round_trip() -> None:
+    """A Japanese place address (with 〒, U+3012) must persist verbatim.
+
+    Regression: the writer/readers must pin encoding="utf-8"; on Windows the
+    default (cp1252) cannot encode 〒 and raised UnicodeEncodeError on save.
+    """
+    doc = _doc()
+    doc.sheets[0].tabs[0].rows[0].cells["c-9a8b7c6d"] = "東京タワー 〒105-0011"
+    repo.write_doc("alice", doc)
+    reread = repo.read_doc("alice")
+    assert reread.sheets[0].tabs[0].rows[0].cells["c-9a8b7c6d"] == "東京タワー 〒105-0011"
+
+
 def test_write_is_atomic_leaving_no_tmp_file(tmp_path: Path) -> None:
     repo.write_doc("alice", _doc())
     assert list(_users_dir(tmp_path).glob("*.tmp")) == []
