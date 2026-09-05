@@ -94,6 +94,47 @@ class ListiesDoc(BaseModel):
     sheets: list[Sheet] = Field(default_factory=list)
 
 
+# ── shared sheets (Story 5.1) ───────────────────────────────────────────────────
+
+
+class SharedSheetDoc(BaseModel):
+    """A sheet promoted out of its owner's user doc into its own file.
+
+    Lives at `DATA_DIR/listies/shared/{sheet_id}.json`. Wraps the existing
+    `Sheet` (unchanged shape) with collaboration metadata. `rev` is bumped on
+    every content write and consumed by the live channel (Story 5.2); the owner
+    is always the first entry in `members`.
+    """
+
+    schema_version: int = 1
+    sheet: Sheet
+    owner: str
+    members: list[str] = Field(default_factory=list)
+    rev: int = 0
+    created_at: str
+    updated_at: str
+
+
+class SheetView(BaseModel):
+    """A sheet plus its collaboration state, as the client sees it (Story 5.1).
+
+    Flattens the `Sheet` fields so the response is a drop-in superset of the
+    pre-sharing sheet shape. A private sheet reports `shared: false` and omits
+    member data; a shared sheet carries `owner`, `members`, `rev`, and
+    `can_manage` (true only for the owner).
+    """
+
+    id: str
+    name: str
+    created_at: str
+    tabs: list[Tab] = Field(default_factory=list)
+    shared: bool = False
+    owner: str | None = None
+    members: list[str] | None = None
+    rev: int | None = None
+    can_manage: bool = False
+
+
 # Lightweight projection for the sheet picker (Story 1.3).
 class SheetSummary(BaseModel):
     id: str
@@ -101,6 +142,10 @@ class SheetSummary(BaseModel):
     tab_count: int
     row_count: int
     created_at: str
+    # Collaboration hints for the home list (Story 5.1). A private sheet reports
+    # `shared: false` with no owner; a shared one names its owner.
+    shared: bool = False
+    owner: str | None = None
 
 
 # ── Request bodies ────────────────────────────────────────────────────────────
@@ -163,6 +208,12 @@ class UpdateTabRequest(BaseModel):
     color: str | None = None
     # `None` means "leave the groups alone"; a list (even empty) replaces them.
     place_groups: list[PlaceGroup] | None = None
+
+
+class ShareRequest(BaseModel):
+    # Usernames to add as members; validated against the platform roster before
+    # any write, so an unknown name leaves membership unchanged (Story 5.1).
+    usernames: list[str]
 
 
 # ── places (Story 4.1) ────────────────────────────────────────────────────────

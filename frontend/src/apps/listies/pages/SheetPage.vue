@@ -32,9 +32,32 @@
       </div>
 
       <div
-        v-if="canShowMap || hasGroupColumn || filterCount > 0"
-        class="listies-sheet__toolbar row justify-end q-gutter-xs"
+        v-if="showToolbar"
+        class="listies-sheet__toolbar row justify-end items-center q-gutter-xs"
       >
+        <q-chip
+          v-if="store.shared"
+          dense
+          icon="group"
+          :label="collaboratorLabel"
+          :clickable="canShare"
+          data-testid="collaborators"
+          @click="canShare && (shareDialogOpen = true)"
+        >
+          <q-tooltip>{{ (store.members ?? []).join(", ") }}</q-tooltip>
+        </q-chip>
+        <q-btn
+          v-else-if="canShare"
+          dense
+          flat
+          no-caps
+          icon="person_add"
+          label="Share"
+          color="primary"
+          data-testid="share-button"
+          @click="shareDialogOpen = true"
+        />
+        <q-space />
         <q-btn
           v-if="filterCount > 0"
           dense
@@ -138,6 +161,9 @@
         :allow-place="store.mapsEnabled"
         @submit="createTab"
       />
+
+      <!-- Owner-only: the dialog is never instantiated for a non-owner member. -->
+      <ShareSheetDialog v-if="canShare" v-model="shareDialogOpen" />
     </template>
   </q-page>
 </template>
@@ -145,7 +171,9 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useQuasar } from "quasar";
 import CreateTabDialog from "@/apps/listies/components/CreateTabDialog.vue";
+import ShareSheetDialog from "@/apps/listies/components/ShareSheetDialog.vue";
 import GroupManager from "@/apps/listies/components/GroupManager.vue";
 import MapPane from "@/apps/listies/components/MapPane.vue";
 import SheetGrid from "@/apps/listies/components/SheetGrid.vue";
@@ -161,8 +189,39 @@ const store = useListiesStore();
 const pageDetail = usePageDetailStore();
 const route = useRoute();
 const router = useRouter();
+const $q = useQuasar();
+
+// When a live event ends my access to the sheet, leave for the home list and
+// say why (Story 5.2 wires the reaction; Story 5.3 polishes the copy).
+const CLOSED_MESSAGE: Record<string, string> = {
+  removed: "You were removed from this sheet.",
+  unshared: "This sheet is no longer shared.",
+  deleted: "This sheet was deleted.",
+};
+
+watch(
+  () => store.closedReason,
+  (reason) => {
+    if (!reason) return;
+    $q?.notify?.({
+      type: "warning",
+      message: CLOSED_MESSAGE[reason] ?? "This sheet is no longer available.",
+    });
+    void router.push("/listies");
+  },
+);
 const tabDialogOpen = ref(false);
+const shareDialogOpen = ref(false);
 const selectedRowId = ref<string | null>(null);
+
+// I can share when the sheet is mine to share: a private sheet I own, or a
+// shared sheet I am the owner of. A non-owner member sees collaborators but no
+// controls, and never gets the dialog instantiated.
+const canShare = computed(() => !store.shared || store.canManage);
+const collaboratorLabel = computed(() => {
+  const count = (store.members ?? []).length;
+  return count === 1 ? "1 person" : `${count} people`;
+});
 
 // Which tabs have their map open, for this visit only. Keyed by tab so
 // switching away and back does not lose it.
@@ -191,6 +250,17 @@ function saveGroups(groups: PlaceGroup[]): void {
 // count and clear them (Story 2.9). Reset when the tab changes.
 const filters = ref<Record<string, FilterSpec>>({});
 const filterCount = computed(() => activeFilterCount(filters.value));
+
+// The toolbar row also carries the share affordance, so it shows whenever there
+// is anything to put in it — collaborators, a share entry, map, groups, filters.
+const showToolbar = computed(
+  () =>
+    store.shared ||
+    canShare.value ||
+    canShowMap.value ||
+    hasGroupColumn.value ||
+    filterCount.value > 0,
+);
 
 function onSetFilter(payload: {
   columnId: string;
@@ -273,7 +343,11 @@ watch(
   { immediate: true },
 );
 
-onUnmounted(() => pageDetail.clearDetail());
+onUnmounted(() => {
+  pageDetail.clearDetail();
+  // Tear down the live SSE subscription when leaving the sheet.
+  store.closeSheet();
+});
 
 /**
  * Give the page a definite height instead of Quasar's default min-height.
@@ -298,7 +372,14 @@ function fillViewport(offset: number): Record<string, string> {
 function load(): void {
   void store.fetchMapsConfig();
   const sheetId = String(route.params.sheetId ?? "");
-  if (sheetId) void store.fetchSheet(sheetId);
+  if (!sheetId) return;
+  void store.fetchSheet(sheetId).then(() => {
+    // Arriving via the home "Share…" entry (…?share=1) opens the dialog once
+    // the sheet is loaded and only if it is mine to manage.
+    if (route.query?.share && canShare.value && store.currentSheet) {
+      shareDialogOpen.value = true;
+    }
+  });
 }
 
 onMounted(load);

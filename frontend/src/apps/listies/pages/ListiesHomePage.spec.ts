@@ -16,6 +16,7 @@ vi.mock("@/composables/useApi", () => ({
 vi.mock("vue-router", () => ({ useRouter: () => ({ push }) }));
 
 import ListiesHomePage from "./ListiesHomePage.vue";
+import { useAuthStore } from "@/stores/useAuthStore";
 import type { Sheet, SheetSummary } from "@/apps/listies/types";
 
 const SUMMARY: SheetSummary = {
@@ -71,6 +72,10 @@ const STUBS = {
     template: "<div />",
     props: ["modelValue", "allowPlace"],
     emits: ["update:modelValue", "submit"],
+  },
+  "q-badge": {
+    template: "<span :data-testid=\"$attrs['data-testid']\">{{ label }}</span>",
+    props: ["label", "color"],
   },
 };
 
@@ -332,5 +337,62 @@ describe("ListiesHomePage — the place type (Story 4.2)", () => {
     expect(
       wrapper.findComponent({ name: "CreateSheetDialog" }).props("allowPlace"),
     ).toBe(false);
+  });
+});
+
+describe("ListiesHomePage — shared sheets (Story 5.3)", () => {
+  const sharedByMe: SheetSummary = { ...SUMMARY, shared: true, owner: "alice" };
+  const sharedWithMe: SheetSummary = {
+    ...SUMMARY,
+    id: "s-2",
+    shared: true,
+    owner: "bob",
+  };
+
+  it("badges a sheet I share as “shared” with share and delete controls", async () => {
+    useAuthStore().username = "alice";
+    getMock.mockResolvedValue([sharedByMe]);
+    const wrapper = mount(ListiesHomePage, OPTS);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="shared-badge-s-1"]').text()).toBe(
+      "shared",
+    );
+    expect(wrapper.find('[data-testid="share-s-1"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="delete-s-1"]').exists()).toBe(true);
+  });
+
+  it("badges a sheet shared with me as “shared by {owner}” with no share/delete", async () => {
+    useAuthStore().username = "alice";
+    getMock.mockResolvedValue([sharedWithMe]);
+    const wrapper = mount(ListiesHomePage, OPTS);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="shared-badge-s-2"]').text()).toBe(
+      "shared by bob",
+    );
+    expect(wrapper.find('[data-testid="share-s-2"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="delete-s-2"]').exists()).toBe(false);
+  });
+
+  it("shows no badge on a private sheet", async () => {
+    useAuthStore().username = "alice";
+    getMock.mockResolvedValue([SUMMARY]);
+    const wrapper = mount(ListiesHomePage, OPTS);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="shared-badge-s-1"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("the Share entry navigates to the sheet with ?share=1", async () => {
+    useAuthStore().username = "alice";
+    getMock.mockResolvedValue([sharedByMe]);
+    const wrapper = mount(ListiesHomePage, OPTS);
+    await flushPromises();
+
+    await wrapper.find('[data-testid="share-s-1"]').trigger("click");
+    expect(push).toHaveBeenCalledWith("/listies/sheets/s-1?share=1");
   });
 });
