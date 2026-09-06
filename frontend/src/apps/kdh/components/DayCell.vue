@@ -40,10 +40,12 @@
     <span class="d">{{ dayOfMonth }}</span>
     <span class="n" data-testid="count-area">
       <span data-testid="count">{{ coverage }}</span>
-      <!-- Hover only, for now: a phone has no hover, and the day sheet already
-           carries this list one tap away. A touch equivalent is deliberately
-           left open rather than faked with a long-press that would fight the
-           tap that opens the sheet. -->
+      <!-- Hover only: a phone has no hover, and the day sheet already carries
+           this list one tap away. A touch equivalent is deliberately left open
+           rather than faked with a long-press that would fight the tap that
+           opens the sheet. The `.n` rule below keeps this out of the way of
+           that tap — without it Quasar wires touch handlers here and the tap
+           dies on the number. -->
       <q-tooltip
         v-if="voters.length > 0"
         class="kdh-panel kdh-voters"
@@ -222,6 +224,16 @@ const label = computed(() => {
 .w5 .n:hover,
 .w6 .n:hover {
   background: rgba(26, 16, 36, 0.14);
+}
+/* The count is a hover target, and on a touch screen it was a dead spot: Quasar
+   binds the tooltip's touch handlers to this element, so a tap that landed on
+   the number opened nothing and selected nothing — and on a ~44px cell the
+   number is most of what there is to aim at. Transparent to the pointer where
+   there is no hover, so the whole cell is one target again. */
+@media (hover: none) {
+  .n {
+    pointer-events: none;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .n {
