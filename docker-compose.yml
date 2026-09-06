@@ -16,11 +16,11 @@ services:
       HOST_COMPOSE_FILE_DIR_ON_HOST: ${HOST_COMPOSE_FILE_DIR:-}
       GOOGLE_MAPS_SERVER_KEY: ${GOOGLE_MAPS_SERVER_KEY:-}
       GOOGLE_MAPS_BROWSER_KEY: ${GOOGLE_MAPS_BROWSER_KEY:-}
-      # KDH: comma-separated guest accounts (vote-only). Every other dock user
-      # is an admin. The fallback MUST mirror the app default — `${KDH_GUESTS:-}`
+      # Kalendariq: comma-separated guest accounts (vote-only). Every other dock user
+      # is an admin. The fallback MUST mirror the app default — `${KALENDARIQ_GUESTS:-}`
       # would pass an empty string, which overrides that default and silently
       # promotes the shared account to admin.
-      KDH_GUESTS: ${KDH_GUESTS:-players}
+      KALENDARIQ_GUESTS: ${KALENDARIQ_GUESTS:-players}
     volumes:
       - archery-data:/data
       - /var/run/docker.sock:/var/run/docker.sock

@@ -31,9 +31,9 @@ async function mountAt(path: string) {
         meta: { title: "Listies" },
       },
       {
-        path: "/kdh/s/:shareToken",
+        path: "/kalendariq/s/:shareToken",
         component: { template: "<div />" },
-        meta: { title: "KDH", hideShellNav: true },
+        meta: { title: "Kalendariq", hideShellNav: true },
       },
     ],
   });
@@ -77,15 +77,15 @@ describe("MainLayout toolbar control", () => {
   });
 
   it("hides both nav buttons on a route that opts out of the shell nav", async () => {
-    const wrapper = await mountAt("/kdh/s/tok3n");
+    const wrapper = await mountAt("/kalendariq/s/tok3n");
     expect(wrapper.find('[aria-label="Go back"]').exists()).toBe(false);
     expect(wrapper.find('[aria-label="Go to apps home"]').exists()).toBe(false);
     expect(wrapper.find('[aria-label="Open settings"]').exists()).toBe(false);
   });
 
   it("still names the app in the title bar on a nav-less route", async () => {
-    const wrapper = await mountAt("/kdh/s/tok3n");
-    expect(wrapper.find(".app-bar__title").text()).toBe("KDH");
+    const wrapper = await mountAt("/kalendariq/s/tok3n");
+    expect(wrapper.find(".app-bar__title").text()).toBe("Kalendariq");
   });
 
   it("logout button hidden when not authenticated", async () => {

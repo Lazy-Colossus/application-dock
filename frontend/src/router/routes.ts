@@ -145,26 +145,45 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "Listies", requiresAuth: true },
       },
       {
-        path: "kdh",
-        name: "kdh-home",
-        component: () => import("@/apps/kdh/pages/KdhHomePage.vue"),
-        meta: { title: "KDH", requiresAuth: true },
+        path: "kalendariq",
+        name: "kalendariq-home",
+        component: () =>
+          import("@/apps/kalendariq/pages/KalendariqHomePage.vue"),
+        meta: { title: "Kalendariq", requiresAuth: true },
       },
       {
-        path: "kdh/c/:calendarId",
-        name: "kdh-calendar",
-        component: () => import("@/apps/kdh/pages/CalendarPage.vue"),
-        meta: { title: "KDH", requiresAuth: true },
+        path: "kalendariq/c/:calendarId",
+        name: "kalendariq-calendar",
+        component: () => import("@/apps/kalendariq/pages/CalendarPage.vue"),
+        meta: { title: "Kalendariq", requiresAuth: true },
       },
       {
         // The invitee link. Deliberately NOT `requiresAuth`: an invitee arrives
         // from a group chat with no account, and bouncing them to a login they
         // cannot pass would be the whole feature failing. The token in the path
         // is the authorisation, and the server enforces what it buys.
+        path: "kalendariq/s/:shareToken",
+        name: "kalendariq-shared-calendar",
+        component: () => import("@/apps/kalendariq/pages/CalendarPage.vue"),
+        meta: { title: "Kalendariq", hideShellNav: true },
+      },
+      {
+        // Kalendariq was called KDH until 2026-09-06. Invitee links live in
+        // group chats forever and nobody can reissue them, so the old paths
+        // stay as redirects rather than 404s. Params carry across by name.
         path: "kdh/s/:shareToken",
-        name: "kdh-shared-calendar",
-        component: () => import("@/apps/kdh/pages/CalendarPage.vue"),
-        meta: { title: "KDH", hideShellNav: true },
+        redirect: (to) => ({
+          name: "kalendariq-shared-calendar",
+          params: to.params,
+        }),
+      },
+      {
+        path: "kdh/c/:calendarId",
+        redirect: (to) => ({ name: "kalendariq-calendar", params: to.params }),
+      },
+      {
+        path: "kdh",
+        redirect: { name: "kalendariq-home" },
       },
     ],
   },

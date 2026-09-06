@@ -45,10 +45,10 @@ _APPS: list[AppDescriptor] = [
         route="/listies",
     ),
     AppDescriptor(
-        id="kdh",
-        label="KDH",
+        id="kalendariq",
+        label="Kalendariq",
         icon="event_available",
-        route="/kdh",
+        route="/kalendariq",
     ),
 ]
 

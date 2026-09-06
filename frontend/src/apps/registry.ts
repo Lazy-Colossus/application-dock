@@ -37,9 +37,9 @@ export const apps: AppDescriptor[] = [
     route: "/listies",
   },
   {
-    id: "kdh",
-    label: "KDH",
+    id: "kalendariq",
+    label: "Kalendariq",
     icon: "event_available",
-    route: "/kdh",
+    route: "/kalendariq",
   },
 ];

@@ -1,0 +1,153 @@
+// Kalendariq "Eggplant Wash" theme — SCOPED to the Kalendariq app.
+//
+// One idea carries colour: how many people can come. The wash is ORDERED and is
+// the only purple in the interface; invitee colours are CATEGORICAL and sit
+// outside the purple family, so a person is never mistaken for a coverage
+// level. Token values from ux-designs/ux-kalendariq-2026-09-03/DESIGN.md.
+//
+// The tokens are declared on TWO roots. `.kalendariq-app` covers the pages; `.kalendariq-panel`
+// covers dialog cards, which Quasar teleports to the body and which therefore sit
+// outside the page entirely — without the second root they fall back to the
+// shell's Carbon theme mid-flow.
+
+.kalendariq-app,
+.kalendariq-panel
+  // Field
+  --kalendariq-field: #15111C
+  --kalendariq-field-raise: #1F1829
+  --kalendariq-field-line: #332942
+  // Ink
+  --kalendariq-ink-hi: #EBE4F4
+  --kalendariq-ink-mid: #A79BBC
+  --kalendariq-ink-lo: #7B6F91
+  // Ink for the top two wash steps, where the field is too light for pale text
+  --kalendariq-ink-on-light: #1A1024
+  // The coverage wash, low to high
+  --kalendariq-wash-0: #221B2E
+  --kalendariq-wash-1: #31234A
+  --kalendariq-wash-2: #3A2A56
+  --kalendariq-wash-3: #4E3770
+  --kalendariq-wash-4: #6C4C93
+  --kalendariq-wash-5: #9773BC
+  --kalendariq-wash-6: #C9AEE6
+  // The one non-wash colour: something has gone wrong, or is about to
+  --kalendariq-danger: #CF6679
+  // The two answers, on the control where you give yours. Green and yellow are
+  // the everyday language for "yes" and "sort of", and they are worth the extra
+  // colour on a control the user is about to press.
+  --kalendariq-yes: #6FD08C
+  --kalendariq-maybe: #F2C94C
+  // The decided day. A THIRD colour dimension, deliberately: the wash says how
+  // many can come, an invitee colour says who, and gold says this is the one.
+  // It is the dock's family of gold, used here for a meaning the dock does not
+  // have — see DESIGN.md, Components → Chosen day.
+  --kalendariq-gold: #FFD54A
+  // Gold legible against the pale top of the ramp, where the bright one washes
+  // out entirely. The ring does the popping there; this only has to be readable.
+  --kalendariq-gold-deep: #5F4200
+
+.kalendariq-app
+  background: var(--kalendariq-field)
+  color: var(--kalendariq-ink-hi)
+  min-height: 100%
+
+// --- Raised surfaces (dialogs, sheets, popovers) --------------------------
+// Flat: a shadow on a near-black ground reads as mud, so depth is a lighter
+// fill plus a hairline, never a drop shadow.
+.kalendariq-panel
+  background: var(--kalendariq-field-raise)
+  color: var(--kalendariq-ink-hi)
+  border: 1px solid var(--kalendariq-field-line)
+  border-radius: 12px
+  box-shadow: none
+
+// --- A note, peeked or opened ----------------------------------------------
+.kalendariq-note-pop
+  padding: 9px 11px
+  font-size: 12.5px
+  max-width: 220px
+  white-space: normal
+
+// --- The hover list of who voted -------------------------------------------
+.kalendariq-voters
+  padding: 8px 10px
+  font-size: 12px
+
+  .kalendariq-voter
+    display: flex
+    align-items: center
+    gap: 6px
+    padding: 2px 0
+    white-space: nowrap
+
+  // Set apart by weight and style, never by tinting their colour — the same
+  // rule the day sheet follows, since the colour has to keep meaning "them".
+  .tentative
+    font-style: italic
+    opacity: 0.72
+
+
+// --- Type ------------------------------------------------------------------
+.kalendariq-app,
+.kalendariq-panel
+  .text-h5,
+  .text-h6,
+  .text-subtitle1,
+  .text-subtitle2
+    color: var(--kalendariq-ink-hi)
+
+  .q-item__label--caption,
+  .text-grey-6,
+  .text-caption
+    color: var(--kalendariq-ink-mid) !important
+
+  .text-negative
+    color: var(--kalendariq-danger) !important
+
+// --- Lists -----------------------------------------------------------------
+.kalendariq-app,
+.kalendariq-panel
+  .q-item
+    color: var(--kalendariq-ink-hi)
+
+  .q-list--separator > .q-item-type + .q-item-type,
+  .q-item + .q-item
+    border-top: 1px solid var(--kalendariq-field-line)
+
+  .q-item--clickable:hover
+    background: rgba(201, 174, 230, 0.06)
+
+// --- Inputs ----------------------------------------------------------------
+// Quasar draws the outline with `currentColor` at low opacity, so setting the
+// field's colour is most of the job.
+.kalendariq-app,
+.kalendariq-panel
+  .q-field
+    color: var(--kalendariq-ink-mid)
+
+  .q-field__native,
+  .q-field__input
+    color: var(--kalendariq-ink-hi)
+
+  .q-field--focused .q-field__control:after
+    border-color: var(--kalendariq-wash-5)
+
+// --- Buttons ---------------------------------------------------------------
+// Kalendariq has no accent hue on purpose: the wash is the only colour, so a primary
+// action is a raised surface rather than a bright fill. This is why the dock's
+// gold is not used here — it would be a second thing competing for attention
+// with the one thing that matters.
+.kalendariq-app,
+.kalendariq-panel
+  .q-btn.bg-primary,
+  .q-btn--unelevated.text-white
+    background: var(--kalendariq-wash-3) !important
+    color: var(--kalendariq-ink-hi) !important
+
+  .q-btn
+    color: var(--kalendariq-ink-hi)
+
+  .q-btn.text-negative,
+  .q-btn.bg-negative
+    color: var(--kalendariq-danger) !important
+    background: transparent !important
