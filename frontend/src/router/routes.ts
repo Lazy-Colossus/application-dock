@@ -164,7 +164,7 @@ const routes: RouteRecordRaw[] = [
         path: "kdh/s/:shareToken",
         name: "kdh-shared-calendar",
         component: () => import("@/apps/kdh/pages/CalendarPage.vue"),
-        meta: { title: "KDH" },
+        meta: { title: "KDH", hideShellNav: true },
       },
     ],
   },

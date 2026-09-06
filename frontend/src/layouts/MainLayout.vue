@@ -36,7 +36,7 @@
           to="/settings"
         />
         <q-btn
-          v-else
+          v-else-if="!hideShellNav"
           flat
           round
           dense
@@ -65,7 +65,11 @@ const router = useRouter();
 const authStore = useAuthStore();
 const pageDetail = usePageDetailStore();
 
-const showBack = computed(() => route.path !== "/");
+// A public link is not a place inside the shell: whoever follows one has no
+// account, so the apps home is a dead end and "back" leads out of the app.
+const hideShellNav = computed(() => route.meta?.hideShellNav === true);
+
+const showBack = computed(() => route.path !== "/" && !hideShellNav.value);
 
 // Inside the Hotaru app the shell bar adopts Hotaru's dusk field so the header
 // reads as part of the app, not a foreign grey chrome strip.
