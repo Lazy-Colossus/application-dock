@@ -112,8 +112,8 @@ describe("MonthGrid", () => {
     // The bug this pins: Today used to render BETWEEN the arrows, so the click
     // that revealed it also shoved `next-month` sideways — and the second
     // click of a two-month jump landed on whatever slid under the pointer.
-    // Structure is the fix, so structure is the test: the arrows and the label
-    // between them come first, and Today can only appear after them.
+    // Structure is the fix, so structure is the test: the arrow cluster holds
+    // the two chevrons and the label, and nothing else can appear inside it.
     const wrapper = mountGrid();
     const nav = () =>
       wrapper.find('[data-testid="prev-month"]').element.parentElement;
@@ -127,13 +127,10 @@ describe("MonthGrid", () => {
     await wrapper.find('[data-testid="next-month"]').trigger("click");
     expect(wrapper.find('[data-testid="jump-today"]').exists()).toBe(true);
 
-    // Today lands after both arrows, so neither of them moved.
-    expect(order()).toEqual([
-      "prev-month",
-      "month-label",
-      "next-month",
-      "jump-today",
-    ]);
+    // Same three, in the same order: Today landed outside the cluster, so
+    // neither chevron moved. Where it lands is the header grid's business.
+    expect(order()).toEqual(["prev-month", "month-label", "next-month"]);
+    expect(nav()?.querySelector('[data-testid="jump-today"]')).toBeNull();
   });
 
   it("emits the date that was picked", async () => {

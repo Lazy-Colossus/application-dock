@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { mount } from "@vue/test-utils";
+import { nextTick } from "vue";
 
 import DaySheet from "./DaySheet.vue";
 import type { Invitee } from "@/apps/kalendariq/types";
@@ -298,6 +299,20 @@ describe("DaySheet", () => {
 
     expect(wrapper.emitted("note")?.[0]).toEqual(["Only after 8pm"]);
     expect(wrapper.find('[data-testid="note-open"]').exists()).toBe(true);
+  });
+
+  it("scrolls the note field into view when it opens", async () => {
+    // On a phone the sheet can be taller than the screen and the field is its
+    // last row, so on a day with several voters it opens below the fold — and
+    // the keyboard then shrinks the viewport further.
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+
+    const wrapper = mountSheet({ votes: { "inv-1": "yes" } });
+    await wrapper.find('[data-testid="note-open"]').trigger("click");
+    await nextTick();
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "center" });
   });
 
   it("prefills the editor with the existing note", async () => {

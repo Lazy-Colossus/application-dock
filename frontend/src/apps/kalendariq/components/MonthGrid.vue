@@ -1,6 +1,6 @@
 <template>
   <div class="kalendariq-month">
-    <div class="row items-center justify-between q-mb-sm">
+    <div class="kalendariq-month-head q-mb-sm">
       <div class="row items-center kalendariq-month-nav">
         <q-btn
           flat
@@ -25,23 +25,24 @@
           data-testid="next-month"
           @click="shift(1)"
         />
-        <!-- Today follows the arrows rather than sitting between them. It is
-             conditional, and anywhere earlier in the cluster it reflowed the
-             chevrons on the very click that summoned it: one step off the
-             current month moved `next-month` out from under the pointer, and
-             the second click of a two-month jump landed on the wrong control.
-             The label between the arrows is width-reserved for the same
-             reason -- a label that resized with the month name would slide
-             `next-month` sideways on every step. -->
-        <button
-          v-if="!showingCurrentMonth"
-          class="kalendariq-today-btn"
-          data-testid="jump-today"
-          @click="goToToday"
-        >
-          Today
-        </button>
       </div>
+      <!-- Outside the arrow cluster, never between the arrows. It is
+           conditional, and inside the cluster it reflowed the chevrons on the
+           very click that summoned it: one step off the current month moved
+           `next-month` out from under the pointer, and the second click of a
+           two-month jump landed on the wrong control. The label between the
+           arrows is width-reserved for the same reason -- a label that resized
+           with the month name would slide `next-month` sideways on every step.
+           The grid below puts this beside the month on a wide header and on its
+           own second line on a phone, where all three do not fit. -->
+      <button
+        v-if="!showingCurrentMonth"
+        class="kalendariq-today-btn"
+        data-testid="jump-today"
+        @click="goToToday"
+      >
+        Today
+      </button>
       <!-- Only on the way in: leaving is the Cancel on the selection bar, and
            two ways out of one mode is one too many. -->
       <button
@@ -189,12 +190,32 @@ defineExpose({ monthLabel, dates });
   background: var(--kalendariq-wash-5);
   color: var(--kalendariq-ink-on-light);
 }
+/* Explicit rows rather than flex wrapping: the header's children are content
+   sized, so a wrap would never fall where it is wanted -- the cluster just grew
+   and pushed Select Multiple down instead. Phone gets two rows, with Today on
+   the second; the wide layout below collapses them into one. */
+.kalendariq-month-head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  row-gap: 6px;
+}
 .kalendariq-month-nav {
+  grid-column: 1;
+  grid-row: 1;
   min-width: 0;
   gap: 2px;
 }
-.kalendariq-month-nav .kalendariq-today-btn {
-  margin-left: 8px;
+.kalendariq-month-head > .kalendariq-select-btn {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+}
+/* Row 2 exists only when Today does, so an empty row never opens a gap. */
+.kalendariq-month-head > .kalendariq-today-btn {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  justify-self: start;
 }
 .kalendariq-today-btn {
   /* Never shrinks: the month label is what gives way on a narrow header,
@@ -288,13 +309,25 @@ defineExpose({ monthLabel, dates });
   /* Scales with the month label beside it: at 12.5px this read as a caption on
      a wide header rather than the way into select mode. */
   .kalendariq-select-btn {
-    paddingTop: 9px;
+    padding-bottom: 9px;
     padding-right: 30px;
     padding-left: 30px;
     font-size: 15px;
   }
   .kalendariq-select-btn .q-icon {
     font-size: 22px;
+  }
+  /* Room for all three on one line again: Today returns beside the month. */
+  .kalendariq-month-head {
+    grid-template-columns: auto auto 1fr;
+  }
+  .kalendariq-month-head > .kalendariq-today-btn {
+    grid-column: 2;
+    grid-row: 1;
+    margin-left: 8px;
+  }
+  .kalendariq-month-head > .kalendariq-select-btn {
+    grid-column: 3;
   }
   .kalendariq-dow {
     font-size: 12px;

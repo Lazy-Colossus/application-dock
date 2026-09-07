@@ -99,7 +99,7 @@
       </div>
       <!-- Revealed in the space the button occupied, rather than opening another
            surface on top of a sheet that is already one. -->
-      <div v-else class="note-edit">
+      <div v-else ref="noteEdit" class="note-edit">
         <q-input
           v-model="noteDraft"
           dense
@@ -147,7 +147,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { NOTE_MAX_LENGTH } from "@/apps/kalendariq/types";
 import type { Invitee, VoteStatus } from "@/apps/kalendariq/types";
 
@@ -232,10 +232,32 @@ const myNote = computed(() =>
   props.claimedId ? (props.notes[props.claimedId] ?? "") : "",
 );
 
-function openNote(): void {
+const noteEdit = ref<HTMLElement | null>(null);
+
+/* The field is the last thing in a sheet that can already be taller than a
+   phone, so opening it is not enough — on a day with several voters it sits
+   below the fold, and the on-screen keyboard shrinks the viewport further. */
+function revealNoteField(): void {
+  noteEdit.value?.scrollIntoView?.({ block: "center" });
+}
+
+async function openNote(): Promise<void> {
   noteDraft.value = myNote.value;
   noteOpen.value = true;
+  await nextTick();
+  revealNoteField();
 }
+
+/* The keyboard opens AFTER focus lands and resizes the visual viewport, which
+   can put the field back under the fold — so follow it while the editor is up. */
+watch(noteOpen, (open) => {
+  if (open) window.visualViewport?.addEventListener("resize", revealNoteField);
+  else window.visualViewport?.removeEventListener("resize", revealNoteField);
+});
+
+onBeforeUnmount(() =>
+  window.visualViewport?.removeEventListener("resize", revealNoteField),
+);
 
 function saveNote(): void {
   emit("note", noteDraft.value);
