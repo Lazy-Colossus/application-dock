@@ -235,6 +235,32 @@ describe("DayCell", () => {
     expect(area.find(".tip").exists()).toBe(true);
   });
 
+  it("marks the count with a person icon once anybody is on the day", () => {
+    // Rendered at every size and hidden by CSS on a phone, where the cell has
+    // no room to spare. Nothing at zero: an icon for nobody is noise.
+    const area = (votes: Record<string, string>) =>
+      mountCell({ votes }).find('[data-testid="count-area"]');
+
+    expect(area({ a: "yes" }).find('[data-testid="count-icon"]').exists()).toBe(
+      true,
+    );
+    expect(
+      area({ a: "yes", b: "if_needed" })
+        .find('[data-testid="count-icon"]')
+        .exists(),
+    ).toBe(true);
+    expect(area({}).find('[data-testid="count-icon"]').exists()).toBe(false);
+  });
+
+  it("keeps the icon out of the spoken label", () => {
+    // The label already says "2 of 6 free"; the icon is decoration on top of it.
+    const wrapper = mountCell({ votes: { a: "yes" } });
+    expect(
+      wrapper.find('[data-testid="count-icon"]').attributes("aria-hidden"),
+    ).toBe("true");
+    expect(wrapper.attributes("aria-label")).toBe("14, 1 of 6 free");
+  });
+
   it("lists the voters on one line at the foot of the cell, in roster order", () => {
     // Rendered at every size and hidden by CSS on a phone, where a 44px cell
     // cannot hold a name — that is what the day sheet is for.
@@ -295,6 +321,14 @@ describe("DayCell", () => {
 
     const maybe = mountCell({ votes: { "inv-1": "if_needed" } });
     expect(maybe.find(".mine-mark").classes()).toContain("maybe");
+  });
+
+  it("leaves the date itself unmarked", () => {
+    // The mark is a corner wedge, not something drawn on or behind the number:
+    // that is what lets the chosen day keep its gold date at every wash step.
+    const wrapper = mountCell({ votes: { "inv-1": "yes" } });
+    expect(wrapper.find(".d").classes()).toEqual(["d"]);
+    expect(wrapper.find(".d").attributes("style")).toBeUndefined();
   });
 
   it("marks nothing when the answer is not yours", () => {

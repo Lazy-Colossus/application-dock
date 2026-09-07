@@ -1,20 +1,7 @@
 <template>
   <div class="kalendariq-month">
     <div class="row items-center justify-between q-mb-sm">
-      <div class="kalendariq-month-label col" data-testid="month-label">
-        {{ monthLabel }}
-      </div>
-      <div class="row items-center q-gutter-xs">
-        <!-- Only on the way in: leaving is the Cancel on the selection bar, and
-             two ways out of one mode is one too many. -->
-        <button
-          v-if="selectable && !selectMode"
-          class="kalendariq-select-btn"
-          data-testid="select-toggle"
-          @click="$emit('toggleSelectMode')"
-        >
-          <q-icon name="checklist" size="16px" />Select Multiple
-        </button>
+      <div class="row items-center kalendariq-month-nav">
         <q-btn
           flat
           dense
@@ -25,16 +12,9 @@
           data-testid="prev-month"
           @click="shift(-1)"
         />
-        <q-btn
-          v-if="!showingCurrentMonth"
-          flat
-          dense
-          no-caps
-          size="sm"
-          label="Today"
-          data-testid="jump-today"
-          @click="goToToday"
-        />
+        <div class="kalendariq-month-label" data-testid="month-label">
+          {{ monthLabel }}
+        </div>
         <q-btn
           flat
           dense
@@ -45,7 +25,33 @@
           data-testid="next-month"
           @click="shift(1)"
         />
+        <!-- Today follows the arrows rather than sitting between them. It is
+             conditional, and anywhere earlier in the cluster it reflowed the
+             chevrons on the very click that summoned it: one step off the
+             current month moved `next-month` out from under the pointer, and
+             the second click of a two-month jump landed on the wrong control.
+             The label between the arrows is width-reserved for the same
+             reason -- a label that resized with the month name would slide
+             `next-month` sideways on every step. -->
+        <button
+          v-if="!showingCurrentMonth"
+          class="kalendariq-today-btn"
+          data-testid="jump-today"
+          @click="goToToday"
+        >
+          Today
+        </button>
       </div>
+      <!-- Only on the way in: leaving is the Cancel on the selection bar, and
+           two ways out of one mode is one too many. -->
+      <button
+        v-if="selectable && !selectMode"
+        class="kalendariq-select-btn"
+        data-testid="select-toggle"
+        @click="$emit('toggleSelectMode')"
+      >
+        <q-icon name="checklist" size="16px" />Select Multiple
+      </button>
     </div>
 
     <div class="kalendariq-dow">
@@ -183,8 +189,53 @@ defineExpose({ monthLabel, dates });
   background: var(--kalendariq-wash-5);
   color: var(--kalendariq-ink-on-light);
 }
-.kalendariq-month-label {
+.kalendariq-month-nav {
   min-width: 0;
+  gap: 2px;
+}
+.kalendariq-month-nav .kalendariq-today-btn {
+  margin-left: 8px;
+}
+.kalendariq-today-btn {
+  /* Never shrinks: the month label is what gives way on a narrow header,
+     because a truncated month name still reads and a truncated button does
+     not. */
+  flex: none;
+  padding: 5px 12px;
+  border: 1px solid var(--kalendariq-field-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--kalendariq-ink-mid);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+.kalendariq-today-btn:hover {
+  background: var(--kalendariq-wash-3);
+  border-color: var(--kalendariq-wash-4);
+  color: var(--kalendariq-ink-hi);
+}
+.kalendariq-today-btn:focus-visible {
+  outline: 2px solid var(--kalendariq-wash-5);
+  outline-offset: 1px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kalendariq-today-btn {
+    transition: none;
+  }
+}
+.kalendariq-month-label {
+  /* Reserved footprint, wide enough for the longest label ("September 2026"):
+     the arrows flank the label now, so a label that grew with the month name
+     would walk `next-month` sideways on every step. In em, so the reservation
+     tracks the font size at both breakpoints. */
+  flex: none;
+  min-width: 11.5em;
+  text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -233,6 +284,17 @@ defineExpose({ monthLabel, dates });
 @media (min-width: 700px) {
   .kalendariq-month-label {
     font-size: 16px;
+  }
+  /* Scales with the month label beside it: at 12.5px this read as a caption on
+     a wide header rather than the way into select mode. */
+  .kalendariq-select-btn {
+    paddingTop: 9px;
+    padding-right: 30px;
+    padding-left: 30px;
+    font-size: 15px;
+  }
+  .kalendariq-select-btn .q-icon {
+    font-size: 22px;
   }
   .kalendariq-dow {
     font-size: 12px;

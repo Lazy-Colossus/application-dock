@@ -107,7 +107,6 @@
           autofocus
           class="col"
           :maxlength="NOTE_MAX_LENGTH"
-          placeholder="Only after 8pm…"
           data-testid="note-input"
           @keyup.enter="saveNote"
         />
@@ -409,7 +408,12 @@ function glyphFor(status: VoteStatus | undefined): string {
   gap: 6px;
 }
 .ans-btn {
+  /* An equal third each, but never narrower than the label needs: selecting an
+     answer turns it semibold, and "If needed" is wide enough that the extra
+     weight alone used to push it onto a second line. */
   flex: 1;
+  min-width: max-content;
+  white-space: nowrap;
   display: flex;
   align-items: center;
   justify-content: center;

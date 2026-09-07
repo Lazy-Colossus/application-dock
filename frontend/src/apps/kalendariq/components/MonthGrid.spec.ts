@@ -108,6 +108,34 @@ describe("MonthGrid", () => {
     );
   });
 
+  it("keeps the month arrows still when the Today button appears", async () => {
+    // The bug this pins: Today used to render BETWEEN the arrows, so the click
+    // that revealed it also shoved `next-month` sideways — and the second
+    // click of a two-month jump landed on whatever slid under the pointer.
+    // Structure is the fix, so structure is the test: the arrows and the label
+    // between them come first, and Today can only appear after them.
+    const wrapper = mountGrid();
+    const nav = () =>
+      wrapper.find('[data-testid="prev-month"]').element.parentElement;
+    const order = () =>
+      Array.from(nav()?.children ?? []).map((el) =>
+        el.getAttribute("data-testid"),
+      );
+
+    expect(order()).toEqual(["prev-month", "month-label", "next-month"]);
+
+    await wrapper.find('[data-testid="next-month"]').trigger("click");
+    expect(wrapper.find('[data-testid="jump-today"]').exists()).toBe(true);
+
+    // Today lands after both arrows, so neither of them moved.
+    expect(order()).toEqual([
+      "prev-month",
+      "month-label",
+      "next-month",
+      "jump-today",
+    ]);
+  });
+
   it("emits the date that was picked", async () => {
     const wrapper = mountGrid();
     await wrapper.find('[data-testid="day-2026-09-14"]').trigger("click");

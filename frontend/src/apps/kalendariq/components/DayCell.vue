@@ -39,6 +39,21 @@
     </span>
     <span class="d">{{ dayOfMonth }}</span>
     <span class="n" data-testid="count-area">
+      <!-- Wide layout only (hidden by CSS below the breakpoint, like the names):
+           says what the number counts, which a bare digit next to a date does
+           not. Suppressed at zero — an icon for nobody is noise, and the empty
+           days are the ones the eye should skip. -->
+      <svg
+        v-if="coverage > 0"
+        class="who"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        data-testid="count-icon"
+      >
+        <path
+          d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 1.8c-4.2 0-7.6 2.1-7.6 4.7V20h15.2v-1.5c0-2.6-3.4-4.7-7.6-4.7Z"
+        />
+      </svg>
       <span data-testid="count">{{ coverage }}</span>
       <!-- Hover only: a phone has no hover, and the day sheet already carries
            this list one tap away. A touch equivalent is deliberately left open
@@ -241,8 +256,9 @@ const label = computed(() => {
   }
 }
 
-/* --- Names in the cell: wide layout only ------------------------------- */
-.cell-names {
+/* --- Names and the count icon: wide layout only ----------------------- */
+.cell-names,
+.who {
   display: none;
 }
 
@@ -274,7 +290,7 @@ const label = computed(() => {
     height: clamp(10px, 1.1vw, 14px);
   }
   .d {
-    font-size: clamp(16px, 1.6vw, 21px);
+    font-size: clamp(20px, 1.9vw, 25px);
   }
   /* Generous on web because this is where hover exists at all, and the number
      alone was too small to aim at. Untouched on a phone, which has no hover and
@@ -284,6 +300,18 @@ const label = computed(() => {
     padding: 4px clamp(9px, 1.1vw, 15px);
     min-width: clamp(34px, 3.4vw, 46px);
     border-radius: 8px;
+  }
+  /* Sized in `em` and filled with `currentColor`, so it rides the count's own
+     fluid font size and inherits the per-step ink that already keeps the number
+     legible at the pale top of the ramp — no second set of colour rules. */
+  .who {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    margin-right: 0.28em;
+    vertical-align: -0.14em;
+    fill: currentColor;
+    opacity: 0.85;
   }
   /* One line at the foot of the cell, in the cell's own ink. Deliberately NOT
      each person's colour: six colours on one line is a smear, and the colour
@@ -308,7 +336,9 @@ const label = computed(() => {
     line-clamp: 2;
     flex: 0 1 auto;
     min-height: 0;
-    margin-top: 4px;
+    /* Set the names apart from the count as their own block, rather than
+       reading as one more line of it. */
+    margin-top: 9px;
     width: 100%;
     max-width: 100%;
     font-size: clamp(8.5px, 0.75vw, 10px);
@@ -363,8 +393,8 @@ const label = computed(() => {
   box-shadow: inset 0 0 0 1px var(--kalendariq-wash-6);
 }
 .today {
-  outline: 1px solid var(--kalendariq-ink-mid);
-  outline-offset: -1px;
+  outline: 2px solid var(--kalendariq-ink-mid);
+  outline-offset: -2px;
 }
 /* Collected for a bulk answer. A fill rather than a frame, so it cannot be
    mistaken for the gold frame that means "this is the day". */
@@ -386,11 +416,12 @@ const label = computed(() => {
 }
 
 /* The decided day.
-   A gold ring and outer glow on the cell, so it pops at EVERY step of the ramp —
-   including the pale top, where gold text alone disappears and where the chosen
-   day most often lives. The date is bold gold with its own glow on the dark
-   steps; on the light ones it drops to the deep gold and loses the text glow,
-   because a bright halo on pale lilac is mud. The diamond stays regardless: gold
+   A gold ring on the cell, so it pops at EVERY step of the ramp — including the
+   pale top, where the chosen day most often lives. The date is bold in the ring's
+   own gold at every step: one gold for one meaning, so the number and the frame
+   are visibly the same mark rather than two golds a step apart — and the crown
+   above them is that same gold again. That costs contrast on the two palest
+   washes, where the ring carries the day. The crown stays regardless: gold
    carries the message, but colour must never be the only signal (NFR-6). */
 /* The mark lives in the gutter, not on the cell. A frame looks identical at
    every step of the ramp, which is what nothing painted on the wash could do —
@@ -406,15 +437,6 @@ const label = computed(() => {
 .chosen .d {
   font-weight: 700;
   color: var(--kalendariq-gold);
-}
-/* Free to be legible again, now that the frame is doing the work: the deeper
-   gold on pale lilac, with no outline and no glow to prop it up. */
-.w5.chosen .d,
-.w6.chosen .d,
-.w5 .crown,
-.w6 .crown {
-  color: var(--kalendariq-gold-deep);
-  fill: var(--kalendariq-gold-deep);
 }
 /* Both marks at once: the provisional hairline is inset, the chosen ring is
    outside it, so they compose rather than one silently winning. */
@@ -433,33 +455,41 @@ const label = computed(() => {
   margin-bottom: 1px;
   line-height: 0;
 }
-/* Green filled for free, yellow half for if-needed — the same glyphs and the
-   same two colours as the answer buttons in the day sheet, so there is nothing
-   new to learn. Green and yellow also read at every step of the ramp, which the
-   lilac used elsewhere would not at the pale top. Half versus whole carries it
-   without colour (NFR-6). */
+/* Your own answer, folded into the leading corner like a dog-eared page.
+   Flush to the corner rather than inset: the two straight legs then sit on the
+   cell's own boundary, where the wash meets the dark field, and that edge is
+   the one thing in the cell whose contrast does not change as the ramp climbs.
+   The cell's `overflow: hidden` and 7px radius round the point for free.
+   Costs no layout at all, so the date, the crown slot and the count keep the
+   sizes they were designed at — and it stays clear of the crown, which is
+   centred, and of the select-mode tick, which owns the trailing corner.
+   One rule for both layouts: below ~820px the viewport term is under the floor,
+   so a phone gets a flat 14px and a wide window grows it with everything else. */
 .mine-mark {
   position: absolute;
-  top: 3px;
-  left: 4px;
-  /* Opposite the select-mode tick, which owns the trailing corner. Sized in one
-     rule for both layouts: below ~820px the viewport term is under the floor, so
-     a phone gets a flat 7px and a wide window grows it with everything else. */
-  width: clamp(7px, 0.85vw, 11px);
-  height: clamp(7px, 0.85vw, 11px);
-  border-radius: 50%;
+  top: 0;
+  left: 0;
+  width: clamp(14px, 1.8vw, 26px);
+  height: clamp(14px, 1.8vw, 26px);
+  clip-path: polygon(0 0, 100% 0, 0 100%);
 }
 .mine-mark.free {
   background: var(--kalendariq-yes);
 }
+/* Half the wedge, held at the corner — the same whole-versus-half language the
+   day sheet's answer buttons and status glyphs already speak, and the signal
+   that survives with the colour taken away (NFR-6). */
 .mine-mark.maybe {
-  background: linear-gradient(90deg, var(--kalendariq-maybe) 50%, transparent 50%);
-  box-shadow: inset 0 0 0 1.5px var(--kalendariq-maybe);
+  background: linear-gradient(
+    to bottom right,
+    var(--kalendariq-maybe) 0 52%,
+    transparent 52%
+  );
 }
 
-/* Filled gold with a dark stroke, so one crown reads at every step of the ramp —
-   the same trick the gold date uses, rather than a second darker crown for the
-   pale steps. It is also the signal that does not depend on colour (NFR-6). */
+/* One gold at every step of the ramp, the ring's own — no darker crown for the
+   pale steps. Its shape is the signal that does not depend on colour (NFR-6),
+   which is what lets the fill follow the ring rather than the background. */
 .crown {
   fill: var(--kalendariq-gold);
 }
