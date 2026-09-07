@@ -27,6 +27,8 @@ prioritised — this is the pool we draw from when we start real story work.
   A map of everywhere your shelf has "traveled."
 - **Cha Dao Almanac** — a quiet curated reference: brewing parameters, tea families,
   ceremony vocabulary (Chinese + Japanese terms). A personal tea encyclopedia.
+- **Teaware Cabinet** - an inventory of teaware, what kind of utensil (gaiwan, put, kyusu) 
+  and it's aparamters, like material, volume and so on.
 
 ## Notes
 - Suggested sequencing (rough): Session Timer → Cha Xi Journal → The Cabinet →

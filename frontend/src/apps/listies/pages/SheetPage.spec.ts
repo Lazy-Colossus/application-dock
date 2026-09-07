@@ -22,7 +22,9 @@ vi.mock("vue-router", async () => {
 
 import SheetPage from "./SheetPage.vue";
 import { usePageDetailStore } from "@/stores/usePageDetailStore";
-import type { Sheet } from "@/apps/listies/types";
+import { useListiesStore } from "@/apps/listies/stores/useListiesStore";
+import { useAuthStore } from "@/stores/useAuthStore";
+import type { Sheet, SheetView } from "@/apps/listies/types";
 
 const sheet = (): Sheet => ({
   id: "s-1",
@@ -112,6 +114,20 @@ const STUBS = {
     props: ["modelValue", "existingTabs"],
     emits: ["update:modelValue", "submit"],
   },
+  ShareSheetDialog: {
+    name: "ShareSheetDialog",
+    template: '<div data-testid="share-dialog-stub" />',
+    props: ["modelValue"],
+    emits: ["update:modelValue"],
+  },
+  "q-chip": {
+    template:
+      "<div :data-testid=\"$attrs['data-testid']\" @click=\"$emit('click')\"><slot /></div>",
+    props: ["label", "icon", "dense", "clickable"],
+    emits: ["click"],
+  },
+  "q-space": { template: "<div />" },
+  "q-tooltip": { template: "<div><slot /></div>" },
 };
 
 const OPTS = { global: { stubs: STUBS } };
@@ -981,7 +997,9 @@ describe("SheetPage — place groups (Story 4.6)", () => {
       { id: "g-1", name: "Must see", color: "#e5484d" },
       { id: "g-2", name: "Maybe", color: "#3e63dd" },
     ];
-    await wrapper.findComponent({ name: "GroupManager" }).vm.$emit("save", next);
+    await wrapper
+      .findComponent({ name: "GroupManager" })
+      .vm.$emit("save", next);
     await flushPromises();
 
     expect(putMock).toHaveBeenCalledWith("/listies/sheets/s-1/tabs/tb-1", {
@@ -1050,8 +1068,20 @@ describe("SheetPage — filtering (Story 2.9)", () => {
     const twoTabs = (): Sheet => {
       const s = sheet();
       s.tabs = [
-        { id: "tb-1", name: "One", order: 0, columns: [{ id: "c-1", name: "Item", type: "text", order: 0 }], rows: [] },
-        { id: "tb-2", name: "Two", order: 1, columns: [{ id: "c-9", name: "Item", type: "text", order: 0 }], rows: [] },
+        {
+          id: "tb-1",
+          name: "One",
+          order: 0,
+          columns: [{ id: "c-1", name: "Item", type: "text", order: 0 }],
+          rows: [],
+        },
+        {
+          id: "tb-2",
+          name: "Two",
+          order: 1,
+          columns: [{ id: "c-9", name: "Item", type: "text", order: 0 }],
+          rows: [],
+        },
       ];
       return s;
     };
@@ -1065,5 +1095,83 @@ describe("SheetPage — filtering (Story 2.9)", () => {
     await flushPromises();
 
     expect(wrapper.find('[data-testid="clear-filters"]').exists()).toBe(false);
+  });
+});
+
+describe("SheetPage — sharing affordance (Story 5.3)", () => {
+  const ownerView = (): SheetView => ({
+    ...sheet(),
+    shared: true,
+    owner: "alice",
+    members: ["alice", "bob"],
+    rev: 0,
+    can_manage: true,
+  });
+  const memberView = (): SheetView => ({
+    ...ownerView(),
+    can_manage: false,
+  });
+
+  function serve(view: SheetView): void {
+    getMock.mockImplementation((path: string) =>
+      path.includes("maps-config")
+        ? Promise.resolve({ enabled: false })
+        : Promise.resolve(view),
+    );
+  }
+
+  it("shows a Share button on a private sheet and opens the dialog", async () => {
+    useAuthStore().username = "alice";
+    getMock.mockImplementation((path: string) =>
+      path.includes("maps-config")
+        ? Promise.resolve({ enabled: false })
+        : Promise.resolve(sheet()),
+    );
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="share-button"]').exists()).toBe(true);
+    await wrapper.find('[data-testid="share-button"]').trigger("click");
+    expect(
+      wrapper.findComponent({ name: "ShareSheetDialog" }).props("modelValue"),
+    ).toBe(true);
+  });
+
+  it("shows collaborators and opens the dialog for the owner", async () => {
+    useAuthStore().username = "alice";
+    serve(ownerView());
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="collaborators"]').exists()).toBe(true);
+    await wrapper.find('[data-testid="collaborators"]').trigger("click");
+    expect(
+      wrapper.findComponent({ name: "ShareSheetDialog" }).props("modelValue"),
+    ).toBe(true);
+  });
+
+  it("a non-owner member sees collaborators but no dialog and no share button", async () => {
+    useAuthStore().username = "bob";
+    serve(memberView());
+    const wrapper = mount(SheetPage, OPTS);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="collaborators"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="share-button"]').exists()).toBe(false);
+    expect(wrapper.findComponent({ name: "ShareSheetDialog" }).exists()).toBe(
+      false,
+    );
+  });
+
+  it("routes home when a live event ends my access", async () => {
+    useAuthStore().username = "bob";
+    serve(memberView());
+    mount(SheetPage, OPTS);
+    await flushPromises();
+
+    useListiesStore().closedReason = "removed";
+    await flushPromises();
+
+    expect(push).toHaveBeenCalledWith("/listies");
   });
 });

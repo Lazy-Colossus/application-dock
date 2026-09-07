@@ -1,7 +1,15 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
 import { api } from "@/composables/useApi";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { isPlace } from "@/apps/listies/types";
+import {
+  useSheetEvents,
+  type SheetChangedEvent,
+  type SheetClosedEvent,
+  type SheetEventsSubscription,
+  type ClosedReason,
+} from "@/apps/listies/composables/useSheetEvents";
 import type {
   CellValue,
   ColumnSpec,
@@ -11,6 +19,7 @@ import type {
   Row,
   Sheet,
   SheetSummary,
+  SheetView,
   Tab,
 } from "@/apps/listies/types";
 
@@ -40,6 +49,26 @@ export const useListiesStore = defineStore("listies", () => {
   const activeTabId = ref<string | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
+
+  // ── collaboration state for the open sheet (Stories 5.1/5.2) ─────────────
+  const shared = ref(false);
+  const owner = ref<string | null>(null);
+  const members = ref<string[] | null>(null);
+  const rev = ref(0);
+  const canManage = ref(false);
+  // Set when a live `sheet.closed` event ends my access; the sheet page watches
+  // it to leave with a reason (Story 5.2 wires it; Story 5.3 renders the notice).
+  const closedReason = ref<ClosedReason | null>(null);
+
+  // The live SSE subscription for the open shared sheet, and the guards that
+  // stop a live refetch from stomping an edit that is still in flight.
+  let subscription: SheetEventsSubscription | null = null;
+  let inFlightCellWrites = 0;
+  let reconcilePending = false;
+
+  function me(): string | null {
+    return useAuthStore().username;
+  }
 
   // Google Maps is optional server configuration (Story 4.1). Everything
   // place-related keys off this.
@@ -116,22 +145,197 @@ export const useListiesStore = defineStore("listies", () => {
     }
   }
 
+  /**
+   * Apply a fetched sheet view to the store, including collaboration state.
+   *
+   * `preserveActiveTab` keeps the tab the user is looking at across a live
+   * refetch (Story 5.2); the initial load lets it fall to the first tab.
+   */
+  function applyView(view: SheetView, preserveActiveTab: boolean): void {
+    const previousActive = activeTabId.value;
+    currentSheet.value = {
+      id: view.id,
+      name: view.name,
+      created_at: view.created_at,
+      tabs: view.tabs,
+    };
+    shared.value = view.shared ?? false;
+    owner.value = view.owner ?? null;
+    members.value = view.members ?? null;
+    rev.value = view.rev ?? 0;
+    canManage.value = view.can_manage ?? false;
+
+    // Tab order is authoritative; array position is not.
+    const ordered = [...view.tabs].sort((a, b) => a.order - b.order);
+    activeTabId.value =
+      preserveActiveTab && ordered.some((t) => t.id === previousActive)
+        ? previousActive
+        : (ordered[0]?.id ?? null);
+  }
+
   async function fetchSheet(sheetId: string): Promise<void> {
     loading.value = true;
     error.value = null;
+    closedReason.value = null;
     try {
-      const sheet = await api.get<Sheet>(`/listies/sheets/${sheetId}`);
-      currentSheet.value = sheet;
-      // Tab order is authoritative; array position is not.
-      activeTabId.value =
-        [...sheet.tabs].sort((a, b) => a.order - b.order)[0]?.id ?? null;
+      const view = await api.get<SheetView>(`/listies/sheets/${sheetId}`);
+      applyView(view, false);
+      subscribeToSheet(sheetId);
     } catch (e) {
+      closeSubscription();
       currentSheet.value = null;
       activeTabId.value = null;
       error.value = e instanceof Error ? e.message : String(e);
     } finally {
       loading.value = false;
     }
+  }
+
+  /**
+   * Refetch a live-changed sheet and re-render, preserving the tab I am on.
+   *
+   * Sort, map and tick state live in the sheet page's own refs (keyed by tab)
+   * and are untouched by replacing `currentSheet`. If a cell write is still in
+   * flight, the refetch is deferred until it lands so an optimistic value is
+   * never stomped (Story 5.2, AC-10).
+   */
+  async function reconcile(sheetId: string): Promise<void> {
+    if (inFlightCellWrites > 0) {
+      reconcilePending = true;
+      return;
+    }
+    try {
+      const view = await api.get<SheetView>(`/listies/sheets/${sheetId}`);
+      if (currentSheet.value?.id !== sheetId) return; // navigated away meanwhile
+      applyView(view, true);
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  function onSheetChanged(event: SheetChangedEvent): void {
+    if (event.sheet_id !== currentSheet.value?.id) return;
+    // Ignore my own write (already applied optimistically) and any rev I hold.
+    if (event.actor === me()) return;
+    if (event.rev <= rev.value) return;
+    void reconcile(event.sheet_id);
+  }
+
+  function onSheetClosed(event: SheetClosedEvent): void {
+    if (event.sheet_id !== currentSheet.value?.id) return;
+    // "removed" targets one member; "unshared" spares the owner; "deleted" hits
+    // everyone. Anything that does not end *my* access is ignored.
+    if (event.reason === "removed" && event.member !== me()) return;
+    if (event.reason === "unshared" && owner.value === me()) return;
+    closeSubscription();
+    closedReason.value = event.reason;
+  }
+
+  function subscribeToSheet(sheetId: string): void {
+    closeSubscription();
+    // Only shared sheets have a live channel; a private sheet needs no stream.
+    if (!shared.value) return;
+    const token = useAuthStore().token;
+    if (!token) return;
+    subscription = useSheetEvents(sheetId, token, {
+      onChanged: onSheetChanged,
+      onMembersChanged: (event) => {
+        if (event.sheet_id === currentSheet.value?.id) {
+          members.value = event.members;
+        }
+      },
+      onClosed: onSheetClosed,
+    });
+  }
+
+  function closeSubscription(): void {
+    subscription?.close();
+    subscription = null;
+  }
+
+  // ── sharing actions (Story 5.3) ─────────────────────────────────────────
+  //
+  // All operate on the open sheet and route failures into `error`. Owner-only
+  // rejection (403) is surfaced too — hiding the controls is UX, not the guard.
+
+  /** The platform roster for the share picker; a failure yields an empty list. */
+  async function fetchUsers(): Promise<string[]> {
+    try {
+      const data = await api.get<{ usernames: string[] }>("/auth/users");
+      return data.usernames;
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+      return [];
+    }
+  }
+
+  function syncSummary(view: SheetView): void {
+    const summary = sheets.value.find((s) => s.id === view.id);
+    if (summary) {
+      summary.shared = view.shared ?? false;
+      summary.owner = view.owner ?? null;
+    }
+  }
+
+  async function shareSheet(usernames: string[]): Promise<void> {
+    const sheet = currentSheet.value;
+    if (!sheet) return;
+    error.value = null;
+    try {
+      const view = await api.post<SheetView>(
+        `/listies/sheets/${sheet.id}/share`,
+        { usernames },
+      );
+      applyView(view, true);
+      subscribeToSheet(view.id); // now shared → open the live channel
+      syncSummary(view);
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  async function removeMember(username: string): Promise<void> {
+    const sheet = currentSheet.value;
+    if (!sheet) return;
+    error.value = null;
+    try {
+      const view = await api.del<SheetView>(
+        `/listies/sheets/${sheet.id}/share/${username}`,
+      );
+      applyView(view, true);
+      syncSummary(view);
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  async function stopSharing(): Promise<void> {
+    const sheet = currentSheet.value;
+    if (!sheet) return;
+    error.value = null;
+    try {
+      const view = await api.del<SheetView>(
+        `/listies/sheets/${sheet.id}/share`,
+      );
+      applyView(view, true); // now private
+      subscribeToSheet(view.id); // not shared → tears the channel down
+      syncSummary(view);
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  /** Leave the open sheet: tear down the live stream and clear its state. */
+  function closeSheet(): void {
+    closeSubscription();
+    currentSheet.value = null;
+    activeTabId.value = null;
+    shared.value = false;
+    owner.value = null;
+    members.value = null;
+    rev.value = 0;
+    canManage.value = false;
+    closedReason.value = null;
   }
 
   async function addRow(cells: Record<string, CellValue> = {}): Promise<void> {
@@ -176,6 +380,9 @@ export const useListiesStore = defineStore("listies", () => {
     applyCell(row, columnId, value);
 
     error.value = null;
+    // Count this write as in flight so a live refetch cannot stomp the value I
+    // am applying; a refetch that arrives meanwhile is deferred until it lands.
+    inFlightCellWrites += 1;
     try {
       const updated = await api.put<Row>(
         `/listies/sheets/${sheet.id}/tabs/${tab.id}/rows/${rowId}`,
@@ -185,6 +392,12 @@ export const useListiesStore = defineStore("listies", () => {
     } catch (e) {
       applyCell(row, columnId, previous);
       error.value = e instanceof Error ? e.message : String(e);
+    } finally {
+      inFlightCellWrites -= 1;
+      if (inFlightCellWrites === 0 && reconcilePending) {
+        reconcilePending = false;
+        if (currentSheet.value) void reconcile(currentSheet.value.id);
+      }
     }
   }
 
@@ -483,6 +696,18 @@ export const useListiesStore = defineStore("listies", () => {
     activeTabId,
     activeTab,
     fetchSheet,
+    closeSheet,
+    reconcile,
+    shared,
+    owner,
+    members,
+    rev,
+    canManage,
+    closedReason,
+    fetchUsers,
+    shareSheet,
+    removeMember,
+    stopSharing,
     addRow,
     commitCell,
     setActiveTab,

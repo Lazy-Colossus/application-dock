@@ -72,12 +72,30 @@ export interface Sheet {
   tabs: Tab[];
 }
 
+/**
+ * A sheet plus its collaboration state, as `GET /sheets/{id}` returns it
+ * (Story 5.1). A superset of `Sheet`: a private sheet reports `shared: false`
+ * and omits member data; a shared one carries owner/members/rev and
+ * `can_manage` (true only for the owner).
+ */
+export interface SheetView extends Sheet {
+  shared: boolean;
+  owner?: string | null;
+  members?: string[] | null;
+  rev?: number | null;
+  can_manage?: boolean;
+}
+
 export interface SheetSummary {
   id: string;
   name: string;
   tab_count: number;
   row_count: number;
   created_at: string;
+  // Collaboration hints for the home list (Story 5.1). Absent/false on a
+  // private sheet; a shared sheet names its owner.
+  shared?: boolean;
+  owner?: string | null;
 }
 
 // A column as the user defines it before creation — the id and order are

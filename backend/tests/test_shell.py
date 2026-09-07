@@ -137,3 +137,18 @@ def test_kalendariq_router_is_mounted() -> None:
     from app.routers import kalendariq
 
     assert kalendariq.router.prefix == "/api/kalendariq"
+
+
+def test_list_apps_includes_question_of_the_day() -> None:
+    response = client.get("/api/apps")
+    qotd = next((a for a in response.json() if a["id"] == "question-of-the-day"), None)
+    assert qotd is not None
+    assert qotd["label"] == "Question of the Day"
+    assert qotd["icon"] == "help_center"
+    assert qotd["route"] == "/question-of-the-day"
+
+
+def test_qotd_router_is_mounted() -> None:
+    from app.routers import qotd
+
+    assert qotd.router.prefix == "/api/qotd"

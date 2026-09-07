@@ -5,9 +5,14 @@ user via `get_current_user`; the username selects the on-disk file (never taken
 from request input).
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+import asyncio
+import json
+from collections.abc import AsyncIterator, Awaitable, Callable
 
-from app.core.dependencies import get_current_user
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import StreamingResponse
+
+from app.core.dependencies import get_current_user, user_from_token
 from app.schemas.listies import (
     AddColumnRequest,
     CreateRowRequest,
@@ -17,14 +22,17 @@ from app.schemas.listies import (
     PlaceResult,
     ReorderColumnsRequest,
     Row,
+    ShareRequest,
     Sheet,
     SheetSummary,
+    SheetView,
     Tab,
     UpdateColumnRequest,
     UpdateRowRequest,
     UpdateSheetRequest,
     UpdateTabRequest,
 )
+from app.services import listies_events as events
 from app.services import listies_service as service
 from app.services import places_service
 
@@ -44,12 +52,12 @@ def create_sheet(req: CreateSheetRequest, current_user: str = Depends(get_curren
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
-@router.put("/sheets/{sheet_id}", response_model=Sheet)
+@router.put("/sheets/{sheet_id}", response_model=SheetView)
 def update_sheet(
     sheet_id: str,
     req: UpdateSheetRequest,
     current_user: str = Depends(get_current_user),
-) -> Sheet:
+) -> SheetView:
     # PUT (not PATCH) to match the frontend `useApi` boundary, which exposes
     # get/post/put/del only — consistent with the other apps.
     if req.name is None:
@@ -68,14 +76,128 @@ def delete_sheet(sheet_id: str, current_user: str = Depends(get_current_user)) -
         service.delete_sheet(current_user, sheet_id)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Sheet not found") from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
-@router.get("/sheets/{sheet_id}", response_model=Sheet)
-def get_sheet(sheet_id: str, current_user: str = Depends(get_current_user)) -> Sheet:
+@router.get("/sheets/{sheet_id}", response_model=SheetView)
+def get_sheet(sheet_id: str, current_user: str = Depends(get_current_user)) -> SheetView:
     try:
         return service.get_sheet(current_user, sheet_id)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Sheet not found") from exc
+
+
+# ── sharing (Story 5.1) ─────────────────────────────────────────────────────────
+
+
+@router.post("/sheets/{sheet_id}/share", response_model=SheetView)
+def share_sheet(
+    sheet_id: str,
+    req: ShareRequest,
+    current_user: str = Depends(get_current_user),
+) -> SheetView:
+    try:
+        return service.share_sheet(current_user, sheet_id, req.usernames)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Sheet not found") from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.delete("/sheets/{sheet_id}/share/{username}", response_model=SheetView)
+def remove_member(
+    sheet_id: str,
+    username: str,
+    current_user: str = Depends(get_current_user),
+) -> SheetView:
+    try:
+        return service.remove_member(current_user, sheet_id, username)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Sheet not found") from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.delete("/sheets/{sheet_id}/share", response_model=SheetView)
+def stop_sharing(sheet_id: str, current_user: str = Depends(get_current_user)) -> SheetView:
+    try:
+        return service.stop_sharing(current_user, sheet_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Sheet not found") from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+# ── live events / SSE (Story 5.2) ───────────────────────────────────────────────
+
+_KEEPALIVE_SECONDS = 15
+
+
+async def sse_frames(
+    sheet_id: str,
+    queue: "asyncio.Queue[dict]",
+    is_disconnected: Callable[[], Awaitable[bool]],
+    keepalive: float = _KEEPALIVE_SECONDS,
+) -> AsyncIterator[str]:
+    """Format a subscriber's queue as an SSE frame stream until disconnect.
+
+    Yields an opening comment, then one `data:` frame per event, with periodic
+    `: ping` keep-alives during idle so a proxy does not drop the connection.
+    Always unsubscribes in the `finally`. Factored out of the route so it can be
+    unit-tested without an (unbounded) HTTP stream.
+    """
+    try:
+        # An immediate comment opens the stream and flushes past proxies.
+        yield ": connected\n\n"
+        while True:
+            if await is_disconnected():
+                break
+            try:
+                event = await asyncio.wait_for(queue.get(), timeout=keepalive)
+            except TimeoutError:
+                yield ": ping\n\n"
+                continue
+            yield f"data: {json.dumps(event)}\n\n"
+            if events.is_stale(sheet_id, queue):
+                break  # overflowed — drop; the client resyncs on reconnect
+    finally:
+        events.unsubscribe(sheet_id, queue)
+
+
+@router.get("/sheets/{sheet_id}/events")
+async def sheet_events(
+    sheet_id: str,
+    request: Request,
+    token: str = Query(...),
+) -> StreamingResponse:
+    """Server-Sent Events stream for a shared sheet.
+
+    Authenticated via `?token=` because an `EventSource` cannot send an
+    `Authorization` header — verified with the same logic as the bearer path. A
+    caller who cannot access the sheet gets the same 404 as every other sheet
+    route, so the stream never reveals a sheet's existence.
+    """
+    username = user_from_token(token)  # 401 on a missing/invalid token
+    try:
+        service.get_sheet(username, sheet_id)  # membership gate → 404 if no access
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Sheet not found") from exc
+
+    queue = events.subscribe(sheet_id)
+    return StreamingResponse(
+        sse_frames(sheet_id, queue, request.is_disconnected),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # tell nginx not to buffer the stream
+        },
+    )
 
 
 @router.post("/sheets/{sheet_id}/tabs/{tab_id}/rows", response_model=Row)

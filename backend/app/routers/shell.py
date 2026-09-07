@@ -50,6 +50,12 @@ _APPS: list[AppDescriptor] = [
         icon="event_available",
         route="/kalendariq",
     ),
+    AppDescriptor(
+        id="question-of-the-day",
+        label="Question of the Day",
+        icon="help_center",
+        route="/question-of-the-day",
+    ),
 ]
 
 

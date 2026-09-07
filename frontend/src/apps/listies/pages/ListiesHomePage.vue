@@ -45,7 +45,16 @@
             @keyup.enter="saveRename(sheet.id)"
           />
           <template v-else>
-            <q-item-label>{{ sheet.name }}</q-item-label>
+            <q-item-label>
+              {{ sheet.name }}
+              <q-badge
+                v-if="sheet.shared"
+                color="primary"
+                class="q-ml-xs"
+                :label="sharedLabel(sheet)"
+                :data-testid="`shared-badge-${sheet.id}`"
+              />
+            </q-item-label>
             <q-item-label caption>
               {{ sheet.row_count }}
               {{ sheet.row_count === 1 ? "row" : "rows" }} ·
@@ -99,6 +108,15 @@
 
             <template v-else>
               <q-btn
+                v-if="isMine(sheet)"
+                dense
+                flat
+                round
+                icon="person_add"
+                :data-testid="`share-${sheet.id}`"
+                @click.stop="openShare(sheet.id)"
+              />
+              <q-btn
                 dense
                 flat
                 round
@@ -106,7 +124,9 @@
                 :data-testid="`rename-${sheet.id}`"
                 @click.stop="startRename(sheet)"
               />
+              <!-- Only the owner deletes a shared sheet; a member has no delete. -->
               <q-btn
+                v-if="isMine(sheet)"
                 dense
                 flat
                 round
@@ -129,18 +149,40 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import CreateSheetDialog from "@/apps/listies/components/CreateSheetDialog.vue";
 import { useListiesStore } from "@/apps/listies/stores/useListiesStore";
+import { useAuthStore } from "@/stores/useAuthStore";
 import type { ColumnSpec, SheetSummary } from "@/apps/listies/types";
 
 const store = useListiesStore();
+const auth = useAuthStore();
 const router = useRouter();
 const dialogOpen = ref(false);
 const renamingId = ref<string | null>(null);
 const renameDraft = ref("");
 const confirmingId = ref<string | null>(null);
+
+const me = computed(() => auth.username);
+
+// A private sheet is always mine; a shared sheet is "mine to manage" only when
+// I own it. Shared-with-me sheets show a "shared by {owner}" badge and no
+// share/delete controls.
+function isMine(sheet: SheetSummary): boolean {
+  return !sheet.shared || sheet.owner === me.value;
+}
+
+function sharedLabel(sheet: SheetSummary): string {
+  return sheet.owner && sheet.owner !== me.value
+    ? `shared by ${sheet.owner}`
+    : "shared";
+}
+
+function openShare(sheetId: string): void {
+  // Take the sharing surface to the sheet page, which opens the dialog.
+  void router.push(`/listies/sheets/${sheetId}?share=1`);
+}
 
 onMounted(() => {
   void store.fetchSheets();

@@ -42,4 +42,11 @@ export const apps: AppDescriptor[] = [
     icon: "event_available",
     route: "/kalendariq",
   },
+  {
+    id: "question-of-the-day",
+    label: "Question of the Day",
+    // A question-prompt glyph, distinct from the other apps' icons.
+    icon: "help_center",
+    route: "/question-of-the-day",
+  },
 ];

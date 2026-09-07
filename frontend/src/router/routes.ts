@@ -158,6 +158,26 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "Kalendariq", requiresAuth: true },
       },
       {
+        path: "question-of-the-day",
+        name: "qotd-home",
+        component: () =>
+          import("@/apps/question-of-the-day/pages/QotdHomePage.vue"),
+        meta: { title: "Question of the Day", requiresAuth: true },
+      },
+      {
+        path: "question-of-the-day/history",
+        name: "qotd-history",
+        component: () =>
+          import("@/apps/question-of-the-day/pages/HistoryPage.vue"),
+        meta: { title: "Past questions", requiresAuth: true },
+      },
+      {
+        path: "question-of-the-day/days/:date",
+        name: "qotd-day",
+        component: () => import("@/apps/question-of-the-day/pages/DayPage.vue"),
+        meta: { title: "Past question", requiresAuth: true },
+      },
+      {
         // The invitee link. Deliberately NOT `requiresAuth`: an invitee arrives
         // from a group chat with no account, and bouncing them to a login they
         // cannot pass would be the whole feature failing. The token in the path

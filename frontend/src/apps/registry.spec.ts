@@ -41,4 +41,12 @@ describe("app registry", () => {
     expect(cs?.icon).toBe("swap_horiz");
     expect(cs?.route).toBe("/context-switch");
   });
+
+  it("registers the Question of the Day app (Story 1.1)", () => {
+    const qotd = apps.find((a) => a.id === "question-of-the-day");
+    expect(qotd).toBeDefined();
+    expect(qotd?.label).toBe("Question of the Day");
+    expect(qotd?.icon).toBe("help_center");
+    expect(qotd?.route).toBe("/question-of-the-day");
+  });
 });
