@@ -4,7 +4,16 @@ from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.routers import archery, auth, context_switch, hotaru, kdh, listies, qotd, shell
+from app.routers import (
+    archery,
+    auth,
+    context_switch,
+    hotaru,
+    kalendariq,
+    listies,
+    qotd,
+    shell,
+)
 
 app = FastAPI(title="Application Dock")
 
@@ -22,9 +31,9 @@ app.include_router(shell.router)
 app.include_router(hotaru.router)
 app.include_router(context_switch.router)
 app.include_router(listies.router)
-app.include_router(kdh.router)
-# Unauthenticated by design — the invitee link. See the note in routers/kdh.py.
-app.include_router(kdh.share_router)
+app.include_router(kalendariq.router)
+# Unauthenticated by design — the invitee link. See the note in routers/kalendariq.py.
+app.include_router(kalendariq.share_router)
 app.include_router(qotd.router)
 app.include_router(archery.router)
 

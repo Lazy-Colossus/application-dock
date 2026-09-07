@@ -26,12 +26,12 @@ describe("app registry", () => {
     expect(listies?.route).toBe("/listies");
   });
 
-  it("registers the KDH app (Story 1.1)", () => {
-    const kdh = apps.find((a) => a.id === "kdh");
-    expect(kdh).toBeDefined();
-    expect(kdh?.label).toBe("KDH");
-    expect(kdh?.icon).toBe("event_available");
-    expect(kdh?.route).toBe("/kdh");
+  it("registers the Kalendariq app (Story 1.1)", () => {
+    const kalendariq = apps.find((a) => a.id === "kalendariq");
+    expect(kalendariq).toBeDefined();
+    expect(kalendariq?.label).toBe("Kalendariq");
+    expect(kalendariq?.icon).toBe("event_available");
+    expect(kalendariq?.route).toBe("/kalendariq");
   });
 
   it("registers the Context-Switch app (Story 1.1)", () => {

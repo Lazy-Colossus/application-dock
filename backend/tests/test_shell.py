@@ -124,19 +124,19 @@ def test_listies_router_is_mounted() -> None:
     assert listies.router.prefix == "/api/listies"
 
 
-def test_list_apps_includes_kdh() -> None:
+def test_list_apps_includes_kalendariq() -> None:
     response = client.get("/api/apps")
-    kdh = next((a for a in response.json() if a["id"] == "kdh"), None)
-    assert kdh is not None
-    assert kdh["label"] == "KDH"
-    assert kdh["icon"] == "event_available"
-    assert kdh["route"] == "/kdh"
+    kalendariq = next((a for a in response.json() if a["id"] == "kalendariq"), None)
+    assert kalendariq is not None
+    assert kalendariq["label"] == "Kalendariq"
+    assert kalendariq["icon"] == "event_available"
+    assert kalendariq["route"] == "/kalendariq"
 
 
-def test_kdh_router_is_mounted() -> None:
-    from app.routers import kdh
+def test_kalendariq_router_is_mounted() -> None:
+    from app.routers import kalendariq
 
-    assert kdh.router.prefix == "/api/kdh"
+    assert kalendariq.router.prefix == "/api/kalendariq"
 
 
 def test_list_apps_includes_question_of_the_day() -> None:
