@@ -1,11 +1,21 @@
 """Tests for the offline Hotaru seed builder (Story 1.1)."""
 
 import json
+from collections import Counter
 from pathlib import Path
 
 import pytest
 
-from scripts.build_hotaru_seed import build_seed, check_unique, drill_caps
+from scripts.build_hotaru_seed import (
+    build_all,
+    build_kaishi,
+    build_seed,
+    check_unique,
+    drill_caps,
+    kaishi_kanji,
+    kaishi_lesson,
+    to_romaji,
+)
 
 SAMPLE = [
     {
@@ -126,3 +136,122 @@ def test_committed_seed_file_is_valid() -> None:
         assert len(w["drill_caps"]) >= 2
         assert ("k2r" in w["drill_caps"]) == (w["kanji"] is not None)
         assert w["visibility"] == "shared"
+
+
+KAISHI_SAMPLE = [
+    {
+        "order": 1,
+        "word": "私",
+        "reading": "わたし",
+        "meaning": "I (polite, general)",
+        "type": "noun",
+    },
+    {"order": 2, "word": "あなた", "reading": "あなた", "meaning": "you", "type": "noun"},
+    {"order": 100, "word": "学校", "reading": "がっこう", "meaning": "school", "type": "noun"},
+    {"order": 101, "word": "パン", "reading": "ぱん", "meaning": "bread", "type": "noun"},
+]
+
+
+@pytest.mark.parametrize(
+    ("reading", "expected"),
+    [
+        ("わたし", "watashi"),
+        ("がっこう", "gakkou"),  # sokuon doubles the next consonant
+        ("とっち", "totchi"),  # ...but っち is "tchi", not "cchi"
+        ("しゃしん", "shashin"),  # digraph
+        ("こんにちは", "konnichiha"),  # は transliterated as written, not as the particle
+        ("テレビ", "terebi"),  # katakana folds onto the same table
+        ("コンピューター", "konpyuutaa"),  # ー repeats the preceding vowel
+        ("なに・なん", "nani・nan"),  # alternate readings keep their separator
+        ("いっ", "i"),  # a counter stem's dangling っ doubles nothing
+    ],
+)
+def test_to_romaji(reading: str, expected: str) -> None:
+    assert to_romaji(reading) == expected
+
+
+def test_kaishi_kanji_only_when_the_surface_form_has_kanji() -> None:
+    assert kaishi_kanji("私") == "私"
+    assert kaishi_kanji("パン") is None  # katakana word, reading ぱん
+    assert kaishi_kanji("あなた") is None
+
+
+@pytest.mark.parametrize(
+    ("order", "lesson"),
+    [(1, "1-100"), (100, "1-100"), (101, "101-200"), (1500, "1401-1500")],
+)
+def test_kaishi_lesson_bands(order: int, lesson: str) -> None:
+    assert kaishi_lesson(order) == lesson
+
+
+def test_kaishi_field_mapping_and_id_format() -> None:
+    words = {w["reading"]: w for w in build_kaishi(KAISHI_SAMPLE)}
+    watashi = words["わたし"]
+    assert watashi["id"] == "kaishi-1-100-0001"
+    assert watashi["source"] == "kaishi"
+    assert watashi["kanji"] == "私"
+    assert watashi["romaji"] == "watashi"
+    assert watashi["meaning"] == "I (polite, general)"
+    assert watashi["lesson"] == "1-100"
+    assert watashi["visibility"] == "shared"
+    assert watashi["drill_caps"] == ["r2m", "m2r", "k2r"]
+    # `type` carries through as `pos`, the way a Genki row's does.
+    assert watashi["pos"] == "noun"
+
+
+def test_kaishi_seq_restarts_in_each_band() -> None:
+    ids = {w["id"] for w in build_kaishi(KAISHI_SAMPLE)}
+    assert ids == {
+        "kaishi-1-100-0001",
+        "kaishi-1-100-0002",
+        "kaishi-1-100-0003",
+        "kaishi-101-200-0001",
+    }
+
+
+def test_kaishi_pos_comes_from_the_row_and_is_not_invented() -> None:
+    # The derivation lives in derive_kaishi_pos.py; a row that has not been through
+    # it arrives here blank, and the builder leaves it that way.
+    row = {"order": 1, "word": "空気", "reading": "くうき", "meaning": "air"}
+    assert build_kaishi([row])[0]["pos"] == ""
+
+
+def test_kaishi_ids_follow_deck_order_not_row_order() -> None:
+    assert build_kaishi(KAISHI_SAMPLE) == build_kaishi(list(reversed(KAISHI_SAMPLE)))
+
+
+def test_build_all_combines_sources_with_unique_ids() -> None:
+    seed = build_all(SAMPLE, KAISHI_SAMPLE)
+    assert seed["schema_version"] == 1
+    sources = {w["source"] for w in seed["words"]}
+    assert sources == {"genki_3", "kaishi"}
+    ids = [w["id"] for w in seed["words"]]
+    assert len(ids) == len(set(ids))
+
+
+def test_committed_seed_ships_both_sources() -> None:
+    seed = json.loads(_SEED_FILE.read_text(encoding="utf-8"))
+    counts = Counter(w["source"] for w in seed["words"])
+    assert counts["genki_3"] > 0
+    assert counts["kaishi"] > 0
+
+
+def test_every_seeded_kaishi_word_has_a_part_of_speech() -> None:
+    seed = json.loads(_SEED_FILE.read_text(encoding="utf-8"))
+    kaishi = [w for w in seed["words"] if w["source"] == "kaishi"]
+    known = {
+        "u-verb",
+        "ru-verb",
+        "irregular-verb",
+        "i-adjective",
+        "na-adjective",
+        "noun",
+        "adverb",
+        "expression",
+        "prefix",
+        "suffix",
+        "particle",
+    }
+    assert {w["pos"] for w in kaishi} <= known
+    # Rules, then hand-read judgements, then the noun default: nothing is left over.
+    assert all(w["pos"] for w in kaishi)

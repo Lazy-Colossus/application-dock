@@ -25,13 +25,16 @@ export interface UpdateWordInput {
   visibility?: Visibility;
 }
 
-// Order lessons for the filter tabs: "G" (greetings/intro) first, then L1..L9
-// by numeric order. Any other code sorts alphabetically after these.
+// Order lessons for the filter tabs: "G" (greetings/intro) first, then L1..L9 by
+// numeric order, then frequency bands ("1-100", "101-200") by where they start --
+// as text those would read 1-100, 1001-1100, 101-200. Anything else sorts last.
 function lessonRank(lesson: string): [number, number, string] {
   if (lesson === "G") return [0, 0, ""];
-  const m = /^L(\d+)$/.exec(lesson);
-  if (m) return [1, Number(m[1]), ""];
-  return [2, 0, lesson];
+  const textbook = /^L(\d+)$/.exec(lesson);
+  if (textbook) return [1, Number(textbook[1]), ""];
+  const band = /^(\d+)-\d+$/.exec(lesson);
+  if (band) return [2, Number(band[1]), ""];
+  return [3, 0, lesson];
 }
 
 function sortLessons(values: string[]): string[] {

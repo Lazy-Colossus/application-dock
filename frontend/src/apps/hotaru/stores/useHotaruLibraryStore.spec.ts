@@ -72,6 +72,18 @@ describe("useHotaruLibraryStore", () => {
     expect(store.lessons).toEqual(["G", "L1", "L2", "L10"]);
   });
 
+  it("orders frequency bands by where they start, after textbook lessons", async () => {
+    getMock.mockResolvedValueOnce([
+      word("a", "1001-1100"),
+      word("b", "101-200"),
+      word("c", "1-100"),
+      word("d", "L1"),
+    ]);
+    const store = useHotaruLibraryStore();
+    await store.loadWords();
+    expect(store.lessons).toEqual(["L1", "1-100", "101-200", "1001-1100"]);
+  });
+
   it("wordsByLesson filters to the given lesson", async () => {
     getMock.mockResolvedValueOnce([
       word("a", "L1"),
