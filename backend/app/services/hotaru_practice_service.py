@@ -7,6 +7,7 @@ due-count/overdue/next_review_at.
 
 from __future__ import annotations
 
+import random
 from datetime import UTC, datetime
 
 from app.repositories import progress_repo
@@ -89,6 +90,7 @@ def build_queue(
     limit: int = DEFAULT_SESSION_SIZE,
     lessons: list[str] | None = None,
     tiers: list[int] | None = None,
+    rng: random.Random | None = None,
 ) -> list[QueueItem]:
     """Build an ordered, soft-capped drill queue for a scope.
 
@@ -97,13 +99,20 @@ def build_queue(
     the first `limit` are returned. "Due" only orders the queue — it never
     leaves the API (queue-not-debt).
 
+    That order *selects* the session; it does not present it. The chosen cards are
+    then shuffled, because a queue whose sequence never changes can be learned as
+    a sequence — recognising the seventh card by what preceded it rather than by
+    the word. So which words you get is principled, and the order you meet them
+    in is not predictable.
+
     Optional `lessons`/`tiers` narrow the set further (Quick Practice, Story
     2.9): keep only words in those lessons and/or at those familiarity tiers (an
     unreviewed word counts as tier 0). Both default `None` (no extra filtering),
     so a normal scoped drill is unaffected.
 
-    `now` is injected here (defaulting to the current UTC time) so the pure
-    `srs` engine stays clock-free; tests pass a fixed `now`.
+    `now` and `rng` are both injected (defaulting to the current UTC time and a
+    fresh `Random`) so the pure `srs` engine stays clock-free and the shuffle is
+    reproducible; tests pass a fixed `now` and a seeded `rng`.
     """
     now = now or datetime.now(UTC)
     words = [w for w in _words_for_scope(scope, user) if direction in w.drill_caps]
@@ -123,7 +132,10 @@ def build_queue(
 
     ordered = sorted(words, key=sort_key)
     # limit <= 0 means "no cap" (Quick Practice's "All"); otherwise soft-cap.
-    capped = ordered if limit <= 0 else ordered[:limit]
+    capped = list(ordered) if limit <= 0 else ordered[:limit]
+    # After the cap, never before it: the cap has to fall on the words that most
+    # need review, and only then does the order stop mattering.
+    (rng or random.Random()).shuffle(capped)
     # Attach each card's privacy-filtered notes (shared + this user's own private)
     # so the drill renders them without a second fetch (Story 3.3, FR-24). Batched
     # over just the capped words — one read of each notes file, not one per card.

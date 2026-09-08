@@ -90,6 +90,43 @@
                 }}</span>
               </button>
             </div>
+            <div class="practice-group-label">Familiarity</div>
+            <div class="practice-chips row items-center q-gutter-xs q-mb-sm">
+              <button
+                v-for="p in FAMILIARITY_PRESETS"
+                :key="p.key"
+                class="practice-chip"
+                :class="{ 'practice-chip--active': scopePreset === p.key }"
+                :data-testid="`scope-fam-${p.key}`"
+                @click="scopePreset = p.key"
+              >
+                {{ p.label }}
+              </button>
+            </div>
+
+            <div class="practice-group-label">Words per session</div>
+            <div class="practice-chips row items-center q-gutter-xs q-mb-sm">
+              <button
+                v-for="opt in COUNT_OPTIONS"
+                :key="opt.value"
+                class="practice-chip"
+                :class="{ 'practice-chip--active': scopeCount === opt.value }"
+                :data-testid="`scope-count-${opt.value}`"
+                @click="scopeCount = opt.value"
+              >
+                {{ opt.label }}
+              </button>
+            </div>
+
+            <div
+              class="quick__count q-mb-sm"
+              :class="{ 'quick__count--empty': scopeSessionCount === 0 }"
+              data-testid="scope-session-count"
+            >
+              {{ scopeSessionCount }}
+              {{ scopeSessionCount === 1 ? "word" : "words" }}
+            </div>
+
             <PracticeDirectionScoring
               v-model:direction="direction"
               v-model:mode="mode"
@@ -177,6 +214,43 @@
                 }}</span>
               </button>
             </div>
+            <div class="practice-group-label">Familiarity</div>
+            <div class="practice-chips row items-center q-gutter-xs q-mb-sm">
+              <button
+                v-for="p in FAMILIARITY_PRESETS"
+                :key="p.key"
+                class="practice-chip"
+                :class="{ 'practice-chip--active': scopePreset === p.key }"
+                :data-testid="`scope-fam-${p.key}`"
+                @click="scopePreset = p.key"
+              >
+                {{ p.label }}
+              </button>
+            </div>
+
+            <div class="practice-group-label">Words per session</div>
+            <div class="practice-chips row items-center q-gutter-xs q-mb-sm">
+              <button
+                v-for="opt in COUNT_OPTIONS"
+                :key="opt.value"
+                class="practice-chip"
+                :class="{ 'practice-chip--active': scopeCount === opt.value }"
+                :data-testid="`scope-count-${opt.value}`"
+                @click="scopeCount = opt.value"
+              >
+                {{ opt.label }}
+              </button>
+            </div>
+
+            <div
+              class="quick__count q-mb-sm"
+              :class="{ 'quick__count--empty': scopeSessionCount === 0 }"
+              data-testid="scope-session-count"
+            >
+              {{ scopeSessionCount }}
+              {{ scopeSessionCount === 1 ? "word" : "words" }}
+            </div>
+
             <PracticeDirectionScoring
               v-model:direction="direction"
               v-model:mode="mode"
@@ -415,7 +489,9 @@ function openInLibrary(tier: number): void {
   );
 }
 
-// --- Quick Practice (Story 2.9): build a session from the whole list -------
+// --- Session shaping: familiarity + words-per-session ---------------------
+// Shared by Quick Practice (Story 2.9) and by a scoped lesson/topic drill, which
+// needs them just as much: a 100-word Kaishi band is several sittings, not one.
 // Each familiarity preset maps to a tier set (null = any tier). New = tier 0.
 const FAMILIARITY_PRESETS: {
   key: string;
@@ -451,6 +527,29 @@ const COUNT_OPTIONS: { label: string; value: number }[] = [
   { label: "100", value: 100 },
 ];
 const countValue = ref(0);
+
+// Scoped drills: "All" familiarity and the server's own session size, so the
+// defaults launch exactly the drill this screen launched before the controls
+// existed. `limit` 0 means no cap.
+const scopePreset = ref("all");
+const scopeCount = ref(20);
+
+const scopeTiers = computed<number[] | null>(
+  () =>
+    FAMILIARITY_PRESETS.find((p) => p.key === scopePreset.value)?.tiers ?? null,
+);
+
+// What the chosen settings would actually deal out of the selected scope. The
+// launched queue is still the server's authoritative set; this is the preview
+// that answers "how much am I taking on" before starting.
+const scopeSessionCount = computed(() => {
+  const tiers = scopeTiers.value;
+  const words = wordsForScope(selected.value);
+  const matching = tiers
+    ? words.filter((w) => tiers.includes(store.familiarityTier(w.id))).length
+    : words.length;
+  return scopeCount.value > 0 ? Math.min(matching, scopeCount.value) : matching;
+});
 
 const quickTiers = computed<number[] | null>(
   () =>
@@ -568,11 +667,17 @@ function scopeLabel(scope: string): string {
 
 function startDrill(): void {
   if (selected.value === null) return;
-  const q =
-    `scope=${encodeURIComponent(selected.value)}` +
-    `&label=${encodeURIComponent(scopeLabel(selected.value))}` +
-    `&direction=${direction.value}&mode=${mode.value}`;
-  void router.push(`/hotaru/drill?${q}`);
+  const parts = [
+    `scope=${encodeURIComponent(selected.value)}`,
+    `label=${encodeURIComponent(scopeLabel(selected.value))}`,
+    `direction=${direction.value}`,
+    `mode=${mode.value}`,
+  ];
+  const tiers = scopeTiers.value;
+  if (tiers) parts.push(`tiers=${tiers.join(",")}`);
+  // Words-per-session: 0 = All (no cap) on the backend.
+  parts.push(`limit=${scopeCount.value}`);
+  void router.push(`/hotaru/drill?${parts.join("&")}`);
 }
 
 // Study is the un-graded browse — just carry the scope, no direction/mode.

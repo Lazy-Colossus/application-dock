@@ -1,3 +1,4 @@
+import random
 from datetime import UTC, datetime
 
 from fastapi.testclient import TestClient
@@ -5,6 +6,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.repositories import progress_repo
 from app.schemas.hotaru import ProgressEntry
+from app.services import hotaru_practice_service
 
 client = TestClient(app)
 
@@ -209,16 +211,56 @@ def _queue_ids(scope: str, user: str = "dani", direction: str | None = None) -> 
     return [it["word"]["id"] for it in _queue(scope, user, direction).json()]
 
 
-def test_queue_orders_weakest_tier_first() -> None:
+def test_queue_selects_the_weakest_tier_first() -> None:
     tid = _create_topic("Q-order")
     strong = _make_word({"reading": "つよい", "meaning": "strong"})
     fresh = _make_word({"reading": "あたらしい", "meaning": "new"})
     _assign(tid, strong)
     _assign(tid, fresh)
-    # strong is Mastered; fresh is never-reviewed (tier 0) → fresh must come first.
+    # strong is Mastered; fresh is never-reviewed (tier 0) → fresh is the one worth
+    # reviewing. Asserted through the cap rather than through position, because the
+    # session is shuffled once chosen: selection is ordered, presentation is not.
     progress_repo.set_entry("dani", strong, ProgressEntry(tier=4, points=0, last_reviewed_at=NOW))
-    ids = _queue_ids(f"topic:{tid}")
-    assert ids.index(fresh) < ids.index(strong)
+    one = client.get(
+        "/api/hotaru/practice/queue",
+        params={"scope": f"topic:{tid}", "user": "dani", "limit": 1},
+    ).json()
+    assert [it["word"]["id"] for it in one] == [fresh]
+
+
+def test_queue_shuffles_the_chosen_session() -> None:
+    # A queue whose sequence never changes can be learned as a sequence, so the
+    # cards are shuffled once selected. Called directly with a seeded Random,
+    # the way `now` is injected, so the assertion is not a coin flip.
+    tid = _create_topic("Q-shuffle")
+    for i in range(12):
+        _assign(tid, _make_word({"reading": f"し{i}", "meaning": f"m{i}"}))
+
+    def ids(seed: int) -> list[str]:
+        queue = hotaru_practice_service.build_queue(
+            scope=f"topic:{tid}", user="dani", rng=random.Random(seed)
+        )
+        return [item.word.id for item in queue]
+
+    first, second = ids(1), ids(2)
+    # The same session either way — only the order it is dealt in differs.
+    assert set(first) == set(second)
+    assert first != second
+    # And a given seed is reproducible.
+    assert ids(1) == first
+
+
+def test_queue_shuffle_never_costs_a_word() -> None:
+    # The shuffle happens after the cap, so it can neither drop a card nor pull in
+    # one the cap excluded.
+    tid = _create_topic("Q-shuffle-cap")
+    for i in range(30):
+        _assign(tid, _make_word({"reading": f"ふ{i}", "meaning": f"m{i}"}))
+    queue = hotaru_practice_service.build_queue(
+        scope=f"topic:{tid}", user="dani", limit=7, rng=random.Random(3)
+    )
+    assert len(queue) == 7
+    assert len({item.word.id for item in queue}) == 7
 
 
 def test_queue_soft_caps_at_20() -> None:

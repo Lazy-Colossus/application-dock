@@ -1,0 +1,10502 @@
+[
+ {
+  "order": 1,
+  "word": "私",
+  "reading": "わたし",
+  "meaning": "I (polite, general)",
+  "type": "noun"
+ },
+ {
+  "order": 2,
+  "word": "あなた",
+  "reading": "あなた",
+  "meaning": "you (usually when one doesn't know the person)",
+  "type": "noun"
+ },
+ {
+  "order": 3,
+  "word": "さん",
+  "reading": "さん",
+  "meaning": "san",
+  "type": "suffix"
+ },
+ {
+  "order": 4,
+  "word": "彼",
+  "reading": "かれ",
+  "meaning": "he, him",
+  "type": "noun"
+ },
+ {
+  "order": 5,
+  "word": "好き",
+  "reading": "すき",
+  "meaning": "fond of, liked",
+  "type": "na-adjective"
+ },
+ {
+  "order": 6,
+  "word": "人",
+  "reading": "ひと",
+  "meaning": "person",
+  "type": "noun"
+ },
+ {
+  "order": 7,
+  "word": "いい",
+  "reading": "いい",
+  "meaning": "good",
+  "type": "i-adjective"
+ },
+ {
+  "order": 8,
+  "word": "人",
+  "reading": "じん",
+  "meaning": "person from (nationality)",
+  "type": "suffix"
+ },
+ {
+  "order": 9,
+  "word": "日本語",
+  "reading": "にほんご",
+  "meaning": "Japanese language",
+  "type": "noun"
+ },
+ {
+  "order": 10,
+  "word": "勉強",
+  "reading": "べんきょう",
+  "meaning": "study",
+  "type": "noun"
+ },
+ {
+  "order": 11,
+  "word": "本",
+  "reading": "ほん",
+  "meaning": "book",
+  "type": "noun"
+ },
+ {
+  "order": 12,
+  "word": "これ",
+  "reading": "これ",
+  "meaning": "this",
+  "type": "noun"
+ },
+ {
+  "order": 13,
+  "word": "何",
+  "reading": "なに・なん",
+  "meaning": "what",
+  "type": "noun"
+ },
+ {
+  "order": 14,
+  "word": "それ",
+  "reading": "それ",
+  "meaning": "that",
+  "type": "noun"
+ },
+ {
+  "order": 15,
+  "word": "あれ",
+  "reading": "あれ",
+  "meaning": "that over there",
+  "type": "noun"
+ },
+ {
+  "order": 16,
+  "word": "どれ",
+  "reading": "どれ",
+  "meaning": "which, what",
+  "type": "noun"
+ },
+ {
+  "order": 17,
+  "word": "毎日",
+  "reading": "まいにち",
+  "meaning": "every day",
+  "type": "noun"
+ },
+ {
+  "order": 18,
+  "word": "兄",
+  "reading": "あに",
+  "meaning": "older brother",
+  "type": "noun"
+ },
+ {
+  "order": 19,
+  "word": "いる",
+  "reading": "いる",
+  "meaning": "to have, to exist (animate)",
+  "type": "u-verb"
+ },
+ {
+  "order": 20,
+  "word": "ある",
+  "reading": "ある",
+  "meaning": "to have, to exist (inanimate)",
+  "type": "u-verb"
+ },
+ {
+  "order": 21,
+  "word": "あまり",
+  "reading": "あまり",
+  "meaning": "(not) very, (not) much",
+  "type": "adverb"
+ },
+ {
+  "order": 22,
+  "word": "今",
+  "reading": "いま",
+  "meaning": "now",
+  "type": "adverb"
+ },
+ {
+  "order": 23,
+  "word": "時間",
+  "reading": "じかん",
+  "meaning": "time, hour",
+  "type": "noun"
+ },
+ {
+  "order": 24,
+  "word": "無い",
+  "reading": "ない",
+  "meaning": "nonexistent, not being",
+  "type": "i-adjective"
+ },
+ {
+  "order": 25,
+  "word": "この",
+  "reading": "この",
+  "meaning": "this one",
+  "type": "prefix"
+ },
+ {
+  "order": 26,
+  "word": "その",
+  "reading": "その",
+  "meaning": "that one",
+  "type": "prefix"
+ },
+ {
+  "order": 27,
+  "word": "あの",
+  "reading": "あの",
+  "meaning": "that one there",
+  "type": "prefix"
+ },
+ {
+  "order": 28,
+  "word": "どの",
+  "reading": "どの",
+  "meaning": "which one",
+  "type": "prefix"
+ },
+ {
+  "order": 29,
+  "word": "見る",
+  "reading": "みる",
+  "meaning": "to see, to look at",
+  "type": "ru-verb"
+ },
+ {
+  "order": 30,
+  "word": "全然",
+  "reading": "ぜんぜん",
+  "meaning": "(not) at all",
+  "type": "adverb"
+ },
+ {
+  "order": 31,
+  "word": "面白い",
+  "reading": "おもしろい",
+  "meaning": "interesting, amusing",
+  "type": "i-adjective"
+ },
+ {
+  "order": 32,
+  "word": "する",
+  "reading": "する",
+  "meaning": "to do, to make",
+  "type": "irregular-verb"
+ },
+ {
+  "order": 33,
+  "word": "なる",
+  "reading": "なる",
+  "meaning": "to become, to result in, to come (to do)",
+  "type": "u-verb"
+ },
+ {
+  "order": 34,
+  "word": "先生",
+  "reading": "せんせい",
+  "meaning": "teacher",
+  "type": "noun"
+ },
+ {
+  "order": 35,
+  "word": "ください",
+  "reading": "ください",
+  "meaning": "please give..., please do...",
+  "type": "expression"
+ },
+ {
+  "order": 36,
+  "word": "名前",
+  "reading": "なまえ",
+  "meaning": "name",
+  "type": "noun"
+ },
+ {
+  "order": 37,
+  "word": "教える",
+  "reading": "おしえる",
+  "meaning": "to teach, to tell",
+  "type": "ru-verb"
+ },
+ {
+  "order": 38,
+  "word": "ここ",
+  "reading": "ここ",
+  "meaning": "here",
+  "type": "noun"
+ },
+ {
+  "order": 39,
+  "word": "そこ",
+  "reading": "そこ",
+  "meaning": "there",
+  "type": "noun"
+ },
+ {
+  "order": 40,
+  "word": "あそこ",
+  "reading": "あそこ",
+  "meaning": "over there",
+  "type": "noun"
+ },
+ {
+  "order": 41,
+  "word": "どこ",
+  "reading": "どこ",
+  "meaning": "where",
+  "type": "noun"
+ },
+ {
+  "order": 42,
+  "word": "置く",
+  "reading": "おく",
+  "meaning": "to put, to place",
+  "type": "u-verb"
+ },
+ {
+  "order": 43,
+  "word": "家",
+  "reading": "いえ",
+  "meaning": "house, home",
+  "type": "noun"
+ },
+ {
+  "order": 44,
+  "word": "帰る",
+  "reading": "かえる",
+  "meaning": "to return, to go back",
+  "type": "u-verb"
+ },
+ {
+  "order": 45,
+  "word": "話",
+  "reading": "はなし",
+  "meaning": "talk, story",
+  "type": "noun"
+ },
+ {
+  "order": 46,
+  "word": "知る",
+  "reading": "しる",
+  "meaning": "to know",
+  "type": "u-verb"
+ },
+ {
+  "order": 47,
+  "word": "彼女",
+  "reading": "かのじょ",
+  "meaning": "she, her, girlfriend",
+  "type": "noun"
+ },
+ {
+  "order": 48,
+  "word": "ちゃん",
+  "reading": "ちゃん",
+  "meaning": "chan",
+  "type": "suffix"
+ },
+ {
+  "order": 49,
+  "word": "はい",
+  "reading": "はい",
+  "meaning": "yes (polite)",
+  "type": "expression"
+ },
+ {
+  "order": 50,
+  "word": "いいえ",
+  "reading": "いいえ",
+  "meaning": "no (polite)",
+  "type": "expression"
+ },
+ {
+  "order": 51,
+  "word": "日本",
+  "reading": "にほん",
+  "meaning": "Japan",
+  "type": "noun"
+ },
+ {
+  "order": 52,
+  "word": "学校",
+  "reading": "がっこう",
+  "meaning": "school",
+  "type": "noun"
+ },
+ {
+  "order": 53,
+  "word": "行く",
+  "reading": "いく",
+  "meaning": "to go",
+  "type": "u-verb"
+ },
+ {
+  "order": 54,
+  "word": "明日",
+  "reading": "あした",
+  "meaning": "tomorrow",
+  "type": "noun"
+ },
+ {
+  "order": 55,
+  "word": "来る",
+  "reading": "くる",
+  "meaning": "to come",
+  "type": "irregular-verb"
+ },
+ {
+  "order": 56,
+  "word": "また",
+  "reading": "また",
+  "meaning": "again, also",
+  "type": "adverb"
+ },
+ {
+  "order": 57,
+  "word": "いつ",
+  "reading": "いつ",
+  "meaning": "when",
+  "type": "noun"
+ },
+ {
+  "order": 58,
+  "word": "思う",
+  "reading": "おもう",
+  "meaning": "to think",
+  "type": "u-verb"
+ },
+ {
+  "order": 59,
+  "word": "こう",
+  "reading": "こう",
+  "meaning": "like this, this kind of",
+  "type": "adverb"
+ },
+ {
+  "order": 60,
+  "word": "そう",
+  "reading": "そう",
+  "meaning": "in such manner, that way",
+  "type": "adverb"
+ },
+ {
+  "order": 61,
+  "word": "どう",
+  "reading": "どう",
+  "meaning": "how, what",
+  "type": "adverb"
+ },
+ {
+  "order": 62,
+  "word": "会う",
+  "reading": "あう",
+  "meaning": "to meet",
+  "type": "u-verb"
+ },
+ {
+  "order": 63,
+  "word": "次",
+  "reading": "つぎ",
+  "meaning": "next, subsequent",
+  "type": "noun"
+ },
+ {
+  "order": 64,
+  "word": "方",
+  "reading": "ほう",
+  "meaning": "direction, side",
+  "type": "noun"
+ },
+ {
+  "order": 65,
+  "word": "方",
+  "reading": "かた",
+  "meaning": "person (polite form)",
+  "type": "noun"
+ },
+ {
+  "order": 66,
+  "word": "聞く",
+  "reading": "きく",
+  "meaning": "to hear",
+  "type": "u-verb"
+ },
+ {
+  "order": 67,
+  "word": "聞く",
+  "reading": "きく",
+  "meaning": "to ask",
+  "type": "u-verb"
+ },
+ {
+  "order": 68,
+  "word": "お願いします",
+  "reading": "おねがいします",
+  "meaning": "please",
+  "type": "expression"
+ },
+ {
+  "order": 69,
+  "word": "分かる",
+  "reading": "わかる",
+  "meaning": "to understand",
+  "type": "u-verb"
+ },
+ {
+  "order": 70,
+  "word": "よく",
+  "reading": "よく",
+  "meaning": "well",
+  "type": "adverb"
+ },
+ {
+  "order": 71,
+  "word": "よく",
+  "reading": "よく",
+  "meaning": "often",
+  "type": "adverb"
+ },
+ {
+  "order": 72,
+  "word": "考える",
+  "reading": "かんがえる",
+  "meaning": "to think, to consider",
+  "type": "ru-verb"
+ },
+ {
+  "order": 73,
+  "word": "ありがとうございます",
+  "reading": "ありがとうございます",
+  "meaning": "thank you (formal)",
+  "type": "expression"
+ },
+ {
+  "order": 74,
+  "word": "話す",
+  "reading": "はなす",
+  "meaning": "to talk, to speak",
+  "type": "u-verb"
+ },
+ {
+  "order": 75,
+  "word": "もっと",
+  "reading": "もっと",
+  "meaning": "more, a bit more",
+  "type": "adverb"
+ },
+ {
+  "order": 76,
+  "word": "ゆっくり",
+  "reading": "ゆっくり",
+  "meaning": "slowly",
+  "type": "adverb"
+ },
+ {
+  "order": 77,
+  "word": "言う",
+  "reading": "いう",
+  "meaning": "to say",
+  "type": "u-verb"
+ },
+ {
+  "order": 78,
+  "word": "友達",
+  "reading": "ともだち",
+  "meaning": "friend, companion",
+  "type": "noun"
+ },
+ {
+  "order": 79,
+  "word": "待つ",
+  "reading": "まつ",
+  "meaning": "to wait",
+  "type": "u-verb"
+ },
+ {
+  "order": 80,
+  "word": "昨日",
+  "reading": "きのう",
+  "meaning": "yesterday",
+  "type": "noun"
+ },
+ {
+  "order": 81,
+  "word": "町",
+  "reading": "まち",
+  "meaning": "town, city",
+  "type": "noun"
+ },
+ {
+  "order": 82,
+  "word": "高い",
+  "reading": "たかい",
+  "meaning": "expensive",
+  "type": "i-adjective"
+ },
+ {
+  "order": 83,
+  "word": "高い",
+  "reading": "たかい",
+  "meaning": "high, tall",
+  "type": "i-adjective"
+ },
+ {
+  "order": 84,
+  "word": "一番",
+  "reading": "いちばん",
+  "meaning": "(the) most",
+  "type": "adverb"
+ },
+ {
+  "order": 85,
+  "word": "ちょっと",
+  "reading": "ちょっと",
+  "meaning": "a little",
+  "type": "adverb"
+ },
+ {
+  "order": 86,
+  "word": "もう",
+  "reading": "もう",
+  "meaning": "already, yet",
+  "type": "adverb"
+ },
+ {
+  "order": 87,
+  "word": "もう",
+  "reading": "もう",
+  "meaning": "another, again",
+  "type": "adverb"
+ },
+ {
+  "order": 88,
+  "word": "父",
+  "reading": "ちち",
+  "meaning": "(speaker's) father",
+  "type": "noun"
+ },
+ {
+  "order": 89,
+  "word": "大好き",
+  "reading": "だいすき",
+  "meaning": "love",
+  "type": "na-adjective"
+ },
+ {
+  "order": 90,
+  "word": "母",
+  "reading": "はは",
+  "meaning": "(speaker's) mother",
+  "type": "noun"
+ },
+ {
+  "order": 91,
+  "word": "あげる",
+  "reading": "あげる",
+  "meaning": "to give (receiver is not in the speaker's group)",
+  "type": "ru-verb"
+ },
+ {
+  "order": 92,
+  "word": "くれる",
+  "reading": "くれる",
+  "meaning": "to give (receiver is in the speaker's group)",
+  "type": "ru-verb"
+ },
+ {
+  "order": 93,
+  "word": "もらう",
+  "reading": "もらう",
+  "meaning": "to receive",
+  "type": "u-verb"
+ },
+ {
+  "order": 94,
+  "word": "物",
+  "reading": "もの",
+  "meaning": "thing, object",
+  "type": "noun"
+ },
+ {
+  "order": 95,
+  "word": "君",
+  "reading": "きみ",
+  "meaning": "you (to someone of equal or lower status)",
+  "type": "noun"
+ },
+ {
+  "order": 96,
+  "word": "中",
+  "reading": "なか",
+  "meaning": "inside, middle",
+  "type": "noun"
+ },
+ {
+  "order": 97,
+  "word": "出来る",
+  "reading": "できる",
+  "meaning": "to be able to do, to be good at",
+  "type": "ru-verb"
+ },
+ {
+  "order": 98,
+  "word": "本当",
+  "reading": "ほんとう",
+  "meaning": "truth, reality",
+  "type": "noun"
+ },
+ {
+  "order": 99,
+  "word": "立つ",
+  "reading": "たつ",
+  "meaning": "to stand, to rise",
+  "type": "u-verb"
+ },
+ {
+  "order": 100,
+  "word": "前",
+  "reading": "まえ",
+  "meaning": "front, before",
+  "type": "noun"
+ },
+ {
+  "order": 101,
+  "word": "入る",
+  "reading": "はいる",
+  "meaning": "to enter",
+  "type": "u-verb"
+ },
+ {
+  "order": 102,
+  "word": "家族",
+  "reading": "かぞく",
+  "meaning": "family",
+  "type": "noun"
+ },
+ {
+  "order": 103,
+  "word": "住む",
+  "reading": "すむ",
+  "meaning": "to live, to reside",
+  "type": "u-verb"
+ },
+ {
+  "order": 104,
+  "word": "大きな",
+  "reading": "おおきな",
+  "meaning": "big, large",
+  "type": "noun"
+ },
+ {
+  "order": 105,
+  "word": "大きい",
+  "reading": "おおきい",
+  "meaning": "big, large",
+  "type": "i-adjective"
+ },
+ {
+  "order": 106,
+  "word": "声",
+  "reading": "こえ",
+  "meaning": "voice, sound",
+  "type": "noun"
+ },
+ {
+  "order": 107,
+  "word": "目",
+  "reading": "め",
+  "meaning": "eye",
+  "type": "noun"
+ },
+ {
+  "order": 108,
+  "word": "手",
+  "reading": "て",
+  "meaning": "hand",
+  "type": "noun"
+ },
+ {
+  "order": 109,
+  "word": "上げる",
+  "reading": "あげる",
+  "meaning": "to raise, to increase",
+  "type": "ru-verb"
+ },
+ {
+  "order": 110,
+  "word": "嫌い",
+  "reading": "きらい",
+  "meaning": "dislike",
+  "type": "na-adjective"
+ },
+ {
+  "order": 111,
+  "word": "おじいさん",
+  "reading": "おじいさん",
+  "meaning": "grandfather",
+  "type": "noun"
+ },
+ {
+  "order": 112,
+  "word": "おばあさん",
+  "reading": "おばあさん",
+  "meaning": "grandmother",
+  "type": "noun"
+ },
+ {
+  "order": 113,
+  "word": "元気",
+  "reading": "げんき",
+  "meaning": "energetic, healthy",
+  "type": "na-adjective"
+ },
+ {
+  "order": 114,
+  "word": "いつも",
+  "reading": "いつも",
+  "meaning": "always, usually",
+  "type": "adverb"
+ },
+ {
+  "order": 115,
+  "word": "持つ",
+  "reading": "もつ",
+  "meaning": "to have, to hold",
+  "type": "u-verb"
+ },
+ {
+  "order": 116,
+  "word": "みんな",
+  "reading": "みんな",
+  "meaning": "all, everybody",
+  "type": "adverb"
+ },
+ {
+  "order": 117,
+  "word": "使う",
+  "reading": "つかう",
+  "meaning": "to use",
+  "type": "u-verb"
+ },
+ {
+  "order": 118,
+  "word": "大丈夫",
+  "reading": "だいじょうぶ",
+  "meaning": "alright, OK",
+  "type": "expression"
+ },
+ {
+  "order": 119,
+  "word": "始める",
+  "reading": "はじめる",
+  "meaning": "to start",
+  "type": "ru-verb"
+ },
+ {
+  "order": 120,
+  "word": "今日",
+  "reading": "きょう",
+  "meaning": "today",
+  "type": "noun"
+ },
+ {
+  "order": 121,
+  "word": "部屋",
+  "reading": "へや",
+  "meaning": "room",
+  "type": "noun"
+ },
+ {
+  "order": 122,
+  "word": "悪い",
+  "reading": "わるい",
+  "meaning": "bad",
+  "type": "i-adjective"
+ },
+ {
+  "order": 123,
+  "word": "まあ",
+  "reading": "まあ",
+  "meaning": "well...",
+  "type": "expression"
+ },
+ {
+  "order": 124,
+  "word": "食べる",
+  "reading": "たべる",
+  "meaning": "to eat",
+  "type": "ru-verb"
+ },
+ {
+  "order": 125,
+  "word": "沢山",
+  "reading": "たくさん",
+  "meaning": "a lot, plenty",
+  "type": "adverb"
+ },
+ {
+  "order": 126,
+  "word": "場所",
+  "reading": "ばしょ",
+  "meaning": "place, location",
+  "type": "noun"
+ },
+ {
+  "order": 127,
+  "word": "呼ぶ",
+  "reading": "よぶ",
+  "meaning": "to call, to name",
+  "type": "u-verb"
+ },
+ {
+  "order": 128,
+  "word": "動く",
+  "reading": "うごく",
+  "meaning": "to move",
+  "type": "u-verb"
+ },
+ {
+  "order": 129,
+  "word": "気持ち",
+  "reading": "きもち",
+  "meaning": "feeling, sensation",
+  "type": "noun"
+ },
+ {
+  "order": 130,
+  "word": "誰",
+  "reading": "だれ",
+  "meaning": "who",
+  "type": "noun"
+ },
+ {
+  "order": 131,
+  "word": "子",
+  "reading": "こ",
+  "meaning": "child, kid",
+  "type": "noun"
+ },
+ {
+  "order": 132,
+  "word": "どんな",
+  "reading": "どんな",
+  "meaning": "what kind of...",
+  "type": "prefix"
+ },
+ {
+  "order": 133,
+  "word": "意味",
+  "reading": "いみ",
+  "meaning": "meaning, significance",
+  "type": "noun"
+ },
+ {
+  "order": 134,
+  "word": "言葉",
+  "reading": "ことば",
+  "meaning": "word, language",
+  "type": "noun"
+ },
+ {
+  "order": 135,
+  "word": "心配",
+  "reading": "しんぱい",
+  "meaning": "worry",
+  "type": "noun"
+ },
+ {
+  "order": 136,
+  "word": "様子",
+  "reading": "ようす",
+  "meaning": "appearance, state",
+  "type": "noun"
+ },
+ {
+  "order": 137,
+  "word": "信じる",
+  "reading": "しんじる",
+  "meaning": "to believe, to trust",
+  "type": "ru-verb"
+ },
+ {
+  "order": 138,
+  "word": "自分",
+  "reading": "じぶん",
+  "meaning": "self, oneself",
+  "type": "noun"
+ },
+ {
+  "order": 139,
+  "word": "調べる",
+  "reading": "しらべる",
+  "meaning": "to look up, to search",
+  "type": "ru-verb"
+ },
+ {
+  "order": 140,
+  "word": "事",
+  "reading": "こと",
+  "meaning": "thing, incident",
+  "type": "noun"
+ },
+ {
+  "order": 141,
+  "word": "同じ",
+  "reading": "おなじ",
+  "meaning": "same, identical",
+  "type": "noun"
+ },
+ {
+  "order": 142,
+  "word": "申し訳ない",
+  "reading": "もうしわけない",
+  "meaning": "sorry, inexcusable",
+  "type": "i-adjective"
+ },
+ {
+  "order": 143,
+  "word": "もちろん",
+  "reading": "もちろん",
+  "meaning": "of course, no doubt",
+  "type": "adverb"
+ },
+ {
+  "order": 144,
+  "word": "とても",
+  "reading": "とても",
+  "meaning": "very",
+  "type": "adverb"
+ },
+ {
+  "order": 145,
+  "word": "楽しい",
+  "reading": "たのしい",
+  "meaning": "fun, enjoyable",
+  "type": "i-adjective"
+ },
+ {
+  "order": 146,
+  "word": "失礼します",
+  "reading": "しつれいします",
+  "meaning": "pardon me, excuse me (e.g. when leaving)",
+  "type": "expression"
+ },
+ {
+  "order": 147,
+  "word": "手伝う",
+  "reading": "てつだう",
+  "meaning": "to help",
+  "type": "u-verb"
+ },
+ {
+  "order": 148,
+  "word": "忙しい",
+  "reading": "いそがしい",
+  "meaning": "busy, occupied",
+  "type": "i-adjective"
+ },
+ {
+  "order": 149,
+  "word": "仕事",
+  "reading": "しごと",
+  "meaning": "work, job",
+  "type": "noun"
+ },
+ {
+  "order": 150,
+  "word": "続ける",
+  "reading": "つづける",
+  "meaning": "to continue, to keep up",
+  "type": "ru-verb"
+ },
+ {
+  "order": 151,
+  "word": "見せる",
+  "reading": "みせる",
+  "meaning": "to show",
+  "type": "ru-verb"
+ },
+ {
+  "order": 152,
+  "word": "うち",
+  "reading": "うち",
+  "meaning": "one's household",
+  "type": "noun"
+ },
+ {
+  "order": 153,
+  "word": "約束",
+  "reading": "やくそく",
+  "meaning": "promise, appointment",
+  "type": "noun"
+ },
+ {
+  "order": 154,
+  "word": "忘れる",
+  "reading": "わすれる",
+  "meaning": "to forget",
+  "type": "ru-verb"
+ },
+ {
+  "order": 155,
+  "word": "守る",
+  "reading": "まもる",
+  "meaning": "to protect, to observe",
+  "type": "u-verb"
+ },
+ {
+  "order": 156,
+  "word": "変える",
+  "reading": "かえる",
+  "meaning": "to change, to alter",
+  "type": "ru-verb"
+ },
+ {
+  "order": 157,
+  "word": "さっき",
+  "reading": "さっき",
+  "meaning": "(only) a moment ago",
+  "type": "adverb"
+ },
+ {
+  "order": 158,
+  "word": "今度",
+  "reading": "こんど",
+  "meaning": "next time",
+  "type": "noun"
+ },
+ {
+  "order": 159,
+  "word": "これから",
+  "reading": "これから",
+  "meaning": "from now on, after this",
+  "type": "adverb"
+ },
+ {
+  "order": 160,
+  "word": "止める",
+  "reading": "とめる",
+  "meaning": "to stop (at some place)",
+  "type": "ru-verb"
+ },
+ {
+  "order": 161,
+  "word": "止める",
+  "reading": "やめる",
+  "meaning": "to stop (doing something)",
+  "type": "ru-verb"
+ },
+ {
+  "order": 162,
+  "word": "頼む",
+  "reading": "たのむ",
+  "meaning": "to ask, to request",
+  "type": "u-verb"
+ },
+ {
+  "order": 163,
+  "word": "許す",
+  "reading": "ゆるす",
+  "meaning": "to forgive, to permit",
+  "type": "u-verb"
+ },
+ {
+  "order": 164,
+  "word": "嬉しい",
+  "reading": "うれしい",
+  "meaning": "happy, glad",
+  "type": "i-adjective"
+ },
+ {
+  "order": 165,
+  "word": "頑張る",
+  "reading": "がんばる",
+  "meaning": "to persevere, to do one's best",
+  "type": "u-verb"
+ },
+ {
+  "order": 166,
+  "word": "なるほど",
+  "reading": "なるほど",
+  "meaning": "I see, really",
+  "type": "expression"
+ },
+ {
+  "order": 167,
+  "word": "つまり",
+  "reading": "つまり",
+  "meaning": "in short, basically",
+  "type": "adverb"
+ },
+ {
+  "order": 168,
+  "word": "国",
+  "reading": "くに",
+  "meaning": "country",
+  "type": "noun"
+ },
+ {
+  "order": 169,
+  "word": "優しい",
+  "reading": "やさしい",
+  "meaning": "gentle, kind",
+  "type": "i-adjective"
+ },
+ {
+  "order": 170,
+  "word": "嫌",
+  "reading": "いや",
+  "meaning": "disliking, unwilling (to do)",
+  "type": "na-adjective"
+ },
+ {
+  "order": 171,
+  "word": "そんなに",
+  "reading": "そんなに",
+  "meaning": "that much",
+  "type": "adverb"
+ },
+ {
+  "order": 172,
+  "word": "今回",
+  "reading": "こんかい",
+  "meaning": "this time",
+  "type": "noun"
+ },
+ {
+  "order": 173,
+  "word": "夜",
+  "reading": "よる",
+  "meaning": "evening, night",
+  "type": "noun"
+ },
+ {
+  "order": 174,
+  "word": "買う",
+  "reading": "かう",
+  "meaning": "to buy",
+  "type": "u-verb"
+ },
+ {
+  "order": 175,
+  "word": "今まで",
+  "reading": "いままで",
+  "meaning": "until now",
+  "type": "adverb"
+ },
+ {
+  "order": 176,
+  "word": "奴",
+  "reading": "やつ",
+  "meaning": "that guy, (s)he (usu. derogatory)",
+  "type": "noun"
+ },
+ {
+  "order": 177,
+  "word": "あいつ",
+  "reading": "あいつ",
+  "meaning": "that guy",
+  "type": "noun"
+ },
+ {
+  "order": 178,
+  "word": "もし",
+  "reading": "もし",
+  "meaning": "if, in the event of...",
+  "type": "expression"
+ },
+ {
+  "order": 179,
+  "word": "理解",
+  "reading": "りかい",
+  "meaning": "understanding, comprehension",
+  "type": "noun"
+ },
+ {
+  "order": 180,
+  "word": "夢",
+  "reading": "ゆめ",
+  "meaning": "dream",
+  "type": "noun"
+ },
+ {
+  "order": 181,
+  "word": "俺",
+  "reading": "おれ",
+  "meaning": "I (male)",
+  "type": "noun"
+ },
+ {
+  "order": 182,
+  "word": "難しい",
+  "reading": "むずかしい",
+  "meaning": "difficult",
+  "type": "i-adjective"
+ },
+ {
+  "order": 183,
+  "word": "今度",
+  "reading": "こんど",
+  "meaning": "this time",
+  "type": "noun"
+ },
+ {
+  "order": 184,
+  "word": "おかしい",
+  "reading": "おかしい",
+  "meaning": "strange, suspicious",
+  "type": "i-adjective"
+ },
+ {
+  "order": 185,
+  "word": "男の子",
+  "reading": "おとこのこ",
+  "meaning": "boy",
+  "type": "noun"
+ },
+ {
+  "order": 186,
+  "word": "女の子",
+  "reading": "おんなのこ",
+  "meaning": "girl",
+  "type": "noun"
+ },
+ {
+  "order": 187,
+  "word": "寝る",
+  "reading": "ねる",
+  "meaning": "to sleep",
+  "type": "ru-verb"
+ },
+ {
+  "order": 188,
+  "word": "伝える",
+  "reading": "つたえる",
+  "meaning": "to convey, to transmit",
+  "type": "ru-verb"
+ },
+ {
+  "order": 189,
+  "word": "小さい",
+  "reading": "ちいさい",
+  "meaning": "small",
+  "type": "i-adjective"
+ },
+ {
+  "order": 190,
+  "word": "選ぶ",
+  "reading": "えらぶ",
+  "meaning": "to choose, to elect",
+  "type": "u-verb"
+ },
+ {
+  "order": 191,
+  "word": "座る",
+  "reading": "すわる",
+  "meaning": "to sit",
+  "type": "u-verb"
+ },
+ {
+  "order": 192,
+  "word": "簡単",
+  "reading": "かんたん",
+  "meaning": "simple, easy",
+  "type": "na-adjective"
+ },
+ {
+  "order": 193,
+  "word": "お願い",
+  "reading": "おねがい",
+  "meaning": "favor",
+  "type": "noun"
+ },
+ {
+  "order": 194,
+  "word": "進む",
+  "reading": "すすむ",
+  "meaning": "to move forward",
+  "type": "u-verb"
+ },
+ {
+  "order": 195,
+  "word": "全く",
+  "reading": "まったく",
+  "meaning": "entirely, truly",
+  "type": "adverb"
+ },
+ {
+  "order": 196,
+  "word": "なぜ",
+  "reading": "なぜ",
+  "meaning": "why",
+  "type": "adverb"
+ },
+ {
+  "order": 197,
+  "word": "僕",
+  "reading": "ぼく",
+  "meaning": "I (male)",
+  "type": "noun"
+ },
+ {
+  "order": 198,
+  "word": "水",
+  "reading": "みず",
+  "meaning": "water",
+  "type": "noun"
+ },
+ {
+  "order": 199,
+  "word": "飲む",
+  "reading": "のむ",
+  "meaning": "to drink",
+  "type": "u-verb"
+ },
+ {
+  "order": 200,
+  "word": "暇",
+  "reading": "ひま",
+  "meaning": "free, not busy",
+  "type": "na-adjective"
+ },
+ {
+  "order": 201,
+  "word": "時",
+  "reading": "とき",
+  "meaning": "time, occasion",
+  "type": "noun"
+ },
+ {
+  "order": 202,
+  "word": "時",
+  "reading": "じ",
+  "meaning": "hour, o'clock",
+  "type": "suffix"
+ },
+ {
+  "order": 203,
+  "word": "一",
+  "reading": "いち",
+  "meaning": "one",
+  "type": "noun"
+ },
+ {
+  "order": 204,
+  "word": "二",
+  "reading": "に",
+  "meaning": "two",
+  "type": "noun"
+ },
+ {
+  "order": 205,
+  "word": "三",
+  "reading": "さん",
+  "meaning": "three",
+  "type": "noun"
+ },
+ {
+  "order": 206,
+  "word": "四",
+  "reading": "よん・し",
+  "meaning": "four",
+  "type": "noun"
+ },
+ {
+  "order": 207,
+  "word": "五",
+  "reading": "ご",
+  "meaning": "five",
+  "type": "noun"
+ },
+ {
+  "order": 208,
+  "word": "六",
+  "reading": "ろく",
+  "meaning": "six",
+  "type": "noun"
+ },
+ {
+  "order": 209,
+  "word": "七",
+  "reading": "なな・しち",
+  "meaning": "seven",
+  "type": "noun"
+ },
+ {
+  "order": 210,
+  "word": "八",
+  "reading": "はち",
+  "meaning": "eight",
+  "type": "noun"
+ },
+ {
+  "order": 211,
+  "word": "九",
+  "reading": "きゅう",
+  "meaning": "nine",
+  "type": "noun"
+ },
+ {
+  "order": 212,
+  "word": "十",
+  "reading": "じゅう",
+  "meaning": "ten",
+  "type": "noun"
+ },
+ {
+  "order": 213,
+  "word": "くん",
+  "reading": "くん",
+  "meaning": "kun (usu. used with men younger or of the same age)",
+  "type": "suffix"
+ },
+ {
+  "order": 214,
+  "word": "すみません",
+  "reading": "すみません",
+  "meaning": "sorry, excuse me",
+  "type": "expression"
+ },
+ {
+  "order": 215,
+  "word": "やる",
+  "reading": "やる",
+  "meaning": "to do",
+  "type": "u-verb"
+ },
+ {
+  "order": 216,
+  "word": "顔",
+  "reading": "かお",
+  "meaning": "face",
+  "type": "noun"
+ },
+ {
+  "order": 217,
+  "word": "今朝",
+  "reading": "けさ",
+  "meaning": "this morning",
+  "type": "noun"
+ },
+ {
+  "order": 218,
+  "word": "出る",
+  "reading": "でる",
+  "meaning": "to go out, to leave",
+  "type": "ru-verb"
+ },
+ {
+  "order": 219,
+  "word": "そして",
+  "reading": "そして",
+  "meaning": "and, and then",
+  "type": "expression"
+ },
+ {
+  "order": 220,
+  "word": "まだ",
+  "reading": "まだ",
+  "meaning": "yet, more",
+  "type": "adverb"
+ },
+ {
+  "order": 221,
+  "word": "じゃ",
+  "reading": "じゃ",
+  "meaning": "then, well",
+  "type": "expression"
+ },
+ {
+  "order": 222,
+  "word": "ため",
+  "reading": "ため",
+  "meaning": "sake, purpose",
+  "type": "noun"
+ },
+ {
+  "order": 223,
+  "word": "ご飯",
+  "reading": "ごはん",
+  "meaning": "cooked rice, meal",
+  "type": "noun"
+ },
+ {
+  "order": 224,
+  "word": "ところ",
+  "reading": "ところ",
+  "meaning": "place",
+  "type": "noun"
+ },
+ {
+  "order": 225,
+  "word": "少し",
+  "reading": "すこし",
+  "meaning": "a bit, a little while",
+  "type": "adverb"
+ },
+ {
+  "order": 226,
+  "word": "見える",
+  "reading": "みえる",
+  "meaning": "be visible",
+  "type": "ru-verb"
+ },
+ {
+  "order": 227,
+  "word": "違う",
+  "reading": "ちがう",
+  "meaning": "to differ, to be wrong",
+  "type": "u-verb"
+ },
+ {
+  "order": 228,
+  "word": "男",
+  "reading": "おとこ",
+  "meaning": "man, male",
+  "type": "noun"
+ },
+ {
+  "order": 229,
+  "word": "ただ",
+  "reading": "ただ",
+  "meaning": "free",
+  "type": "noun"
+ },
+ {
+  "order": 230,
+  "word": "ただ",
+  "reading": "ただ",
+  "meaning": "simply",
+  "type": "adverb"
+ },
+ {
+  "order": 231,
+  "word": "人間",
+  "reading": "にんげん",
+  "meaning": "human being, people",
+  "type": "noun"
+ },
+ {
+  "order": 232,
+  "word": "作る",
+  "reading": "つくる",
+  "meaning": "to make, to create",
+  "type": "u-verb"
+ },
+ {
+  "order": 233,
+  "word": "感じる",
+  "reading": "かんじる",
+  "meaning": "to feel, to sense",
+  "type": "ru-verb"
+ },
+ {
+  "order": 234,
+  "word": "上",
+  "reading": "うえ",
+  "meaning": "up, above",
+  "type": "noun"
+ },
+ {
+  "order": 235,
+  "word": "強い",
+  "reading": "つよい",
+  "meaning": "strong",
+  "type": "i-adjective"
+ },
+ {
+  "order": 236,
+  "word": "出す",
+  "reading": "だす",
+  "meaning": "to take out",
+  "type": "u-verb"
+ },
+ {
+  "order": 237,
+  "word": "笑う",
+  "reading": "わらう",
+  "meaning": "to laugh, to smile",
+  "type": "u-verb"
+ },
+ {
+  "order": 238,
+  "word": "毎月",
+  "reading": "まいつき",
+  "meaning": "every month",
+  "type": "noun"
+ },
+ {
+  "order": 239,
+  "word": "毎年",
+  "reading": "まいとし",
+  "meaning": "every year",
+  "type": "noun"
+ },
+ {
+  "order": 240,
+  "word": "多く",
+  "reading": "おおく",
+  "meaning": "many, much",
+  "type": "adverb"
+ },
+ {
+  "order": 241,
+  "word": "くらい",
+  "reading": "くらい",
+  "meaning": "approximately, about",
+  "type": "adverb"
+ },
+ {
+  "order": 242,
+  "word": "姉",
+  "reading": "あね",
+  "meaning": "older sister",
+  "type": "noun"
+ },
+ {
+  "order": 243,
+  "word": "弟",
+  "reading": "おとうと",
+  "meaning": "younger brother",
+  "type": "noun"
+ },
+ {
+  "order": 244,
+  "word": "妹",
+  "reading": "いもうと",
+  "meaning": "younger sister",
+  "type": "noun"
+ },
+ {
+  "order": 245,
+  "word": "力",
+  "reading": "ちから",
+  "meaning": "strength, power",
+  "type": "noun"
+ },
+ {
+  "order": 246,
+  "word": "世界",
+  "reading": "せかい",
+  "meaning": "world",
+  "type": "noun"
+ },
+ {
+  "order": 247,
+  "word": "相手",
+  "reading": "あいて",
+  "meaning": "partner, opponent",
+  "type": "noun"
+ },
+ {
+  "order": 248,
+  "word": "姿",
+  "reading": "すがた",
+  "meaning": "figure, appearance",
+  "type": "noun"
+ },
+ {
+  "order": 249,
+  "word": "死ぬ",
+  "reading": "しぬ",
+  "meaning": "to die",
+  "type": "u-verb"
+ },
+ {
+  "order": 250,
+  "word": "早い",
+  "reading": "はやい",
+  "meaning": "early",
+  "type": "i-adjective"
+ },
+ {
+  "order": 251,
+  "word": "早い",
+  "reading": "はやい",
+  "meaning": "fast (in terms of time)",
+  "type": "i-adjective"
+ },
+ {
+  "order": 252,
+  "word": "頭",
+  "reading": "あたま",
+  "meaning": "head",
+  "type": "noun"
+ },
+ {
+  "order": 253,
+  "word": "戻る",
+  "reading": "もどる",
+  "meaning": "to return, to go back",
+  "type": "u-verb"
+ },
+ {
+  "order": 254,
+  "word": "ずっと",
+  "reading": "ずっと",
+  "meaning": "continuously, the whole time",
+  "type": "adverb"
+ },
+ {
+  "order": 255,
+  "word": "どうして",
+  "reading": "どうして",
+  "meaning": "why",
+  "type": "adverb"
+ },
+ {
+  "order": 256,
+  "word": "やっぱり",
+  "reading": "やっぱり",
+  "meaning": "just as I thought, after all",
+  "type": "adverb"
+ },
+ {
+  "order": 257,
+  "word": "つもり",
+  "reading": "つもり",
+  "meaning": "intention, purpose",
+  "type": "noun"
+ },
+ {
+  "order": 258,
+  "word": "必要",
+  "reading": "ひつよう",
+  "meaning": "necessary, needed",
+  "type": "na-adjective"
+ },
+ {
+  "order": 259,
+  "word": "終わる",
+  "reading": "おわる",
+  "meaning": "to finish, to end",
+  "type": "u-verb"
+ },
+ {
+  "order": 260,
+  "word": "者",
+  "reading": "もの",
+  "meaning": "person",
+  "type": "noun"
+ },
+ {
+  "order": 261,
+  "word": "後",
+  "reading": "あと",
+  "meaning": "after",
+  "type": "noun"
+ },
+ {
+  "order": 262,
+  "word": "こちら",
+  "reading": "こちら",
+  "meaning": "here, this way",
+  "type": "noun"
+ },
+ {
+  "order": 263,
+  "word": "向かう",
+  "reading": "むかう",
+  "meaning": "to face, to head toward",
+  "type": "u-verb"
+ },
+ {
+  "order": 264,
+  "word": "きっと",
+  "reading": "きっと",
+  "meaning": "surely, certainly",
+  "type": "adverb"
+ },
+ {
+  "order": 265,
+  "word": "変わる",
+  "reading": "かわる",
+  "meaning": "to change",
+  "type": "u-verb"
+ },
+ {
+  "order": 266,
+  "word": "凄い",
+  "reading": "すごい",
+  "meaning": "wonderful, great, a lot",
+  "type": "i-adjective"
+ },
+ {
+  "order": 267,
+  "word": "女",
+  "reading": "おんな",
+  "meaning": "woman, girl",
+  "type": "noun"
+ },
+ {
+  "order": 268,
+  "word": "ちゃんと",
+  "reading": "ちゃんと",
+  "meaning": "properly",
+  "type": "adverb"
+ },
+ {
+  "order": 269,
+  "word": "音",
+  "reading": "おと",
+  "meaning": "sound",
+  "type": "noun"
+ },
+ {
+  "order": 270,
+  "word": "体",
+  "reading": "からだ",
+  "meaning": "body",
+  "type": "noun"
+ },
+ {
+  "order": 271,
+  "word": "掛ける",
+  "reading": "かける",
+  "meaning": "to hang, to put on",
+  "type": "ru-verb"
+ },
+ {
+  "order": 272,
+  "word": "歩く",
+  "reading": "あるく",
+  "meaning": "to walk, to go on foot",
+  "type": "u-verb"
+ },
+ {
+  "order": 273,
+  "word": "存在",
+  "reading": "そんざい",
+  "meaning": "existence, being",
+  "type": "noun"
+ },
+ {
+  "order": 274,
+  "word": "過ぎる",
+  "reading": "すぎる",
+  "meaning": "to exceed, to pass by",
+  "type": "ru-verb"
+ },
+ {
+  "order": 275,
+  "word": "聞こえる",
+  "reading": "きこえる",
+  "meaning": "to be able to hear",
+  "type": "ru-verb"
+ },
+ {
+  "order": 276,
+  "word": "受ける",
+  "reading": "うける",
+  "meaning": "to receive, to accept",
+  "type": "ru-verb"
+ },
+ {
+  "order": 277,
+  "word": "今年",
+  "reading": "ことし",
+  "meaning": "this year",
+  "type": "noun"
+ },
+ {
+  "order": 278,
+  "word": "去年",
+  "reading": "きょねん",
+  "meaning": "last year",
+  "type": "noun"
+ },
+ {
+  "order": 279,
+  "word": "来年",
+  "reading": "らいねん",
+  "meaning": "next year",
+  "type": "noun"
+ },
+ {
+  "order": 280,
+  "word": "殺す",
+  "reading": "ころす",
+  "meaning": "to kill",
+  "type": "u-verb"
+ },
+ {
+  "order": 281,
+  "word": "まさか",
+  "reading": "まさか",
+  "meaning": "by no means, never!",
+  "type": "adverb"
+ },
+ {
+  "order": 282,
+  "word": "絶対",
+  "reading": "ぜったい",
+  "meaning": "absolutely",
+  "type": "adverb"
+ },
+ {
+  "order": 283,
+  "word": "理由",
+  "reading": "りゆう",
+  "meaning": "reason, cause",
+  "type": "noun"
+ },
+ {
+  "order": 284,
+  "word": "口",
+  "reading": "くち",
+  "meaning": "mouth",
+  "type": "noun"
+ },
+ {
+  "order": 285,
+  "word": "外",
+  "reading": "そと",
+  "meaning": "outside",
+  "type": "noun"
+ },
+ {
+  "order": 286,
+  "word": "逃げる",
+  "reading": "にげる",
+  "meaning": "to escape, to run away",
+  "type": "ru-verb"
+ },
+ {
+  "order": 287,
+  "word": "誰か",
+  "reading": "だれか",
+  "meaning": "someone",
+  "type": "noun"
+ },
+ {
+  "order": 288,
+  "word": "まるで",
+  "reading": "まるで",
+  "meaning": "just like, completely",
+  "type": "adverb"
+ },
+ {
+  "order": 289,
+  "word": "他",
+  "reading": "ほか",
+  "meaning": "another, somewhere else",
+  "type": "noun"
+ },
+ {
+  "order": 290,
+  "word": "他",
+  "reading": "た",
+  "meaning": "other (esp. people and abstract matters)",
+  "type": "noun"
+ },
+ {
+  "order": 291,
+  "word": "問題",
+  "reading": "もんだい",
+  "meaning": "problem, question",
+  "type": "noun"
+ },
+ {
+  "order": 292,
+  "word": "今後",
+  "reading": "こんご",
+  "meaning": "after this, in the future",
+  "type": "noun"
+ },
+ {
+  "order": 293,
+  "word": "普通",
+  "reading": "ふつう",
+  "meaning": "normal, regular, average",
+  "type": "na-adjective"
+ },
+ {
+  "order": 294,
+  "word": "心",
+  "reading": "こころ",
+  "meaning": "heart, mind",
+  "type": "noun"
+ },
+ {
+  "order": 295,
+  "word": "春",
+  "reading": "はる",
+  "meaning": "spring",
+  "type": "noun"
+ },
+ {
+  "order": 296,
+  "word": "夏",
+  "reading": "なつ",
+  "meaning": "summer",
+  "type": "noun"
+ },
+ {
+  "order": 297,
+  "word": "秋",
+  "reading": "あき",
+  "meaning": "fall",
+  "type": "noun"
+ },
+ {
+  "order": 298,
+  "word": "冬",
+  "reading": "ふゆ",
+  "meaning": "winter",
+  "type": "noun"
+ },
+ {
+  "order": 299,
+  "word": "以上",
+  "reading": "いじょう",
+  "meaning": "... or more, beyond",
+  "type": "noun"
+ },
+ {
+  "order": 300,
+  "word": "それで",
+  "reading": "それで",
+  "meaning": "then, so",
+  "type": "expression"
+ },
+ {
+  "order": 301,
+  "word": "生きる",
+  "reading": "いきる",
+  "meaning": "to live, to exist",
+  "type": "ru-verb"
+ },
+ {
+  "order": 302,
+  "word": "最初",
+  "reading": "さいしょ",
+  "meaning": "first, beginning",
+  "type": "noun"
+ },
+ {
+  "order": 303,
+  "word": "最後",
+  "reading": "さいご",
+  "meaning": "last, final",
+  "type": "noun"
+ },
+ {
+  "order": 304,
+  "word": "日",
+  "reading": "ひ",
+  "meaning": "day",
+  "type": "noun"
+ },
+ {
+  "order": 305,
+  "word": "間",
+  "reading": "あいだ",
+  "meaning": "interval (of time, space, etc.)",
+  "type": "noun"
+ },
+ {
+  "order": 306,
+  "word": "間",
+  "reading": "ま",
+  "meaning": "interval, duration of time, pause",
+  "type": "noun"
+ },
+ {
+  "order": 307,
+  "word": "について",
+  "reading": "について",
+  "meaning": "concerning, regarding",
+  "type": "noun"
+ },
+ {
+  "order": 308,
+  "word": "左",
+  "reading": "ひだり",
+  "meaning": "left",
+  "type": "noun"
+ },
+ {
+  "order": 309,
+  "word": "右",
+  "reading": "みぎ",
+  "meaning": "right",
+  "type": "noun"
+ },
+ {
+  "order": 310,
+  "word": "感じ",
+  "reading": "かんじ",
+  "meaning": "feeling, impression",
+  "type": "noun"
+ },
+ {
+  "order": 311,
+  "word": "胸",
+  "reading": "むね",
+  "meaning": "chest",
+  "type": "noun"
+ },
+ {
+  "order": 312,
+  "word": "表情",
+  "reading": "ひょうじょう",
+  "meaning": "expression, look",
+  "type": "noun"
+ },
+ {
+  "order": 313,
+  "word": "多い",
+  "reading": "おおい",
+  "meaning": "a lot",
+  "type": "i-adjective"
+ },
+ {
+  "order": 314,
+  "word": "初めて",
+  "reading": "はじめて",
+  "meaning": "for the first time",
+  "type": "adverb"
+ },
+ {
+  "order": 315,
+  "word": "無理",
+  "reading": "むり",
+  "meaning": "unreasonable, impossible",
+  "type": "na-adjective"
+ },
+ {
+  "order": 316,
+  "word": "欲しい",
+  "reading": "ほしい",
+  "meaning": "wanting, wishing for",
+  "type": "i-adjective"
+ },
+ {
+  "order": 317,
+  "word": "ごめん",
+  "reading": "ごめん",
+  "meaning": "sorry",
+  "type": "expression"
+ },
+ {
+  "order": 318,
+  "word": "覚える",
+  "reading": "おぼえる",
+  "meaning": "to memorize",
+  "type": "ru-verb"
+ },
+ {
+  "order": 319,
+  "word": "別に",
+  "reading": "べつに",
+  "meaning": "(not) particularly",
+  "type": "adverb"
+ },
+ {
+  "order": 320,
+  "word": "思い出す",
+  "reading": "おもいだす",
+  "meaning": "to recollect, to recall",
+  "type": "u-verb"
+ },
+ {
+  "order": 321,
+  "word": "入れる",
+  "reading": "いれる",
+  "meaning": "to put in",
+  "type": "ru-verb"
+ },
+ {
+  "order": 322,
+  "word": "開く",
+  "reading": "あく",
+  "meaning": "to open",
+  "type": "u-verb"
+ },
+ {
+  "order": 323,
+  "word": "開く",
+  "reading": "ひらく",
+  "meaning": "to open",
+  "type": "u-verb"
+ },
+ {
+  "order": 324,
+  "word": "残る",
+  "reading": "のこる",
+  "meaning": "to remain, to be left over",
+  "type": "u-verb"
+ },
+ {
+  "order": 325,
+  "word": "答える",
+  "reading": "こたえる",
+  "meaning": "to answer",
+  "type": "ru-verb"
+ },
+ {
+  "order": 326,
+  "word": "怖い",
+  "reading": "こわい",
+  "meaning": "fearful, being afraid, fearsome",
+  "type": "i-adjective"
+ },
+ {
+  "order": 327,
+  "word": "年",
+  "reading": "ねん",
+  "meaning": "counter for years",
+  "type": "suffix"
+ },
+ {
+  "order": 328,
+  "word": "年",
+  "reading": "とし",
+  "meaning": "year",
+  "type": "noun"
+ },
+ {
+  "order": 329,
+  "word": "取る",
+  "reading": "とる",
+  "meaning": "to take, to get",
+  "type": "u-verb"
+ },
+ {
+  "order": 330,
+  "word": "全て",
+  "reading": "すべて",
+  "meaning": "all, entirely",
+  "type": "adverb"
+ },
+ {
+  "order": 331,
+  "word": "助ける",
+  "reading": "たすける",
+  "meaning": "to help, to save",
+  "type": "ru-verb"
+ },
+ {
+  "order": 332,
+  "word": "状況",
+  "reading": "じょうきょう",
+  "meaning": "state of affairs, conditions",
+  "type": "noun"
+ },
+ {
+  "order": 333,
+  "word": "確認",
+  "reading": "かくにん",
+  "meaning": "confirmation",
+  "type": "noun"
+ },
+ {
+  "order": 334,
+  "word": "消える",
+  "reading": "きえる",
+  "meaning": "to go out, to disappear",
+  "type": "ru-verb"
+ },
+ {
+  "order": 335,
+  "word": "長い",
+  "reading": "ながい",
+  "meaning": "long",
+  "type": "i-adjective"
+ },
+ {
+  "order": 336,
+  "word": "驚く",
+  "reading": "おどろく",
+  "meaning": "to be surprised, to be astonished",
+  "type": "u-verb"
+ },
+ {
+  "order": 337,
+  "word": "腕",
+  "reading": "うで",
+  "meaning": "arm",
+  "type": "noun"
+ },
+ {
+  "order": 338,
+  "word": "以外",
+  "reading": "いがい",
+  "meaning": "except for",
+  "type": "noun"
+ },
+ {
+  "order": 339,
+  "word": "困る",
+  "reading": "こまる",
+  "meaning": "to be at a loss, to be troubled",
+  "type": "u-verb"
+ },
+ {
+  "order": 340,
+  "word": "離れる",
+  "reading": "はなれる",
+  "meaning": "to be separated, to be apart",
+  "type": "ru-verb"
+ },
+ {
+  "order": 341,
+  "word": "気",
+  "reading": "き",
+  "meaning": "spirit, temperament",
+  "type": "noun"
+ },
+ {
+  "order": 342,
+  "word": "書く",
+  "reading": "かく",
+  "meaning": "to write",
+  "type": "u-verb"
+ },
+ {
+  "order": 343,
+  "word": "光",
+  "reading": "ひかり",
+  "meaning": "light, flash",
+  "type": "noun"
+ },
+ {
+  "order": 344,
+  "word": "走る",
+  "reading": "はしる",
+  "meaning": "to run",
+  "type": "u-verb"
+ },
+ {
+  "order": 345,
+  "word": "戦う",
+  "reading": "たたかう",
+  "meaning": "to wage war, to fight",
+  "type": "u-verb"
+ },
+ {
+  "order": 346,
+  "word": "余り",
+  "reading": "あまり",
+  "meaning": "remainder, leftover",
+  "type": "noun"
+ },
+ {
+  "order": 347,
+  "word": "全部",
+  "reading": "ぜんぶ",
+  "meaning": "all, everything",
+  "type": "noun"
+ },
+ {
+  "order": 348,
+  "word": "瞬間",
+  "reading": "しゅんかん",
+  "meaning": "instant, moment",
+  "type": "noun"
+ },
+ {
+  "order": 349,
+  "word": "説明",
+  "reading": "せつめい",
+  "meaning": "explanation",
+  "type": "noun"
+ },
+ {
+  "order": 350,
+  "word": "決める",
+  "reading": "きめる",
+  "meaning": "to decide",
+  "type": "ru-verb"
+ },
+ {
+  "order": 351,
+  "word": "女性",
+  "reading": "じょせい",
+  "meaning": "woman, female",
+  "type": "noun"
+ },
+ {
+  "order": 352,
+  "word": "頂く",
+  "reading": "いただく",
+  "meaning": "to receive, to take (humble form)",
+  "type": "u-verb"
+ },
+ {
+  "order": 353,
+  "word": "敵",
+  "reading": "てき",
+  "meaning": "enemy",
+  "type": "noun"
+ },
+ {
+  "order": 354,
+  "word": "起きる",
+  "reading": "おきる",
+  "meaning": "to occur",
+  "type": "ru-verb"
+ },
+ {
+  "order": 355,
+  "word": "起きる",
+  "reading": "おきる",
+  "meaning": "to get up, to get out of bed",
+  "type": "ru-verb"
+ },
+ {
+  "order": 356,
+  "word": "落ちる",
+  "reading": "おちる",
+  "meaning": "to fall",
+  "type": "ru-verb"
+ },
+ {
+  "order": 357,
+  "word": "足",
+  "reading": "あし",
+  "meaning": "leg, foot",
+  "type": "noun"
+ },
+ {
+  "order": 358,
+  "word": "それに",
+  "reading": "それに",
+  "meaning": "in addition",
+  "type": "expression"
+ },
+ {
+  "order": 359,
+  "word": "先に",
+  "reading": "さきに",
+  "meaning": "before, ahead",
+  "type": "adverb"
+ },
+ {
+  "order": 360,
+  "word": "魔法",
+  "reading": "まほう",
+  "meaning": "magic",
+  "type": "noun"
+ },
+ {
+  "order": 361,
+  "word": "探す",
+  "reading": "さがす",
+  "meaning": "to look for, to search",
+  "type": "u-verb"
+ },
+ {
+  "order": 362,
+  "word": "子供",
+  "reading": "こども",
+  "meaning": "child, kid",
+  "type": "noun"
+ },
+ {
+  "order": 363,
+  "word": "怒る",
+  "reading": "おこる",
+  "meaning": "to get angry, to scold",
+  "type": "u-verb"
+ },
+ {
+  "order": 364,
+  "word": "笑顔",
+  "reading": "えがお",
+  "meaning": "smile",
+  "type": "noun"
+ },
+ {
+  "order": 365,
+  "word": "先輩",
+  "reading": "せんぱい",
+  "meaning": "senior (at work, school, etc.)",
+  "type": "noun"
+ },
+ {
+  "order": 366,
+  "word": "続く",
+  "reading": "つづく",
+  "meaning": "to continue, to keep up",
+  "type": "u-verb"
+ },
+ {
+  "order": 367,
+  "word": "こんなに",
+  "reading": "こんなに",
+  "meaning": "this much, such",
+  "type": "adverb"
+ },
+ {
+  "order": 368,
+  "word": "変",
+  "reading": "へん",
+  "meaning": "strange, funny",
+  "type": "na-adjective"
+ },
+ {
+  "order": 369,
+  "word": "読む",
+  "reading": "よむ",
+  "meaning": "to read",
+  "type": "u-verb"
+ },
+ {
+  "order": 370,
+  "word": "当然",
+  "reading": "とうぜん",
+  "meaning": "natural, as a matter of course",
+  "type": "na-adjective"
+ },
+ {
+  "order": 371,
+  "word": "情報",
+  "reading": "じょうほう",
+  "meaning": "information",
+  "type": "noun"
+ },
+ {
+  "order": 372,
+  "word": "見つける",
+  "reading": "みつける",
+  "meaning": "to find",
+  "type": "ru-verb"
+ },
+ {
+  "order": 373,
+  "word": "少女",
+  "reading": "しょうじょ",
+  "meaning": "girl",
+  "type": "noun"
+ },
+ {
+  "order": 374,
+  "word": "大変",
+  "reading": "たいへん",
+  "meaning": "terrible, serious, grave",
+  "type": "na-adjective"
+ },
+ {
+  "order": 375,
+  "word": "かなり",
+  "reading": "かなり",
+  "meaning": "fairly, rather",
+  "type": "adverb"
+ },
+ {
+  "order": 376,
+  "word": "下",
+  "reading": "した",
+  "meaning": "under, below",
+  "type": "noun"
+ },
+ {
+  "order": 377,
+  "word": "下",
+  "reading": "もと",
+  "meaning": "under (the supervision of)",
+  "type": "noun"
+ },
+ {
+  "order": 378,
+  "word": "かかる",
+  "reading": "かかる",
+  "meaning": "to take (e.g. time or money)",
+  "type": "u-verb"
+ },
+ {
+  "order": 379,
+  "word": "掛かる",
+  "reading": "かかる",
+  "meaning": "to hang, to be hung",
+  "type": "u-verb"
+ },
+ {
+  "order": 380,
+  "word": "一度",
+  "reading": "いちど",
+  "meaning": "once",
+  "type": "adverb"
+ },
+ {
+  "order": 381,
+  "word": "完全",
+  "reading": "かんぜん",
+  "meaning": "perfect, complete",
+  "type": "na-adjective"
+ },
+ {
+  "order": 382,
+  "word": "後ろ",
+  "reading": "うしろ",
+  "meaning": "back, behind",
+  "type": "noun"
+ },
+ {
+  "order": 383,
+  "word": "泣く",
+  "reading": "なく",
+  "meaning": "to cry",
+  "type": "u-verb"
+ },
+ {
+  "order": 384,
+  "word": "状態",
+  "reading": "じょうたい",
+  "meaning": "state, condition",
+  "type": "noun"
+ },
+ {
+  "order": 385,
+  "word": "関係",
+  "reading": "かんけい",
+  "meaning": "relation(ship)",
+  "type": "noun"
+ },
+ {
+  "order": 386,
+  "word": "向ける",
+  "reading": "むける",
+  "meaning": "to turn toward, to point at",
+  "type": "ru-verb"
+ },
+ {
+  "order": 387,
+  "word": "奥",
+  "reading": "おく",
+  "meaning": "inner part, back (of...)",
+  "type": "noun"
+ },
+ {
+  "order": 388,
+  "word": "軽い",
+  "reading": "かるい",
+  "meaning": "light",
+  "type": "i-adjective"
+ },
+ {
+  "order": 389,
+  "word": "返す",
+  "reading": "かえす",
+  "meaning": "to return, to repay",
+  "type": "u-verb"
+ },
+ {
+  "order": 390,
+  "word": "現れる",
+  "reading": "あらわれる",
+  "meaning": "to appear, to emerge",
+  "type": "ru-verb"
+ },
+ {
+  "order": 391,
+  "word": "痛い",
+  "reading": "いたい",
+  "meaning": "hurt, ouch",
+  "type": "i-adjective"
+ },
+ {
+  "order": 392,
+  "word": "どうやら",
+  "reading": "どうやら",
+  "meaning": "(seems) likely, seems like",
+  "type": "adverb"
+ },
+ {
+  "order": 393,
+  "word": "点ける",
+  "reading": "つける",
+  "meaning": "to switch on",
+  "type": "ru-verb"
+ },
+ {
+  "order": 394,
+  "word": "付ける",
+  "reading": "つける",
+  "meaning": "to attach, to set, to add",
+  "type": "ru-verb"
+ },
+ {
+  "order": 395,
+  "word": "一瞬",
+  "reading": "いっしゅん",
+  "meaning": "instant, for a moment",
+  "type": "noun"
+ },
+ {
+  "order": 396,
+  "word": "隠す",
+  "reading": "かくす",
+  "meaning": "to hide",
+  "type": "u-verb"
+ },
+ {
+  "order": 397,
+  "word": "準備",
+  "reading": "じゅんび",
+  "meaning": "preparation, arrangements",
+  "type": "noun"
+ },
+ {
+  "order": 398,
+  "word": "そろそろ",
+  "reading": "そろそろ",
+  "meaning": "soon, about time",
+  "type": "adverb"
+ },
+ {
+  "order": 399,
+  "word": "落ち着く",
+  "reading": "おちつく",
+  "meaning": "to calm down, to settle in",
+  "type": "u-verb"
+ },
+ {
+  "order": 400,
+  "word": "恥ずかしい",
+  "reading": "はずかしい",
+  "meaning": "embarrassing, shy",
+  "type": "i-adjective"
+ },
+ {
+  "order": 401,
+  "word": "場合",
+  "reading": "ばあい",
+  "meaning": "situation, case",
+  "type": "noun"
+ },
+ {
+  "order": 402,
+  "word": "しっかり",
+  "reading": "しっかり",
+  "meaning": "tightly, firmly",
+  "type": "adverb"
+ },
+ {
+  "order": 403,
+  "word": "しっかり",
+  "reading": "しっかり",
+  "meaning": "reliable, dependable",
+  "type": "adverb"
+ },
+ {
+  "order": 404,
+  "word": "髪",
+  "reading": "かみ",
+  "meaning": "hair(style)",
+  "type": "noun"
+ },
+ {
+  "order": 405,
+  "word": "元",
+  "reading": "もと",
+  "meaning": "former, ex-",
+  "type": "noun"
+ },
+ {
+  "order": 406,
+  "word": "得る",
+  "reading": "える",
+  "meaning": "to obtain, to gain",
+  "type": "ru-verb"
+ },
+ {
+  "order": 407,
+  "word": "すぐ",
+  "reading": "すぐ",
+  "meaning": "at once, right away",
+  "type": "adverb"
+ },
+ {
+  "order": 408,
+  "word": "来月",
+  "reading": "らいげつ",
+  "meaning": "next month",
+  "type": "noun"
+ },
+ {
+  "order": 409,
+  "word": "昔",
+  "reading": "むかし",
+  "meaning": "a long time ago, the old days",
+  "type": "noun"
+ },
+ {
+  "order": 410,
+  "word": "近い",
+  "reading": "ちかい",
+  "meaning": "near",
+  "type": "i-adjective"
+ },
+ {
+  "order": 411,
+  "word": "動き",
+  "reading": "うごき",
+  "meaning": "movement, motion",
+  "type": "noun"
+ },
+ {
+  "order": 412,
+  "word": "見つめる",
+  "reading": "みつめる",
+  "meaning": "to stare",
+  "type": "ru-verb"
+ },
+ {
+  "order": 413,
+  "word": "幸せ",
+  "reading": "しあわせ",
+  "meaning": "happiness, good fortune",
+  "type": "na-adjective"
+ },
+ {
+  "order": 414,
+  "word": "記憶",
+  "reading": "きおく",
+  "meaning": "memory",
+  "type": "noun"
+ },
+ {
+  "order": 415,
+  "word": "反応",
+  "reading": "はんのう",
+  "meaning": "reaction, response",
+  "type": "noun"
+ },
+ {
+  "order": 416,
+  "word": "私たち",
+  "reading": "わたしたち",
+  "meaning": "we",
+  "type": "noun"
+ },
+ {
+  "order": 417,
+  "word": "とにかく",
+  "reading": "とにかく",
+  "meaning": "in any case, anyway",
+  "type": "adverb"
+ },
+ {
+  "order": 418,
+  "word": "勝手",
+  "reading": "かって",
+  "meaning": "selfish, self-centered",
+  "type": "na-adjective"
+ },
+ {
+  "order": 419,
+  "word": "攻撃",
+  "reading": "こうげき",
+  "meaning": "attack, assault, criticism",
+  "type": "noun"
+ },
+ {
+  "order": 420,
+  "word": "開ける",
+  "reading": "あける",
+  "meaning": "to open, to unlock",
+  "type": "ru-verb"
+ },
+ {
+  "order": 421,
+  "word": "黙る",
+  "reading": "だまる",
+  "meaning": "to become silent, to shut one's mouth",
+  "type": "u-verb"
+ },
+ {
+  "order": 422,
+  "word": "最近",
+  "reading": "さいきん",
+  "meaning": "recently",
+  "type": "adverb"
+ },
+ {
+  "order": 423,
+  "word": "全員",
+  "reading": "ぜんいん",
+  "meaning": "all members, (the) entire staff",
+  "type": "noun"
+ },
+ {
+  "order": 424,
+  "word": "せい",
+  "reading": "せい",
+  "meaning": "cause, fault",
+  "type": "noun"
+ },
+ {
+  "order": 425,
+  "word": "深い",
+  "reading": "ふかい",
+  "meaning": "deep, profound",
+  "type": "i-adjective"
+ },
+ {
+  "order": 426,
+  "word": "別",
+  "reading": "べつ",
+  "meaning": "another, different",
+  "type": "na-adjective"
+ },
+ {
+  "order": 427,
+  "word": "決まる",
+  "reading": "きまる",
+  "meaning": "to be decided, to be set",
+  "type": "u-verb"
+ },
+ {
+  "order": 428,
+  "word": "しばらく",
+  "reading": "しばらく",
+  "meaning": "for a while, for the time being",
+  "type": "adverb"
+ },
+ {
+  "order": 429,
+  "word": "行う",
+  "reading": "おこなう",
+  "meaning": "to perform, to do",
+  "type": "u-verb"
+ },
+ {
+  "order": 430,
+  "word": "上がる",
+  "reading": "あがる",
+  "meaning": "to go up, to rise",
+  "type": "u-verb"
+ },
+ {
+  "order": 431,
+  "word": "隣",
+  "reading": "となり",
+  "meaning": "next to, adjacent",
+  "type": "noun"
+ },
+ {
+  "order": 432,
+  "word": "扉",
+  "reading": "とびら",
+  "meaning": "door",
+  "type": "noun"
+ },
+ {
+  "order": 433,
+  "word": "指",
+  "reading": "ゆび",
+  "meaning": "finger, toe",
+  "type": "noun"
+ },
+ {
+  "order": 434,
+  "word": "結果",
+  "reading": "けっか",
+  "meaning": "result, outcome",
+  "type": "noun"
+ },
+ {
+  "order": 435,
+  "word": "与える",
+  "reading": "あたえる",
+  "meaning": "to give",
+  "type": "ru-verb"
+ },
+ {
+  "order": 436,
+  "word": "道",
+  "reading": "みち",
+  "meaning": "road",
+  "type": "noun"
+ },
+ {
+  "order": 437,
+  "word": "乗る",
+  "reading": "のる",
+  "meaning": "to ride, to take",
+  "type": "u-verb"
+ },
+ {
+  "order": 438,
+  "word": "特に",
+  "reading": "とくに",
+  "meaning": "specially, particularly",
+  "type": "adverb"
+ },
+ {
+  "order": 439,
+  "word": "形",
+  "reading": "かたち",
+  "meaning": "shape",
+  "type": "noun"
+ },
+ {
+  "order": 440,
+  "word": "さあ",
+  "reading": "さあ",
+  "meaning": "I'm not sure, Hmm...",
+  "type": "expression"
+ },
+ {
+  "order": 441,
+  "word": "血",
+  "reading": "ち",
+  "meaning": "blood",
+  "type": "noun"
+ },
+ {
+  "order": 442,
+  "word": "更に",
+  "reading": "さらに",
+  "meaning": "furthermore, even more",
+  "type": "adverb"
+ },
+ {
+  "order": 443,
+  "word": "用意",
+  "reading": "ようい",
+  "meaning": "preparation, getting ready",
+  "type": "noun"
+ },
+ {
+  "order": 444,
+  "word": "負ける",
+  "reading": "まける",
+  "meaning": "to lose",
+  "type": "ru-verb"
+ },
+ {
+  "order": 445,
+  "word": "神",
+  "reading": "かみ",
+  "meaning": "god, spirit",
+  "type": "noun"
+ },
+ {
+  "order": 446,
+  "word": "実は",
+  "reading": "じつは",
+  "meaning": "actually, the truth is",
+  "type": "adverb"
+ },
+ {
+  "order": 447,
+  "word": "服",
+  "reading": "ふく",
+  "meaning": "clothes",
+  "type": "noun"
+ },
+ {
+  "order": 448,
+  "word": "不思議",
+  "reading": "ふしぎ",
+  "meaning": "strange, wonderful",
+  "type": "na-adjective"
+ },
+ {
+  "order": 449,
+  "word": "意識",
+  "reading": "いしき",
+  "meaning": "consciousness, awareness",
+  "type": "noun"
+ },
+ {
+  "order": 450,
+  "word": "一体",
+  "reading": "いったい",
+  "meaning": "what on earth, what the…",
+  "type": "adverb"
+ },
+ {
+  "order": 451,
+  "word": "とりあえず",
+  "reading": "とりあえず",
+  "meaning": "for now, first of all",
+  "type": "adverb"
+ },
+ {
+  "order": 452,
+  "word": "送る",
+  "reading": "おくる",
+  "meaning": "to send",
+  "type": "u-verb"
+ },
+ {
+  "order": 453,
+  "word": "では",
+  "reading": "では",
+  "meaning": "then",
+  "type": "expression"
+ },
+ {
+  "order": 454,
+  "word": "安心",
+  "reading": "あんしん",
+  "meaning": "peace of mind, relief",
+  "type": "noun"
+ },
+ {
+  "order": 455,
+  "word": "失う",
+  "reading": "うしなう",
+  "meaning": "to lose, to miss",
+  "type": "u-verb"
+ },
+ {
+  "order": 456,
+  "word": "行動",
+  "reading": "こうどう",
+  "meaning": "action, conduct",
+  "type": "noun"
+ },
+ {
+  "order": 457,
+  "word": "触れる",
+  "reading": "ふれる",
+  "meaning": "to touch, to come in contact with",
+  "type": "ru-verb"
+ },
+ {
+  "order": 458,
+  "word": "そもそも",
+  "reading": "そもそも",
+  "meaning": "in the first place",
+  "type": "adverb"
+ },
+ {
+  "order": 459,
+  "word": "少ない",
+  "reading": "すくない",
+  "meaning": "few, little",
+  "type": "i-adjective"
+ },
+ {
+  "order": 460,
+  "word": "結局",
+  "reading": "けっきょく",
+  "meaning": "after all, finally",
+  "type": "adverb"
+ },
+ {
+  "order": 461,
+  "word": "空",
+  "reading": "そら",
+  "meaning": "sky, weather",
+  "type": "noun"
+ },
+ {
+  "order": 462,
+  "word": "済む",
+  "reading": "すむ",
+  "meaning": "to be settled, to complete",
+  "type": "u-verb"
+ },
+ {
+  "order": 463,
+  "word": "任せる",
+  "reading": "まかせる",
+  "meaning": "to entrust to, to leave it to",
+  "type": "ru-verb"
+ },
+ {
+  "order": 464,
+  "word": "赤い",
+  "reading": "あかい",
+  "meaning": "red",
+  "type": "i-adjective"
+ },
+ {
+  "order": 465,
+  "word": "大事",
+  "reading": "だいじ",
+  "meaning": "important, precious",
+  "type": "na-adjective"
+ },
+ {
+  "order": 466,
+  "word": "残す",
+  "reading": "のこす",
+  "meaning": "to leave, to reserve",
+  "type": "u-verb"
+ },
+ {
+  "order": 467,
+  "word": "止まる",
+  "reading": "とまる",
+  "meaning": "to stop, to come to a stop",
+  "type": "u-verb"
+ },
+ {
+  "order": 468,
+  "word": "朝",
+  "reading": "あさ",
+  "meaning": "morning",
+  "type": "noun"
+ },
+ {
+  "order": 469,
+  "word": "命",
+  "reading": "いのち",
+  "meaning": "life",
+  "type": "noun"
+ },
+ {
+  "order": 470,
+  "word": "不安",
+  "reading": "ふあん",
+  "meaning": "uneasiness, anxiety",
+  "type": "noun"
+ },
+ {
+  "order": 471,
+  "word": "結構",
+  "reading": "けっこう",
+  "meaning": "all right, no thank you",
+  "type": "expression"
+ },
+ {
+  "order": 472,
+  "word": "結構",
+  "reading": "けっこう",
+  "meaning": "quite",
+  "type": "adverb"
+ },
+ {
+  "order": 473,
+  "word": "新しい",
+  "reading": "あたらしい",
+  "meaning": "new",
+  "type": "i-adjective"
+ },
+ {
+  "order": 474,
+  "word": "程度",
+  "reading": "ていど",
+  "meaning": "degree, extent",
+  "type": "noun"
+ },
+ {
+  "order": 475,
+  "word": "壁",
+  "reading": "かべ",
+  "meaning": "wall, partition",
+  "type": "noun"
+ },
+ {
+  "order": 476,
+  "word": "用",
+  "reading": "よう",
+  "meaning": "things to do, (as a suffix) to do..., made for...",
+  "type": "noun"
+ },
+ {
+  "order": 477,
+  "word": "背中",
+  "reading": "せなか",
+  "meaning": "back",
+  "type": "noun"
+ },
+ {
+  "order": 478,
+  "word": "気付く",
+  "reading": "きづく",
+  "meaning": "to realize, to notice",
+  "type": "u-verb"
+ },
+ {
+  "order": 479,
+  "word": "いきなり",
+  "reading": "いきなり",
+  "meaning": "all of a sudden, without warning",
+  "type": "adverb"
+ },
+ {
+  "order": 480,
+  "word": "渡す",
+  "reading": "わたす",
+  "meaning": "to carry across, to hand over",
+  "type": "u-verb"
+ },
+ {
+  "order": 481,
+  "word": "喜ぶ",
+  "reading": "よろこぶ",
+  "meaning": "to be happy, to be delighted",
+  "type": "u-verb"
+ },
+ {
+  "order": 482,
+  "word": "可愛い",
+  "reading": "かわいい",
+  "meaning": "cute",
+  "type": "i-adjective"
+ },
+ {
+  "order": 483,
+  "word": "始まる",
+  "reading": "はじまる",
+  "meaning": "to begin",
+  "type": "u-verb"
+ },
+ {
+  "order": 484,
+  "word": "色",
+  "reading": "いろ",
+  "meaning": "color",
+  "type": "noun"
+ },
+ {
+  "order": 485,
+  "word": "認める",
+  "reading": "みとめる",
+  "meaning": "to recognize, to approve, to accept",
+  "type": "ru-verb"
+ },
+ {
+  "order": 486,
+  "word": "急",
+  "reading": "きゅう",
+  "meaning": "suddenly",
+  "type": "na-adjective"
+ },
+ {
+  "order": 487,
+  "word": "向こう",
+  "reading": "むこう",
+  "meaning": "the other side, the other party, opponent",
+  "type": "noun"
+ },
+ {
+  "order": 488,
+  "word": "求める",
+  "reading": "もとめる",
+  "meaning": "to seek, to wish for",
+  "type": "ru-verb"
+ },
+ {
+  "order": 489,
+  "word": "肩",
+  "reading": "かた",
+  "meaning": "shoulder",
+  "type": "noun"
+ },
+ {
+  "order": 490,
+  "word": "仲間",
+  "reading": "なかま",
+  "meaning": "comrade, peer",
+  "type": "noun"
+ },
+ {
+  "order": 491,
+  "word": "ようやく",
+  "reading": "ようやく",
+  "meaning": "at last",
+  "type": "adverb"
+ },
+ {
+  "order": 492,
+  "word": "思わず",
+  "reading": "おもわず",
+  "meaning": "unintentionally, involuntarily",
+  "type": "adverb"
+ },
+ {
+  "order": 493,
+  "word": "ほとんど",
+  "reading": "ほとんど",
+  "meaning": "almost, hardly",
+  "type": "adverb"
+ },
+ {
+  "order": 494,
+  "word": "突然",
+  "reading": "とつぜん",
+  "meaning": "abruptly, suddenly",
+  "type": "adverb"
+ },
+ {
+  "order": 495,
+  "word": "自身",
+  "reading": "じしん",
+  "meaning": "self",
+  "type": "noun"
+ },
+ {
+  "order": 496,
+  "word": "再び",
+  "reading": "ふたたび",
+  "meaning": "again, a second time",
+  "type": "adverb"
+ },
+ {
+  "order": 497,
+  "word": "静か",
+  "reading": "しずか",
+  "meaning": "quiet",
+  "type": "na-adjective"
+ },
+ {
+  "order": 498,
+  "word": "飛ぶ",
+  "reading": "とぶ",
+  "meaning": "to fly",
+  "type": "u-verb"
+ },
+ {
+  "order": 499,
+  "word": "白い",
+  "reading": "しろい",
+  "meaning": "white, blank",
+  "type": "i-adjective"
+ },
+ {
+  "order": 500,
+  "word": "届く",
+  "reading": "とどく",
+  "meaning": "to reach, to be received",
+  "type": "u-verb"
+ },
+ {
+  "order": 501,
+  "word": "生む",
+  "reading": "うむ",
+  "meaning": "to have children",
+  "type": "u-verb"
+ },
+ {
+  "order": 502,
+  "word": "倒す",
+  "reading": "たおす",
+  "meaning": "to bring down, to overthrow",
+  "type": "u-verb"
+ },
+ {
+  "order": 503,
+  "word": "似る",
+  "reading": "にる",
+  "meaning": "to look similar to, to resemble",
+  "type": "ru-verb"
+ },
+ {
+  "order": 504,
+  "word": "空気",
+  "reading": "くうき",
+  "meaning": "atmosphere, air",
+  "type": "noun"
+ },
+ {
+  "order": 505,
+  "word": "腰",
+  "reading": "こし",
+  "meaning": "hip, lower back",
+  "type": "noun"
+ },
+ {
+  "order": 506,
+  "word": "名",
+  "reading": "な",
+  "meaning": "name, reputation",
+  "type": "noun"
+ },
+ {
+  "order": 507,
+  "word": "危険",
+  "reading": "きけん",
+  "meaning": "danger, dangerous",
+  "type": "na-adjective"
+ },
+ {
+  "order": 508,
+  "word": "付く",
+  "reading": "つく",
+  "meaning": "to attach itself to, to be connected with, to come in contact with",
+  "type": "u-verb"
+ },
+ {
+  "order": 509,
+  "word": "つく",
+  "reading": "つく",
+  "meaning": "to be on, to be switched on",
+  "type": "u-verb"
+ },
+ {
+  "order": 510,
+  "word": "熱い",
+  "reading": "あつい",
+  "meaning": "hot (things, touch)",
+  "type": "i-adjective"
+ },
+ {
+  "order": 511,
+  "word": "ただいま",
+  "reading": "ただいま",
+  "meaning": "I'm back (said when arriving home)",
+  "type": "expression"
+ },
+ {
+  "order": 512,
+  "word": "頂きます",
+  "reading": "いただきます",
+  "meaning": "let's eat!, thank you for the meal",
+  "type": "expression"
+ },
+ {
+  "order": 513,
+  "word": "慌てる",
+  "reading": "あわてる",
+  "meaning": "to be flustered, to hurry",
+  "type": "ru-verb"
+ },
+ {
+  "order": 514,
+  "word": "周囲",
+  "reading": "しゅうい",
+  "meaning": "circumference, surroundings",
+  "type": "noun"
+ },
+ {
+  "order": 515,
+  "word": "気分",
+  "reading": "きぶん",
+  "meaning": "mood, feeling",
+  "type": "noun"
+ },
+ {
+  "order": 516,
+  "word": "事実",
+  "reading": "じじつ",
+  "meaning": "fact, truth",
+  "type": "noun"
+ },
+ {
+  "order": 517,
+  "word": "まず",
+  "reading": "まず",
+  "meaning": "first (of all), to begin with",
+  "type": "adverb"
+ },
+ {
+  "order": 518,
+  "word": "本気",
+  "reading": "ほんき",
+  "meaning": "seriousness",
+  "type": "noun"
+ },
+ {
+  "order": 519,
+  "word": "頷く",
+  "reading": "うなずく",
+  "meaning": "to nod",
+  "type": "u-verb"
+ },
+ {
+  "order": 520,
+  "word": "通り",
+  "reading": "とおり",
+  "meaning": "street",
+  "type": "noun"
+ },
+ {
+  "order": 521,
+  "word": "想像",
+  "reading": "そうぞう",
+  "meaning": "imagination",
+  "type": "noun"
+ },
+ {
+  "order": 522,
+  "word": "店",
+  "reading": "みせ",
+  "meaning": "shop, store",
+  "type": "noun"
+ },
+ {
+  "order": 523,
+  "word": "何だか",
+  "reading": "なんだか",
+  "meaning": "somehow, for some reason",
+  "type": "adverb"
+ },
+ {
+  "order": 524,
+  "word": "目的",
+  "reading": "もくてき",
+  "meaning": "purpose, aim, object",
+  "type": "noun"
+ },
+ {
+  "order": 525,
+  "word": "眠る",
+  "reading": "ねむる",
+  "meaning": "to sleep",
+  "type": "u-verb"
+ },
+ {
+  "order": 526,
+  "word": "確か",
+  "reading": "たしか",
+  "meaning": "certainly, surely, if I'm not mistaken...",
+  "type": "adverb"
+ },
+ {
+  "order": 527,
+  "word": "十分",
+  "reading": "じゅうぶん",
+  "meaning": "plenty",
+  "type": "adverb"
+ },
+ {
+  "order": 528,
+  "word": "料理",
+  "reading": "りょうり",
+  "meaning": "cooking, cuisine",
+  "type": "noun"
+ },
+ {
+  "order": 529,
+  "word": "頃",
+  "reading": "ころ",
+  "meaning": "approximate time",
+  "type": "noun"
+ },
+ {
+  "order": 530,
+  "word": "なかなか",
+  "reading": "なかなか",
+  "meaning": "rather, fairly",
+  "type": "adverb"
+ },
+ {
+  "order": 531,
+  "word": "正直",
+  "reading": "しょうじき",
+  "meaning": "honest, upright",
+  "type": "na-adjective"
+ },
+ {
+  "order": 532,
+  "word": "身",
+  "reading": "み",
+  "meaning": "body, one's own person",
+  "type": "noun"
+ },
+ {
+  "order": 533,
+  "word": "いっぱい",
+  "reading": "いっぱい",
+  "meaning": "full, a lot",
+  "type": "adverb"
+ },
+ {
+  "order": 534,
+  "word": "美しい",
+  "reading": "うつくしい",
+  "meaning": "beautiful",
+  "type": "i-adjective"
+ },
+ {
+  "order": 535,
+  "word": "甘い",
+  "reading": "あまい",
+  "meaning": "sweet",
+  "type": "i-adjective"
+ },
+ {
+  "order": 536,
+  "word": "むしろ",
+  "reading": "むしろ",
+  "meaning": "rather",
+  "type": "adverb"
+ },
+ {
+  "order": 537,
+  "word": "首",
+  "reading": "くび",
+  "meaning": "neck",
+  "type": "noun"
+ },
+ {
+  "order": 538,
+  "word": "感情",
+  "reading": "かんじょう",
+  "meaning": "feeling, emotion",
+  "type": "noun"
+ },
+ {
+  "order": 539,
+  "word": "周り",
+  "reading": "まわり",
+  "meaning": "around, surroundings",
+  "type": "noun"
+ },
+ {
+  "order": 540,
+  "word": "方法",
+  "reading": "ほうほう",
+  "meaning": "method, way",
+  "type": "noun"
+ },
+ {
+  "order": 541,
+  "word": "もう一度",
+  "reading": "もういちど",
+  "meaning": "once more",
+  "type": "adverb"
+ },
+ {
+  "order": 542,
+  "word": "遅い",
+  "reading": "おそい",
+  "meaning": "slow, late",
+  "type": "i-adjective"
+ },
+ {
+  "order": 543,
+  "word": "会話",
+  "reading": "かいわ",
+  "meaning": "conversation",
+  "type": "noun"
+ },
+ {
+  "order": 544,
+  "word": "合う",
+  "reading": "あう",
+  "meaning": "to fit",
+  "type": "u-verb"
+ },
+ {
+  "order": 545,
+  "word": "やって来る",
+  "reading": "やってくる",
+  "meaning": "to come around, to come along",
+  "type": "irregular-verb"
+ },
+ {
+  "order": 546,
+  "word": "森",
+  "reading": "もり",
+  "meaning": "thick woods, forest",
+  "type": "noun"
+ },
+ {
+  "order": 547,
+  "word": "動かす",
+  "reading": "うごかす",
+  "meaning": "to move, to make a move",
+  "type": "u-verb"
+ },
+ {
+  "order": 548,
+  "word": "能力",
+  "reading": "のうりょく",
+  "meaning": "ability, capacity",
+  "type": "noun"
+ },
+ {
+  "order": 549,
+  "word": "震える",
+  "reading": "ふるえる",
+  "meaning": "to tremble, to shake",
+  "type": "ru-verb"
+ },
+ {
+  "order": 550,
+  "word": "期待",
+  "reading": "きたい",
+  "meaning": "expectation, anticipation",
+  "type": "noun"
+ },
+ {
+  "order": 551,
+  "word": "無事",
+  "reading": "ぶじ",
+  "meaning": "safely, peacefully",
+  "type": "na-adjective"
+ },
+ {
+  "order": 552,
+  "word": "起こす",
+  "reading": "おこす",
+  "meaning": "to bring about, to cause",
+  "type": "u-verb"
+ },
+ {
+  "order": 553,
+  "word": "起こす",
+  "reading": "おこす",
+  "meaning": "to wake up",
+  "type": "u-verb"
+ },
+ {
+  "order": 554,
+  "word": "耳",
+  "reading": "みみ",
+  "meaning": "ear, hearing",
+  "type": "noun"
+ },
+ {
+  "order": 555,
+  "word": "生まれる",
+  "reading": "うまれる",
+  "meaning": "to be born",
+  "type": "ru-verb"
+ },
+ {
+  "order": 556,
+  "word": "移動",
+  "reading": "いどう",
+  "meaning": "movement, shift",
+  "type": "noun"
+ },
+ {
+  "order": 557,
+  "word": "邪魔",
+  "reading": "じゃま",
+  "meaning": "obstacle, hindrance",
+  "type": "na-adjective"
+ },
+ {
+  "order": 558,
+  "word": "遊ぶ",
+  "reading": "あそぶ",
+  "meaning": "to play",
+  "type": "u-verb"
+ },
+ {
+  "order": 559,
+  "word": "要る",
+  "reading": "いる",
+  "meaning": "to need, to require",
+  "type": "u-verb"
+ },
+ {
+  "order": 560,
+  "word": "無くなる",
+  "reading": "なくなる",
+  "meaning": "to be lost, to be used up",
+  "type": "u-verb"
+ },
+ {
+  "order": 561,
+  "word": "唇",
+  "reading": "くちびる",
+  "meaning": "lip",
+  "type": "noun"
+ },
+ {
+  "order": 562,
+  "word": "着る",
+  "reading": "きる",
+  "meaning": "to wear, to put on",
+  "type": "ru-verb"
+ },
+ {
+  "order": 563,
+  "word": "色々",
+  "reading": "いろいろ",
+  "meaning": "various, in various ways",
+  "type": "na-adjective"
+ },
+ {
+  "order": 564,
+  "word": "どうぞ",
+  "reading": "どうぞ",
+  "meaning": "go ahead",
+  "type": "expression"
+ },
+ {
+  "order": 565,
+  "word": "立ち上がる",
+  "reading": "たちあがる",
+  "meaning": "to stand up",
+  "type": "u-verb"
+ },
+ {
+  "order": 566,
+  "word": "思い",
+  "reading": "おもい",
+  "meaning": "thought",
+  "type": "noun"
+ },
+ {
+  "order": 567,
+  "word": "以前",
+  "reading": "いぜん",
+  "meaning": "before, ago",
+  "type": "noun"
+ },
+ {
+  "order": 568,
+  "word": "もう少し",
+  "reading": "もうすこし",
+  "meaning": "a little more, a bit more",
+  "type": "adverb"
+ },
+ {
+  "order": 569,
+  "word": "襲う",
+  "reading": "おそう",
+  "meaning": "to assault, to attack",
+  "type": "u-verb"
+ },
+ {
+  "order": 570,
+  "word": "見つかる",
+  "reading": "みつかる",
+  "meaning": "to be found, to be caught",
+  "type": "u-verb"
+ },
+ {
+  "order": 571,
+  "word": "急ぐ",
+  "reading": "いそぐ",
+  "meaning": "to hurry",
+  "type": "u-verb"
+ },
+ {
+  "order": 572,
+  "word": "せっかく",
+  "reading": "せっかく",
+  "meaning": "with (much) trouble, specially",
+  "type": "adverb"
+ },
+ {
+  "order": 573,
+  "word": "降りる",
+  "reading": "おりる",
+  "meaning": "to get off, to go down",
+  "type": "ru-verb"
+ },
+ {
+  "order": 574,
+  "word": "下りる",
+  "reading": "おりる",
+  "meaning": "to go down, to come down",
+  "type": "ru-verb"
+ },
+ {
+  "order": 575,
+  "word": "切る",
+  "reading": "きる",
+  "meaning": "to cut",
+  "type": "u-verb"
+ },
+ {
+  "order": 576,
+  "word": "事件",
+  "reading": "じけん",
+  "meaning": "affair, case",
+  "type": "noun"
+ },
+ {
+  "order": 577,
+  "word": "返事",
+  "reading": "へんじ",
+  "meaning": "reply",
+  "type": "noun"
+ },
+ {
+  "order": 578,
+  "word": "酷い",
+  "reading": "ひどい",
+  "meaning": "terrible, cruel",
+  "type": "i-adjective"
+ },
+ {
+  "order": 579,
+  "word": "重い",
+  "reading": "おもい",
+  "meaning": "heavy",
+  "type": "i-adjective"
+ },
+ {
+  "order": 580,
+  "word": "起こる",
+  "reading": "おこる",
+  "meaning": "to occur, to happen",
+  "type": "u-verb"
+ },
+ {
+  "order": 581,
+  "word": "逆",
+  "reading": "ぎゃく",
+  "meaning": "reverse, inverse",
+  "type": "na-adjective"
+ },
+ {
+  "order": 582,
+  "word": "納得",
+  "reading": "なっとく",
+  "meaning": "consent, acceptance",
+  "type": "noun"
+ },
+ {
+  "order": 583,
+  "word": "楽しむ",
+  "reading": "たのしむ",
+  "meaning": "to enjoy",
+  "type": "u-verb"
+ },
+ {
+  "order": 584,
+  "word": "叫ぶ",
+  "reading": "さけぶ",
+  "meaning": "to shout, to yell, to cry out",
+  "type": "u-verb"
+ },
+ {
+  "order": 585,
+  "word": "集まる",
+  "reading": "あつまる",
+  "meaning": "to gather, to be collected",
+  "type": "u-verb"
+ },
+ {
+  "order": 586,
+  "word": "構う",
+  "reading": "かまう",
+  "meaning": "to mind, to care for",
+  "type": "u-verb"
+ },
+ {
+  "order": 587,
+  "word": "王",
+  "reading": "おう",
+  "meaning": "king",
+  "type": "noun"
+ },
+ {
+  "order": 588,
+  "word": "途中",
+  "reading": "とちゅう",
+  "meaning": "on the way, half way",
+  "type": "noun"
+ },
+ {
+  "order": 589,
+  "word": "慣れる",
+  "reading": "なれる",
+  "meaning": "to grow accustomed to",
+  "type": "ru-verb"
+ },
+ {
+  "order": 590,
+  "word": "終わり",
+  "reading": "おわり",
+  "meaning": "end",
+  "type": "noun"
+ },
+ {
+  "order": 591,
+  "word": "一応",
+  "reading": "いちおう",
+  "meaning": "for the time being, more or less",
+  "type": "adverb"
+ },
+ {
+  "order": 592,
+  "word": "引く",
+  "reading": "ひく",
+  "meaning": "to draw, to pull",
+  "type": "u-verb"
+ },
+ {
+  "order": 593,
+  "word": "海",
+  "reading": "うみ",
+  "meaning": "sea, ocean",
+  "type": "noun"
+ },
+ {
+  "order": 594,
+  "word": "諦める",
+  "reading": "あきらめる",
+  "meaning": "to give up, to abandon",
+  "type": "ru-verb"
+ },
+ {
+  "order": 595,
+  "word": "必ず",
+  "reading": "かならず",
+  "meaning": "without exception, always, certainly",
+  "type": "adverb"
+ },
+ {
+  "order": 596,
+  "word": "狙う",
+  "reading": "ねらう",
+  "meaning": "to aim, to be after",
+  "type": "u-verb"
+ },
+ {
+  "order": 597,
+  "word": "いくら",
+  "reading": "いくら",
+  "meaning": "how much",
+  "type": "noun"
+ },
+ {
+  "order": 598,
+  "word": "落とす",
+  "reading": "おとす",
+  "meaning": "to drop",
+  "type": "u-verb"
+ },
+ {
+  "order": 599,
+  "word": "部分",
+  "reading": "ぶぶん",
+  "meaning": "part, section",
+  "type": "noun"
+ },
+ {
+  "order": 600,
+  "word": "必死",
+  "reading": "ひっし",
+  "meaning": "frantic, desperate",
+  "type": "na-adjective"
+ },
+ {
+  "order": 601,
+  "word": "珍しい",
+  "reading": "めずらしい",
+  "meaning": "rare, uncommon",
+  "type": "i-adjective"
+ },
+ {
+  "order": 602,
+  "word": "意外",
+  "reading": "いがい",
+  "meaning": "unexpected, unforeseen",
+  "type": "na-adjective"
+ },
+ {
+  "order": 603,
+  "word": "報告",
+  "reading": "ほうこく",
+  "meaning": "report",
+  "type": "noun"
+ },
+ {
+  "order": 604,
+  "word": "握る",
+  "reading": "にぎる",
+  "meaning": "to grasp, to grip",
+  "type": "u-verb"
+ },
+ {
+  "order": 605,
+  "word": "結婚",
+  "reading": "けっこん",
+  "meaning": "marriage",
+  "type": "noun"
+ },
+ {
+  "order": 606,
+  "word": "戦い",
+  "reading": "たたかい",
+  "meaning": "war, battle",
+  "type": "noun"
+ },
+ {
+  "order": 607,
+  "word": "感謝",
+  "reading": "かんしゃ",
+  "meaning": "appreciation, thanks",
+  "type": "noun"
+ },
+ {
+  "order": 608,
+  "word": "激しい",
+  "reading": "はげしい",
+  "meaning": "intense, violent",
+  "type": "i-adjective"
+ },
+ {
+  "order": 609,
+  "word": "倒れる",
+  "reading": "たおれる",
+  "meaning": "to collapse, to fall down",
+  "type": "ru-verb"
+ },
+ {
+  "order": 610,
+  "word": "既に",
+  "reading": "すでに",
+  "meaning": "already, too late",
+  "type": "adverb"
+ },
+ {
+  "order": 611,
+  "word": "疲れる",
+  "reading": "つかれる",
+  "meaning": "to get tired",
+  "type": "ru-verb"
+ },
+ {
+  "order": 612,
+  "word": "生活",
+  "reading": "せいかつ",
+  "meaning": "life, lifestyle",
+  "type": "noun"
+ },
+ {
+  "order": 613,
+  "word": "場",
+  "reading": "ば",
+  "meaning": "opportunity, occasion",
+  "type": "noun"
+ },
+ {
+  "order": 614,
+  "word": "愛する",
+  "reading": "あいする",
+  "meaning": "to love, to care for",
+  "type": "irregular-verb"
+ },
+ {
+  "order": 615,
+  "word": "冷たい",
+  "reading": "つめたい",
+  "meaning": "cold (to the touch)",
+  "type": "i-adjective"
+ },
+ {
+  "order": 616,
+  "word": "捨てる",
+  "reading": "すてる",
+  "meaning": "to throw away",
+  "type": "ru-verb"
+ },
+ {
+  "order": 617,
+  "word": "過ごす",
+  "reading": "すごす",
+  "meaning": "to spend (time), to pass",
+  "type": "u-verb"
+ },
+ {
+  "order": 618,
+  "word": "食事",
+  "reading": "しょくじ",
+  "meaning": "meal, dinner",
+  "type": "noun"
+ },
+ {
+  "order": 619,
+  "word": "働く",
+  "reading": "はたらく",
+  "meaning": "to work",
+  "type": "u-verb"
+ },
+ {
+  "order": 620,
+  "word": "答え",
+  "reading": "こたえ",
+  "meaning": "answer, response",
+  "type": "noun"
+ },
+ {
+  "order": 621,
+  "word": "風",
+  "reading": "かぜ",
+  "meaning": "wind",
+  "type": "noun"
+ },
+ {
+  "order": 622,
+  "word": "黒い",
+  "reading": "くろい",
+  "meaning": "black, dark",
+  "type": "i-adjective"
+ },
+ {
+  "order": 623,
+  "word": "助かる",
+  "reading": "たすかる",
+  "meaning": "to be saved, to survive",
+  "type": "u-verb"
+ },
+ {
+  "order": 624,
+  "word": "受け取る",
+  "reading": "うけとる",
+  "meaning": "to receive, to take (someone's words or behavior)",
+  "type": "u-verb"
+ },
+ {
+  "order": 625,
+  "word": "足りる",
+  "reading": "たりる",
+  "meaning": "to be enough, to be sufficient",
+  "type": "ru-verb"
+ },
+ {
+  "order": 626,
+  "word": "判断",
+  "reading": "はんだん",
+  "meaning": "judgment, decision",
+  "type": "noun"
+ },
+ {
+  "order": 627,
+  "word": "未来",
+  "reading": "みらい",
+  "meaning": "future",
+  "type": "noun"
+ },
+ {
+  "order": 628,
+  "word": "食う",
+  "reading": "くう",
+  "meaning": "to eat, to live on",
+  "type": "u-verb"
+ },
+ {
+  "order": 629,
+  "word": "分",
+  "reading": "ぶん",
+  "meaning": "amount, share",
+  "type": "noun"
+ },
+ {
+  "order": 630,
+  "word": "そっち",
+  "reading": "そっち",
+  "meaning": "there",
+  "type": "noun"
+ },
+ {
+  "order": 631,
+  "word": "上手い",
+  "reading": "うまい",
+  "meaning": "skilled, good",
+  "type": "i-adjective"
+ },
+ {
+  "order": 632,
+  "word": "合わせる",
+  "reading": "あわせる",
+  "meaning": "to adjust, to match",
+  "type": "ru-verb"
+ },
+ {
+  "order": 633,
+  "word": "大切",
+  "reading": "たいせつ",
+  "meaning": "important, valuable",
+  "type": "na-adjective"
+ },
+ {
+  "order": 634,
+  "word": "花",
+  "reading": "はな",
+  "meaning": "flower",
+  "type": "noun"
+ },
+ {
+  "order": 635,
+  "word": "謝る",
+  "reading": "あやまる",
+  "meaning": "to apologize",
+  "type": "u-verb"
+ },
+ {
+  "order": 636,
+  "word": "奪う",
+  "reading": "うばう",
+  "meaning": "to snatch, to take by force",
+  "type": "u-verb"
+ },
+ {
+  "order": 637,
+  "word": "勢い",
+  "reading": "いきおい",
+  "meaning": "vigor, momentum",
+  "type": "noun"
+ },
+ {
+  "order": 638,
+  "word": "涙",
+  "reading": "なみだ",
+  "meaning": "tear",
+  "type": "noun"
+ },
+ {
+  "order": 639,
+  "word": "雰囲気",
+  "reading": "ふんいき",
+  "meaning": "atmosphere, mood",
+  "type": "noun"
+ },
+ {
+  "order": 640,
+  "word": "嘘",
+  "reading": "うそ",
+  "meaning": "lie",
+  "type": "noun"
+ },
+ {
+  "order": 641,
+  "word": "望む",
+  "reading": "のぞむ",
+  "meaning": "to desire, to hope",
+  "type": "u-verb"
+ },
+ {
+  "order": 642,
+  "word": "緊張",
+  "reading": "きんちょう",
+  "meaning": "tension, strain, nervousness",
+  "type": "noun"
+ },
+ {
+  "order": 643,
+  "word": "一緒",
+  "reading": "いっしょ",
+  "meaning": "together",
+  "type": "na-adjective"
+ },
+ {
+  "order": 644,
+  "word": "救う",
+  "reading": "すくう",
+  "meaning": "to save",
+  "type": "u-verb"
+ },
+ {
+  "order": 645,
+  "word": "自ら",
+  "reading": "みずから",
+  "meaning": "oneself",
+  "type": "adverb"
+ },
+ {
+  "order": 646,
+  "word": "地面",
+  "reading": "じめん",
+  "meaning": "surface, ground",
+  "type": "noun"
+ },
+ {
+  "order": 647,
+  "word": "失敗",
+  "reading": "しっぱい",
+  "meaning": "failure, blunder",
+  "type": "noun"
+ },
+ {
+  "order": 648,
+  "word": "避ける",
+  "reading": "さける",
+  "meaning": "to avoid, to evade",
+  "type": "ru-verb"
+ },
+ {
+  "order": 649,
+  "word": "窓",
+  "reading": "まど",
+  "meaning": "window",
+  "type": "noun"
+ },
+ {
+  "order": 650,
+  "word": "素直",
+  "reading": "すなお",
+  "meaning": "honest, straightforward",
+  "type": "na-adjective"
+ },
+ {
+  "order": 651,
+  "word": "肉",
+  "reading": "にく",
+  "meaning": "flesh, meat",
+  "type": "noun"
+ },
+ {
+  "order": 652,
+  "word": "冗談",
+  "reading": "じょうだん",
+  "meaning": "joke",
+  "type": "noun"
+ },
+ {
+  "order": 653,
+  "word": "余裕",
+  "reading": "よゆう",
+  "meaning": "room, leeway",
+  "type": "noun"
+ },
+ {
+  "order": 654,
+  "word": "連絡",
+  "reading": "れんらく",
+  "meaning": "connection, communication",
+  "type": "noun"
+ },
+ {
+  "order": 655,
+  "word": "人生",
+  "reading": "じんせい",
+  "meaning": "(human) life",
+  "type": "noun"
+ },
+ {
+  "order": 656,
+  "word": "放つ",
+  "reading": "はなつ",
+  "meaning": "to emit, to set free, to shoot (e.g. an arrow or bullet)",
+  "type": "u-verb"
+ },
+ {
+  "order": 657,
+  "word": "流れる",
+  "reading": "ながれる",
+  "meaning": "to flow, to pass",
+  "type": "ru-verb"
+ },
+ {
+  "order": 658,
+  "word": "特別",
+  "reading": "とくべつ",
+  "meaning": "special, extraordinary",
+  "type": "na-adjective"
+ },
+ {
+  "order": 659,
+  "word": "連中",
+  "reading": "れんちゅう",
+  "meaning": "party, this bunch",
+  "type": "noun"
+ },
+ {
+  "order": 660,
+  "word": "両手",
+  "reading": "りょうて",
+  "meaning": "both hands",
+  "type": "noun"
+ },
+ {
+  "order": 661,
+  "word": "増える",
+  "reading": "ふえる",
+  "meaning": "to increase, to accrue",
+  "type": "ru-verb"
+ },
+ {
+  "order": 662,
+  "word": "出会う",
+  "reading": "であう",
+  "meaning": "to meet (by chance), to come across",
+  "type": "u-verb"
+ },
+ {
+  "order": 663,
+  "word": "少年",
+  "reading": "しょうねん",
+  "meaning": "boy",
+  "type": "noun"
+ },
+ {
+  "order": 664,
+  "word": "繰り返す",
+  "reading": "くりかえす",
+  "meaning": "to repeat",
+  "type": "u-verb"
+ },
+ {
+  "order": 665,
+  "word": "我慢",
+  "reading": "がまん",
+  "meaning": "patience, bearing with",
+  "type": "noun"
+ },
+ {
+  "order": 666,
+  "word": "我々",
+  "reading": "われわれ",
+  "meaning": "we (formal)",
+  "type": "noun"
+ },
+ {
+  "order": 667,
+  "word": "感覚",
+  "reading": "かんかく",
+  "meaning": "sensation",
+  "type": "noun"
+ },
+ {
+  "order": 668,
+  "word": "響く",
+  "reading": "ひびく",
+  "meaning": "to reverberate",
+  "type": "u-verb"
+ },
+ {
+  "order": 669,
+  "word": "何とか",
+  "reading": "なんとか",
+  "meaning": "somehow, please",
+  "type": "adverb"
+ },
+ {
+  "order": 670,
+  "word": "山",
+  "reading": "やま",
+  "meaning": "mountain",
+  "type": "noun"
+ },
+ {
+  "order": 671,
+  "word": "当たり前",
+  "reading": "あたりまえ",
+  "meaning": "of course, obvious",
+  "type": "na-adjective"
+ },
+ {
+  "order": 672,
+  "word": "予定",
+  "reading": "よてい",
+  "meaning": "schedule, plan",
+  "type": "noun"
+ },
+ {
+  "order": 673,
+  "word": "残念",
+  "reading": "ざんねん",
+  "meaning": "regrettable, disappointing",
+  "type": "na-adjective"
+ },
+ {
+  "order": 674,
+  "word": "追う",
+  "reading": "おう",
+  "meaning": "to chase, to pursue",
+  "type": "u-verb"
+ },
+ {
+  "order": 675,
+  "word": "綺麗",
+  "reading": "きれい",
+  "meaning": "beautiful, clean",
+  "type": "na-adjective"
+ },
+ {
+  "order": 676,
+  "word": "いらっしゃる",
+  "reading": "いらっしゃる",
+  "meaning": "to be, to come, to go (honorific form)",
+  "type": "u-verb"
+ },
+ {
+  "order": 677,
+  "word": "若い",
+  "reading": "わかい",
+  "meaning": "young",
+  "type": "i-adjective"
+ },
+ {
+  "order": 678,
+  "word": "どうしても",
+  "reading": "どうしても",
+  "meaning": "by any means, really",
+  "type": "adverb"
+ },
+ {
+  "order": 679,
+  "word": "考え",
+  "reading": "かんがえ",
+  "meaning": "thought, view",
+  "type": "noun"
+ },
+ {
+  "order": 680,
+  "word": "過去",
+  "reading": "かこ",
+  "meaning": "the past",
+  "type": "noun"
+ },
+ {
+  "order": 681,
+  "word": "気配",
+  "reading": "けはい",
+  "meaning": "indication, sign",
+  "type": "noun"
+ },
+ {
+  "order": 682,
+  "word": "本人",
+  "reading": "ほんにん",
+  "meaning": "the person in question",
+  "type": "noun"
+ },
+ {
+  "order": 683,
+  "word": "現実",
+  "reading": "げんじつ",
+  "meaning": "reality, actuality",
+  "type": "noun"
+ },
+ {
+  "order": 684,
+  "word": "決して",
+  "reading": "けっして",
+  "meaning": "never, by no means",
+  "type": "adverb"
+ },
+ {
+  "order": 685,
+  "word": "いつか",
+  "reading": "いつか",
+  "meaning": "some time, some day",
+  "type": "adverb"
+ },
+ {
+  "order": 686,
+  "word": "床",
+  "reading": "ゆか",
+  "meaning": "floor",
+  "type": "noun"
+ },
+ {
+  "order": 687,
+  "word": "横",
+  "reading": "よこ",
+  "meaning": "side, width across",
+  "type": "noun"
+ },
+ {
+  "order": 688,
+  "word": "休む",
+  "reading": "やすむ",
+  "meaning": "to rest, to take time off",
+  "type": "u-verb"
+ },
+ {
+  "order": 689,
+  "word": "振り返る",
+  "reading": "ふりかえる",
+  "meaning": "to turn one's head, to look back on",
+  "type": "ru-verb"
+ },
+ {
+  "order": 690,
+  "word": "わざわざ",
+  "reading": "わざわざ",
+  "meaning": "go out of one's way",
+  "type": "adverb"
+ },
+ {
+  "order": 691,
+  "word": "質問",
+  "reading": "しつもん",
+  "meaning": "question",
+  "type": "noun"
+ },
+ {
+  "order": 692,
+  "word": "興味",
+  "reading": "きょうみ",
+  "meaning": "interest",
+  "type": "noun"
+ },
+ {
+  "order": 693,
+  "word": "距離",
+  "reading": "きょり",
+  "meaning": "distance, interval",
+  "type": "noun"
+ },
+ {
+  "order": 694,
+  "word": "内容",
+  "reading": "ないよう",
+  "meaning": "contents",
+  "type": "noun"
+ },
+ {
+  "order": 695,
+  "word": "つい",
+  "reading": "つい",
+  "meaning": "inadvertently, carelessly",
+  "type": "adverb"
+ },
+ {
+  "order": 696,
+  "word": "回る",
+  "reading": "まわる",
+  "meaning": "to rotate, to go around",
+  "type": "u-verb"
+ },
+ {
+  "order": 697,
+  "word": "並ぶ",
+  "reading": "ならぶ",
+  "meaning": "to line up",
+  "type": "u-verb"
+ },
+ {
+  "order": 698,
+  "word": "終える",
+  "reading": "おえる",
+  "meaning": "to end, to finish",
+  "type": "ru-verb"
+ },
+ {
+  "order": 699,
+  "word": "態度",
+  "reading": "たいど",
+  "meaning": "attitude, manner",
+  "type": "noun"
+ },
+ {
+  "order": 700,
+  "word": "金",
+  "reading": "かね",
+  "meaning": "money",
+  "type": "noun"
+ },
+ {
+  "order": 701,
+  "word": "今夜",
+  "reading": "こんや",
+  "meaning": "tonight, this evening",
+  "type": "noun"
+ },
+ {
+  "order": 702,
+  "word": "昨夜",
+  "reading": "ゆうべ",
+  "meaning": "last night, last evening",
+  "type": "noun"
+ },
+ {
+  "order": 703,
+  "word": "さすが",
+  "reading": "さすが",
+  "meaning": "just as expected, true to one's reputation",
+  "type": "adverb"
+ },
+ {
+  "order": 704,
+  "word": "自然",
+  "reading": "しぜん",
+  "meaning": "nature",
+  "type": "noun"
+ },
+ {
+  "order": 705,
+  "word": "眺める",
+  "reading": "ながめる",
+  "meaning": "to look out, to gaze",
+  "type": "ru-verb"
+ },
+ {
+  "order": 706,
+  "word": "向く",
+  "reading": "むく",
+  "meaning": "to face, to look",
+  "type": "u-verb"
+ },
+ {
+  "order": 707,
+  "word": "相変わらず",
+  "reading": "あいかわらず",
+  "meaning": "as usual, as before",
+  "type": "adverb"
+ },
+ {
+  "order": 708,
+  "word": "普段",
+  "reading": "ふだん",
+  "meaning": "usual, ordinary",
+  "type": "noun"
+ },
+ {
+  "order": 709,
+  "word": "どうも",
+  "reading": "どうも",
+  "meaning": "for some reason, somehow",
+  "type": "expression"
+ },
+ {
+  "order": 710,
+  "word": "運ぶ",
+  "reading": "はこぶ",
+  "meaning": "to carry",
+  "type": "u-verb"
+ },
+ {
+  "order": 711,
+  "word": "やっと",
+  "reading": "やっと",
+  "meaning": "at last, finally",
+  "type": "adverb"
+ },
+ {
+  "order": 712,
+  "word": "弱い",
+  "reading": "よわい",
+  "meaning": "weak",
+  "type": "i-adjective"
+ },
+ {
+  "order": 713,
+  "word": "どうせ",
+  "reading": "どうせ",
+  "meaning": "anyway",
+  "type": "adverb"
+ },
+ {
+  "order": 714,
+  "word": "離す",
+  "reading": "はなす",
+  "meaning": "to separate, to detach",
+  "type": "u-verb"
+ },
+ {
+  "order": 715,
+  "word": "貴族",
+  "reading": "きぞく",
+  "meaning": "noble",
+  "type": "noun"
+ },
+ {
+  "order": 716,
+  "word": "広がる",
+  "reading": "ひろがる",
+  "meaning": "to spread out, to extend",
+  "type": "u-verb"
+ },
+ {
+  "order": 717,
+  "word": "頬",
+  "reading": "ほお",
+  "meaning": "cheek",
+  "type": "noun"
+ },
+ {
+  "order": 718,
+  "word": "寂しい",
+  "reading": "さびしい",
+  "meaning": "lonely, sad",
+  "type": "i-adjective"
+ },
+ {
+  "order": 719,
+  "word": "正しい",
+  "reading": "ただしい",
+  "meaning": "correct",
+  "type": "i-adjective"
+ },
+ {
+  "order": 720,
+  "word": "自由",
+  "reading": "じゆう",
+  "meaning": "freedom, free",
+  "type": "na-adjective"
+ },
+ {
+  "order": 721,
+  "word": "全身",
+  "reading": "ぜんしん",
+  "meaning": "the whole body",
+  "type": "noun"
+ },
+ {
+  "order": 722,
+  "word": "武器",
+  "reading": "ぶき",
+  "meaning": "weapon, arms",
+  "type": "noun"
+ },
+ {
+  "order": 723,
+  "word": "それぞれ",
+  "reading": "それぞれ",
+  "meaning": "each, respective",
+  "type": "adverb"
+ },
+ {
+  "order": 724,
+  "word": "語る",
+  "reading": "かたる",
+  "meaning": "to tell, to talk",
+  "type": "u-verb"
+ },
+ {
+  "order": 725,
+  "word": "持ってくる",
+  "reading": "もってくる",
+  "meaning": "to bring",
+  "type": "irregular-verb"
+ },
+ {
+  "order": 726,
+  "word": "息子",
+  "reading": "むすこ",
+  "meaning": "son",
+  "type": "noun"
+ },
+ {
+  "order": 727,
+  "word": "娘",
+  "reading": "むすめ",
+  "meaning": "daughter",
+  "type": "noun"
+ },
+ {
+  "order": 728,
+  "word": "一気に",
+  "reading": "いっきに",
+  "meaning": "in one go",
+  "type": "adverb"
+ },
+ {
+  "order": 729,
+  "word": "そっと",
+  "reading": "そっと",
+  "meaning": "softly, gently",
+  "type": "adverb"
+ },
+ {
+  "order": 730,
+  "word": "伝わる",
+  "reading": "つたわる",
+  "meaning": "to be transmitted, to be handed down",
+  "type": "u-verb"
+ },
+ {
+  "order": 731,
+  "word": "当たる",
+  "reading": "あたる",
+  "meaning": "to hit, to strike",
+  "type": "u-verb"
+ },
+ {
+  "order": 732,
+  "word": "痛み",
+  "reading": "いたみ",
+  "meaning": "pain, ache",
+  "type": "noun"
+ },
+ {
+  "order": 733,
+  "word": "妙",
+  "reading": "みょう",
+  "meaning": "strange",
+  "type": "na-adjective"
+ },
+ {
+  "order": 734,
+  "word": "影",
+  "reading": "かげ",
+  "meaning": "shadow, shade",
+  "type": "noun"
+ },
+ {
+  "order": 735,
+  "word": "死",
+  "reading": "し",
+  "meaning": "death",
+  "type": "noun"
+ },
+ {
+  "order": 736,
+  "word": "多分",
+  "reading": "たぶん",
+  "meaning": "probably, perhaps",
+  "type": "adverb"
+ },
+ {
+  "order": 737,
+  "word": "協力",
+  "reading": "きょうりょく",
+  "meaning": "cooperation, collaboration",
+  "type": "noun"
+ },
+ {
+  "order": 738,
+  "word": "見上げる",
+  "reading": "みあげる",
+  "meaning": "to look up",
+  "type": "ru-verb"
+ },
+ {
+  "order": 739,
+  "word": "覚悟",
+  "reading": "かくご",
+  "meaning": "readiness, resolution",
+  "type": "noun"
+ },
+ {
+  "order": 740,
+  "word": "連れる",
+  "reading": "つれる",
+  "meaning": "to take along, to bring along",
+  "type": "ru-verb"
+ },
+ {
+  "order": 741,
+  "word": "低い",
+  "reading": "ひくい",
+  "meaning": "low, short (height)",
+  "type": "i-adjective"
+ },
+ {
+  "order": 742,
+  "word": "木",
+  "reading": "き",
+  "meaning": "tree",
+  "type": "noun"
+ },
+ {
+  "order": 743,
+  "word": "面倒",
+  "reading": "めんどう",
+  "meaning": "annoying, troublesome",
+  "type": "na-adjective"
+ },
+ {
+  "order": 744,
+  "word": "闇",
+  "reading": "やみ",
+  "meaning": "darkness",
+  "type": "noun"
+ },
+ {
+  "order": 745,
+  "word": "広い",
+  "reading": "ひろい",
+  "meaning": "wide, big",
+  "type": "i-adjective"
+ },
+ {
+  "order": 746,
+  "word": "告げる",
+  "reading": "つげる",
+  "meaning": "to tell, to notify",
+  "type": "ru-verb"
+ },
+ {
+  "order": 747,
+  "word": "叩く",
+  "reading": "たたく",
+  "meaning": "to tap, to hit",
+  "type": "u-verb"
+ },
+ {
+  "order": 748,
+  "word": "自信",
+  "reading": "じしん",
+  "meaning": "self-confidence",
+  "type": "noun"
+ },
+ {
+  "order": 749,
+  "word": "集める",
+  "reading": "あつめる",
+  "meaning": "to gather, to collect",
+  "type": "ru-verb"
+ },
+ {
+  "order": 750,
+  "word": "振る",
+  "reading": "ふる",
+  "meaning": "to wave, to shake",
+  "type": "u-verb"
+ },
+ {
+  "order": 751,
+  "word": "余計",
+  "reading": "よけい",
+  "meaning": "excess, needless",
+  "type": "na-adjective"
+ },
+ {
+  "order": 752,
+  "word": "他に",
+  "reading": "ほかに",
+  "meaning": "else, in addition",
+  "type": "adverb"
+ },
+ {
+  "order": 753,
+  "word": "誘う",
+  "reading": "さそう",
+  "meaning": "to invite, to ask out",
+  "type": "u-verb"
+ },
+ {
+  "order": 754,
+  "word": "付き合う",
+  "reading": "つきあう",
+  "meaning": "to socialize with, to see someone",
+  "type": "u-verb"
+ },
+ {
+  "order": 755,
+  "word": "村",
+  "reading": "むら",
+  "meaning": "village",
+  "type": "noun"
+ },
+ {
+  "order": 756,
+  "word": "人物",
+  "reading": "じんぶつ",
+  "meaning": "character, person",
+  "type": "noun"
+ },
+ {
+  "order": 757,
+  "word": "数",
+  "reading": "かず",
+  "meaning": "number",
+  "type": "noun"
+ },
+ {
+  "order": 758,
+  "word": "危ない",
+  "reading": "あぶない",
+  "meaning": "dangerous, uncertain",
+  "type": "i-adjective"
+ },
+ {
+  "order": 759,
+  "word": "事情",
+  "reading": "じじょう",
+  "meaning": "circumstances, conditions",
+  "type": "noun"
+ },
+ {
+  "order": 760,
+  "word": "本当に",
+  "reading": "ほんとうに",
+  "meaning": "really, truly",
+  "type": "adverb"
+ },
+ {
+  "order": 761,
+  "word": "噂",
+  "reading": "うわさ",
+  "meaning": "gossip, rumor",
+  "type": "noun"
+ },
+ {
+  "order": 762,
+  "word": "断る",
+  "reading": "ことわる",
+  "meaning": "to refuse, to turn down",
+  "type": "u-verb"
+ },
+ {
+  "order": 763,
+  "word": "どうか",
+  "reading": "どうか",
+  "meaning": "if possible, somehow",
+  "type": "adverb"
+ },
+ {
+  "order": 764,
+  "word": "巨大",
+  "reading": "きょだい",
+  "meaning": "huge, gigantic",
+  "type": "na-adjective"
+ },
+ {
+  "order": 765,
+  "word": "最高",
+  "reading": "さいこう",
+  "meaning": "best, supreme",
+  "type": "na-adjective"
+ },
+ {
+  "order": 766,
+  "word": "お金",
+  "reading": "おかね",
+  "meaning": "money",
+  "type": "noun"
+ },
+ {
+  "order": 767,
+  "word": "傷",
+  "reading": "きず",
+  "meaning": "wound, cut",
+  "type": "noun"
+ },
+ {
+  "order": 768,
+  "word": "怒り",
+  "reading": "いかり",
+  "meaning": "anger, rage",
+  "type": "noun"
+ },
+ {
+  "order": 769,
+  "word": "どうやって",
+  "reading": "どうやって",
+  "meaning": "how, in what way",
+  "type": "adverb"
+ },
+ {
+  "order": 770,
+  "word": "効果",
+  "reading": "こうか",
+  "meaning": "effect, result",
+  "type": "noun"
+ },
+ {
+  "order": 771,
+  "word": "取り出す",
+  "reading": "とりだす",
+  "meaning": "to take out, to pull out",
+  "type": "u-verb"
+ },
+ {
+  "order": 772,
+  "word": "黒",
+  "reading": "くろ",
+  "meaning": "black",
+  "type": "noun"
+ },
+ {
+  "order": 773,
+  "word": "愛",
+  "reading": "あい",
+  "meaning": "love",
+  "type": "noun"
+ },
+ {
+  "order": 774,
+  "word": "直接",
+  "reading": "ちょくせつ",
+  "meaning": "directly",
+  "type": "adverb"
+ },
+ {
+  "order": 775,
+  "word": "浮かぶ",
+  "reading": "うかぶ",
+  "meaning": "to float",
+  "type": "u-verb"
+ },
+ {
+  "order": 776,
+  "word": "抜ける",
+  "reading": "ぬける",
+  "meaning": "to fall out, to leave",
+  "type": "ru-verb"
+ },
+ {
+  "order": 777,
+  "word": "暗い",
+  "reading": "くらい",
+  "meaning": "dark",
+  "type": "i-adjective"
+ },
+ {
+  "order": 778,
+  "word": "息",
+  "reading": "いき",
+  "meaning": "breath",
+  "type": "noun"
+ },
+ {
+  "order": 779,
+  "word": "駄目",
+  "reading": "だめ",
+  "meaning": "no good",
+  "type": "na-adjective"
+ },
+ {
+  "order": 780,
+  "word": "点",
+  "reading": "てん",
+  "meaning": "point, mark",
+  "type": "noun"
+ },
+ {
+  "order": 781,
+  "word": "参加",
+  "reading": "さんか",
+  "meaning": "participation",
+  "type": "noun"
+ },
+ {
+  "order": 782,
+  "word": "はっきり",
+  "reading": "はっきり",
+  "meaning": "clearly",
+  "type": "adverb"
+ },
+ {
+  "order": 783,
+  "word": "描く",
+  "reading": "かく",
+  "meaning": "to draw",
+  "type": "u-verb"
+ },
+ {
+  "order": 784,
+  "word": "描く",
+  "reading": "えがく",
+  "meaning": "to depict, to describe, to draw",
+  "type": "u-verb"
+ },
+ {
+  "order": 785,
+  "word": "無視",
+  "reading": "むし",
+  "meaning": "ignoring, disregarding",
+  "type": "noun"
+ },
+ {
+  "order": 786,
+  "word": "生徒",
+  "reading": "せいと",
+  "meaning": "pupil, student",
+  "type": "noun"
+ },
+ {
+  "order": 787,
+  "word": "詳しい",
+  "reading": "くわしい",
+  "meaning": "detailed",
+  "type": "i-adjective"
+ },
+ {
+  "order": 788,
+  "word": "触る",
+  "reading": "さわる",
+  "meaning": "to touch",
+  "type": "u-verb"
+ },
+ {
+  "order": 789,
+  "word": "これまで",
+  "reading": "これまで",
+  "meaning": "until now, until here",
+  "type": "adverb"
+ },
+ {
+  "order": 790,
+  "word": "半分",
+  "reading": "はんぶん",
+  "meaning": "half",
+  "type": "noun"
+ },
+ {
+  "order": 791,
+  "word": "耐える",
+  "reading": "たえる",
+  "meaning": "to withstand, to endure",
+  "type": "ru-verb"
+ },
+ {
+  "order": 792,
+  "word": "立場",
+  "reading": "たちば",
+  "meaning": "standpoint, position",
+  "type": "noun"
+ },
+ {
+  "order": 793,
+  "word": "石",
+  "reading": "いし",
+  "meaning": "stone, small rock",
+  "type": "noun"
+ },
+ {
+  "order": 794,
+  "word": "挨拶",
+  "reading": "あいさつ",
+  "meaning": "greeting",
+  "type": "noun"
+ },
+ {
+  "order": 795,
+  "word": "相談",
+  "reading": "そうだん",
+  "meaning": "consultation, advice",
+  "type": "noun"
+ },
+ {
+  "order": 796,
+  "word": "受け入れる",
+  "reading": "うけいれる",
+  "meaning": "to accept, to accommodate",
+  "type": "ru-verb"
+ },
+ {
+  "order": 797,
+  "word": "練習",
+  "reading": "れんしゅう",
+  "meaning": "practice, training",
+  "type": "noun"
+ },
+ {
+  "order": 798,
+  "word": "無駄",
+  "reading": "むだ",
+  "meaning": "wasteful, useless",
+  "type": "na-adjective"
+ },
+ {
+  "order": 799,
+  "word": "抱える",
+  "reading": "かかえる",
+  "meaning": "to hold in one's arms",
+  "type": "ru-verb"
+ },
+ {
+  "order": 800,
+  "word": "示す",
+  "reading": "しめす",
+  "meaning": "to show, to indicate",
+  "type": "u-verb"
+ },
+ {
+  "order": 801,
+  "word": "成功",
+  "reading": "せいこう",
+  "meaning": "success",
+  "type": "noun"
+ },
+ {
+  "order": 802,
+  "word": "抱く",
+  "reading": "だく",
+  "meaning": "to hug, to hold in one's arms",
+  "type": "u-verb"
+ },
+ {
+  "order": 803,
+  "word": "味",
+  "reading": "あじ",
+  "meaning": "taste, flavor",
+  "type": "noun"
+ },
+ {
+  "order": 804,
+  "word": "男性",
+  "reading": "だんせい",
+  "meaning": "male, man",
+  "type": "noun"
+ },
+ {
+  "order": 805,
+  "word": "否定",
+  "reading": "ひてい",
+  "meaning": "denial, negation",
+  "type": "noun"
+ },
+ {
+  "order": 806,
+  "word": "致す",
+  "reading": "いたす",
+  "meaning": "to do (humble form)",
+  "type": "u-verb"
+ },
+ {
+  "order": 807,
+  "word": "現在",
+  "reading": "げんざい",
+  "meaning": "present time, now",
+  "type": "noun"
+ },
+ {
+  "order": 808,
+  "word": "輝く",
+  "reading": "かがやく",
+  "meaning": "to glitter, to shine",
+  "type": "u-verb"
+ },
+ {
+  "order": 809,
+  "word": "熱",
+  "reading": "ねつ",
+  "meaning": "fever",
+  "type": "noun"
+ },
+ {
+  "order": 810,
+  "word": "始め",
+  "reading": "はじめ",
+  "meaning": "beginning, origin",
+  "type": "noun"
+ },
+ {
+  "order": 811,
+  "word": "厳しい",
+  "reading": "きびしい",
+  "meaning": "strict",
+  "type": "i-adjective"
+ },
+ {
+  "order": 812,
+  "word": "匂い",
+  "reading": "におい",
+  "meaning": "smell, odor",
+  "type": "noun"
+ },
+ {
+  "order": 813,
+  "word": "席",
+  "reading": "せき",
+  "meaning": "seat",
+  "type": "noun"
+ },
+ {
+  "order": 814,
+  "word": "売る",
+  "reading": "うる",
+  "meaning": "to sell",
+  "type": "u-verb"
+ },
+ {
+  "order": 815,
+  "word": "暮らす",
+  "reading": "くらす",
+  "meaning": "to live, to make a living",
+  "type": "u-verb"
+ },
+ {
+  "order": 816,
+  "word": "利用",
+  "reading": "りよう",
+  "meaning": "usage, utilization",
+  "type": "noun"
+ },
+ {
+  "order": 817,
+  "word": "ふと",
+  "reading": "ふと",
+  "meaning": "suddenly, unintentionally",
+  "type": "adverb"
+ },
+ {
+  "order": 818,
+  "word": "経験",
+  "reading": "けいけん",
+  "meaning": "experience",
+  "type": "noun"
+ },
+ {
+  "order": 819,
+  "word": "変化",
+  "reading": "へんか",
+  "meaning": "change, variation",
+  "type": "noun"
+ },
+ {
+  "order": 820,
+  "word": "王子",
+  "reading": "おうじ",
+  "meaning": "prince",
+  "type": "noun"
+ },
+ {
+  "order": 821,
+  "word": "満足",
+  "reading": "まんぞく",
+  "meaning": "satisfaction",
+  "type": "noun"
+ },
+ {
+  "order": 822,
+  "word": "どんどん",
+  "reading": "どんどん",
+  "meaning": "steadily",
+  "type": "adverb"
+ },
+ {
+  "order": 823,
+  "word": "命令",
+  "reading": "めいれい",
+  "meaning": "order, command",
+  "type": "noun"
+ },
+ {
+  "order": 824,
+  "word": "主",
+  "reading": "おも",
+  "meaning": "main, chief",
+  "type": "na-adjective"
+ },
+ {
+  "order": 825,
+  "word": "美味しい",
+  "reading": "おいしい",
+  "meaning": "tasty",
+  "type": "i-adjective"
+ },
+ {
+  "order": 826,
+  "word": "手紙",
+  "reading": "てがみ",
+  "meaning": "letter",
+  "type": "noun"
+ },
+ {
+  "order": 827,
+  "word": "掴む",
+  "reading": "つかむ",
+  "meaning": "to grip, to grab",
+  "type": "u-verb"
+ },
+ {
+  "order": 828,
+  "word": "他人",
+  "reading": "たにん",
+  "meaning": "another person, stranger",
+  "type": "noun"
+ },
+ {
+  "order": 829,
+  "word": "格好",
+  "reading": "かっこう",
+  "meaning": "shape, appearance",
+  "type": "noun"
+ },
+ {
+  "order": 830,
+  "word": "光景",
+  "reading": "こうけい",
+  "meaning": "sight, spectacle",
+  "type": "noun"
+ },
+ {
+  "order": 831,
+  "word": "すっかり",
+  "reading": "すっかり",
+  "meaning": "all, completely",
+  "type": "adverb"
+ },
+ {
+  "order": 832,
+  "word": "どちら",
+  "reading": "どちら",
+  "meaning": "which",
+  "type": "noun"
+ },
+ {
+  "order": 833,
+  "word": "親",
+  "reading": "おや",
+  "meaning": "parent",
+  "type": "noun"
+ },
+ {
+  "order": 834,
+  "word": "時代",
+  "reading": "じだい",
+  "meaning": "period, age",
+  "type": "noun"
+ },
+ {
+  "order": 835,
+  "word": "作戦",
+  "reading": "さくせん",
+  "meaning": "tactic, strategy",
+  "type": "noun"
+ },
+ {
+  "order": 836,
+  "word": "もしかしたら",
+  "reading": "もしかしたら",
+  "meaning": "possibly, perhaps",
+  "type": "adverb"
+ },
+ {
+  "order": 837,
+  "word": "苦しい",
+  "reading": "くるしい",
+  "meaning": "painful, difficult",
+  "type": "i-adjective"
+ },
+ {
+  "order": 838,
+  "word": "明るい",
+  "reading": "あかるい",
+  "meaning": "bright",
+  "type": "i-adjective"
+ },
+ {
+  "order": 839,
+  "word": "原因",
+  "reading": "げんいん",
+  "meaning": "cause, origin",
+  "type": "noun"
+ },
+ {
+  "order": 840,
+  "word": "廊下",
+  "reading": "ろうか",
+  "meaning": "hallway",
+  "type": "noun"
+ },
+ {
+  "order": 841,
+  "word": "そいつ",
+  "reading": "そいつ",
+  "meaning": "that person, that guy",
+  "type": "noun"
+ },
+ {
+  "order": 842,
+  "word": "先ほど",
+  "reading": "さきほど",
+  "meaning": "some time ago",
+  "type": "adverb"
+ },
+ {
+  "order": 843,
+  "word": "大人",
+  "reading": "おとな",
+  "meaning": "adult",
+  "type": "noun"
+ },
+ {
+  "order": 844,
+  "word": "人々",
+  "reading": "ひとびと",
+  "meaning": "people",
+  "type": "noun"
+ },
+ {
+  "order": 845,
+  "word": "撫でる",
+  "reading": "なでる",
+  "meaning": "to pat, to stroke",
+  "type": "ru-verb"
+ },
+ {
+  "order": 846,
+  "word": "立てる",
+  "reading": "たてる",
+  "meaning": "to put up, to erect",
+  "type": "ru-verb"
+ },
+ {
+  "order": 847,
+  "word": "たまに",
+  "reading": "たまに",
+  "meaning": "occasionally, now and then",
+  "type": "adverb"
+ },
+ {
+  "order": 848,
+  "word": "押す",
+  "reading": "おす",
+  "meaning": "to push, to press down",
+  "type": "u-verb"
+ },
+ {
+  "order": 849,
+  "word": "平気",
+  "reading": "へいき",
+  "meaning": "calm, all right",
+  "type": "na-adjective"
+ },
+ {
+  "order": 850,
+  "word": "悲しい",
+  "reading": "かなしい",
+  "meaning": "sad",
+  "type": "i-adjective"
+ },
+ {
+  "order": 851,
+  "word": "隠れる",
+  "reading": "かくれる",
+  "meaning": "to hide, to disappear",
+  "type": "ru-verb"
+ },
+ {
+  "order": 852,
+  "word": "まだまだ",
+  "reading": "まだまだ",
+  "meaning": "still, not there yet",
+  "type": "adverb"
+ },
+ {
+  "order": 853,
+  "word": "皆さん",
+  "reading": "みなさん",
+  "meaning": "everyone",
+  "type": "noun"
+ },
+ {
+  "order": 854,
+  "word": "戻す",
+  "reading": "もどす",
+  "meaning": "to return",
+  "type": "u-verb"
+ },
+ {
+  "order": 855,
+  "word": "戦闘",
+  "reading": "せんとう",
+  "meaning": "battle, fight",
+  "type": "noun"
+ },
+ {
+  "order": 856,
+  "word": "火",
+  "reading": "ひ",
+  "meaning": "fire",
+  "type": "noun"
+ },
+ {
+  "order": 857,
+  "word": "炎",
+  "reading": "ほのお",
+  "meaning": "flame, blaze",
+  "type": "noun"
+ },
+ {
+  "order": 858,
+  "word": "恐怖",
+  "reading": "きょうふ",
+  "meaning": "fear",
+  "type": "noun"
+ },
+ {
+  "order": 859,
+  "word": "迷う",
+  "reading": "まよう",
+  "meaning": "to be perplexed, to get lost",
+  "type": "u-verb"
+ },
+ {
+  "order": 860,
+  "word": "よろしい",
+  "reading": "よろしい",
+  "meaning": "all right",
+  "type": "i-adjective"
+ },
+ {
+  "order": 861,
+  "word": "機会",
+  "reading": "きかい",
+  "meaning": "chance, opportunity, occasion",
+  "type": "noun"
+ },
+ {
+  "order": 862,
+  "word": "恐ろしい",
+  "reading": "おそろしい",
+  "meaning": "terrible, frightening",
+  "type": "i-adjective"
+ },
+ {
+  "order": 863,
+  "word": "借りる",
+  "reading": "かりる",
+  "meaning": "to borrow",
+  "type": "ru-verb"
+ },
+ {
+  "order": 864,
+  "word": "外す",
+  "reading": "はずす",
+  "meaning": "to remove",
+  "type": "u-verb"
+ },
+ {
+  "order": 865,
+  "word": "地",
+  "reading": "ち",
+  "meaning": "ground, place",
+  "type": "noun"
+ },
+ {
+  "order": 866,
+  "word": "速い",
+  "reading": "はやい",
+  "meaning": "fast (in terms of speed)",
+  "type": "i-adjective"
+ },
+ {
+  "order": 867,
+  "word": "短い",
+  "reading": "みじかい",
+  "meaning": "short, brief",
+  "type": "i-adjective"
+ },
+ {
+  "order": 868,
+  "word": "気に入る",
+  "reading": "きにいる",
+  "meaning": "to like, to be pleased with",
+  "type": "u-verb"
+ },
+ {
+  "order": 869,
+  "word": "改めて",
+  "reading": "あらためて",
+  "meaning": "once again",
+  "type": "adverb"
+ },
+ {
+  "order": 870,
+  "word": "うるさい",
+  "reading": "うるさい",
+  "meaning": "noisy, annoying",
+  "type": "i-adjective"
+ },
+ {
+  "order": 871,
+  "word": "当てる",
+  "reading": "あてる",
+  "meaning": "to hit, to guess",
+  "type": "ru-verb"
+ },
+ {
+  "order": 872,
+  "word": "包む",
+  "reading": "つつむ",
+  "meaning": "to wrap, to pack",
+  "type": "u-verb"
+ },
+ {
+  "order": 873,
+  "word": "位置",
+  "reading": "いち",
+  "meaning": "position, place",
+  "type": "noun"
+ },
+ {
+  "order": 874,
+  "word": "打つ",
+  "reading": "うつ",
+  "meaning": "to hit, to strike",
+  "type": "u-verb"
+ },
+ {
+  "order": 875,
+  "word": "目指す",
+  "reading": "めざす",
+  "meaning": "to aim for",
+  "type": "u-verb"
+ },
+ {
+  "order": 876,
+  "word": "秘密",
+  "reading": "ひみつ",
+  "meaning": "secret, privacy",
+  "type": "noun"
+ },
+ {
+  "order": 877,
+  "word": "屋敷",
+  "reading": "やしき",
+  "meaning": "mansion",
+  "type": "noun"
+ },
+ {
+  "order": 878,
+  "word": "限界",
+  "reading": "げんかい",
+  "meaning": "boundary, limit",
+  "type": "noun"
+ },
+ {
+  "order": 879,
+  "word": "勝負",
+  "reading": "しょうぶ",
+  "meaning": "match, contest",
+  "type": "noun"
+ },
+ {
+  "order": 880,
+  "word": "星",
+  "reading": "ほし",
+  "meaning": "star, planet",
+  "type": "noun"
+ },
+ {
+  "order": 881,
+  "word": "明らか",
+  "reading": "あきらか",
+  "meaning": "clear, obvious",
+  "type": "na-adjective"
+ },
+ {
+  "order": 882,
+  "word": "悩む",
+  "reading": "なやむ",
+  "meaning": "to be troubled, to worry",
+  "type": "u-verb"
+ },
+ {
+  "order": 883,
+  "word": "集中",
+  "reading": "しゅうちゅう",
+  "meaning": "concentration, convergence",
+  "type": "noun"
+ },
+ {
+  "order": 884,
+  "word": "間違う",
+  "reading": "まちがう",
+  "meaning": "to be mistaken, to be incorrect",
+  "type": "u-verb"
+ },
+ {
+  "order": 885,
+  "word": "裏",
+  "reading": "うら",
+  "meaning": "rear, reverse",
+  "type": "noun"
+ },
+ {
+  "order": 886,
+  "word": "薄い",
+  "reading": "うすい",
+  "meaning": "weak, pale",
+  "type": "i-adjective"
+ },
+ {
+  "order": 887,
+  "word": "願う",
+  "reading": "ねがう",
+  "meaning": "to wish, to ask a favor, to pray",
+  "type": "u-verb"
+ },
+ {
+  "order": 888,
+  "word": "回復",
+  "reading": "かいふく",
+  "meaning": "recovery",
+  "type": "noun"
+ },
+ {
+  "order": 889,
+  "word": "流す",
+  "reading": "ながす",
+  "meaning": "to let flow, to set adrift",
+  "type": "u-verb"
+ },
+ {
+  "order": 890,
+  "word": "じっと",
+  "reading": "じっと",
+  "meaning": "without moving, still",
+  "type": "adverb"
+ },
+ {
+  "order": 891,
+  "word": "本物",
+  "reading": "ほんもの",
+  "meaning": "real thing, genuine article",
+  "type": "noun"
+ },
+ {
+  "order": 892,
+  "word": "正に",
+  "reading": "まさに",
+  "meaning": "exactly, surely, truly",
+  "type": "adverb"
+ },
+ {
+  "order": 893,
+  "word": "取り戻す",
+  "reading": "とりもどす",
+  "meaning": "to take back, to recover",
+  "type": "u-verb"
+ },
+ {
+  "order": 894,
+  "word": "何より",
+  "reading": "なにより",
+  "meaning": "above all, most important",
+  "type": "adverb"
+ },
+ {
+  "order": 895,
+  "word": "身体",
+  "reading": "しんたい",
+  "meaning": "body",
+  "type": "noun"
+ },
+ {
+  "order": 896,
+  "word": "方向",
+  "reading": "ほうこう",
+  "meaning": "direction, course",
+  "type": "noun"
+ },
+ {
+  "order": 897,
+  "word": "通る",
+  "reading": "とおる",
+  "meaning": "to pass, to take, to go through",
+  "type": "u-verb"
+ },
+ {
+  "order": 898,
+  "word": "空間",
+  "reading": "くうかん",
+  "meaning": "space, room",
+  "type": "noun"
+ },
+ {
+  "order": 899,
+  "word": "着く",
+  "reading": "つく",
+  "meaning": "to arrive",
+  "type": "u-verb"
+ },
+ {
+  "order": 900,
+  "word": "可能",
+  "reading": "かのう",
+  "meaning": "possible, potential",
+  "type": "na-adjective"
+ },
+ {
+  "order": 901,
+  "word": "新た",
+  "reading": "あらた",
+  "meaning": "new",
+  "type": "na-adjective"
+ },
+ {
+  "order": 902,
+  "word": "随分",
+  "reading": "ずいぶん",
+  "meaning": "extremely, considerably",
+  "type": "adverb"
+ },
+ {
+  "order": 903,
+  "word": "尋ねる",
+  "reading": "たずねる",
+  "meaning": "to inquire, to search for",
+  "type": "ru-verb"
+ },
+ {
+  "order": 904,
+  "word": "椅子",
+  "reading": "いす",
+  "meaning": "chair",
+  "type": "noun"
+ },
+ {
+  "order": 905,
+  "word": "城",
+  "reading": "しろ",
+  "meaning": "castle",
+  "type": "noun"
+ },
+ {
+  "order": 906,
+  "word": "恐らく",
+  "reading": "おそらく",
+  "meaning": "probably (usually negative), I'm afraid ...",
+  "type": "adverb"
+ },
+ {
+  "order": 907,
+  "word": "お茶",
+  "reading": "おちゃ",
+  "meaning": "tea (polite)",
+  "type": "noun"
+ },
+ {
+  "order": 908,
+  "word": "雨",
+  "reading": "あめ",
+  "meaning": "rain",
+  "type": "noun"
+ },
+ {
+  "order": 909,
+  "word": "いやいや",
+  "reading": "いやいや",
+  "meaning": "reluctantly",
+  "type": "adverb"
+ },
+ {
+  "order": 910,
+  "word": "そのもの",
+  "reading": "そのもの",
+  "meaning": "the very thing, the picture of",
+  "type": "noun"
+ },
+ {
+  "order": 911,
+  "word": "教室",
+  "reading": "きょうしつ",
+  "meaning": "classroom",
+  "type": "noun"
+ },
+ {
+  "order": 912,
+  "word": "馬鹿",
+  "reading": "ばか",
+  "meaning": "fool, nonsense",
+  "type": "noun"
+ },
+ {
+  "order": 913,
+  "word": "遠慮",
+  "reading": "えんりょ",
+  "meaning": "reserve, refraining",
+  "type": "noun"
+ },
+ {
+  "order": 914,
+  "word": "まずい",
+  "reading": "まずい",
+  "meaning": "problematic, troublesome",
+  "type": "i-adjective"
+ },
+ {
+  "order": 915,
+  "word": "まずい",
+  "reading": "まずい",
+  "meaning": "bad-tasting, bad",
+  "type": "i-adjective"
+ },
+ {
+  "order": 916,
+  "word": "せめて",
+  "reading": "せめて",
+  "meaning": "at least",
+  "type": "adverb"
+ },
+ {
+  "order": 917,
+  "word": "迎える",
+  "reading": "むかえる",
+  "meaning": "to welcome, to go out to meet, to invite",
+  "type": "ru-verb"
+ },
+ {
+  "order": 918,
+  "word": "少なくとも",
+  "reading": "すくなくとも",
+  "meaning": "at least",
+  "type": "adverb"
+ },
+ {
+  "order": 919,
+  "word": "魂",
+  "reading": "たましい",
+  "meaning": "soul, spirit",
+  "type": "noun"
+ },
+ {
+  "order": 920,
+  "word": "消す",
+  "reading": "けす",
+  "meaning": "to turn off",
+  "type": "u-verb"
+ },
+ {
+  "order": 921,
+  "word": "調子",
+  "reading": "ちょうし",
+  "meaning": "condition, state of health",
+  "type": "noun"
+ },
+ {
+  "order": 922,
+  "word": "お互い",
+  "reading": "おたがい",
+  "meaning": "each other",
+  "type": "noun"
+ },
+ {
+  "order": 923,
+  "word": "似合う",
+  "reading": "にあう",
+  "meaning": "to suit, to match well",
+  "type": "u-verb"
+ },
+ {
+  "order": 924,
+  "word": "猫",
+  "reading": "ねこ",
+  "meaning": "cat",
+  "type": "noun"
+ },
+ {
+  "order": 925,
+  "word": "犬",
+  "reading": "いぬ",
+  "meaning": "dog",
+  "type": "noun"
+ },
+ {
+  "order": 926,
+  "word": "お礼",
+  "reading": "おれい",
+  "meaning": "gratitude",
+  "type": "noun"
+ },
+ {
+  "order": 927,
+  "word": "後悔",
+  "reading": "こうかい",
+  "meaning": "regret",
+  "type": "noun"
+ },
+ {
+  "order": 928,
+  "word": "希望",
+  "reading": "きぼう",
+  "meaning": "hope, wish",
+  "type": "noun"
+ },
+ {
+  "order": 929,
+  "word": "下がる",
+  "reading": "さがる",
+  "meaning": "to come down, to hang down, to fall",
+  "type": "u-verb"
+ },
+ {
+  "order": 930,
+  "word": "訪れる",
+  "reading": "おとずれる",
+  "meaning": "to visit, to call on",
+  "type": "ru-verb"
+ },
+ {
+  "order": 931,
+  "word": "褒める",
+  "reading": "ほめる",
+  "meaning": "to praise, to commend",
+  "type": "ru-verb"
+ },
+ {
+  "order": 932,
+  "word": "性格",
+  "reading": "せいかく",
+  "meaning": "character, personality",
+  "type": "noun"
+ },
+ {
+  "order": 933,
+  "word": "写真",
+  "reading": "しゃしん",
+  "meaning": "photograph",
+  "type": "noun"
+ },
+ {
+  "order": 934,
+  "word": "薬",
+  "reading": "くすり",
+  "meaning": "drug, remedy",
+  "type": "noun"
+ },
+ {
+  "order": 935,
+  "word": "友人",
+  "reading": "ゆうじん",
+  "meaning": "friend",
+  "type": "noun"
+ },
+ {
+  "order": 936,
+  "word": "かつて",
+  "reading": "かつて",
+  "meaning": "once, formerly",
+  "type": "adverb"
+ },
+ {
+  "order": 937,
+  "word": "確実",
+  "reading": "かくじつ",
+  "meaning": "certain, secure",
+  "type": "na-adjective"
+ },
+ {
+  "order": 938,
+  "word": "もはや",
+  "reading": "もはや",
+  "meaning": "already, no longer",
+  "type": "adverb"
+ },
+ {
+  "order": 939,
+  "word": "去る",
+  "reading": "さる",
+  "meaning": "to go away, to pass",
+  "type": "u-verb"
+ },
+ {
+  "order": 940,
+  "word": "一部",
+  "reading": "いちぶ",
+  "meaning": "(one) part",
+  "type": "noun"
+ },
+ {
+  "order": 941,
+  "word": "遠く",
+  "reading": "とおく",
+  "meaning": "far (away)",
+  "type": "adverb"
+ },
+ {
+  "order": 942,
+  "word": "腹",
+  "reading": "はら",
+  "meaning": "belly",
+  "type": "noun"
+ },
+ {
+  "order": 943,
+  "word": "階段",
+  "reading": "かいだん",
+  "meaning": "stairs",
+  "type": "noun"
+ },
+ {
+  "order": 944,
+  "word": "適当",
+  "reading": "てきとう",
+  "meaning": "suitable, appropriate",
+  "type": "na-adjective"
+ },
+ {
+  "order": 945,
+  "word": "舌",
+  "reading": "した",
+  "meaning": "tongue",
+  "type": "noun"
+ },
+ {
+  "order": 946,
+  "word": "予想",
+  "reading": "よそう",
+  "meaning": "prospect, expectation",
+  "type": "noun"
+ },
+ {
+  "order": 947,
+  "word": "興奮",
+  "reading": "こうふん",
+  "meaning": "excitement, agitation",
+  "type": "noun"
+ },
+ {
+  "order": 948,
+  "word": "関わる",
+  "reading": "かかわる",
+  "meaning": "to involve, to concern",
+  "type": "u-verb"
+ },
+ {
+  "order": 949,
+  "word": "白",
+  "reading": "しろ",
+  "meaning": "white",
+  "type": "noun"
+ },
+ {
+  "order": 950,
+  "word": "進める",
+  "reading": "すすめる",
+  "meaning": "to advance, to promote",
+  "type": "ru-verb"
+ },
+ {
+  "order": 951,
+  "word": "真剣",
+  "reading": "しんけん",
+  "meaning": "serious, sincere",
+  "type": "na-adjective"
+ },
+ {
+  "order": 952,
+  "word": "迫る",
+  "reading": "せまる",
+  "meaning": "to press, to close in on",
+  "type": "u-verb"
+ },
+ {
+  "order": 953,
+  "word": "ほぼ",
+  "reading": "ほぼ",
+  "meaning": "almost, nearly",
+  "type": "adverb"
+ },
+ {
+  "order": 954,
+  "word": "ちょうど",
+  "reading": "ちょうど",
+  "meaning": "just, as if",
+  "type": "adverb"
+ },
+ {
+  "order": 955,
+  "word": "疑問",
+  "reading": "ぎもん",
+  "meaning": "question, doubt",
+  "type": "noun"
+ },
+ {
+  "order": 956,
+  "word": "指示",
+  "reading": "しじ",
+  "meaning": "instruction, indication",
+  "type": "noun"
+ },
+ {
+  "order": 957,
+  "word": "揺れる",
+  "reading": "ゆれる",
+  "meaning": "to shake, to sway",
+  "type": "ru-verb"
+ },
+ {
+  "order": 958,
+  "word": "相当",
+  "reading": "そうとう",
+  "meaning": "correspondence, suitability",
+  "type": "noun"
+ },
+ {
+  "order": 959,
+  "word": "楽",
+  "reading": "らく",
+  "meaning": "easy, comfortable",
+  "type": "na-adjective"
+ },
+ {
+  "order": 960,
+  "word": "勘違い",
+  "reading": "かんちがい",
+  "meaning": "misunderstanding",
+  "type": "noun"
+ },
+ {
+  "order": 961,
+  "word": "警戒",
+  "reading": "けいかい",
+  "meaning": "vigilance, precaution",
+  "type": "noun"
+ },
+ {
+  "order": 962,
+  "word": "確かめる",
+  "reading": "たしかめる",
+  "meaning": "to check, to make sure of",
+  "type": "ru-verb"
+ },
+ {
+  "order": 963,
+  "word": "月",
+  "reading": "つき",
+  "meaning": "moon",
+  "type": "noun"
+ },
+ {
+  "order": 964,
+  "word": "疑う",
+  "reading": "うたがう",
+  "meaning": "to doubt, to be suspicious of",
+  "type": "u-verb"
+ },
+ {
+  "order": 965,
+  "word": "電話",
+  "reading": "でんわ",
+  "meaning": "telephone",
+  "type": "noun"
+ },
+ {
+  "order": 966,
+  "word": "成長",
+  "reading": "せいちょう",
+  "meaning": "growth",
+  "type": "noun"
+ },
+ {
+  "order": 967,
+  "word": "鋭い",
+  "reading": "するどい",
+  "meaning": "acute, sharp",
+  "type": "i-adjective"
+ },
+ {
+  "order": 968,
+  "word": "証拠",
+  "reading": "しょうこ",
+  "meaning": "proof, evidence",
+  "type": "noun"
+ },
+ {
+  "order": 969,
+  "word": "紹介",
+  "reading": "しょうかい",
+  "meaning": "introduction, referral",
+  "type": "noun"
+ },
+ {
+  "order": 970,
+  "word": "実際",
+  "reading": "じっさい",
+  "meaning": "reality, actuality",
+  "type": "noun"
+ },
+ {
+  "order": 971,
+  "word": "何でも",
+  "reading": "なんでも",
+  "meaning": "anything, whatever",
+  "type": "adverb"
+ },
+ {
+  "order": 972,
+  "word": "作業",
+  "reading": "さぎょう",
+  "meaning": "work, operation",
+  "type": "noun"
+ },
+ {
+  "order": 973,
+  "word": "重要",
+  "reading": "じゅうよう",
+  "meaning": "important, essential",
+  "type": "na-adjective"
+ },
+ {
+  "order": 974,
+  "word": "鍵",
+  "reading": "かぎ",
+  "meaning": "key",
+  "type": "noun"
+ },
+ {
+  "order": 975,
+  "word": "衝撃",
+  "reading": "しょうげき",
+  "meaning": "impact, shock",
+  "type": "noun"
+ },
+ {
+  "order": 976,
+  "word": "巻き込む",
+  "reading": "まきこむ",
+  "meaning": "to roll up, to involve",
+  "type": "u-verb"
+ },
+ {
+  "order": 977,
+  "word": "差し出す",
+  "reading": "さしだす",
+  "meaning": "to submit",
+  "type": "u-verb"
+ },
+ {
+  "order": 978,
+  "word": "軍",
+  "reading": "ぐん",
+  "meaning": "army, troops",
+  "type": "noun"
+ },
+ {
+  "order": 979,
+  "word": "そちら",
+  "reading": "そちら",
+  "meaning": "there, that way",
+  "type": "noun"
+ },
+ {
+  "order": 980,
+  "word": "悔しい",
+  "reading": "くやしい",
+  "meaning": "vexing, frustrating",
+  "type": "i-adjective"
+ },
+ {
+  "order": 981,
+  "word": "抜く",
+  "reading": "ぬく",
+  "meaning": "to pull out",
+  "type": "u-verb"
+ },
+ {
+  "order": 982,
+  "word": "破壊",
+  "reading": "はかい",
+  "meaning": "breaking, destruction",
+  "type": "noun"
+ },
+ {
+  "order": 983,
+  "word": "運命",
+  "reading": "うんめい",
+  "meaning": "fate, fortune",
+  "type": "noun"
+ },
+ {
+  "order": 984,
+  "word": "案内",
+  "reading": "あんない",
+  "meaning": "guidance, showing around",
+  "type": "noun"
+ },
+ {
+  "order": 985,
+  "word": "努力",
+  "reading": "どりょく",
+  "meaning": "endeavor, effort",
+  "type": "noun"
+ },
+ {
+  "order": 986,
+  "word": "いずれ",
+  "reading": "いずれ",
+  "meaning": "eventually, sometime",
+  "type": "adverb"
+ },
+ {
+  "order": 987,
+  "word": "一言",
+  "reading": "ひとこと",
+  "meaning": "single word, a few words",
+  "type": "noun"
+ },
+ {
+  "order": 988,
+  "word": "ついに",
+  "reading": "ついに",
+  "meaning": "at last, finally",
+  "type": "adverb"
+ },
+ {
+  "order": 989,
+  "word": "心臓",
+  "reading": "しんぞう",
+  "meaning": "heart",
+  "type": "noun"
+ },
+ {
+  "order": 990,
+  "word": "荷物",
+  "reading": "にもつ",
+  "meaning": "baggage, load",
+  "type": "noun"
+ },
+ {
+  "order": 991,
+  "word": "伸びる",
+  "reading": "のびる",
+  "meaning": "to stretch, to grow",
+  "type": "ru-verb"
+ },
+ {
+  "order": 992,
+  "word": "両親",
+  "reading": "りょうしん",
+  "meaning": "(both) parents",
+  "type": "noun"
+ },
+ {
+  "order": 993,
+  "word": "量",
+  "reading": "りょう",
+  "meaning": "amount, portion",
+  "type": "noun"
+ },
+ {
+  "order": 994,
+  "word": "払う",
+  "reading": "はらう",
+  "meaning": "to pay",
+  "type": "u-verb"
+ },
+ {
+  "order": 995,
+  "word": "二度と",
+  "reading": "にどと",
+  "meaning": "never again",
+  "type": "adverb"
+ },
+ {
+  "order": 996,
+  "word": "辺り",
+  "reading": "あたり",
+  "meaning": "vicinity, around",
+  "type": "noun"
+ },
+ {
+  "order": 997,
+  "word": "開始",
+  "reading": "かいし",
+  "meaning": "beginning",
+  "type": "noun"
+ },
+ {
+  "order": 998,
+  "word": "解放",
+  "reading": "かいほう",
+  "meaning": "release, setting free",
+  "type": "noun"
+ },
+ {
+  "order": 999,
+  "word": "仲良く",
+  "reading": "なかよく",
+  "meaning": "harmoniously, amicably",
+  "type": "adverb"
+ },
+ {
+  "order": 1000,
+  "word": "獣",
+  "reading": "けもの",
+  "meaning": "beast, brute",
+  "type": "noun"
+ },
+ {
+  "order": 1001,
+  "word": "取れる",
+  "reading": "とれる",
+  "meaning": "to come off, to be removed",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1002,
+  "word": "建物",
+  "reading": "たてもの",
+  "meaning": "building, structure",
+  "type": "noun"
+ },
+ {
+  "order": 1003,
+  "word": "本来",
+  "reading": "ほんらい",
+  "meaning": "originally, essentially",
+  "type": "adverb"
+ },
+ {
+  "order": 1004,
+  "word": "扱う",
+  "reading": "あつかう",
+  "meaning": "to handle, to deal with",
+  "type": "u-verb"
+ },
+ {
+  "order": 1005,
+  "word": "真面目",
+  "reading": "まじめ",
+  "meaning": "serious, earnest",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1006,
+  "word": "影響",
+  "reading": "えいきょう",
+  "meaning": "influence, effect",
+  "type": "noun"
+ },
+ {
+  "order": 1007,
+  "word": "真っ赤",
+  "reading": "まっか",
+  "meaning": "deep red",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1008,
+  "word": "発見",
+  "reading": "はっけん",
+  "meaning": "discovery, revelation",
+  "type": "noun"
+ },
+ {
+  "order": 1009,
+  "word": "支える",
+  "reading": "ささえる",
+  "meaning": "to support, to maintain",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1010,
+  "word": "第一",
+  "reading": "だいいち",
+  "meaning": "number one, first",
+  "type": "noun"
+ },
+ {
+  "order": 1011,
+  "word": "お父さん",
+  "reading": "おとうさん",
+  "meaning": "father",
+  "type": "noun"
+ },
+ {
+  "order": 1012,
+  "word": "お母さん",
+  "reading": "おかあさん",
+  "meaning": "mother",
+  "type": "noun"
+ },
+ {
+  "order": 1013,
+  "word": "お兄さん",
+  "reading": "おにいさん",
+  "meaning": "older brother",
+  "type": "noun"
+ },
+ {
+  "order": 1014,
+  "word": "お姉さん",
+  "reading": "おねえさん",
+  "meaning": "older sister",
+  "type": "noun"
+ },
+ {
+  "order": 1015,
+  "word": "おじさん",
+  "reading": "おじさん",
+  "meaning": "uncle",
+  "type": "noun"
+ },
+ {
+  "order": 1016,
+  "word": "おばさん",
+  "reading": "おばさん",
+  "meaning": "aunt",
+  "type": "noun"
+ },
+ {
+  "order": 1017,
+  "word": "いとこ",
+  "reading": "いとこ",
+  "meaning": "cousin",
+  "type": "noun"
+ },
+ {
+  "order": 1018,
+  "word": "机",
+  "reading": "つくえ",
+  "meaning": "desk, table",
+  "type": "noun"
+ },
+ {
+  "order": 1019,
+  "word": "同士",
+  "reading": "どうし",
+  "meaning": "of the same kind, each other, fellow",
+  "type": "noun"
+ },
+ {
+  "order": 1020,
+  "word": "遅れる",
+  "reading": "おくれる",
+  "meaning": "to be late",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1021,
+  "word": "車",
+  "reading": "くるま",
+  "meaning": "car, automobile",
+  "type": "noun"
+ },
+ {
+  "order": 1022,
+  "word": "飛び出す",
+  "reading": "とびだす",
+  "meaning": "to fly out, to dash out",
+  "type": "u-verb"
+ },
+ {
+  "order": 1023,
+  "word": "事態",
+  "reading": "じたい",
+  "meaning": "situation, state of affairs",
+  "type": "noun"
+ },
+ {
+  "order": 1024,
+  "word": "味方",
+  "reading": "みかた",
+  "meaning": "friend, ally",
+  "type": "noun"
+ },
+ {
+  "order": 1025,
+  "word": "展開",
+  "reading": "てんかい",
+  "meaning": "unfolding, development",
+  "type": "noun"
+ },
+ {
+  "order": 1026,
+  "word": "学園",
+  "reading": "がくえん",
+  "meaning": "educational institution, school",
+  "type": "noun"
+ },
+ {
+  "order": 1027,
+  "word": "怪しい",
+  "reading": "あやしい",
+  "meaning": "suspicious, dubious",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1028,
+  "word": "型",
+  "reading": "かた",
+  "meaning": "type, model",
+  "type": "noun"
+ },
+ {
+  "order": 1029,
+  "word": "流れ",
+  "reading": "ながれ",
+  "meaning": "flow, stream",
+  "type": "noun"
+ },
+ {
+  "order": 1030,
+  "word": "残り",
+  "reading": "のこり",
+  "meaning": "rest, leftover",
+  "type": "noun"
+ },
+ {
+  "order": 1031,
+  "word": "偶然",
+  "reading": "ぐうぜん",
+  "meaning": "chance, accident",
+  "type": "noun"
+ },
+ {
+  "order": 1032,
+  "word": "柔らかい",
+  "reading": "やわらかい",
+  "meaning": "soft",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1033,
+  "word": "感触",
+  "reading": "かんしょく",
+  "meaning": "feeling, touch",
+  "type": "noun"
+ },
+ {
+  "order": 1034,
+  "word": "女子",
+  "reading": "じょし",
+  "meaning": "woman, girl",
+  "type": "noun"
+ },
+ {
+  "order": 1035,
+  "word": "無し",
+  "reading": "なし",
+  "meaning": "naught, nothing, without",
+  "type": "noun"
+ },
+ {
+  "order": 1036,
+  "word": "壊れる",
+  "reading": "こわれる",
+  "meaning": "to break, to fall apart",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1037,
+  "word": "苦手",
+  "reading": "にがて",
+  "meaning": "hard to deal with, weak point",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1038,
+  "word": "試す",
+  "reading": "ためす",
+  "meaning": "to try, to test",
+  "type": "u-verb"
+ },
+ {
+  "order": 1039,
+  "word": "立派",
+  "reading": "りっぱ",
+  "meaning": "fine, excellent",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1040,
+  "word": "回す",
+  "reading": "まわす",
+  "meaning": "to turn, to rotate",
+  "type": "u-verb"
+ },
+ {
+  "order": 1041,
+  "word": "なぜか",
+  "reading": "なぜか",
+  "meaning": "for some reason",
+  "type": "adverb"
+ },
+ {
+  "order": 1042,
+  "word": "意見",
+  "reading": "いけん",
+  "meaning": "opinion",
+  "type": "noun"
+ },
+ {
+  "order": 1043,
+  "word": "大量",
+  "reading": "たいりょう",
+  "meaning": "large quantity, great volume",
+  "type": "noun"
+ },
+ {
+  "order": 1044,
+  "word": "提案",
+  "reading": "ていあん",
+  "meaning": "proposal, proposition",
+  "type": "noun"
+ },
+ {
+  "order": 1045,
+  "word": "責任",
+  "reading": "せきにん",
+  "meaning": "responsibility, liability",
+  "type": "noun"
+ },
+ {
+  "order": 1046,
+  "word": "抑える",
+  "reading": "おさえる",
+  "meaning": "to hold back, to restrain",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1047,
+  "word": "全力",
+  "reading": "ぜんりょく",
+  "meaning": "with all of one's strength, at full capacity",
+  "type": "noun"
+ },
+ {
+  "order": 1048,
+  "word": "伸ばす",
+  "reading": "のばす",
+  "meaning": "to stretch, to straighten",
+  "type": "u-verb"
+ },
+ {
+  "order": 1049,
+  "word": "客",
+  "reading": "きゃく",
+  "meaning": "customer, guest",
+  "type": "noun"
+ },
+ {
+  "order": 1050,
+  "word": "王国",
+  "reading": "おうこく",
+  "meaning": "kingdom, monarchy",
+  "type": "noun"
+ },
+ {
+  "order": 1051,
+  "word": "抵抗",
+  "reading": "ていこう",
+  "meaning": "resistance, opposition",
+  "type": "noun"
+ },
+ {
+  "order": 1052,
+  "word": "混乱",
+  "reading": "こんらん",
+  "meaning": "disorder, chaos",
+  "type": "noun"
+ },
+ {
+  "order": 1053,
+  "word": "条件",
+  "reading": "じょうけん",
+  "meaning": "condition, item",
+  "type": "noun"
+ },
+ {
+  "order": 1054,
+  "word": "迷惑",
+  "reading": "めいわく",
+  "meaning": "trouble, annoyance",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1055,
+  "word": "例",
+  "reading": "れい",
+  "meaning": "example",
+  "type": "noun"
+ },
+ {
+  "order": 1056,
+  "word": "頼る",
+  "reading": "たよる",
+  "meaning": "to rely on, to depend on",
+  "type": "u-verb"
+ },
+ {
+  "order": 1057,
+  "word": "完璧",
+  "reading": "かんぺき",
+  "meaning": "flawless, perfect",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1058,
+  "word": "日々",
+  "reading": "ひび",
+  "meaning": "daily, every day",
+  "type": "noun"
+ },
+ {
+  "order": 1059,
+  "word": "行為",
+  "reading": "こうい",
+  "meaning": "act, conduct",
+  "type": "noun"
+ },
+ {
+  "order": 1060,
+  "word": "ともかく",
+  "reading": "ともかく",
+  "meaning": "at least, at any rate",
+  "type": "adverb"
+ },
+ {
+  "order": 1061,
+  "word": "減る",
+  "reading": "へる",
+  "meaning": "to decrease, to diminish",
+  "type": "u-verb"
+ },
+ {
+  "order": 1062,
+  "word": "嫌う",
+  "reading": "きらう",
+  "meaning": "to dislike, to hate",
+  "type": "u-verb"
+ },
+ {
+  "order": 1063,
+  "word": "知り合い",
+  "reading": "しりあい",
+  "meaning": "acquaintance",
+  "type": "noun"
+ },
+ {
+  "order": 1064,
+  "word": "思考",
+  "reading": "しこう",
+  "meaning": "thinking, thought",
+  "type": "noun"
+ },
+ {
+  "order": 1065,
+  "word": "解決",
+  "reading": "かいけつ",
+  "meaning": "solution, settlement",
+  "type": "noun"
+ },
+ {
+  "order": 1066,
+  "word": "冷静",
+  "reading": "れいせい",
+  "meaning": "cool, calm",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1067,
+  "word": "天",
+  "reading": "てん",
+  "meaning": "sky, Heaven",
+  "type": "noun"
+ },
+ {
+  "order": 1068,
+  "word": "いつの間にか",
+  "reading": "いつのまにか",
+  "meaning": "before one knows, unnoticed",
+  "type": "adverb"
+ },
+ {
+  "order": 1069,
+  "word": "直す",
+  "reading": "なおす",
+  "meaning": "to repair, to cure, to alter",
+  "type": "u-verb"
+ },
+ {
+  "order": 1070,
+  "word": "常に",
+  "reading": "つねに",
+  "meaning": "always, constantly",
+  "type": "adverb"
+ },
+ {
+  "order": 1071,
+  "word": "犯人",
+  "reading": "はんにん",
+  "meaning": "criminal, culprit",
+  "type": "noun"
+ },
+ {
+  "order": 1072,
+  "word": "許可",
+  "reading": "きょか",
+  "meaning": "permission, approval",
+  "type": "noun"
+ },
+ {
+  "order": 1073,
+  "word": "閉じる",
+  "reading": "とじる",
+  "meaning": "to close",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1074,
+  "word": "重ねる",
+  "reading": "かさねる",
+  "meaning": "to put on top of something, to pile up",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1075,
+  "word": "細い",
+  "reading": "ほそい",
+  "meaning": "thin, narrow, slender",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1076,
+  "word": "久しぶり",
+  "reading": "ひさしぶり",
+  "meaning": "for the first time in a while",
+  "type": "expression"
+ },
+ {
+  "order": 1077,
+  "word": "目立つ",
+  "reading": "めだつ",
+  "meaning": "to stand out, to be conspicuous",
+  "type": "u-verb"
+ },
+ {
+  "order": 1078,
+  "word": "到着",
+  "reading": "とうちゃく",
+  "meaning": "arrival",
+  "type": "noun"
+ },
+ {
+  "order": 1079,
+  "word": "押さえる",
+  "reading": "おさえる",
+  "meaning": "to hold down, to hold steady",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1080,
+  "word": "通う",
+  "reading": "かよう",
+  "meaning": "to go to and from, to frequent a place",
+  "type": "u-verb"
+ },
+ {
+  "order": 1081,
+  "word": "殴る",
+  "reading": "なぐる",
+  "meaning": "to hit, to strike",
+  "type": "u-verb"
+ },
+ {
+  "order": 1082,
+  "word": "広げる",
+  "reading": "ひろげる",
+  "meaning": "to spread, to unfold",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1083,
+  "word": "引っ張る",
+  "reading": "ひっぱる",
+  "meaning": "to pull, to drag",
+  "type": "u-verb"
+ },
+ {
+  "order": 1084,
+  "word": "いつまでも",
+  "reading": "いつまでも",
+  "meaning": "endlessly, as long as one likes",
+  "type": "adverb"
+ },
+ {
+  "order": 1085,
+  "word": "間に合う",
+  "reading": "まにあう",
+  "meaning": "to be in time, to answer the purpose, to be good enough",
+  "type": "u-verb"
+ },
+ {
+  "order": 1086,
+  "word": "了解",
+  "reading": "りょうかい",
+  "meaning": "consent, understanding, roger that",
+  "type": "expression"
+ },
+ {
+  "order": 1087,
+  "word": "番",
+  "reading": "ばん",
+  "meaning": "one's turn",
+  "type": "suffix"
+ },
+ {
+  "order": 1088,
+  "word": "戦争",
+  "reading": "せんそう",
+  "meaning": "war, battle",
+  "type": "noun"
+ },
+ {
+  "order": 1089,
+  "word": "寒い",
+  "reading": "さむい",
+  "meaning": "cold (temperature)",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1090,
+  "word": "見事",
+  "reading": "みごと",
+  "meaning": "splendid, admirable",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1091,
+  "word": "酒",
+  "reading": "さけ",
+  "meaning": "alcoholic drink, Japanese rice wine",
+  "type": "noun"
+ },
+ {
+  "order": 1092,
+  "word": "恋人",
+  "reading": "こいびと",
+  "meaning": "lover, sweetheart",
+  "type": "noun"
+ },
+ {
+  "order": 1093,
+  "word": "一切",
+  "reading": "いっさい",
+  "meaning": "not at all, absolutely nothing",
+  "type": "adverb"
+ },
+ {
+  "order": 1094,
+  "word": "穴",
+  "reading": "あな",
+  "meaning": "hole, cavity",
+  "type": "noun"
+ },
+ {
+  "order": 1095,
+  "word": "依頼",
+  "reading": "いらい",
+  "meaning": "request, commission",
+  "type": "noun"
+ },
+ {
+  "order": 1096,
+  "word": "中身",
+  "reading": "なかみ",
+  "meaning": "content, interior",
+  "type": "noun"
+ },
+ {
+  "order": 1097,
+  "word": "多少",
+  "reading": "たしょう",
+  "meaning": "a little, somewhat",
+  "type": "adverb"
+ },
+ {
+  "order": 1098,
+  "word": "真実",
+  "reading": "しんじつ",
+  "meaning": "truth, reality",
+  "type": "noun"
+ },
+ {
+  "order": 1099,
+  "word": "見た目",
+  "reading": "みため",
+  "meaning": "outward appearance",
+  "type": "noun"
+ },
+ {
+  "order": 1100,
+  "word": "間違い",
+  "reading": "まちがい",
+  "meaning": "mistake, error",
+  "type": "noun"
+ },
+ {
+  "order": 1101,
+  "word": "青い",
+  "reading": "あおい",
+  "meaning": "blue",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1102,
+  "word": "辛い",
+  "reading": "からい",
+  "meaning": "spicy",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1103,
+  "word": "辛い",
+  "reading": "つらい",
+  "meaning": "difficult, harsh",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1104,
+  "word": "対応",
+  "reading": "たいおう",
+  "meaning": "correspondence, equivalence, response",
+  "type": "noun"
+ },
+ {
+  "order": 1105,
+  "word": "光る",
+  "reading": "ひかる",
+  "meaning": "to shine, to emit light",
+  "type": "u-verb"
+ },
+ {
+  "order": 1106,
+  "word": "苦労",
+  "reading": "くろう",
+  "meaning": "difficulty, hardship",
+  "type": "noun"
+ },
+ {
+  "order": 1107,
+  "word": "通じる",
+  "reading": "つうじる",
+  "meaning": "to pass, to communicate with",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1108,
+  "word": "罪",
+  "reading": "つみ",
+  "meaning": "crime, sin",
+  "type": "noun"
+ },
+ {
+  "order": 1109,
+  "word": "授業",
+  "reading": "じゅぎょう",
+  "meaning": "class, lesson",
+  "type": "noun"
+ },
+ {
+  "order": 1110,
+  "word": "最悪",
+  "reading": "さいあく",
+  "meaning": "worst, terrible",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1111,
+  "word": "差",
+  "reading": "さ",
+  "meaning": "difference",
+  "type": "noun"
+ },
+ {
+  "order": 1112,
+  "word": "信用",
+  "reading": "しんよう",
+  "meaning": "trust, credit",
+  "type": "noun"
+ },
+ {
+  "order": 1113,
+  "word": "壊す",
+  "reading": "こわす",
+  "meaning": "to break, to destroy, to smash",
+  "type": "u-verb"
+ },
+ {
+  "order": 1114,
+  "word": "式",
+  "reading": "しき",
+  "meaning": "ceremony",
+  "type": "noun"
+ },
+ {
+  "order": 1115,
+  "word": "人形",
+  "reading": "にんぎょう",
+  "meaning": "doll",
+  "type": "noun"
+ },
+ {
+  "order": 1116,
+  "word": "結ぶ",
+  "reading": "むすぶ",
+  "meaning": "to tie, to join",
+  "type": "u-verb"
+ },
+ {
+  "order": 1117,
+  "word": "あんなに",
+  "reading": "あんなに",
+  "meaning": "that much, such...",
+  "type": "noun"
+ },
+ {
+  "order": 1118,
+  "word": "計画",
+  "reading": "けいかく",
+  "meaning": "plan, project",
+  "type": "noun"
+ },
+ {
+  "order": 1119,
+  "word": "囲む",
+  "reading": "かこむ",
+  "meaning": "to enclose, to encircle",
+  "type": "u-verb"
+ },
+ {
+  "order": 1120,
+  "word": "知識",
+  "reading": "ちしき",
+  "meaning": "knowledge",
+  "type": "noun"
+ },
+ {
+  "order": 1121,
+  "word": "切り",
+  "reading": "きり",
+  "meaning": "end, place to stop",
+  "type": "noun"
+ },
+ {
+  "order": 1122,
+  "word": "注意",
+  "reading": "ちゅうい",
+  "meaning": "care, watch out",
+  "type": "noun"
+ },
+ {
+  "order": 1123,
+  "word": "言い方",
+  "reading": "いいかた",
+  "meaning": "way of speaking, expression",
+  "type": "noun"
+ },
+ {
+  "order": 1124,
+  "word": "経つ",
+  "reading": "たつ",
+  "meaning": "to pass, to elapse",
+  "type": "u-verb"
+ },
+ {
+  "order": 1125,
+  "word": "背",
+  "reading": "せ",
+  "meaning": "height, stature",
+  "type": "noun"
+ },
+ {
+  "order": 1126,
+  "word": "問う",
+  "reading": "とう",
+  "meaning": "to ask, to inquire",
+  "type": "u-verb"
+ },
+ {
+  "order": 1127,
+  "word": "恋",
+  "reading": "こい",
+  "meaning": "love, romance",
+  "type": "noun"
+ },
+ {
+  "order": 1128,
+  "word": "とんでもない",
+  "reading": "とんでもない",
+  "meaning": "unthinkable, outrageous",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1129,
+  "word": "中心",
+  "reading": "ちゅうしん",
+  "meaning": "center, middle",
+  "type": "noun"
+ },
+ {
+  "order": 1130,
+  "word": "汗",
+  "reading": "あせ",
+  "meaning": "sweat",
+  "type": "noun"
+ },
+ {
+  "order": 1131,
+  "word": "異常",
+  "reading": "いじょう",
+  "meaning": "extraordinary, exceptional",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1132,
+  "word": "非常",
+  "reading": "ひじょう",
+  "meaning": "emergency, calamity",
+  "type": "noun"
+ },
+ {
+  "order": 1133,
+  "word": "膝",
+  "reading": "ひざ",
+  "meaning": "knee",
+  "type": "noun"
+ },
+ {
+  "order": 1134,
+  "word": "わずか",
+  "reading": "わずか",
+  "meaning": "few, little",
+  "type": "noun"
+ },
+ {
+  "order": 1135,
+  "word": "役",
+  "reading": "やく",
+  "meaning": "role, part",
+  "type": "noun"
+ },
+ {
+  "order": 1136,
+  "word": "焦る",
+  "reading": "あせる",
+  "meaning": "to feel pressured, to feel hurried",
+  "type": "u-verb"
+ },
+ {
+  "order": 1137,
+  "word": "川",
+  "reading": "かわ",
+  "meaning": "river, stream",
+  "type": "noun"
+ },
+ {
+  "order": 1138,
+  "word": "悪魔",
+  "reading": "あくま",
+  "meaning": "demon, devil",
+  "type": "noun"
+ },
+ {
+  "order": 1139,
+  "word": "唯一",
+  "reading": "ゆいいつ",
+  "meaning": "(the) only, unique",
+  "type": "noun"
+ },
+ {
+  "order": 1140,
+  "word": "もうすぐ",
+  "reading": "もうすぐ",
+  "meaning": "soon, before long",
+  "type": "adverb"
+ },
+ {
+  "order": 1141,
+  "word": "中央",
+  "reading": "ちゅうおう",
+  "meaning": "center",
+  "type": "noun"
+ },
+ {
+  "order": 1142,
+  "word": "突っ込む",
+  "reading": "つっこむ",
+  "meaning": "to thrust in, to dash into",
+  "type": "u-verb"
+ },
+ {
+  "order": 1143,
+  "word": "技術",
+  "reading": "ぎじゅつ",
+  "meaning": "technology",
+  "type": "noun"
+ },
+ {
+  "order": 1144,
+  "word": "素晴らしい",
+  "reading": "すばらしい",
+  "meaning": "splendid, excellent",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1145,
+  "word": "単純",
+  "reading": "たんじゅん",
+  "meaning": "simple, uncomplicated",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1146,
+  "word": "穏やか",
+  "reading": "おだやか",
+  "meaning": "calm, mild",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1147,
+  "word": "撃つ",
+  "reading": "うつ",
+  "meaning": "to fire, to shoot",
+  "type": "u-verb"
+ },
+ {
+  "order": 1148,
+  "word": "拾う",
+  "reading": "ひろう",
+  "meaning": "to pick up, to find",
+  "type": "u-verb"
+ },
+ {
+  "order": 1149,
+  "word": "完成",
+  "reading": "かんせい",
+  "meaning": "completion, finish",
+  "type": "noun"
+ },
+ {
+  "order": 1150,
+  "word": "毒",
+  "reading": "どく",
+  "meaning": "poison, harm",
+  "type": "noun"
+ },
+ {
+  "order": 1151,
+  "word": "馬",
+  "reading": "うま",
+  "meaning": "horse",
+  "type": "noun"
+ },
+ {
+  "order": 1152,
+  "word": "覆う",
+  "reading": "おおう",
+  "meaning": "to cover, to hide",
+  "type": "u-verb"
+ },
+ {
+  "order": 1153,
+  "word": "趣味",
+  "reading": "しゅみ",
+  "meaning": "hobby",
+  "type": "noun"
+ },
+ {
+  "order": 1154,
+  "word": "どうにか",
+  "reading": "どうにか",
+  "meaning": "somehow",
+  "type": "adverb"
+ },
+ {
+  "order": 1155,
+  "word": "何となく",
+  "reading": "なんとなく",
+  "meaning": "for some reason",
+  "type": "adverb"
+ },
+ {
+  "order": 1156,
+  "word": "価値",
+  "reading": "かち",
+  "meaning": "value, merit",
+  "type": "noun"
+ },
+ {
+  "order": 1157,
+  "word": "見守る",
+  "reading": "みまもる",
+  "meaning": "to watch, to keep watch over",
+  "type": "u-verb"
+ },
+ {
+  "order": 1158,
+  "word": "安全",
+  "reading": "あんぜん",
+  "meaning": "safety, security",
+  "type": "noun"
+ },
+ {
+  "order": 1159,
+  "word": "連れて来る",
+  "reading": "つれてくる",
+  "meaning": "to bring over, to bring along",
+  "type": "irregular-verb"
+ },
+ {
+  "order": 1160,
+  "word": "そば",
+  "reading": "そば",
+  "meaning": "side, vicinity",
+  "type": "noun"
+ },
+ {
+  "order": 1161,
+  "word": "万",
+  "reading": "まん",
+  "meaning": "ten thousand",
+  "type": "noun"
+ },
+ {
+  "order": 1162,
+  "word": "額",
+  "reading": "がく",
+  "meaning": "picture frame",
+  "type": "noun"
+ },
+ {
+  "order": 1163,
+  "word": "受け止める",
+  "reading": "うけとめる",
+  "meaning": "to catch, to receive",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1164,
+  "word": "素敵",
+  "reading": "すてき",
+  "meaning": "lovely, superb",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1165,
+  "word": "正体",
+  "reading": "しょうたい",
+  "meaning": "true character, true form",
+  "type": "noun"
+ },
+ {
+  "order": 1166,
+  "word": "あっさり",
+  "reading": "あっさり",
+  "meaning": "lightly, easily, simply",
+  "type": "adverb"
+ },
+ {
+  "order": 1167,
+  "word": "吸う",
+  "reading": "すう",
+  "meaning": "to smoke",
+  "type": "u-verb"
+ },
+ {
+  "order": 1168,
+  "word": "鳴る",
+  "reading": "なる",
+  "meaning": "to ring, to beep",
+  "type": "u-verb"
+ },
+ {
+  "order": 1169,
+  "word": "研究",
+  "reading": "けんきゅう",
+  "meaning": "research",
+  "type": "noun"
+ },
+ {
+  "order": 1170,
+  "word": "まとめる",
+  "reading": "まとめる",
+  "meaning": "to gather together, to put in order",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1171,
+  "word": "別れる",
+  "reading": "わかれる",
+  "meaning": "to separate, to part from",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1172,
+  "word": "ふざける",
+  "reading": "ふざける",
+  "meaning": "to mess around, to fool around",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1173,
+  "word": "着替える",
+  "reading": "きがえる",
+  "meaning": "to change clothes",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1174,
+  "word": "箱",
+  "reading": "はこ",
+  "meaning": "box, case",
+  "type": "noun"
+ },
+ {
+  "order": 1175,
+  "word": "無言",
+  "reading": "むごん",
+  "meaning": "silence, muteness",
+  "type": "noun"
+ },
+ {
+  "order": 1176,
+  "word": "何で",
+  "reading": "なんで",
+  "meaning": "why, what for",
+  "type": "adverb"
+ },
+ {
+  "order": 1177,
+  "word": "裏切る",
+  "reading": "うらぎる",
+  "meaning": "to betray",
+  "type": "u-verb"
+ },
+ {
+  "order": 1178,
+  "word": "焼く",
+  "reading": "やく",
+  "meaning": "to burn, to bake",
+  "type": "u-verb"
+ },
+ {
+  "order": 1179,
+  "word": "怪我",
+  "reading": "けが",
+  "meaning": "injury",
+  "type": "noun"
+ },
+ {
+  "order": 1180,
+  "word": "門",
+  "reading": "もん",
+  "meaning": "gate, entrance",
+  "type": "noun"
+ },
+ {
+  "order": 1181,
+  "word": "不可能",
+  "reading": "ふかのう",
+  "meaning": "impossible",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1182,
+  "word": "妻",
+  "reading": "つま",
+  "meaning": "wife",
+  "type": "noun"
+ },
+ {
+  "order": 1183,
+  "word": "時には",
+  "reading": "ときには",
+  "meaning": "occasionally, at times",
+  "type": "adverb"
+ },
+ {
+  "order": 1184,
+  "word": "発言",
+  "reading": "はつげん",
+  "meaning": "speech",
+  "type": "noun"
+ },
+ {
+  "order": 1185,
+  "word": "正確",
+  "reading": "せいかく",
+  "meaning": "accurate, precise",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1186,
+  "word": "認識",
+  "reading": "にんしき",
+  "meaning": "recognition, acknowledgment",
+  "type": "noun"
+ },
+ {
+  "order": 1187,
+  "word": "速度",
+  "reading": "そくど",
+  "meaning": "velocity, speed",
+  "type": "noun"
+ },
+ {
+  "order": 1188,
+  "word": "謎",
+  "reading": "なぞ",
+  "meaning": "mystery, puzzle",
+  "type": "noun"
+ },
+ {
+  "order": 1189,
+  "word": "文字",
+  "reading": "もじ",
+  "meaning": "character, letter",
+  "type": "noun"
+ },
+ {
+  "order": 1190,
+  "word": "吐く",
+  "reading": "はく",
+  "meaning": "to spew, to vomit, to holler",
+  "type": "u-verb"
+ },
+ {
+  "order": 1191,
+  "word": "鬼",
+  "reading": "おに",
+  "meaning": "demon, ogre",
+  "type": "noun"
+ },
+ {
+  "order": 1192,
+  "word": "刺激",
+  "reading": "しげき",
+  "meaning": "stimulus, stimulation",
+  "type": "noun"
+ },
+ {
+  "order": 1193,
+  "word": "最も",
+  "reading": "もっとも",
+  "meaning": "the most",
+  "type": "adverb"
+ },
+ {
+  "order": 1194,
+  "word": "制服",
+  "reading": "せいふく",
+  "meaning": "uniform",
+  "type": "noun"
+ },
+ {
+  "order": 1195,
+  "word": "爆発",
+  "reading": "ばくはつ",
+  "meaning": "blast, explosion",
+  "type": "noun"
+ },
+ {
+  "order": 1196,
+  "word": "訓練",
+  "reading": "くんれん",
+  "meaning": "training, drill",
+  "type": "noun"
+ },
+ {
+  "order": 1197,
+  "word": "振り向く",
+  "reading": "ふりむく",
+  "meaning": "to turn around, to look back",
+  "type": "u-verb"
+ },
+ {
+  "order": 1198,
+  "word": "脱ぐ",
+  "reading": "ぬぐ",
+  "meaning": "to remove clothes, to take off",
+  "type": "u-verb"
+ },
+ {
+  "order": 1199,
+  "word": "信頼",
+  "reading": "しんらい",
+  "meaning": "trust, faith",
+  "type": "noun"
+ },
+ {
+  "order": 1200,
+  "word": "寄る",
+  "reading": "よる",
+  "meaning": "to stop by, to drop by",
+  "type": "u-verb"
+ },
+ {
+  "order": 1201,
+  "word": "飛ばす",
+  "reading": "とばす",
+  "meaning": "to fly, to launch in the air",
+  "type": "u-verb"
+ },
+ {
+  "order": 1202,
+  "word": "貸す",
+  "reading": "かす",
+  "meaning": "to lend, to lease",
+  "type": "u-verb"
+ },
+ {
+  "order": 1203,
+  "word": "パン",
+  "reading": "ぱん",
+  "meaning": "bread",
+  "type": "noun"
+ },
+ {
+  "order": 1204,
+  "word": "ありがたい",
+  "reading": "ありがたい",
+  "meaning": "welcome, grateful",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1205,
+  "word": "赤",
+  "reading": "あか",
+  "meaning": "red",
+  "type": "noun"
+ },
+ {
+  "order": 1206,
+  "word": "大体",
+  "reading": "だいたい",
+  "meaning": "mostly",
+  "type": "adverb"
+ },
+ {
+  "order": 1207,
+  "word": "きちんと",
+  "reading": "きちんと",
+  "meaning": "neatly, accurately",
+  "type": "adverb"
+ },
+ {
+  "order": 1208,
+  "word": "喉",
+  "reading": "のど",
+  "meaning": "throat",
+  "type": "noun"
+ },
+ {
+  "order": 1209,
+  "word": "少々",
+  "reading": "しょうしょう",
+  "meaning": "a little, a few",
+  "type": "adverb"
+ },
+ {
+  "order": 1210,
+  "word": "有名",
+  "reading": "ゆうめい",
+  "meaning": "famous",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1211,
+  "word": "船",
+  "reading": "ふね",
+  "meaning": "ship, boat",
+  "type": "noun"
+ },
+ {
+  "order": 1212,
+  "word": "転がる",
+  "reading": "ころがる",
+  "meaning": "to roll over, to tumble",
+  "type": "u-verb"
+ },
+ {
+  "order": 1213,
+  "word": "切れる",
+  "reading": "きれる",
+  "meaning": "to be able to cut, to run out, to expire",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1214,
+  "word": "たった",
+  "reading": "たった",
+  "meaning": "only, merely",
+  "type": "adverb"
+ },
+ {
+  "order": 1215,
+  "word": "話題",
+  "reading": "わだい",
+  "meaning": "topic of conversation",
+  "type": "noun"
+ },
+ {
+  "order": 1216,
+  "word": "濡れる",
+  "reading": "ぬれる",
+  "meaning": "to get wet",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1217,
+  "word": "ついでに",
+  "reading": "ついでに",
+  "meaning": "on the way, while one's at it",
+  "type": "adverb"
+ },
+ {
+  "order": 1218,
+  "word": "呼び出す",
+  "reading": "よびだす",
+  "meaning": "to call someone to",
+  "type": "u-verb"
+ },
+ {
+  "order": 1219,
+  "word": "確信",
+  "reading": "かくしん",
+  "meaning": "firm belief, conviction",
+  "type": "noun"
+ },
+ {
+  "order": 1220,
+  "word": "込める",
+  "reading": "こめる",
+  "meaning": "to put in, to concentrate on",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1221,
+  "word": "自覚",
+  "reading": "じかく",
+  "meaning": "awareness",
+  "type": "noun"
+ },
+ {
+  "order": 1222,
+  "word": "空く",
+  "reading": "あく",
+  "meaning": "to become available or vacant",
+  "type": "u-verb"
+ },
+ {
+  "order": 1223,
+  "word": "空く",
+  "reading": "すく",
+  "meaning": "to be empty, to become less crowded",
+  "type": "u-verb"
+ },
+ {
+  "order": 1224,
+  "word": "警察",
+  "reading": "けいさつ",
+  "meaning": "police",
+  "type": "noun"
+ },
+ {
+  "order": 1225,
+  "word": "悲鳴",
+  "reading": "ひめい",
+  "meaning": "shriek, scream",
+  "type": "noun"
+ },
+ {
+  "order": 1226,
+  "word": "捕まえる",
+  "reading": "つかまえる",
+  "meaning": "to arrest, to capture",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1227,
+  "word": "早速",
+  "reading": "さっそく",
+  "meaning": "immediately",
+  "type": "adverb"
+ },
+ {
+  "order": 1228,
+  "word": "お腹",
+  "reading": "おなか",
+  "meaning": "stomach, belly",
+  "type": "noun"
+ },
+ {
+  "order": 1229,
+  "word": "掃除",
+  "reading": "そうじ",
+  "meaning": "cleaning",
+  "type": "noun"
+ },
+ {
+  "order": 1230,
+  "word": "硬い",
+  "reading": "かたい",
+  "meaning": "hard, stiff",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1231,
+  "word": "際",
+  "reading": "さい",
+  "meaning": "occasion, time",
+  "type": "noun"
+ },
+ {
+  "order": 1232,
+  "word": "漏らす",
+  "reading": "もらす",
+  "meaning": "to give away, to let leak",
+  "type": "u-verb"
+ },
+ {
+  "order": 1233,
+  "word": "面",
+  "reading": "めん",
+  "meaning": "surface, aspect",
+  "type": "noun"
+ },
+ {
+  "order": 1234,
+  "word": "不満",
+  "reading": "ふまん",
+  "meaning": "dissatisfaction, discontent",
+  "type": "noun"
+ },
+ {
+  "order": 1235,
+  "word": "驚き",
+  "reading": "おどろき",
+  "meaning": "surprise, amazement",
+  "type": "noun"
+ },
+ {
+  "order": 1236,
+  "word": "旅",
+  "reading": "たび",
+  "meaning": "journey, travel",
+  "type": "noun"
+ },
+ {
+  "order": 1237,
+  "word": "絵",
+  "reading": "え",
+  "meaning": "picture, drawing",
+  "type": "noun"
+ },
+ {
+  "order": 1238,
+  "word": "組む",
+  "reading": "くむ",
+  "meaning": "to pair up, to partner with",
+  "type": "u-verb"
+ },
+ {
+  "order": 1239,
+  "word": "沈黙",
+  "reading": "ちんもく",
+  "meaning": "reticence, silence",
+  "type": "noun"
+ },
+ {
+  "order": 1240,
+  "word": "張る",
+  "reading": "はる",
+  "meaning": "to strain, to be stretched",
+  "type": "u-verb"
+ },
+ {
+  "order": 1241,
+  "word": "告白",
+  "reading": "こくはく",
+  "meaning": "confession, admission",
+  "type": "noun"
+ },
+ {
+  "order": 1242,
+  "word": "舐める",
+  "reading": "なめる",
+  "meaning": "to lick",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1243,
+  "word": "潰す",
+  "reading": "つぶす",
+  "meaning": "to crush, to smash",
+  "type": "u-verb"
+ },
+ {
+  "order": 1244,
+  "word": "含める",
+  "reading": "ふくめる",
+  "meaning": "to include",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1245,
+  "word": "時期",
+  "reading": "じき",
+  "meaning": "time, season, period",
+  "type": "noun"
+ },
+ {
+  "order": 1246,
+  "word": "活動",
+  "reading": "かつどう",
+  "meaning": "activity",
+  "type": "noun"
+ },
+ {
+  "order": 1247,
+  "word": "育てる",
+  "reading": "そだてる",
+  "meaning": "to bring up, to breed",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1248,
+  "word": "優秀",
+  "reading": "ゆうしゅう",
+  "meaning": "excellent, exceptional",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1249,
+  "word": "予感",
+  "reading": "よかん",
+  "meaning": "hunch, premonition",
+  "type": "noun"
+ },
+ {
+  "order": 1250,
+  "word": "解く",
+  "reading": "とく",
+  "meaning": "to solve",
+  "type": "u-verb"
+ },
+ {
+  "order": 1251,
+  "word": "元々",
+  "reading": "もともと",
+  "meaning": "originally, by nature",
+  "type": "adverb"
+ },
+ {
+  "order": 1252,
+  "word": "溢れる",
+  "reading": "あふれる",
+  "meaning": "to overflow, to flood",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1253,
+  "word": "発生",
+  "reading": "はっせい",
+  "meaning": "occurrence, happening",
+  "type": "noun"
+ },
+ {
+  "order": 1254,
+  "word": "微妙",
+  "reading": "びみょう",
+  "meaning": "subtle, delicate, sensitive, iffy",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1255,
+  "word": "違い",
+  "reading": "ちがい",
+  "meaning": "difference, mistake",
+  "type": "noun"
+ },
+ {
+  "order": 1256,
+  "word": "直後",
+  "reading": "ちょくご",
+  "meaning": "immediately after",
+  "type": "adverb"
+ },
+ {
+  "order": 1257,
+  "word": "地下",
+  "reading": "ちか",
+  "meaning": "underground",
+  "type": "noun"
+ },
+ {
+  "order": 1258,
+  "word": "香り",
+  "reading": "かおり",
+  "meaning": "perfume, fragrance",
+  "type": "noun"
+ },
+ {
+  "order": 1259,
+  "word": "効く",
+  "reading": "きく",
+  "meaning": "to be effective",
+  "type": "u-verb"
+ },
+ {
+  "order": 1260,
+  "word": "使用",
+  "reading": "しよう",
+  "meaning": "usage",
+  "type": "noun"
+ },
+ {
+  "order": 1261,
+  "word": "道具",
+  "reading": "どうぐ",
+  "meaning": "tool",
+  "type": "noun"
+ },
+ {
+  "order": 1262,
+  "word": "願い",
+  "reading": "ねがい",
+  "meaning": "wish, request",
+  "type": "noun"
+ },
+ {
+  "order": 1263,
+  "word": "洗う",
+  "reading": "あらう",
+  "meaning": "to wash",
+  "type": "u-verb"
+ },
+ {
+  "order": 1264,
+  "word": "手段",
+  "reading": "しゅだん",
+  "meaning": "means, way",
+  "type": "noun"
+ },
+ {
+  "order": 1265,
+  "word": "誤解",
+  "reading": "ごかい",
+  "meaning": "misunderstanding",
+  "type": "noun"
+ },
+ {
+  "order": 1266,
+  "word": "応援",
+  "reading": "おうえん",
+  "meaning": "cheering",
+  "type": "noun"
+ },
+ {
+  "order": 1267,
+  "word": "含む",
+  "reading": "ふくむ",
+  "meaning": "to contain, to include",
+  "type": "u-verb"
+ },
+ {
+  "order": 1268,
+  "word": "当時",
+  "reading": "とうじ",
+  "meaning": "at that time, at the present time",
+  "type": "adverb"
+ },
+ {
+  "order": 1269,
+  "word": "勝利",
+  "reading": "しょうり",
+  "meaning": "triumph, victory",
+  "type": "noun"
+ },
+ {
+  "order": 1270,
+  "word": "降る",
+  "reading": "ふる",
+  "meaning": "to fall (e.g. rain)",
+  "type": "u-verb"
+ },
+ {
+  "order": 1271,
+  "word": "雪",
+  "reading": "ゆき",
+  "meaning": "snow, snowfall",
+  "type": "noun"
+ },
+ {
+  "order": 1272,
+  "word": "入り口",
+  "reading": "いりぐち",
+  "meaning": "entrance",
+  "type": "noun"
+ },
+ {
+  "order": 1273,
+  "word": "一方",
+  "reading": "いっぽう",
+  "meaning": "one way",
+  "type": "noun"
+ },
+ {
+  "order": 1274,
+  "word": "古い",
+  "reading": "ふるい",
+  "meaning": "old",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1275,
+  "word": "役に立つ",
+  "reading": "やくにたつ",
+  "meaning": "to be useful, to be helpful",
+  "type": "u-verb"
+ },
+ {
+  "order": 1276,
+  "word": "懐かしい",
+  "reading": "なつかしい",
+  "meaning": "longed-for, nostalgic",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1277,
+  "word": "もしも",
+  "reading": "もしも",
+  "meaning": "if, if ever",
+  "type": "expression"
+ },
+ {
+  "order": 1278,
+  "word": "才能",
+  "reading": "さいのう",
+  "meaning": "talent, ability",
+  "type": "noun"
+ },
+ {
+  "order": 1279,
+  "word": "逃げ出す",
+  "reading": "にげだす",
+  "meaning": "to make a break for, to run off",
+  "type": "u-verb"
+ },
+ {
+  "order": 1280,
+  "word": "様々",
+  "reading": "さまざま",
+  "meaning": "various, diverse",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1281,
+  "word": "病院",
+  "reading": "びょういん",
+  "meaning": "hospital",
+  "type": "noun"
+ },
+ {
+  "order": 1282,
+  "word": "比べる",
+  "reading": "くらべる",
+  "meaning": "to compare, to contrast",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1283,
+  "word": "氷",
+  "reading": "こおり",
+  "meaning": "ice",
+  "type": "noun"
+ },
+ {
+  "order": 1284,
+  "word": "狭い",
+  "reading": "せまい",
+  "meaning": "narrow, cramped",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1285,
+  "word": "神様",
+  "reading": "かみさま",
+  "meaning": "God, the divine",
+  "type": "noun"
+ },
+ {
+  "order": 1286,
+  "word": "動揺",
+  "reading": "どうよう",
+  "meaning": "shaking, turbulence",
+  "type": "noun"
+ },
+ {
+  "order": 1287,
+  "word": "長",
+  "reading": "ちょう",
+  "meaning": "chief, head",
+  "type": "noun"
+ },
+ {
+  "order": 1288,
+  "word": "なお",
+  "reading": "なお",
+  "meaning": "still, in addition",
+  "type": "adverb"
+ },
+ {
+  "order": 1289,
+  "word": "物語",
+  "reading": "ものがたり",
+  "meaning": "story, tale",
+  "type": "noun"
+ },
+ {
+  "order": 1290,
+  "word": "文句",
+  "reading": "もんく",
+  "meaning": "complaint",
+  "type": "noun"
+ },
+ {
+  "order": 1291,
+  "word": "至る",
+  "reading": "いたる",
+  "meaning": "to come to, to reach",
+  "type": "u-verb"
+ },
+ {
+  "order": 1292,
+  "word": "魚",
+  "reading": "さかな",
+  "meaning": "fish",
+  "type": "noun"
+ },
+ {
+  "order": 1293,
+  "word": "鳥",
+  "reading": "とり",
+  "meaning": "bird",
+  "type": "noun"
+ },
+ {
+  "order": 1294,
+  "word": "映る",
+  "reading": "うつる",
+  "meaning": "to be reflected, to appear",
+  "type": "u-verb"
+ },
+ {
+  "order": 1295,
+  "word": "一生",
+  "reading": "いっしょう",
+  "meaning": "a lifetime",
+  "type": "noun"
+ },
+ {
+  "order": 1296,
+  "word": "紙",
+  "reading": "かみ",
+  "meaning": "paper",
+  "type": "noun"
+ },
+ {
+  "order": 1297,
+  "word": "申す",
+  "reading": "もうす",
+  "meaning": "to be called..., to speak (humble form)",
+  "type": "u-verb"
+ },
+ {
+  "order": 1298,
+  "word": "複雑",
+  "reading": "ふくざつ",
+  "meaning": "complicated, intricate",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1299,
+  "word": "投げる",
+  "reading": "なげる",
+  "meaning": "to throw, to abandon",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1300,
+  "word": "出来事",
+  "reading": "できごと",
+  "meaning": "occurrence, incident",
+  "type": "noun"
+ },
+ {
+  "order": 1301,
+  "word": "部下",
+  "reading": "ぶか",
+  "meaning": "subordinate",
+  "type": "noun"
+ },
+ {
+  "order": 1302,
+  "word": "たっぷり",
+  "reading": "たっぷり",
+  "meaning": "fully, amply",
+  "type": "adverb"
+ },
+ {
+  "order": 1303,
+  "word": "実力",
+  "reading": "じつりょく",
+  "meaning": "real ability, capability",
+  "type": "noun"
+ },
+ {
+  "order": 1304,
+  "word": "左右",
+  "reading": "さゆう",
+  "meaning": "right and left",
+  "type": "noun"
+ },
+ {
+  "order": 1305,
+  "word": "選択",
+  "reading": "せんたく",
+  "meaning": "choice, selection",
+  "type": "noun"
+ },
+ {
+  "order": 1306,
+  "word": "調査",
+  "reading": "ちょうさ",
+  "meaning": "investigation, inquiry",
+  "type": "noun"
+ },
+ {
+  "order": 1307,
+  "word": "例えば",
+  "reading": "たとえば",
+  "meaning": "for example",
+  "type": "adverb"
+ },
+ {
+  "order": 1308,
+  "word": "見送る",
+  "reading": "みおくる",
+  "meaning": "to see (someone) off",
+  "type": "u-verb"
+ },
+ {
+  "order": 1309,
+  "word": "もっとも",
+  "reading": "もっとも",
+  "meaning": "quite right, reasonable",
+  "type": "adverb"
+ },
+ {
+  "order": 1310,
+  "word": "従う",
+  "reading": "したがう",
+  "meaning": "to follow, to obey",
+  "type": "u-verb"
+ },
+ {
+  "order": 1311,
+  "word": "通す",
+  "reading": "とおす",
+  "meaning": "to let pass, to run through",
+  "type": "u-verb"
+ },
+ {
+  "order": 1312,
+  "word": "間違える",
+  "reading": "まちがえる",
+  "meaning": "to mistake, to confuse",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1313,
+  "word": "体力",
+  "reading": "たいりょく",
+  "meaning": "stamina, endurance",
+  "type": "noun"
+ },
+ {
+  "order": 1314,
+  "word": "果たす",
+  "reading": "はたす",
+  "meaning": "to accomplish, to carry out, to fulfill",
+  "type": "u-verb"
+ },
+ {
+  "order": 1315,
+  "word": "騒ぐ",
+  "reading": "さわぐ",
+  "meaning": "to make a racket, to mess around",
+  "type": "u-verb"
+ },
+ {
+  "order": 1316,
+  "word": "飛び込む",
+  "reading": "とびこむ",
+  "meaning": "to dive into",
+  "type": "u-verb"
+ },
+ {
+  "order": 1317,
+  "word": "増す",
+  "reading": "ます",
+  "meaning": "to increase, to augment, to rise",
+  "type": "u-verb"
+ },
+ {
+  "order": 1318,
+  "word": "ぶつかる",
+  "reading": "ぶつかる",
+  "meaning": "to hit, to bump into",
+  "type": "u-verb"
+ },
+ {
+  "order": 1319,
+  "word": "思い出",
+  "reading": "おもいで",
+  "meaning": "recollections, memory",
+  "type": "noun"
+ },
+ {
+  "order": 1320,
+  "word": "天井",
+  "reading": "てんじょう",
+  "meaning": "ceiling",
+  "type": "noun"
+ },
+ {
+  "order": 1321,
+  "word": "兵士",
+  "reading": "へいし",
+  "meaning": "soldier",
+  "type": "noun"
+ },
+ {
+  "order": 1322,
+  "word": "満ちる",
+  "reading": "みちる",
+  "meaning": "to fill, to become full",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1323,
+  "word": "たまらない",
+  "reading": "たまらない",
+  "meaning": "can't stand, can't put up with",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1324,
+  "word": "味わう",
+  "reading": "あじわう",
+  "meaning": "to taste, to appreciate",
+  "type": "u-verb"
+ },
+ {
+  "order": 1325,
+  "word": "出かける",
+  "reading": "でかける",
+  "meaning": "to go out",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1326,
+  "word": "背負う",
+  "reading": "せおう",
+  "meaning": "to carry on one's back, to shoulder",
+  "type": "u-verb"
+ },
+ {
+  "order": 1327,
+  "word": "揃う",
+  "reading": "そろう",
+  "meaning": "to be (all) together",
+  "type": "u-verb"
+ },
+ {
+  "order": 1328,
+  "word": "呼吸",
+  "reading": "こきゅう",
+  "meaning": "breathing, respiration",
+  "type": "noun"
+ },
+ {
+  "order": 1329,
+  "word": "真似",
+  "reading": "まね",
+  "meaning": "imitation, mimicry",
+  "type": "noun"
+ },
+ {
+  "order": 1330,
+  "word": "人気",
+  "reading": "にんき",
+  "meaning": "popularity",
+  "type": "noun"
+ },
+ {
+  "order": 1331,
+  "word": "偉い",
+  "reading": "えらい",
+  "meaning": "great, famous",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1332,
+  "word": "いよいよ",
+  "reading": "いよいよ",
+  "meaning": "finally, at last",
+  "type": "adverb"
+ },
+ {
+  "order": 1333,
+  "word": "対象",
+  "reading": "たいしょう",
+  "meaning": "target, object",
+  "type": "noun"
+ },
+ {
+  "order": 1334,
+  "word": "整える",
+  "reading": "ととのえる",
+  "meaning": "to arrange, to adjust",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1335,
+  "word": "沈む",
+  "reading": "しずむ",
+  "meaning": "to sink, to set",
+  "type": "u-verb"
+ },
+ {
+  "order": 1336,
+  "word": "地上",
+  "reading": "ちじょう",
+  "meaning": "above ground",
+  "type": "noun"
+ },
+ {
+  "order": 1337,
+  "word": "用事",
+  "reading": "ようじ",
+  "meaning": "things to do, errand, business",
+  "type": "noun"
+ },
+ {
+  "order": 1338,
+  "word": "よる",
+  "reading": "よる",
+  "meaning": "to be caused by",
+  "type": "u-verb"
+ },
+ {
+  "order": 1339,
+  "word": "反対",
+  "reading": "はんたい",
+  "meaning": "opposition, objection",
+  "type": "noun"
+ },
+ {
+  "order": 1340,
+  "word": "保つ",
+  "reading": "たもつ",
+  "meaning": "to preserve, to endure",
+  "type": "u-verb"
+ },
+ {
+  "order": 1341,
+  "word": "歴史",
+  "reading": "れきし",
+  "meaning": "history",
+  "type": "noun"
+ },
+ {
+  "order": 1342,
+  "word": "島",
+  "reading": "しま",
+  "meaning": "island, isle",
+  "type": "noun"
+ },
+ {
+  "order": 1343,
+  "word": "それほど",
+  "reading": "それほど",
+  "meaning": "so much, that much",
+  "type": "adverb"
+ },
+ {
+  "order": 1344,
+  "word": "実に",
+  "reading": "じつに",
+  "meaning": "truly, surely",
+  "type": "adverb"
+ },
+ {
+  "order": 1345,
+  "word": "恐れる",
+  "reading": "おそれる",
+  "meaning": "to fear, to apprehend",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1346,
+  "word": "あくまで",
+  "reading": "あくまで",
+  "meaning": "to the end, persistently",
+  "type": "adverb"
+ },
+ {
+  "order": 1347,
+  "word": "鼻",
+  "reading": "はな",
+  "meaning": "nose",
+  "type": "noun"
+ },
+ {
+  "order": 1348,
+  "word": "担当",
+  "reading": "たんとう",
+  "meaning": "person in charge",
+  "type": "noun"
+ },
+ {
+  "order": 1349,
+  "word": "片手",
+  "reading": "かたて",
+  "meaning": "one hand",
+  "type": "noun"
+ },
+ {
+  "order": 1350,
+  "word": "幼い",
+  "reading": "おさない",
+  "meaning": "young, childish",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1351,
+  "word": "学ぶ",
+  "reading": "まなぶ",
+  "meaning": "to learn, to study",
+  "type": "u-verb"
+ },
+ {
+  "order": 1352,
+  "word": "強引",
+  "reading": "ごういん",
+  "meaning": "overbearing, pushy",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1353,
+  "word": "捲る",
+  "reading": "まくる",
+  "meaning": "to turn up, to roll up (e.g. sleeves)",
+  "type": "u-verb"
+ },
+ {
+  "order": 1354,
+  "word": "漏れる",
+  "reading": "もれる",
+  "meaning": "to leak, to be disclosed",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1355,
+  "word": "全体",
+  "reading": "ぜんたい",
+  "meaning": "whole, total",
+  "type": "noun"
+ },
+ {
+  "order": 1356,
+  "word": "度",
+  "reading": "ど",
+  "meaning": "degree, extent",
+  "type": "suffix"
+ },
+ {
+  "order": 1357,
+  "word": "情けない",
+  "reading": "なさけない",
+  "meaning": "pathetic, shameful",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1358,
+  "word": "太陽",
+  "reading": "たいよう",
+  "meaning": "sun",
+  "type": "noun"
+ },
+ {
+  "order": 1359,
+  "word": "甘える",
+  "reading": "あまえる",
+  "meaning": "to depend on, to take advantage of",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1360,
+  "word": "踏む",
+  "reading": "ふむ",
+  "meaning": "to step on, to tread on",
+  "type": "u-verb"
+ },
+ {
+  "order": 1361,
+  "word": "印象",
+  "reading": "いんしょう",
+  "meaning": "impression",
+  "type": "noun"
+ },
+ {
+  "order": 1362,
+  "word": "死体",
+  "reading": "したい",
+  "meaning": "corpse, body",
+  "type": "noun"
+ },
+ {
+  "order": 1363,
+  "word": "支配",
+  "reading": "しはい",
+  "meaning": "control, management",
+  "type": "noun"
+ },
+ {
+  "order": 1364,
+  "word": "現場",
+  "reading": "げんば",
+  "meaning": "actual spot, job site",
+  "type": "noun"
+ },
+ {
+  "order": 1365,
+  "word": "絶望",
+  "reading": "ぜつぼう",
+  "meaning": "despair, hopelessness",
+  "type": "noun"
+ },
+ {
+  "order": 1366,
+  "word": "察する",
+  "reading": "さっする",
+  "meaning": "to sense, to guess",
+  "type": "irregular-verb"
+ },
+ {
+  "order": 1367,
+  "word": "以来",
+  "reading": "いらい",
+  "meaning": "since",
+  "type": "noun"
+ },
+ {
+  "order": 1368,
+  "word": "漂う",
+  "reading": "ただよう",
+  "meaning": "to drift, to float",
+  "type": "u-verb"
+ },
+ {
+  "order": 1369,
+  "word": "探る",
+  "reading": "さぐる",
+  "meaning": "to probe, to search into",
+  "type": "u-verb"
+ },
+ {
+  "order": 1370,
+  "word": "最大",
+  "reading": "さいだい",
+  "meaning": "biggest, largest",
+  "type": "noun"
+ },
+ {
+  "order": 1371,
+  "word": "下げる",
+  "reading": "さげる",
+  "meaning": "to lower, to turn down",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1372,
+  "word": "捕まる",
+  "reading": "つかまる",
+  "meaning": "to be caught, to be arrested",
+  "type": "u-verb"
+ },
+ {
+  "order": 1373,
+  "word": "戸惑う",
+  "reading": "とまどう",
+  "meaning": "to be perplexed, to be bewildered",
+  "type": "u-verb"
+ },
+ {
+  "order": 1374,
+  "word": "言い訳",
+  "reading": "いいわけ",
+  "meaning": "apology, excuse",
+  "type": "noun"
+ },
+ {
+  "order": 1375,
+  "word": "証明",
+  "reading": "しょうめい",
+  "meaning": "proof, evidence",
+  "type": "noun"
+ },
+ {
+  "order": 1376,
+  "word": "参る",
+  "reading": "まいる",
+  "meaning": "to go, to come (humble form)",
+  "type": "u-verb"
+ },
+ {
+  "order": 1377,
+  "word": "見下ろす",
+  "reading": "みおろす",
+  "meaning": "to look down, to overlook",
+  "type": "u-verb"
+ },
+ {
+  "order": 1378,
+  "word": "燃える",
+  "reading": "もえる",
+  "meaning": "to burn, to get fired up",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1379,
+  "word": "たまる",
+  "reading": "たまる",
+  "meaning": "to accumulate, to store up",
+  "type": "u-verb"
+ },
+ {
+  "order": 1380,
+  "word": "暴れる",
+  "reading": "あばれる",
+  "meaning": "to act violently, to rage about",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1381,
+  "word": "越える",
+  "reading": "こえる",
+  "meaning": "to go over, to go across, to go beyond",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1382,
+  "word": "精神",
+  "reading": "せいしん",
+  "meaning": "mind, spirit",
+  "type": "noun"
+ },
+ {
+  "order": 1383,
+  "word": "男子",
+  "reading": "だんし",
+  "meaning": "boy, young man",
+  "type": "noun"
+ },
+ {
+  "order": 1384,
+  "word": "宣言",
+  "reading": "せんげん",
+  "meaning": "declaration",
+  "type": "noun"
+ },
+ {
+  "order": 1385,
+  "word": "挟む",
+  "reading": "はさむ",
+  "meaning": "to hold between, to put between, to pinch",
+  "type": "u-verb"
+ },
+ {
+  "order": 1386,
+  "word": "防ぐ",
+  "reading": "ふせぐ",
+  "meaning": "to prevent, to defend",
+  "type": "u-verb"
+ },
+ {
+  "order": 1387,
+  "word": "預ける",
+  "reading": "あずける",
+  "meaning": "to deposit, to entrust",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1388,
+  "word": "限る",
+  "reading": "かぎる",
+  "meaning": "to be limited to",
+  "type": "u-verb"
+ },
+ {
+  "order": 1389,
+  "word": "責める",
+  "reading": "せめる",
+  "meaning": "to blame",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1390,
+  "word": "崩れる",
+  "reading": "くずれる",
+  "meaning": "to crumble, to collapse",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1391,
+  "word": "一度も",
+  "reading": "いちども",
+  "meaning": "(not) even once, (not) ever",
+  "type": "adverb"
+ },
+ {
+  "order": 1392,
+  "word": "ぼんやり",
+  "reading": "ぼんやり",
+  "meaning": "vaguely, absent-mindedly",
+  "type": "adverb"
+ },
+ {
+  "order": 1393,
+  "word": "その内",
+  "reading": "そのうち",
+  "meaning": "before long, sooner or later",
+  "type": "adverb"
+ },
+ {
+  "order": 1394,
+  "word": "鏡",
+  "reading": "かがみ",
+  "meaning": "mirror",
+  "type": "noun"
+ },
+ {
+  "order": 1395,
+  "word": "貫く",
+  "reading": "つらぬく",
+  "meaning": "to go through, to carry out",
+  "type": "u-verb"
+ },
+ {
+  "order": 1396,
+  "word": "固まる",
+  "reading": "かたまる",
+  "meaning": "to harden, to solidify",
+  "type": "u-verb"
+ },
+ {
+  "order": 1397,
+  "word": "平和",
+  "reading": "へいわ",
+  "meaning": "peace, harmony",
+  "type": "noun"
+ },
+ {
+  "order": 1398,
+  "word": "意志",
+  "reading": "いし",
+  "meaning": "will, volition",
+  "type": "noun"
+ },
+ {
+  "order": 1399,
+  "word": "下手",
+  "reading": "へた",
+  "meaning": "bad at, poor",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1400,
+  "word": "続き",
+  "reading": "つづき",
+  "meaning": "continuation, sequel",
+  "type": "noun"
+ },
+ {
+  "order": 1401,
+  "word": "祈る",
+  "reading": "いのる",
+  "meaning": "to pray",
+  "type": "u-verb"
+ },
+ {
+  "order": 1402,
+  "word": "午後",
+  "reading": "ごご",
+  "meaning": "afternoon, p.m.",
+  "type": "noun"
+ },
+ {
+  "order": 1403,
+  "word": "同様",
+  "reading": "どうよう",
+  "meaning": "similar",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1404,
+  "word": "外れる",
+  "reading": "はずれる",
+  "meaning": "to come undone, to be removed",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1405,
+  "word": "歌う",
+  "reading": "うたう",
+  "meaning": "to sing",
+  "type": "u-verb"
+ },
+ {
+  "order": 1406,
+  "word": "回",
+  "reading": "かい",
+  "meaning": "times",
+  "type": "suffix"
+ },
+ {
+  "order": 1407,
+  "word": "固い",
+  "reading": "かたい",
+  "meaning": "stiff, tight",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1408,
+  "word": "最強",
+  "reading": "さいきょう",
+  "meaning": "strongest",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1409,
+  "word": "弾く",
+  "reading": "ひく",
+  "meaning": "to strum (e.g. a guitar), to flick",
+  "type": "u-verb"
+ },
+ {
+  "order": 1410,
+  "word": "正解",
+  "reading": "せいかい",
+  "meaning": "right answer, correct solution",
+  "type": "noun"
+ },
+ {
+  "order": 1411,
+  "word": "きつい",
+  "reading": "きつい",
+  "meaning": "tight, tough",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1412,
+  "word": "お陰",
+  "reading": "おかげ",
+  "meaning": "help, thanks to",
+  "type": "noun"
+ },
+ {
+  "order": 1413,
+  "word": "地獄",
+  "reading": "じごく",
+  "meaning": "hell",
+  "type": "noun"
+ },
+ {
+  "order": 1414,
+  "word": "年齢",
+  "reading": "ねんれい",
+  "meaning": "age, years",
+  "type": "noun"
+ },
+ {
+  "order": 1415,
+  "word": "病気",
+  "reading": "びょうき",
+  "meaning": "illness",
+  "type": "noun"
+ },
+ {
+  "order": 1416,
+  "word": "携帯",
+  "reading": "けいたい",
+  "meaning": "cell phone",
+  "type": "noun"
+ },
+ {
+  "order": 1417,
+  "word": "ますます",
+  "reading": "ますます",
+  "meaning": "increasingly",
+  "type": "adverb"
+ },
+ {
+  "order": 1418,
+  "word": "並べる",
+  "reading": "ならべる",
+  "meaning": "to line up, to display, to set up",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1419,
+  "word": "契約",
+  "reading": "けいやく",
+  "meaning": "contract, agreement",
+  "type": "noun"
+ },
+ {
+  "order": 1420,
+  "word": "永遠",
+  "reading": "えいえん",
+  "meaning": "eternity",
+  "type": "noun"
+ },
+ {
+  "order": 1421,
+  "word": "不意に",
+  "reading": "ふいに",
+  "meaning": "suddenly, unexpectedly",
+  "type": "adverb"
+ },
+ {
+  "order": 1422,
+  "word": "呪い",
+  "reading": "のろい",
+  "meaning": "curse, spell",
+  "type": "noun"
+ },
+ {
+  "order": 1423,
+  "word": "組",
+  "reading": "くみ",
+  "meaning": "school class",
+  "type": "noun"
+ },
+ {
+  "order": 1424,
+  "word": "踊る",
+  "reading": "おどる",
+  "meaning": "to dance",
+  "type": "u-verb"
+ },
+ {
+  "order": 1425,
+  "word": "目覚める",
+  "reading": "めざめる",
+  "meaning": "to wake (up), to come to one's senses",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1426,
+  "word": "事故",
+  "reading": "じこ",
+  "meaning": "accident, incident",
+  "type": "noun"
+ },
+ {
+  "order": 1427,
+  "word": "袋",
+  "reading": "ふくろ",
+  "meaning": "bag, sack",
+  "type": "noun"
+ },
+ {
+  "order": 1428,
+  "word": "派手",
+  "reading": "はで",
+  "meaning": "showy, flashy",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1429,
+  "word": "今更",
+  "reading": "いまさら",
+  "meaning": "now (when it's too late), at this stage",
+  "type": "adverb"
+ },
+ {
+  "order": 1430,
+  "word": "真っ直ぐ",
+  "reading": "まっすぐ",
+  "meaning": "straight ahead, straightforward",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1431,
+  "word": "油断",
+  "reading": "ゆだん",
+  "meaning": "inattention, carelessness",
+  "type": "noun"
+ },
+ {
+  "order": 1432,
+  "word": "ぶつける",
+  "reading": "ぶつける",
+  "meaning": "to bump",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1433,
+  "word": "育つ",
+  "reading": "そだつ",
+  "meaning": "to be brought up, to grow",
+  "type": "u-verb"
+ },
+ {
+  "order": 1434,
+  "word": "傷つく",
+  "reading": "きずつく",
+  "meaning": "to get hurt",
+  "type": "u-verb"
+ },
+ {
+  "order": 1435,
+  "word": "発する",
+  "reading": "はっする",
+  "meaning": "to emit, to radiate",
+  "type": "irregular-verb"
+ },
+ {
+  "order": 1436,
+  "word": "終了",
+  "reading": "しゅうりょう",
+  "meaning": "end, expiry",
+  "type": "noun"
+ },
+ {
+  "order": 1437,
+  "word": "足音",
+  "reading": "あしおと",
+  "meaning": "sound of footsteps",
+  "type": "noun"
+ },
+ {
+  "order": 1438,
+  "word": "決意",
+  "reading": "けつい",
+  "meaning": "decision, resolution",
+  "type": "noun"
+ },
+ {
+  "order": 1439,
+  "word": "感心",
+  "reading": "かんしん",
+  "meaning": "admiration",
+  "type": "noun"
+ },
+ {
+  "order": 1440,
+  "word": "飲み込む",
+  "reading": "のみこむ",
+  "meaning": "to swallow, to grasp",
+  "type": "u-verb"
+ },
+ {
+  "order": 1441,
+  "word": "仮に",
+  "reading": "かりに",
+  "meaning": "supposing that, even if",
+  "type": "adverb"
+ },
+ {
+  "order": 1442,
+  "word": "お菓子",
+  "reading": "おかし",
+  "meaning": "sweets, snacks",
+  "type": "noun"
+ },
+ {
+  "order": 1443,
+  "word": "染まる",
+  "reading": "そまる",
+  "meaning": "to be dyed, to be tainted",
+  "type": "u-verb"
+ },
+ {
+  "order": 1444,
+  "word": "笑い",
+  "reading": "わらい",
+  "meaning": "laughter, laugh",
+  "type": "noun"
+ },
+ {
+  "order": 1445,
+  "word": "買い物",
+  "reading": "かいもの",
+  "meaning": "shopping",
+  "type": "noun"
+ },
+ {
+  "order": 1446,
+  "word": "歌",
+  "reading": "うた",
+  "meaning": "song",
+  "type": "noun"
+ },
+ {
+  "order": 1447,
+  "word": "庭",
+  "reading": "にわ",
+  "meaning": "garden, yard",
+  "type": "noun"
+ },
+ {
+  "order": 1448,
+  "word": "生き物",
+  "reading": "いきもの",
+  "meaning": "living creature",
+  "type": "noun"
+ },
+ {
+  "order": 1449,
+  "word": "特殊",
+  "reading": "とくしゅ",
+  "meaning": "special, unique",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1450,
+  "word": "連れて行く",
+  "reading": "つれていく",
+  "meaning": "to take (a person) along",
+  "type": "u-verb"
+ },
+ {
+  "order": 1451,
+  "word": "現状",
+  "reading": "げんじょう",
+  "meaning": "present condition",
+  "type": "noun"
+ },
+ {
+  "order": 1452,
+  "word": "大分",
+  "reading": "だいぶ",
+  "meaning": "very, greatly",
+  "type": "adverb"
+ },
+ {
+  "order": 1453,
+  "word": "底",
+  "reading": "そこ",
+  "meaning": "bottom",
+  "type": "noun"
+ },
+ {
+  "order": 1454,
+  "word": "学生",
+  "reading": "がくせい",
+  "meaning": "student",
+  "type": "noun"
+ },
+ {
+  "order": 1455,
+  "word": "丁寧",
+  "reading": "ていねい",
+  "meaning": "polite, careful",
+  "type": "na-adjective"
+ },
+ {
+  "order": 1456,
+  "word": "範囲",
+  "reading": "はんい",
+  "meaning": "range, scope",
+  "type": "noun"
+ },
+ {
+  "order": 1457,
+  "word": "テレビ",
+  "reading": "テレビ",
+  "meaning": "television",
+  "type": "noun"
+ },
+ {
+  "order": 1458,
+  "word": "美人",
+  "reading": "びじん",
+  "meaning": "beautiful woman",
+  "type": "noun"
+ },
+ {
+  "order": 1459,
+  "word": "技",
+  "reading": "わざ",
+  "meaning": "skill",
+  "type": "noun"
+ },
+ {
+  "order": 1460,
+  "word": "将来",
+  "reading": "しょうらい",
+  "meaning": "one's future, in the future",
+  "type": "noun"
+ },
+ {
+  "order": 1461,
+  "word": "記録",
+  "reading": "きろく",
+  "meaning": "record, documentation",
+  "type": "noun"
+ },
+ {
+  "order": 1462,
+  "word": "大人しい",
+  "reading": "おとなしい",
+  "meaning": "tame, quiet, obedient, calm",
+  "type": "i-adjective"
+ },
+ {
+  "order": 1463,
+  "word": "骨",
+  "reading": "ほね",
+  "meaning": "bone",
+  "type": "noun"
+ },
+ {
+  "order": 1464,
+  "word": "目標",
+  "reading": "もくひょう",
+  "meaning": "target, goal",
+  "type": "noun"
+ },
+ {
+  "order": 1465,
+  "word": "肉体",
+  "reading": "にくたい",
+  "meaning": "body, flesh",
+  "type": "noun"
+ },
+ {
+  "order": 1466,
+  "word": "届ける",
+  "reading": "とどける",
+  "meaning": "to deliver, to give notice",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1467,
+  "word": "足元",
+  "reading": "あしもと",
+  "meaning": "step, under foot",
+  "type": "noun"
+ },
+ {
+  "order": 1468,
+  "word": "捜す",
+  "reading": "さがす",
+  "meaning": "to look for, to search for (e.g. a lost item)",
+  "type": "u-verb"
+ },
+ {
+  "order": 1469,
+  "word": "わざと",
+  "reading": "わざと",
+  "meaning": "on purpose",
+  "type": "adverb"
+ },
+ {
+  "order": 1470,
+  "word": "いかが",
+  "reading": "いかが",
+  "meaning": "how, would you like",
+  "type": "expression"
+ },
+ {
+  "order": 1471,
+  "word": "布",
+  "reading": "ぬの",
+  "meaning": "cloth",
+  "type": "noun"
+ },
+ {
+  "order": 1472,
+  "word": "種類",
+  "reading": "しゅるい",
+  "meaning": "kind, species",
+  "type": "noun"
+ },
+ {
+  "order": 1473,
+  "word": "満たす",
+  "reading": "みたす",
+  "meaning": "to fill, to satisfy",
+  "type": "u-verb"
+ },
+ {
+  "order": 1474,
+  "word": "景色",
+  "reading": "けしき",
+  "meaning": "scenery",
+  "type": "noun"
+ },
+ {
+  "order": 1475,
+  "word": "勇気",
+  "reading": "ゆうき",
+  "meaning": "courage, nerve",
+  "type": "noun"
+ },
+ {
+  "order": 1476,
+  "word": "強化",
+  "reading": "きょうか",
+  "meaning": "strengthening",
+  "type": "noun"
+ },
+ {
+  "order": 1477,
+  "word": "加える",
+  "reading": "くわえる",
+  "meaning": "to add, to include",
+  "type": "ru-verb"
+ },
+ {
+  "order": 1478,
+  "word": "言い出す",
+  "reading": "いいだす",
+  "meaning": "to begin to say, to be the first to say, to propose",
+  "type": "u-verb"
+ },
+ {
+  "order": 1479,
+  "word": "収まる",
+  "reading": "おさまる",
+  "meaning": "to be settled (e.g. a dispute), to be contained within",
+  "type": "u-verb"
+ },
+ {
+  "order": 1480,
+  "word": "組織",
+  "reading": "そしき",
+  "meaning": "organization, structure",
+  "type": "noun"
+ },
+ {
+  "order": 1481,
+  "word": "隙間",
+  "reading": "すきま",
+  "meaning": "crack, gap",
+  "type": "noun"
+ },
+ {
+  "order": 1482,
+  "word": "本日",
+  "reading": "ほんじつ",
+  "meaning": "today",
+  "type": "noun"
+ },
+ {
+  "order": 1483,
+  "word": "先日",
+  "reading": "せんじつ",
+  "meaning": "the other day, a few days ago",
+  "type": "noun"
+ },
+ {
+  "order": 1484,
+  "word": "月曜日",
+  "reading": "げつようび",
+  "meaning": "Monday",
+  "type": "noun"
+ },
+ {
+  "order": 1485,
+  "word": "火曜日",
+  "reading": "かようび",
+  "meaning": "Tuesday",
+  "type": "noun"
+ },
+ {
+  "order": 1486,
+  "word": "水曜日",
+  "reading": "すいようび",
+  "meaning": "Wednesday",
+  "type": "noun"
+ },
+ {
+  "order": 1487,
+  "word": "木曜日",
+  "reading": "もくようび",
+  "meaning": "Thursday",
+  "type": "noun"
+ },
+ {
+  "order": 1488,
+  "word": "金曜日",
+  "reading": "きんようび",
+  "meaning": "Friday",
+  "type": "noun"
+ },
+ {
+  "order": 1489,
+  "word": "土曜日",
+  "reading": "どようび",
+  "meaning": "Saturday",
+  "type": "noun"
+ },
+ {
+  "order": 1490,
+  "word": "日曜日",
+  "reading": "にちようび",
+  "meaning": "Sunday",
+  "type": "noun"
+ },
+ {
+  "order": 1491,
+  "word": "一つ",
+  "reading": "ひとつ",
+  "meaning": "one (thing)",
+  "type": "noun"
+ },
+ {
+  "order": 1492,
+  "word": "二つ",
+  "reading": "ふたつ",
+  "meaning": "two (things)",
+  "type": "noun"
+ },
+ {
+  "order": 1493,
+  "word": "三つ",
+  "reading": "みっつ",
+  "meaning": "three (things)",
+  "type": "noun"
+ },
+ {
+  "order": 1494,
+  "word": "四つ",
+  "reading": "よっつ",
+  "meaning": "four (things)",
+  "type": "noun"
+ },
+ {
+  "order": 1495,
+  "word": "五つ",
+  "reading": "いつつ",
+  "meaning": "five (things)",
+  "type": "noun"
+ },
+ {
+  "order": 1496,
+  "word": "六つ",
+  "reading": "むっつ",
+  "meaning": "six (things)",
+  "type": "noun"
+ },
+ {
+  "order": 1497,
+  "word": "七つ",
+  "reading": "ななつ",
+  "meaning": "seven (things)",
+  "type": "noun"
+ },
+ {
+  "order": 1498,
+  "word": "八つ",
+  "reading": "やっつ",
+  "meaning": "eight (things)",
+  "type": "noun"
+ },
+ {
+  "order": 1499,
+  "word": "九つ",
+  "reading": "ここのつ",
+  "meaning": "nine (things)",
+  "type": "noun"
+ },
+ {
+  "order": 1500,
+  "word": "評価",
+  "reading": "ひょうか",
+  "meaning": "evaluation, appraisal, recognition",
+  "type": "noun"
+ }
+]

@@ -136,7 +136,7 @@ describe("PracticeSetupPage", () => {
     await wrapper.find('[data-testid="start-drill"]').trigger("click");
     // Defaults: JP→EN recognition, self-grade.
     expect(push).toHaveBeenCalledWith(
-      "/hotaru/drill?scope=lesson%3AL2&label=L2&direction=r2m&mode=self",
+      "/hotaru/drill?scope=lesson%3AL2&label=L2&direction=r2m&mode=self&limit=20",
     );
   });
 
@@ -163,7 +163,7 @@ describe("PracticeSetupPage", () => {
     await wrapper.find('[data-testid="scope-topic-t1"]').trigger("click");
     await wrapper.find('[data-testid="start-drill"]').trigger("click");
     expect(push).toHaveBeenCalledWith(
-      "/hotaru/drill?scope=topic%3At1&label=Food&direction=r2m&mode=self",
+      "/hotaru/drill?scope=topic%3At1&label=Food&direction=r2m&mode=self&limit=20",
     );
   });
 
@@ -188,8 +188,50 @@ describe("PracticeSetupPage", () => {
     await wrapper.find('[data-testid="mode-typed"]').trigger("click");
     await wrapper.find('[data-testid="start-drill"]').trigger("click");
     expect(push).toHaveBeenCalledWith(
-      "/hotaru/drill?scope=lesson%3AL2&label=L2&direction=m2r&mode=typed",
+      "/hotaru/drill?scope=lesson%3AL2&label=L2&direction=m2r&mode=typed&limit=20",
     );
+  });
+
+  it("shapes a scoped drill by familiarity and words-per-session", async () => {
+    // A 100-word band is several sittings, so a lesson drill gets the same two
+    // controls Quick Practice has.
+    const wrapper = mountPage();
+    await flushPromises();
+    await wrapper.find('[data-testid="scope-lesson-L2"]').trigger("click");
+
+    await wrapper.find('[data-testid="scope-fam-new"]').trigger("click");
+    await wrapper.find('[data-testid="scope-count-5"]').trigger("click");
+    await wrapper.find('[data-testid="start-drill"]').trigger("click");
+
+    expect(push).toHaveBeenCalledWith(
+      "/hotaru/drill?scope=lesson%3AL2&label=L2&direction=r2m&mode=self&tiers=0&limit=5",
+    );
+  });
+
+  it("sends no cap when words-per-session is All", async () => {
+    const wrapper = mountPage();
+    await flushPromises();
+    await wrapper.find('[data-testid="scope-lesson-L2"]').trigger("click");
+    await wrapper.find('[data-testid="scope-count-0"]').trigger("click");
+    await wrapper.find('[data-testid="start-drill"]').trigger("click");
+    // limit=0 means "no cap" on the backend; All familiarity adds no tiers.
+    expect(push).toHaveBeenCalledWith(
+      "/hotaru/drill?scope=lesson%3AL2&label=L2&direction=r2m&mode=self&limit=0",
+    );
+  });
+
+  it("previews how many words the chosen settings would deal", async () => {
+    const wrapper = mountPage();
+    await flushPromises();
+    await wrapper.find('[data-testid="scope-lesson-L2"]').trigger("click");
+    const preview = () =>
+      wrapper.find('[data-testid="scope-session-count"]').text();
+
+    // L2 holds one word, unreviewed, so the cap is not what binds here.
+    expect(preview()).toBe("1 word");
+    // Nothing is mastered yet, so that preset would deal an empty session.
+    await wrapper.find('[data-testid="scope-fam-mastered"]').trigger("click");
+    expect(preview()).toBe("0 words");
   });
 
   it("resets scoring to self-grade when switching back to JP→EN", async () => {
@@ -201,7 +243,7 @@ describe("PracticeSetupPage", () => {
     await wrapper.find('[data-testid="dir-r2m"]').trigger("click");
     await wrapper.find('[data-testid="start-drill"]').trigger("click");
     expect(push).toHaveBeenCalledWith(
-      "/hotaru/drill?scope=lesson%3AL2&label=L2&direction=r2m&mode=self",
+      "/hotaru/drill?scope=lesson%3AL2&label=L2&direction=r2m&mode=self&limit=20",
     );
   });
 
