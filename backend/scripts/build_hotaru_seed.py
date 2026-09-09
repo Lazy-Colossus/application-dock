@@ -4,9 +4,9 @@ Run manually (this is NOT part of the served app):
 
     python backend/scripts/build_hotaru_seed.py
 
-Reads scripts/genki_raw.json and scripts/kaishi_raw.json (see extract_kaishi_apkg.py),
-assigns stable word IDs and drill_caps, and writes the read-only seed to
-app/hotaru_seed/vocab_seed.json (committed, shipped in the image).
+Reads scripts/genki_raw.json, scripts/kaishi_raw.json (see extract_kaishi_apkg.py)
+and scripts/tea_raw.json, assigns stable word IDs and drill_caps, and writes the
+read-only seed to app/hotaru_seed/vocab_seed.json (committed, shipped in the image).
 """
 
 import json
@@ -18,9 +18,11 @@ SCHEMA_VERSION = 1
 _SCRIPT_DIR = Path(__file__).resolve().parent
 _RAW_PATH = _SCRIPT_DIR / "genki_raw.json"
 _KAISHI_RAW_PATH = _SCRIPT_DIR / "kaishi_raw.json"
+_TEA_RAW_PATH = _SCRIPT_DIR / "tea_raw.json"
 _SEED_PATH = _SCRIPT_DIR.parent / "app" / "hotaru_seed" / "vocab_seed.json"
 
 KAISHI_SOURCE = "kaishi"
+TEA_SOURCE = "tea"
 # The deck is one flat list in study order; the library needs subsections, so it is cut
 # into bands of this size ("1-100", "101-200", ...).
 KAISHI_LESSON_SIZE = 100
@@ -326,11 +328,51 @@ def build_kaishi(raw: list[dict]) -> list[dict]:
     return words
 
 
+def build_tea(raw: list[dict]) -> list[dict]:
+    """Transform raw Japanese tea glossary rows into seed words.
+
+    Unlike the textbooks, this source has no study order, so `lesson` is a theme the
+    row already carries ("types", "process", "ceremony", "taste", "spirit") and the
+    sequence within it comes from a deterministic sort — the Genki approach. Romaji is
+    carried over rather than derived: these are romanised names as the glossaries print
+    them ("shira-ore", "wakei seijaku"), which a kana transliteration would not produce.
+    """
+    words: list[dict] = []
+    seq_by_lesson: dict[str, int] = {}
+    for row in sorted(raw, key=lambda r: (r["lesson"], r["reading"], r["kanji"])):
+        lesson = row["lesson"]
+        seq = seq_by_lesson.get(lesson, 0) + 1
+        seq_by_lesson[lesson] = seq
+        kanji = row["kanji"] or None
+        words.append(
+            {
+                "id": f"{TEA_SOURCE}-{lesson}-{seq:04d}",
+                "source": TEA_SOURCE,
+                "reading": row["reading"],
+                "kanji": kanji,
+                "romaji": row["romaji"],
+                "meaning": row["meaning"],
+                "pos": row["type"],
+                "lesson": lesson,
+                "visibility": "shared",
+                "drill_caps": drill_caps(kanji),
+            }
+        )
+    return words
+
+
 def build_all(
-    genki_raw: list[dict], kaishi_raw: list[dict], schema_version: int = SCHEMA_VERSION
+    genki_raw: list[dict],
+    kaishi_raw: list[dict],
+    tea_raw: list[dict],
+    schema_version: int = SCHEMA_VERSION,
 ) -> dict:
     """The full shipped seed: every source in one envelope, ids unique across all."""
-    words = build_seed(genki_raw, schema_version)["words"] + build_kaishi(kaishi_raw)
+    words = (
+        build_seed(genki_raw, schema_version)["words"]
+        + build_kaishi(kaishi_raw)
+        + build_tea(tea_raw)
+    )
     check_unique(words)
     return {"schema_version": schema_version, "words": words}
 
@@ -338,7 +380,8 @@ def build_all(
 def main() -> None:
     genki_raw = json.loads(_RAW_PATH.read_text(encoding="utf-8"))
     kaishi_raw = json.loads(_KAISHI_RAW_PATH.read_text(encoding="utf-8"))
-    seed = build_all(genki_raw, kaishi_raw)
+    tea_raw = json.loads(_TEA_RAW_PATH.read_text(encoding="utf-8"))
+    seed = build_all(genki_raw, kaishi_raw, tea_raw)
     _SEED_PATH.parent.mkdir(parents=True, exist_ok=True)
     _SEED_PATH.write_text(json.dumps(seed, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"Wrote {len(seed['words'])} words to {_SEED_PATH}")
