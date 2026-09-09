@@ -1,0 +1,546 @@
+[
+  {
+    "kanji": "一服",
+    "reading": "いっぷく",
+    "romaji": "ippuku",
+    "meaning": "ippuku — a bowl of tea — a tea break; a small pause that makes room for reflection",
+    "type": "noun",
+    "lesson": "ceremony"
+  },
+  {
+    "kanji": "懐石",
+    "reading": "かいせき",
+    "romaji": "kaiseki",
+    "meaning": "kaiseki — the seasonal multi-course meal served before a formal tea ceremony",
+    "type": "noun",
+    "lesson": "ceremony"
+  },
+  {
+    "kanji": "急須",
+    "reading": "きゅうす",
+    "romaji": "kyuusu",
+    "meaning": "kyuusu — Japanese teapot — a side-handled clay pot with a built-in strainer, for green tea",
+    "type": "noun",
+    "lesson": "ceremony"
+  },
+  {
+    "kanji": "茶道",
+    "reading": "さどう",
+    "romaji": "sadou",
+    "meaning": "sadou — the Way of Tea — the tea ceremony as a spiritual and aesthetic practice rooted in Zen",
+    "type": "noun",
+    "lesson": "ceremony"
+  },
+  {
+    "kanji": "茶釜",
+    "reading": "ちゃがま",
+    "romaji": "chagama",
+    "meaning": "chagama — tea kettle — the iron kettle that boils water in the tea room",
+    "type": "noun",
+    "lesson": "ceremony"
+  },
+  {
+    "kanji": "茶師",
+    "reading": "ちゃし",
+    "romaji": "chashi",
+    "meaning": "chashi — tea master — an expert who evaluates, blends and refines tea leaves",
+    "type": "noun",
+    "lesson": "ceremony"
+  },
+  {
+    "kanji": "茶杓",
+    "reading": "ちゃしゃく",
+    "romaji": "chashaku",
+    "meaning": "chashaku — tea scoop — the bamboo scoop that measures matcha powder",
+    "type": "noun",
+    "lesson": "ceremony"
+  },
+  {
+    "kanji": "茶筅",
+    "reading": "ちゃせん",
+    "romaji": "chasen",
+    "meaning": "chasen — bamboo whisk — 80–120 fine tines that whisk matcha into a frothy suspension",
+    "type": "noun",
+    "lesson": "ceremony"
+  },
+  {
+    "kanji": "茶筅直し",
+    "reading": "ちゃせんなおし",
+    "romaji": "chasen naoshi",
+    "meaning": "chasen naoshi — whisk stand — a ceramic rest that holds a chasen in shape after use",
+    "type": "noun",
+    "lesson": "ceremony"
+  },
+  {
+    "kanji": "茶の湯",
+    "reading": "ちゃのゆ",
+    "romaji": "chanoyu",
+    "meaning": "chanoyu — hot water for tea — a synonym for chadō; the ritual of preparing and serving matcha",
+    "type": "noun",
+    "lesson": "ceremony"
+  },
+  {
+    "kanji": "茶柱",
+    "reading": "ちゃばしら",
+    "romaji": "chabashira",
+    "meaning": "chabashira — tea pillar — a stem standing upright in the cup; a rare sign of good luck",
+    "type": "noun",
+    "lesson": "ceremony"
+  },
+  {
+    "kanji": "茶碗",
+    "reading": "ちゃわん",
+    "romaji": "chawan",
+    "meaning": "chawan — tea bowl — the bowl matcha is whisked and drunk from; usually handmade and seasonal",
+    "type": "noun",
+    "lesson": "ceremony"
+  },
+  {
+    "kanji": "亭主",
+    "reading": "ていしゅ",
+    "romaji": "teishu",
+    "meaning": "teishu — host — the tea master who prepares and serves the tea in a ceremony",
+    "type": "noun",
+    "lesson": "ceremony"
+  },
+  {
+    "kanji": "棗",
+    "reading": "なつめ",
+    "romaji": "natsume",
+    "meaning": "natsume — matcha caddy — a lidded container for matcha, named for its jujube-like shape",
+    "type": "noun",
+    "lesson": "ceremony"
+  },
+  {
+    "kanji": "水差し",
+    "reading": "みずさし",
+    "romaji": "mizusashi",
+    "meaning": "mizusashi — water jar — the lidded container of fresh water used through a tea ceremony",
+    "type": "noun",
+    "lesson": "ceremony"
+  },
+  {
+    "kanji": "浅蒸し茶",
+    "reading": "あさむしちゃ",
+    "romaji": "asamushicha",
+    "meaning": "asamushicha — light-steamed tea — steamed only 10–30 seconds; clear golden liquor and bright astringency",
+    "type": "noun",
+    "lesson": "process"
+  },
+  {
+    "kanji": "荒茶",
+    "reading": "あらちゃ",
+    "romaji": "aracha",
+    "meaning": "aracha — coarse tea — leaf that has been dried but not yet sorted or refined",
+    "type": "noun",
+    "lesson": "process"
+  },
+  {
+    "kanji": "萎凋茶",
+    "reading": "いちょうちゃ",
+    "romaji": "ichoucha",
+    "meaning": "ichoucha — withered tea — green tea slightly withered to draw out a floral aroma",
+    "type": "noun",
+    "lesson": "process"
+  },
+  {
+    "kanji": "釜炒り茶",
+    "reading": "かまいりちゃ",
+    "romaji": "kamairicha",
+    "meaning": "kamairicha — pan-fired tea — leaf heated in a pan instead of steamed; made in southern Japan",
+    "type": "noun",
+    "lesson": "process"
+  },
+  {
+    "kanji": "蔵出し茶",
+    "reading": "くらだしちゃ",
+    "romaji": "kuradashicha",
+    "meaning": "kuradashicha — storehouse tea — spring sencha aged in storage; rounder and richer in umami",
+    "type": "noun",
+    "lesson": "process"
+  },
+  {
+    "kanji": "中蒸し茶",
+    "reading": "ちゅうむしちゃ",
+    "romaji": "chuumushicha",
+    "meaning": "chuumushicha — mid-steamed tea — steamed 30–60 seconds; balanced between asamushi and fukamushi",
+    "type": "noun",
+    "lesson": "process"
+  },
+  {
+    "kanji": "手揉み茶",
+    "reading": "てもみちゃ",
+    "romaji": "temomicha",
+    "meaning": "temomicha — hand-rolled tea — a rare, labour-intensive tea rolled leaf by leaf by hand",
+    "type": "noun",
+    "lesson": "process"
+  },
+  {
+    "kanji": "深蒸し茶",
+    "reading": "ふかむしちゃ",
+    "romaji": "fukamushicha",
+    "meaning": "fukamushicha — deep-steamed tea — steamed 1–3 minutes; vivid green, mellow, less astringent",
+    "type": "noun",
+    "lesson": "process"
+  },
+  {
+    "kanji": "普通蒸し",
+    "reading": "ふつうむし",
+    "romaji": "futsuumushi",
+    "meaning": "futsuumushi — ordinary steaming — the standard steaming time; see chumushicha",
+    "type": "noun",
+    "lesson": "process"
+  },
+  {
+    "kanji": "一期一会",
+    "reading": "いちごいちえ",
+    "romaji": "ichigo ichie",
+    "meaning": "ichigo ichie — one time, one meeting — every encounter is unique and unrepeatable",
+    "type": "expression",
+    "lesson": "spirit"
+  },
+  {
+    "kanji": "",
+    "reading": "おもてなし",
+    "romaji": "omotenashi",
+    "meaning": "omotenashi — hospitality — sincere, selfless service that anticipates the guest's needs",
+    "type": "noun",
+    "lesson": "spirit"
+  },
+  {
+    "kanji": "金継ぎ",
+    "reading": "きんつぎ",
+    "romaji": "kintsugi",
+    "meaning": "kintsugi — golden joinery — repairing broken ceramics with gold-dusted lacquer, celebrating the crack",
+    "type": "noun",
+    "lesson": "spirit"
+  },
+  {
+    "kanji": "和敬清寂",
+    "reading": "わけいせいじゃく",
+    "romaji": "wakei seijaku",
+    "meaning": "wakei seijaku — harmony, respect, purity, tranquillity — the four principles at the root of chadō",
+    "type": "expression",
+    "lesson": "spirit"
+  },
+  {
+    "kanji": "侘寂",
+    "reading": "わびさび",
+    "romaji": "wabi sabi",
+    "meaning": "wabi sabi — wabi-sabi — the beauty of imperfection, impermanence and simplicity",
+    "type": "noun",
+    "lesson": "spirit"
+  },
+  {
+    "kanji": "甘み",
+    "reading": "あまみ",
+    "romaji": "amami",
+    "meaning": "amami — sweetness — the natural sweetness of amino acids (esp. L-theanine), strongest in shaded teas",
+    "type": "noun",
+    "lesson": "taste"
+  },
+  {
+    "kanji": "旨み",
+    "reading": "うまみ",
+    "romaji": "umami",
+    "meaning": "umami — the savoury, broth-like taste that comes from L-theanine and amino acids",
+    "type": "noun",
+    "lesson": "taste"
+  },
+  {
+    "kanji": "渋み",
+    "reading": "しぶみ",
+    "romaji": "shibumi",
+    "meaning": "shibumi — astringency — the refined, delicate sharpness that gives good tea depth and structure",
+    "type": "noun",
+    "lesson": "taste"
+  },
+  {
+    "kanji": "阿波番茶",
+    "reading": "あわばんちゃ",
+    "romaji": "awa bancha",
+    "meaning": "Awa bancha — lightly fermented bancha from Tokushima, with a lactic tang",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "石鎚黒茶",
+    "reading": "いしづちくろちゃ",
+    "romaji": "ishizuchi kurocha",
+    "meaning": "ishizuchi kurocha — Stone Hammer black tea — a post-fermented folk tea from Mt. Ishizuchi, Ehime",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "薄茶",
+    "reading": "うすちゃ",
+    "romaji": "usucha",
+    "meaning": "usucha — thin tea — the usual ceremonial matcha, about 2 g whisked light and frothy",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "被せ茶",
+    "reading": "かぶせちゃ",
+    "romaji": "kabusecha",
+    "meaning": "kabusecha — shaded tea — covered 7–14 days before harvest; more umami and sweetness, less bitterness",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "雁ヶ音",
+    "reading": "かりがね",
+    "romaji": "karigane",
+    "meaning": "karigane — stem tea from gyokuro or high-grade sencha; a Kansai term",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "寒茶",
+    "reading": "かんちゃ",
+    "romaji": "kancha",
+    "meaning": "kancha — cold tea — a rare tea picked in midwinter (Dec–Feb); mellow with soft astringency",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "京番茶",
+    "reading": "きょうばんちゃ",
+    "romaji": "kyoubancha",
+    "meaning": "kyoubancha — Kyoto bancha — bancha steamed, dried and then roasted; smoky in character",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "玉真",
+    "reading": "ぎょくしん",
+    "romaji": "gyokushin",
+    "meaning": "gyokushin — leaf tips sifted out of unrefined gyokuro; a Kyoto term",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "玉露",
+    "reading": "ぎょくろ",
+    "romaji": "gyokuro",
+    "meaning": "gyokuro — jade dew — top-grade tea shaded some three weeks before harvest; sweet, deeply umami",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "茎茶",
+    "reading": "くきちゃ",
+    "romaji": "kukicha",
+    "meaning": "kukicha — stem tea — made from the stalks and stems of young leaf; light, creamy, naturally sweet",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "",
+    "reading": "ぐりちゃ",
+    "romaji": "guricha",
+    "meaning": "guricha — another name for tamaryokucha",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "玄米茶",
+    "reading": "げんまいちゃ",
+    "romaji": "genmaicha",
+    "meaning": "genmaicha — brown rice tea — green tea blended with toasted rice; nutty and toasty",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "濃茶",
+    "reading": "こいちゃ",
+    "romaji": "koicha",
+    "meaning": "koicha — thick tea — ceremonial matcha, about 4 g with little water; syrupy and bold",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "粉茶",
+    "reading": "こなちゃ",
+    "romaji": "konacha",
+    "meaning": "konacha — powder tea — the fine bits left from making sencha or gyokuro; brisk, bold, quick to brew",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "碁石茶",
+    "reading": "ごいしちゃ",
+    "romaji": "goishicha",
+    "meaning": "goishicha — Japan's only truly fermented tea, from Kochi; named after the game of go",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "",
+    "reading": "さんぴんちゃ",
+    "romaji": "sanpincha",
+    "meaning": "sanpincha — Okinawan jasmine tea, made from Chinese oolong and jasmine flowers",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "白折れ",
+    "reading": "しらおれ",
+    "romaji": "shira-ore",
+    "meaning": "shira-ore — another name for kukicha (stem tea)",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "新茶",
+    "reading": "しんちゃ",
+    "romaji": "shincha",
+    "meaning": "shincha — new tea — the first flush of early spring (April–May); aromatic, sweet and rich",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "煎茶",
+    "reading": "せんちゃ",
+    "romaji": "sencha",
+    "meaning": "sencha — steamed, rolled and dried leaf; the green tea drunk most in Japan",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "玉茶",
+    "reading": "たまちゃ",
+    "romaji": "tamacha",
+    "meaning": "tamacha — round tea — sencha rolled into balls instead of needles",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "玉緑茶",
+    "reading": "たまりょくちゃ",
+    "romaji": "tamaryokucha",
+    "meaning": "tamaryokucha — ball green tea — a sencha that skips the final needle-rolling step",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "碾茶",
+    "reading": "てんちゃ",
+    "romaji": "tencha",
+    "meaning": "tencha — shaded leaf dried without rolling; the raw material for matcha",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "糖番茶",
+    "reading": "とうばんちゃ",
+    "romaji": "toubancha",
+    "meaning": "toubancha — tea that skips steaming or pan-firing to raise its polysaccharides",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "土佐番茶",
+    "reading": "とさばんちゃ",
+    "romaji": "tosa bancha",
+    "meaning": "Tosa bancha — a bancha from Tosa, Kochi Prefecture",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "日本茶",
+    "reading": "にほんちゃ",
+    "romaji": "nihoncha",
+    "meaning": "nihoncha — Japanese tea — the traditional teas of Japan, not its black or oolong teas",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "番茶",
+    "reading": "ばんちゃ",
+    "romaji": "bancha",
+    "meaning": "bancha — ordinary tea — coarse late-grown leaf; high in catechins, so healthy but more bitter",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "",
+    "reading": "ぶくぶくちゃ",
+    "romaji": "bukubukucha",
+    "meaning": "bukubukucha — Okinawan tea whisked into a mountain of foam and eaten with red rice",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "焙じ茶",
+    "reading": "ほうじちゃ",
+    "romaji": "houjicha",
+    "meaning": "houjicha — roasted tea — pan-roasted at high heat; toasty and nutty, low in bitterness and caffeine",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "棒茶",
+    "reading": "ぼうちゃ",
+    "romaji": "boucha",
+    "meaning": "boucha — stick tea — another name for roasted kukicha (stem tea)",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "抹茶",
+    "reading": "まっちゃ",
+    "romaji": "matcha",
+    "meaning": "matcha — finely ground powder of shade-grown tencha leaf, whisked rather than steeped",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "美作番茶",
+    "reading": "みまさかばんちゃ",
+    "romaji": "mimasaka bancha",
+    "meaning": "Mimasaka bancha — lightly fermented tea from Okayama, boiled in an iron pan",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "芽茶",
+    "reading": "めちゃ",
+    "romaji": "mecha",
+    "meaning": "mecha — bud tea — the youngest tips and buds sorted out of high-grade tea; concentrated umami",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "緑茶",
+    "reading": "りょくちゃ",
+    "romaji": "ryokucha",
+    "meaning": "ryokucha — green tea — the general term for Japan's unfermented teas",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "和紅茶",
+    "reading": "わこうちゃ",
+    "romaji": "wakoucha",
+    "meaning": "wakoucha — Japanese black tea — milder, smoother and sweeter than imported black teas",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "バタバタ茶",
+    "reading": "バタバタちゃ",
+    "romaji": "batabatacha",
+    "meaning": "batabatacha — a post-fermented tea from Toyama, drunk whisked",
+    "type": "noun",
+    "lesson": "types"
+  },
+  {
+    "kanji": "ボテボテ茶",
+    "reading": "ボテボテちゃ",
+    "romaji": "botebotecha",
+    "meaning": "botebotecha — whisked tea of Shimane's Edo-period steel workers",
+    "type": "noun",
+    "lesson": "types"
+  }
+]

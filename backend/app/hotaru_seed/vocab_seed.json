@@ -35456,6 +35456,1090 @@
         "m2r",
         "k2r"
       ]
+    },
+    {
+      "id": "tea-ceremony-0001",
+      "source": "tea",
+      "reading": "いっぷく",
+      "kanji": "一服",
+      "romaji": "ippuku",
+      "meaning": "ippuku — a bowl of tea — a tea break; a small pause that makes room for reflection",
+      "pos": "noun",
+      "lesson": "ceremony",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-ceremony-0002",
+      "source": "tea",
+      "reading": "かいせき",
+      "kanji": "懐石",
+      "romaji": "kaiseki",
+      "meaning": "kaiseki — the seasonal multi-course meal served before a formal tea ceremony",
+      "pos": "noun",
+      "lesson": "ceremony",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-ceremony-0003",
+      "source": "tea",
+      "reading": "きゅうす",
+      "kanji": "急須",
+      "romaji": "kyuusu",
+      "meaning": "kyuusu — Japanese teapot — a side-handled clay pot with a built-in strainer, for green tea",
+      "pos": "noun",
+      "lesson": "ceremony",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-ceremony-0004",
+      "source": "tea",
+      "reading": "さどう",
+      "kanji": "茶道",
+      "romaji": "sadou",
+      "meaning": "sadou — the Way of Tea — the tea ceremony as a spiritual and aesthetic practice rooted in Zen",
+      "pos": "noun",
+      "lesson": "ceremony",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-ceremony-0005",
+      "source": "tea",
+      "reading": "ちゃがま",
+      "kanji": "茶釜",
+      "romaji": "chagama",
+      "meaning": "chagama — tea kettle — the iron kettle that boils water in the tea room",
+      "pos": "noun",
+      "lesson": "ceremony",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-ceremony-0006",
+      "source": "tea",
+      "reading": "ちゃし",
+      "kanji": "茶師",
+      "romaji": "chashi",
+      "meaning": "chashi — tea master — an expert who evaluates, blends and refines tea leaves",
+      "pos": "noun",
+      "lesson": "ceremony",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-ceremony-0007",
+      "source": "tea",
+      "reading": "ちゃしゃく",
+      "kanji": "茶杓",
+      "romaji": "chashaku",
+      "meaning": "chashaku — tea scoop — the bamboo scoop that measures matcha powder",
+      "pos": "noun",
+      "lesson": "ceremony",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-ceremony-0008",
+      "source": "tea",
+      "reading": "ちゃせん",
+      "kanji": "茶筅",
+      "romaji": "chasen",
+      "meaning": "chasen — bamboo whisk — 80–120 fine tines that whisk matcha into a frothy suspension",
+      "pos": "noun",
+      "lesson": "ceremony",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-ceremony-0009",
+      "source": "tea",
+      "reading": "ちゃせんなおし",
+      "kanji": "茶筅直し",
+      "romaji": "chasen naoshi",
+      "meaning": "chasen naoshi — whisk stand — a ceramic rest that holds a chasen in shape after use",
+      "pos": "noun",
+      "lesson": "ceremony",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-ceremony-0010",
+      "source": "tea",
+      "reading": "ちゃのゆ",
+      "kanji": "茶の湯",
+      "romaji": "chanoyu",
+      "meaning": "chanoyu — hot water for tea — a synonym for chadō; the ritual of preparing and serving matcha",
+      "pos": "noun",
+      "lesson": "ceremony",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-ceremony-0011",
+      "source": "tea",
+      "reading": "ちゃばしら",
+      "kanji": "茶柱",
+      "romaji": "chabashira",
+      "meaning": "chabashira — tea pillar — a stem standing upright in the cup; a rare sign of good luck",
+      "pos": "noun",
+      "lesson": "ceremony",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-ceremony-0012",
+      "source": "tea",
+      "reading": "ちゃわん",
+      "kanji": "茶碗",
+      "romaji": "chawan",
+      "meaning": "chawan — tea bowl — the bowl matcha is whisked and drunk from; usually handmade and seasonal",
+      "pos": "noun",
+      "lesson": "ceremony",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-ceremony-0013",
+      "source": "tea",
+      "reading": "ていしゅ",
+      "kanji": "亭主",
+      "romaji": "teishu",
+      "meaning": "teishu — host — the tea master who prepares and serves the tea in a ceremony",
+      "pos": "noun",
+      "lesson": "ceremony",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-ceremony-0014",
+      "source": "tea",
+      "reading": "なつめ",
+      "kanji": "棗",
+      "romaji": "natsume",
+      "meaning": "natsume — matcha caddy — a lidded container for matcha, named for its jujube-like shape",
+      "pos": "noun",
+      "lesson": "ceremony",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-ceremony-0015",
+      "source": "tea",
+      "reading": "みずさし",
+      "kanji": "水差し",
+      "romaji": "mizusashi",
+      "meaning": "mizusashi — water jar — the lidded container of fresh water used through a tea ceremony",
+      "pos": "noun",
+      "lesson": "ceremony",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-process-0001",
+      "source": "tea",
+      "reading": "あさむしちゃ",
+      "kanji": "浅蒸し茶",
+      "romaji": "asamushicha",
+      "meaning": "asamushicha — light-steamed tea — steamed only 10–30 seconds; clear golden liquor and bright astringency",
+      "pos": "noun",
+      "lesson": "process",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-process-0002",
+      "source": "tea",
+      "reading": "あらちゃ",
+      "kanji": "荒茶",
+      "romaji": "aracha",
+      "meaning": "aracha — coarse tea — leaf that has been dried but not yet sorted or refined",
+      "pos": "noun",
+      "lesson": "process",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-process-0003",
+      "source": "tea",
+      "reading": "いちょうちゃ",
+      "kanji": "萎凋茶",
+      "romaji": "ichoucha",
+      "meaning": "ichoucha — withered tea — green tea slightly withered to draw out a floral aroma",
+      "pos": "noun",
+      "lesson": "process",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-process-0004",
+      "source": "tea",
+      "reading": "かまいりちゃ",
+      "kanji": "釜炒り茶",
+      "romaji": "kamairicha",
+      "meaning": "kamairicha — pan-fired tea — leaf heated in a pan instead of steamed; made in southern Japan",
+      "pos": "noun",
+      "lesson": "process",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-process-0005",
+      "source": "tea",
+      "reading": "くらだしちゃ",
+      "kanji": "蔵出し茶",
+      "romaji": "kuradashicha",
+      "meaning": "kuradashicha — storehouse tea — spring sencha aged in storage; rounder and richer in umami",
+      "pos": "noun",
+      "lesson": "process",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-process-0006",
+      "source": "tea",
+      "reading": "ちゅうむしちゃ",
+      "kanji": "中蒸し茶",
+      "romaji": "chuumushicha",
+      "meaning": "chuumushicha — mid-steamed tea — steamed 30–60 seconds; balanced between asamushi and fukamushi",
+      "pos": "noun",
+      "lesson": "process",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-process-0007",
+      "source": "tea",
+      "reading": "てもみちゃ",
+      "kanji": "手揉み茶",
+      "romaji": "temomicha",
+      "meaning": "temomicha — hand-rolled tea — a rare, labour-intensive tea rolled leaf by leaf by hand",
+      "pos": "noun",
+      "lesson": "process",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-process-0008",
+      "source": "tea",
+      "reading": "ふかむしちゃ",
+      "kanji": "深蒸し茶",
+      "romaji": "fukamushicha",
+      "meaning": "fukamushicha — deep-steamed tea — steamed 1–3 minutes; vivid green, mellow, less astringent",
+      "pos": "noun",
+      "lesson": "process",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-process-0009",
+      "source": "tea",
+      "reading": "ふつうむし",
+      "kanji": "普通蒸し",
+      "romaji": "futsuumushi",
+      "meaning": "futsuumushi — ordinary steaming — the standard steaming time; see chumushicha",
+      "pos": "noun",
+      "lesson": "process",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-spirit-0001",
+      "source": "tea",
+      "reading": "いちごいちえ",
+      "kanji": "一期一会",
+      "romaji": "ichigo ichie",
+      "meaning": "ichigo ichie — one time, one meeting — every encounter is unique and unrepeatable",
+      "pos": "expression",
+      "lesson": "spirit",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-spirit-0002",
+      "source": "tea",
+      "reading": "おもてなし",
+      "kanji": null,
+      "romaji": "omotenashi",
+      "meaning": "omotenashi — hospitality — sincere, selfless service that anticipates the guest's needs",
+      "pos": "noun",
+      "lesson": "spirit",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r"
+      ]
+    },
+    {
+      "id": "tea-spirit-0003",
+      "source": "tea",
+      "reading": "きんつぎ",
+      "kanji": "金継ぎ",
+      "romaji": "kintsugi",
+      "meaning": "kintsugi — golden joinery — repairing broken ceramics with gold-dusted lacquer, celebrating the crack",
+      "pos": "noun",
+      "lesson": "spirit",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-spirit-0004",
+      "source": "tea",
+      "reading": "わけいせいじゃく",
+      "kanji": "和敬清寂",
+      "romaji": "wakei seijaku",
+      "meaning": "wakei seijaku — harmony, respect, purity, tranquillity — the four principles at the root of chadō",
+      "pos": "expression",
+      "lesson": "spirit",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-spirit-0005",
+      "source": "tea",
+      "reading": "わびさび",
+      "kanji": "侘寂",
+      "romaji": "wabi sabi",
+      "meaning": "wabi sabi — wabi-sabi — the beauty of imperfection, impermanence and simplicity",
+      "pos": "noun",
+      "lesson": "spirit",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-taste-0001",
+      "source": "tea",
+      "reading": "あまみ",
+      "kanji": "甘み",
+      "romaji": "amami",
+      "meaning": "amami — sweetness — the natural sweetness of amino acids (esp. L-theanine), strongest in shaded teas",
+      "pos": "noun",
+      "lesson": "taste",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-taste-0002",
+      "source": "tea",
+      "reading": "うまみ",
+      "kanji": "旨み",
+      "romaji": "umami",
+      "meaning": "umami — the savoury, broth-like taste that comes from L-theanine and amino acids",
+      "pos": "noun",
+      "lesson": "taste",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-taste-0003",
+      "source": "tea",
+      "reading": "しぶみ",
+      "kanji": "渋み",
+      "romaji": "shibumi",
+      "meaning": "shibumi — astringency — the refined, delicate sharpness that gives good tea depth and structure",
+      "pos": "noun",
+      "lesson": "taste",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0001",
+      "source": "tea",
+      "reading": "あわばんちゃ",
+      "kanji": "阿波番茶",
+      "romaji": "awa bancha",
+      "meaning": "Awa bancha — lightly fermented bancha from Tokushima, with a lactic tang",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0002",
+      "source": "tea",
+      "reading": "いしづちくろちゃ",
+      "kanji": "石鎚黒茶",
+      "romaji": "ishizuchi kurocha",
+      "meaning": "ishizuchi kurocha — Stone Hammer black tea — a post-fermented folk tea from Mt. Ishizuchi, Ehime",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0003",
+      "source": "tea",
+      "reading": "うすちゃ",
+      "kanji": "薄茶",
+      "romaji": "usucha",
+      "meaning": "usucha — thin tea — the usual ceremonial matcha, about 2 g whisked light and frothy",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0004",
+      "source": "tea",
+      "reading": "かぶせちゃ",
+      "kanji": "被せ茶",
+      "romaji": "kabusecha",
+      "meaning": "kabusecha — shaded tea — covered 7–14 days before harvest; more umami and sweetness, less bitterness",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0005",
+      "source": "tea",
+      "reading": "かりがね",
+      "kanji": "雁ヶ音",
+      "romaji": "karigane",
+      "meaning": "karigane — stem tea from gyokuro or high-grade sencha; a Kansai term",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0006",
+      "source": "tea",
+      "reading": "かんちゃ",
+      "kanji": "寒茶",
+      "romaji": "kancha",
+      "meaning": "kancha — cold tea — a rare tea picked in midwinter (Dec–Feb); mellow with soft astringency",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0007",
+      "source": "tea",
+      "reading": "きょうばんちゃ",
+      "kanji": "京番茶",
+      "romaji": "kyoubancha",
+      "meaning": "kyoubancha — Kyoto bancha — bancha steamed, dried and then roasted; smoky in character",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0008",
+      "source": "tea",
+      "reading": "ぎょくしん",
+      "kanji": "玉真",
+      "romaji": "gyokushin",
+      "meaning": "gyokushin — leaf tips sifted out of unrefined gyokuro; a Kyoto term",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0009",
+      "source": "tea",
+      "reading": "ぎょくろ",
+      "kanji": "玉露",
+      "romaji": "gyokuro",
+      "meaning": "gyokuro — jade dew — top-grade tea shaded some three weeks before harvest; sweet, deeply umami",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0010",
+      "source": "tea",
+      "reading": "くきちゃ",
+      "kanji": "茎茶",
+      "romaji": "kukicha",
+      "meaning": "kukicha — stem tea — made from the stalks and stems of young leaf; light, creamy, naturally sweet",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0011",
+      "source": "tea",
+      "reading": "ぐりちゃ",
+      "kanji": null,
+      "romaji": "guricha",
+      "meaning": "guricha — another name for tamaryokucha",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r"
+      ]
+    },
+    {
+      "id": "tea-types-0012",
+      "source": "tea",
+      "reading": "げんまいちゃ",
+      "kanji": "玄米茶",
+      "romaji": "genmaicha",
+      "meaning": "genmaicha — brown rice tea — green tea blended with toasted rice; nutty and toasty",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0013",
+      "source": "tea",
+      "reading": "こいちゃ",
+      "kanji": "濃茶",
+      "romaji": "koicha",
+      "meaning": "koicha — thick tea — ceremonial matcha, about 4 g with little water; syrupy and bold",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0014",
+      "source": "tea",
+      "reading": "こなちゃ",
+      "kanji": "粉茶",
+      "romaji": "konacha",
+      "meaning": "konacha — powder tea — the fine bits left from making sencha or gyokuro; brisk, bold, quick to brew",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0015",
+      "source": "tea",
+      "reading": "ごいしちゃ",
+      "kanji": "碁石茶",
+      "romaji": "goishicha",
+      "meaning": "goishicha — Japan's only truly fermented tea, from Kochi; named after the game of go",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0016",
+      "source": "tea",
+      "reading": "さんぴんちゃ",
+      "kanji": null,
+      "romaji": "sanpincha",
+      "meaning": "sanpincha — Okinawan jasmine tea, made from Chinese oolong and jasmine flowers",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r"
+      ]
+    },
+    {
+      "id": "tea-types-0017",
+      "source": "tea",
+      "reading": "しらおれ",
+      "kanji": "白折れ",
+      "romaji": "shira-ore",
+      "meaning": "shira-ore — another name for kukicha (stem tea)",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0018",
+      "source": "tea",
+      "reading": "しんちゃ",
+      "kanji": "新茶",
+      "romaji": "shincha",
+      "meaning": "shincha — new tea — the first flush of early spring (April–May); aromatic, sweet and rich",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0019",
+      "source": "tea",
+      "reading": "せんちゃ",
+      "kanji": "煎茶",
+      "romaji": "sencha",
+      "meaning": "sencha — steamed, rolled and dried leaf; the green tea drunk most in Japan",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0020",
+      "source": "tea",
+      "reading": "たまちゃ",
+      "kanji": "玉茶",
+      "romaji": "tamacha",
+      "meaning": "tamacha — round tea — sencha rolled into balls instead of needles",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0021",
+      "source": "tea",
+      "reading": "たまりょくちゃ",
+      "kanji": "玉緑茶",
+      "romaji": "tamaryokucha",
+      "meaning": "tamaryokucha — ball green tea — a sencha that skips the final needle-rolling step",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0022",
+      "source": "tea",
+      "reading": "てんちゃ",
+      "kanji": "碾茶",
+      "romaji": "tencha",
+      "meaning": "tencha — shaded leaf dried without rolling; the raw material for matcha",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0023",
+      "source": "tea",
+      "reading": "とうばんちゃ",
+      "kanji": "糖番茶",
+      "romaji": "toubancha",
+      "meaning": "toubancha — tea that skips steaming or pan-firing to raise its polysaccharides",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0024",
+      "source": "tea",
+      "reading": "とさばんちゃ",
+      "kanji": "土佐番茶",
+      "romaji": "tosa bancha",
+      "meaning": "Tosa bancha — a bancha from Tosa, Kochi Prefecture",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0025",
+      "source": "tea",
+      "reading": "にほんちゃ",
+      "kanji": "日本茶",
+      "romaji": "nihoncha",
+      "meaning": "nihoncha — Japanese tea — the traditional teas of Japan, not its black or oolong teas",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0026",
+      "source": "tea",
+      "reading": "ばんちゃ",
+      "kanji": "番茶",
+      "romaji": "bancha",
+      "meaning": "bancha — ordinary tea — coarse late-grown leaf; high in catechins, so healthy but more bitter",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0027",
+      "source": "tea",
+      "reading": "ぶくぶくちゃ",
+      "kanji": null,
+      "romaji": "bukubukucha",
+      "meaning": "bukubukucha — Okinawan tea whisked into a mountain of foam and eaten with red rice",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r"
+      ]
+    },
+    {
+      "id": "tea-types-0028",
+      "source": "tea",
+      "reading": "ほうじちゃ",
+      "kanji": "焙じ茶",
+      "romaji": "houjicha",
+      "meaning": "houjicha — roasted tea — pan-roasted at high heat; toasty and nutty, low in bitterness and caffeine",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0029",
+      "source": "tea",
+      "reading": "ぼうちゃ",
+      "kanji": "棒茶",
+      "romaji": "boucha",
+      "meaning": "boucha — stick tea — another name for roasted kukicha (stem tea)",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0030",
+      "source": "tea",
+      "reading": "まっちゃ",
+      "kanji": "抹茶",
+      "romaji": "matcha",
+      "meaning": "matcha — finely ground powder of shade-grown tencha leaf, whisked rather than steeped",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0031",
+      "source": "tea",
+      "reading": "みまさかばんちゃ",
+      "kanji": "美作番茶",
+      "romaji": "mimasaka bancha",
+      "meaning": "Mimasaka bancha — lightly fermented tea from Okayama, boiled in an iron pan",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0032",
+      "source": "tea",
+      "reading": "めちゃ",
+      "kanji": "芽茶",
+      "romaji": "mecha",
+      "meaning": "mecha — bud tea — the youngest tips and buds sorted out of high-grade tea; concentrated umami",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0033",
+      "source": "tea",
+      "reading": "りょくちゃ",
+      "kanji": "緑茶",
+      "romaji": "ryokucha",
+      "meaning": "ryokucha — green tea — the general term for Japan's unfermented teas",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0034",
+      "source": "tea",
+      "reading": "わこうちゃ",
+      "kanji": "和紅茶",
+      "romaji": "wakoucha",
+      "meaning": "wakoucha — Japanese black tea — milder, smoother and sweeter than imported black teas",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0035",
+      "source": "tea",
+      "reading": "バタバタちゃ",
+      "kanji": "バタバタ茶",
+      "romaji": "batabatacha",
+      "meaning": "batabatacha — a post-fermented tea from Toyama, drunk whisked",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
+    },
+    {
+      "id": "tea-types-0036",
+      "source": "tea",
+      "reading": "ボテボテちゃ",
+      "kanji": "ボテボテ茶",
+      "romaji": "botebotecha",
+      "meaning": "botebotecha — whisked tea of Shimane's Edo-period steel workers",
+      "pos": "noun",
+      "lesson": "types",
+      "visibility": "shared",
+      "drill_caps": [
+        "r2m",
+        "m2r",
+        "k2r"
+      ]
     }
   ]
 }

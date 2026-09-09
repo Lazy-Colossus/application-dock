@@ -10,6 +10,7 @@ from scripts.build_hotaru_seed import (
     build_all,
     build_kaishi,
     build_seed,
+    build_tea,
     check_unique,
     drill_caps,
     kaishi_kanji,
@@ -221,19 +222,20 @@ def test_kaishi_ids_follow_deck_order_not_row_order() -> None:
 
 
 def test_build_all_combines_sources_with_unique_ids() -> None:
-    seed = build_all(SAMPLE, KAISHI_SAMPLE)
+    seed = build_all(SAMPLE, KAISHI_SAMPLE, TEA_SAMPLE)
     assert seed["schema_version"] == 1
     sources = {w["source"] for w in seed["words"]}
-    assert sources == {"genki_3", "kaishi"}
+    assert sources == {"genki_3", "kaishi", "tea"}
     ids = [w["id"] for w in seed["words"]]
     assert len(ids) == len(set(ids))
 
 
-def test_committed_seed_ships_both_sources() -> None:
+def test_committed_seed_ships_every_source() -> None:
     seed = json.loads(_SEED_FILE.read_text(encoding="utf-8"))
     counts = Counter(w["source"] for w in seed["words"])
     assert counts["genki_3"] > 0
     assert counts["kaishi"] > 0
+    assert counts["tea"] > 0
 
 
 def test_every_seeded_kaishi_word_has_a_part_of_speech() -> None:
@@ -255,3 +257,76 @@ def test_every_seeded_kaishi_word_has_a_part_of_speech() -> None:
     assert {w["pos"] for w in kaishi} <= known
     # Rules, then hand-read judgements, then the noun default: nothing is left over.
     assert all(w["pos"] for w in kaishi)
+
+
+TEA_SAMPLE = [
+    {
+        "kanji": "煎茶",
+        "reading": "せんちゃ",
+        "romaji": "sencha",
+        "meaning": "sencha — steamed, rolled and dried leaf",
+        "type": "noun",
+        "lesson": "types",
+    },
+    {
+        "kanji": "玉露",
+        "reading": "ぎょくろ",
+        "romaji": "gyokuro",
+        "meaning": "jade dew — top-grade shaded tea",
+        "type": "noun",
+        "lesson": "types",
+    },
+    {
+        "kanji": "",
+        "reading": "おもてなし",
+        "romaji": "omotenashi",
+        "meaning": "hospitality — sincere, selfless service",
+        "type": "noun",
+        "lesson": "spirit",
+    },
+]
+
+
+def test_tea_field_mapping_and_id_format() -> None:
+    words = {w["reading"]: w for w in build_tea(TEA_SAMPLE)}
+    sencha = words["せんちゃ"]
+    # Deterministic sort by reading puts ぎょくろ (0001) before せんちゃ (0002).
+    assert sencha["id"] == "tea-types-0002"
+    assert sencha["source"] == "tea"
+    assert sencha["kanji"] == "煎茶"
+    assert sencha["romaji"] == "sencha"
+    assert sencha["pos"] == "noun"
+    assert sencha["lesson"] == "types"
+    assert sencha["visibility"] == "shared"
+    assert sencha["drill_caps"] == ["r2m", "m2r", "k2r"]
+
+
+def test_tea_kana_only_term_has_no_kanji_and_no_kanji_drill() -> None:
+    words = {w["reading"]: w for w in build_tea(TEA_SAMPLE)}
+    omotenashi = words["おもてなし"]
+    assert omotenashi["kanji"] is None
+    assert omotenashi["drill_caps"] == ["r2m", "m2r"]
+
+
+def test_tea_seq_restarts_in_each_theme() -> None:
+    ids = {w["id"] for w in build_tea(TEA_SAMPLE)}
+    assert ids == {"tea-types-0001", "tea-types-0002", "tea-spirit-0001"}
+
+
+def test_tea_ids_are_stable_regardless_of_row_order() -> None:
+    assert build_tea(TEA_SAMPLE) == build_tea(list(reversed(TEA_SAMPLE)))
+
+
+def test_tea_romaji_is_carried_over_not_transliterated() -> None:
+    # Glossary spellings ("shira-ore") are not what a kana transliteration produces.
+    row = dict(TEA_SAMPLE[0], reading="しらおれ", romaji="shira-ore", kanji="白折れ")
+    assert build_tea([row])[0]["romaji"] == "shira-ore"
+
+
+def test_committed_seed_tea_words_are_themed_and_glossed() -> None:
+    seed = json.loads(_SEED_FILE.read_text(encoding="utf-8"))
+    tea = [w for w in seed["words"] if w["source"] == "tea"]
+    assert {w["lesson"] for w in tea} == {"types", "process", "ceremony", "taste", "spirit"}
+    # Every gloss leads with the romanised name, so a card names the tea it describes.
+    assert all(w["meaning"].lower().startswith(w["romaji"].lower()) for w in tea)
+    assert all(w["pos"] for w in tea)
