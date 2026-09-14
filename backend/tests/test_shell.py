@@ -152,3 +152,18 @@ def test_qotd_router_is_mounted() -> None:
     from app.routers import qotd
 
     assert qotd.router.prefix == "/api/qotd"
+
+
+def test_list_apps_includes_kitchencraft() -> None:
+    response = client.get("/api/apps")
+    kitchencraft = next((a for a in response.json() if a["id"] == "kitchencraft"), None)
+    assert kitchencraft is not None
+    assert kitchencraft["label"] == "KitchenCraft"
+    assert kitchencraft["icon"] == "menu_book"
+    assert kitchencraft["route"] == "/kitchencraft"
+
+
+def test_kitchencraft_router_is_mounted() -> None:
+    from app.routers import kitchencraft
+
+    assert kitchencraft.router.prefix == "/api/kitchencraft"

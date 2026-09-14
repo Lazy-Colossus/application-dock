@@ -1,0 +1,84 @@
+// KitchenCraft — shared frontend types. Mirrors the backend schemas
+// (snake_case fields, as served).
+
+// Verbatim from PRD FR-4, in the PRD's order. Never re-worded, re-cased or
+// re-ordered — the meal-type chips render this array as-is (UX-DR18).
+export const MEAL_TYPES = [
+  "breakfast",
+  "lunch",
+  "dinner",
+  "snack",
+  "dessert",
+  "other",
+] as const;
+
+export type MealType = (typeof MEAL_TYPES)[number];
+
+// Two-level: a `category` from the shared vocabulary, plus the optional
+// free-text `specific` the cook actually cares about. The pantry filter matches
+// on category; the reading view shows the specific where there is one.
+export interface IngredientTag {
+  category: string;
+  specific: string | null;
+}
+
+export interface Recipe {
+  id: string;
+  name: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+  favourite: boolean;
+  // 1-5, or null for unrated. Independent of `favourite` in both directions:
+  // neither is derived from the other (Story 2.7).
+  rating: number | null;
+  meal_type: MealType | null;
+  total_time_minutes: number | null;
+  servings: number | null;
+  source: string | null;
+  tags: string[];
+  ingredients: IngredientTag[];
+  // Provenance keys for values written by the offline enrichment pass and not
+  // yet touched. Epic 4 populates this and renders the unconfirmed chip.
+  unconfirmed: string[];
+}
+
+// The two typeahead namespaces, kept strictly apart (FR-8). A tag never appears
+// under Ingredients and vice versa.
+export interface Vocabulary {
+  tags: string[];
+  ingredient_categories: string[];
+}
+
+// What capture sends. Only `name` and `body` are required, and nothing else may
+// stand between a paste and a saved recipe (FR-3).
+export interface RecipeDraft {
+  name: string;
+  body: string;
+  rating?: number | null;
+  meal_type?: MealType | null;
+  total_time_minutes?: number | null;
+  servings?: number | null;
+  source?: string | null;
+  tags?: string[];
+  ingredients?: IngredientTag[];
+}
+
+// A partial update. A key present with `null` clears that field; an absent key
+// leaves it alone — which is what keeps an edit of the meal type from ever
+// rewriting the body.
+export type RecipeChanges = Partial<
+  Pick<
+    Recipe,
+    | "name"
+    | "body"
+    | "favourite"
+    | "rating"
+    | "meal_type"
+    | "total_time_minutes"
+    | "servings"
+    | "source"
+    | "tags"
+    | "ingredients"
+  >
+>;

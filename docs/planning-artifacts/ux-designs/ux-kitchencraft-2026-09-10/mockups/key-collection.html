@@ -1,0 +1,437 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KitchenCraft — Collection screen</title>
+<style>
+/*
+  KEY SCREEN: the Collection screen ("Beige Ledger")
+  Governed by, and subordinate to, these spine sections:
+    DESIGN.md      § Colors · Typography · Layout & Spacing · Elevation & Depth
+                   § Shapes · Components (recipe-row, chip, field, button-primary,
+                     button-quiet, rule) · Do's and Don'ts
+    EXPERIENCE.md  § Information Architecture (Collection, Search, Filter bar,
+                     Pantry filter, Favourites-only)
+                   § State Patterns (Collection: Empty / Populated / Loaded-filtering;
+                     Search: Active; Filter bar: None active / Active / Zero results;
+                     Pantry filter: Any selection; Favourites-only: Active)
+                   § The absence rule
+                   § The pantry filter never implies completeness
+                   § Voice and Tone · Component Patterns · Responsive & Platform
+  The spines win on conflict with this mock. This file illustrates; it does not decide.
+
+  Tokens used verbatim from DESIGN.md frontmatter:
+    beige #EAE1CD · beige-raise #F5F0E2 · ink #141310
+    moss #4F6B3A · on-moss #F5F0E2 · taupe #96775F · taupe-ink #6E5541
+  taupe is NON-TEXT ONLY (3.17:1). All quiet text is taupe-ink (5.31:1 / 6.07:1).
+  No box shadows. No imagery: no illustration, texture, grain, ornament or
+  decorative icon. The only glyphs present are functional (search, basket, the
+  favourites mark, and the ink star), per DESIGN.md § Components.
+*/
+:root{
+  --beige:#EAE1CD; --beige-raise:#F5F0E2; --ink:#141310;
+  --moss:#4F6B3A; --on-moss:#F5F0E2; --taupe:#96775F; --taupe-ink:#6E5541;
+  --serif:ui-serif,Georgia,"Iowan Old Style","Palatino Linotype","Times New Roman",serif;
+  --r-sm:3px; --r-md:6px; --pad:16px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#D6CBB4;font-family:var(--serif);color:var(--ink);
+  padding:32px 16px;-webkit-font-smoothing:antialiased}
+
+/* ---- page scaffolding for the mock sheet itself (not part of the product) ---- */
+.sheet{max-width:1180px;margin:0 auto}
+.sheet h1{font-size:22px;line-height:1.25;font-weight:600;margin:0 0 4px}
+.sheet .lede{font-size:13px;line-height:1.45;color:var(--taupe-ink);margin:0 0 32px;max-width:62ch}
+.grid{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.cap{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--taupe-ink);margin:0 0 8px}
+.note{font-size:13px;line-height:1.45;color:var(--taupe-ink);margin:8px 0 0;max-width:44ch}
+
+/* ---- device frames (scaffolding) ---- */
+.phone{width:390px;border:1px solid var(--taupe);border-radius:var(--r-md);overflow:hidden;background:var(--beige)}
+.wide{width:100%;max-width:900px;border:1px solid var(--taupe);border-radius:var(--r-md);overflow:hidden;background:var(--beige)}
+
+/* ============================ THE PRODUCT ============================ */
+.app{background:var(--beige);color:var(--ink)}
+
+/* App bar — the shopping-list button sits top-right on EVERY surface (FR-12) */
+.bar{display:flex;align-items:center;justify-content:space-between;
+  padding:12px var(--pad);border-bottom:1px solid var(--taupe)}
+.bar h2{font-size:22px;line-height:1.25;font-weight:600;margin:0}
+.iconbtn{min-width:44px;min-height:44px;display:inline-flex;align-items:center;
+  justify-content:center;gap:6px;background:transparent;border:1px solid var(--taupe);
+  border-radius:var(--r-sm);color:var(--ink);font-family:var(--serif);font-size:13px;
+  line-height:1.45;padding:0 8px;cursor:pointer}
+.iconbtn .n{font-variant-numeric:tabular-nums}
+svg{display:block}
+
+/* Search + filters */
+.head{padding:16px var(--pad) 12px;border-bottom:1px solid var(--taupe)}
+.lab{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--taupe-ink);display:block;margin:0 0 4px}
+.field{display:flex;align-items:center;gap:8px;min-height:44px;background:var(--beige-raise);
+  border:1px solid var(--taupe);border-radius:var(--r-sm);padding:0 12px}
+.field input{border:0;background:transparent;font-family:var(--serif);font-size:16px;
+  line-height:1.6;color:var(--ink);width:100%;outline:none;padding:10px 0}
+.field.focus{outline:2px solid var(--moss);outline-offset:1px}
+.fgroup{margin-top:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.chip{min-height:44px;display:inline-flex;align-items:center;padding:0 12px;
+  background:var(--beige-raise);border:1px solid var(--taupe);border-radius:var(--r-sm);
+  color:var(--ink);font-size:16px;line-height:1.6;cursor:pointer}
+.chip.on{background:var(--moss);border-color:var(--moss);color:var(--on-moss)}
+.count{font-size:13px;line-height:1.45;color:var(--taupe-ink);margin:12px 0 0;
+  font-variant-numeric:tabular-nums}
+
+/* Recipe rows — transparent, 1px taupe rule below, 64px min, no card, no chevron */
+.rows{margin:0;padding:0;list-style:none}
+.row{display:flex;align-items:center;gap:12px;min-height:64px;padding:10px var(--pad);
+  border-bottom:1px solid var(--taupe);background:transparent;cursor:pointer}
+.row .txt{flex:1;min-width:0}
+.row .name{font-size:16px;line-height:1.6;color:var(--ink)}
+.row .meta{font-size:13px;line-height:1.45;color:var(--taupe-ink);
+  font-variant-numeric:tabular-nums}
+.star{min-width:44px;min-height:44px;display:inline-flex;align-items:center;
+  justify-content:center;background:transparent;border:0;cursor:pointer;padding:0}
+
+/* Empty / zero-result states — type, rule and spacing only. Never a bare panel. */
+.state{padding:32px var(--pad)}
+.state h3{font-size:22px;line-height:1.25;font-weight:600;margin:0 0 8px}
+.state p{font-size:16px;line-height:1.6;margin:0 0 24px;max-width:62ch}
+.btn{display:block;width:100%;min-height:52px;background:var(--moss);color:var(--on-moss);
+  border:1px solid var(--moss);border-radius:var(--r-sm);font-family:var(--serif);
+  font-size:16px;line-height:1.6;cursor:pointer}
+.btn.quiet{background:transparent;color:var(--ink);border:1px solid var(--taupe)}
+.why{margin:0;padding:0;list-style:none;border-top:1px solid var(--taupe)}
+.why li{border-bottom:1px solid var(--taupe)}
+.why button{width:100%;min-height:44px;display:flex;align-items:baseline;
+  justify-content:space-between;gap:12px;background:transparent;border:0;padding:10px 0;
+  font-family:var(--serif);font-size:16px;line-height:1.6;color:var(--ink);cursor:pointer;
+  text-align:left}
+.why .n{font-size:13px;line-height:1.45;color:var(--taupe-ink);
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.fab{padding:16px var(--pad);border-top:1px solid var(--taupe)}
+
+/* Wide (>=700px): centred band, rows in two columns */
+.band{max-width:none;padding:0}
+.cols{display:grid;grid-template-columns:1fr 1fr}
+.cols .row:nth-child(odd){border-right:1px solid var(--taupe)}
+@media (max-width:900px){ .wide .cols{grid-template-columns:1fr}
+  .wide .cols .row:nth-child(odd){border-right:0} }
+</style>
+
+<div class="sheet">
+<h1>KitchenCraft — the Collection screen</h1>
+<p class="lede">Identity <strong>Beige Ledger</strong>, drawn strictly from the drafted spines. Canonical
+state first, then the two load-bearing alternates and the wide peer layout. Every
+string is the spine's own wording. No imagery of any kind appears: the only glyphs
+are functional.</p>
+
+<div class="grid">
+
+  <!-- ============ 1. CANONICAL: populated, filters active ============ -->
+  <div>
+    <p class="cap">1 · Populated · pantry filter active</p>
+    <div class="phone"><div class="app">
+
+      <div class="bar">
+        <h2>KitchenCraft</h2>
+        <button class="iconbtn" aria-label="Shopping list, 4 items">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="#141310" stroke-width="1.6" aria-hidden="true">
+            <path d="M4 8h16l-1.4 11.2A2 2 0 0 1 16.6 21H7.4a2 2 0 0 1-2-1.8L4 8Z"/>
+            <path d="M9 8V6a3 3 0 0 1 6 0v2"/>
+          </svg>
+          <span class="n">4</span>
+        </button>
+      </div>
+
+      <div class="head">
+        <label class="lab" for="s1">Search</label>
+        <div class="field">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6E5541"
+               stroke-width="1.6" aria-hidden="true">
+            <circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/>
+          </svg>
+          <input id="s1" type="text" value="" aria-label="Search names and recipe text">
+        </div>
+
+        <div class="fgroup">
+          <span class="lab">Meal type</span>
+          <div class="chips">
+            <button class="chip on">dinner</button>
+            <button class="chip">lunch</button>
+            <button class="chip">dessert</button>
+          </div>
+        </div>
+
+        <div class="fgroup">
+          <span class="lab">Ingredients</span>
+          <div class="chips">
+            <button class="chip on">chicken</button>
+            <button class="chip on">onion</button>
+            <button class="chip">chickpeas</button>
+          </div>
+        </div>
+
+        <p class="count">6 of 42 recipes call for chicken + onion</p>
+      </div>
+
+      <ul class="rows">
+        <li class="row">
+          <span class="txt">
+            <span class="name">Lemon-oregano chicken thighs</span><br>
+            <span class="meta">dinner · 40 min</span>
+          </span>
+          <button class="star" aria-label="Remove from favourites">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#141310" aria-hidden="true">
+              <path d="M12 3.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.8l6.1-.7L12 3.5Z"/>
+            </svg>
+          </button>
+        </li>
+        <li class="row">
+          <span class="txt">
+            <span class="name">Nan's Sunday gravy</span><br>
+            <span class="meta">dinner · 3 hr</span>
+          </span>
+          <button class="star" aria-label="Remove from favourites">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#141310" aria-hidden="true">
+              <path d="M12 3.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.8l6.1-.7L12 3.5Z"/>
+            </svg>
+          </button>
+        </li>
+        <!-- absence rule: no meal type, no time -> a ONE-LINE row -->
+        <li class="row">
+          <span class="txt"><span class="name">Chicken and onion traybake, the lazy one</span></span>
+          <button class="star" aria-label="Add to favourites">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#141310"
+                 stroke-width="1.5" aria-hidden="true">
+              <path d="M12 3.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.8l6.1-.7L12 3.5Z"/>
+            </svg>
+          </button>
+        </li>
+        <li class="row">
+          <span class="txt">
+            <span class="name">Leftover-rice egg fried rice</span><br>
+            <span class="meta">dinner · 15 min</span>
+          </span>
+          <button class="star" aria-label="Add to favourites">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#141310"
+                 stroke-width="1.5" aria-hidden="true">
+              <path d="M12 3.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.8l6.1-.7L12 3.5Z"/>
+            </svg>
+          </button>
+        </li>
+        <li class="row">
+          <span class="txt"><span class="name">Onion soup, the one off the back of the packet</span></span>
+          <button class="star" aria-label="Add to favourites">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#141310"
+                 stroke-width="1.5" aria-hidden="true">
+              <path d="M12 3.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.8l6.1-.7L12 3.5Z"/>
+            </svg>
+          </button>
+        </li>
+      </ul>
+
+      <div class="fab"><button class="btn">Add a recipe</button></div>
+    </div></div>
+    <p class="note">Two favourites sorted above everything, marked with a filled ink
+      star — never moss, because the mark is status, not a control's state. Rows three
+      and five carry no meal type and no time, so they are one-line rows: the absence
+      rule, visible.</p>
+  </div>
+
+  <!-- ============ 2. EMPTY ============ -->
+  <div>
+    <p class="cap">2 · Empty collection</p>
+    <div class="phone"><div class="app">
+      <div class="bar">
+        <h2>KitchenCraft</h2>
+        <button class="iconbtn" aria-label="Shopping list, empty">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#141310"
+               stroke-width="1.6" aria-hidden="true">
+            <path d="M4 8h16l-1.4 11.2A2 2 0 0 1 16.6 21H7.4a2 2 0 0 1-2-1.8L4 8Z"/>
+            <path d="M9 8V6a3 3 0 0 1 6 0v2"/>
+          </svg>
+        </button>
+      </div>
+      <div class="state">
+        <h3>No recipes yet.</h3>
+        <p>Paste a name and the text and it's saved. Nothing else is required.</p>
+        <button class="btn">Add a recipe</button>
+      </div>
+    </div></div>
+    <p class="note">No search field and no filter bar: there is nothing to search or
+      filter. Type, rule and spacing carry the state — no illustration, and not a bare
+      panel either.</p>
+  </div>
+
+  <!-- ============ 3. ZERO RESULTS ============ -->
+  <div>
+    <p class="cap">3 · Zero results · explains why</p>
+    <div class="phone"><div class="app">
+      <div class="bar">
+        <h2>KitchenCraft</h2>
+        <button class="iconbtn" aria-label="Shopping list, 4 items">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#141310"
+               stroke-width="1.6" aria-hidden="true">
+            <path d="M4 8h16l-1.4 11.2A2 2 0 0 1 16.6 21H7.4a2 2 0 0 1-2-1.8L4 8Z"/>
+            <path d="M9 8V6a3 3 0 0 1 6 0v2"/>
+          </svg>
+          <span class="n">4</span>
+        </button>
+      </div>
+
+      <div class="head">
+        <label class="lab" for="s3">Search</label>
+        <div class="field focus">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6E5541"
+               stroke-width="1.6" aria-hidden="true">
+            <circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/>
+          </svg>
+          <input id="s3" type="text" value="crumble" aria-label="Search names and recipe text">
+        </div>
+        <div class="fgroup">
+          <span class="lab">Meal type</span>
+          <div class="chips">
+            <button class="chip on">dinner</button>
+            <button class="chip">lunch</button>
+            <button class="chip">dessert</button>
+          </div>
+        </div>
+        <div class="fgroup">
+          <span class="lab">Ingredients</span>
+          <div class="chips">
+            <button class="chip on">chickpeas</button>
+            <button class="chip on">rhubarb</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="state">
+        <h3>Nothing matches all of these.</h3>
+        <ul class="why">
+          <li><button>chickpeas<span class="n">7 on its own</span></button></li>
+          <li><button>rhubarb<span class="n">3 on its own</span></button></li>
+          <li><button>dinner<span class="n">22 on its own</span></button></li>
+          <li><button>“crumble”<span class="n">2 on its own</span></button></li>
+        </ul>
+        <p class="note" style="margin:16px 0 24px">Each line clears that one filter.</p>
+        <button class="btn quiet">Clear filters</button>
+      </div>
+    </div></div>
+    <p class="note">The state the deleted exploration earned its place with, kept on
+      behavioural merit: it says <em>why</em> nothing matched instead of only offering
+      the exit. The search field shows the 2px moss focus ring at 1px offset.</p>
+  </div>
+
+</div>
+
+<!-- ============ 4. WIDE PEER ============ -->
+<p class="cap" style="margin-top:32px">4 · Wide (≥700px) · the peer layout, rows in two columns</p>
+<div class="wide"><div class="app">
+  <div class="bar">
+    <h2>KitchenCraft</h2>
+    <button class="iconbtn" aria-label="Shopping list, 4 items">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#141310"
+           stroke-width="1.6" aria-hidden="true">
+        <path d="M4 8h16l-1.4 11.2A2 2 0 0 1 16.6 21H7.4a2 2 0 0 1-2-1.8L4 8Z"/>
+        <path d="M9 8V6a3 3 0 0 1 6 0v2"/>
+      </svg>
+      <span class="n">4</span>
+    </button>
+  </div>
+
+  <div class="head">
+    <label class="lab" for="s4">Search</label>
+    <div class="field">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6E5541"
+           stroke-width="1.6" aria-hidden="true">
+        <circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/>
+      </svg>
+      <input id="s4" type="text" value="" aria-label="Search names and recipe text">
+    </div>
+    <div class="fgroup">
+      <span class="lab">Meal type</span>
+      <div class="chips">
+        <button class="chip on">dinner</button><button class="chip">lunch</button>
+        <button class="chip">breakfast</button><button class="chip">snack</button>
+        <button class="chip">dessert</button><button class="chip">other</button>
+      </div>
+    </div>
+    <div class="fgroup">
+      <span class="lab">Ingredients</span>
+      <div class="chips">
+        <button class="chip on">chicken</button><button class="chip on">onion</button>
+        <button class="chip">chickpeas</button><button class="chip">rhubarb</button>
+      </div>
+    </div>
+    <p class="count">6 of 42 recipes call for chicken + onion</p>
+  </div>
+
+  <ul class="rows cols">
+    <li class="row">
+      <span class="txt"><span class="name">Lemon-oregano chicken thighs</span><br>
+        <span class="meta">dinner · 40 min</span></span>
+      <button class="star" aria-label="Remove from favourites">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#141310" aria-hidden="true">
+          <path d="M12 3.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.8l6.1-.7L12 3.5Z"/>
+        </svg>
+      </button>
+    </li>
+    <li class="row">
+      <span class="txt"><span class="name">Nan's Sunday gravy</span><br>
+        <span class="meta">dinner · 3 hr</span></span>
+      <button class="star" aria-label="Remove from favourites">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#141310" aria-hidden="true">
+          <path d="M12 3.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.8l6.1-.7L12 3.5Z"/>
+        </svg>
+      </button>
+    </li>
+    <li class="row">
+      <span class="txt"><span class="name">Chicken and onion traybake, the lazy one</span></span>
+      <button class="star" aria-label="Add to favourites">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#141310"
+             stroke-width="1.5" aria-hidden="true">
+          <path d="M12 3.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.8l6.1-.7L12 3.5Z"/>
+        </svg>
+      </button>
+    </li>
+    <li class="row">
+      <span class="txt"><span class="name">Leftover-rice egg fried rice</span><br>
+        <span class="meta">dinner · 15 min</span></span>
+      <button class="star" aria-label="Add to favourites">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#141310"
+             stroke-width="1.5" aria-hidden="true">
+          <path d="M12 3.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.8l6.1-.7L12 3.5Z"/>
+        </svg>
+      </button>
+    </li>
+    <li class="row">
+      <span class="txt"><span class="name">Onion soup, the one off the back of the packet</span></span>
+      <button class="star" aria-label="Add to favourites">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#141310"
+             stroke-width="1.5" aria-hidden="true">
+          <path d="M12 3.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.8l6.1-.7L12 3.5Z"/>
+        </svg>
+      </button>
+    </li>
+    <li class="row">
+      <span class="txt"><span class="name">Roast chicken, Thursday version</span><br>
+        <span class="meta">dinner · 1 hr 20 min</span></span>
+      <button class="star" aria-label="Add to favourites">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#141310"
+             stroke-width="1.5" aria-hidden="true">
+          <path d="M12 3.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.8l6.1-.7L12 3.5Z"/>
+        </svg>
+      </button>
+    </li>
+  </ul>
+
+  <div class="fab"><button class="btn" style="max-width:280px">Add a recipe</button></div>
+</div></div>
+<p class="note" style="max-width:62ch">Rows go to two columns, favourites still first,
+  reading left-to-right then down. Search and the filter bar span the band. Nothing grows
+  a longer line and nothing shrinks — the wide window buys margin, not density. Narrow this
+  window past 900px to see it fold back to one column.</p>
+
+</div>

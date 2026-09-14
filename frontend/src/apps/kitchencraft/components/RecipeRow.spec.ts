@@ -1,0 +1,156 @@
+import { describe, it, expect, beforeEach } from "vitest";
+import { mount } from "@vue/test-utils";
+import RecipeRow from "@/apps/kitchencraft/components/RecipeRow.vue";
+import { recipe, resetRecipeFixture } from "@/apps/kitchencraft/recipe.fixture";
+import type { Recipe } from "@/apps/kitchencraft/types";
+
+beforeEach(resetRecipeFixture);
+
+function mountRow(over: Partial<Recipe> = {}) {
+  const subject = recipe(over);
+  return { wrapper: mount(RecipeRow, { props: { recipe: subject } }), subject };
+}
+
+describe("what the row shows", () => {
+  it("always shows the name", () => {
+    const { wrapper } = mountRow({ name: "Pumpkin dal" });
+    expect(wrapper.text()).toContain("Pumpkin dal");
+  });
+
+  it("is a genuine one-line row with no meal type and no time", () => {
+    // The absence rule: not a two-line row with an empty second line.
+    const { wrapper } = mountRow();
+    expect(wrapper.find('[data-testid="row-meta"]').exists()).toBe(false);
+  });
+
+  it("shows meal type and time on a second line when present", () => {
+    const { wrapper } = mountRow({
+      meal_type: "dinner",
+      total_time_minutes: 40,
+    });
+    expect(wrapper.find('[data-testid="row-meta"]').text()).toBe(
+      "dinner · 40 min",
+    );
+  });
+
+  it("shows just the meal type when there is no time", () => {
+    const { wrapper } = mountRow({ meal_type: "lunch" });
+    expect(wrapper.find('[data-testid="row-meta"]').text()).toBe("lunch");
+  });
+
+  it("has no chevron, no card and no fill", () => {
+    const { wrapper } = mountRow();
+    expect(wrapper.html()).not.toContain("chevron");
+    expect(wrapper.find(".kc-row").classes()).not.toContain("kc-chip--on");
+  });
+});
+
+describe("the favourites glyph", () => {
+  it("toggles the favourite without opening the recipe", async () => {
+    const { wrapper, subject } = mountRow();
+    await wrapper
+      .find(`[data-testid="favourite-${subject.id}"]`)
+      .trigger("click");
+
+    expect(wrapper.emitted("toggle-favourite")).toHaveLength(1);
+    // Crucially, no `open` — tapping the star must not navigate.
+    expect(wrapper.emitted("open")).toBeUndefined();
+  });
+
+  it("opens the recipe when the rest of the row is tapped", async () => {
+    const { wrapper, subject } = mountRow();
+    await wrapper.find(`[data-testid="row-${subject.id}"]`).trigger("click");
+
+    expect(wrapper.emitted("open")).toHaveLength(1);
+    expect(wrapper.emitted("toggle-favourite")).toBeUndefined();
+  });
+
+  it("announces its state in words as well as in shape", () => {
+    // Colour is never the sole signal (UX-DR17).
+    const off = mountRow({ favourite: false }).wrapper.find(".kc-heart");
+    expect(off.attributes("aria-label")).toBe("Favourite, off");
+    expect(off.attributes("aria-pressed")).toBe("false");
+
+    const on = mountRow({ favourite: true }).wrapper.find(".kc-heart");
+    expect(on.attributes("aria-label")).toBe("Favourite, on");
+    expect(on.attributes("aria-pressed")).toBe("true");
+  });
+
+  it("changes SHAPE between states, not just colour", () => {
+    // Filled heart versus outlined — legible with colour off entirely.
+    const off = mountRow({ favourite: false }).wrapper.find(".kc-heart svg");
+    const on = mountRow({ favourite: true }).wrapper.find(".kc-heart svg");
+    expect(off.attributes("fill")).toBe("none");
+    expect(on.attributes("fill")).toBe("currentColor");
+  });
+
+  it("carries the mark in ink, never in moss", () => {
+    // Moss means "pressable" across the dock; the mark is status.
+    const { wrapper } = mountRow({ favourite: true });
+    expect(wrapper.find(".kc-heart").classes()).toContain("kc-heart");
+    expect(wrapper.html()).not.toMatch(/kc-chip--on|--kc-moss/);
+  });
+});
+
+describe("the rating on the row", () => {
+  it("renders the recipe's rating", () => {
+    const { wrapper, subject } = mountRow({ rating: 4 });
+    const filled = wrapper
+      .findAll(`[data-testid^="rating-${subject.id}-"] svg`)
+      .filter((s) => s.attributes("fill") === "currentColor");
+    expect(filled).toHaveLength(4);
+  });
+
+  it("emits rate without opening the recipe", async () => {
+    const { wrapper, subject } = mountRow();
+    await wrapper
+      .find(`[data-testid="rating-${subject.id}-3"]`)
+      .trigger("click");
+
+    expect(wrapper.emitted("rate")).toEqual([[3]]);
+    // The whole point of the separate target: the row must not navigate.
+    expect(wrapper.emitted("open")).toBeUndefined();
+  });
+
+  it("emits null when the current rating is tapped again", async () => {
+    const { wrapper, subject } = mountRow({ rating: 3 });
+    await wrapper
+      .find(`[data-testid="rating-${subject.id}-3"]`)
+      .trigger("click");
+    expect(wrapper.emitted("rate")).toEqual([[null]]);
+  });
+
+  it("does not touch the favourite", async () => {
+    const { wrapper, subject } = mountRow({ favourite: true });
+    await wrapper
+      .find(`[data-testid="rating-${subject.id}-5"]`)
+      .trigger("click");
+    expect(wrapper.emitted("toggle-favourite")).toBeUndefined();
+  });
+
+  it("keeps the heart and the stars as separate targets", async () => {
+    const { wrapper, subject } = mountRow();
+    await wrapper
+      .find(`[data-testid="favourite-${subject.id}"]`)
+      .trigger("click");
+
+    expect(wrapper.emitted("toggle-favourite")).toHaveLength(1);
+    expect(wrapper.emitted("rate")).toBeUndefined();
+    expect(wrapper.emitted("open")).toBeUndefined();
+  });
+
+  it("still opens from the name", async () => {
+    const { wrapper, subject } = mountRow({ rating: 2 });
+    await wrapper.find(`[data-testid="row-${subject.id}"]`).trigger("click");
+    expect(wrapper.emitted("open")).toHaveLength(1);
+  });
+
+  it("shows the rating control even on an unrated recipe", () => {
+    // It is a control, not a value — so absence means five outlined stars,
+    // never a hidden control the user cannot find.
+    const { wrapper, subject } = mountRow({ rating: null });
+    expect(wrapper.find(`[data-testid="rating-${subject.id}"]`).exists()).toBe(
+      true,
+    );
+  });
+});
