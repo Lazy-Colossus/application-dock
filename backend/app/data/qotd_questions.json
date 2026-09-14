@@ -1,0 +1,98 @@
+[
+  { "id": "q-0001", "text": "What's a small thing that made you smile today?", "type": "text" },
+  { "id": "q-0002", "text": "What's the last thing you looked up because you genuinely didn't know?", "type": "text" },
+  {
+    "id": "q-0003", "text": "How's your energy today?", "type": "scale",
+    "scale": { "min": 1, "max": 5, "min_label": "Flat", "max_label": "Buzzing" }
+  },
+  { "id": "q-0004", "text": "What's something you're looking forward to this week?", "type": "text" },
+  { "id": "q-0005", "text": "What did you eat that was worth eating?", "type": "text" },
+  {
+    "id": "q-0006", "text": "How much of today went the way you planned?", "type": "scale",
+    "scale": { "min": 1, "max": 5, "min_label": "None of it", "max_label": "All of it" }
+  },
+  { "id": "q-0007", "text": "Who did you think about today who doesn't know it?", "type": "text" },
+  { "id": "q-0008", "text": "What's a song you've had on repeat lately?", "type": "text" },
+  {
+    "id": "q-0009", "text": "How well did you sleep last night?", "type": "scale",
+    "scale": { "min": 1, "max": 5, "min_label": "Barely", "max_label": "Like a stone" }
+  },
+  { "id": "q-0010", "text": "What's the best thing you've read, watched or listened to recently?", "type": "text" },
+  { "id": "q-0011", "text": "What's something you keep meaning to do and haven't?", "type": "text" },
+  {
+    "id": "q-0012", "text": "How social are you feeling right now?", "type": "scale",
+    "scale": { "min": 1, "max": 5, "min_label": "Leave me be", "max_label": "Who's free?" }
+  },
+  { "id": "q-0013", "text": "What made you laugh most recently?", "type": "text" },
+  { "id": "q-0014", "text": "What's a skill you'd like to have by this time next year?", "type": "text" },
+  {
+    "id": "q-0015", "text": "How's the weather where you are — honestly?", "type": "scale",
+    "scale": { "min": 1, "max": 5, "min_label": "Grim", "max_label": "Glorious" }
+  },
+  { "id": "q-0016", "text": "What's the oldest thing you own that you still use?", "type": "text" },
+  { "id": "q-0017", "text": "Where would you go right now if the travel were free and instant?", "type": "text" },
+  {
+    "id": "q-0018", "text": "How stretched do you feel this week?", "type": "scale",
+    "scale": { "min": 1, "max": 5, "min_label": "Plenty of room", "max_label": "At capacity" }
+  },
+  { "id": "q-0019", "text": "What's a piece of advice you've actually taken?", "type": "text" },
+  { "id": "q-0020", "text": "What's something you changed your mind about?", "type": "text" },
+  {
+    "id": "q-0021", "text": "How ready are you for the week ahead?", "type": "scale",
+    "scale": { "min": 1, "max": 5, "min_label": "Not remotely", "max_label": "Bring it on" }
+  },
+  { "id": "q-0022", "text": "What's the last photo you took?", "type": "text" },
+  { "id": "q-0023", "text": "What's a smell that takes you somewhere else?", "type": "text" },
+  {
+    "id": "q-0024", "text": "How much did you move today?", "type": "scale",
+    "scale": { "min": 1, "max": 5, "min_label": "Desk to kettle", "max_label": "Properly out" }
+  },
+  { "id": "q-0025", "text": "What's something you're better at than you were a year ago?", "type": "text" },
+  { "id": "q-0026", "text": "What would you do with an unexpected free afternoon?", "type": "text" },
+  {
+    "id": "q-0027", "text": "How much are you looking forward to tomorrow?", "type": "scale",
+    "scale": { "min": 1, "max": 5, "min_label": "Not at all", "max_label": "Genuinely excited" }
+  },
+  { "id": "q-0028", "text": "What's a meal you could cook without a recipe?", "type": "text" },
+  { "id": "q-0029", "text": "Who taught you something that stuck?", "type": "text" },
+  {
+    "id": "q-0030", "text": "How's your patience holding up today?", "type": "scale",
+    "scale": { "min": 1, "max": 5, "min_label": "Threadbare", "max_label": "Infinite" }
+  },
+  { "id": "q-0031", "text": "What's the most useless fact you know?", "type": "text" },
+  { "id": "q-0032", "text": "What's something small you'd fix about where you live?", "type": "text" },
+  {
+    "id": "q-0033", "text": "How much of today was yours?", "type": "scale",
+    "scale": { "min": 1, "max": 5, "min_label": "None of it", "max_label": "Most of it" }
+  },
+  { "id": "q-0034", "text": "What's a habit you're glad you have?", "type": "text" },
+  { "id": "q-0035", "text": "What did you almost say today but didn't?", "type": "text" },
+  {
+    "id": "q-0036", "text": "How curious are you feeling lately?", "type": "scale",
+    "scale": { "min": 1, "max": 5, "min_label": "Heads down", "max_label": "Into everything" }
+  },
+  { "id": "q-0037", "text": "What's the best thing about this time of year?", "type": "text" },
+  { "id": "q-0038", "text": "What's something you'd happily do again for the first time?", "type": "text" },
+  {
+    "id": "q-0039", "text": "How's your focus been today?", "type": "scale",
+    "scale": { "min": 1, "max": 5, "min_label": "Scattered", "max_label": "Locked in" }
+  },
+  { "id": "q-0040", "text": "What's a thing you own that you'd replace immediately if it broke?", "type": "text" },
+  { "id": "q-0041", "text": "What's something you've been putting off that's smaller than it feels?", "type": "text" },
+  {
+    "id": "q-0042", "text": "How rested do you feel right now?", "type": "scale",
+    "scale": { "min": 1, "max": 5, "min_label": "Running on empty", "max_label": "Fully charged" }
+  },
+  { "id": "q-0043", "text": "What's the last kind thing someone did for you?", "type": "text" },
+  { "id": "q-0044", "text": "What would younger you be most surprised by?", "type": "text" },
+  {
+    "id": "q-0045", "text": "How's your week going so far?", "type": "scale",
+    "scale": { "min": 1, "max": 5, "min_label": "Write it off", "max_label": "One of the good ones" }
+  },
+  { "id": "q-0046", "text": "What's a place you keep going back to?", "type": "text" },
+  { "id": "q-0047", "text": "What's something you'd like to spend more time doing?", "type": "text" },
+  {
+    "id": "q-0048", "text": "How settled do you feel at the moment?", "type": "scale",
+    "scale": { "min": 1, "max": 5, "min_label": "All at sea", "max_label": "Feet on the ground" }
+  }
+]

@@ -34,6 +34,11 @@ def patch_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     from app.core.config import settings
 
     monkeypatch.setattr(settings, "data_dir", tmp_path)
+    # `get_current_user` returns a dev user when no JWT_SECRET_KEY is configured
+    # — the local-dev escape hatch — which is the default in this environment.
+    # Without a secret the 401 assertions below would answer 200 and prove
+    # nothing, and the SSE `?token=` path would not verify what it mints.
+    monkeypatch.setattr(settings, "jwt_secret_key", "test-secret-key-for-tests-only")
     for name in ("alice", "bob"):
         auth_service.create_user(name)
 

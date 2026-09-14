@@ -165,8 +165,11 @@ def test_concurrent_answers_by_different_users_all_persist(
     assert set(stored.answers.keys()) == set(names)  # none lost
 
 
-def test_answer_requires_auth() -> None:
+def test_answer_requires_auth(monkeypatch: pytest.MonkeyPatch) -> None:
     # With the auth override removed, the router-level dependency rejects.
+    # A secret is required for that to mean anything: `get_current_user` hands
+    # back a dev user when none is configured, so the route would answer 200.
+    monkeypatch.setattr("app.core.config.settings.jwt_secret_key", "test-secret-key-for-tests-only")
     app.dependency_overrides.pop(get_current_user, None)
     try:
         response = client.put("/api/qotd/today/answer", json={"text": "hi"})
