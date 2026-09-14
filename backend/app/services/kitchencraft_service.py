@@ -525,3 +525,168 @@ def add_shopping_items(username: str, texts: list[str], mode: str = "merge") -> 
             created.append(ShoppingItem(id=_new_item_id(), text=text, created_at=_now_iso()))
         shopping_list.items.extend(created)
     return created
+
+
+# -- Offline enrichment (Epic 4) ----------------------------------------------
+# Called by `backend/scripts/enrich.py`, never by a router. There is no HTTP
+# surface for any of this (PRD Q1) — the script runs inside the container and
+# goes through the repository layer, so it takes the same locks the app takes.
+
+
+def enrichment_report(username: str) -> dict[str, Any]:
+    """What a pass would need to know, without changing anything (Story 4.2).
+
+    Two halves: the recipes that are missing structure, and the wording the
+    collection already uses. The second half is what Story 4.4 is about — a pass
+    that cannot see the existing wording will invent a near-synonym for it.
+    """
+    doc = repo.read_doc(username)
+    gaps = []
+    for recipe in doc.recipes:
+        missing = [f for f in _MARKED_FIELDS if getattr(recipe, f) is None]
+        if not missing and recipe.tags and recipe.ingredients:
+            continue
+        gaps.append(
+            {
+                "id": recipe.id,
+                "name": recipe.name,
+                "body": recipe.body,
+                "missing_fields": missing,
+                "has_tags": bool(recipe.tags),
+                "has_ingredients": bool(recipe.ingredients),
+                "unconfirmed": list(recipe.unconfirmed),
+            }
+        )
+
+    return {
+        "username": username,
+        "recipe_count": len(doc.recipes),
+        "needing_attention": len(gaps),
+        "recipes": gaps,
+        # Reuse this wording. Introducing a near-synonym for something already
+        # here is the drift Story 4.4 exists to prevent.
+        "vocabulary": {
+            "tags": _tag_vocabulary(doc),
+            "ingredients": _ingredient_vocabulary(doc),
+            "units": _unit_vocabulary(doc),
+        },
+    }
+
+
+def _enrich_one(recipe: Recipe, values: dict[str, Any]) -> list[str]:
+    """Apply one recipe's inferred values in place; return what was skipped.
+
+    **A user-set value is never overwritten.** A field the user set carries no
+    mark, so "not marked and not empty" is the test for "leave it alone" —
+    which is also what makes a re-run a no-op rather than a fight.
+    """
+    marked = set(recipe.unconfirmed)
+    skipped: list[str] = []
+
+    for field in _MARKED_FIELDS:
+        if field not in values:
+            continue
+        current = getattr(recipe, field)
+        if current is not None and field not in marked:
+            skipped.append(field)
+            continue
+        new = values[field]
+        if field in ("total_time_minutes", "servings") and new is not None:
+            new = _positive_int(new, field)
+        if current != new:
+            setattr(recipe, field, new)
+        marked.add(field)
+
+    if "tags" in values:
+        known = {t.casefold(): t for t in recipe.tags}
+        for raw in values["tags"]:
+            tag = (raw or "").strip()
+            if not tag or tag.casefold() in known:
+                continue
+            recipe.tags.append(tag)
+            marked.add(f"tag:{tag}")
+            known[tag.casefold()] = tag
+
+    if "ingredients" in values:
+        # A recipe whose ingredients the user entered is left entirely alone:
+        # adding to a hand-written list would be editing their work, not
+        # filling a gap.
+        user_set = recipe.ingredients and not any(k.startswith("ingredient:") for k in marked)
+        if user_set:
+            skipped.append("ingredients")
+        else:
+            known = {i.text.casefold() for i in recipe.ingredients}
+            incoming = [Ingredient.model_validate(i) for i in values["ingredients"]]
+            for ingredient in _clean_ingredients(incoming, [i.text for i in recipe.ingredients]):
+                if ingredient.text.casefold() in known:
+                    continue
+                recipe.ingredients.append(ingredient)
+                marked.add(f"ingredient:{ingredient.text}")
+                known.add(ingredient.text.casefold())
+
+    recipe.unconfirmed = sorted(marked)
+    return skipped
+
+
+def _apply_batch(doc: KitchencraftDoc, updates: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    """The whole batch against one document. Shared by the dry run and the real run."""
+    applied: list[str] = []
+    unchanged: list[str] = []
+    unknown: list[str] = []
+    skipped: dict[str, list[str]] = {}
+
+    by_id = {r.id: r for r in doc.recipes}
+    for recipe_id, values in updates.items():
+        recipe = by_id.get(recipe_id)
+        if recipe is None:
+            unknown.append(recipe_id)
+            continue
+
+        before = recipe.model_copy(deep=True)
+        left_alone = _enrich_one(recipe, values)
+        if left_alone:
+            skipped[recipe_id] = left_alone
+
+        # The body is never touched by any of this, so it is restored rather
+        # than trusted (FR-5, NFR-3).
+        recipe.body = before.body
+
+        if recipe == before:
+            unchanged.append(recipe_id)
+            continue
+        recipe.updated_at = _now_iso()
+        applied.append(recipe_id)
+
+    return {
+        "applied": applied,
+        "unchanged": unchanged,
+        "unknown": unknown,
+        "skipped": skipped,
+    }
+
+
+def apply_enrichment(
+    username: str, updates: dict[str, dict[str, Any]], *, write: bool = False
+) -> dict[str, Any]:
+    """Apply inferred structure to many recipes in one run (Story 4.3).
+
+    `updates` is keyed by **recipe id**, never by name, so a batch still lands
+    after the user has renamed something (FR-20).
+
+    Without `write=True` nothing is persisted: the batch runs against a document
+    read outside any transaction, which is then discarded. Both paths call
+    `_apply_batch`, so what the dry run reports is exactly what the real run
+    does — a dry run that used different code would be worth very little.
+
+    The real run holds the document's lock across the whole batch and writes
+    once at the end, so an interruption leaves every recipe in a valid state
+    rather than some of them half-written. An unknown id is reported and the
+    rest of the batch still applies. A re-run of an identical batch changes
+    nothing, so `updated_at` does not churn.
+    """
+    if write:
+        with repo.doc_transaction(username) as doc:
+            result = _apply_batch(doc, updates)
+        return {"write": True, **result}
+
+    return {"write": False, **_apply_batch(repo.read_doc(username), updates)}
