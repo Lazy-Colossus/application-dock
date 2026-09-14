@@ -7,34 +7,37 @@
       (FR-13, Story 2.7 AC 2).
     -->
     <div class="kc-row__main">
-      <button
-        type="button"
-        class="kc-row__open"
-        :data-testid="`row-${recipe.id}`"
-        @click="emit('open')"
-      >
-        <span class="kc-body">{{ recipe.name }}</span>
-      </button>
-
       <!--
-        The rating sits on the meta line rather than the trailing edge: five
-        touch-sized targets plus the heart do not fit beside a name at phone
-        width (Story 2.7 AC 5).
+        The name and the rating share the first line. They are siblings rather
+        than nested, because the name navigates and the rating must not.
+
+        The line WRAPS instead of truncating: five targets plus the heart still
+        do not fit beside a long name at 375px (the constraint Story 2.7 AC 5
+        named), and a clipped recipe name is a worse answer than stars that drop
+        to their own line on a narrow screen.
       -->
-      <div class="kc-row__meta">
+      <div class="kc-row__line">
+        <button
+          type="button"
+          class="kc-row__open"
+          :data-testid="`row-${recipe.id}`"
+          @click="emit('open')"
+        >
+          <span class="kc-body">{{ recipe.name }}</span>
+        </button>
+
         <RatingStars
           :model-value="recipe.rating"
           :testid="`rating-${recipe.id}`"
           @update:model-value="emit('rate', $event)"
         />
-        <!--
-          The absence rule: with no meal type and no time there is nothing here
-          but the stars.
-        -->
-        <span v-if="meta" class="kc-meta" data-testid="row-meta">{{
-          meta
-        }}</span>
       </div>
+
+      <!--
+        The absence rule: with no meal type and no time there is no second line
+        at all.
+      -->
+      <span v-if="meta" class="kc-meta" data-testid="row-meta">{{ meta }}</span>
     </div>
 
     <button

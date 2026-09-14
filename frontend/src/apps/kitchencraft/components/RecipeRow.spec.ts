@@ -154,3 +154,46 @@ describe("the rating on the row", () => {
     );
   });
 });
+
+describe("how the two lines are laid out", () => {
+  it("puts the name and the rating on the same line", async () => {
+    const { wrapper, subject } = mountRow({ name: "Beef ragu", rating: 4 });
+    const line = wrapper.find(".kc-row__line");
+
+    expect(line.find(`[data-testid="row-${subject.id}"]`).exists()).toBe(true);
+    expect(line.find(`[data-testid="rating-${subject.id}"]`).exists()).toBe(
+      true,
+    );
+  });
+
+  it("keeps the rating OUT of the name's button, so stars never navigate", async () => {
+    const { wrapper, subject } = mountRow({ rating: 3 });
+    const open = wrapper.find(`[data-testid="row-${subject.id}"]`);
+    // Siblings, not nested: this is what makes "a star does not open the
+    // recipe" structural rather than a handler that remembers to stop.
+    expect(open.find(`[data-testid="rating-${subject.id}"]`).exists()).toBe(
+      false,
+    );
+  });
+
+  it("keeps meal type and time on the second line, below both", async () => {
+    const { wrapper } = mountRow({
+      meal_type: "dinner",
+      total_time_minutes: 40,
+    });
+    const meta = wrapper.find('[data-testid="row-meta"]');
+    expect(meta.text()).toBe("dinner · 40 min");
+    // Below the name/rating line, not inside it.
+    expect(
+      wrapper.find(".kc-row__line [data-testid='row-meta']").exists(),
+    ).toBe(false);
+  });
+
+  it("still shows the rating when there is no second line at all", async () => {
+    const { wrapper, subject } = mountRow({ rating: 2 });
+    expect(wrapper.find('[data-testid="row-meta"]').exists()).toBe(false);
+    expect(wrapper.find(`[data-testid="rating-${subject.id}"]`).exists()).toBe(
+      true,
+    );
+  });
+});

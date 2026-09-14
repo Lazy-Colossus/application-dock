@@ -293,11 +293,20 @@
   padding: 10px var(--kc-pad)
   min-height: 64px
 
-// Only the name opens the recipe. The meta line below it carries the rating,
-// which must not navigate.
+// The name and the rating share the first line, as siblings — only the name
+// opens the recipe. Wraps rather than truncating: a clipped recipe name is
+// worse than stars dropping to their own line on a narrow phone.
+.kc-row__line
+  display: flex
+  align-items: center
+  flex-wrap: wrap
+  gap: 4px 8px
+
+// Only the name opens the recipe.
 .kc-row__open
   display: block
-  width: 100%
+  flex: 1 1 auto
+  min-width: 0
   text-align: left
   background: transparent
   border: 0
@@ -309,15 +318,6 @@
 .kc-row__open:focus-visible
   outline: 2px solid var(--kc-moss)
   outline-offset: 2px
-
-// Stars and the meta text share this line. It wraps rather than overflowing, so
-// a long "1 hr 30 min" drops below the stars on a narrow phone instead of
-// pushing the row sideways.
-.kc-row__meta
-  display: flex
-  align-items: center
-  flex-wrap: wrap
-  gap: 4px 8px
 
 // The favourites mark is an ink glyph and a SHAPE change - filled versus
 // outlined - never a colour of its own and never moss. It wears the heart since
