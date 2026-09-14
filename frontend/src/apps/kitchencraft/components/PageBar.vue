@@ -20,7 +20,7 @@
         class="kc-icon-btn"
         aria-label="Shopping list"
         data-testid="open-shopping"
-        @click="open = true"
+        @click="store.open()"
       >
         <svg
           width="20"
@@ -40,12 +40,12 @@
     </div>
   </div>
 
-  <ShoppingListModal v-if="open" @close="open = false" />
+  <ShoppingListModal v-if="store.isOpen" @close="store.close()" />
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
 import ShoppingListModal from "@/apps/kitchencraft/components/ShoppingListModal.vue";
+import { useShoppingListStore } from "@/apps/kitchencraft/stores/useShoppingListStore";
 
 /**
  * The bar every KitchenCraft screen wears, and the shopping list it opens.
@@ -57,8 +57,12 @@ import ShoppingListModal from "@/apps/kitchencraft/components/ShoppingListModal.
  *
  * Not in the dock's `MainLayout`: the spec says every *KitchenCraft* screen,
  * which is narrower than every dock screen, and app code stays inside the app.
+ *
+ * The open flag moved into the store in Story 3.3, because the bar is no longer
+ * the only thing that opens the list — "View list" after sending a recipe's
+ * ingredients does too.
  */
 withDefaults(defineProps<{ title?: string | null }>(), { title: null });
 
-const open = ref(false);
+const store = useShoppingListStore();
 </script>

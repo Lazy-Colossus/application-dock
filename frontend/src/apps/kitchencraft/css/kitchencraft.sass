@@ -541,6 +541,16 @@
   flex: none
   color: var(--kc-ink)
 
+// The native control, sized to the grid and coloured in ink like every other
+// mark. `accent-color` is the whole styling — no custom box to keep in step
+// with the browser's own checked state.
+.kc-checkbox
+  flex: none
+  width: 18px
+  height: 18px
+  accent-color: var(--kc-ink)
+  cursor: pointer
+
 // Trailing target, set in from the edge the way the collection row's own
 // trailing glyph is.
 .kc-shop-row__delete

@@ -476,3 +476,29 @@ def clear_shopping_list(username: str) -> None:
     """
     with repo.shopping_transaction(username) as shopping_list:
         shopping_list.items = []
+
+
+def add_shopping_items(username: str, texts: list[str]) -> list[ShoppingItem]:
+    """Append several items in one transaction (Story 3.3).
+
+    One lock and one write for the whole batch, so a recipe's ingredients either
+    all land or none do.
+
+    Blank entries are skipped rather than rejecting the batch: the caller is a
+    checkbox list, and one empty label should not cost the user the other nine.
+    An all-blank batch adds nothing and is not an error.
+
+    The items are ordinary `ShoppingItem`s. Nothing records which recipe they
+    came from — on the list they are text like any other, which is what lets
+    `chicken thighs` become `2 packs chicken thighs` (FR-16).
+    """
+    clean = [text.strip() for text in texts]
+    items = [
+        ShoppingItem(id=_new_item_id(), text=text, created_at=_now_iso()) for text in clean if text
+    ]
+    if not items:
+        return []
+
+    with repo.shopping_transaction(username) as shopping_list:
+        shopping_list.items.extend(items)
+    return items

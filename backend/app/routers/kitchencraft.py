@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.core.dependencies import get_current_user
 from app.schemas.kitchencraft import (
     AddShoppingItemRequest,
+    AddShoppingItemsRequest,
     CreateRecipeRequest,
     Recipe,
     ShoppingItem,
@@ -114,6 +115,15 @@ def add_shopping_item(
         return service.add_shopping_item(current_user, req.text)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+# Declared before the parameterised routes so "bulk" is never read as an id.
+@router.post("/shopping-list/items/bulk", response_model=list[ShoppingItem])
+def add_shopping_items(
+    req: AddShoppingItemsRequest,
+    current_user: str = Depends(get_current_user),
+) -> list[ShoppingItem]:
+    return service.add_shopping_items(current_user, req.texts)
 
 
 @router.put("/shopping-list/items/{item_id}", response_model=ShoppingItem)

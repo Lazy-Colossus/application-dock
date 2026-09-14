@@ -355,3 +355,86 @@ describe("what a failure says", () => {
     expect(store.error).toBeNull();
   });
 });
+
+describe("addItems", () => {
+  it("sends the whole batch as one request", async () => {
+    const store = await loadedStore([]);
+    postMock.mockResolvedValueOnce([
+      item({ text: "thighs" }),
+      item({ text: "garlic" }),
+    ]);
+
+    await store.addItems(["thighs", "garlic"]);
+
+    expect(postMock).toHaveBeenCalledTimes(1);
+    expect(postMock).toHaveBeenCalledWith(
+      "/kitchencraft/shopping-list/items/bulk",
+      { texts: ["thighs", "garlic"] },
+    );
+  });
+
+  it("shows the rows before the request resolves", async () => {
+    const store = await loadedStore([]);
+    postMock.mockReturnValueOnce(new Promise(() => {}));
+
+    void store.addItems(["thighs", "garlic"]);
+
+    expect(store.items.map((i) => i.text)).toEqual(["thighs", "garlic"]);
+    expect(store.loading).toBe(false);
+  });
+
+  it("appends after what is already on the list", async () => {
+    const store = await loadedStore([item({ text: "bread" })]);
+    postMock.mockResolvedValueOnce([item({ text: "thighs" })]);
+
+    await store.addItems(["thighs"]);
+
+    expect(store.items.map((i) => i.text)).toEqual(["bread", "thighs"]);
+  });
+
+  it("takes the WHOLE batch back out when the write fails", async () => {
+    const store = await loadedStore([item({ text: "bread" })]);
+    postMock.mockRejectedValueOnce(new Error("nope"));
+
+    await store.addItems(["thighs", "garlic", "lemon"]);
+
+    // All or none — half a recipe's ingredients is not a state worth having.
+    expect(store.items.map((i) => i.text)).toEqual(["bread"]);
+    expect(store.error).toBe(WRITE_FAILED);
+  });
+
+  it("leaves no provisional ids behind on success", async () => {
+    const store = await loadedStore([]);
+    postMock.mockResolvedValueOnce([item({ text: "thighs" })]);
+
+    await store.addItems(["thighs"]);
+
+    expect(store.items.some((i) => i.id.startsWith("pending-"))).toBe(false);
+  });
+
+  it("skips blanks and does nothing at all for an all-blank batch", async () => {
+    const store = await loadedStore([]);
+    postMock.mockResolvedValueOnce([item({ text: "thighs" })]);
+
+    await store.addItems(["  thighs  ", "   "]);
+    expect(postMock).toHaveBeenCalledWith(
+      "/kitchencraft/shopping-list/items/bulk",
+      { texts: ["thighs"] },
+    );
+
+    postMock.mockClear();
+    await store.addItems(["", "  "]);
+    expect(postMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("the open flag", () => {
+  it("starts closed and opens and closes", () => {
+    const store = useShoppingListStore();
+    expect(store.isOpen).toBe(false);
+    store.open();
+    expect(store.isOpen).toBe(true);
+    store.close();
+    expect(store.isOpen).toBe(false);
+  });
+});

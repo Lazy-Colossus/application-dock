@@ -262,7 +262,13 @@ describe("edit and delete", () => {
       .findAll("button")
       .map((b) => b.text())
       .filter(Boolean);
-    expect(actions).toEqual(["Edit", "Delete", "Delete", "Cancel"]);
+    expect(actions).toEqual([
+      "Edit",
+      "Add to shopping list",
+      "Delete",
+      "Delete",
+      "Cancel",
+    ]);
     expect(actions.join(" ")).not.toMatch(/undo|restore|trash|bin\b/i);
   });
 });

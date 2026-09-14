@@ -18,6 +18,10 @@ export const useShoppingListStore = defineStore(
     // Separates "loaded and genuinely empty" from "not fetched yet", so the empty
     // state cannot flash while the modal is still waiting.
     const loaded = ref(false);
+    // Whether the list modal is on screen. It lives here rather than in
+    // `PageBar` because more than one surface opens it now: the bar's button,
+    // and "View list" after a recipe's ingredients are sent (Story 3.3).
+    const isOpen = ref(false);
 
     const isEmpty = computed(() => loaded.value && items.value.length === 0);
 
@@ -138,6 +142,47 @@ export const useShoppingListStore = defineStore(
       }
     }
 
+    /**
+     * Append several items in one request (Story 3.3).
+     *
+     * One call, not one per ingredient: the server writes the whole batch under
+     * a single lock, so a recipe's ingredients either all land or none do. A
+     * failure takes the whole batch back out.
+     */
+    async function addItems(texts: string[]): Promise<void> {
+      const clean = texts.map((t) => t.trim()).filter(Boolean);
+      if (clean.length === 0) return;
+
+      const provisional: ShoppingItem[] = clean.map((text) => ({
+        id: `pending-${crypto.randomUUID()}`,
+        text,
+        ticked: false,
+        created_at: new Date().toISOString(),
+      }));
+      const ids = new Set(provisional.map((i) => i.id));
+      error.value = null;
+      items.value = [...items.value, ...provisional];
+
+      try {
+        const saved = await api.post<ShoppingItem[]>(
+          "/kitchencraft/shopping-list/items/bulk",
+          { texts: clean },
+        );
+        items.value = [...items.value.filter((i) => !ids.has(i.id)), ...saved];
+      } catch {
+        error.value = WRITE_FAILED;
+        items.value = items.value.filter((i) => !ids.has(i.id));
+      }
+    }
+
+    function open(): void {
+      isOpen.value = true;
+    }
+
+    function close(): void {
+      isOpen.value = false;
+    }
+
     /** Empty the list. Destructive, and the modal asks first. */
     async function clearList(): Promise<void> {
       const previous = items.value;
@@ -158,8 +203,12 @@ export const useShoppingListStore = defineStore(
       error,
       loaded,
       isEmpty,
+      isOpen,
+      open,
+      close,
       fetchList,
       addItem,
+      addItems,
       toggleTicked,
       removeItem,
       clearList,

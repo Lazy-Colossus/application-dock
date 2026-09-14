@@ -93,6 +93,14 @@
             >
               Edit
             </button>
+            <button
+              type="button"
+              class="kc-btn kc-btn--quiet"
+              data-testid="add-to-list"
+              @click="sending = true"
+            >
+              Add to shopping list
+            </button>
             <!--
               Delete is behind a confirmation, and the confirmation is the only
               safety net: there is no undo and no trash, by design.
@@ -107,6 +115,13 @@
             </button>
           </div>
         </div>
+
+        <AddToListModal
+          v-if="sending"
+          :ingredients="recipe.ingredients"
+          @close="sending = false"
+          @edit="goEdit()"
+        />
 
         <ConfirmModal
           v-if="confirming"
@@ -137,6 +152,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import AddToListModal from "@/apps/kitchencraft/components/AddToListModal.vue";
 import ConfirmModal from "@/apps/kitchencraft/components/ConfirmModal.vue";
 import PageBar from "@/apps/kitchencraft/components/PageBar.vue";
 import RatingStars from "@/apps/kitchencraft/components/RatingStars.vue";
@@ -152,6 +168,7 @@ const router = useRouter();
 const recipeId = String(route.params.id ?? "");
 const missing = ref(false);
 const confirming = ref(false);
+const sending = ref(false);
 
 // Read live from the store rather than into a local copy, so a favourite
 // toggled elsewhere and an edit saved on the next screen are both reflected.

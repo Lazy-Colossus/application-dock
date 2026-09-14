@@ -147,6 +147,16 @@ class AddShoppingItemRequest(BaseModel):
     text: str
 
 
+class AddShoppingItemsRequest(BaseModel):
+    """Several items at once, from a recipe's ingredients (Story 3.3).
+
+    A batch rather than N calls so the whole add is one lock and one atomic
+    write — half a recipe's ingredients landing is not a state worth having.
+    """
+
+    texts: list[str]
+
+
 class UpdateShoppingItemRequest(BaseModel):
     """What may change about an item. Only the tick, for now (Story 3.2)."""
 

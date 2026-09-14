@@ -158,6 +158,7 @@ def test_there_is_no_route_for_creating_or_deleting_a_list() -> None:
     assert shopping == {
         "/api/kitchencraft/shopping-list",
         "/api/kitchencraft/shopping-list/items",
+        "/api/kitchencraft/shopping-list/items/bulk",
         "/api/kitchencraft/shopping-list/items/{item_id}",
     }
     assert not any("list_id" in p for p in shopping)
@@ -318,3 +319,128 @@ def test_simultaneous_ticks_do_not_lose_each_other() -> None:
 
     assert not errors
     assert all(i.ticked for i in service.get_shopping_list("alice").items)
+
+
+# -- Story 3.3: a recipe's ingredients, in one write -------------------------
+
+
+def add_bulk(texts: list[str]) -> list[dict]:
+    resp = client.post("/api/kitchencraft/shopping-list/items/bulk", json={"texts": texts})
+    assert resp.status_code == 200, resp.text
+    return resp.json()
+
+
+def test_a_batch_lands_in_the_order_given() -> None:
+    add_bulk(["chicken thighs", "new potatoes", "smoked paprika"])
+    assert [i["text"] for i in get_list()["items"]] == [
+        "chicken thighs",
+        "new potatoes",
+        "smoked paprika",
+    ]
+
+
+def test_a_batch_appends_after_what_is_already_there() -> None:
+    add("bread")
+    add_bulk(["chicken thighs", "lemon"])
+    assert [i["text"] for i in get_list()["items"]] == [
+        "bread",
+        "chicken thighs",
+        "lemon",
+    ]
+
+
+def test_a_batch_is_one_write_not_one_per_item(isolate: Path) -> None:
+    # Half a recipe's ingredients landing is not a state worth having, so the
+    # whole batch shares one transaction.
+    calls: list[str] = []
+    real = repo.write_shopping_list
+
+    def counting(username: str, shopping_list: object) -> None:
+        calls.append(username)
+        real(username, shopping_list)  # type: ignore[arg-type]
+
+    repo.write_shopping_list = counting  # type: ignore[assignment]
+    try:
+        service.add_shopping_items("alice", ["a", "b", "c", "d"])
+    finally:
+        repo.write_shopping_list = real  # type: ignore[assignment]
+
+    assert calls == ["alice"]
+
+
+def test_items_from_a_recipe_are_ordinary_items() -> None:
+    item = add_bulk(["chicken thighs"])[0]
+    # No recipe id, no category — on the list they are text like any other,
+    # which is what lets them be edited freely (FR-16).
+    assert set(item) == {"id", "text", "ticked", "created_at"}
+    assert item["ticked"] is False
+
+
+def test_blank_entries_are_skipped_without_losing_the_rest() -> None:
+    add_bulk(["chicken thighs", "   ", "lemon", ""])
+    assert [i["text"] for i in get_list()["items"]] == ["chicken thighs", "lemon"]
+
+
+def test_an_all_blank_batch_adds_nothing_and_is_not_an_error() -> None:
+    assert add_bulk(["", "   "]) == []
+    assert get_list()["items"] == []
+
+
+def test_an_empty_batch_adds_nothing_and_is_not_an_error() -> None:
+    assert add_bulk([]) == []
+    assert get_list()["items"] == []
+
+
+def test_an_empty_batch_writes_no_file(isolate: Path) -> None:
+    add_bulk([])
+    assert not (isolate / "kitchencraft" / "shopping").exists()
+
+
+def test_a_batch_trims_each_entry() -> None:
+    assert [i["text"] for i in add_bulk(["  chicken thighs  "])] == ["chicken thighs"]
+
+
+def test_the_same_ingredient_twice_in_one_batch_is_two_items() -> None:
+    # Case-insensitive de-duplication is Story 3.4's merge, not this one's.
+    add_bulk(["lemon", "Lemon"])
+    assert len(get_list()["items"]) == 2
+
+
+def test_a_batch_does_not_disturb_ticks_on_existing_items() -> None:
+    existing = add("bread")
+    tick(existing["id"])
+    add_bulk(["lemon"])
+
+    items = get_list()["items"]
+    assert items[0]["ticked"] is True
+    assert items[1]["ticked"] is False
+
+
+def test_bulk_is_not_read_as_an_item_id() -> None:
+    # The route is declared before the parameterised ones; this fails as a 404
+    # if that order is ever reversed.
+    assert add_bulk(["lemon"])[0]["text"] == "lemon"
+
+
+def test_one_users_batch_does_not_reach_another() -> None:
+    service.add_shopping_items("alice", ["lemon"])
+    assert service.get_shopping_list("bob").items == []
+
+
+def test_simultaneous_batches_do_not_lose_each_other() -> None:
+    errors: list[BaseException] = []
+
+    def add_batch(n: int) -> None:
+        try:
+            service.add_shopping_items("alice", [f"batch {n} a", f"batch {n} b"])
+        except BaseException as exc:  # noqa: BLE001 — recorded and asserted below
+            errors.append(exc)
+
+    threads = [threading.Thread(target=add_batch, args=(n,)) for n in range(6)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert not errors
+    assert len(service.get_shopping_list("alice").items) == 12
