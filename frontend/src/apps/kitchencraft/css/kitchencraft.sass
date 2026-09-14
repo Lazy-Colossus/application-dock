@@ -437,6 +437,16 @@
   justify-content: center
   background: rgba(20, 19, 16, 0.45)
 
+// A confirmation sits in the MIDDLE of the screen at every width, not as a
+// sheet off the bottom edge. It is not a surface you work in — it is a question
+// that stops you, and the centre is where a question that stops you belongs.
+// This is a deliberate departure from EXPERIENCE.md's responsive table, which
+// specifies "sheet from the bottom" on phone.
+.kc-backdrop--centred
+  align-items: center
+  // Side room so the box never touches the screen edge on a narrow phone.
+  padding: var(--kc-pad)
+
 .kc-modal
   width: 100%
   max-width: 480px
@@ -444,6 +454,11 @@
   border: 1px solid var(--kc-taupe)
   border-radius: var(--kc-r-md) var(--kc-r-md) 0 0
   padding: 24px var(--kc-pad)
+
+// Free of the bottom edge, so all four corners are rounded rather than the two
+// a sheet gets.
+.kc-backdrop--centred .kc-modal
+  border-radius: var(--kc-r-md)
 
 .kc-modal__actions
   display: flex

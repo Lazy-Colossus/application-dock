@@ -4,7 +4,10 @@
     NEVER a confirmation, which requires an explicit choice (UX-DR14). There is
     no click-outside handler and no escape listener here on purpose.
   -->
-  <div class="kc-backdrop kitchencraft-panel" data-testid="confirm-backdrop">
+  <div
+    class="kc-backdrop kc-backdrop--centred kitchencraft-panel"
+    data-testid="confirm-backdrop"
+  >
     <div
       class="kc-modal"
       role="dialog"
