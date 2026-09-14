@@ -166,9 +166,14 @@ class AddShoppingItemsRequest(BaseModel):
 
     A batch rather than N calls so the whole add is one lock and one atomic
     write — half a recipe's ingredients landing is not a state worth having.
+
+    `mode` is the add-vs-overwrite decision (Story 3.4). It defaults to `merge`
+    because that is the non-destructive answer, and a caller that forgets to
+    choose should not be the one that empties a list.
     """
 
     texts: list[str]
+    mode: Literal["merge", "overwrite"] = "merge"
 
 
 class UpdateShoppingItemRequest(BaseModel):

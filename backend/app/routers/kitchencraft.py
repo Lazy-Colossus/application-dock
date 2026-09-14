@@ -123,7 +123,10 @@ def add_shopping_items(
     req: AddShoppingItemsRequest,
     current_user: str = Depends(get_current_user),
 ) -> list[ShoppingItem]:
-    return service.add_shopping_items(current_user, req.texts)
+    try:
+        return service.add_shopping_items(current_user, req.texts, req.mode)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.put("/shopping-list/items/{item_id}", response_model=ShoppingItem)

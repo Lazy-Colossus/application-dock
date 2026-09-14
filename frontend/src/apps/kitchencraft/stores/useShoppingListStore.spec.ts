@@ -369,7 +369,7 @@ describe("addItems", () => {
     expect(postMock).toHaveBeenCalledTimes(1);
     expect(postMock).toHaveBeenCalledWith(
       "/kitchencraft/shopping-list/items/bulk",
-      { texts: ["thighs", "garlic"] },
+      { texts: ["thighs", "garlic"], mode: "merge" },
     );
   });
 
@@ -419,7 +419,7 @@ describe("addItems", () => {
     await store.addItems(["  thighs  ", "   "]);
     expect(postMock).toHaveBeenCalledWith(
       "/kitchencraft/shopping-list/items/bulk",
-      { texts: ["thighs"] },
+      { texts: ["thighs"], mode: "merge" },
     );
 
     postMock.mockClear();
@@ -436,5 +436,85 @@ describe("the open flag", () => {
     expect(store.isOpen).toBe(true);
     store.close();
     expect(store.isOpen).toBe(false);
+  });
+});
+
+describe("addItems: merge and overwrite", () => {
+  it("defaults to merge, the non-destructive answer", async () => {
+    const store = await loadedStore([]);
+    postMock.mockResolvedValueOnce([item({ text: "bread" })]);
+
+    await store.addItems(["bread"]);
+
+    expect(postMock.mock.calls[0][1]).toMatchObject({ mode: "merge" });
+  });
+
+  it("passes overwrite through when asked", async () => {
+    const store = await loadedStore([item({ text: "old" })]);
+    postMock.mockResolvedValueOnce([item({ text: "bread" })]);
+
+    await store.addItems(["bread"], "overwrite");
+
+    expect(postMock.mock.calls[0][1]).toMatchObject({ mode: "overwrite" });
+  });
+
+  it("returns what the SERVER created, not what was sent", async () => {
+    // A merge that skips duplicates has to report the smaller, true number.
+    const store = await loadedStore([item({ text: "bread" })]);
+    postMock.mockResolvedValueOnce([item({ text: "milk" })]);
+
+    const added = await store.addItems(["bread", "milk"], "merge");
+
+    expect(added).toBe(1);
+  });
+
+  it("does not show an optimistic row for something already on the list", async () => {
+    const store = await loadedStore([item({ text: "Bread" })]);
+    postMock.mockReturnValueOnce(new Promise(() => {}));
+
+    void store.addItems(["bread", "milk"], "merge");
+
+    // Case-insensitive, like the server's own merge.
+    expect(store.items.map((i) => i.text)).toEqual(["Bread", "milk"]);
+  });
+
+  it("clears the list optimistically on an overwrite", async () => {
+    const store = await loadedStore([item({ text: "old" })]);
+    postMock.mockReturnValueOnce(new Promise(() => {}));
+
+    void store.addItems(["bread"], "overwrite");
+
+    expect(store.items.map((i) => i.text)).toEqual(["bread"]);
+  });
+
+  it("puts the previous list back, ticks included, when an overwrite fails", async () => {
+    const store = await loadedStore([
+      item({ text: "old", ticked: true }),
+      item({ text: "older" }),
+    ]);
+    postMock.mockRejectedValueOnce(new Error("nope"));
+
+    const added = await store.addItems(["bread"], "overwrite");
+
+    expect(store.items.map((i) => i.text)).toEqual(["old", "older"]);
+    expect(store.items[0].ticked).toBe(true);
+    expect(added).toBe(0);
+    expect(store.error).toBe(WRITE_FAILED);
+  });
+
+  it("sends an empty overwrite, which is how a list gets emptied this way", async () => {
+    const store = await loadedStore([item({ text: "old" })]);
+    postMock.mockResolvedValueOnce([]);
+
+    await store.addItems([], "overwrite");
+
+    expect(postMock).toHaveBeenCalled();
+    expect(store.items).toEqual([]);
+  });
+
+  it("still does nothing for an empty merge", async () => {
+    const store = await loadedStore([item({ text: "old" })]);
+    await store.addItems([], "merge");
+    expect(postMock).not.toHaveBeenCalled();
   });
 });

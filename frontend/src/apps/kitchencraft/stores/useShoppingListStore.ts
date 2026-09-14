@@ -149,29 +149,50 @@ export const useShoppingListStore = defineStore(
      * a single lock, so a recipe's ingredients either all land or none do. A
      * failure takes the whole batch back out.
      */
-    async function addItems(texts: string[]): Promise<void> {
+    async function addItems(
+      texts: string[],
+      mode: "merge" | "overwrite" = "merge",
+    ): Promise<number> {
       const clean = texts.map((t) => t.trim()).filter(Boolean);
-      if (clean.length === 0) return;
+      if (clean.length === 0 && mode === "merge") return 0;
 
-      const provisional: ShoppingItem[] = clean.map((text) => ({
-        id: `pending-${crypto.randomUUID()}`,
-        text,
-        ticked: false,
-        created_at: new Date().toISOString(),
-      }));
+      // Kept whole so an overwrite that fails can put the previous list back,
+      // ticks included — the one revert that cannot be done by id.
+      const previous = items.value;
+      // The server decides what a merge actually adds, so the optimistic view
+      // skips what is plainly already there rather than guessing differently.
+      const existing = new Set(
+        (mode === "overwrite" ? [] : previous).map((i) => i.text.toLowerCase()),
+      );
+      const provisional: ShoppingItem[] = [];
+      for (const text of clean) {
+        if (existing.has(text.toLowerCase())) continue;
+        existing.add(text.toLowerCase());
+        provisional.push({
+          id: `pending-${crypto.randomUUID()}`,
+          text,
+          ticked: false,
+          created_at: new Date().toISOString(),
+        });
+      }
       const ids = new Set(provisional.map((i) => i.id));
+
       error.value = null;
-      items.value = [...items.value, ...provisional];
+      items.value =
+        mode === "overwrite" ? provisional : [...previous, ...provisional];
 
       try {
         const saved = await api.post<ShoppingItem[]>(
           "/kitchencraft/shopping-list/items/bulk",
-          { texts: clean },
+          { texts: clean, mode },
         );
         items.value = [...items.value.filter((i) => !ids.has(i.id)), ...saved];
+        // What the server actually created, not what was sent.
+        return saved.length;
       } catch {
         error.value = WRITE_FAILED;
-        items.value = items.value.filter((i) => !ids.has(i.id));
+        items.value = previous;
+        return 0;
       }
     }
 

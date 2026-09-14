@@ -400,10 +400,11 @@ def test_a_batch_trims_each_entry() -> None:
     assert [i["text"] for i in add_bulk(["  chicken thighs  "])] == ["chicken thighs"]
 
 
-def test_the_same_ingredient_twice_in_one_batch_is_two_items() -> None:
-    # Case-insensitive de-duplication is Story 3.4's merge, not this one's.
+def test_the_same_ingredient_twice_in_one_batch_is_one_item() -> None:
+    # Story 3.4 made the batch a merge: the result can never hold a
+    # case-insensitive duplicate, whether it came from the list or the batch.
     add_bulk(["lemon", "Lemon"])
-    assert len(get_list()["items"]) == 2
+    assert [i["text"] for i in get_list()["items"]] == ["lemon"]
 
 
 def test_a_batch_does_not_disturb_ticks_on_existing_items() -> None:
@@ -444,3 +445,127 @@ def test_simultaneous_batches_do_not_lose_each_other() -> None:
 
     assert not errors
     assert len(service.get_shopping_list("alice").items) == 12
+
+
+# -- Story 3.4: merging into a list that already has items -------------------
+
+
+def add_bulk_mode(texts: list[str], mode: str) -> list[dict]:
+    resp = client.post(
+        "/api/kitchencraft/shopping-list/items/bulk", json={"texts": texts, "mode": mode}
+    )
+    assert resp.status_code == 200, resp.text
+    return resp.json()
+
+
+def test_merge_is_the_default_so_a_forgetful_caller_never_empties_a_list() -> None:
+    add("bread")
+    add_bulk(["lemon"])
+    assert [i["text"] for i in get_list()["items"]] == ["bread", "lemon"]
+
+
+def test_merge_skips_an_item_already_on_the_list() -> None:
+    add("lemon")
+    add_bulk_mode(["lemon", "garlic"], "merge")
+    assert [i["text"] for i in get_list()["items"]] == ["lemon", "garlic"]
+
+
+def test_merge_matches_case_insensitively() -> None:
+    add("Lemon")
+    add_bulk_mode(["lemon"], "merge")
+    assert [i["text"] for i in get_list()["items"]] == ["Lemon"]
+
+
+def test_merge_returns_only_what_it_actually_created() -> None:
+    # The count reported to the user has to be honest: six sent, four added.
+    add("lemon")
+    add("garlic")
+    created = add_bulk_mode(["lemon", "garlic", "bread", "milk"], "merge")
+    assert [i["text"] for i in created] == ["bread", "milk"]
+
+
+def test_merge_that_adds_nothing_returns_nothing() -> None:
+    add("lemon")
+    assert add_bulk_mode(["lemon"], "merge") == []
+    assert len(get_list()["items"]) == 1
+
+
+def test_merge_leaves_existing_ticks_alone() -> None:
+    existing = add("lemon")
+    tick(existing["id"])
+    add_bulk_mode(["garlic"], "merge")
+
+    items = get_list()["items"]
+    assert items[0]["ticked"] is True
+    assert items[1]["text"] == "garlic"
+
+
+def test_merge_does_not_revive_a_ticked_duplicate_as_a_new_row() -> None:
+    existing = add("lemon")
+    tick(existing["id"])
+    add_bulk_mode(["lemon"], "merge")
+
+    items = get_list()["items"]
+    assert len(items) == 1
+    assert items[0]["ticked"] is True
+
+
+def test_overwrite_discards_everything_including_ticked_items() -> None:
+    first = add("lemon")
+    tick(first["id"])
+    add("garlic")
+
+    add_bulk_mode(["bread", "milk"], "overwrite")
+
+    assert [i["text"] for i in get_list()["items"]] == ["bread", "milk"]
+    assert all(not i["ticked"] for i in get_list()["items"])
+
+
+def test_overwrite_on_an_empty_list_is_just_an_add() -> None:
+    add_bulk_mode(["bread"], "overwrite")
+    assert [i["text"] for i in get_list()["items"]] == ["bread"]
+
+
+def test_overwrite_with_nothing_empties_the_list() -> None:
+    add("lemon")
+    assert add_bulk_mode([], "overwrite") == []
+    assert get_list()["items"] == []
+
+
+def test_overwrite_still_de_duplicates_within_the_batch() -> None:
+    add_bulk_mode(["lemon", "Lemon"], "overwrite")
+    assert [i["text"] for i in get_list()["items"]] == ["lemon"]
+
+
+def test_an_unknown_mode_is_rejected_with_a_detail_string() -> None:
+    resp = client.post(
+        "/api/kitchencraft/shopping-list/items/bulk",
+        json={"texts": ["bread"], "mode": "destroy"},
+    )
+    assert resp.status_code == 422
+
+
+def test_either_mode_is_one_write() -> None:
+    calls: list[str] = []
+    real = repo.write_shopping_list
+
+    def counting(username: str, shopping_list: object) -> None:
+        calls.append(username)
+        real(username, shopping_list)  # type: ignore[arg-type]
+
+    repo.write_shopping_list = counting  # type: ignore[assignment]
+    try:
+        service.add_shopping_items("alice", ["a", "b", "c"], "merge")
+        service.add_shopping_items("alice", ["d", "e", "f"], "overwrite")
+    finally:
+        repo.write_shopping_list = real  # type: ignore[assignment]
+
+    assert calls == ["alice", "alice"]
+
+
+def test_hand_entry_still_duplicates_freely() -> None:
+    # De-duplication belongs to the recipe merge, not to typing: a cook who
+    # types `milk` twice may well want two.
+    add("milk")
+    add("milk")
+    assert len(get_list()["items"]) == 2

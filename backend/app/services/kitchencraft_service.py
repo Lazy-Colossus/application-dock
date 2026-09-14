@@ -481,11 +481,19 @@ def clear_shopping_list(username: str) -> None:
         shopping_list.items = []
 
 
-def add_shopping_items(username: str, texts: list[str]) -> list[ShoppingItem]:
-    """Append several items in one transaction (Story 3.3).
+def add_shopping_items(username: str, texts: list[str], mode: str = "merge") -> list[ShoppingItem]:
+    """Add several items in one transaction (Stories 3.3, 3.4).
 
     One lock and one write for the whole batch, so a recipe's ingredients either
     all land or none do.
+
+    `merge` adds what is not already there, matched case-insensitively — both
+    against the existing list and within the batch, so the result can never hold
+    a case-insensitive duplicate. `overwrite` discards everything first, ticked
+    items included.
+
+    **Returns only the items actually created**, which is what lets the caller
+    report an honest count: a merge that sends six and adds four says four.
 
     Blank entries are skipped rather than rejecting the batch: the caller is a
     checkbox list, and one empty label should not cost the user the other nine.
@@ -495,13 +503,25 @@ def add_shopping_items(username: str, texts: list[str]) -> list[ShoppingItem]:
     came from — on the list they are text like any other, which is what lets
     `chicken thighs` become `2 packs chicken thighs` (FR-16).
     """
-    clean = [text.strip() for text in texts]
-    items = [
-        ShoppingItem(id=_new_item_id(), text=text, created_at=_now_iso()) for text in clean if text
-    ]
-    if not items:
+    if mode not in {"merge", "overwrite"}:
+        raise ValueError(f"unknown mode: {mode!r}")
+
+    clean = [text.strip() for text in texts if text.strip()]
+    if not clean and mode == "merge":
         return []
 
     with repo.shopping_transaction(username) as shopping_list:
-        shopping_list.items.extend(items)
-    return items
+        if mode == "overwrite":
+            shopping_list.items = []
+
+        # Seeded from whatever survives, so a merge never duplicates an existing
+        # item and a batch never duplicates itself.
+        seen = {i.text.casefold() for i in shopping_list.items}
+        created: list[ShoppingItem] = []
+        for text in clean:
+            if text.casefold() in seen:
+                continue
+            seen.add(text.casefold())
+            created.append(ShoppingItem(id=_new_item_id(), text=text, created_at=_now_iso()))
+        shopping_list.items.extend(created)
+    return created

@@ -31,10 +31,26 @@ const TRAYBAKE: Ingredient[] = [
   ing("black pepper"),
 ];
 
+function saved(texts: string[]) {
+  return texts.map((text, n) => ({
+    id: `s-${n}`,
+    text,
+    ticked: false,
+    created_at: "2026-09-15T00:00:00+00:00",
+  }));
+}
+
 beforeEach(() => {
   setActivePinia(createPinia());
   vi.clearAllMocks();
-  postMock.mockResolvedValue([]);
+  // An empty list by default, so the add-vs-overwrite prompt stays out of the
+  // way of the tests that are not about it.
+  getMock.mockResolvedValue({ schema_version: 1, items: [] });
+  // The count reported is what the SERVER created, so a mock that returns
+  // nothing means nothing was added.
+  postMock.mockImplementation((_url: string, body: { texts: string[] }) =>
+    Promise.resolve(saved(body.texts)),
+  );
 });
 
 function mountModal(ingredients: Ingredient[] = TRAYBAKE) {
@@ -126,7 +142,10 @@ describe("confirming", () => {
     expect(postMock).toHaveBeenCalledTimes(1);
     expect(postMock).toHaveBeenCalledWith(
       "/kitchencraft/shopping-list/items/bulk",
-      { texts: ["4 chicken thighs", "500 g new potatoes", "garlic"] },
+      {
+        texts: ["4 chicken thighs", "500 g new potatoes", "garlic"],
+        mode: "merge",
+      },
     );
   });
 
@@ -138,6 +157,7 @@ describe("confirming", () => {
 
     expect(postMock.mock.calls[0][1]).toEqual({
       texts: ["4 chicken thighs", "500 g new potatoes", "garlic", "salt"],
+      mode: "merge",
     });
   });
 
@@ -245,5 +265,146 @@ describe("dismissing", () => {
     const onBackdrop = mountModal();
     await onBackdrop.find('[data-testid="add-backdrop"]').trigger("click");
     expect(onBackdrop.emitted("close")).toHaveLength(1);
+  });
+});
+
+describe("adding to a list that already has items", () => {
+  function withList(texts: string[]) {
+    getMock.mockResolvedValue({ schema_version: 1, items: saved(texts) });
+  }
+
+  async function reachPrompt() {
+    withList(["bread", "milk"]);
+    const wrapper = mountModal();
+    await flushPromises();
+    await wrapper.find('[data-testid="add-confirm"]').trigger("click");
+    await flushPromises();
+    return wrapper;
+  }
+
+  it("never interrupts an empty list", async () => {
+    // Default mock is an empty list.
+    const wrapper = mountModal();
+    await flushPromises();
+    await wrapper.find('[data-testid="add-confirm"]').trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="add-prompt"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="add-result"]').exists()).toBe(true);
+    expect(postMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("asks, naming the count, when the list is not empty", async () => {
+    const wrapper = await reachPrompt();
+
+    expect(wrapper.find('[data-testid="add-prompt"]').text()).toBe(
+      "The list already has 2 items.",
+    );
+    // Nothing has been sent yet.
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it("says 'item' rather than '1 items'", async () => {
+    withList(["bread"]);
+    const wrapper = mountModal();
+    await flushPromises();
+    await wrapper.find('[data-testid="add-confirm"]').trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="add-prompt"]').text()).toBe(
+      "The list already has 1 item.",
+    );
+  });
+
+  it("merges when add is chosen", async () => {
+    const wrapper = await reachPrompt();
+    await wrapper.find('[data-testid="add-merge"]').trigger("click");
+    await flushPromises();
+
+    expect(postMock.mock.calls[0][1]).toMatchObject({ mode: "merge" });
+    expect(wrapper.find('[data-testid="add-result"]').exists()).toBe(true);
+  });
+
+  it("asks a SECOND time before replacing", async () => {
+    const wrapper = await reachPrompt();
+    await wrapper.find('[data-testid="add-replace"]').trigger("click");
+
+    expect(wrapper.find('[data-testid="add-overwrite"]').exists()).toBe(true);
+    // Still nothing sent: the first choice is not the confirmation.
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it("replaces the prompt in place rather than stacking on it", async () => {
+    // UX-DR14's single stated exception. One dialog on screen, not two.
+    const wrapper = await reachPrompt();
+    await wrapper.find('[data-testid="add-replace"]').trigger("click");
+
+    expect(wrapper.find('[data-testid="add-prompt"]').exists()).toBe(false);
+    expect(wrapper.findAll('[role="dialog"]')).toHaveLength(1);
+    expect(wrapper.find('[data-testid="confirm-backdrop"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("overwrites once the second confirmation is given", async () => {
+    const wrapper = await reachPrompt();
+    await wrapper.find('[data-testid="add-replace"]').trigger("click");
+    await wrapper
+      .find('[data-testid="add-overwrite-confirm"]')
+      .trigger("click");
+    await flushPromises();
+
+    expect(postMock.mock.calls[0][1]).toMatchObject({ mode: "overwrite" });
+    expect(wrapper.find('[data-testid="add-result"]').exists()).toBe(true);
+  });
+
+  it("warns that ticked items go too", async () => {
+    const wrapper = await reachPrompt();
+    await wrapper.find('[data-testid="add-replace"]').trigger("click");
+    expect(wrapper.text()).toContain("ticked ones included");
+    expect(wrapper.text()).toContain("can't be undone");
+  });
+});
+
+describe("cancelling the add-vs-overwrite question", () => {
+  function withList(texts: string[]) {
+    getMock.mockResolvedValue({ schema_version: 1, items: saved(texts) });
+  }
+
+  async function reachPrompt() {
+    withList(["bread"]);
+    const wrapper = mountModal();
+    await flushPromises();
+    // Uncheck one so the selection is visibly the user's own.
+    await wrapper.find('[data-testid="add-check-0"]').trigger("change");
+    await wrapper.find('[data-testid="add-confirm"]').trigger("click");
+    await flushPromises();
+    return wrapper;
+  }
+
+  it("returns to the checkboxes with the selection intact", async () => {
+    const wrapper = await reachPrompt();
+    await wrapper.find('[data-testid="add-prompt-cancel"]').trigger("click");
+
+    expect(wrapper.find('[data-testid="add-items"]').exists()).toBe(true);
+    // Cancelling a question about HOW to add must not throw away WHAT was
+    // chosen: the unchecked first ingredient is still unchecked.
+    expect(checkedStates(wrapper)[0]).toBe(false);
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it("returns to the checkboxes from the overwrite confirmation too", async () => {
+    const wrapper = await reachPrompt();
+    await wrapper.find('[data-testid="add-replace"]').trigger("click");
+    await wrapper.find('[data-testid="add-overwrite-cancel"]').trigger("click");
+
+    expect(wrapper.find('[data-testid="add-items"]').exists()).toBe(true);
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it("does not close the modal", async () => {
+    const wrapper = await reachPrompt();
+    await wrapper.find('[data-testid="add-prompt-cancel"]').trigger("click");
+    expect(wrapper.emitted("close")).toBeUndefined();
   });
 });

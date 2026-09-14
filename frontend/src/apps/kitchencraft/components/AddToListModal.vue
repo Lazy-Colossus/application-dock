@@ -74,6 +74,80 @@
         </div>
       </template>
 
+      <!--
+        The list already has something on it, so the add becomes a decision.
+        Never shown on an empty list: there is nothing to lose, and asking would
+        be a tap the cook did not need (FR-17).
+      -->
+      <template v-else-if="step === 'prompt'">
+        <h2 id="add-title" class="kc-title" data-testid="add-prompt">
+          The list already has {{ store.items.length }}
+          {{ store.items.length === 1 ? "item" : "items" }}.
+        </h2>
+        <div class="kc-modal__actions">
+          <button
+            type="button"
+            class="kc-btn"
+            data-testid="add-merge"
+            @click="send('merge')"
+          >
+            Add to the list
+          </button>
+          <button
+            type="button"
+            class="kc-btn kc-btn--danger"
+            data-testid="add-replace"
+            @click="step = 'overwrite'"
+          >
+            Replace the list
+          </button>
+          <button
+            type="button"
+            class="kc-btn kc-btn--quiet"
+            data-testid="add-prompt-cancel"
+            @click="step = 'choose'"
+          >
+            Cancel
+          </button>
+        </div>
+      </template>
+
+      <!--
+        The second, explicit confirmation before anything is discarded. It
+        REPLACES the prompt in place rather than stacking on it — the single
+        stated exception to modals stacking one level deep (UX-DR14), which is
+        also why this is not a `ConfirmModal`: that renders its own backdrop.
+      -->
+      <template v-else-if="step === 'overwrite'">
+        <h2 id="add-title" class="kc-title" data-testid="add-overwrite">
+          Replace the list?
+        </h2>
+        <p class="kc-state__lede">
+          The
+          {{ store.items.length }}
+          {{ store.items.length === 1 ? "item" : "items" }} already there will
+          be discarded, ticked ones included. This can't be undone.
+        </p>
+        <div class="kc-modal__actions">
+          <button
+            type="button"
+            class="kc-btn kc-btn--danger"
+            data-testid="add-overwrite-confirm"
+            @click="send('overwrite')"
+          >
+            Replace
+          </button>
+          <button
+            type="button"
+            class="kc-btn kc-btn--quiet"
+            data-testid="add-overwrite-cancel"
+            @click="step = 'choose'"
+          >
+            Cancel
+          </button>
+        </div>
+      </template>
+
       <template v-else>
         <h2 id="add-title" class="kc-title">Add to shopping list</h2>
 
@@ -152,6 +226,10 @@ const STAPLES = ["salt", "black pepper"];
 
 const store = useShoppingListStore();
 
+// The prompt depends on whether the list is empty, so it has to be known before
+// the user can confirm. Cheap when the list is already loaded.
+if (!store.loaded) void store.fetchList();
+
 const label = ingredientLabel;
 
 const checked = ref(
@@ -161,24 +239,42 @@ const checked = ref(
 // Null until an add has happened; the count afterwards.
 const added = ref<number | null>(null);
 
+// `choose` is the checkbox list; `prompt` is add-vs-overwrite; `overwrite` is
+// its second confirmation. Cancel from either question returns to `choose`
+// rather than closing: cancelling a question about *how* to add should not
+// throw away *what* was chosen.
+const step = ref<"choose" | "prompt" | "overwrite">("choose");
+
 function toggle(index: number): void {
   checked.value = checked.value.map((on, i) => (i === index ? !on : on));
 }
 
-async function confirm(): Promise<void> {
-  const texts = props.ingredients
+function chosen(): string[] {
+  return props.ingredients
     .filter((_, i) => checked.value[i])
     .map((i) => label(i));
+}
 
+async function confirm(): Promise<void> {
   // Nothing checked is a silent no-op: the modal simply closes, with no message
   // and no post-add confirmation (FR-16).
-  if (texts.length === 0) {
+  if (chosen().length === 0) {
     emit("close");
     return;
   }
 
-  await store.addItems(texts);
-  added.value = texts.length;
+  // An empty list is never interrupted — the add is silent (FR-17).
+  if (store.items.length === 0) {
+    await send("merge");
+    return;
+  }
+  step.value = "prompt";
+}
+
+async function send(mode: "merge" | "overwrite"): Promise<void> {
+  // The count is what the server actually created, not what was sent: a merge
+  // that skips duplicates has to report the smaller, true number (FR-18).
+  added.value = await store.addItems(chosen(), mode);
 }
 
 // Replaces this modal with the list rather than stacking on it, and is only
