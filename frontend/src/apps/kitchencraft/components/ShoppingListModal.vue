@@ -13,6 +13,7 @@
     <div
       ref="panel"
       class="kc-sheet"
+      :class="{ 'kc-sheet--empty': store.isEmpty }"
       tabindex="-1"
       role="dialog"
       aria-modal="true"
@@ -146,7 +147,7 @@
 
             <button
               type="button"
-              class="kc-icon-btn"
+              class="kc-icon-btn kc-shop-row__delete"
               :aria-label="`Delete ${item.text}`"
               :data-testid="`delete-${item.id}`"
               @click="store.removeItem(item.id)"
@@ -214,7 +215,7 @@
       <ConfirmModal
         v-if="clearing"
         testid="clear"
-        title="Clear the whole list?"
+        :title="clearTitle"
         detail="This can't be undone."
         confirm-label="Clear"
         @confirm="confirmClear()"
@@ -225,7 +226,7 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
 import ConfirmModal from "@/apps/kitchencraft/components/ConfirmModal.vue";
 import { useShoppingListStore } from "@/apps/kitchencraft/stores/useShoppingListStore";
 
@@ -242,6 +243,13 @@ const store = useShoppingListStore();
 
 const draft = ref("");
 const clearing = ref(false);
+
+// The count is the whole reason a cook hesitates over this one, so the
+// confirmation names it. Singular is spelled out rather than left as "1 items".
+const clearTitle = computed(() => {
+  const n = store.items.length;
+  return `Clear all ${n} ${n === 1 ? "item" : "items"}?`;
+});
 const entry = ref<HTMLInputElement | null>(null);
 const panel = ref<HTMLElement | null>(null);
 

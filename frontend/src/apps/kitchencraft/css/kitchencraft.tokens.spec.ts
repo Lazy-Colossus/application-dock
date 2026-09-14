@@ -204,3 +204,39 @@ describe("shapes and touch targets", () => {
     expect(SASS).toContain("@media (prefers-reduced-motion: reduce)");
   });
 });
+
+describe("the shopping list wears list-row, not recipe-row", () => {
+  // DESIGN.md defines the two as separate components: `recipe-row` is 64px
+  // because it carries two lines, `list-row` is touch-min because it carries
+  // one. The shopping row borrowing 64px is the mistake this guards.
+  function block(selector: string): string {
+    const match = SASS.match(new RegExp(`\\${selector}\\n((?:  .*\\n|\\n)*)`));
+    if (!match) throw new Error(`rule ${selector} is not declared`);
+    return match[1];
+  }
+
+  it("sizes the shopping row to the touch minimum, not to 64px", () => {
+    expect(block(".kc-shop-row")).toMatch(/min-height:\s*var\(--kc-touch\)/);
+    expect(block(".kc-shop-row")).not.toMatch(/min-height:\s*64px/);
+  });
+
+  it("sizes its tick target the same, overriding the recipe row it extends", () => {
+    expect(block(".kc-shop-row__tick")).toMatch(
+      /min-height:\s*var\(--kc-touch\)/,
+    );
+  });
+
+  it("insets row content to the 16px grid the bar and the field sit on", () => {
+    expect(block(".kc-shop-row__tick")).toMatch(/padding:.*var\(--kc-pad\)/);
+  });
+
+  it("strikes a ticked item through in INK, never in the quiet register", () => {
+    // Three places in the spec say ink: the `list-row` token, the colour
+    // allocation, and the State Patterns row. A ticked item has to stay
+    // readable — fading it half-removes it, which FR-15 forbids.
+    expect(block(".kc-shop-row__done")).toMatch(
+      /text-decoration:\s*line-through/,
+    );
+    expect(block(".kc-shop-row__done")).not.toMatch(/color:/);
+  });
+});

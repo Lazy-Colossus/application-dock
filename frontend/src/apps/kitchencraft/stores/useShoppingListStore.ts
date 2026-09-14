@@ -25,6 +25,16 @@ export const useShoppingListStore = defineStore(
       return e instanceof Error ? e.message : String(e);
     }
 
+    /**
+     * What a failed WRITE says, verbatim from the spec.
+     *
+     * Fixed copy rather than the exception's own message: this line is read by
+     * someone standing in a shop, and `Failed to fetch` or a bare status code
+     * tells them nothing they can act on. A failed *read* keeps the real error,
+     * because no spec copy covers it and the modal is empty anyway.
+     */
+    const WRITE_FAILED = "Couldn't save that — check your connection.";
+
     async function fetchList(): Promise<void> {
       loading.value = true;
       error.value = null;
@@ -73,8 +83,8 @@ export const useShoppingListStore = defineStore(
         items.value = items.value.map((i) =>
           i.id === provisional.id ? saved : i,
         );
-      } catch (e) {
-        error.value = message(e);
+      } catch {
+        error.value = WRITE_FAILED;
         items.value = items.value.filter((i) => i.id !== provisional.id);
       }
     }
@@ -101,8 +111,8 @@ export const useShoppingListStore = defineStore(
           { ticked: !previous },
         );
         items.value = items.value.map((i) => (i.id === id ? saved : i));
-      } catch (e) {
-        error.value = message(e);
+      } catch {
+        error.value = WRITE_FAILED;
         items.value = items.value.map((i) =>
           i.id === id ? { ...i, ticked: previous } : i,
         );
@@ -119,8 +129,8 @@ export const useShoppingListStore = defineStore(
       items.value = items.value.filter((i) => i.id !== id);
       try {
         await api.del(`/kitchencraft/shopping-list/items/${id}`);
-      } catch (e) {
-        error.value = message(e);
+      } catch {
+        error.value = WRITE_FAILED;
         // Back where it was, not appended to the end — position is meaningful.
         const restored = [...items.value];
         restored.splice(index, 0, removed);
@@ -135,8 +145,8 @@ export const useShoppingListStore = defineStore(
       items.value = [];
       try {
         await api.del("/kitchencraft/shopping-list/items");
-      } catch (e) {
-        error.value = message(e);
+      } catch {
+        error.value = WRITE_FAILED;
         // The whole list back, ticks included.
         items.value = previous;
       }

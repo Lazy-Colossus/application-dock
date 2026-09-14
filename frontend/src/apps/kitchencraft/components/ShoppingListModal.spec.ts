@@ -16,6 +16,9 @@ vi.mock("@/composables/useApi", () => ({
 import ShoppingListModal from "@/apps/kitchencraft/components/ShoppingListModal.vue";
 import type { ShoppingItem } from "@/apps/kitchencraft/types";
 
+// Verbatim from EXPERIENCE.md § State Patterns → Shopping list / Write failed.
+const WRITE_FAILED = "Couldn't save that — check your connection.";
+
 let counter = 0;
 
 function item(over: Partial<ShoppingItem> = {}): ShoppingItem {
@@ -169,7 +172,7 @@ describe("hand-entry", () => {
     await flushPromises();
 
     expect(wrapper.find('[data-testid="shopping-error"]').text()).toBe(
-      "Couldn't save that",
+      WRITE_FAILED,
     );
     // The row is gone again, not left behind as though it saved.
     expect(wrapper.find('[data-testid="shopping-items"]').exists()).toBe(false);
@@ -297,7 +300,7 @@ describe("ticking things off", () => {
 
     expect(wrapper.find(".kc-shop-row__done").exists()).toBe(false);
     expect(wrapper.find('[data-testid="shopping-error"]').text()).toBe(
-      "Offline",
+      WRITE_FAILED,
     );
   });
 });
@@ -412,5 +415,52 @@ describe("clearing the list", () => {
     expect(rows.map((r) => r.text())).toEqual(["bread", "milk"]);
     // Ticks come back too.
     expect(wrapper.find(".kc-shop-row__done").exists()).toBe(true);
+  });
+});
+
+describe("the polish pass", () => {
+  it("names the count in the clear confirmation", async () => {
+    // The count is the whole reason a cook hesitates over this one.
+    const wrapper = await openModal([item(), item(), item()]);
+    await wrapper.find('[data-testid="shopping-clear"]').trigger("click");
+    expect(wrapper.find("#clear-title").text()).toBe("Clear all 3 items?");
+  });
+
+  it("says 'item' rather than '1 items'", async () => {
+    const wrapper = await openModal([item()]);
+    await wrapper.find('[data-testid="shopping-clear"]').trigger("click");
+    expect(wrapper.find("#clear-title").text()).toBe("Clear all 1 item?");
+  });
+
+  it("pairs the empty message with the entry row", async () => {
+    // On a full-height sheet the two are otherwise most of a screen apart.
+    const wrapper = await openModal([]);
+    expect(wrapper.find(".kc-sheet").classes()).toContain("kc-sheet--empty");
+  });
+
+  it("unpairs them again once there is a list to stand above", async () => {
+    const wrapper = await openModal([item()]);
+    expect(wrapper.find(".kc-sheet").classes()).not.toContain(
+      "kc-sheet--empty",
+    );
+  });
+
+  it("does not pair while the list is still loading", async () => {
+    // `isEmpty` is false until loaded, so the skeleton never triggers it.
+    getMock.mockReturnValueOnce(new Promise(() => {}));
+    const wrapper = mount(ShoppingListModal, { attachTo: document.body });
+    expect(wrapper.find(".kc-sheet").classes()).not.toContain(
+      "kc-sheet--empty",
+    );
+  });
+
+  it("marks a ticked item with both a line and a filled box", async () => {
+    const wrapper = await openModal([
+      item({ text: "bay leaves", ticked: true }),
+    ]);
+    expect(wrapper.find(".kc-shop-row__done").exists()).toBe(true);
+    expect(wrapper.find(".kc-shop-row__box").attributes("fill")).toBe(
+      "currentColor",
+    );
   });
 });

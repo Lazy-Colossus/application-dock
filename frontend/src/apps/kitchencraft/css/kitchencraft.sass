@@ -472,17 +472,39 @@
 .kc-sheet__body
   flex: 1
   min-height: 0
+  display: flex
+  flex-direction: column
   overflow-y: auto
   overscroll-behavior: contain
-  padding: 8px var(--kc-pad) 16px
+  // No horizontal padding: rows run full-bleed so their separators reach the
+  // panel edge, and each row insets its own content instead — the collection's
+  // pattern exactly.
+  padding: 8px 0 16px
+
+// An empty list pairs its message with the hand-entry row: the spec asks for the
+// row "directly beneath", and on a full-height sheet a message pinned under the
+// bar sits most of a screen away from an input pinned to the foot. Pushing the
+// message down to meet it — and dropping the hairline between them — makes the
+// two read as the one invitation they are.
+.kc-sheet--empty .kc-sheet__body
+  justify-content: flex-end
+  padding-bottom: 8px
+
+.kc-sheet--empty .kc-sheet__foot
+  border-top: 0
 
 .kc-sheet__foot
   border-top: 1px solid var(--kc-taupe)
   padding: 12px var(--kc-pad)
   padding-bottom: max(12px, env(safe-area-inset-bottom))
 
+// `list-row`, NOT `recipe-row`: DESIGN.md defines the two separately, and this
+// one is touch-min, not 64px. A recipe row is tall because it carries two lines;
+// a shopping row carries one, on the surface where seeing the most of the list
+// at a glance matters most.
 .kc-shop-row
-  padding: 0 4px
+  min-height: var(--kc-touch)
+  padding: 0
 
 // The whole row ticks, so the target spans it — sized for a thumb on a phone
 // held in a hand that is also holding a basket (NFR-4).
@@ -491,7 +513,10 @@
   align-items: center
   gap: 12px
   cursor: pointer
-  padding: 10px 8px
+  min-height: var(--kc-touch)
+  // Content insets to the 16px grid the bar title and the entry field also sit
+  // on; the separator stays full-bleed.
+  padding: 6px 0 6px var(--kc-pad)
 
 .kc-shop-row__tick:focus-visible
   outline: 2px solid var(--kc-moss)
@@ -501,11 +526,18 @@
   flex: none
   color: var(--kc-ink)
 
+// Trailing target, set in from the edge the way the collection row's own
+// trailing glyph is.
+.kc-shop-row__delete
+  margin-right: 4px
+
 // Two signals on a ticked item, and neither of them is colour: a filled box and
-// a line through the text (UX-DR17).
+// a line through the text (UX-DR17). The text stays INK — three places in the
+// spec say so, and the point of "stays in place" is that a ticked item is still
+// readable when you glance back to check you really did get the bay leaves.
+// Fading it would half-remove it, which is the thing FR-15 forbids.
 .kc-shop-row__done
   text-decoration: line-through
-  color: var(--kc-taupe-ink)
 
 // Standing in for rows that have not arrived, so the modal can open before the
 // fetch lands. Inert: aria-hidden on the list, no animation to chase.

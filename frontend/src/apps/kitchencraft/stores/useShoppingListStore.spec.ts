@@ -15,6 +15,9 @@ vi.mock("@/composables/useApi", () => ({
 import { useShoppingListStore } from "@/apps/kitchencraft/stores/useShoppingListStore";
 import type { ShoppingItem } from "@/apps/kitchencraft/types";
 
+// Verbatim from EXPERIENCE.md § State Patterns → Shopping list / Write failed.
+const WRITE_FAILED = "Couldn't save that — check your connection.";
+
 let counter = 0;
 
 function item(over: Partial<ShoppingItem> = {}): ShoppingItem {
@@ -144,7 +147,7 @@ describe("addItem", () => {
     await store.addItem("oat milk");
 
     expect(store.items.map((i) => i.text)).toEqual(["bread"]);
-    expect(store.error).toBe("Offline");
+    expect(store.error).toBe(WRITE_FAILED);
   });
 
   it("keeps earlier items when a later add fails", async () => {
@@ -232,7 +235,7 @@ describe("toggleTicked", () => {
     await store.toggleTicked(store.items[0].id);
 
     expect(store.items[0].ticked).toBe(false);
-    expect(store.error).toBe("Offline");
+    expect(store.error).toBe(WRITE_FAILED);
   });
 
   it("is a no-op for an unknown id", async () => {
@@ -277,7 +280,7 @@ describe("removeItem", () => {
 
     // Position is meaningful — this is the order the cook shops in.
     expect(store.items.map((i) => i.text)).toEqual(["bread", "milk", "apples"]);
-    expect(store.error).toBe("Offline");
+    expect(store.error).toBe(WRITE_FAILED);
   });
 
   it("is a no-op for an unknown id", async () => {
@@ -318,6 +321,37 @@ describe("clearList", () => {
 
     expect(store.items.map((i) => i.text)).toEqual(["bread", "milk"]);
     expect(store.items[0].ticked).toBe(true);
-    expect(store.error).toBe("Offline");
+    expect(store.error).toBe(WRITE_FAILED);
+  });
+});
+
+describe("what a failure says", () => {
+  it("never leaks the exception's own message to a cook in a shop", async () => {
+    const store = await loadedStore([item()]);
+    putMock.mockRejectedValueOnce(new Error("Failed to fetch"));
+
+    await store.toggleTicked(store.items[0].id);
+
+    expect(store.error).toBe(WRITE_FAILED);
+    expect(store.error).not.toContain("fetch");
+  });
+
+  it("keeps the real error for a failed LOAD, which has no spec copy", async () => {
+    getMock.mockRejectedValueOnce(new Error("Network error"));
+    const store = useShoppingListStore();
+    await store.fetchList();
+
+    expect(store.error).toBe("Network error");
+  });
+
+  it("clears the message on the next successful write", async () => {
+    const store = await loadedStore([item()]);
+    putMock.mockRejectedValueOnce(new Error("nope"));
+    await store.toggleTicked(store.items[0].id);
+    expect(store.error).toBe(WRITE_FAILED);
+
+    putMock.mockResolvedValueOnce({ ...store.items[0], ticked: true });
+    await store.toggleTicked(store.items[0].id);
+    expect(store.error).toBeNull();
   });
 });
