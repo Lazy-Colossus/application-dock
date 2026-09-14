@@ -24,7 +24,7 @@ from typing import Any
 
 from app.repositories import kitchencraft_repo as repo
 from app.schemas.kitchencraft import (
-    IngredientTag,
+    Ingredient,
     KitchencraftDoc,
     Recipe,
     ShoppingItem,
@@ -85,30 +85,34 @@ def _clean_tags(values: list[str], known: list[str]) -> list[str]:
     return out
 
 
-def _clean_ingredients(values: list[IngredientTag], known: list[str]) -> list[IngredientTag]:
-    """Normalise ingredient tags: category folded onto the vocabulary, specific left alone.
+def _clean_ingredients(values: list[Ingredient], known: list[str]) -> list[Ingredient]:
+    """Normalise ingredients: text trimmed and case-folded, amount and unit tidied.
 
-    The specific is free text the cook wrote about this one recipe (`chicken
-    thighs`), so it is trimmed and otherwise kept exactly as typed — it is not
-    vocabulary and nothing matches against it. A blank specific is stored as
-    absent, never as an empty string, so the reading view can apply the absence
-    rule without a second emptiness test.
+    The text is free text the cook wrote about this one recipe, so beyond
+    trimming and folding onto a casing they have already used, it is kept
+    exactly as typed — there is no shared vocabulary to match it against any
+    more, and nothing parses it.
 
-    The same category may legitimately appear twice with different specifics
-    (`cheese` -> `feta` and `cheese` -> `cheddar`); only exact repeats are dropped.
+    A blank amount or unit is stored as absent, never as an empty string, so the
+    reading view can apply the absence rule without a second emptiness test.
+
+    The same ingredient may legitimately appear twice with different amounts
+    (`100 g butter` for the pastry, `20 g butter` for the pan); only entries
+    identical in all three parts are dropped.
     """
-    out: list[IngredientTag] = []
-    seen: set[tuple[str, str]] = set()
+    out: list[Ingredient] = []
+    seen: set[tuple[str, str, str]] = set()
     for raw in values:
-        category = _resolve_casing(raw.category, known + [i.category for i in out])
-        if not category:
-            raise ValueError("An ingredient needs a category")
-        specific = (raw.specific or "").strip() or None
-        key = (category.casefold(), (specific or "").casefold())
+        text = _resolve_casing(raw.text, known + [i.text for i in out])
+        if not text:
+            raise ValueError("An ingredient needs a name")
+        amount = (raw.amount or "").strip() or None
+        unit = (raw.unit or "").strip() or None
+        key = (text.casefold(), (amount or "").casefold(), (unit or "").casefold())
         if key in seen:
             continue
         seen.add(key)
-        out.append(IngredientTag(category=category, specific=specific))
+        out.append(Ingredient(amount=amount, unit=unit, text=text))
     return out
 
 
@@ -155,47 +159,48 @@ def _tag_vocabulary(doc: KitchencraftDoc) -> list[str]:
     return out
 
 
-def _category_vocabulary(doc: KitchencraftDoc) -> list[str]:
-    """The shipped seed, plus the user's coined categories, plus anything in use.
+def _ingredient_vocabulary(doc: KitchencraftDoc) -> list[str]:
+    """Every ingredient text anywhere in the collection, in first-seen order.
 
-    The seed comes first so the typeahead's ranking starts from the common case;
-    a user's own categories follow. Unioned on read for the same reason as the
-    tags: there is no separate index to keep honest.
+    The user's own history, not a shared vocabulary — v2 has none. It exists so
+    the field can still suggest what this cook has typed before, which is what
+    keeps `Feta` and `feta` from becoming two things.
     """
     out: list[str] = []
     seen: set[str] = set()
-    accrued = list(doc.categories) + [i.category for r in doc.recipes for i in r.ingredients]
-    for category in repo.read_seed_categories() + accrued:
-        if category.casefold() not in seen:
-            seen.add(category.casefold())
-            out.append(category)
+    for recipe in doc.recipes:
+        for ingredient in recipe.ingredients:
+            if ingredient.text.casefold() not in seen:
+                seen.add(ingredient.text.casefold())
+                out.append(ingredient.text)
+    return out
+
+
+def _unit_vocabulary(doc: KitchencraftDoc) -> list[str]:
+    """The shipped units, plus any this user has coined, in that order.
+
+    The seed comes first so the field offers the common case before anything is
+    typed. Unioned on read for the same reason as the tags: no separate index to
+    keep honest.
+    """
+    out: list[str] = []
+    seen: set[str] = set()
+    used = [i.unit for r in doc.recipes for i in r.ingredients if i.unit]
+    for unit in repo.read_seed_units() + used:
+        if unit.casefold() not in seen:
+            seen.add(unit.casefold())
+            out.append(unit)
     return out
 
 
 def get_vocabulary(username: str) -> Vocabulary:
-    """The two typeahead namespaces, kept strictly apart (FR-8)."""
+    """What each typeahead may offer, kept strictly apart (FR-8)."""
     doc = repo.read_doc(username)
     return Vocabulary(
         tags=_tag_vocabulary(doc),
-        ingredient_categories=_category_vocabulary(doc),
+        ingredients=_ingredient_vocabulary(doc),
+        units=_unit_vocabulary(doc),
     )
-
-
-def _remember_categories(doc: KitchencraftDoc, ingredients: list[IngredientTag]) -> None:
-    """Record any genuinely new category on the user's document.
-
-    A category coined on the edit screen has to outlive the recipe that
-    introduced it — that is what makes it *shared* vocabulary for every future
-    recipe (FR-9, FR-22). Seeded categories are not copied in; the seed is
-    already read on every vocabulary read.
-    """
-    seeded = {c.casefold() for c in repo.read_seed_categories()}
-    known = {c.casefold() for c in doc.categories}
-    for ingredient in ingredients:
-        folded = ingredient.category.casefold()
-        if folded not in seeded and folded not in known:
-            known.add(folded)
-            doc.categories.append(ingredient.category)
 
 
 # -- Reads --------------------------------------------------------------------
@@ -256,7 +261,7 @@ def create_recipe(
     servings: int | None = None,
     source: str | None = None,
     tags: list[str] | None = None,
-    ingredients: list[IngredientTag] | None = None,
+    ingredients: list[Ingredient] | None = None,
 ) -> Recipe:
     """Save a new recipe. Only a name and a body are required (FR-3).
 
@@ -292,9 +297,8 @@ def create_recipe(
             servings=servings,
             source=(source or "").strip() or None,
             tags=_clean_tags(tags or [], _tag_vocabulary(doc)),
-            ingredients=_clean_ingredients(ingredients or [], _category_vocabulary(doc)),
+            ingredients=_clean_ingredients(ingredients or [], _ingredient_vocabulary(doc)),
         )
-        _remember_categories(doc, recipe.ingredients)
         doc.recipes.append(recipe)
     return recipe
 
@@ -307,7 +311,7 @@ def _drop_marks(recipe: Recipe, changed: set[str]) -> None:
     a mark for a tag that is no longer on the recipe describes nothing.
     """
     live_tags = {f"tag:{t}" for t in recipe.tags}
-    live_ingredients = {f"ingredient:{i.category}" for i in recipe.ingredients}
+    live_ingredients = {f"ingredient:{i.text}" for i in recipe.ingredients}
     recipe.unconfirmed = [
         key
         for key in recipe.unconfirmed
@@ -369,14 +373,13 @@ def update_recipe(username: str, recipe_id: str, changes: dict[str, Any]) -> Rec
             recipe.tags = _clean_tags(changes["tags"] or [], known)
 
         if "ingredients" in changes:
-            incoming = [IngredientTag.model_validate(i) for i in (changes["ingredients"] or [])]
-            recipe.ingredients = _clean_ingredients(incoming, _category_vocabulary(doc))
-            _remember_categories(doc, recipe.ingredients)
+            incoming = [Ingredient.model_validate(i) for i in (changes["ingredients"] or [])]
+            recipe.ingredients = _clean_ingredients(incoming, _ingredient_vocabulary(doc))
 
         changed = {f for f in _MARKED_FIELDS if getattr(before, f) != getattr(recipe, f)}
         changed |= {f"tag:{t}" for t in set(before.tags) ^ set(recipe.tags)}
         changed |= {
-            f"ingredient:{i.category}"
+            f"ingredient:{i.text}"
             for i in before.ingredients + recipe.ingredients
             if (i in before.ingredients) != (i in recipe.ingredients)
         }

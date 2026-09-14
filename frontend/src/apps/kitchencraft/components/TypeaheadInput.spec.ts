@@ -78,84 +78,14 @@ describe("suggesting from its own namespace", () => {
   });
 });
 
-describe("the new-category row", () => {
-  it("is not offered at all when coining is off (Tags)", async () => {
-    const wrapper = mountField({ allowCoin: false });
-    await type(wrapper, "harissaX");
-    expect(wrapper.find('[data-testid="ingredients-coin"]').exists()).toBe(
-      false,
-    );
-  });
-
-  it("is offered for a value that matches nothing (Ingredients)", async () => {
-    const wrapper = mountField({ allowCoin: true });
-    await type(wrapper, "sumac");
-    const coin = wrapper.find('[data-testid="ingredients-coin"]');
-    expect(coin.exists()).toBe(true);
-    expect(coin.text()).toBe('Add "sumac" — new category');
-  });
-
-  it("is NOT offered when the typed value already names a category", async () => {
-    // There is nothing to coin.
-    const wrapper = mountField({ allowCoin: true });
-    await type(wrapper, "harissa");
-    expect(wrapper.find('[data-testid="ingredients-coin"]').exists()).toBe(
-      false,
-    );
-  });
-
-  it("is not offered for a value differing only in casing", async () => {
-    const wrapper = mountField({ allowCoin: true });
-    await type(wrapper, "Harissa");
-    expect(wrapper.find('[data-testid="ingredients-coin"]').exists()).toBe(
-      false,
-    );
-  });
-
-  it("ranks below every existing match", async () => {
-    const wrapper = mountField({ allowCoin: true });
-    await type(wrapper, "chi");
-    const rows = wrapper.findAll(".kc-typeahead__row");
-    expect(rows.map((r) => r.text())).toEqual([
-      "chicken",
-      "chickpeas",
-      'Add "chi" — new category',
-    ]);
-  });
-
-  it("is distinct by rule and icon, not by colour alone", async () => {
-    // Position, rule, icon and wording — so it survives any contrast setting.
-    const wrapper = mountField({ allowCoin: true });
-    await type(wrapper, "sumac");
-    const coin = wrapper.find('[data-testid="ingredients-coin"]');
-    expect(coin.classes()).toContain("kc-new-category");
-    expect(coin.find("svg").exists()).toBe(true);
-  });
-
-  it("reports the commit as new, so the parent can widen the vocabulary", async () => {
-    const wrapper = mountField({ allowCoin: true });
-    await type(wrapper, "sumac");
-    await wrapper.find('[data-testid="ingredients-coin"]').trigger("mousedown");
-    expect(wrapper.emitted("commit")).toEqual([["sumac", true]]);
-  });
-
-  it("is not gated behind a confirmation", async () => {
-    const wrapper = mountField({ allowCoin: true });
-    await type(wrapper, "sumac");
-    await wrapper.find('[data-testid="ingredients-coin"]').trigger("mousedown");
-    // One action: the commit lands straight away.
-    expect(wrapper.emitted("commit")).toHaveLength(1);
-  });
-});
-
 describe("committing", () => {
-  it("commits an existing value as not-new", async () => {
-    const wrapper = mountField({ allowCoin: true });
+  it("commits an existing value", async () => {
+    const wrapper = mountField();
     await type(wrapper, "chi");
     await wrapper
       .findAll('[data-testid="ingredients-option"]')[0]
       .trigger("mousedown");
-    expect(wrapper.emitted("commit")).toEqual([["chicken", false]]);
+    expect(wrapper.emitted("commit")).toEqual([["chicken"]]);
   });
 
   it("clears the query and keeps focus so a run can be typed", async () => {
@@ -169,26 +99,19 @@ describe("committing", () => {
   });
 
   it("resolves Enter on a fully-typed name to the existing casing", async () => {
-    const wrapper = mountField({ allowCoin: true });
+    const wrapper = mountField();
     const input = await type(wrapper, "HARISSA");
     await input.trigger("keydown", { key: "Enter" });
-    // Never coins a duplicate under a different casing.
-    expect(wrapper.emitted("commit")).toEqual([["harissa", false]]);
+    // Never commits a near-duplicate under a different casing.
+    expect(wrapper.emitted("commit")).toEqual([["harissa"]]);
   });
 
   it("commits a genuinely new tag straight off Enter", async () => {
-    // A free tag needs no ceremony (allowCoin is off for Tags).
-    const wrapper = mountField({ allowCoin: false });
+    // A free tag needs no ceremony.
+    const wrapper = mountField();
     const input = await type(wrapper, "weeknight");
     await input.trigger("keydown", { key: "Enter" });
-    expect(wrapper.emitted("commit")).toEqual([["weeknight", false]]);
-  });
-
-  it("takes the coin row on Enter for an unmatched ingredient", async () => {
-    const wrapper = mountField({ allowCoin: true });
-    const input = await type(wrapper, "sumac");
-    await input.trigger("keydown", { key: "Enter" });
-    expect(wrapper.emitted("commit")).toEqual([["sumac", true]]);
+    expect(wrapper.emitted("commit")).toEqual([["weeknight"]]);
   });
 
   it("does nothing on Enter with an empty query", async () => {
@@ -206,16 +129,7 @@ describe("keyboard navigation", () => {
     await input.trigger("keydown", { key: "ArrowDown" });
     await input.trigger("keydown", { key: "ArrowDown" });
     await input.trigger("keydown", { key: "Enter" });
-    expect(wrapper.emitted("commit")).toEqual([["chickpeas", false]]);
-  });
-
-  it("reaches the last row with one press of Up", async () => {
-    // With coining on, that last row is the new-category row at the foot.
-    const wrapper = mountField({ allowCoin: true });
-    const input = await type(wrapper, "chi");
-    await input.trigger("keydown", { key: "ArrowUp" });
-    await input.trigger("keydown", { key: "Enter" });
-    expect(wrapper.emitted("commit")).toEqual([["chi", true]]);
+    expect(wrapper.emitted("commit")).toEqual([["chickpeas"]]);
   });
 
   it("wraps around the end of the list", async () => {
@@ -225,7 +139,7 @@ describe("keyboard navigation", () => {
     await input.trigger("keydown", { key: "ArrowDown" });
     await input.trigger("keydown", { key: "ArrowDown" });
     await input.trigger("keydown", { key: "Enter" });
-    expect(wrapper.emitted("commit")).toEqual([["chicken", false]]);
+    expect(wrapper.emitted("commit")).toEqual([["chicken"]]);
   });
 
   it("rings the highlighted row rather than filling it", async () => {
@@ -334,14 +248,7 @@ describe("the add button", () => {
     const wrapper = mountField();
     await type(wrapper, "cheese");
     await wrapper.find('[data-testid="ingredients-add"]').trigger("click");
-    expect(wrapper.emitted("commit")?.[0]).toEqual(["cheese", false]);
-  });
-
-  it("coins through the same explicit path Enter uses", async () => {
-    const wrapper = mountField({ allowCoin: true });
-    await type(wrapper, "sumac");
-    await wrapper.find('[data-testid="ingredients-add"]').trigger("click");
-    expect(wrapper.emitted("commit")?.[0]).toEqual(["sumac", true]);
+    expect(wrapper.emitted("commit")?.[0]).toEqual(["cheese"]);
   });
 
   it("is disabled with nothing typed, so it can never commit an empty value", async () => {

@@ -155,33 +155,57 @@ describe("the absence rule", () => {
 });
 
 describe("ingredients and tags", () => {
-  it("shows the specific where there is one, the category where there is not", async () => {
+  it("lists ingredients one per line, in the order entered", async () => {
     const { wrapper } = await mountPage({
       ingredients: [
-        { category: "cheese", specific: "feta" },
-        { category: "harissa", specific: null },
+        { amount: "200", unit: "g", text: "feta" },
+        { amount: null, unit: null, text: "harissa" },
       ],
     });
-    const chips = wrapper.findAll(
-      '[data-testid="recipe-ingredients"] .kc-chip',
-    );
-    expect(chips.map((c) => c.text())).toEqual(["feta", "harissa"]);
+    const rows = wrapper.findAll('[data-testid="recipe-ingredients"] li');
+    expect(rows).toHaveLength(2);
+    // Two columns, so they are read as a pair rather than one run-on string —
+    // the space between them is layout, not text.
+    expect(
+      rows.map((r) => [
+        r.find(".kc-ingredient__measure").text(),
+        r.find(".kc-ingredient__name").text(),
+      ]),
+    ).toEqual([
+      ["200 g", "feta"],
+      ["", "harissa"],
+    ]);
   });
 
-  it("never stacks a category and its specific as two ingredients", async () => {
+  it("puts the amount and unit in their own column, so quantities line up", async () => {
     const { wrapper } = await mountPage({
-      ingredients: [{ category: "cheese", specific: "feta" }],
+      ingredients: [
+        { amount: "200", unit: "g", text: "feta" },
+        { amount: "8", unit: null, text: "olives" },
+        { amount: null, unit: null, text: "harissa" },
+      ],
     });
-    expect(
-      wrapper.findAll('[data-testid="recipe-ingredients"] .kc-chip'),
-    ).toHaveLength(1);
+    const measures = wrapper
+      .findAll(".kc-ingredient__measure")
+      .map((m) => m.text());
+    expect(measures).toEqual(["200 g", "8", ""]);
+  });
+
+  it("shows an ingredient with neither as just its name", async () => {
+    // The absence rule, inside one line — no gap, no placeholder.
+    const { wrapper } = await mountPage({
+      ingredients: [{ amount: null, unit: null, text: "garlic" }],
+    });
+    const row = wrapper.find('[data-testid="recipe-ingredients"] li');
+    expect(row.find(".kc-ingredient__measure").text()).toBe("");
+    expect(row.find(".kc-ingredient__name").text()).toBe("garlic");
   });
 
   it("never gives a displaying chip the selected fill", async () => {
     // A chip merely displaying a value is not pressable, so never moss.
     const { wrapper } = await mountPage({
       tags: ["cheap"],
-      ingredients: [{ category: "onion", specific: null }],
+      ingredients: [{ amount: null, unit: null, text: "onion" }],
     });
     for (const chip of wrapper.findAll(".kc-chip")) {
       expect(chip.classes()).not.toContain("kc-chip--on");

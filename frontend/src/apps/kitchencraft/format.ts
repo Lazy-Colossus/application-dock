@@ -2,7 +2,7 @@
 // pages and the filter composable share these so the collection row, the
 // reading view and the counts can never disagree about how a value reads.
 
-import type { IngredientTag, Recipe } from "@/apps/kitchencraft/types";
+import type { Ingredient, Recipe } from "@/apps/kitchencraft/types";
 
 /**
  * A total time as a cook says it: "40 min", "1 hr", "1 hr 30 min".
@@ -36,11 +36,15 @@ export function metaLine(recipe: Recipe): string | null {
 }
 
 /**
- * How an ingredient tag reads: the specific where there is one, the bare
- * category where there is not — never both stacked as two ingredients (FR-7).
+ * How an ingredient reads as one line: `200 g feta`, `2 cloves garlic`, `garlic`.
+ *
+ * Each part appears only if it has a value, so an ingredient with no amount and
+ * no unit is just its name — the absence rule, applied inside a single line.
  */
-export function ingredientLabel(ingredient: IngredientTag): string {
-  return ingredient.specific ?? ingredient.category;
+export function ingredientLabel(ingredient: Ingredient): string {
+  return [ingredient.amount, ingredient.unit, ingredient.text]
+    .filter((part): part is string => Boolean(part))
+    .join(" ");
 }
 
 /**
@@ -97,18 +101,16 @@ export function tagUsage(recipes: Recipe[]): Map<string, number> {
 }
 
 /**
- * How many recipes call for each ingredient category, keyed case-insensitively.
+ * How many recipes call for each ingredient, keyed case-insensitively.
  *
- * Counted once per recipe even when a recipe carries the same category twice
- * with different specifics — `cheese → feta` plus `cheese → cheddar` is one
- * recipe that calls for cheese, not two.
+ * Counted once per recipe even when a recipe lists the same ingredient twice
+ * with different amounts — `100 g butter` plus `20 g butter` is one recipe that
+ * calls for butter, not two.
  */
-export function categoryUsage(recipes: Recipe[]): Map<string, number> {
+export function ingredientUsage(recipes: Recipe[]): Map<string, number> {
   const counts = new Map<string, number>();
   for (const recipe of recipes) {
-    const seen = new Set(
-      recipe.ingredients.map((i) => i.category.toLowerCase()),
-    );
+    const seen = new Set(recipe.ingredients.map((i) => i.text.toLowerCase()));
     for (const key of seen) counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   return counts;

@@ -56,18 +56,22 @@
           <div class="kc-read__bottom">
             <div v-if="recipe.ingredients.length > 0">
               <span class="kc-label">Ingredients</span>
-              <ul class="kc-chips" data-testid="recipe-ingredients">
+              <!--
+                One per line, in the order the cook entered them — a list to
+                read down while shopping or laying things out, not a bag of
+                chips to scan. Amount and unit sit in their own column so the
+                quantities line up with each other.
+              -->
+              <ul class="kc-ingredients" data-testid="recipe-ingredients">
                 <li
                   v-for="(ingredient, index) in recipe.ingredients"
                   :key="index"
+                  class="kc-ingredient"
                 >
-                  <!--
-                    Displaying a value, not offering a control — so never moss,
-                    because it is not pressable.
-                  -->
-                  <span class="kc-chip" :title="ingredient.category">
-                    {{ ingredientLabel(ingredient) }}
-                  </span>
+                  <span class="kc-ingredient__measure">{{
+                    measure(ingredient)
+                  }}</span>
+                  <span class="kc-ingredient__name">{{ ingredient.text }}</span>
                 </li>
               </ul>
             </div>
@@ -156,7 +160,8 @@ import AddToListModal from "@/apps/kitchencraft/components/AddToListModal.vue";
 import ConfirmModal from "@/apps/kitchencraft/components/ConfirmModal.vue";
 import PageBar from "@/apps/kitchencraft/components/PageBar.vue";
 import RatingStars from "@/apps/kitchencraft/components/RatingStars.vue";
-import { formatTime, ingredientLabel } from "@/apps/kitchencraft/format";
+import { formatTime } from "@/apps/kitchencraft/format";
+import type { Ingredient } from "@/apps/kitchencraft/types";
 import { useKitchencraftStore } from "@/apps/kitchencraft/stores/useKitchencraftStore";
 import type { Recipe } from "@/apps/kitchencraft/types";
 import "./../css/kitchencraft.sass";
@@ -195,6 +200,11 @@ onMounted(async () => {
   const found = await store.fetchRecipe(recipeId);
   if (!found) missing.value = true;
 });
+
+/** The amount and unit as one column: `200 g`, `2`, or nothing at all. */
+function measure(ingredient: Ingredient): string {
+  return [ingredient.amount, ingredient.unit].filter(Boolean).join(" ");
+}
 
 function rate(rating: number | null): void {
   void store.setRating(recipeId, rating);

@@ -1,5 +1,5 @@
 import { computed, ref, type Ref } from "vue";
-import { categoryUsage, tagUsage } from "@/apps/kitchencraft/format";
+import { tagUsage } from "@/apps/kitchencraft/format";
 import type { MealType, Recipe } from "@/apps/kitchencraft/types";
 
 /**
@@ -14,7 +14,7 @@ import type { MealType, Recipe } from "@/apps/kitchencraft/types";
  * - **Search and filters combine, never replace** (FR-11). Clearing the search
  *   leaves every filter as it was, and vice versa; they are independent inputs
  *   to one predicate.
- * - **AND semantics.** Selecting two ingredient categories returns recipes
+ * - **AND semantics.** Selecting two tags returns recipes
  *   carrying *both*, regardless of what else those recipes need.
  * - **Nothing here implies completeness** (UX-DR11). `countLabel` says recipes
  *   *call for* what was selected. There is no match ratio, no percentage and no
@@ -29,13 +29,12 @@ export interface Filters {
   // tapping the selected one clears it.
   mealType: MealType | null;
   tags: string[];
-  ingredients: string[];
   favouritesOnly: boolean;
 }
 
 export interface FilterReason {
   /** Which control this line clears. */
-  kind: "search" | "mealType" | "tag" | "ingredient" | "favourites";
+  kind: "search" | "mealType" | "tag" | "favourites";
   value: string;
   /** How many recipes this one filter matches on its own. */
   count: number;
@@ -48,7 +47,6 @@ export function emptyFilters(): Filters {
     search: "",
     mealType: null,
     tags: [],
-    ingredients: [],
     favouritesOnly: false,
   };
 }
@@ -69,13 +67,6 @@ function hasAllTags(recipe: Recipe, tags: string[]): boolean {
   return tags.every((tag) => held.has(tag.toLowerCase()));
 }
 
-function hasAllCategories(recipe: Recipe, categories: string[]): boolean {
-  // Matching is on category, never on the specific: a recipe tagged
-  // `cheese → feta` matches a `cheese` selection (FR-7).
-  const held = new Set(recipe.ingredients.map((i) => i.category.toLowerCase()));
-  return categories.every((category) => held.has(category.toLowerCase()));
-}
-
 export function useCollectionFilters(recipes: Ref<Recipe[]>) {
   const filters = ref<Filters>(emptyFilters());
 
@@ -85,7 +76,6 @@ export function useCollectionFilters(recipes: Ref<Recipe[]>) {
       (f.search.trim() ? 1 : 0) +
       (f.mealType ? 1 : 0) +
       f.tags.length +
-      f.ingredients.length +
       (f.favouritesOnly ? 1 : 0)
     );
   });
@@ -98,7 +88,6 @@ export function useCollectionFilters(recipes: Ref<Recipe[]>) {
       if (f.favouritesOnly && !recipe.favourite) return false;
       if (f.mealType && recipe.meal_type !== f.mealType) return false;
       if (!hasAllTags(recipe, f.tags)) return false;
-      if (!hasAllCategories(recipe, f.ingredients)) return false;
       return matchesSearch(recipe, f.search);
     }),
   );
@@ -119,27 +108,6 @@ export function useCollectionFilters(recipes: Ref<Recipe[]>) {
       );
   });
 
-  /** Ingredient categories the collection actually uses, most-used first. */
-  const categoriesInUse = computed(() => {
-    const counts = categoryUsage(recipes.value);
-    return [...counts.keys()]
-      .sort(
-        (a, b) =>
-          (counts.get(b) ?? 0) - (counts.get(a) ?? 0) || a.localeCompare(b),
-      )
-      .map(
-        (key) =>
-          recipes.value
-            .flatMap((r) => r.ingredients)
-            .find((i) => i.category.toLowerCase() === key)?.category ?? key,
-      );
-  });
-
-  /**
-   * The result count, worded so it can never overpromise.
-   *
-   * `null` when nothing is active: the filter bar shows no count at rest.
-   */
   const countLabel = computed<string | null>(() => {
     if (!anyActive.value) return null;
     const f = filters.value;
@@ -153,10 +121,6 @@ export function useCollectionFilters(recipes: Ref<Recipe[]>) {
     }
 
     const noun = total === 1 ? "recipe" : "recipes";
-    if (f.ingredients.length > 0) {
-      // The verb is always "call for". Never "you can make".
-      return `${n} of ${total} ${noun} call for ${f.ingredients.join(" + ")}`;
-    }
     return `${n} of ${total} ${noun}`;
   });
 
@@ -200,15 +164,6 @@ export function useCollectionFilters(recipes: Ref<Recipe[]>) {
         line("tag", tag, all.filter((r) => hasAllTags(r, [tag])).length),
       );
     }
-    for (const category of f.ingredients) {
-      out.push(
-        line(
-          "ingredient",
-          category,
-          all.filter((r) => hasAllCategories(r, [category])).length,
-        ),
-      );
-    }
     if (f.favouritesOnly) {
       out.push(
         line("favourites", "favourites", all.filter((r) => r.favourite).length),
@@ -230,7 +185,6 @@ export function useCollectionFilters(recipes: Ref<Recipe[]>) {
     } else {
       filters.value = {
         ...f,
-        ingredients: f.ingredients.filter((c) => c !== reason.value),
       };
     }
   }
@@ -247,7 +201,6 @@ export function useCollectionFilters(recipes: Ref<Recipe[]>) {
     countLabel,
     reasons,
     tagsInUse,
-    categoriesInUse,
     clearOne,
     clearAll,
   };

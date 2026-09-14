@@ -146,8 +146,8 @@
         <div class="kc-form__group">
           <IngredientsField
             v-model="form.ingredients"
-            :suggestions="categorySuggestions"
-            @coin="store.rememberCategory"
+            :suggestions="ingredientSuggestions"
+            :units="store.vocabulary.units"
           />
         </div>
 
@@ -182,14 +182,14 @@ import IngredientsField from "@/apps/kitchencraft/components/IngredientsField.vu
 import RatingStars from "@/apps/kitchencraft/components/RatingStars.vue";
 import TagsField from "@/apps/kitchencraft/components/TagsField.vue";
 import {
-  categoryUsage,
   orderByUsage,
   tagUsage,
+  ingredientUsage,
 } from "@/apps/kitchencraft/format";
 import { useKitchencraftStore } from "@/apps/kitchencraft/stores/useKitchencraftStore";
 import {
   MEAL_TYPES,
-  type IngredientTag,
+  type Ingredient,
   type MealType,
 } from "@/apps/kitchencraft/types";
 import "./../css/kitchencraft.sass";
@@ -208,7 +208,7 @@ const form = ref({
   meal_type: null as MealType | null,
   source: "",
   tags: [] as string[],
-  ingredients: [] as IngredientTag[],
+  ingredients: [] as Ingredient[],
 });
 
 // Time and servings are held as text so the field can reject what was typed
@@ -244,11 +244,10 @@ const canSave = computed(() => !timeError.value && !servingsError.value);
 const tagSuggestions = computed(() =>
   orderByUsage(store.vocabulary.tags, tagUsage(store.recipes)),
 );
-const categorySuggestions = computed(() =>
-  orderByUsage(
-    store.vocabulary.ingredient_categories,
-    categoryUsage(store.recipes),
-  ),
+// The user's own history, most-used first — there is no shared vocabulary in
+// v2, so this is simply what they have typed before.
+const ingredientSuggestions = computed(() =>
+  orderByUsage(store.vocabulary.ingredients, ingredientUsage(store.recipes)),
 );
 
 onMounted(async () => {

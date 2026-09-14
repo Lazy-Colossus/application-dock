@@ -58,10 +58,11 @@ describe("fetchCollection", () => {
 });
 
 describe("fetchVocabulary", () => {
-  it("loads the two namespaces", async () => {
+  it("loads the namespaces, kept apart", async () => {
     getMock.mockResolvedValueOnce({
       tags: ["cheap"],
-      ingredient_categories: ["onion"],
+      ingredients: ["feta"],
+      units: ["g", "tbsp"],
     });
 
     const store = useKitchencraftStore();
@@ -69,7 +70,8 @@ describe("fetchVocabulary", () => {
 
     expect(getMock).toHaveBeenCalledWith("/kitchencraft/vocabulary");
     expect(store.vocabulary.tags).toEqual(["cheap"]);
-    expect(store.vocabulary.ingredient_categories).toEqual(["onion"]);
+    expect(store.vocabulary.ingredients).toEqual(["feta"]);
+    expect(store.vocabulary.units).toEqual(["g", "tbsp"]);
   });
 });
 
@@ -251,30 +253,6 @@ describe("deleteRecipe", () => {
     delMock.mockRejectedValueOnce(new Error("Network error"));
     await expect(store.deleteRecipe(only.id)).rejects.toThrow();
     expect(store.recipes).toHaveLength(1);
-  });
-});
-
-describe("rememberCategory", () => {
-  it("offers a coined category for the rest of the edit", () => {
-    const store = useKitchencraftStore();
-    store.rememberCategory("harissa");
-    expect(store.vocabulary.ingredient_categories).toContain("harissa");
-  });
-
-  it("does not duplicate a category that differs only in casing", () => {
-    const store = useKitchencraftStore();
-    store.vocabulary = { tags: [], ingredient_categories: ["harissa"] };
-    store.rememberCategory("Harissa");
-    expect(store.vocabulary.ingredient_categories).toEqual(["harissa"]);
-  });
-
-  it("does not reach the server on its own", () => {
-    // It persists when the recipe is saved, which is what keeps an abandoned
-    // edit from leaving a category behind.
-    const store = useKitchencraftStore();
-    store.rememberCategory("harissa");
-    expect(postMock).not.toHaveBeenCalled();
-    expect(putMock).not.toHaveBeenCalled();
   });
 });
 

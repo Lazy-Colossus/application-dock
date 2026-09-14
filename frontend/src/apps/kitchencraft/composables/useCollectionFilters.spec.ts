@@ -21,8 +21,8 @@ function collection() {
       favourite: true,
       tags: ["batch cooking"],
       ingredients: [
-        { category: "chicken", specific: "chicken thighs" },
-        { category: "lemon", specific: null },
+        { amount: "4", unit: null, text: "chicken thighs" },
+        { amount: null, unit: null, text: "lemon" },
       ],
     }),
     recipe({
@@ -31,21 +31,21 @@ function collection() {
       meal_type: "dinner",
       tags: ["cheap"],
       ingredients: [
-        { category: "chicken", specific: null },
-        { category: "onion", specific: null },
+        { amount: null, unit: null, text: "chicken" },
+        { amount: null, unit: null, text: "onion" },
       ],
     }),
     recipe({
       name: "Onion soup",
       body: "Off the back of the packet.",
       meal_type: "lunch",
-      ingredients: [{ category: "onion", specific: null }],
+      ingredients: [{ amount: null, unit: null, text: "onion" }],
     }),
     recipe({
       name: "Feta bake",
       body: "Cheese, tomatoes, pasta.",
       meal_type: "dinner",
-      ingredients: [{ category: "cheese", specific: "feta" }],
+      ingredients: [{ amount: "200", unit: "g", text: "feta" }],
     }),
   ];
 }
@@ -114,48 +114,6 @@ describe("search", () => {
 // -- Story 2.5: filters ------------------------------------------------------
 
 describe("filters", () => {
-  it("ANDs two ingredient categories", () => {
-    const { filters, results } = setup(collection());
-    filters.value = { ...filters.value, ingredients: ["chicken", "onion"] };
-    expect(results.value.map((r) => r.name)).toEqual([
-      "Chicken and onion traybake",
-    ]);
-  });
-
-  it("returns a recipe regardless of what ELSE it requires", () => {
-    // The traybake also needs a tin and an oven; a two-category selection still
-    // matches it. The filter matches ingredients, it does not check completeness.
-    const { filters, results } = setup(collection());
-    filters.value = { ...filters.value, ingredients: ["onion"] };
-    expect(results.value).toHaveLength(2);
-  });
-
-  it("matches on category, never on the specific", () => {
-    const { filters, results } = setup(collection());
-    filters.value = { ...filters.value, ingredients: ["cheese"] };
-    expect(results.value.map((r) => r.name)).toEqual(["Feta bake"]);
-  });
-
-  it("does not match when the search term is only in a specific", () => {
-    // `feta` is the specific of a `cheese` tag, and the filter is on category.
-    const { filters, results } = setup(collection());
-    filters.value = { ...filters.value, ingredients: ["feta"] };
-    expect(results.value).toHaveLength(0);
-  });
-
-  it("combines filters of different kinds", () => {
-    const { filters, results } = setup(collection());
-    filters.value = {
-      ...filters.value,
-      mealType: "dinner",
-      ingredients: ["chicken"],
-      tags: ["cheap"],
-    };
-    expect(results.value.map((r) => r.name)).toEqual([
-      "Chicken and onion traybake",
-    ]);
-  });
-
   it("ANDs two tags", () => {
     const { filters, results } = setup(collection());
     filters.value = { ...filters.value, tags: ["cheap", "batch cooking"] };
@@ -174,30 +132,6 @@ describe("filters", () => {
     expect(results.value.map((r) => r.name)).toEqual([
       "Lemon-oregano chicken thighs",
     ]);
-  });
-
-  it("keeps favourites marked inside a filtered result", () => {
-    const { filters, results } = setup(collection());
-    filters.value = { ...filters.value, ingredients: ["chicken"] };
-    expect(results.value.filter((r) => r.favourite)).toHaveLength(1);
-  });
-
-  it("clears exactly one control and nothing else", () => {
-    const { filters, reasons, clearOne, results } = setup(collection());
-    filters.value = {
-      ...filters.value,
-      mealType: "dinner",
-      ingredients: ["chicken", "onion"],
-      search: "nothing-matches-this",
-    };
-    expect(results.value).toHaveLength(0);
-
-    const search = reasons.value.find((r) => r.kind === "search");
-    clearOne(search!);
-
-    expect(filters.value.search).toBe("");
-    expect(filters.value.mealType).toBe("dinner");
-    expect(filters.value.ingredients).toEqual(["chicken", "onion"]);
   });
 
   it("clears everything at once", () => {
@@ -221,22 +155,6 @@ describe("countLabel", () => {
     expect(countLabel.value).toBe("3 of 4 recipes");
   });
 
-  it("reads 'call for' with the selected categories joined by +", () => {
-    const { filters, countLabel } = setup(collection());
-    filters.value = { ...filters.value, ingredients: ["chicken", "onion"] };
-    expect(countLabel.value).toBe("1 of 4 recipes call for chicken + onion");
-  });
-
-  it("keeps the 'call for' wording when a meal type is also active", () => {
-    const { filters, countLabel } = setup(collection());
-    filters.value = {
-      ...filters.value,
-      ingredients: ["chicken"],
-      mealType: "dinner",
-    };
-    expect(countLabel.value).toBe("2 of 4 recipes call for chicken");
-  });
-
   it("reads favourites in its own words when it is the only filter", () => {
     const { filters, countLabel } = setup(collection());
     filters.value = { ...filters.value, favouritesOnly: true };
@@ -250,41 +168,11 @@ describe("countLabel", () => {
     filters.value = { ...filters.value, favouritesOnly: true };
     expect(countLabel.value).toBe("2 favourites");
   });
-
-  it("never implies the user can cook what matched", () => {
-    // UX-DR11: the PRD's counter-metric makes the wording the requirement.
-    const { filters, countLabel } = setup(collection());
-    filters.value = { ...filters.value, ingredients: ["chicken", "onion"] };
-    const label = countLabel.value ?? "";
-    expect(label).not.toMatch(/can make|can cook|you have|tonight|%|complete/i);
-    expect(label).toMatch(/call for/);
-  });
 });
 
 // -- UX-DR12: the zero-result state explains itself --------------------------
 
 describe("reasons", () => {
-  it("gives each active filter its own count", () => {
-    const { filters, reasons } = setup(collection());
-    filters.value = {
-      ...filters.value,
-      mealType: "dinner",
-      ingredients: ["chicken", "cheese"],
-    };
-    expect(reasons.value.map((r) => r.label)).toEqual([
-      "dinner — 3 on its own",
-      "chicken — 2 on its own",
-      "cheese — 1 on its own",
-    ]);
-  });
-
-  it("counts each filter alone, not in combination", () => {
-    const { filters, reasons } = setup(collection());
-    filters.value = { ...filters.value, ingredients: ["chicken", "onion"] };
-    // Together they match one recipe; on their own, two each.
-    expect(reasons.value.map((r) => r.count)).toEqual([2, 2]);
-  });
-
   it("includes the search term as its own clearable line", () => {
     const { filters, reasons } = setup(collection());
     filters.value = { ...filters.value, search: "paprika", mealType: "lunch" };
@@ -306,32 +194,9 @@ describe("what the bar offers", () => {
     const { tagsInUse } = setup(list);
     expect(tagsInUse.value).toEqual(["cheap", "batch cooking"]);
   });
-
-  it("lists only categories the collection actually calls for", () => {
-    const { categoriesInUse } = setup(collection());
-    // Most-used first: chicken and onion twice each, then the singles.
-    expect(categoriesInUse.value.slice(0, 2).sort()).toEqual([
-      "chicken",
-      "onion",
-    ]);
-    expect(categoriesInUse.value).toHaveLength(4);
-    expect(categoriesInUse.value).not.toContain("salt");
-  });
 });
 
 describe("activeCount", () => {
-  it("counts every individual selection", () => {
-    const { filters, activeCount } = setup(collection());
-    filters.value = {
-      search: "x",
-      mealType: "dinner",
-      tags: ["a", "b"],
-      ingredients: ["c"],
-      favouritesOnly: true,
-    };
-    expect(activeCount.value).toBe(6);
-  });
-
   it("does not count a whitespace-only search", () => {
     const { filters, activeCount } = setup(collection());
     filters.value = { ...filters.value, search: "   " };

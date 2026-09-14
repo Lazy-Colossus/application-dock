@@ -18,7 +18,7 @@ import type {
 // round trip, and full-text search needs the bodies anyway.
 export const useKitchencraftStore = defineStore("kitchencraft", () => {
   const recipes = ref<Recipe[]>([]);
-  const vocabulary = ref<Vocabulary>({ tags: [], ingredient_categories: [] });
+  const vocabulary = ref<Vocabulary>({ tags: [], ingredients: [], units: [] });
   const loading = ref(false);
   const error = ref<string | null>(null);
   // Distinguishes "loaded and genuinely empty" from "not fetched yet", so the
@@ -205,22 +205,6 @@ export const useKitchencraftStore = defineStore("kitchencraft", () => {
     }
   }
 
-  /**
-   * Offer a category the user has just coined for the rest of this edit.
-   *
-   * Coining is one action (UX-DR7), so the new value has to be selectable
-   * immediately; it reaches the server when the recipe is saved, which is also
-   * what keeps an abandoned edit from leaving a category behind.
-   */
-  function rememberCategory(category: string): void {
-    const known = vocabulary.value.ingredient_categories;
-    if (known.some((c) => c.toLowerCase() === category.toLowerCase())) return;
-    vocabulary.value = {
-      ...vocabulary.value,
-      ingredient_categories: [...known, category],
-    };
-  }
-
   return {
     recipes,
     vocabulary,
@@ -236,6 +220,5 @@ export const useKitchencraftStore = defineStore("kitchencraft", () => {
     toggleFavourite,
     setRating,
     deleteRecipe,
-    rememberCategory,
   };
 });

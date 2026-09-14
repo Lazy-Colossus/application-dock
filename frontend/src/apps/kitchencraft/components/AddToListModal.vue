@@ -123,7 +123,7 @@
 import { ref } from "vue";
 import { ingredientLabel } from "@/apps/kitchencraft/format";
 import { useShoppingListStore } from "@/apps/kitchencraft/stores/useShoppingListStore";
-import type { IngredientTag } from "@/apps/kitchencraft/types";
+import type { Ingredient } from "@/apps/kitchencraft/types";
 
 /**
  * Send a recipe's ingredients to the shopping list (Story 3.3).
@@ -131,7 +131,7 @@ import type { IngredientTag } from "@/apps/kitchencraft/types";
  * Always a plain append. Everything about a list that already has items — the
  * prompt, the overwrite, the case-insensitive merge — is Story 3.4.
  */
-const props = defineProps<{ ingredients: IngredientTag[] }>();
+const props = defineProps<{ ingredients: Ingredient[] }>();
 
 const emit = defineEmits<{
   close: [];
@@ -142,9 +142,11 @@ const emit = defineEmits<{
 /**
  * The two the cook almost certainly already has.
  *
- * Matched on **category**, exactly and case-insensitively — never on the
- * specific, and never by substring. `pepper` is its own category in the shipped
- * vocabulary (the vegetable), and a substring match would quietly uncheck it.
+ * Matched on the ingredient text, exactly and case-insensitively — never by
+ * substring, so `red peppers` is not mistaken for `black pepper` and `salted
+ * butter` is not mistaken for `salt`. An exact match is narrow by design: it
+ * under-matches (`freshly ground black pepper` stays checked) rather than
+ * silently dropping something the cook needs.
  */
 const STAPLES = ["salt", "black pepper"];
 
@@ -153,9 +155,7 @@ const store = useShoppingListStore();
 const label = ingredientLabel;
 
 const checked = ref(
-  props.ingredients.map(
-    (i) => !STAPLES.includes(i.category.trim().toLowerCase()),
-  ),
+  props.ingredients.map((i) => !STAPLES.includes(i.text.trim().toLowerCase())),
 );
 
 // Null until an add has happened; the count afterwards.

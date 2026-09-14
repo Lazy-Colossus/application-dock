@@ -13,15 +13,19 @@ vi.mock("@/composables/useApi", () => ({
 
 import AddToListModal from "@/apps/kitchencraft/components/AddToListModal.vue";
 import { useShoppingListStore } from "@/apps/kitchencraft/stores/useShoppingListStore";
-import type { IngredientTag } from "@/apps/kitchencraft/types";
+import type { Ingredient } from "@/apps/kitchencraft/types";
 
-function ing(category: string, specific: string | null = null): IngredientTag {
-  return { category, specific };
+function ing(
+  text: string,
+  amount: string | null = null,
+  unit: string | null = null,
+): Ingredient {
+  return { amount, unit, text };
 }
 
-const TRAYBAKE: IngredientTag[] = [
-  ing("chicken", "thighs"),
-  ing("potato", "new potatoes"),
+const TRAYBAKE: Ingredient[] = [
+  ing("chicken thighs", "4"),
+  ing("new potatoes", "500", "g"),
   ing("garlic"),
   ing("salt"),
   ing("black pepper"),
@@ -33,7 +37,7 @@ beforeEach(() => {
   postMock.mockResolvedValue([]);
 });
 
-function mountModal(ingredients: IngredientTag[] = TRAYBAKE) {
+function mountModal(ingredients: Ingredient[] = TRAYBAKE) {
   return mount(AddToListModal, {
     props: { ingredients },
     attachTo: document.body,
@@ -51,13 +55,13 @@ describe("what it lists", () => {
     expect(mountModal().findAll('input[type="checkbox"]')).toHaveLength(5);
   });
 
-  it("shows the specific where there is one, the category where there is not", () => {
+  it("reads each one as amount, unit, ingredient", () => {
     const rows = mountModal()
       .findAll('[data-testid="add-items"] .kc-body')
       .map((r) => r.text());
     expect(rows).toEqual([
-      "thighs",
-      "new potatoes",
+      "4 chicken thighs",
+      "500 g new potatoes",
       "garlic",
       "salt",
       "black pepper",
@@ -76,18 +80,23 @@ describe("the staples", () => {
     ]);
   });
 
-  it("leaves `pepper` CHECKED — it is the vegetable, not a staple", () => {
-    // Its own category in the shipped vocabulary. A substring match against
-    // "black pepper" would quietly uncheck it and the cook would buy none.
-    const wrapper = mountModal([ing("pepper", "red peppers")]);
+  it("leaves `red peppers` CHECKED — a substring match would drop it", () => {
+    // The trap: `red peppers` contains neither staple, but a loose `includes`
+    // against "black pepper" would catch it and the cook would buy none.
+    const wrapper = mountModal([ing("red peppers", "3")]);
     expect(checkedStates(wrapper)).toEqual([true]);
   });
 
-  it("matches the staple on category, not on the specific", () => {
-    // The category is what the vocabulary knows; `flaky sea salt` under `salt`
-    // is still the staple.
-    const wrapper = mountModal([ing("salt", "flaky sea salt")]);
-    expect(checkedStates(wrapper)).toEqual([false]);
+  it("leaves `salted butter` CHECKED for the same reason", () => {
+    expect(checkedStates(mountModal([ing("salted butter")]))).toEqual([true]);
+  });
+
+  it("under-matches rather than over-matches", () => {
+    // `freshly ground black pepper` stays checked. Narrow by design: a staple
+    // left checked costs one unticked line, a real ingredient dropped costs
+    // the meal.
+    const wrapper = mountModal([ing("freshly ground black pepper")]);
+    expect(checkedStates(wrapper)).toEqual([true]);
   });
 
   it("matches a staple whatever its casing", () => {
@@ -117,7 +126,7 @@ describe("confirming", () => {
     expect(postMock).toHaveBeenCalledTimes(1);
     expect(postMock).toHaveBeenCalledWith(
       "/kitchencraft/shopping-list/items/bulk",
-      { texts: ["thighs", "new potatoes", "garlic"] },
+      { texts: ["4 chicken thighs", "500 g new potatoes", "garlic"] },
     );
   });
 
@@ -128,7 +137,7 @@ describe("confirming", () => {
     await flushPromises();
 
     expect(postMock.mock.calls[0][1]).toEqual({
-      texts: ["thighs", "new potatoes", "garlic", "salt"],
+      texts: ["4 chicken thighs", "500 g new potatoes", "garlic", "salt"],
     });
   });
 
@@ -160,7 +169,7 @@ describe("after a successful add", () => {
   });
 
   it("says 'item' rather than '1 items'", async () => {
-    const wrapper = mountModal([ing("chicken", "thighs")]);
+    const wrapper = mountModal([ing("chicken thighs", "4")]);
     await wrapper.find('[data-testid="add-confirm"]').trigger("click");
     await flushPromises();
     expect(wrapper.find('[data-testid="add-result"]').text()).toBe(

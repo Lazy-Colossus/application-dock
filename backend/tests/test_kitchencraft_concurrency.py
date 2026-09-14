@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from app.repositories import kitchencraft_repo as repo
-from app.schemas.kitchencraft import IngredientTag
+from app.schemas.kitchencraft import Ingredient
 from app.services import kitchencraft_service as service
 
 
@@ -128,18 +128,25 @@ def test_a_rejected_edit_writes_nothing() -> None:
     assert stored.servings is None
 
 
-def test_concurrent_coining_of_one_category_records_it_once() -> None:
+def test_concurrent_writes_of_one_ingredient_converge_on_one_casing() -> None:
+    """Six recipes coining the same ingredient at once must not fork its casing.
+
+    v2 has no shared vocabulary to coin into, but the casing rule still applies
+    across the collection — whichever write lands first sets the casing every
+    later one folds onto.
+    """
     errors = _run(
         [
             lambda i=i: service.create_recipe(
                 "nell",
                 name=f"r{i}",
                 body="b",
-                ingredients=[IngredientTag(category="harissa")],
+                ingredients=[Ingredient(text="Harissa" if i % 2 else "harissa")],
             )
             for i in range(6)
         ]
     )
 
     assert not errors
-    assert repo.read_doc("nell").categories == ["harissa"]
+    used = {i.text for r in repo.read_doc("nell").recipes for i in r.ingredients}
+    assert len(used) == 1

@@ -47,8 +47,6 @@
         <FilterBar
           v-model="filters"
           :tags-in-use="tagsInUse"
-          :categories-in-use="categoriesInUse"
-          :all-categories="store.vocabulary.ingredient_categories"
           :count-label="countLabel"
           :any-active="anyActive"
           @clear-all="clearAll"
@@ -143,7 +141,6 @@ const {
   countLabel,
   reasons,
   tagsInUse,
-  categoriesInUse,
   clearOne,
   clearAll,
 } = useCollectionFilters(recipes);

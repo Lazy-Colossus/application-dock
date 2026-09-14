@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
-  categoryUsage,
+  ingredientUsage,
   formatTime,
   ingredientLabel,
   metaLine,
@@ -63,21 +63,29 @@ describe("metaLine — the absence rule", () => {
 });
 
 describe("ingredientLabel", () => {
-  it("shows the specific where there is one", () => {
-    expect(ingredientLabel({ category: "cheese", specific: "feta" })).toBe(
-      "feta",
+  it("reads as one line: amount, unit, ingredient", () => {
+    expect(ingredientLabel({ amount: "200", unit: "g", text: "feta" })).toBe(
+      "200 g feta",
     );
   });
 
-  it("shows the bare category where there is no specific", () => {
-    expect(ingredientLabel({ category: "harissa", specific: null })).toBe(
-      "harissa",
+  it("drops the unit where there is none", () => {
+    expect(ingredientLabel({ amount: "2", unit: null, text: "onions" })).toBe(
+      "2 onions",
     );
   });
 
-  it("never stacks the two into one string", () => {
-    const label = ingredientLabel({ category: "cheese", specific: "feta" });
-    expect(label).not.toContain("cheese");
+  it("drops the amount where there is none", () => {
+    expect(ingredientLabel({ amount: null, unit: "pinch", text: "salt" })).toBe(
+      "pinch salt",
+    );
+  });
+
+  it("is just the ingredient when it carries neither", () => {
+    // The absence rule, applied inside one line — no gaps, no placeholders.
+    expect(ingredientLabel({ amount: null, unit: null, text: "garlic" })).toBe(
+      "garlic",
+    );
   });
 });
 
@@ -123,18 +131,18 @@ describe("usage counting", () => {
     expect(counts.get("cheap")).toBe(2);
   });
 
-  it("counts a category once per recipe even with two specifics", () => {
-    // `cheese → feta` plus `cheese → cheddar` is one recipe that calls for
-    // cheese, not two.
-    const counts = categoryUsage([
+  it("counts an ingredient once per recipe even when listed twice", () => {
+    // 100g butter for the pastry plus 20g for the pan is one recipe that calls
+    // for butter, not two.
+    const counts = ingredientUsage([
       recipe({
         ingredients: [
-          { category: "cheese", specific: "feta" },
-          { category: "cheese", specific: "cheddar" },
+          { amount: "100", unit: "g", text: "butter" },
+          { amount: "20", unit: "g", text: "butter" },
         ],
       }),
     ]);
-    expect(counts.get("cheese")).toBe(1);
+    expect(counts.get("butter")).toBe(1);
   });
 });
 

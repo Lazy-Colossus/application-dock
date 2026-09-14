@@ -19,7 +19,8 @@ import type { Recipe } from "@/apps/kitchencraft/types";
 
 const VOCABULARY = {
   tags: ["batch cooking", "cheap"],
-  ingredient_categories: ["chicken", "onion", "salt"],
+  ingredients: ["chicken", "onion"],
+  units: ["g", "tbsp"],
 };
 
 beforeEach(() => {
@@ -131,15 +132,15 @@ describe("search and filters on the page", () => {
         meal_type: "dinner",
         tags: ["cheap"],
         ingredients: [
-          { category: "chicken", specific: null },
-          { category: "onion", specific: null },
+          { amount: null, unit: null, text: "chicken" },
+          { amount: null, unit: null, text: "onion" },
         ],
       }),
       recipe({
         name: "Onion soup",
         body: "Off the packet.",
         meal_type: "lunch",
-        ingredients: [{ category: "onion", specific: null }],
+        ingredients: [{ amount: null, unit: null, text: "onion" }],
       }),
     ];
   }
@@ -156,43 +157,6 @@ describe("search and filters on the page", () => {
 
     await wrapper.find('[data-testid="meal-dinner"]').trigger("click");
     expect(wrapper.find('[data-testid="count"]').text()).toBe("1 of 2 recipes");
-  });
-
-  it("words a pantry count as 'call for', never as what the user can make", async () => {
-    const wrapper = await mountPage(collection());
-    await wrapper.find('[data-testid="toggle-ingredients"]').trigger("click");
-    await wrapper
-      .find('[data-testid="ingredient-filter-onion"]')
-      .trigger("click");
-
-    const count = wrapper.find('[data-testid="count"]').text();
-    expect(count).toBe("2 of 2 recipes call for onion");
-    expect(count).not.toMatch(/can make|can cook/i);
-  });
-
-  it("offers the whole vocabulary behind an explicit disclosure", async () => {
-    const wrapper = await mountPage(collection());
-    await wrapper.find('[data-testid="toggle-ingredients"]').trigger("click");
-    // Only what the collection calls for, to begin with.
-    expect(
-      wrapper.find('[data-testid="ingredient-filter-salt"]').exists(),
-    ).toBe(false);
-
-    await wrapper
-      .find('[data-testid="toggle-all-categories"]')
-      .trigger("click");
-    expect(
-      wrapper.find('[data-testid="ingredient-filter-salt"]').exists(),
-    ).toBe(true);
-  });
-
-  it("never labels the pantry filter as a fridge or a pantry", async () => {
-    // UX-DR11: the filter's own label is "Ingredients".
-    const wrapper = await mountPage(collection());
-    expect(wrapper.text()).not.toMatch(/fridge|pantry|cook tonight/i);
-    expect(wrapper.find('[data-testid="toggle-ingredients"]').text()).toBe(
-      "Ingredients",
-    );
   });
 
   it("clears one filter without touching the others", async () => {

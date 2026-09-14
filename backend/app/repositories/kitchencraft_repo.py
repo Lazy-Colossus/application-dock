@@ -29,12 +29,15 @@ from app.core.storage import atomic_write_json
 from app.schemas.kitchencraft import KitchencraftDoc, ShoppingList
 
 _APP_DIR = "kitchencraft"
-_CURRENT_SCHEMA_VERSION = 1
+
+# The two documents version independently: the collection reached v2 when
+# ingredients became amount + unit + free text, and the shopping list was
+# untouched by that change.
+_RECIPES_SCHEMA_VERSION = 2
+_SHOPPING_SCHEMA_VERSION = 1
 
 # Ships in the image (committed, read-only at runtime), NOT under DATA_DIR.
-_SEED_PATH = (
-    Path(__file__).resolve().parent.parent / "kitchencraft_seed" / ("ingredient_categories.json")
-)
+_SEED_PATH = Path(__file__).resolve().parent.parent / "kitchencraft_seed" / "units.json"
 
 
 def _validate_username(username: str) -> str:
@@ -68,31 +71,73 @@ def _shopping_path(username: str) -> Path:
     return settings.data_dir / _APP_DIR / "shopping" / f"{username}.json"
 
 
-def migrate(raw: dict[str, object]) -> dict[str, object]:
-    """Upgrade a raw document to the current schema. v1 is a pass-through.
+def _migrate_v1_ingredients(raw: dict[str, object]) -> dict[str, object]:
+    """v1 -> v2: two-level ingredient tags become amount + unit + free text.
 
-    Kept as the single home for future `schema_version` bumps so `read_doc`
-    never has to grow version branches inline. An unknown *future* version is
-    rejected rather than silently coerced — a body is the irreplaceable asset
-    here (NFR-3) and guessing at a newer shape risks dropping fields on write.
+    A v1 tag was a `category` from a shared vocabulary plus an optional
+    `specific`, and it *displayed* as the specific where there was one and the
+    bare category where there was not. The migration keeps exactly what was on
+    screen — `text = specific or category` — so no recipe reads differently
+    after the upgrade than it did before it.
+
+    The category itself is dropped, which is lossy by decision: the shared
+    vocabulary, the pantry filter and the coining ceremony were removed with it.
+    Amount and unit start empty; there was nowhere for them to have come from.
     """
-    version = raw.get("schema_version", _CURRENT_SCHEMA_VERSION)
-    if version != _CURRENT_SCHEMA_VERSION:
-        raise ValueError(f"Unsupported kitchencraft schema_version: {version!r}")
+    for recipe in raw.get("recipes", []):
+        if not isinstance(recipe, dict):
+            continue
+        migrated = []
+        for tag in recipe.get("ingredients", []) or []:
+            if not isinstance(tag, dict):
+                continue
+            if "text" in tag:  # already v2
+                migrated.append(tag)
+                continue
+            text = (tag.get("specific") or tag.get("category") or "").strip()
+            if text:
+                migrated.append({"amount": None, "unit": None, "text": text})
+        recipe["ingredients"] = migrated
+        # Provenance keys named the category; nothing points at them now.
+        recipe["unconfirmed"] = [
+            key
+            for key in (recipe.get("unconfirmed") or [])
+            if not str(key).startswith("ingredient:")
+        ]
+    # The user's coined categories have no home in v2.
+    raw.pop("categories", None)
+    raw["schema_version"] = 2
     return raw
 
 
-def read_seed_categories() -> list[str]:
-    """The shipped starter vocabulary of ingredient categories (UX-DR19).
+def migrate(raw: dict[str, object], expected: int = _RECIPES_SCHEMA_VERSION) -> dict[str, object]:
+    """Upgrade a raw document to `expected`.
 
-    Read-only and shared by every user, so the typeahead and the pantry filter
-    both do useful work against a user's very first recipe.
+    The single home for `schema_version` bumps, so the readers never grow
+    version branches inline. An unknown *future* version is rejected rather than
+    silently coerced — a body is the irreplaceable asset here (NFR-3) and
+    guessing at a newer shape risks dropping fields on write.
+    """
+    version = raw.get("schema_version", expected)
+    if version == expected:
+        return raw
+    if expected == _RECIPES_SCHEMA_VERSION and version == 1:
+        return _migrate_v1_ingredients(raw)
+    raise ValueError(f"Unsupported kitchencraft schema_version: {version!r}")
+
+
+def read_seed_units() -> list[str]:
+    """The shipped starter list of units.
+
+    Read-only and shared by every user, so the unit field offers something
+    useful against a user's very first recipe. Not a closed set: a unit typed
+    that is not in here is accepted and joins that user's own vocabulary.
     """
     raw = json.loads(_SEED_PATH.read_text(encoding="utf-8"))
     version = raw.get("schema_version")
-    if version != _CURRENT_SCHEMA_VERSION:
-        raise ValueError(f"Unsupported ingredient_categories schema_version: {version!r}")
-    return list(raw["categories"])
+    if version != 1:
+        raise ValueError(f"Unsupported units schema_version: {version!r}")
+    return list(raw["units"])
 
 
 def read_doc(username: str) -> KitchencraftDoc:
@@ -101,7 +146,7 @@ def read_doc(username: str) -> KitchencraftDoc:
     try:
         raw = path.read_text(encoding="utf-8")
     except FileNotFoundError:
-        return KitchencraftDoc(schema_version=_CURRENT_SCHEMA_VERSION)
+        return KitchencraftDoc(schema_version=_RECIPES_SCHEMA_VERSION)
 
     data = migrate(json.loads(raw))
     return KitchencraftDoc.model_validate(data)
@@ -143,9 +188,9 @@ def read_shopping_list(username: str) -> ShoppingList:
     try:
         raw = path.read_text(encoding="utf-8")
     except FileNotFoundError:
-        return ShoppingList(schema_version=_CURRENT_SCHEMA_VERSION)
+        return ShoppingList(schema_version=_SHOPPING_SCHEMA_VERSION)
 
-    data = migrate(json.loads(raw))
+    data = migrate(json.loads(raw), _SHOPPING_SCHEMA_VERSION)
     return ShoppingList.model_validate(data)
 
 

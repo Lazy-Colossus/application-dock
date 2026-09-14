@@ -23,7 +23,8 @@ import type { Recipe } from "@/apps/kitchencraft/types";
 
 const VOCABULARY = {
   tags: ["batch cooking", "cheap"],
-  ingredient_categories: ["chicken", "chickpeas", "cheese", "onion"],
+  ingredients: ["feta", "smoked paprika"],
+  units: ["g", "kg", "tbsp", "tsp", "clove"],
 };
 
 beforeEach(() => {
@@ -111,12 +112,16 @@ describe("the form", () => {
     ]);
   });
 
-  it("keeps Tags and Ingredients as two separate inputs", async () => {
+  it("keeps Tags and Ingredients as separate inputs", async () => {
+    // FR-8 still holds: a value typed into one never lands in the other's
+    // namespace. Ingredients is now three fields rather than one.
     const { wrapper } = await mountPage();
     expect(wrapper.find('[data-testid="tags-input"]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid="ingredients-input"]').exists()).toBe(
+    expect(wrapper.find('[data-testid="ingredient-text"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="ingredient-amount"]').exists()).toBe(
       true,
     );
+    expect(wrapper.find('[data-testid="ingredient-unit"]').exists()).toBe(true);
   });
 });
 
@@ -296,16 +301,13 @@ describe("tags and ingredients", () => {
     expect(options).not.toContain("chicken");
   });
 
-  it("offers ingredient categories only in the Ingredients input", async () => {
+  it("offers ingredients only in the Ingredient field, never tags", async () => {
     const { wrapper } = await mountPage();
-    const input = wrapper.find('[data-testid="ingredients-input"]');
-    await input.trigger("focus");
-    await input.setValue("chi");
-
     const options = wrapper
-      .findAll('[data-testid="ingredients-option"]')
-      .map((o) => o.text());
-    expect(options).toEqual(["chicken", "chickpeas"]);
+      .findAll("#kc-ingredient-suggestions option")
+      .map((o) => o.attributes("value"));
+
+    expect(options).toEqual(["feta", "smoked paprika"]);
     expect(options).not.toContain("batch cooking");
   });
 
@@ -318,13 +320,10 @@ describe("tags and ingredients", () => {
     await tags.setValue("cheap");
     await tags.trigger("keydown", { key: "Enter" });
 
-    const ingredients = wrapper.find('[data-testid="ingredients-input"]');
-    await ingredients.trigger("focus");
-    await ingredients.setValue("chickpeas");
-    await ingredients.trigger("keydown", { key: "Enter" });
-    await flushPromises();
+    await wrapper.find('[data-testid="ingredient-amount"]').setValue("400");
+    await wrapper.find('[data-testid="ingredient-unit"]').setValue("g");
     await wrapper
-      .find('[data-testid="specific-input"]')
+      .find('[data-testid="ingredient-text"]')
       .setValue("dried chickpeas");
     await wrapper.find('[data-testid="add-ingredient"]').trigger("click");
 
@@ -332,42 +331,26 @@ describe("tags and ingredients", () => {
 
     expect(sent().tags).toEqual(["cheap"]);
     expect(sent().ingredients).toEqual([
-      { category: "chickpeas", specific: "dried chickpeas" },
+      { amount: "400", unit: "g", text: "dried chickpeas" },
     ]);
   });
 
-  it("offers a coined category immediately, for the rest of the edit", async () => {
+  it("sends an ingredient with no amount or unit", async () => {
     const { wrapper } = await mountPage();
-    const input = wrapper.find('[data-testid="ingredients-input"]');
-    await input.trigger("focus");
-    await input.setValue("harissa");
-    await wrapper.find('[data-testid="ingredients-coin"]').trigger("mousedown");
-    await flushPromises();
-    await wrapper.find('[data-testid="cancel-ingredient"]').trigger("click");
+    putMock.mockResolvedValueOnce(recipe());
 
-    // Coined once, it is now an ordinary existing category — no second coin row.
-    const again = wrapper.find('[data-testid="ingredients-input"]');
-    await again.trigger("focus");
-    await again.setValue("harissa");
-    expect(wrapper.find('[data-testid="ingredients-coin"]').exists()).toBe(
-      false,
-    );
-    expect(
-      wrapper
-        .findAll('[data-testid="ingredients-option"]')
-        .map((o) => o.text()),
-    ).toEqual(["harissa"]);
+    await wrapper.find('[data-testid="ingredient-text"]').setValue("garlic");
+    await wrapper.find('[data-testid="add-ingredient"]').trigger("click");
+    await save(wrapper);
+
+    expect(sent().ingredients).toEqual([
+      { amount: null, unit: null, text: "garlic" },
+    ]);
   });
 
-  it("does not reach the server just for coining a category", async () => {
+  it("offers no coining ceremony — v2 has no shared vocabulary", async () => {
     const { wrapper } = await mountPage();
-    const input = wrapper.find('[data-testid="ingredients-input"]');
-    await input.trigger("focus");
-    await input.setValue("harissa");
-    await wrapper.find('[data-testid="ingredients-coin"]').trigger("mousedown");
-    await flushPromises();
-
-    expect(putMock).not.toHaveBeenCalled();
+    expect(wrapper.text()).not.toMatch(/new category/i);
   });
 });
 

@@ -31,9 +31,8 @@
     </div>
 
     <!--
-      Tags and Ingredients open on demand. The Ingredients list in particular
-      would be a wall of chips if it were always open: it starts from the
-      shipped vocabulary, not from this collection.
+      Tags open on demand: a collection with many of them would be a wall of
+      chips if the list were always in the way of the search field.
     -->
     <div v-if="tagsInUse.length > 0" class="kc-group">
       <button
@@ -65,60 +64,6 @@
           </button>
         </li>
       </ul>
-    </div>
-
-    <div class="kc-group">
-      <button
-        type="button"
-        class="kc-label"
-        style="
-          background: transparent;
-          border: 0;
-          cursor: pointer;
-          text-align: left;
-        "
-        :aria-expanded="showIngredients"
-        data-testid="toggle-ingredients"
-        @click="showIngredients = !showIngredients"
-      >
-        Ingredients
-      </button>
-      <template v-if="showIngredients">
-        <ul class="kc-chips" data-testid="ingredient-filters">
-          <li v-for="category in offeredCategories" :key="category">
-            <button
-              type="button"
-              class="kc-chip kc-chip--control"
-              :class="{
-                'kc-chip--on': modelValue.ingredients.includes(category),
-              }"
-              :aria-pressed="modelValue.ingredients.includes(category)"
-              :data-testid="`ingredient-filter-${category}`"
-              @click="toggleIn('ingredients', category)"
-            >
-              {{ category }}
-            </button>
-          </li>
-        </ul>
-        <!--
-          "Recipes that use what you selected" — never "recipes you can cook".
-          The filter's own label is "Ingredients", never "What's in my fridge"
-          (UX-DR11).
-        -->
-        <button
-          type="button"
-          class="kc-btn kc-btn--quiet"
-          style="min-height: 44px; margin-top: 8px"
-          data-testid="toggle-all-categories"
-          @click="showAllCategories = !showAllCategories"
-        >
-          {{
-            showAllCategories
-              ? "Show only what's in use"
-              : "Show every category"
-          }}
-        </button>
-      </template>
     </div>
 
     <div class="kc-group">
@@ -162,7 +107,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import { MEAL_TYPES, type MealType } from "@/apps/kitchencraft/types";
 import type { Filters } from "@/apps/kitchencraft/composables/useCollectionFilters";
 
@@ -170,10 +115,6 @@ const props = defineProps<{
   modelValue: Filters;
   /** Tags this collection actually carries, most-used first. */
   tagsInUse: string[];
-  /** Ingredient categories this collection actually calls for. */
-  categoriesInUse: string[];
-  /** The whole vocabulary — the shipped seed plus everything accrued. */
-  allCategories: string[];
   countLabel: string | null;
   anyActive: boolean;
 }>();
@@ -184,26 +125,6 @@ const emit = defineEmits<{
 }>();
 
 const showTags = ref(false);
-const showIngredients = ref(false);
-const showAllCategories = ref(false);
-
-/**
- * What the pantry filter offers.
- *
- * Defaults to categories the collection actually uses, because filtering by one
- * nothing calls for can only return zero. "Show every category" opens the full
- * shipped-plus-accrued vocabulary. A selected category is always offered, so
- * switching back to the shorter list can never hide an active filter.
- */
-const offeredCategories = computed(() => {
-  const base = showAllCategories.value
-    ? props.allCategories
-    : props.categoriesInUse;
-  const missing = props.modelValue.ingredients.filter(
-    (selected) => !base.some((c) => c.toLowerCase() === selected.toLowerCase()),
-  );
-  return [...missing, ...base];
-});
 
 function patch(change: Partial<Filters>): void {
   emit("update:modelValue", { ...props.modelValue, ...change });
@@ -213,7 +134,7 @@ function toggleMealType(mealType: MealType): void {
   patch({ mealType: props.modelValue.mealType === mealType ? null : mealType });
 }
 
-function toggleIn(key: "tags" | "ingredients", value: string): void {
+function toggleIn(key: "tags", value: string): void {
   const held = props.modelValue[key];
   patch({
     [key]: held.includes(value)

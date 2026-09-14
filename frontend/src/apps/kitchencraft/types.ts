@@ -14,12 +14,17 @@ export const MEAL_TYPES = [
 
 export type MealType = (typeof MEAL_TYPES)[number];
 
-// Two-level: a `category` from the shared vocabulary, plus the optional
-// free-text `specific` the cook actually cares about. The pantry filter matches
-// on category; the reading view shows the specific where there is one.
-export interface IngredientTag {
-  category: string;
-  specific: string | null;
+// How much of what. `text` is the only required part, so `garlic` is a complete
+// ingredient and `2 tsp smoked paprika` is the same ingredient with the detail a
+// cook needs at the shop. Amount is a string, never a number: `1/2`, `2-3` and
+// `a few` are all things cooks write, and nothing here parses them.
+//
+// Replaced the two-level category + specific tag in schema v2, along with the
+// shared vocabulary, the pantry filter and the coining ceremony.
+export interface Ingredient {
+  amount: string | null;
+  unit: string | null;
+  text: string;
 }
 
 export interface Recipe {
@@ -37,7 +42,7 @@ export interface Recipe {
   servings: number | null;
   source: string | null;
   tags: string[];
-  ingredients: IngredientTag[];
+  ingredients: Ingredient[];
   // Provenance keys for values written by the offline enrichment pass and not
   // yet touched. Epic 4 populates this and renders the unconfirmed chip.
   unconfirmed: string[];
@@ -65,7 +70,10 @@ export interface ShoppingList {
 // under Ingredients and vice versa.
 export interface Vocabulary {
   tags: string[];
-  ingredient_categories: string[];
+  // The user's own previously-typed ingredients — v2 has no shared vocabulary.
+  ingredients: string[];
+  // The shipped list plus anything this user has coined.
+  units: string[];
 }
 
 // What capture sends. Only `name` and `body` are required, and nothing else may
@@ -79,7 +87,7 @@ export interface RecipeDraft {
   servings?: number | null;
   source?: string | null;
   tags?: string[];
-  ingredients?: IngredientTag[];
+  ingredients?: Ingredient[];
 }
 
 // A partial update. A key present with `null` clears that field; an absent key

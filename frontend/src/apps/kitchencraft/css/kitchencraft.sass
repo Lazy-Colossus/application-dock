@@ -541,6 +541,60 @@
   flex: none
   color: var(--kc-ink)
 
+// Ingredients read one per line, with the amounts in their own column so the
+// quantities line up down the list rather than floating at the start of each
+// sentence.
+.kc-ingredients
+  margin: 0
+  padding: 0
+  list-style: none
+
+.kc-ingredient
+  display: flex
+  align-items: baseline
+  gap: 12px
+  min-height: var(--kc-touch)
+  padding: 4px 0
+  font-size: 16px
+  line-height: 1.6
+
+// Right-aligned and tabular, so 8 and 200 share an edge.
+.kc-ingredient__measure
+  flex: none
+  width: 5.5em
+  text-align: right
+  color: var(--kc-taupe-ink)
+  font-variant-numeric: tabular-nums
+
+.kc-ingredient__name
+  flex: 1
+  min-width: 0
+  color: var(--kc-ink)
+
+.kc-ingredients--editing .kc-ingredient
+  border-bottom: 1px solid var(--kc-taupe)
+
+.kc-ingredient__remove
+  flex: none
+
+// Amount, unit and ingredient on one row; the ingredient takes the slack and
+// the row wraps to stacked fields on a narrow phone.
+.kc-ingredient-entry
+  display: flex
+  flex-wrap: wrap
+  gap: 8px
+  align-items: flex-start
+
+.kc-ingredient-entry__amount
+  flex: 0 1 5rem
+
+.kc-ingredient-entry__unit
+  flex: 0 1 7rem
+
+.kc-ingredient-entry__text
+  flex: 1 1 10rem
+  min-width: 0
+
 // The native control, sized to the grid and coloured in ink like every other
 // mark. `accent-color` is the whole styling — no custom box to keep in step
 // with the browser's own checked state.

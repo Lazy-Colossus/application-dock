@@ -148,107 +148,120 @@ def test_removing_a_tag_from_the_last_recipe_removes_it_from_the_vocabulary() ->
 # -- Story 2.3: two-level ingredient tags ------------------------------------
 
 
-def test_an_ingredient_is_a_category_with_an_optional_specific() -> None:
+def test_an_ingredient_is_an_amount_a_unit_and_a_name() -> None:
     recipe = create(
         ingredients=[
-            {"category": "cheese", "specific": "feta"},
-            {"category": "harissa"},
+            {"amount": "200", "unit": "g", "text": "feta"},
+            {"text": "garlic"},
         ]
     )
     assert recipe["ingredients"] == [
-        {"category": "cheese", "specific": "feta"},
-        {"category": "harissa", "specific": None},
+        {"amount": "200", "unit": "g", "text": "feta"},
+        {"amount": None, "unit": None, "text": "garlic"},
     ]
 
 
-def test_an_ingredient_with_no_category_is_rejected() -> None:
+def test_an_ingredient_with_no_name_is_rejected() -> None:
     resp = client.post(
         "/api/kitchencraft/recipes",
-        json={"name": "Dal", "body": "Simmer.", "ingredients": [{"category": "  "}]},
+        json={"name": "Dal", "body": "Simmer.", "ingredients": [{"text": "  "}]},
     )
     assert resp.status_code == 422
 
 
-def test_a_blank_specific_is_stored_as_absent() -> None:
-    recipe = create(ingredients=[{"category": "cheese", "specific": "  "}])
-    assert recipe["ingredients"][0]["specific"] is None
+@pytest.mark.parametrize("field", ["amount", "unit"])
+def test_amount_and_unit_are_optional_and_never_block_a_save(field: str) -> None:
+    # FR-3's rule reaches here too: no optional field may stand between a paste
+    # and a saved recipe.
+    recipe = create(ingredients=[{"text": "garlic"}])
+    assert recipe["ingredients"][0][field] is None
 
 
-def test_an_ingredient_category_folds_onto_the_seeded_casing() -> None:
-    recipe = create(ingredients=[{"category": "Chicken"}])
-    assert recipe["ingredients"][0]["category"] == "chicken"
+def test_a_blank_amount_or_unit_is_stored_as_absent() -> None:
+    recipe = create(ingredients=[{"amount": " ", "unit": "  ", "text": "garlic"}])
+    assert recipe["ingredients"][0]["amount"] is None
+    assert recipe["ingredients"][0]["unit"] is None
 
 
-def test_one_category_may_carry_two_different_specifics() -> None:
+def test_an_amount_is_free_text_and_is_never_parsed() -> None:
+    """`1/2`, `2-3` and `a few` are all things cooks write."""
+    for amount in ("1/2", "2-3", "a few", "½"):
+        recipe = create(name=f"r-{amount}", ingredients=[{"amount": amount, "text": "onion"}])
+        assert recipe["ingredients"][0]["amount"] == amount
+
+
+def test_an_ingredient_folds_onto_a_casing_the_collection_already_uses() -> None:
+    create(name="one", ingredients=[{"text": "feta"}])
+    second = create(name="two", ingredients=[{"text": "Feta"}])
+    assert second["ingredients"][0]["text"] == "feta"
+
+
+def test_the_same_ingredient_may_appear_twice_with_different_amounts() -> None:
+    # 100g for the pastry, 20g for the pan.
     recipe = create(
         ingredients=[
-            {"category": "cheese", "specific": "feta"},
-            {"category": "cheese", "specific": "cheddar"},
+            {"amount": "100", "unit": "g", "text": "butter"},
+            {"amount": "20", "unit": "g", "text": "butter"},
         ]
     )
-    assert [i["specific"] for i in recipe["ingredients"]] == ["feta", "cheddar"]
+    assert len(recipe["ingredients"]) == 2
 
 
 def test_an_exact_duplicate_ingredient_is_dropped() -> None:
     recipe = create(
         ingredients=[
-            {"category": "cheese", "specific": "feta"},
-            {"category": "cheese", "specific": "Feta"},
+            {"amount": "200", "unit": "g", "text": "feta"},
+            {"amount": "200", "unit": "g", "text": "Feta"},
         ]
     )
     assert len(recipe["ingredients"]) == 1
 
 
-def test_a_specific_keeps_the_casing_the_cook_typed() -> None:
-    """The specific is not vocabulary — nothing matches on it, so it is theirs."""
-    recipe = create(ingredients=[{"category": "cheese", "specific": "Yorkshire Feta"}])
-    assert recipe["ingredients"][0]["specific"] == "Yorkshire Feta"
+# -- Vocabulary: units, the user's own ingredients, and the namespace wall ----
 
 
-# -- Vocabulary: the seed, coining, and the namespace wall -------------------
+def test_the_unit_vocabulary_ships_seeded_for_a_brand_new_user() -> None:
+    units = client.get("/api/kitchencraft/vocabulary").json()["units"]
+    assert units == repo.read_seed_units()
 
 
-def test_the_ingredient_vocabulary_ships_seeded_for_a_brand_new_user() -> None:
-    """UX-DR19: the typeahead and the pantry filter work against recipe one."""
-    categories = client.get("/api/kitchencraft/vocabulary").json()["ingredient_categories"]
-    assert categories == repo.read_seed_categories()
+def test_a_unit_outside_the_seed_is_accepted_and_joins_the_vocabulary() -> None:
+    create(ingredients=[{"amount": "2", "unit": "fistfuls", "text": "lentils"}])
+    units = client.get("/api/kitchencraft/vocabulary").json()["units"]
+    assert "fistfuls" in units
+    # The shipped list still leads, so the common case is offered first.
+    assert units[: len(repo.read_seed_units())] == repo.read_seed_units()
 
 
-def test_coining_a_category_adds_it_to_the_shared_vocabulary() -> None:
-    create(ingredients=[{"category": "harissa"}])
-    categories = client.get("/api/kitchencraft/vocabulary").json()["ingredient_categories"]
-    assert "harissa" in categories
-    # It outlives the recipe that introduced it: that is what makes it shared.
-    assert categories[: len(repo.read_seed_categories())] == repo.read_seed_categories()
+def test_the_unit_vocabulary_has_no_case_insensitive_duplicates() -> None:
+    create(name="one", ingredients=[{"unit": "Sprig", "text": "thyme"}])
+    create(name="two", ingredients=[{"unit": "sprig", "text": "rosemary"}])
+    units = client.get("/api/kitchencraft/vocabulary").json()["units"]
+    assert len(units) == len({u.casefold() for u in units})
 
 
-def test_a_coined_category_survives_the_recipe_that_introduced_it() -> None:
-    recipe = create(ingredients=[{"category": "harissa"}])
-    client.delete(f"/api/kitchencraft/recipes/{recipe['id']}")
-    categories = client.get("/api/kitchencraft/vocabulary").json()["ingredient_categories"]
-    assert "harissa" in categories
+def test_the_ingredient_vocabulary_is_the_users_own_history() -> None:
+    """v2 has no shared ingredient vocabulary; the field suggests what you typed."""
+    assert client.get("/api/kitchencraft/vocabulary").json()["ingredients"] == []
+
+    create(ingredients=[{"text": "smoked paprika"}])
+    assert client.get("/api/kitchencraft/vocabulary").json()["ingredients"] == ["smoked paprika"]
 
 
-def test_a_seeded_category_is_not_copied_into_the_users_document(isolate: Path) -> None:
-    create(ingredients=[{"category": "chicken"}])
-    stored = repo.read_doc("test_user")
-    assert stored.categories == []
-
-
-def test_the_category_vocabulary_has_no_case_insensitive_duplicates() -> None:
-    create(name="one", ingredients=[{"category": "Harissa"}])
-    create(name="two", ingredients=[{"category": "harissa"}])
-    categories = client.get("/api/kitchencraft/vocabulary").json()["ingredient_categories"]
-    assert len(categories) == len({c.casefold() for c in categories})
+def test_the_ingredient_vocabulary_has_no_case_insensitive_duplicates() -> None:
+    create(name="one", ingredients=[{"text": "Feta"}])
+    create(name="two", ingredients=[{"text": "feta"}])
+    ingredients = client.get("/api/kitchencraft/vocabulary").json()["ingredients"]
+    assert len(ingredients) == len({i.casefold() for i in ingredients})
 
 
 def test_a_tag_never_appears_in_the_ingredient_namespace_or_vice_versa() -> None:
     """FR-8: a value typed into one input never lands in the other's namespace."""
-    create(tags=["batch cooking"], ingredients=[{"category": "harissa"}])
+    create(tags=["batch cooking"], ingredients=[{"text": "harissa"}])
     vocabulary = client.get("/api/kitchencraft/vocabulary").json()
 
     assert vocabulary["tags"] == ["batch cooking"]
-    assert "batch cooking" not in vocabulary["ingredient_categories"]
+    assert "batch cooking" not in vocabulary["ingredients"]
     assert "harissa" not in vocabulary["tags"]
 
 
@@ -256,14 +269,15 @@ def test_one_users_vocabulary_is_not_anothers(monkeypatch: pytest.MonkeyPatch) -
     from app.core.dependencies import get_current_user
 
     app.dependency_overrides[get_current_user] = lambda: "nell"
-    create(tags=["batch cooking"], ingredients=[{"category": "harissa"}])
+    create(tags=["batch cooking"], ingredients=[{"text": "harissa"}])
 
     app.dependency_overrides[get_current_user] = lambda: "bram"
     vocabulary = client.get("/api/kitchencraft/vocabulary").json()
     assert vocabulary["tags"] == []
-    assert "harissa" not in vocabulary["ingredient_categories"]
-    # The seed is shared, though — it ships with the app, not with the account.
-    assert "chicken" in vocabulary["ingredient_categories"]
+    # Ingredients are the user's own history in v2, so nothing crosses over.
+    assert vocabulary["ingredients"] == []
+    # The unit seed is shared, though — it ships with the app, not the account.
+    assert "tbsp" in vocabulary["units"]
 
 
 # -- Story 2.6: favourites ---------------------------------------------------

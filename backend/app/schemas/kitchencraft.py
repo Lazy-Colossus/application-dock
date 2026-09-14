@@ -38,15 +38,27 @@ MEAL_TYPES: tuple[str, ...] = (
 )
 
 
-class IngredientTag(BaseModel):
-    """A category from the shared vocabulary, plus an optional specific.
+class Ingredient(BaseModel):
+    """How much of what: an amount, a unit, and the ingredient itself.
 
-    `cheese` alone is a complete ingredient tag; `cheese` -> `feta` is the same
-    tag with the detail the cook cares about kept alongside it.
+    `text` is the only required part, so `garlic` is a complete ingredient and
+    `2 tsp smoked paprika` is the same ingredient with the detail a cook needs
+    at the shop. Amount and unit are optional because plenty of ingredients have
+    neither — `a pinch of salt`, `1 onion` — and FR-3's rule that no optional
+    field may block a save applies here too.
+
+    `amount` is a string, not a number: `1/2`, `2-3` and `a few` are all things
+    cooks write, and parsing them would be a promise this app does not keep
+    anywhere else (the body is stored verbatim for the same reason).
+
+    Replaced the two-level `category` + `specific` tag in schema v2. The shared
+    ingredient vocabulary, the pantry filter and the coining ceremony went with
+    it, by decision.
     """
 
-    category: str
-    specific: str | None = None
+    amount: str | None = None
+    unit: str | None = None
+    text: str
 
 
 class Recipe(BaseModel):
@@ -65,20 +77,16 @@ class Recipe(BaseModel):
     servings: int | None = None
     source: str | None = None
     tags: list[str] = Field(default_factory=list)
-    ingredients: list[IngredientTag] = Field(default_factory=list)
+    ingredients: list[Ingredient] = Field(default_factory=list)
     # Provenance keys: "meal_type", "total_time_minutes", "servings", "source",
-    # "tag:{value}", "ingredient:{category}". Written by Epic 4's enrichment
+    # "tag:{value}", "ingredient:{text}". Written by Epic 4's enrichment
     # pass; an update that changes or removes the value drops its key.
     unconfirmed: list[str] = Field(default_factory=list)
 
 
 class KitchencraftDoc(BaseModel):
-    schema_version: int = 1
+    schema_version: int = 2
     recipes: list[Recipe] = Field(default_factory=list)
-    # Ingredient categories this user has coined, on top of the shipped seed.
-    # The effective vocabulary is seed + these + whatever the recipes already
-    # use, unioned on read — so there is no index to keep in step.
-    categories: list[str] = Field(default_factory=list)
 
 
 class ShoppingItem(BaseModel):
@@ -116,10 +124,16 @@ class ShoppingList(BaseModel):
 
 
 class Vocabulary(BaseModel):
-    """What the two typeahead namespaces may offer, kept strictly apart (FR-8)."""
+    """What each typeahead may offer, kept strictly apart (FR-8).
+
+    `ingredients` is now the user's own previously-typed ingredient text rather
+    than a shared category vocabulary — there is no shared vocabulary in v2.
+    `units` is the shipped list plus whatever the user has coined.
+    """
 
     tags: list[str]
-    ingredient_categories: list[str]
+    ingredients: list[str]
+    units: list[str]
 
 
 # -- Request bodies -----------------------------------------------------------
@@ -137,7 +151,7 @@ class CreateRecipeRequest(BaseModel):
     servings: int | None = None
     source: str | None = None
     tags: list[str] = Field(default_factory=list)
-    ingredients: list[IngredientTag] = Field(default_factory=list)
+    ingredients: list[Ingredient] = Field(default_factory=list)
 
 
 class AddShoppingItemRequest(BaseModel):
@@ -184,4 +198,4 @@ class UpdateRecipeRequest(BaseModel):
     servings: int | None = None
     source: str | None = None
     tags: list[str] | None = None
-    ingredients: list[IngredientTag] | None = None
+    ingredients: list[Ingredient] | None = None
