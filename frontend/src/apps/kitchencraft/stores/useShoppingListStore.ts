@@ -79,6 +79,80 @@ export const useShoppingListStore = defineStore(
       }
     }
 
-    return { items, loading, error, loaded, isEmpty, fetchList, addItem };
+    /**
+     * Tick or untick one item, in place (Story 3.2).
+     *
+     * Optimistic and outside `loading` like every other write here. The array is
+     * mapped rather than re-sorted: nothing may move the row, which is the whole
+     * point of the mark.
+     */
+    async function toggleTicked(id: string): Promise<void> {
+      const target = items.value.find((i) => i.id === id);
+      if (!target) return;
+
+      const previous = target.ticked;
+      error.value = null;
+      items.value = items.value.map((i) =>
+        i.id === id ? { ...i, ticked: !previous } : i,
+      );
+      try {
+        const saved = await api.put<ShoppingItem>(
+          `/kitchencraft/shopping-list/items/${id}`,
+          { ticked: !previous },
+        );
+        items.value = items.value.map((i) => (i.id === id ? saved : i));
+      } catch (e) {
+        error.value = message(e);
+        items.value = items.value.map((i) =>
+          i.id === id ? { ...i, ticked: previous } : i,
+        );
+      }
+    }
+
+    /** Remove one item, ticked or not. */
+    async function removeItem(id: string): Promise<void> {
+      const index = items.value.findIndex((i) => i.id === id);
+      if (index === -1) return;
+
+      const removed = items.value[index];
+      error.value = null;
+      items.value = items.value.filter((i) => i.id !== id);
+      try {
+        await api.del(`/kitchencraft/shopping-list/items/${id}`);
+      } catch (e) {
+        error.value = message(e);
+        // Back where it was, not appended to the end — position is meaningful.
+        const restored = [...items.value];
+        restored.splice(index, 0, removed);
+        items.value = restored;
+      }
+    }
+
+    /** Empty the list. Destructive, and the modal asks first. */
+    async function clearList(): Promise<void> {
+      const previous = items.value;
+      error.value = null;
+      items.value = [];
+      try {
+        await api.del("/kitchencraft/shopping-list/items");
+      } catch (e) {
+        error.value = message(e);
+        // The whole list back, ticks included.
+        items.value = previous;
+      }
+    }
+
+    return {
+      items,
+      loading,
+      error,
+      loaded,
+      isEmpty,
+      fetchList,
+      addItem,
+      toggleTicked,
+      removeItem,
+      clearList,
+    };
   },
 );

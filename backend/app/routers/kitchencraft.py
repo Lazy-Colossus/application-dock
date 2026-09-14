@@ -16,6 +16,7 @@ from app.schemas.kitchencraft import (
     ShoppingItem,
     ShoppingList,
     UpdateRecipeRequest,
+    UpdateShoppingItemRequest,
     Vocabulary,
 )
 from app.services import kitchencraft_service as service
@@ -113,3 +114,32 @@ def add_shopping_item(
         return service.add_shopping_item(current_user, req.text)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.put("/shopping-list/items/{item_id}", response_model=ShoppingItem)
+def update_shopping_item(
+    item_id: str,
+    req: UpdateShoppingItemRequest,
+    current_user: str = Depends(get_current_user),
+) -> ShoppingItem:
+    try:
+        return service.set_item_ticked(current_user, item_id, req.ticked)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Item not found") from exc
+
+
+# Declared before the parameterised delete so "items" is never read as an id.
+@router.delete("/shopping-list/items", status_code=204)
+def clear_shopping_list(current_user: str = Depends(get_current_user)) -> None:
+    service.clear_shopping_list(current_user)
+
+
+@router.delete("/shopping-list/items/{item_id}", status_code=204)
+def delete_shopping_item(
+    item_id: str,
+    current_user: str = Depends(get_current_user),
+) -> None:
+    try:
+        service.delete_shopping_item(current_user, item_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Item not found") from exc

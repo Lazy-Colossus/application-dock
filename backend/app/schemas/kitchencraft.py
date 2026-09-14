@@ -147,6 +147,12 @@ class AddShoppingItemRequest(BaseModel):
     text: str
 
 
+class UpdateShoppingItemRequest(BaseModel):
+    """What may change about an item. Only the tick, for now (Story 3.2)."""
+
+    ticked: bool
+
+
 class UpdateRecipeRequest(BaseModel):
     """A partial update. Only fields actually sent are applied.
 

@@ -1,13 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, postMock } = vi.hoisted(() => ({
+const { getMock, postMock, putMock, delMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
   postMock: vi.fn(),
+  putMock: vi.fn(),
+  delMock: vi.fn(),
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
-  api: { get: getMock, post: postMock, put: vi.fn(), del: vi.fn() },
+  api: { get: getMock, post: postMock, put: putMock, del: delMock },
 }));
 
 import { useShoppingListStore } from "@/apps/kitchencraft/stores/useShoppingListStore";
@@ -167,5 +169,155 @@ describe("addItem", () => {
 
     // De-duplication belongs to Story 3.4's merge, not to hand-entry.
     expect(store.items).toHaveLength(2);
+  });
+});
+
+describe("toggleTicked", () => {
+  it("marks the row before the request resolves", async () => {
+    const store = await loadedStore([item({ text: "bread" })]);
+    putMock.mockReturnValueOnce(new Promise(() => {}));
+
+    void store.toggleTicked(store.items[0].id);
+
+    expect(store.items[0].ticked).toBe(true);
+    expect(store.loading).toBe(false);
+  });
+
+  it("sends the new state", async () => {
+    const store = await loadedStore([item({ ticked: false })]);
+    const id = store.items[0].id;
+    putMock.mockResolvedValueOnce({ ...store.items[0], ticked: true });
+
+    await store.toggleTicked(id);
+
+    expect(putMock).toHaveBeenCalledWith(
+      `/kitchencraft/shopping-list/items/${id}`,
+      { ticked: true },
+    );
+  });
+
+  it("unticks a ticked item", async () => {
+    const store = await loadedStore([item({ ticked: true })]);
+    const id = store.items[0].id;
+    putMock.mockResolvedValueOnce({ ...store.items[0], ticked: false });
+
+    await store.toggleTicked(id);
+
+    expect(putMock).toHaveBeenCalledWith(
+      `/kitchencraft/shopping-list/items/${id}`,
+      { ticked: false },
+    );
+    expect(store.items[0].ticked).toBe(false);
+  });
+
+  it("never moves the item", async () => {
+    const store = await loadedStore([
+      item({ text: "bread" }),
+      item({ text: "milk" }),
+      item({ text: "apples" }),
+    ]);
+    const target = store.items[1];
+    putMock.mockResolvedValueOnce({ ...target, ticked: true });
+
+    await store.toggleTicked(target.id);
+
+    expect(store.items.map((i) => i.text)).toEqual(["bread", "milk", "apples"]);
+    expect(store.items[1].ticked).toBe(true);
+  });
+
+  it("reverts and reports on a failed write", async () => {
+    const store = await loadedStore([item({ ticked: false })]);
+    putMock.mockRejectedValueOnce(new Error("Offline"));
+
+    await store.toggleTicked(store.items[0].id);
+
+    expect(store.items[0].ticked).toBe(false);
+    expect(store.error).toBe("Offline");
+  });
+
+  it("is a no-op for an unknown id", async () => {
+    const store = await loadedStore([item()]);
+    await store.toggleTicked("s-nope");
+    expect(putMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("removeItem", () => {
+  it("removes the row before the request resolves", async () => {
+    const store = await loadedStore([item({ text: "bread" })]);
+    delMock.mockReturnValueOnce(new Promise(() => {}));
+
+    void store.removeItem(store.items[0].id);
+
+    expect(store.items).toEqual([]);
+    expect(store.loading).toBe(false);
+  });
+
+  it("removes only the one asked for", async () => {
+    const store = await loadedStore([
+      item({ text: "bread" }),
+      item({ text: "milk" }),
+    ]);
+    delMock.mockResolvedValueOnce(undefined);
+
+    await store.removeItem(store.items[0].id);
+
+    expect(store.items.map((i) => i.text)).toEqual(["milk"]);
+  });
+
+  it("puts a failed removal back where it was, not at the end", async () => {
+    const store = await loadedStore([
+      item({ text: "bread" }),
+      item({ text: "milk" }),
+      item({ text: "apples" }),
+    ]);
+    delMock.mockRejectedValueOnce(new Error("Offline"));
+
+    await store.removeItem(store.items[1].id);
+
+    // Position is meaningful — this is the order the cook shops in.
+    expect(store.items.map((i) => i.text)).toEqual(["bread", "milk", "apples"]);
+    expect(store.error).toBe("Offline");
+  });
+
+  it("is a no-op for an unknown id", async () => {
+    const store = await loadedStore([item()]);
+    await store.removeItem("s-nope");
+    expect(delMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("clearList", () => {
+  it("empties before the request resolves", async () => {
+    const store = await loadedStore([item(), item()]);
+    delMock.mockReturnValueOnce(new Promise(() => {}));
+
+    void store.clearList();
+
+    expect(store.items).toEqual([]);
+    expect(store.loading).toBe(false);
+  });
+
+  it("calls the collection route, not an item one", async () => {
+    const store = await loadedStore([item()]);
+    delMock.mockResolvedValueOnce(undefined);
+
+    await store.clearList();
+
+    expect(delMock).toHaveBeenCalledWith("/kitchencraft/shopping-list/items");
+  });
+
+  it("restores everything, ticks included, when it fails", async () => {
+    const store = await loadedStore([
+      item({ text: "bread", ticked: true }),
+      item({ text: "milk" }),
+    ]);
+    delMock.mockRejectedValueOnce(new Error("Offline"));
+
+    await store.clearList();
+
+    expect(store.items.map((i) => i.text)).toEqual(["bread", "milk"]);
+    expect(store.items[0].ticked).toBe(true);
+    expect(store.error).toBe("Offline");
   });
 });

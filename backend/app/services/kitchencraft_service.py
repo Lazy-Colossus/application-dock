@@ -435,3 +435,44 @@ def add_shopping_item(username: str, text: str) -> ShoppingItem:
     with repo.shopping_transaction(username) as shopping_list:
         shopping_list.items.append(item)
     return item
+
+
+def _find_item(shopping_list: ShoppingList, item_id: str) -> ShoppingItem:
+    for item in shopping_list.items:
+        if item.id == item_id:
+            return item
+    raise FileNotFoundError(f"shopping item {item_id} not found")
+
+
+def set_item_ticked(username: str, item_id: str, ticked: bool) -> ShoppingItem:
+    """Tick or untick one item, in place (Story 3.2).
+
+    The item's position is untouched: nothing sorts ticked items to the bottom,
+    hides them or moves them to a done group. A list read in an aisle must stay
+    the list the cook built, in that order, with marks on it (FR-15).
+
+    Raises FileNotFoundError for an unknown id.
+    """
+    with repo.shopping_transaction(username) as shopping_list:
+        item = _find_item(shopping_list, item_id)
+        item.ticked = ticked
+    return item
+
+
+def delete_shopping_item(username: str, item_id: str) -> None:
+    """Remove one item, ticked or not. Raises FileNotFoundError if unknown."""
+    with repo.shopping_transaction(username) as shopping_list:
+        remaining = [i for i in shopping_list.items if i.id != item_id]
+        if len(remaining) == len(shopping_list.items):
+            raise FileNotFoundError(f"shopping item {item_id} not found")
+        shopping_list.items = remaining
+
+
+def clear_shopping_list(username: str) -> None:
+    """Empty the list outright, ticked items included.
+
+    Idempotent: clearing an empty list is a no-op rather than an error, because
+    the confirmation the user just answered was about intent, not about state.
+    """
+    with repo.shopping_transaction(username) as shopping_list:
+        shopping_list.items = []

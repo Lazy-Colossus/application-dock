@@ -482,8 +482,30 @@
   padding-bottom: max(12px, env(safe-area-inset-bottom))
 
 .kc-shop-row
-  // No trailing control yet — ticking and deleting arrive with Story 3.2.
   padding: 0 4px
+
+// The whole row ticks, so the target spans it — sized for a thumb on a phone
+// held in a hand that is also holding a basket (NFR-4).
+.kc-shop-row__tick
+  flex-direction: row
+  align-items: center
+  gap: 12px
+  cursor: pointer
+  padding: 10px 8px
+
+.kc-shop-row__tick:focus-visible
+  outline: 2px solid var(--kc-moss)
+  outline-offset: -2px
+
+.kc-shop-row__box
+  flex: none
+  color: var(--kc-ink)
+
+// Two signals on a ticked item, and neither of them is colour: a filled box and
+// a line through the text (UX-DR17).
+.kc-shop-row__done
+  text-decoration: line-through
+  color: var(--kc-taupe-ink)
 
 // Standing in for rows that have not arrived, so the modal can open before the
 // fetch lands. Inert: aria-hidden on the list, no animation to chase.

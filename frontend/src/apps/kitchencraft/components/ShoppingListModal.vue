@@ -22,25 +22,40 @@
     >
       <div class="kc-bar">
         <h2 id="shopping-title" class="kc-title">Shopping list</h2>
-        <button
-          type="button"
-          class="kc-icon-btn"
-          aria-label="Close shopping list"
-          data-testid="shopping-close"
-          @click="emit('close')"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            aria-hidden="true"
+        <div class="kc-bar__actions">
+          <!--
+            Absent on an empty list: there is nothing to clear, and an empty
+            screen offering a destructive action reads as a mistake.
+          -->
+          <button
+            v-if="store.items.length > 0"
+            type="button"
+            class="kc-btn kc-btn--danger"
+            data-testid="shopping-clear"
+            @click="clearing = true"
           >
-            <path d="M6 6l12 12M18 6L6 18" />
-          </svg>
-        </button>
+            Clear
+          </button>
+          <button
+            type="button"
+            class="kc-icon-btn"
+            aria-label="Close shopping list"
+            data-testid="shopping-close"
+            @click="emit('close')"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <!--
@@ -84,7 +99,70 @@
             class="kc-row kc-shop-row"
             :data-testid="`shopping-item-${item.id}`"
           >
-            <span class="kc-body">{{ item.text }}</span>
+            <!--
+              The WHOLE row ticks — sized for a thumb on a phone held in a hand
+              that is also holding a basket (NFR-4). Delete is a separate
+              trailing target so a mistimed tap cannot remove what the user
+              meant to tick.
+            -->
+            <button
+              type="button"
+              class="kc-row__main kc-shop-row__tick"
+              :aria-pressed="item.ticked"
+              :aria-label="`${item.text}, ${item.ticked ? 'ticked' : 'not ticked'}`"
+              :data-testid="`tick-${item.id}`"
+              @click="store.toggleTicked(item.id)"
+            >
+              <!--
+                Both a filled box and a strike-through: two signals, neither of
+                them colour, so the mark survives any contrast setting
+                (UX-DR17).
+              -->
+              <svg
+                class="kc-shop-row__box"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                :fill="item.ticked ? 'currentColor' : 'none'"
+                stroke="currentColor"
+                stroke-width="1.5"
+                aria-hidden="true"
+              >
+                <rect x="3.5" y="3.5" width="17" height="17" rx="2" />
+                <path
+                  v-if="item.ticked"
+                  d="M7.5 12.5l3 3 6-6.5"
+                  stroke="var(--kc-beige-raise)"
+                  stroke-width="2.5"
+                  fill="none"
+                />
+              </svg>
+              <span
+                class="kc-body"
+                :class="{ 'kc-shop-row__done': item.ticked }"
+                >{{ item.text }}</span
+              >
+            </button>
+
+            <button
+              type="button"
+              class="kc-icon-btn"
+              :aria-label="`Delete ${item.text}`"
+              :data-testid="`delete-${item.id}`"
+              @click="store.removeItem(item.id)"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
           </li>
         </ul>
       </div>
@@ -127,12 +205,28 @@
           </button>
         </div>
       </form>
+
+      <!--
+        The app's second destructive confirmation, and it reads like the first:
+        the same component, the same plainness, no theatrics. Stacked one level
+        over the list (UX-DR14).
+      -->
+      <ConfirmModal
+        v-if="clearing"
+        testid="clear"
+        title="Clear the whole list?"
+        detail="This can't be undone."
+        confirm-label="Clear"
+        @confirm="confirmClear()"
+        @cancel="clearing = false"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { nextTick, onMounted, ref } from "vue";
+import ConfirmModal from "@/apps/kitchencraft/components/ConfirmModal.vue";
 import { useShoppingListStore } from "@/apps/kitchencraft/stores/useShoppingListStore";
 
 /**
@@ -147,6 +241,7 @@ const emit = defineEmits<{ close: [] }>();
 const store = useShoppingListStore();
 
 const draft = ref("");
+const clearing = ref(false);
 const entry = ref<HTMLInputElement | null>(null);
 const panel = ref<HTMLElement | null>(null);
 
@@ -159,6 +254,12 @@ onMounted(() => {
   panel.value?.focus();
   void nextTick(() => entry.value?.focus());
 });
+
+async function confirmClear(): Promise<void> {
+  clearing.value = false;
+  await store.clearList();
+  entry.value?.focus();
+}
 
 async function commit(): Promise<void> {
   const text = draft.value;
