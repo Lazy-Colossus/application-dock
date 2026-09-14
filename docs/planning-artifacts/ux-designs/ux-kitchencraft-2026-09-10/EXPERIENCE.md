@@ -28,7 +28,8 @@ Entry 8). Every id below is written as **PRD FR-n** or **epics FR-n**.
 - **What it is.** A private recipe collection, one per dock account, that "never
   punishes you for being in a hurry". A recipe is **a name and a block of text**,
   and that is complete and first-class forever. Structure is optional and
-  additive; the payoff for structure is the pantry filter.
+  additive; the payoff for structure is finding things again. *(The pantry filter
+  was removed 2026-09-15; see Amendments.)*
 - **UI system.** Vue 3 + Quasar v2, inherited from the dock. `DESIGN.md` defines
   KitchenCraft's own tokens over that chassis — it is the dock's **first
   light-ground app** — and keeps Carbon's spacing grid, 44px touch minimum and
@@ -45,13 +46,16 @@ Entry 8). Every id below is written as **PRD FR-n** or **epics FR-n**.
 - **Not in v1**, so no surface exists for any of it: images, in-app AI parsing,
   URL scraping, servings scaling, meal planning, nutrition, sharing or
   collaboration, rich-text or structured recipe editing, alternative sort orders,
-  trash/restore, tag rename and merge, printing, ratings, a configurable staples
-  list, or a second shopping list.
+  trash/restore, tag rename and merge, printing, a ratings *history*, a
+  configurable staples list, or a second shopping list. *(Revised 2026-09-15: a
+  current 1–5 star **rating** shipped in Story 2.7 and is in v1; only the history
+  of past ratings stays out. See PRD FR-21.)*
 
 ## Information Architecture
 
 > Visual reference for the **Collection**, **Search**, **Filter bar** and
-> **Pantry filter** rows below: [`mockups/key-collection.html`](mockups/key-collection.html).
+> rows below: [`mockups/key-collection.html`](mockups/key-collection.html). *(Its
+> pantry-filter row no longer reflects the app.)*
 > Every other surface in this table is built from these tables alone.
 
 One route. Everything else is a screen state or a modal over the current screen —
@@ -62,14 +66,13 @@ which is what lets the shopping list open and close without losing anyone's plac
 | **Dock card** | Dock landing page | Label "KitchenCraft", icon `menu_book`, route `/kitchencraft` | epics FR-1 |
 | **Collection** | Dock card; the app's home | Scannable list of every recipe, newest first, favourites above everything | PRD FR-8 |
 | **Search** | Field at the head of the collection, always present | One box over names **and** bodies | PRD FR-9 |
-| **Filter bar** | Under the search field on the collection | Meal type · tag · pantry · favourites-only. Each control individually clearable; result count always visible | PRD FR-10 |
-| **Pantry filter** | Filter bar → Ingredients | Select one or more ingredient **categories** | PRD FR-10 |
+| **Filter bar** | Under the search field on the collection | Meal type · tag · favourites-only. Each control individually clearable; result count always visible | PRD FR-10 |
 | **Favourites-only view** | One tap on the filter bar's favourites control | The collection, favourites only | PRD FR-11 |
 | **Capture screen** | Primary action on the collection | Name + body. Opens focused on the body | PRD FR-1, NFR-7 |
 | **Recipe view** | Tapping a recipe row | The mid-cook reading surface. The body is the hero | PRD FR-3, NFR-4 |
 | **Edit screen** | Recipe view → Edit | Every field, including the two separate `Tags` and `Ingredients` inputs | PRD FR-2, FR-4, FR-5, FR-6 |
 | **Typeahead suggestions** | Typing in `Tags` or in `Ingredients` | Existing values from **that input's own namespace**, offered before creating | PRD FR-7 |
-| **New-category row** | Foot of the `Ingredients` typeahead | Coining a genuinely new ingredient category — a visibly distinct act | PRD FR-5 |
+
 | **Delete confirmation** | Recipe view → Delete | The only safety net; there is no undo and no trash | PRD FR-2 |
 | **Shopping list** | Top-right button on **every** screen | The one list. Modal over the current screen | PRD FR-12, FR-13 |
 | **Hand-entry row** | Inside the shopping list, always present | Add an item by typing | PRD FR-13 |
@@ -85,6 +88,8 @@ modals included.
 
 Modals stack one level deep. The single exception is the overwrite confirmation,
 which replaces the add-vs-overwrite prompt in place rather than layering on it.
+*(2026-09-15: `DESIGN.md` said the opposite — "modals never stack". This document
+owns behaviour and wins; `DESIGN.md` is corrected.)*
 
 ## Voice and Tone
 
@@ -123,9 +128,10 @@ Behavioural. Visual specs live in `DESIGN.md § Components`.
 | **Chip** | Tags, ingredients, meal type, filters | A chip that is a **control** takes `{colors.moss}` when selected. A chip merely **displaying** a value in the recipe view is never moss — it is not pressable. Chip rows **wrap** to as many lines as they need; they never truncate, scroll sideways or collapse behind a "+3 more". `[ASSUMPTION]` — PRD sets no cap on tag count. |
 | **Unconfirmed chip** | Recipe view, edit screen | Enrichment-written and untouched. Drops to an ordinary chip the moment the user edits or explicitly confirms the value. |
 | **Recipe row** | Collection, favourites-only | Whole row opens the recipe. The favourites glyph is a separate target inside the row: tapping it toggles the favourite **without opening the recipe and without moving the scroll position** (PRD FR-11). Shows the name always; meal type and time **only when present**. |
-| **Typeahead** | `Tags` and `Ingredients` | Suggests from **its own namespace only** — a tag never appears in the Ingredients list or vice versa (PRD FR-6). Case-insensitive match on any part of the value; typing `chi` offers `chicken` and `chickpeas` (PRD FR-7). Existing values always rank above the new-category row. Six suggestions maximum, then the list scrolls. `[ASSUMPTION]` |
-| **New-category row** | `Ingredients` typeahead only | Sits **below a `{components.rule}`**, at the foot of the list, with a leading functional `add` icon and the value quoted back: *Add "harissa" — new category*. It is positionally, verbally and structurally distinct from picking an existing category, which is what PRD FR-5 / Story 2.3 asks for. It is not gated behind a confirmation. |
-| **Shopping-list row** | Shopping list | The **whole row** is the tick target, at `{spacing.touch-min}` or more, sized for one thumb on a phone held in a hand that is also holding a basket. Tap toggles ticked. Delete is a separate trailing target. Text is editable in place. |
+| **Typeahead** | `Tags` | Suggests from **its own namespace only** — a tag never appears under Ingredients or vice versa (PRD FR-6). Case-insensitive match on any part of the value. Six suggestions before anything is typed, then the cap lifts. *(Revised 2026-09-15: Tags is now the only typeahead. The ingredient and unit fields use a native datalist, which offers a list and accepts anything typed — what free text needs.)* |
+| **Ingredient entry** | Edit screen | Three fields in the order they are spoken: amount, unit, ingredient. Only the ingredient is required. Units suggest from a shipped list; ingredients suggest from what this cook has typed before. *(Added 2026-09-15.)* |
+| **Shopping-list row** | Shopping list | The **whole row** is the tick target, at `{spacing.touch-min}` or more, sized for one thumb on a phone held in a hand that is also holding a basket. Tap toggles ticked. Delete is a separate trailing target. *(In-place text editing is specified here but has no story: neither 3.2's nor 3.3's acceptance criteria ask for it. Unbuilt — see Open Questions.)* |
+| **Ingredient row** | Recipe view, edit screen | One ingredient per line, in entry order. Amount and unit sit in a right-aligned column so quantities line up down the list; the name takes the rest. An ingredient with neither is just its name. *(Added 2026-09-15.)* |
 | **Modal** | Shopping list, add, every confirmation | Opens over the current screen; the screen behind keeps its scroll position and its filter state, and **closing returns the user exactly where they were**. Escape and the backdrop close a modal; neither closes a confirmation, which requires an explicit choice. |
 | **Result count** | Filter bar | Always rendered when any filter or search is active, in `{typography.meta}`. Never hidden, never a badge. |
 
@@ -149,7 +155,7 @@ Every surface, every state that applies to it.
 | **Filter bar** | None active | Controls visible, no result count. |
 | **Filter bar** | Active | AND semantics across kinds and within a kind. Each control clears on its own; a separate quiet **Clear filters** clears all. Count reads *"12 of 42 recipes"*. |
 | **Filter bar** | Zero results | *"Nothing matches all of these."* Then **each active filter with its own count**, one per line: *"chickpeas — 7 on its own"*, *"dinner — 22 on its own"*. Each line clears that one filter; a quiet **Clear filters** clears all. It explains why nothing matched instead of only offering the exit. |
-| **Pantry filter** | Any selection | Count reads *"6 of 42 recipes call for chicken + onion"* — see § The pantry filter never implies completeness. |
+
 | **Favourites-only** | Active | The favourites control takes `{colors.moss}`; the count reads *"7 favourites"*. |
 | **Favourites-only** | Empty | *"No favourites yet."* One line: *"Tap the star on any recipe."* No button — the action is on the rows behind. |
 | **Capture** | On open | **Focus is in the body textarea**, keyboard up on phone. Paste, then Save: clipboard to saved in **under 10 seconds and no more than three interactions** (PRD NFR-7). |
@@ -160,18 +166,16 @@ Every surface, every state that applies to it.
 | **Capture** | Save failed | One line above the button: *"Couldn't save — nothing has been lost, try again."* Both fields retain everything. |
 | **Recipe view** | Default | Name in `{typography.title}`; body in `{typography.recipe}` inside `{spacing.measure}`, line breaks and blank lines exactly as pasted. Structure quiet, above and below, never framing the body. |
 | **Recipe view** | Fields absent | **Rendered absent.** See § The absence rule. |
-| **Recipe view** | Ingredient with a specific | Shows the **specific** only. |
-| **Recipe view** | Ingredient with no specific | Shows the **category** only. Never both stacked as two ingredients (PRD FR-5). |
+| **Recipe view** | Ingredient with an amount or unit | Amount and unit in their own right-aligned column, the name beside them. *(Revised 2026-09-15.)* |
+| **Recipe view** | Ingredient with neither | Just the name. No gap, no dash, no placeholder. |
 | **Recipe view** | Unconfirmed value | `{components.chip-unconfirmed}`. |
 | **Edit** | Default | Every field editable. `Tags` and `Ingredients` are **two separate inputs** and are never merged (PRD FR-6). |
 | **Edit** | Non-numeric time or servings | Rejected **at the field, not at save** (PRD FR-4): *"Minutes only."* / *"A whole number of servings."* Zero and negatives are rejected the same way; empty is always valid. |
 | **Edit** | Casing collision | `Chicken` typed where `chicken` exists resolves to the existing normalised casing silently. The two never coexist (PRD FR-7). |
 | **Typeahead** | Field focused, nothing typed | The input's full namespace, most-used first. `[ASSUMPTION]` — the PRD does not order suggestions. |
-| **Typeahead** | Typing, matches found | Matching existing values, **always ranked above** the new-category row. No spinner: the namespace is already loaded. |
-| **Typeahead** | Typing, no matches | `Tags`: the list is empty and the typed value commits on Enter — a free tag needs no ceremony. `Ingredients`: only the new-category row remains. |
-| **New-category row** | Typed value matches no existing category | Offered as the last row: *Add "harissa" — new category*. Committing it adds the category to the shared vocabulary and selects it in one action. |
-| **New-category row** | Typed value matches an existing category exactly | **Not offered.** There is nothing to coin. |
-| **Ingredient tag** | Category chosen, specific left blank | Valid. The category alone is the ingredient tag; the optional free-text specific stays absent (§ The absence rule). |
+| **Typeahead** | Typing, matches found | Matching existing values. No spinner: the namespace is already loaded. |
+| **Typeahead** | Typing, no matches | The list is empty and the typed value commits on Enter — a free tag needs no ceremony. |
+| **Ingredient entry** | Amount and unit left blank | Valid. The name alone is a complete ingredient (§ The absence rule). |
 | **Hand-entry row** | Idle | Present at the foot of the list, labelled *Add an item*, always visible — including on an empty list. |
 | **Hand-entry row** | Submitted blank | Silent no-op. No error, nothing added. |
 | **Hand-entry row** | Submitted | Appends as ordinary editable text, clears, and **keeps focus** so a run of items can be typed without re-tapping. |
@@ -183,7 +187,7 @@ Every surface, every state that applies to it.
 | **Shopping list** | Item ticked | Struck through in `{colors.ink}` with a filled checkbox, and it **stays visible in place** — not removed, not reordered, not moved to a "done" group (PRD FR-13). Untick restores it. |
 | **Shopping list** | Write failed | The row reverts and one line appears at the head of the modal: *"Couldn't save that — check your connection."* No toast. |
 | **Clear-list confirmation** | Open | *"Clear all {n} items? This can't be undone."* Danger **Clear**, quiet **Cancel**. |
-| **Add to shopping list** | Recipe has ingredient tags | One checkbox per ingredient tag, showing the **specific where present**, else the category. **All checked except the staples — salt and black pepper — which start unchecked** and can be checked (PRD FR-14). |
+| **Add to shopping list** | Recipe has ingredients | One checkbox per ingredient, reading as it reads on the recipe — amount, unit and name. **All checked except the staples — salt and black pepper — which start unchecked** and can be checked (PRD FR-14). The staple match is on the full text, exact and case-insensitive, so `red peppers` and `salted butter` stay checked. *(Revised 2026-09-15.)* |
 | **Add to shopping list** | Nothing checked, confirmed | **Silent no-op.** The modal closes; no message, no post-add confirmation, no change to the list. |
 | **Add to shopping list** | Recipe has no ingredient tags | *"Nothing to send yet — this recipe has no ingredients listed."* One line: *"Add some on the edit screen and they can go to the list."* Quiet **Edit recipe**. No empty checkbox list. |
 | **Add-vs-overwrite** | List already non-empty | *"The list already has {n} items."* Primary **Add to the list**, danger **Replace the list**, quiet **Cancel**. |
@@ -248,38 +252,29 @@ PRD FR-3, and Story 1.5. **The body is never reformatted or re-flowed.**
 - The body is text. There is no rich-text editing, no ingredient rows, no step
   objects, and no "parse this for me" button.
 
-## The pantry filter never implies completeness
+## ~~The pantry filter never implies completeness~~
 
-PRD FR-10 and Story 2.5 state the behaviour; the PRD's counter-metric — "the
-pantry filter returning recipes the user obviously cannot cook often enough that
-they stop trusting it" — makes the **wording** the requirement.
+**Void 2026-09-15.** There is no pantry filter (Story 2.8). The section is
+removed rather than kept as guidance, because the copy rules it carried —
+"call for" not "you can make", "Ingredients" not "What's in my fridge" — guarded
+a claim the app no longer makes at all.
 
-The filter matches recipes that **call for** the selected categories. A recipe
-needing ten other ingredients still matches a two-ingredient selection. It never
-checks completeness, and **no copy on any surface may suggest that it does**.
-
-| Write this | Never this |
-|---|---|
-| "6 of 42 recipes call for chicken + onion" | "6 recipes you can make" |
-| "Recipes that use what you selected" | "Recipes you can cook tonight" |
-| "Ingredients" (the filter's own label) | "What's in my fridge" / "Cook from your pantry" |
-
-No surface shows a match percentage, a "you have 2 of 9 ingredients" ratio, a
-completeness bar, a tick, or a sort by how close a recipe is to cookable. The
-count is a count of recipes, and the verb is always *call for* or *use*.
+The general principle it expressed is worth keeping loose: **no surface shows a
+match percentage, a completeness ratio, a "you have 2 of 9 ingredients" bar, a
+tick, or a sort by how close a recipe is to cookable.** Nothing in the app
+claims to know whether you can cook something.
 
 ## Vocabulary and provenance
 
 Both were open PRD questions, closed in `.decision-log.md` Entry 12.
 
-**The ingredient category vocabulary ships seeded.** A starter list of common
-categories is shipped with the app, so the `Ingredients` typeahead and the pantry
-filter both do useful work against the very first recipe. There is therefore **no
-true first-run empty state for the `Ingredients` input** and no day-one empty
-pantry filter. Coining a genuinely new category is still fully available and still
-reads as a visibly distinct act (§ Component Patterns → New-category row). The
-seed is a starting point, not a closed list; nothing in the interface presents it
-as fixed, and no copy discourages adding to it.
+**The unit list ships seeded.** *(Revised 2026-09-15 — this said "the ingredient
+category vocabulary ships seeded". There is no category vocabulary.)* A starter
+list of common units is shipped with the app, so the unit field does useful work
+against the very first recipe. The **ingredient** field has a genuine first-run
+empty state: it suggests from what this cook has typed before, which is nothing
+on day one. The seed is a starting point, not a closed list — anything typed is
+accepted and joins that user's own list, and no copy discourages adding to it.
 
 **Provenance is quietly marked.** This **promotes PRD FR-19 from an open
 architecture question to a requirement**: provenance is stored per structured
@@ -366,7 +361,8 @@ standard.
 | **Recipe view** | Single column. Structure above and below the body, all inside `{spacing.measure}` | **Two columns**: the body holds `{spacing.measure}` on the left; meal type, time, servings, source, tags and ingredients move to a **quiet right rail**. This is PRD §11's "structure at the edges" read literally — and the rail collapses back above and below the body under 700px. |
 | **Capture / Edit** | Single column, body field fills the remaining height | Centred band at `{spacing.measure}`. The body field is taller, not wider. |
 | **Shopping list** | **Full-height sheet** over the screen, hand-entry row at the foot within thumb reach | **Centred dialog**, max 480px wide, vertically centred, page dimmed behind. Not full-screen — the surface behind stays visible, which is what makes "closing returns you where you were" legible on a large display. |
-| **Add / confirmations** | Sheet from the bottom | Centred dialog, max 480px wide |
+| **Add** | Sheet from the bottom | Centred dialog, max 480px wide |
+| **Confirmations** | **Centred dialog** with `{spacing.screen-pad-x}` of side room | Centred dialog, max 480px wide | *(Revised 2026-09-15 at the user request: a confirmation is a question that stops you, not a surface you work in, so it sits in the middle at every width rather than sliding off the bottom edge.)*
 
 - **The `{typography.recipe}` size and `{spacing.measure}` are identical at both
   sizes.** A wide window gets more margin, never a longer line or smaller text.
@@ -409,14 +405,16 @@ nothing has been lost, try again."* Both fields keep everything.
 
 1. Bram opens KitchenCraft on his phone. Forty-two recipes, newest first, three
    favourites starred at the top.
-2. He taps **Ingredients** in the filter bar. The pantry filter opens on the
-   seeded category vocabulary plus everything his collection has accrued.
-3. He selects `chicken`. The count reads *"11 of 42 recipes call for chicken"*.
-4. He adds `onion`. AND semantics: *"6 of 42 recipes call for chicken + onion"*.
-5. He also taps **dinner**. Now *"3 of 42 recipes call for chicken + onion"*, with
-   the meal-type filter shown as its own clearable control.
-6. **Climax:** three rows. Not "three meals you can make" — three recipes that
-   *call for* what he is looking at, which is a claim the app can actually keep.
+2. He types `chicken` into the search field. It matches names **and bodies**, so
+   a recipe that never says "chicken" in its title still surfaces.
+   *(Revised 2026-09-15: this flow used to walk the pantry filter, which no
+   longer exists. Search and the tag filter carry it now.)*
+3. The count reads *"11 of 42 recipes"*.
+4. He taps the **batch-cook** tag. Now *"4 of 42 recipes"*.
+5. He also taps **dinner**. Now *"3 of 42 recipes"*, with each filter shown as its
+   own clearable control.
+6. **Climax:** three rows. The app has not claimed he can cook any of them — it
+   has only narrowed forty-two down to three, which is a claim it can keep.
    He opens the middle one, sees it needs a lemon he does not have, backs out
    without the filter having lied to him, and takes the first.
 
@@ -494,16 +492,14 @@ FR-6, FR-7 and FR-11.
 4. In **Tags** she types `bat` and takes the existing `batch cooking` from the
    typeahead. The list offers tags only — no ingredient has ever appeared here,
    because the two inputs never share a namespace (PRD FR-6).
-5. In **Ingredients** she types `chi` and is offered `chickpeas` and `chicken`
-   from the seeded-plus-accrued vocabulary. She takes `chickpeas` and adds the
-   optional specific `dried chickpeas`.
-6. She types `har`. Nothing matches. Below a rule, with a leading `add` icon,
-   the last row reads *Add "harissa" — new category*. She taps it — **a visibly
-   distinct act from picking an existing one** (PRD FR-5) — and `harissa` joins
-   the shared vocabulary for every future recipe.
-7. She saves and lands back on the recipe view. `chickpeas` shows as **`dried
-   chickpeas`** — the specific where there is one — and `harissa` shows as the
-   category, because there is no specific. **Never both stacked.**
+5. In **Ingredients** she types `400` into Amount, takes `g` from the unit list,
+   and types `dried chickpeas`. *(Revised 2026-09-15: this step used to walk the
+   two-level tag and the coining ceremony, neither of which exists.)*
+6. She adds `harissa` with no amount and no unit. Nothing ceremonial happens —
+   it is free text, and a new ingredient is simply typed.
+7. She saves and lands back on the recipe view. The two read one per line, with
+   the quantities in their own column: **`400 g` `dried chickpeas`**, then
+   `harissa` on its own with the measure column empty.
 8. The meal type the enrichment script guessed last month is sitting there as an
    **unfilled outlined chip**. She taps it, keeps `dinner`, and the mark drops.
    That is the entire provenance interaction: no queue, no review screen, no
@@ -523,14 +519,18 @@ is no undo and nothing to restore, which is why the confirmation exists at all
 
 Genuine gaps, listed rather than filled.
 
-- **What ships in the seed?** Entry 12 decided that the ingredient category
-  vocabulary ships seeded, but not which categories, nor how many. A shipped
-  taxonomy is someone else's taxonomy; the residual risk was accepted, and the
-  mitigation is that the seed is a starting point. The list itself is undecided.
+- ~~**What ships in the seed?**~~ **Closed 2026-09-15** — the seed is a list of
+  units, not categories, and it ships with 22. The taxonomy risk went with the
+  category vocabulary.
 - **Chip overflow at extreme counts.** The PRD sets no cap on tags per recipe.
   Wrapping to as many lines as needed is assumed above, but a recipe with sixty
-  ingredient tags would make the reading view mostly chips. No cap, truncation or
-  overflow behaviour is specified.
+  tags would make the reading view mostly chips. No cap, truncation or overflow
+  behaviour is specified. *(Ingredients are no longer chips — they are one per
+  line — so a long ingredient list is simply a long list.)*
+- **In-place editing of a shopping-list item.** § Component Patterns says the row
+  text is editable in place, but no story's acceptance criteria ask for it —
+  Story 3.2 covers ticking and deleting, Story 3.3 only says items *arrive* as
+  editable text. Specified and unbuilt. *(Raised 2026-09-15.)*
 - **Is the favourites-only view a route?** Assumed here as a filter-bar toggle,
   which satisfies "one interaction from the collection" (PRD FR-11) but is not
   deep-linkable or shareable-by-URL. A route would be.
@@ -548,3 +548,37 @@ Genuine gaps, listed rather than filled.
 - **Does search cover tags and ingredients?** PRD FR-9 says names and bodies. A
   user typing `chickpeas` into search will match bodies that mention them but not
   recipes tagged with them and never mentioning the word. Left as specified.
+
+## Amendments
+
+### 2026-09-15 — The ingredient model changed shape
+
+Story 2.8 replaced the two-level ingredient tag (a shared **category** plus an
+optional free-text **specific**) with an optional **amount**, an optional
+**unit** and a required free-text **name**. Requested directly, with the blast
+radius stated and confirmed first.
+
+Removed with the category: the **pantry filter**, the **shared category
+vocabulary**, the **new-category row** and its coining ceremony, and the copy
+rules that guarded the pantry filter's claim. Added: the **ingredient row**
+pattern (one per line, quantities in their own column) and the **ingredient
+entry** pattern (three fields).
+
+Flow 2 was re-cut — it walked the pantry filter end to end — and Flow 4 steps 5–7
+were re-cut for the same reason. **20 surfaces became 19** with the new-category
+row gone.
+
+### 2026-09-15 — Corrections to things this document already said
+
+- **Ratings are in v1.** § Not in v1 listed them; Story 2.7 shipped a 1–5 star
+  rating, and PRD FR-21 was written after the fact to cover it. Only a ratings
+  *history* remains out of scope.
+- **Modal stacking.** `DESIGN.md` said "modals never stack" while this document
+  said they stack one level deep. A flat contradiction, resolved in this
+  document's favour — it owns behaviour — and `DESIGN.md` corrected.
+- **Confirmations are centred.** § Responsive specified a bottom sheet under
+  700px. Changed at the user's request: a confirmation is a question that stops
+  you, not a surface you work in, so it sits in the middle at every width.
+- **The star rating sits beside the recipe name**, not on the meta line. Story
+  2.7 specced the meta line because five targets plus a heart do not fit beside a
+  name at 375px; moved on request, and the line wraps rather than truncating.

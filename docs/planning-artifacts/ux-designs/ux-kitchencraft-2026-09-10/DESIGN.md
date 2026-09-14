@@ -116,6 +116,12 @@ components:
     separator: '1px {colors.taupe} below'
     min-height: '{spacing.touch-min}'
     ticked: 'line-through {colors.ink}, stays in place'
+  ingredient-row:
+    background: 'transparent'
+    min-height: '{spacing.touch-min}'
+    measure: '{typography.body} {colors.taupe-ink}, right-aligned, tabular-nums, own column'
+    name: '{typography.body} {colors.ink}'
+    note: 'Amount + unit in a right-aligned column so quantities line up down the list; the name takes the remaining width. An ingredient with neither is just its name — no gap, no placeholder. Added 2026-09-15 with the amount + unit + name model.'
   typeahead:
     background: '{colors.beige-raise}'
     border: '1px {colors.taupe}'
@@ -123,18 +129,16 @@ components:
     row-min-height: '{spacing.touch-min}'
     row-text: '{colors.ink}'
     note: 'Anchored under its field, full field width. No fill on the highlighted row beyond a moss focus ring.'
-  new-category-row:
-    background: 'transparent'
-    separator: '1px {colors.taupe} above'
-    text: '{colors.taupe-ink}'
-    icon: 'functional add icon, leading, {colors.taupe-ink}'
-    min-height: '{spacing.touch-min}'
-    note: 'Last row of the Ingredients typeahead only. Distinct by position, rule, icon and wording — never by colour alone.'
   modal:
     background: '{colors.beige-raise}'
     border: '1px {colors.taupe}'
     radius: '{rounded.md}'
     backdrop: '{colors.ink} at 45%'
+    placement: 'Sheet from the bottom edge, except confirmations'
+  confirmation:
+    extends: 'modal'
+    placement: 'Centred at every width, with {spacing.screen-pad-x} of side room; all four corners rounded'
+    note: 'Revised 2026-09-15 at the user request. A confirmation is not a surface you work in — it is a question that stops you, and the centre is where it belongs. Departs from EXPERIENCE.md responsive table, which specified a bottom sheet under 700px; that row is corrected to match.'
   rule:
     color: '{colors.taupe}'
     width: 1px
@@ -279,9 +283,16 @@ ground **the hairline is the boundary, not the step**: every raised surface take
 1px `{colors.taupe}` border. A modal additionally dims the page behind it to 45%
 `{colors.ink}`.
 
-Two levels only. Modals never stack; a confirmation replaces the modal beneath it
-rather than sitting on top of it, with the one stated exception in
-`EXPERIENCE.md § State Patterns` (the overwrite second confirmation).
+Two levels only for *surfaces*: the page, and one modal over it.
+
+**Corrected 2026-09-15.** This paragraph previously read "Modals never stack; a
+confirmation replaces the modal beneath it" and flatly contradicted
+`EXPERIENCE.md`, which says modals stack one level deep. `EXPERIENCE.md` owns how
+things work and wins: **a confirmation may sit over an open modal** — clearing
+the shopping list asks from on top of the list, so the list you are about to
+empty stays visible behind the question. The single exception runs the other way:
+the overwrite confirmation *replaces* the add-vs-overwrite prompt in place rather
+than layering on it.
 
 ## Shapes
 
@@ -338,12 +349,13 @@ Carbon's "no pill-shaped action buttons" rule holds and is extended to chips.
   border and `{rounded.sm}`. Rows are 44px, `{colors.ink}`, separated by nothing.
   The keyboard-highlighted row takes the same 2px `{colors.moss}` ring as a field,
   not a fill — a filled row would read as *selected* when it is only *highlighted*.
-- **New-category row** (`{components.new-category-row}`) — the last row of the
-  `Ingredients` typeahead, and only there. Sits under a 1px `{colors.taupe}` rule
-  that no other row has, carries a leading functional `add` icon that no other row
-  has, and quotes the typed value back in `{colors.taupe-ink}`. Distinct by
-  position, rule, icon and wording — **never by colour alone**, so the distinction
-  survives at any contrast setting.
+- **Ingredient row** (`{components.ingredient-row}`) — one ingredient per line, in
+  entry order. Amount and unit share a right-aligned column set in
+  `{colors.taupe-ink}` with tabular numerals, so quantities line up down the list;
+  the name takes the remaining width in `{colors.ink}`. An ingredient with neither
+  is just its name, and the measure column is simply empty — no dash, no
+  placeholder. *(Added 2026-09-15; replaced the New-category row, which went with
+  the category vocabulary.)*
 - **Modal** (`{components.modal}`) — `{colors.beige-raise}`, 1px
   `{colors.taupe}`, `{rounded.md}`, backdrop 45% `{colors.ink}`. Title in `title`,
   one primary and one quiet action at the foot.

@@ -19,7 +19,7 @@ The user finds a recipe — on a website, in a message from a friend, in their o
 
 Structure is optional and additive. If the user feels like tagging a recipe *chicken, 30 min, dinner*, the app gets better at answering "what do I make tonight?". If they never do, nothing breaks — and the structure can be added later, in bulk, by an LLM-assisted enrichment pass over the stored text, without the user ever having done data entry.
 
-The payoff for structure is the **pantry filter**: pick the ingredients you actually have in the house, and see the recipes that use them.
+The payoff for structure is **finding things**: search the full text, narrow by meal type or tag, and keep what you actually cook at the top. *(The pantry filter was removed 2026-09-15; see §12.)*
 
 ## 2. Target User
 
@@ -45,9 +45,8 @@ The builder and their household — people cooking ordinary meals at home, stand
 - **Recipe** — one stored item. Minimally a **name** and a **body**; optionally everything in §4.2.
 - **Body** — the free-text block holding the recipe as the user captured it. Ingredients, method, notes, whatever they pasted, in whatever shape it arrived. Never rewritten by the system.
 - **Tag** — a free-text label on a recipe. One flat namespace covering cuisine, occasion, diet, and anything else the user invents.
-- **Ingredient tag** — a two-level label in a namespace of its own, separate from ordinary tags. A **category** (`chicken`, `cheese`, `beans`) is always present; a **specific** (`chicken thighs`, `feta`, `chickpeas`) is optional. The category is what the pantry filter matches on — coarse enough to actually match; the specific is what the recipe view shows — precise enough to be useful.
-- **Category vocabulary** — the controlled set of ingredient categories. Shared across the collection so `chicken` means one thing; specifics stay free text.
-- **Pantry filter** — selecting a set of ingredient categories to narrow the list to recipes carrying them.
+- **Ingredient** — a line in a namespace of its own, separate from ordinary tags: an optional **amount** (`200`, `1/2`, `a few`), an optional **unit** (`g`, `tbsp`, `clove`), and the **ingredient itself** as free text (`smoked paprika`, `chicken thighs`). Only the last is required — `garlic` is a complete ingredient. *(Revised 2026-09-15; see §12.)*
+- **Unit list** — a shipped starter set of units offered by the unit field. Not a closed set: anything typed is accepted and joins that user's own list.
 - **Staple** — an ingredient assumed to be in every kitchen (salt, black pepper). Tagged like any other, but excluded by default when sending ingredients to the shopping list.
 - **Enrichment pass** — an offline, LLM-assisted batch over stored bodies that populates structured fields and tags. Run by the builder in Claude Code against the data volume, not by the app.
 - **Shopping list** — one running list per user of items to buy, filled from recipes or typed by hand.
@@ -75,7 +74,7 @@ The user can edit any field of an existing recipe, and delete a recipe.
 
 **Consequences (testable):**
 - Editing only the tags leaves the body byte-identical.
-- Deleting a recipe removes it from the list, from favourites, and from any pantry-filter result, in one action.
+- Deleting a recipe removes it from the list, from favourites, and from any filter result, in one action.
 - Deletion asks for confirmation, because there is no undo. [ASSUMPTION] No trash/restore in v1.
 
 #### FR-3: Preserve the captured text verbatim
@@ -102,15 +101,19 @@ A recipe may carry: **meal type** (breakfast / lunch / dinner / snack / dessert 
 - Time and servings accept positive integers only, or none; a non-numeric entry is rejected at the field, not at save.
 - A recipe may carry any number of tags and ingredient tags, including zero. [ASSUMPTION] No enforced cap.
 
-#### FR-5: Ingredient tags carry a category and an optional specific
+#### FR-5: An ingredient is an amount, a unit and a name
 
-Every ingredient tag has a category drawn from the shared category vocabulary; a free-text specific may be attached to it.
+*Revised 2026-09-15. This replaces the two-level category-plus-specific tag; see §12.*
+
+Every ingredient carries free text naming it, and optionally an amount and a unit.
 
 **Consequences (testable):**
-- An ingredient tag can be stored as category alone (`cheese`) or as category plus specific (`cheese` → `feta`).
-- Two recipes tagged `cheese`/`feta` and `cheese`/`halloumi` both match a pantry selection of `cheese`, and each displays its own specific.
-- The recipe view shows the specific where one exists and the category where one does not — it never shows both stacked as two separate ingredients.
-- Adding an ingredient offers the existing category vocabulary first; introducing a genuinely new category is possible but is a visibly distinct act from picking an existing one.
+- An ingredient can be stored as a name alone (`garlic`), or with either or both of an amount and a unit (`200 g feta`, `2 onions`, `pinch salt`).
+- The amount is free text and is never parsed: `1/2`, `2-3` and `a few` are all stored as typed.
+- A blank amount or unit is stored as absent, never as an empty string.
+- The same ingredient may appear twice with different amounts (`100 g butter` for the pastry, `20 g butter` for the pan); only entries identical in all three parts are dropped.
+- The unit field offers a shipped list and accepts anything typed; the ingredient field offers what this cook has typed before.
+- Ingredients display one per line, in entry order, with amount and unit in their own column.
 
 #### FR-6: Tags and ingredients are entered separately
 
@@ -153,15 +156,15 @@ A single search box matches against recipe names and bodies.
 - Matching is case-insensitive and matches partial words.
 - Search combines with active filters rather than replacing them.
 
-#### FR-10: Filter by meal type, tag, and pantry ingredients
+#### FR-10: Filter by meal type and tag
 
-The user can narrow the list by meal type, by tag, and by ingredient **category**. Ingredient categories behave as a **plain tag filter**: selecting `chicken` and `rice` shows recipes carrying both of those categories, regardless of what else those recipes also require.
+*Revised 2026-09-15. The pantry filter was removed with the category vocabulary; see §12.*
+
+The user can narrow the list by meal type and by tag.
 
 **Consequences (testable):**
-- Selecting two ingredient categories returns only recipes carrying both.
-- Matching is on category, never on specific: a pantry selection of `cheese` matches a recipe tagged `cheese`/`feta`.
-- A recipe needing ten other ingredients still matches a two-ingredient pantry selection — the filter never checks completeness, and the UI never implies it does.
-- Filters combine across categories (meal type AND tags AND ingredients) and each is individually clearable.
+- Selecting two tags returns only recipes carrying both.
+- Filters combine (meal type AND tags) and each is individually clearable.
 - The result count is visible, and a zero-result state offers to clear filters.
 
 ### 4.4 Favourites
@@ -210,11 +213,11 @@ Items can be added by hand, ticked as purchased, unticked, and deleted. A ticked
 "Add to shopping list" on a recipe opens a modal listing that recipe's ingredients as checkboxes. Everything is checked by default **except staples** (salt, black pepper), which start unchecked. Confirming adds the checked items.
 
 **Consequences (testable):**
-- The modal lists one entry per ingredient tag, showing the specific where one exists and the category where it does not.
+- The modal lists one entry per ingredient, reading as it reads on the recipe — amount, unit and name.
 - Salt and black pepper appear unchecked while every other ingredient appears checked, and the user can check them anyway.
 - Confirming with everything unchecked is a no-op that closes the modal without touching the list.
 - Items arrive as ordinary editable text, so `chicken thighs` can be amended to `2 packs chicken thighs` in the list. [ASSUMPTION] v1 does not parse quantities out of the body — ingredient names go across bare.
-- A recipe with no ingredient tags explains there is nothing structured to send yet, rather than opening an empty modal.
+- A recipe with no ingredients explains there is nothing structured to send yet, rather than opening an empty modal.
 
 #### FR-15: Adding to a non-empty list is a deliberate choice
 
@@ -271,13 +274,28 @@ A field the user set by hand is not silently replaced by an enrichment pass.
 - Enrichment fills empty fields and adds tags; the user's own values and tags survive.
 - [OPEN] The mechanism for distinguishing user-set from machine-set values is a design question for architecture, not a PRD decision.
 
-#### FR-20: Enrichment respects the category vocabulary
+#### FR-20: Enrichment respects the ingredient wording already in use
 
-A pass assigns ingredient categories from the existing shared vocabulary, and introduces a new category only when nothing existing fits.
+*Revised 2026-09-15. There is no shared category vocabulary to respect; see §12.*
+
+A pass reuses the ingredient wording already present in the collection rather than inventing a near-synonym for it.
 
 **Consequences (testable):**
-- Two passes over similar recipes do not produce `chicken` and `chicken meat` as separate categories.
-- Newly introduced categories are reported at the end of a pass so the builder can catch vocabulary drift early.
+- Two passes over similar recipes do not produce `feta` and `Feta` as separate ingredients.
+- Newly introduced ingredient wording is reported at the end of a pass so the builder can catch drift early.
+
+#### FR-21: A recipe can carry a star rating
+
+*Added 2026-09-15. Story 2.7 shipped this ahead of the PRD; see §12.*
+
+A recipe can be rated 1–5 stars, independently of whether it is a favourite.
+
+**Consequences (testable):**
+- A rating persists as an integer 1–5; an unrated recipe carries none, and re-selecting the current rating clears it.
+- The rating and the favourite flag are independent in both directions: neither is derived from the other, and clearing one leaves the other intact.
+- The rating does not affect ordering. The collection stays favourites-first, creation-date descending.
+- The rating is settable from the collection list, the reading view and the edit screen.
+- An unrated recipe shows the control, not a placeholder — five outlined stars and no count.
 
 ## 5. Non-Goals (Explicit)
 
@@ -294,25 +312,24 @@ A pass assigns ingredient categories from the existing shared vocabulary, and in
 
 ### 6.1 In Scope
 
-FR-1 through FR-20: capture, edit, optional structured fields (including two-level ingredient tags), search, filter (meal type / tags / pantry ingredients), favourites, the shopping list and its recipe hand-off, and the offline enrichment path.
+FR-1 through FR-21: capture, edit, optional structured fields (including ingredients as amount + unit + name), search, filter (meal type / tags), favourites, a star rating, the shopping list and its recipe hand-off, and the offline enrichment path.
 
 ### 6.2 Out of Scope for MVP
 
-Everything in §5, plus: alternative sort orders, trash/restore, tag rename and merge across the collection, printing, per-recipe cooking notes or ratings history, a user-configurable staples list (salt and black pepper are hard-coded in v1), and any second shopping list.
+Everything in §5, plus: alternative sort orders, trash/restore, tag rename and merge across the collection, printing, per-recipe cooking notes, a ratings *history* (the current rating is in scope — FR-21), a user-configurable staples list (salt and black pepper are hard-coded in v1), and any second shopping list.
 
 ## 7. Success Metrics
 
 - **Capture cost.** A recipe goes from clipboard to saved in under 10 seconds and no more than three interactions.
 - **Collection reached.** The builder's existing scattered recipes (browser bookmarks, notes, messages) end up in KitchenCraft rather than staying scattered.
-- **Filter earns itself.** After one enrichment pass, the pantry filter returns a usable answer — a handful of plausible recipes, not zero and not everything.
+- **Filter earns itself.** After one enrichment pass, meal type and tag filters return a usable answer — a handful of plausible recipes, not zero and not everything.
 - **Mid-cook readability.** The method is readable at arm's length on a phone, one-handed, without pinch-zoom.
 
 **Counter-metrics** (things that would mean we got it wrong):
 
 - Users leaving bodies unpasted because the form felt like work — capture friction reintroduced by field creep.
 - Enrichment passes silently degrading the collection: bodies altered, user tags lost, tag vocabulary fragmented into near-duplicates.
-- The pantry filter returning recipes the user obviously cannot cook often enough that they stop trusting it — the known cost of the plain-tag-filter choice.
-- The category vocabulary drifting into near-synonyms across enrichment passes, quietly making the pantry filter worse the more it is used.
+- Ingredient wording drifting into near-synonyms across enrichment passes, quietly making the collection harder to search.
 - An enrichment pass corrupting live data because it wrote to the volume underneath a running app.
 
 ## 8. Resolved and Open
@@ -320,14 +337,14 @@ Everything in §5, plus: alternative sort orders, trash/restore, tag rename and 
 **Resolved during discovery:**
 
 1. **Enrichment reaches the data by direct volume access** — a maintenance script in `backend/scripts/` driven from Claude Code, going through the repository layer (FR-17). No export endpoint, no HTTP enrichment surface.
-2. **Ingredient granularity is two-level** — a shared category plus an optional free-text specific (FR-5). The filter matches the category; the view shows the specific.
-3. **Tags and ingredients get separate inputs** (FR-6). One combined input would pollute the namespace the pantry filter depends on.
+2. **Ingredient granularity is amount + unit + name** (FR-5), free text throughout. *Superseded the two-level category-plus-specific decision of 2026-09-10; see §12.*
+3. **Tags and ingredients get separate inputs** (FR-6). One combined input would have to guess which namespace a value belongs to.
 4. **The shopping list lives in KitchenCraft**, not in Listies, and is deliberately minimal: one list, a modal, tick-to-cross-off, clear (FR-12 – FR-16).
 
 **Still open:**
 
 1. **Distinguishing user-set from machine-set field values** (FR-19). Needed so enrichment can fill gaps without overwriting deliberate input. An architecture decision — provenance flags, a separate machine-written layer, or something else.
-2. **Seeding the category vocabulary.** Does v1 ship a starter list of ingredient categories, or does the vocabulary accrete from the first enrichment pass? Accretion is simpler but makes the first pass load-bearing for years of tag quality.
+2. ~~**Seeding the category vocabulary.**~~ **Closed 2026-09-15** — moot. There is no category vocabulary; ingredients are free text (FR-5). A shipped starter list of *units* took its place, and it is deliberately open: anything typed is accepted.
 3. **Reaching the volume from the host.** Direct access is decided; the mechanics are not — bind mount, `docker cp`, or running the script inside the container. Belongs to architecture, but the answer determines whether a pass can run against a live app at all.
 
 ## 9. Assumptions Index
@@ -336,7 +353,7 @@ Everything in §5, plus: alternative sort orders, trash/restore, tag rename and 
 - **[ASSUMPTION]** Default browse order is creation date descending, favourites first; no alternative sorts.
 - **[ASSUMPTION]** No trash or undo; deletion is confirmed and permanent.
 - **[ASSUMPTION]** No cap on tag count per recipe.
-- **[ASSUMPTION]** Quantities are not parsed out of bodies for the shopping list in v1; ingredient names go across bare.
+- **[ASSUMPTION]** Quantities are not parsed out of bodies. An amount is whatever the cook typed into the amount field, and the shopping list receives the ingredient line as it reads on the recipe. *(Revised 2026-09-15.)*
 - **[ASSUMPTION]** Staples are hard-coded as salt and black pepper, not user-configurable in v1.
 - **[ASSUMPTION]** The shopping list holds plain text items with no link back to the recipe they came from.
 - **[ASSUMPTION]** Mobile-first web, same Quasar SPA as every other dock app — no native app, no offline mode.
@@ -353,3 +370,57 @@ Everything in §5, plus: alternative sort orders, trash/restore, tag rename and 
 ## 11. Aesthetic & Tone
 
 Calm and uncluttered — a notebook, not a magazine. The text is the hero: generous line height, comfortable measure, no decoration competing with the method while someone is cooking from it. Structure (tags, time, meal type) is present but quiet, sitting at the edges rather than framing the content. Empty fields are invisible, never rendered as gaps waiting to be filled — the app must never make an unstructured recipe feel unfinished.
+
+## 12. Amendments
+
+Changes made after `status: final`, recorded here rather than folded silently into
+the text above. Each amended requirement carries a dated note pointing at this
+section.
+
+### 2026-09-15 — Ingredients become amount + unit + name
+
+**What changed.** FR-5 was rewritten. An ingredient was a **category** from a
+shared controlled vocabulary plus an optional free-text **specific**; it is now
+an optional **amount**, an optional **unit**, and a required free-text **name**.
+The schema went to v2 and existing recipes migrated on read.
+
+**What went with it.** The category was the thing several other requirements
+were standing on, so removing it removed them:
+
+| Removed | Was |
+|---|---|
+| The pantry filter | FR-10 |
+| The shared category vocabulary and its coining ceremony | FR-5, FR-6, FR-20 |
+| Enrichment's duty to reuse existing categories | FR-20 (rewritten, not deleted) |
+| The starter category vocabulary question | §8 open question 2 |
+
+FR-10 keeps meal type and tag filtering. FR-20 now asks enrichment to reuse the
+ingredient *wording* already in use, which is the same duty against a different
+shape of data.
+
+**Why.** Requested directly, with the blast radius stated and confirmed before
+any of it was removed. The stated motivation was that ingredients "always have
+amount + unit + ingredient" — a recipe needs quantities, and the two-level tag
+had nowhere to put them.
+
+**What it cost.** The migration is display-equivalent, not lossless: a v1 tag
+showed its specific where it had one and its bare category where it did not, so
+`text = specific or category` leaves every recipe reading exactly as before —
+but the category is gone. `chicken → thighs` is now `thighs`. Against the
+builder's own 13-recipe collection, all 97 ingredient rows migrated and none
+were dropped.
+
+**What it fixed.** An ingredient line now carries its quantity, so the shopping
+list receives `2 tsp smoked paprika` rather than `smoked` — a defect the
+previous model produced whenever a specific was an adjective rather than a noun.
+
+### 2026-09-15 — FR-21 added: the star rating
+
+**What changed.** A 1–5 star rating was added as FR-21, and ratings moved out of
+§6.2's out-of-scope list (a *ratings history* remains out of scope; the current
+rating is in).
+
+**Why.** Story 2.7 shipped the feature before any requirement covered it. The
+PRD is catching up with the code rather than the other way round, which is worth
+noting as a process fact: the requirement was written after the fact, from the
+built behaviour.

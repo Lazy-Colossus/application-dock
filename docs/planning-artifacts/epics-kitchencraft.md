@@ -23,10 +23,8 @@ collection shipped as a new self-contained app inside the Application Dock platf
 
 A user captures a recipe by pasting text and giving it a name — that alone is a complete, valid
 recipe, forever. Every other field is optional: meal type, total time, servings, source, free tags,
-and **two-level ingredient tags** (a shared *category* like `cheese` plus an optional free-text
-*specific* like `feta`). The collection is browsable, full-text searchable, and filterable by meal
-type, tag, and **pantry ingredients** — pick the categories you have at home and see the recipes
-that use them. Recipes can be favourited, and their ingredients pushed onto a single per-user
+and **ingredients** (an optional amount and unit plus the ingredient itself, as free text). The
+collection is browsable, full-text searchable, and filterable by meal type and tag. Recipes can be favourited, and their ingredients pushed onto a single per-user
 **shopping list** that opens as a modal from anywhere and behaves like a shopping companion.
 
 Structure that the user never enters by hand is filled in later by an **offline enrichment pass** —
@@ -64,15 +62,16 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
 - FR-6: A recipe may optionally carry meal type (breakfast / lunch / dinner / snack / dessert /
   other), total time in minutes, servings, and source (free text). Each is independently settable
   and clearable; time and servings accept positive integers only.
-- FR-7: An **ingredient tag** is two-level — a **category** from the shared vocabulary (always
-  present) plus an optional free-text **specific**. The pantry filter matches on category; the
-  recipe view shows the specific where one exists, the category where it does not.
+- FR-7: An **ingredient** is an optional **amount**, an optional **unit**, and the ingredient
+  itself as free text. Only the name is required. Ingredients display one per line, in entry order,
+  with amount and unit in their own column. *(Revised 2026-09-15; see "Amendments".)*
 - FR-8: Ordinary tags and ingredient tags are entered in **two separate inputs**; a value typed in
   one never lands in the other's namespace, and each suggests only from its own namespace.
 - FR-9: Tag and ingredient entry suggests values already present in the collection, matched
-  case-insensitively and stored in one normalised casing, so the vocabulary converges. A genuinely
-  new value can still be committed, and introducing a new ingredient *category* is a visibly
-  distinct act from picking an existing one.
+  case-insensitively and stored in one normalised casing, so the wording converges. A genuinely
+  new value can still be committed. *(Revised 2026-09-15: the "visibly distinct act" for coining an
+  ingredient category is void — there is no controlled vocabulary. Convergence on one casing still
+  holds, and is what stops `Feta` and `feta` becoming two things.)*
 
 **F4 — Browse, Search, Filter** *(PRD FR-8 – FR-10)*
 - FR-10: The collection renders as a scannable list, creation date descending, **favourites first**,
@@ -80,8 +79,8 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
   prompts for the first capture.
 - FR-11: A single search box matches case-insensitively and on partial words against recipe **names
   and bodies**, and combines with active filters rather than replacing them.
-- FR-12: The list can be filtered by meal type, by tag, and by ingredient **category** — a plain tag
-  filter (selecting two categories returns recipes carrying both, regardless of what else those
+- FR-12: The list can be filtered by meal type and by tag — a plain tag
+  filter (selecting two tags returns recipes carrying both, regardless of what else those
   recipes need, and the UI never implies completeness). Filters combine, each is individually
   clearable, the result count is visible, and a zero-result state offers to clear.
 
@@ -120,8 +119,8 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
   re-running an identical batch is a no-op.
 - FR-21: An enrichment pass **never overwrites deliberate user input** — it fills empty fields and
   adds tags; user-set values and user-added tags survive.
-- FR-22: A pass assigns ingredient categories from the **existing shared vocabulary**, introducing a
-  new category only when nothing fits, and reports newly introduced categories at the end of the run
+- FR-22: A pass reuses the **ingredient wording already present in the collection** rather than
+  inventing a near-synonym, and reports newly introduced wording at the end of the run
   so vocabulary drift is caught early.
 
 ### NonFunctional Requirements
@@ -194,18 +193,20 @@ These are first-class requirements, at the same rigour as the FRs above.
 
 **Components** *(12 in `EXPERIENCE.md § Component Patterns`, each with a visual peer in `DESIGN.md § Components`)*
 
-- **UX-DR5** — Build the 12 components to their paired contract: `field`, `button-primary`,
+- **UX-DR5** — Build the components to their paired contract: `field`, `button-primary`,
   `button-quiet`, `button-danger`, `chip`, `chip-unconfirmed`, `recipe-row`, `list-row`,
-  `typeahead`, `new-category-row`, `modal`, `rule`. A chip that is a **control** takes moss when
+  `typeahead`, `modal`, `rule`. A chip that is a **control** takes moss when
   selected; a chip merely **displaying** a value is never moss, because it is not pressable.
+  *(`new-category-row` removed 2026-09-15 with the category vocabulary; 11 components.)*
 - **UX-DR6** — Typeahead suggests from **its own namespace only** — a tag never appears under
-  Ingredients or vice versa. Case-insensitive match on any substring, existing values always ranked
-  above the new-category row, six suggestions then scroll, no spinner. The highlighted row takes a
-  moss focus ring, never a fill, because a fill would read as *selected* when it is only
-  *highlighted*.
-- **UX-DR7** — The new-category row is distinct by **position, rule, icon and wording** — never by
-  colour alone — so that coining a category survives any contrast setting as "a visibly distinct
-  act" (PRD FR-5 / Story 2.3). Not gated behind a confirmation.
+  Ingredients or vice versa. Case-insensitive match on any substring, six suggestions then scroll,
+  no spinner. The highlighted row takes a moss focus ring, never a fill, because a fill would read
+  as *selected* when it is only *highlighted*. *(Revised 2026-09-15: Tags is now the typeahead's
+  only caller. The ingredient and unit fields use a native datalist — "offer a list, accept
+  anything" — which is what free text needs.)*
+- **UX-DR7** — ~~The new-category row is distinct by position, rule, icon and wording~~ **Void
+  2026-09-15** — there is no coining ceremony, because there is no controlled vocabulary to protect.
+  A new ingredient is simply typed.
 - **UX-DR8** — Unconfirmed chip for enrichment-written values: **unfilled** where a confirmed chip
   is filled, plus lighter ink. Two signals, neither of them colour alone. No icon, no badge, and the
   whole tell drops the moment the user touches the value.
@@ -220,7 +221,7 @@ These are first-class requirements, at the same rigour as the FRs above.
 - **UX-DR10** — **The verbatim body contract.** Mixed bullet characters, inconsistent casing, stray
   pasted site boilerplate, blank lines and ragged breaks all read back exactly as pasted. Nothing
   re-flows, re-wraps or tidies the body — not the app, not an enrichment pass.
-- **UX-DR11** — **The pantry filter never implies completeness.** The PRD's counter-metric makes the
+- **UX-DR11** — ~~**The pantry filter never implies completeness.**~~ **Void 2026-09-15** — there is no pantry filter. The PRD's counter-metric made the
   *wording* the requirement. Counts read "6 of 42 recipes call for chicken + onion", never "6 you
   can make"; the verb is always *call for* or *use*. No match percentage, no "2 of 9 ingredients"
   ratio, no completeness bar, no tick, no sort by how close a recipe is to cookable. See the
@@ -254,11 +255,13 @@ These are first-class requirements, at the same rigour as the FRs above.
   verbatim from PRD FR-4 and are **never re-worded, re-cased or re-ordered**. No exclamation marks,
   encouragement, emoji, streaks, or nagging to fill in fields. The app never implies a recipe is
   unfinished.
-- **UX-DR19** — A **shipped starter vocabulary** of ingredient categories, so the Ingredients
-  typeahead and the pantry filter both do useful work against the very first recipe. Follows the
-  Hotaru shipped-seed precedent (commits `24422ce`, `f95697c`). Consequence: Story 4.4 **guards** a
-  seeded vocabulary rather than bootstrapping one, and the Ingredients input has no true first-run
-  empty state — but coining a new category must still be possible and still read as distinct.
+- **UX-DR19** — ~~A **shipped starter vocabulary** of ingredient categories~~ **Superseded
+  2026-09-15**: a shipped starter list of **units** instead, so the unit field does useful work
+  against the very first recipe. Deliberately open — anything typed is accepted. Follows the
+  Hotaru shipped-seed precedent (commits `24422ce`, `f95697c`). **Revised 2026-09-15**: the shipped
+  seed is now a list of **units**, not ingredient categories. Story 4.4 guards ingredient *wording*
+  rather than a controlled vocabulary, and the Ingredients input suggests from the user's own
+  history, so it does have a genuine first-run empty state.
 
 ### Architecture Gaps
 
@@ -274,8 +277,10 @@ is a genuine architecture question and should be settled before or during the st
 1. **Recipe schema and stable id.** FR-20 requires bulk updates addressed by stable recipe **id**,
    never by name. The id's shape, how it is generated, and where it lives in the per-user JSON are
    undecided. First bites **Story 1.2**.
-2. **Shared ingredient-category vocabulary storage.** The vocabulary is shared across a user's whole
-   collection and is read by the typeahead, the pantry filter and the enrichment pass. Whether it is
+2. ~~**Shared ingredient-category vocabulary storage.**~~ **Closed 2026-09-15** — moot; there is no
+   shared vocabulary. The ingredient field suggests from the user's own history, derived on read.
+   Previously: the vocabulary was shared across a user's whole collection and read by the typeahead,
+   the pantry filter and the enrichment pass. Whether it was
    a separate `_`-prefixed file (as `_recurring_players.json` is for archery), a derived index, or
    computed on read is undecided — and UX-DR19 now requires it to ship **seeded**. First bites
    **Story 2.3**.
@@ -293,12 +298,12 @@ FR-3: Epic 1 — Create a recipe from name and body alone
 FR-4: Epic 1 — Edit any field; delete behind a confirmation
 FR-5: Epic 1 — Body stored verbatim, never reformatted
 FR-6: Epic 2 — Optional meal type, time, servings, source
-FR-7: Epic 2 — Two-level ingredient tags (category + optional specific)
+FR-7: Epic 2 — Ingredients as amount + unit + name (Story 2.8)
 FR-8: Epic 2 — Separate Tags and Ingredients inputs
 FR-9: Epic 2 — Suggestion from existing vocabulary; normalised casing
 FR-10: Epic 1 — Browse the collection, newest first, favourites first
 FR-11: Epic 2 — Full-text search over names and bodies
-FR-12: Epic 2 — Filter by meal type, tag, and ingredient category
+FR-12: Epic 2 — Filter by meal type and tag
 FR-13: Epic 2 — Favourite toggle, favourites-first ordering, favourites-only view
 FR-14: Epic 3 — One list per user, opened as a modal from the top-right
 FR-15: Epic 3 — Tick / untick / delete / clear behaviour
@@ -308,7 +313,7 @@ FR-18: Epic 3 — Post-add confirmation offering the list without forcing it
 FR-19: Epic 4 — Enrichment writes through the repository layer
 FR-20: Epic 4 — Bulk, id-addressed, idempotent structured updates
 FR-21: Epic 4 — Never overwrite deliberate user input
-FR-22: Epic 4 — Reuse the shared category vocabulary; report new categories
+FR-22: Epic 4 — Reuse the ingredient wording already in use; report new wording
 
 ## Epic List
 
@@ -331,13 +336,34 @@ the filter work it shares files with.
 ### Epic 2: Structure & finding what to cook
 
 A user can add optional structure to recipes — meal type, time, servings, source, tags, and
-two-level ingredient tags — and then use it: search the full text, filter by meal type, tag, and
-pantry ingredients, and keep the recipes they actually cook one tap away as favourites. This is the
+ingredients with amounts — and then use it: search the full text, filter by meal type and tag,
+and keep the recipes they actually cook one tap away as favourites. This is the
 epic that turns a pile of text into a collection you can ask questions of.
 
-**FRs covered:** FR-6, FR-7, FR-8, FR-9, FR-11, FR-12, FR-13
+**FRs covered:** FR-6, FR-7, FR-8, FR-9, FR-11, FR-12, FR-13, FR-23 (rating)
 
-### Epic 3: The shopping list
+#### Story 2.7: A star rating alongside favourites
+
+*Added 2026-09-15, after Epic 2 shipped. Covered by PRD FR-21, written after the
+fact from the built behaviour.*
+
+A recipe can carry a 1–5 star rating, independent of the favourite flag in both
+directions. The rating took the star, so the favourite moved to a heart. Rating
+stays out of the collection order. Full acceptance criteria live in
+`docs/stories/kitchencraft/for-review/2.7.star-rating-alongside-favourites.story.md`.
+
+### Story 2.8: Ingredients become amount + unit + name
+
+*Added 2026-09-15. Replaces Story 2.3 and the pantry half of Story 2.5.*
+
+An ingredient becomes an optional amount, an optional unit and a required
+free-text name, displayed one per line with the quantities in their own column.
+The schema goes to v2 and existing recipes migrate on read. The shared category
+vocabulary, the pantry filter and the coining ceremony are removed. Full
+acceptance criteria live in
+`docs/stories/kitchencraft/for-review/2.8.ingredients-as-amount-unit-and-name.story.md`.
+
+## Epic 3: The shopping list
 
 A user can push a recipe's ingredients onto a single running shopping list — choosing which ones,
 with staples excluded by default — and carry that list to the shop, ticking things off as they go.
@@ -508,7 +534,7 @@ collection in one action; there is no undo and no trash (FR-4).
 ## Epic 2: Structure & finding what to cook
 
 A user can add optional structure to any recipe and then use it — searching the full text, filtering
-by meal type, tag and pantry ingredients, and keeping the recipes they actually cook one tap away.
+by meal type and tag, and keeping the recipes they actually cook one tap away.
 
 ### Story 2.1: Optional meal type, time, servings and source
 
@@ -555,7 +581,11 @@ so that I can group them the way I actually think about them.
 **When** the user commits it
 **Then** it is accepted as a new tag (FR-9).
 
-### Story 2.3: Two-level ingredient tags
+### Story 2.3: Two-level ingredient tags — SUPERSEDED 2026-09-15
+
+> **Superseded by Story 2.8** (ingredients as amount + unit + name). Shipped as
+> written, then replaced. Kept for the record; do not build from it.
+
 
 As a cook,
 I want to record what a recipe uses as a broad category plus the specific thing,
@@ -609,7 +639,12 @@ so that I can find it again without remembering what I called it.
 **When** the user types
 **Then** results update without perceptible delay (NFR-6).
 
-### Story 2.5: Filter by meal type, tag and pantry ingredients
+### Story 2.5: Filter by meal type, tag and pantry ingredients — PARTLY SUPERSEDED 2026-09-15
+
+> **The pantry-ingredient half was removed** with the category vocabulary (Story
+> 2.8). Meal type and tag filtering, the combining rule, the visible count and
+> the zero-result state all still stand.
+
 
 As a cook deciding what to make,
 I want to narrow my collection by what kind of meal it is and what I have in the house,
@@ -617,28 +652,24 @@ so that I can pick something without reading every recipe.
 
 **Acceptance Criteria:**
 
-**Given** two ingredient categories selected
-**When** the list is filtered
-**Then** only recipes carrying both categories are shown, regardless of what else those recipes
-require (FR-12).
+~~**Given** two ingredient categories selected / **When** the list is filtered / **Then** only
+recipes carrying both categories are shown~~ — **void 2026-09-15**, no pantry filter.
 
-**Given** a recipe tagged `cheese` → `feta`
-**When** the user selects the `cheese` category
-**Then** the recipe matches — matching is on category, never on specific (FR-7, FR-12).
+~~**Given** a recipe tagged `cheese` → `feta` / **When** the user selects the `cheese` category /
+**Then** the recipe matches~~ — **void 2026-09-15**, no categories.
 
 **Given** filters of different kinds
 **When** several are active
-**Then** meal type, tags and ingredients combine, each is individually clearable, and the number of
+**Then** meal type and tags combine, each is individually clearable, and the number of
 matching recipes is visible (FR-12).
 
 **Given** a filter combination that matches nothing
 **When** it is applied
 **Then** the empty state offers to clear the filters (FR-12).
 
-**Given** any pantry filter result
-**When** it is presented
-**Then** no wording implies the user can fully cook the listed recipes — the filter matches
-ingredients, it does not check completeness (FR-12).
+~~**Given** any pantry filter result / **Then** no wording implies the user can fully cook the
+listed recipes~~ — **void 2026-09-15**, no pantry filter. The counter-metric it guarded is gone
+with it.
 
 ### Story 2.6: Favourites
 
@@ -665,6 +696,27 @@ completing the ordering left partial by Story 1.4 (FR-10, FR-13).
 **Given** the collection screen
 **When** the user wants only favourites
 **Then** a favourites-only view is reachable in one interaction (FR-13).
+
+### Story 2.7: A star rating alongside favourites
+
+*Added 2026-09-15, after Epic 2 shipped. Covered by PRD FR-21, written after the
+fact from the built behaviour.*
+
+A recipe can carry a 1–5 star rating, independent of the favourite flag in both
+directions. The rating took the star, so the favourite moved to a heart. Rating
+stays out of the collection order. Full acceptance criteria live in
+`docs/stories/kitchencraft/for-review/2.7.star-rating-alongside-favourites.story.md`.
+
+### Story 2.8: Ingredients become amount + unit + name
+
+*Added 2026-09-15. Replaces Story 2.3 and the pantry half of Story 2.5.*
+
+An ingredient becomes an optional amount, an optional unit and a required
+free-text name, displayed one per line with the quantities in their own column.
+The schema goes to v2 and existing recipes migrate on read. The shared category
+vocabulary, the pantry filter and the coining ceremony are removed. Full
+acceptance criteria live in
+`docs/stories/kitchencraft/for-review/2.8.ingredients-as-amount-unit-and-name.story.md`.
 
 ## Epic 3: The shopping list
 
@@ -743,10 +795,10 @@ so that I can buy what I need without copying it out by hand.
 
 **Acceptance Criteria:**
 
-**Given** a recipe with ingredient tags
+**Given** a recipe with ingredients
 **When** "Add to shopping list" is chosen
-**Then** a modal lists one checkbox per ingredient, showing the specific where one exists and the
-category where it does not (FR-16).
+**Then** a modal lists one checkbox per ingredient, reading as it reads on the recipe — amount, unit
+and name (FR-16). *(Revised 2026-09-15.)*
 
 **Given** that modal
 **When** it opens
@@ -762,7 +814,7 @@ checked by the user (FR-16).
 **Then** they arrive as ordinary editable text, so `chicken thighs` can be amended to
 `2 packs chicken thighs` (FR-16).
 
-**Given** a recipe with no ingredient tags
+**Given** a recipe with no ingredients
 **When** "Add to shopping list" is chosen
 **Then** it explains there is nothing structured to send yet rather than opening an empty modal
 (FR-16).
@@ -899,25 +951,70 @@ afterwards (FR-20, FR-5, NFR-3).
 **When** the batch would change it
 **Then** it is left alone and the skip is reported (FR-21).
 
-### Story 4.4: Keep the ingredient vocabulary from drifting
+### Story 4.4: Keep the ingredient wording from drifting
+
+> **Re-cut 2026-09-15.** This story was *"Keep the ingredient vocabulary from
+> drifting"* and guarded a shared category vocabulary that no longer exists
+> (Story 2.8). The duty survives against a different shape of data: there is
+> still wording to keep consistent, it is just free text now rather than a
+> controlled set.
 
 As the builder,
-I want each pass to reuse the categories that already exist,
-so that the pantry filter does not quietly rot as the collection grows.
+I want each pass to reuse the ingredient wording that already exists in the collection,
+so that the ingredient wording does not quietly fragment as the collection grows.
 
 **Acceptance Criteria:**
 
-**Given** the existing category vocabulary
-**When** a pass assigns ingredient categories
-**Then** it draws from that vocabulary, introducing a new category only where nothing existing fits
-(FR-22).
+**Given** the ingredient wording already present in the collection
+**When** a pass writes ingredients
+**Then** it reuses that wording where it fits, introducing new wording only where nothing existing
+does (FR-22).
 
 **Given** two passes over similar recipes
 **When** both have run
-**Then** the vocabulary does not contain near-synonyms such as `chicken` and `chicken meat` for the
-same thing (FR-22).
+**Then** the collection does not contain near-synonyms such as `chicken` and `chicken meat`, nor
+casing variants such as `Feta` and `feta`, for the same thing (FR-22).
 
 **Given** a completed pass
 **When** it reports
-**Then** it lists every newly introduced category with the number of recipes that received it, so
+**Then** it lists every newly introduced ingredient with the number of recipes that received it, so
 drift is visible immediately rather than discovered months later (FR-22).
+
+**Given** an ingredient a pass writes
+**When** it carries a quantity
+**Then** the amount and unit go in their own fields rather than into the ingredient name, so
+`2 tsp smoked paprika` is not stored as one opaque string.
+
+## Amendments
+
+### 2026-09-15 — The ingredient model changed shape
+
+Story 2.8 replaced the two-level ingredient tag with **amount + unit + free-text
+name**. The category was load-bearing for more than itself, so this document
+changed in eleven places:
+
+| Changed | Effect |
+|---|---|
+| FR-7 | Rewritten to the new shape |
+| FR-9 | The coining "visibly distinct act" clause voided; casing convergence kept |
+| FR-12 | Pantry filtering removed; meal type and tag kept |
+| FR-22 | Reuse the *wording* in use, rather than a controlled vocabulary |
+| UX-DR5 | `new-category-row` dropped; 12 components → 11 |
+| UX-DR6 | Tags is the typeahead's only caller; ingredients use a datalist |
+| UX-DR7 | Void — no coining ceremony |
+| UX-DR11 | Void — no pantry filter to imply completeness |
+| UX-DR19 | Seeded vocabulary of categories → seeded list of units |
+| Architecture Gap 2 | Closed as moot |
+| Stories 2.3, 2.5, 4.4 | Superseded, partly superseded, and re-cut respectively |
+
+**Stories are marked, not deleted.** 2.3 and 2.5 shipped as written and were then
+replaced; their text stays as the record of what was built, with a banner saying
+so. Story 4.4's duty survived the change and was re-cut rather than dropped — the
+wording still needs keeping consistent, it is just free text now.
+
+### 2026-09-15 — Two stories added after their epic shipped
+
+Stories 2.7 (star rating) and 2.8 were both built before this document described
+them, and PRD FR-21 was written after the fact from the built behaviour. Recorded
+plainly because the direction of travel matters: the code led and the specs
+followed, which is the opposite of how the rest of this document was produced.
