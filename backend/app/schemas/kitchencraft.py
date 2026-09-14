@@ -81,6 +81,40 @@ class KitchencraftDoc(BaseModel):
     categories: list[str] = Field(default_factory=list)
 
 
+class ShoppingItem(BaseModel):
+    """One line on the shopping list.
+
+    The text is ordinary free text — no parsing, no quantity field, no link back
+    to the recipe or ingredient category it may have come from — so
+    `chicken thighs` can be amended to `2 packs chicken thighs` in place (FR-16).
+
+    `ticked` is the purchased mark. It lands here in Story 3.1 rather than with
+    the ticking behaviour in Story 3.2, so the persisted shape settles once and
+    a later story does not pay for a migration to add a boolean.
+    """
+
+    id: str
+    text: str
+    ticked: bool = False
+    created_at: str
+
+
+class ShoppingList(BaseModel):
+    """A user's one and only shopping list (FR-14).
+
+    Its own document rather than a field on `KitchencraftDoc`: the collection is
+    read whole on every page load while this is written repeatedly mid-shop, so
+    sharing a file would mean rewriting every recipe to tick one item — and the
+    two want independent locks.
+
+    Items stay in the order they were added. Nothing sorts them, here or later:
+    a list that reorders under a thumb in a supermarket is worse than useless.
+    """
+
+    schema_version: int = 1
+    items: list[ShoppingItem] = Field(default_factory=list)
+
+
 class Vocabulary(BaseModel):
     """What the two typeahead namespaces may offer, kept strictly apart (FR-8)."""
 
@@ -104,6 +138,13 @@ class CreateRecipeRequest(BaseModel):
     source: str | None = None
     tags: list[str] = Field(default_factory=list)
     ingredients: list[IngredientTag] = Field(default_factory=list)
+
+
+class AddShoppingItemRequest(BaseModel):
+    # Unconstrained so an empty or whitespace-only value is rejected by the
+    # service as a `ValueError` and reaches the client as a `{ detail }` string,
+    # matching every other validated field in this app.
+    text: str
 
 
 class UpdateRecipeRequest(BaseModel):

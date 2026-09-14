@@ -43,6 +43,24 @@ export interface Recipe {
   unconfirmed: string[];
 }
 
+// One line on the shopping list. Ordinary free text — no quantity field and no
+// link back to a recipe — so `chicken thighs` can become `2 packs chicken
+// thighs` in place (FR-16). `ticked` is Story 3.2's, and lands here so the
+// persisted shape settles once.
+export interface ShoppingItem {
+  id: string;
+  text: string;
+  ticked: boolean;
+  created_at: string;
+}
+
+// A user's one and only list (FR-14). Items stay in the order added; nothing
+// sorts them.
+export interface ShoppingList {
+  schema_version: number;
+  items: ShoppingItem[];
+}
+
 // The two typeahead namespaces, kept strictly apart (FR-8). A tag never appears
 // under Ingredients and vice versa.
 export interface Vocabulary {

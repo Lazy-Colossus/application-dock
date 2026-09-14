@@ -327,3 +327,10 @@ describe("the rating on the reading view", () => {
     expect(wrapper.find('[data-testid="recipe-rating"]').exists()).toBe(true);
   });
 });
+
+describe("the shopping list is reachable from here", () => {
+  it("shows the shopping-list button (FR-14: every screen, without exception)", async () => {
+    const { wrapper } = await mountPage();
+    expect(wrapper.find('[data-testid="open-shopping"]').exists()).toBe(true);
+  });
+});

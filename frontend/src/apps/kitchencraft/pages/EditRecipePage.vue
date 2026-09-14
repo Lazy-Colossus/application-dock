@@ -1,9 +1,7 @@
 <template>
   <q-page class="kitchencraft-app">
     <div class="kc-band">
-      <div class="kc-bar">
-        <h1 class="kc-title">Edit</h1>
-      </div>
+      <PageBar title="Edit" />
 
       <p v-if="store.error" class="kc-error kc-pad" data-testid="error">
         {{ store.error }}
@@ -179,6 +177,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import PageBar from "@/apps/kitchencraft/components/PageBar.vue";
 import IngredientsField from "@/apps/kitchencraft/components/IngredientsField.vue";
 import RatingStars from "@/apps/kitchencraft/components/RatingStars.vue";
 import TagsField from "@/apps/kitchencraft/components/TagsField.vue";

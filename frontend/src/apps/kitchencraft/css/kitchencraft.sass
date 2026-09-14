@@ -451,6 +451,56 @@
   gap: 8px
   margin-top: 24px
 
+// The shopping list. A full-height sheet on a phone, with the hand-entry row at
+// the foot inside thumb reach; a centred dialog on a wide screen, so the surface
+// it opened over stays visible behind it (UX-DR16).
+.kc-sheet
+  display: flex
+  flex-direction: column
+  width: 100%
+  max-width: 480px
+  max-height: 100dvh
+  height: 100dvh
+  background: var(--kc-beige-raise)
+  border: 1px solid var(--kc-taupe)
+  border-radius: var(--kc-r-md) var(--kc-r-md) 0 0
+
+.kc-sheet:focus
+  // Focused only so escape reaches it; the ring belongs on the controls inside.
+  outline: none
+
+.kc-sheet__body
+  flex: 1
+  min-height: 0
+  overflow-y: auto
+  overscroll-behavior: contain
+  padding: 8px var(--kc-pad) 16px
+
+.kc-sheet__foot
+  border-top: 1px solid var(--kc-taupe)
+  padding: 12px var(--kc-pad)
+  padding-bottom: max(12px, env(safe-area-inset-bottom))
+
+.kc-shop-row
+  // No trailing control yet — ticking and deleting arrive with Story 3.2.
+  padding: 0 4px
+
+// Standing in for rows that have not arrived, so the modal can open before the
+// fetch lands. Inert: aria-hidden on the list, no animation to chase.
+.kc-skeleton-row
+  height: var(--kc-touch)
+  border-bottom: 1px solid var(--kc-taupe)
+  opacity: 0.4
+
+@media (min-width: 700px)
+  .kc-backdrop
+    align-items: center
+
+  .kc-sheet
+    height: auto
+    max-height: 80dvh
+    border-radius: var(--kc-r-md)
+
 // --- Screen furniture --------------------------------------------------------
 
 .kc-bar
@@ -460,6 +510,12 @@
   gap: 12px
   padding: 12px var(--kc-pad)
   border-bottom: 1px solid var(--kc-taupe)
+
+// The trailing cluster on a bar: the page's own action, then the shopping list.
+.kc-bar__actions
+  display: flex
+  align-items: center
+  gap: 8px
 
 .kc-head
   padding: 16px var(--kc-pad) 12px

@@ -1,6 +1,13 @@
 <template>
   <q-page class="kitchencraft-app">
     <div class="kc-band">
+      <!--
+        The reading view had no bar; it gains a titleless one so the shopping
+        list is reachable here too (FR-14). No title, because the recipe name
+        below is already this screen's heading.
+      -->
+      <PageBar />
+
       <p v-if="store.error" class="kc-error kc-pad" data-testid="error">
         {{ store.error }}
       </p>
@@ -131,6 +138,7 @@
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import ConfirmModal from "@/apps/kitchencraft/components/ConfirmModal.vue";
+import PageBar from "@/apps/kitchencraft/components/PageBar.vue";
 import RatingStars from "@/apps/kitchencraft/components/RatingStars.vue";
 import { formatTime, ingredientLabel } from "@/apps/kitchencraft/format";
 import { useKitchencraftStore } from "@/apps/kitchencraft/stores/useKitchencraftStore";

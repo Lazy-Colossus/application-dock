@@ -26,7 +26,7 @@ from pathlib import Path
 from app.core.config import settings
 from app.core.locks import key_lock
 from app.core.storage import atomic_write_json
-from app.schemas.kitchencraft import KitchencraftDoc
+from app.schemas.kitchencraft import KitchencraftDoc, ShoppingList
 
 _APP_DIR = "kitchencraft"
 _CURRENT_SCHEMA_VERSION = 1
@@ -55,6 +55,17 @@ def _validate_username(username: str) -> str:
 def _user_path(username: str) -> Path:
     _validate_username(username)
     return settings.data_dir / _APP_DIR / "users" / f"{username}.json"
+
+
+def _shopping_path(username: str) -> Path:
+    """The user's shopping list — a separate document under its own lock.
+
+    Deliberately not a field on the collection document: that one is read whole
+    on every page load, while this is written repeatedly mid-shop. Sharing a
+    file would mean rewriting every recipe to tick one item (Story 3.1).
+    """
+    _validate_username(username)
+    return settings.data_dir / _APP_DIR / "shopping" / f"{username}.json"
 
 
 def migrate(raw: dict[str, object]) -> dict[str, object]:
@@ -119,3 +130,40 @@ def doc_transaction(username: str) -> Iterator[KitchencraftDoc]:
         doc = read_doc(username)
         yield doc
         write_doc(username, doc)
+
+
+# -- The shopping list --------------------------------------------------------
+# A second document, same rules: validated username, atomic write, lock held
+# across the whole read-modify-write.
+
+
+def read_shopping_list(username: str) -> ShoppingList:
+    """Read a user's shopping list, or an empty one if they have no file yet."""
+    path = _shopping_path(username)
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return ShoppingList(schema_version=_CURRENT_SCHEMA_VERSION)
+
+    data = migrate(json.loads(raw))
+    return ShoppingList.model_validate(data)
+
+
+def write_shopping_list(username: str, shopping_list: ShoppingList) -> None:
+    """Persist a shopping list atomically, creating `shopping/` on first write."""
+    path = _shopping_path(username)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    atomic_write_json(path, shopping_list.model_dump(mode="json"))
+
+
+@contextmanager
+def shopping_transaction(username: str) -> Iterator[ShoppingList]:
+    """Read-modify-write a user's shopping list under that file's lock.
+
+    Its own lock, keyed on its own path, so ticking an item never contends with
+    saving a recipe.
+    """
+    with key_lock(str(_shopping_path(username))):
+        shopping_list = read_shopping_list(username)
+        yield shopping_list
+        write_shopping_list(username, shopping_list)

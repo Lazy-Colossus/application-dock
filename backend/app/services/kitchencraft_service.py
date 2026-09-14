@@ -27,6 +27,8 @@ from app.schemas.kitchencraft import (
     IngredientTag,
     KitchencraftDoc,
     Recipe,
+    ShoppingItem,
+    ShoppingList,
     Vocabulary,
 )
 
@@ -396,3 +398,40 @@ def delete_recipe(username: str, recipe_id: str) -> None:
         if len(remaining) == len(doc.recipes):
             raise FileNotFoundError(f"recipe {recipe_id} not found")
         doc.recipes = remaining
+
+
+# -- The shopping list (Story 3.1) --------------------------------------------
+# Exactly one list per user, and no list management: there is deliberately no
+# create, name, switch or delete anywhere in this module (FR-14).
+
+
+def _new_item_id() -> str:
+    """Mint a stable item id like `s-ab12cd34`, on the recipe-id precedent.
+
+    Minted rather than derived from the text, so an item survives being edited
+    from `chicken thighs` to `2 packs chicken thighs`.
+    """
+    return f"s-{uuid.uuid4().hex[:8]}"
+
+
+def get_shopping_list(username: str) -> ShoppingList:
+    """The user's list. An empty one on first read, never an error."""
+    return repo.read_shopping_list(username)
+
+
+def add_shopping_item(username: str, text: str) -> ShoppingItem:
+    """Append one hand-entered item to the end of the list.
+
+    Appends rather than inserts, and nothing sorts afterwards: the order items
+    were added is the order they are read in the shop.
+
+    Raises ValueError for an empty or whitespace-only value.
+    """
+    clean = text.strip()
+    if not clean:
+        raise ValueError("text must not be empty")
+
+    item = ShoppingItem(id=_new_item_id(), text=clean, created_at=_now_iso())
+    with repo.shopping_transaction(username) as shopping_list:
+        shopping_list.items.append(item)
+    return item

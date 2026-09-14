@@ -1,8 +1,7 @@
 <template>
   <q-page class="kitchencraft-app">
     <div class="kc-band">
-      <div class="kc-bar">
-        <h1 class="kc-title">KitchenCraft</h1>
+      <PageBar title="KitchenCraft">
         <!--
           Capture stays reachable without scrolling: with a collection of any
           size a footer button is below the fold the moment the page opens.
@@ -18,7 +17,7 @@
         >
           Add a recipe
         </button>
-      </div>
+      </PageBar>
 
       <p v-if="store.error" class="kc-error kc-pad" data-testid="error">
         {{ store.error }}
@@ -126,6 +125,7 @@
 import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import FilterBar from "@/apps/kitchencraft/components/FilterBar.vue";
+import PageBar from "@/apps/kitchencraft/components/PageBar.vue";
 import RecipeRow from "@/apps/kitchencraft/components/RecipeRow.vue";
 import { useCollectionFilters } from "@/apps/kitchencraft/composables/useCollectionFilters";
 import { useKitchencraftStore } from "@/apps/kitchencraft/stores/useKitchencraftStore";

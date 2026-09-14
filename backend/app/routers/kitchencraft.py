@@ -10,8 +10,11 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.dependencies import get_current_user
 from app.schemas.kitchencraft import (
+    AddShoppingItemRequest,
     CreateRecipeRequest,
     Recipe,
+    ShoppingItem,
+    ShoppingList,
     UpdateRecipeRequest,
     Vocabulary,
 )
@@ -89,3 +92,24 @@ def delete_recipe(recipe_id: str, current_user: str = Depends(get_current_user))
         service.delete_recipe(current_user, recipe_id)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Recipe not found") from exc
+
+
+# -- The shopping list --------------------------------------------------------
+# One list per user, selected by the JWT username. There is no list id in any
+# path and no route for creating, naming or deleting a list (FR-14).
+
+
+@router.get("/shopping-list", response_model=ShoppingList)
+def get_shopping_list(current_user: str = Depends(get_current_user)) -> ShoppingList:
+    return service.get_shopping_list(current_user)
+
+
+@router.post("/shopping-list/items", response_model=ShoppingItem)
+def add_shopping_item(
+    req: AddShoppingItemRequest,
+    current_user: str = Depends(get_current_user),
+) -> ShoppingItem:
+    try:
+        return service.add_shopping_item(current_user, req.text)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

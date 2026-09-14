@@ -1,9 +1,7 @@
 <template>
   <q-page class="kitchencraft-app">
     <div class="kc-band">
-      <div class="kc-bar">
-        <h1 class="kc-title">Add a recipe</h1>
-      </div>
+      <PageBar title="Add a recipe" />
 
       <form class="kc-form" @submit.prevent="save()">
         <!--
@@ -89,6 +87,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import PageBar from "@/apps/kitchencraft/components/PageBar.vue";
 import { useKitchencraftStore } from "@/apps/kitchencraft/stores/useKitchencraftStore";
 import "./../css/kitchencraft.sass";
 
