@@ -32,6 +32,8 @@ export const useSharedNotesStore = defineStore("shared-notes", () => {
   const saving = ref(false);
   const notFound = ref(false);
   const error = ref<string | null>(null);
+  // The platform roster, for the collaborators picker (Story 2.3).
+  const dockUsers = ref<string[]>([]);
 
   // ── live channel for the open note (Story 2.2) ──────────────────────────
   // Set when the note stops being mine to see — the editor watches it and
@@ -163,6 +165,56 @@ export const useSharedNotesStore = defineStore("shared-notes", () => {
     }
   }
 
+  // ── membership (Story 2.3) ──────────────────────────────────────────────
+
+  /** Mirror a fresh roster onto the note's home-list summary. */
+  function syncSummary(saved: Note): void {
+    const summary = notes.value.find((n) => n.id === saved.id);
+    if (summary) summary.shared = saved.members.length > 1;
+  }
+
+  async function fetchDockUsers(): Promise<void> {
+    try {
+      const data = await api.get<{ usernames: string[] }>("/auth/users");
+      dockUsers.value = data.usernames;
+    } catch (e) {
+      error.value = message(e);
+    }
+  }
+
+  async function shareNote(noteId: string, usernames: string[]): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const saved = await api.post<Note>(
+        `/shared-notes/notes/${noteId}/share`,
+        { usernames },
+      );
+      currentNote.value = saved;
+      syncSummary(saved);
+    } catch (e) {
+      error.value = message(e);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function removeMember(noteId: string, username: string): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const saved = await api.del<Note>(
+        `/shared-notes/notes/${noteId}/share/${username}`,
+      );
+      currentNote.value = saved;
+      syncSummary(saved);
+    } catch (e) {
+      error.value = message(e);
+    } finally {
+      loading.value = false;
+    }
+  }
+
   function subscribeToNote(noteId: string): void {
     unsubscribeFromNote();
     const token = useAuthStore().token;
@@ -203,6 +255,10 @@ export const useSharedNotesStore = defineStore("shared-notes", () => {
     remoteChange,
     subscribeToNote,
     unsubscribeFromNote,
+    dockUsers,
+    fetchDockUsers,
+    shareNote,
+    removeMember,
     loading,
     saving,
     notFound,

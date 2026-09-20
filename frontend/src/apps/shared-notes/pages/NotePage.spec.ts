@@ -66,7 +66,7 @@ const STUBS = {
   "q-page": { template: '<div class="q-page-stub"><slot /></div>' },
   "q-btn": {
     template:
-      '<button :data-testid="$attrs[\'data-testid\']" :disabled="disable" @click="$emit(\'click\', $event)">{{ label }}</button>',
+      '<button :data-testid="$attrs[\'data-testid\']" :disabled="disable" @click="$emit(\'click\', $event)">{{ label }}<slot /></button>',
     props: [
       "label",
       "disable",
@@ -88,6 +88,16 @@ const STUBS = {
     emits: ["update:modelValue", "blur", "keyup"],
   },
   "q-spinner": { template: "<div />" },
+  "q-badge": {
+    template: "<span :data-testid=\"$attrs['data-testid']\">{{ label }}</span>",
+    props: ["label", "color"],
+  },
+  CollaboratorsDialog: {
+    name: "CollaboratorsDialog",
+    template: '<div data-testid="collaborators-dialog" />',
+    props: ["modelValue"],
+    emits: ["update:modelValue"],
+  },
 };
 
 function render() {
@@ -494,5 +504,46 @@ describe("NotePage — live channel (Story 2.2)", () => {
 
     await wrapper.get('[data-testid="back-home"]').trigger("click");
     expect(push).toHaveBeenCalledWith("/shared-notes");
+  });
+});
+
+describe("NotePage — collaborators (Story 2.3)", () => {
+  it("opens the collaborators dialog from the note", async () => {
+    getMock.mockResolvedValue(note());
+    const wrapper = render();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="collaborators-dialog"]').exists()).toBe(
+      false,
+    );
+    await wrapper.get('[data-testid="collaborators"]').trigger("click");
+
+    expect(wrapper.find('[data-testid="collaborators-dialog"]').exists()).toBe(
+      true,
+    );
+  });
+
+  it("offers the collaborators view to a member too, not just the owner", async () => {
+    getMock.mockResolvedValue({ ...note(), can_manage: false });
+    const wrapper = render();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="collaborators"]').exists()).toBe(true);
+  });
+
+  it("shows how many people share the note", async () => {
+    getMock.mockResolvedValue({ ...note(), members: ["ana", "bo", "cy"] });
+    const wrapper = render();
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="member-count"]').text()).toBe("3");
+  });
+
+  it("shows no count for a note nobody else has", async () => {
+    getMock.mockResolvedValue({ ...note(), members: ["ana"] });
+    const wrapper = render();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="member-count"]').exists()).toBe(false);
   });
 });

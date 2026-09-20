@@ -36,7 +36,16 @@
         @click="open(note.id)"
       >
         <q-item-section>
-          <q-item-label>{{ note.title }}</q-item-label>
+          <q-item-label>
+            {{ note.title }}
+            <q-badge
+              v-if="note.shared"
+              color="primary"
+              class="q-ml-xs"
+              :label="sharedLabel(note)"
+              :data-testid="`badge-${note.id}`"
+            />
+          </q-item-label>
           <q-item-label caption>
             {{ byline(note) }} · edited {{ relativeTime(note.updated_at) }}
           </q-item-label>
@@ -119,7 +128,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useSharedNotesStore } from "@/apps/shared-notes/stores/useSharedNotesStore";
 import { relativeTime } from "@/apps/shared-notes/time";
@@ -140,14 +149,32 @@ function isMine(note: NoteSummary): boolean {
   return note.owner === me.value;
 }
 
-// Until Epic 2 adds the shared-with-me / shared-by-me badges (Story 2.3), the
-// owner's name is the whole signal for whose note this is.
 function byline(note: NoteSummary): string {
   return isMine(note) ? "Mine" : `Shared by ${note.owner}`;
 }
 
+// Shared-by-me and shared-with-me read differently: mine just carries a flag,
+// theirs needs to say whose it is.
+function sharedLabel(note: NoteSummary): string {
+  return isMine(note) ? "shared" : `${note.owner} · shared with you`;
+}
+
+// Being added to someone else's note happens off-screen, so the list is
+// refreshed whenever this tab comes back to the foreground. That is enough at
+// this scale — deliberately no EventSource per row (Story 2.3).
+function refreshIfVisible(): void {
+  if (document.visibilityState !== "hidden") void store.fetchNotes();
+}
+
 onMounted(() => {
   void store.fetchNotes();
+  document.addEventListener("visibilitychange", refreshIfVisible);
+  window.addEventListener("focus", refreshIfVisible);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("visibilitychange", refreshIfVisible);
+  window.removeEventListener("focus", refreshIfVisible);
 });
 
 function open(noteId: string): void {

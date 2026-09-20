@@ -58,6 +58,22 @@
         <div class="text-caption text-grey-6" data-testid="save-status">
           {{ saveStatus }}
         </div>
+        <q-btn
+          flat
+          dense
+          round
+          icon="group"
+          data-testid="collaborators"
+          @click="openCollaborators"
+        >
+          <q-badge
+            v-if="memberCount > 1"
+            floating
+            color="primary"
+            :label="String(memberCount)"
+            data-testid="member-count"
+          />
+        </q-btn>
       </div>
 
       <div
@@ -81,6 +97,11 @@
         data-testid="note-body"
         @input="onBodyInput"
       ></textarea>
+
+      <CollaboratorsDialog
+        v-if="collaboratorsOpen"
+        v-model="collaboratorsOpen"
+      />
     </template>
   </q-page>
 </template>
@@ -88,6 +109,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import CollaboratorsDialog from "@/apps/shared-notes/components/CollaboratorsDialog.vue";
 import { useAutosave } from "@/apps/shared-notes/composables/useAutosave";
 import { useSharedNotesStore } from "@/apps/shared-notes/stores/useSharedNotesStore";
 
@@ -108,8 +130,11 @@ const dirty = ref(false);
 // Names the member whose change arrived while I had unsaved text, so the cue
 // explains why the note on screen is not what they just wrote.
 const remoteNotice = ref("");
+const collaboratorsOpen = ref(false);
 
 const autosave = useAutosave(saveBody);
+
+const memberCount = computed(() => store.currentNote?.members.length ?? 0);
 
 const closedHeading = computed(() =>
   store.closedReason === "deleted" ? "This note was deleted" : "Access removed",
@@ -216,6 +241,13 @@ async function commitTitle(): Promise<void> {
   } else {
     titleDraft.value = savedTitle.value;
   }
+}
+
+function openCollaborators(): void {
+  // The store's error belongs to the dialog once it is open; a stale message
+  // from an earlier save would read as a sharing failure.
+  store.error = null;
+  collaboratorsOpen.value = true;
 }
 
 function goHome(): void {

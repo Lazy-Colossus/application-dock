@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
@@ -94,14 +94,24 @@ const STUBS = {
   "q-spinner": { template: "<div />" },
 };
 
+// The page subscribes to document/window events, so every mount is tracked and
+// torn down — otherwise one case's listeners fire during the next one's.
+const mounted: ReturnType<typeof mount>[] = [];
+
 function render() {
-  return mount(SharedNotesHomePage, { global: { stubs: STUBS } });
+  const wrapper = mount(SharedNotesHomePage, { global: { stubs: STUBS } });
+  mounted.push(wrapper);
+  return wrapper;
 }
 
 beforeEach(() => {
   setActivePinia(createPinia());
   vi.clearAllMocks();
   useAuthStore().username = "ana";
+});
+
+afterEach(() => {
+  while (mounted.length) mounted.pop()?.unmount();
 });
 
 describe("SharedNotesHomePage — listing", () => {
@@ -273,5 +283,75 @@ describe("SharedNotesHomePage — deleting", () => {
 
     await wrapper.get('[data-testid="delete-n-mine0001"]').trigger("click");
     expect(push).not.toHaveBeenCalled();
+  });
+});
+
+describe("SharedNotesHomePage — shared state (Story 2.3)", () => {
+  it("names the owner and cues a note shared with me", async () => {
+    getMock.mockResolvedValue([THEIRS]);
+    const wrapper = render();
+    await flushPromises();
+
+    const badge = wrapper.get('[data-testid="badge-n-theirs01"]');
+    expect(badge.text()).toContain("bo");
+    expect(badge.text()).toContain("shared with you");
+  });
+
+  it("marks a note I own that has other members as shared", async () => {
+    getMock.mockResolvedValue([{ ...MINE, shared: true }]);
+    const wrapper = render();
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="badge-n-mine0001"]').text()).toBe(
+      "shared",
+    );
+  });
+
+  it("badges nothing on a note only I can see", async () => {
+    getMock.mockResolvedValue([MINE]);
+    const wrapper = render();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="badge-n-mine0001"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it("still offers delete on a note I own that is shared", async () => {
+    getMock.mockResolvedValue([{ ...MINE, shared: true }]);
+    const wrapper = render();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="delete-n-mine0001"]').exists()).toBe(
+      true,
+    );
+  });
+});
+
+describe("SharedNotesHomePage — live membership (Story 2.3)", () => {
+  it("picks up notes shared with me while I was away", async () => {
+    getMock.mockResolvedValue([MINE]);
+    const wrapper = render();
+    await flushPromises();
+    expect(wrapper.text()).not.toContain("Bo's plan");
+
+    getMock.mockResolvedValue([MINE, THEIRS]);
+    document.dispatchEvent(new Event("visibilitychange"));
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Bo's plan");
+  });
+
+  it("stops listening once the page is gone", async () => {
+    getMock.mockResolvedValue([MINE]);
+    const wrapper = render();
+    await flushPromises();
+
+    wrapper.unmount();
+    getMock.mockClear();
+    document.dispatchEvent(new Event("visibilitychange"));
+    await flushPromises();
+
+    expect(getMock).not.toHaveBeenCalled();
   });
 });
