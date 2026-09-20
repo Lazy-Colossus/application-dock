@@ -28,8 +28,8 @@ def _note(note_id: str = "n-abc12345", **overrides: object) -> Note:
         "owner": "ana",
         "members": ["ana"],
         "rev": 0,
-        "created_at": "2026-09-20T10:00:00Z",
-        "updated_at": "2026-09-20T10:00:00Z",
+        "created_at": "2026-09-20T10:00:00.000Z",
+        "updated_at": "2026-09-20T10:00:00.000Z",
     }
     fields.update(overrides)
     return Note.model_validate(fields)
@@ -125,9 +125,62 @@ def test_list_notes_for_ignores_non_json_files(tmp_path: Path) -> None:
 # ── migration hook (AR-3) ─────────────────────────────────────────────────────
 
 
-def test_migrate_is_a_pass_through_at_v1() -> None:
-    raw = {"schema_version": 1, "id": "n-abc12345"}
-    assert repo.migrate(raw) == raw
+def test_migrate_leaves_a_current_note_alone() -> None:
+    raw = {"schema_version": 1, "id": "n-abc12345", "updated_at": "2026-09-20T10:00:00.500Z"}
+    assert repo.migrate(dict(raw)) == raw
+
+
+def test_migrate_normalises_a_second_precision_stamp() -> None:
+    migrated = repo.migrate(
+        {"created_at": "2026-09-20T10:00:00Z", "updated_at": "2026-09-20T10:00:07Z"}
+    )
+    assert migrated == {
+        "created_at": "2026-09-20T10:00:00.000Z",
+        "updated_at": "2026-09-20T10:00:07.000Z",
+    }
+
+
+def test_a_legacy_stamp_no_longer_outranks_a_later_one() -> None:
+    """`Z` sorts after `.`, so an un-normalised old stamp would look newer.
+
+    "2026-09-20T10:00:00Z" > "2026-09-20T10:00:00.500Z" as raw strings — the
+    note saved half a second later would have sorted below the older one.
+    """
+    legacy = repo.migrate({"updated_at": "2026-09-20T10:00:00Z"})["updated_at"]
+    later = "2026-09-20T10:00:00.500Z"
+    assert legacy < later
+
+
+def test_migrate_ignores_a_stamp_it_does_not_recognise() -> None:
+    raw = {"created_at": "not a date", "updated_at": None}
+    assert repo.migrate(dict(raw)) == raw
+
+
+def test_reading_a_legacy_note_normalises_its_stamps(tmp_path: Path) -> None:
+    import json
+
+    notes_dir = tmp_path / "shared-notes" / "notes"
+    notes_dir.mkdir(parents=True)
+    (notes_dir / "n-legacy01.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "id": "n-legacy01",
+                "title": "Old",
+                "body": "",
+                "owner": "ana",
+                "members": ["ana"],
+                "rev": 0,
+                "created_at": "2026-09-20T10:00:00Z",
+                "updated_at": "2026-09-20T10:00:00Z",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    note = repo.read_note("n-legacy01")
+    assert note is not None
+    assert note.updated_at == "2026-09-20T10:00:00.000Z"
 
 
 def test_read_runs_migrate_before_validation(monkeypatch: pytest.MonkeyPatch) -> None:

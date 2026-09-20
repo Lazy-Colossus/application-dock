@@ -40,10 +40,16 @@ def test_create_note_starts_empty_at_rev_zero() -> None:
     assert note.rev == 0
 
 
-def test_create_note_stamps_iso_utc_timestamps() -> None:
+def test_create_note_stamps_iso_utc_timestamps_to_the_millisecond() -> None:
     note = service.create_note("ana", "Groceries")
-    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", note.created_at)
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z", note.created_at)
     assert note.updated_at == note.created_at
+
+
+def test_stamps_sort_lexicographically_in_chronological_order() -> None:
+    """The list order compares these strings, so the two must not disagree."""
+    stamps = [service.now_iso() for _ in range(50)]
+    assert stamps == sorted(stamps)
 
 
 def test_create_note_trims_the_title() -> None:

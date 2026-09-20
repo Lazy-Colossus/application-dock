@@ -20,7 +20,14 @@ from app.services import shared_notes_events as events
 
 
 def now_iso() -> str:
-    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    """An ISO-8601 UTC stamp with millisecond precision.
+
+    Finer than the platform's usual second stamp because `updated_at` is the
+    sort key for the note list, and two saves inside one second are ordinary
+    here — a shared note takes writes from several people at once. At second
+    precision those tie, and the list order becomes arbitrary.
+    """
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 
 
 def new_id() -> str:
@@ -94,7 +101,9 @@ def get_note(user: str, note_id: str) -> NoteView:
 def list_notes(user: str) -> list[NoteSummary]:
     """Every note `user` can see, most recently edited first."""
     notes = repo.list_notes_for(user)
-    notes.sort(key=lambda note: note.updated_at, reverse=True)
+    # `id` breaks a tie so the order is total: equal stamps must not leave the
+    # list in whatever sequence the directory happened to be read in.
+    notes.sort(key=lambda note: (note.updated_at, note.id), reverse=True)
     return [_summary(note) for note in notes]
 
 

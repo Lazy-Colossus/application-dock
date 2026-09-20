@@ -11,6 +11,7 @@ Layering: callers MUST be services. Routers do not call this directly.
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -49,12 +50,26 @@ def _note_path(note_id: str) -> Path:
     return _notes_dir() / f"{note_id}.json"
 
 
+# A stamp written before note timestamps gained millisecond precision.
+_SECOND_PRECISION = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+
+
 def migrate(raw: dict[str, object]) -> dict[str, object]:
-    """Upgrade a raw note to the current schema. v1 is a pass-through.
+    """Upgrade a raw note to the current shape, before validation.
 
     The single home for future `schema_version` bumps, so `read_note` never has
     to grow version branches inline.
+
+    Timestamps are normalised to millisecond precision. Ordering compares these
+    strings, and `"...:18Z"` sorts *after* `"...:18.500Z"` because `Z` > `.` —
+    so a note written before the change would otherwise appear newer than one
+    saved half a second later. Normalising on read fixes the comparison without
+    rewriting files; the next save persists the new form anyway.
     """
+    for field in ("created_at", "updated_at"):
+        value = raw.get(field)
+        if isinstance(value, str) and _SECOND_PRECISION.match(value):
+            raw[field] = f"{value[:-1]}.000Z"
     return raw
 
 

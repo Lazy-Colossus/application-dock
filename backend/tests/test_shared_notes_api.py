@@ -135,6 +135,36 @@ def test_list_is_newest_updated_first(as_user, monkeypatch: pytest.MonkeyPatch) 
     assert [n["id"] for n in body] == [first["id"], second["id"]]
 
 
+def test_list_orders_edits_made_within_the_same_second(as_user) -> None:
+    """The real clock, no monkeypatching — this is what second stamps broke.
+
+    Five notes touched back-to-back land in one wall-clock second. At second
+    precision every `updated_at` tied and the order fell back to whatever the
+    directory scan returned, which is uuid filenames.
+    """
+    ids = [_create(f"Note {i}")["id"] for i in range(5)]
+    for note_id in ids:
+        client.put(f"/api/shared-notes/notes/{note_id}", json={"body": "x"})
+
+    body = client.get("/api/shared-notes/notes").json()
+    assert [n["id"] for n in body] == list(reversed(ids))
+
+
+def test_list_order_is_stable_when_stamps_genuinely_tie(
+    as_user, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Even a real tie must not reorder between two identical requests."""
+    from app.services import shared_notes_service as service
+
+    monkeypatch.setattr(service, "now_iso", lambda: "2026-09-20T10:00:00.000Z")
+    for i in range(5):
+        _create(f"Note {i}")
+
+    first = [n["id"] for n in client.get("/api/shared-notes/notes").json()]
+    second = [n["id"] for n in client.get("/api/shared-notes/notes").json()]
+    assert first == second
+
+
 def test_list_flags_a_note_with_more_than_one_member_as_shared(as_user) -> None:
     solo = _create("Solo")
     shared = _create("Shared")
