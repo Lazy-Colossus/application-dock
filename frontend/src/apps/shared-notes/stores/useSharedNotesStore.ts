@@ -1,6 +1,6 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
-import { api } from "@/composables/useApi";
+import { api, ApiError } from "@/composables/useApi";
 import type { Note, NoteSummary } from "@/apps/shared-notes/types";
 
 function message(e: unknown): string {
@@ -19,7 +19,12 @@ function summarise(note: Note): NoteSummary {
 
 export const useSharedNotesStore = defineStore("shared-notes", () => {
   const notes = ref<NoteSummary[]>([]);
+  const currentNote = ref<Note | null>(null);
   const loading = ref(false);
+  // Saving is tracked apart from `loading` on purpose: an autosave must never
+  // put the open editor into a loading state while someone is typing in it.
+  const saving = ref(false);
+  const notFound = ref(false);
   const error = ref<string | null>(null);
 
   async function fetchNotes(): Promise<void> {
@@ -66,5 +71,72 @@ export const useSharedNotesStore = defineStore("shared-notes", () => {
     }
   }
 
-  return { notes, loading, error, fetchNotes, createNote, deleteNote };
+  async function openNote(noteId: string): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    notFound.value = false;
+    try {
+      currentNote.value = await api.get<Note>(`/shared-notes/notes/${noteId}`);
+    } catch (e) {
+      // A 404 is not a fault to report — it is the note not being mine, which
+      // the page renders as its own state. Anything else is a real error.
+      if (e instanceof ApiError && e.status === 404) {
+        currentNote.value = null;
+        notFound.value = true;
+      } else {
+        error.value = message(e);
+      }
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  /**
+   * Write the supplied fields. Returns whether the save landed, so the caller
+   * can revert a rejected field without having to read `error`.
+   *
+   * The response updates `currentNote` — the server copy — but callers must
+   * keep their own draft of whatever is being typed: the local text is ahead
+   * of any response by the time it arrives. Story 2.2 hooks another member's
+   * changes in here.
+   */
+  async function saveNote(
+    noteId: string,
+    fields: { title?: string; body?: string },
+  ): Promise<boolean> {
+    saving.value = true;
+    error.value = null;
+    try {
+      const saved = await api.put<Note>(
+        `/shared-notes/notes/${noteId}`,
+        fields,
+      );
+      currentNote.value = saved;
+      const summary = notes.value.find((n) => n.id === noteId);
+      if (summary) {
+        summary.title = saved.title;
+        summary.updated_at = saved.updated_at;
+      }
+      return true;
+    } catch (e) {
+      error.value = message(e);
+      return false;
+    } finally {
+      saving.value = false;
+    }
+  }
+
+  return {
+    notes,
+    currentNote,
+    loading,
+    saving,
+    notFound,
+    error,
+    fetchNotes,
+    createNote,
+    deleteNote,
+    openNote,
+    saveNote,
+  };
 });
