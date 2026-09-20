@@ -349,7 +349,9 @@ describe("CalendarPage", () => {
     await wrapper.find('[data-testid="claim-inv-2"]').trigger("click");
 
     expect(wrapper.find('[data-testid="whoami-btn"]').text()).toContain("Jake");
-    expect(window.localStorage.getItem("kalendariq.claim.cal-ab12cd34")).toBe("inv-2");
+    expect(window.localStorage.getItem("kalendariq.claim.cal-ab12cd34")).toBe(
+      "inv-2",
+    );
   });
 
   it("restores a stored claim on a later visit", async () => {
@@ -368,7 +370,9 @@ describe("CalendarPage", () => {
     expect(wrapper.find('[data-testid="whoami-btn"]').text()).toContain(
       "Who are you?",
     );
-    expect(window.localStorage.getItem("kalendariq.claim.cal-ab12cd34")).toBeNull();
+    expect(
+      window.localStorage.getItem("kalendariq.claim.cal-ab12cd34"),
+    ).toBeNull();
   });
 
   it("switches to a different name by picking one", async () => {
@@ -383,7 +387,9 @@ describe("CalendarPage", () => {
     await wrapper.find('[data-testid="claim-inv-2"]').trigger("click");
 
     expect(wrapper.find('[data-testid="whoami-btn"]').text()).toContain("Jake");
-    expect(window.localStorage.getItem("kalendariq.claim.cal-ab12cd34")).toBe("inv-2");
+    expect(window.localStorage.getItem("kalendariq.claim.cal-ab12cd34")).toBe(
+      "inv-2",
+    );
   });
 
   it("has no release control — switching is done by picking someone else", async () => {
@@ -547,11 +553,14 @@ describe("CalendarPage", () => {
     await wrapper.find('[data-testid="set-yes"]').trigger("click");
     await flushPromises();
 
-    expect(putMock).toHaveBeenCalledWith("/kalendariq/calendars/cal-ab12cd34/votes", {
-      invitee_id: "inv-1",
-      date: "2026-09-14",
-      status: "yes",
-    });
+    expect(putMock).toHaveBeenCalledWith(
+      "/kalendariq/calendars/cal-ab12cd34/votes",
+      {
+        invitee_id: "inv-1",
+        date: "2026-09-14",
+        status: "yes",
+      },
+    );
     expect(wrapper.find('[data-testid="day-2026-09-14"]').text()).toContain(
       "1",
     );
@@ -583,10 +592,13 @@ describe("CalendarPage", () => {
     await wrapper.find('[data-testid="toggle-chosen"]').trigger("click");
     await flushPromises();
 
-    expect(putMock).toHaveBeenCalledWith("/kalendariq/calendars/cal-ab12cd34/chosen", {
-      date: "2026-09-14",
-      chosen: true,
-    });
+    expect(putMock).toHaveBeenCalledWith(
+      "/kalendariq/calendars/cal-ab12cd34/chosen",
+      {
+        date: "2026-09-14",
+        chosen: true,
+      },
+    );
     expect(
       wrapper.find('[data-testid="day-2026-09-14"]').find(".crown").exists(),
     ).toBe(true);
@@ -787,11 +799,14 @@ describe("CalendarPage", () => {
     await wrapper.find('[data-testid="note-save"]').trigger("click");
     await flushPromises();
 
-    expect(putMock).toHaveBeenCalledWith("/kalendariq/calendars/cal-ab12cd34/notes", {
-      invitee_id: "inv-1",
-      date: "2026-09-14",
-      text: "Only after 8pm",
-    });
+    expect(putMock).toHaveBeenCalledWith(
+      "/kalendariq/calendars/cal-ab12cd34/notes",
+      {
+        invitee_id: "inv-1",
+        date: "2026-09-14",
+        text: "Only after 8pm",
+      },
+    );
   });
 
   describe("clearing a month of your own answers", () => {
@@ -937,7 +952,9 @@ describe("CalendarPage", () => {
       expect(getMock).toHaveBeenCalledWith("/kalendariq/share/tok-secret");
       // There is no logged-in user on this path; the date rides along instead.
       expect(getMock).not.toHaveBeenCalledWith("/kalendariq/me");
-      expect(getMock).not.toHaveBeenCalledWith("/kalendariq/calendars/cal-ab12cd34");
+      expect(getMock).not.toHaveBeenCalledWith(
+        "/kalendariq/calendars/cal-ab12cd34",
+      );
     });
 
     it("shows the calendar itself", async () => {
@@ -984,11 +1001,14 @@ describe("CalendarPage", () => {
       await wrapper.find('[data-testid="set-yes"]').trigger("click");
       await flushPromises();
 
-      expect(putMock).toHaveBeenCalledWith("/kalendariq/share/tok-secret/votes", {
-        invitee_id: "inv-1",
-        date: "2026-09-14",
-        status: "yes",
-      });
+      expect(putMock).toHaveBeenCalledWith(
+        "/kalendariq/share/tok-secret/votes",
+        {
+          invitee_id: "inv-1",
+          date: "2026-09-14",
+          status: "yes",
+        },
+      );
     });
 
     it("lets them leave a note, through the public route", async () => {
@@ -1003,11 +1023,14 @@ describe("CalendarPage", () => {
       await wrapper.find('[data-testid="note-save"]').trigger("click");
       await flushPromises();
 
-      expect(putMock).toHaveBeenCalledWith("/kalendariq/share/tok-secret/notes", {
-        invitee_id: "inv-1",
-        date: "2026-09-14",
-        text: "Only after 8pm",
-      });
+      expect(putMock).toHaveBeenCalledWith(
+        "/kalendariq/share/tok-secret/notes",
+        {
+          invitee_id: "inv-1",
+          date: "2026-09-14",
+          text: "Only after 8pm",
+        },
+      );
     });
 
     it("lets them clear their own month, through the public route", async () => {
@@ -1025,12 +1048,15 @@ describe("CalendarPage", () => {
         .trigger("click");
       await flushPromises();
 
-      expect(putMock).toHaveBeenCalledWith("/kalendariq/share/tok-secret/votes/bulk", {
-        invitee_id: "inv-1",
-        dates: ["2026-09-14"],
-        status: "none",
-        clear_notes: true,
-      });
+      expect(putMock).toHaveBeenCalledWith(
+        "/kalendariq/share/tok-secret/votes/bulk",
+        {
+          invitee_id: "inv-1",
+          dates: ["2026-09-14"],
+          status: "none",
+          clear_notes: true,
+        },
+      );
     });
 
     it("says a dead link is dead without saying why", async () => {

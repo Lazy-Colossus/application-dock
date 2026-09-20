@@ -840,7 +840,11 @@ import "./../css/kalendariq.sass";
   background: var(--kalendariq-yes);
 }
 .g.maybe {
-  background: linear-gradient(90deg, var(--kalendariq-maybe) 50%, transparent 50%);
+  background: linear-gradient(
+    90deg,
+    var(--kalendariq-maybe) 50%,
+    transparent 50%
+  );
   box-shadow: inset 0 0 0 1.5px var(--kalendariq-maybe);
 }
 .g.no {

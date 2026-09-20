@@ -71,7 +71,9 @@ export const useKalendariqStore = defineStore("kalendariq", () => {
     loading.value = true;
     error.value = null;
     try {
-      calendars.value = await api.get<CalendarSummary[]>("/kalendariq/calendars");
+      calendars.value = await api.get<CalendarSummary[]>(
+        "/kalendariq/calendars",
+      );
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e);
     } finally {
@@ -101,9 +103,12 @@ export const useKalendariqStore = defineStore("kalendariq", () => {
     loading.value = true;
     error.value = null;
     try {
-      const updated = await api.put<Calendar>(`/kalendariq/calendars/${calendarId}`, {
-        name,
-      });
+      const updated = await api.put<Calendar>(
+        `/kalendariq/calendars/${calendarId}`,
+        {
+          name,
+        },
+      );
       currentCalendar.value = updated;
       // Keep the cached list honest, so returning to it does not show the old name.
       const summary = calendars.value.find((c) => c.id === calendarId);

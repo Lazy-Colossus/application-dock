@@ -255,7 +255,9 @@ describe("MapPane — plotting", () => {
   });
 
   it("colours a pin by its row's group (Story 4.6)", async () => {
-    mountPane(tabWithGroups([{ id: "r-1", where: place("A", 1, 1), group: "g-1" }]));
+    mountPane(
+      tabWithGroups([{ id: "r-1", where: place("A", 1, 1), group: "g-1" }]),
+    );
     await flushPromises();
 
     const icon = mapState.markers[0]!.options.icon as { fillColor: string };
@@ -325,7 +327,9 @@ describe("MapPane — plotting", () => {
   });
 
   it("repaints a pin when its group is recoloured", async () => {
-    const tab = tabWithGroups([{ id: "r-1", where: place("A", 1, 1), group: "g-1" }]);
+    const tab = tabWithGroups([
+      { id: "r-1", where: place("A", 1, 1), group: "g-1" },
+    ]);
     const wrapper = mountPane(tab);
     await flushPromises();
 

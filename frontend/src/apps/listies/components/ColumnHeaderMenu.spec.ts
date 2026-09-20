@@ -374,8 +374,9 @@ describe("ColumnHeaderMenu — filtering (Story 2.9)", () => {
     });
     await openFilter(wrapper);
 
-    expect(
-      wrapper.find('[data-testid="filter-text"]').element,
-    ).toHaveProperty("value", "existing");
+    expect(wrapper.find('[data-testid="filter-text"]').element).toHaveProperty(
+      "value",
+      "existing",
+    );
   });
 });
