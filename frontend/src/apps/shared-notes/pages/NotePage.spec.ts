@@ -30,7 +30,25 @@ vi.mock("vue-router", () => ({
 }));
 
 import NotePage from "./NotePage.vue";
+import { useAuthStore } from "@/stores/useAuthStore";
 import type { Note } from "@/apps/shared-notes/types";
+import type { NoteEvent } from "@/apps/shared-notes/composables/useNoteEvents";
+
+class FakeEventSource {
+  static last: FakeEventSource | null = null;
+  onmessage: ((m: MessageEvent<string>) => void) | null = null;
+  closed = false;
+
+  constructor(readonly url: string) {
+    FakeEventSource.last = this;
+  }
+  close() {
+    this.closed = true;
+  }
+  emit(payload: NoteEvent) {
+    this.onmessage?.({ data: JSON.stringify(payload) } as MessageEvent<string>);
+  }
+}
 
 const note = (): Note => ({
   id: "n-abc12345",
@@ -80,10 +98,16 @@ beforeEach(() => {
   setActivePinia(createPinia());
   vi.clearAllMocks();
   vi.useFakeTimers();
+  vi.stubGlobal("EventSource", FakeEventSource);
+  FakeEventSource.last = null;
+  const auth = useAuthStore();
+  auth.username = "ana";
+  auth.token = "tok";
 });
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 
 describe("NotePage — loading", () => {
@@ -298,5 +322,177 @@ describe("NotePage — leaving", () => {
     expect(putMock).toHaveBeenCalledWith("/shared-notes/notes/n-abc12345", {
       body: "unsaved",
     });
+  });
+});
+
+describe("NotePage — live channel (Story 2.2)", () => {
+  it("subscribes to the note's events on load", async () => {
+    getMock.mockResolvedValue(note());
+    render();
+    await flushPromises();
+
+    expect(FakeEventSource.last?.url).toBe(
+      "/api/shared-notes/notes/n-abc12345/events?token=tok",
+    );
+  });
+
+  it("tears the stream down on unmount", async () => {
+    getMock.mockResolvedValue(note());
+    const wrapper = render();
+    await flushPromises();
+
+    wrapper.unmount();
+    expect(FakeEventSource.last?.closed).toBe(true);
+  });
+
+  it("adopts another member's text when I have nothing unsaved", async () => {
+    getMock.mockResolvedValue(note());
+    const wrapper = render();
+    await flushPromises();
+
+    getMock.mockResolvedValue({ ...note(), rev: 2, body: "milk and eggs" });
+    FakeEventSource.last?.emit({
+      type: "note.changed",
+      note_id: "n-abc12345",
+      rev: 2,
+      actor: "bo",
+    });
+    await flushPromises();
+
+    expect(
+      (wrapper.get('[data-testid="note-body"]').element as HTMLTextAreaElement)
+        .value,
+    ).toBe("milk and eggs");
+  });
+
+  it("keeps my unsaved text when another member's change lands", async () => {
+    getMock.mockResolvedValue(note());
+    const wrapper = render();
+    await flushPromises();
+
+    // Typed, but still inside the debounce window — nothing saved yet.
+    await wrapper.get('[data-testid="note-body"]').setValue("my draft");
+
+    getMock.mockResolvedValue({ ...note(), rev: 2, body: "their text" });
+    FakeEventSource.last?.emit({
+      type: "note.changed",
+      note_id: "n-abc12345",
+      rev: 2,
+      actor: "bo",
+    });
+    await flushPromises();
+
+    expect(
+      (wrapper.get('[data-testid="note-body"]').element as HTMLTextAreaElement)
+        .value,
+    ).toBe("my draft");
+  });
+
+  it("names who changed it when my text was kept", async () => {
+    getMock.mockResolvedValue(note());
+    const wrapper = render();
+    await flushPromises();
+
+    await wrapper.get('[data-testid="note-body"]').setValue("my draft");
+
+    getMock.mockResolvedValue({ ...note(), rev: 2, body: "their text" });
+    FakeEventSource.last?.emit({
+      type: "note.changed",
+      note_id: "n-abc12345",
+      rev: 2,
+      actor: "bo",
+    });
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="remote-change"]').text()).toContain("bo");
+  });
+
+  it("adopts a renamed title when I am not editing it", async () => {
+    getMock.mockResolvedValue(note());
+    const wrapper = render();
+    await flushPromises();
+
+    getMock.mockResolvedValue({ ...note(), rev: 2, title: "Shopping" });
+    FakeEventSource.last?.emit({
+      type: "note.changed",
+      note_id: "n-abc12345",
+      rev: 2,
+      actor: "bo",
+    });
+    await flushPromises();
+
+    expect(
+      (wrapper.get('[data-testid="note-title"]').element as HTMLInputElement)
+        .value,
+    ).toBe("Shopping");
+  });
+
+  it("closes the editor when the note is deleted under me", async () => {
+    getMock.mockResolvedValue(note());
+    const wrapper = render();
+    await flushPromises();
+
+    FakeEventSource.last?.emit({
+      type: "note.closed",
+      note_id: "n-abc12345",
+      reason: "deleted",
+    });
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="closed"]').text()).toContain("deleted");
+    expect(wrapper.find('[data-testid="note-body"]').exists()).toBe(false);
+  });
+
+  it("explains a removal differently from a deletion", async () => {
+    useAuthStore().username = "bo";
+    getMock.mockResolvedValue({ ...note(), can_manage: false });
+    const wrapper = render();
+    await flushPromises();
+
+    FakeEventSource.last?.emit({
+      type: "note.closed",
+      note_id: "n-abc12345",
+      reason: "removed",
+      member: "bo",
+    });
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="closed"]').text()).toContain(
+      "no longer shared",
+    );
+  });
+
+  it("does not try to save into a note that has closed", async () => {
+    getMock.mockResolvedValue(note());
+    const wrapper = render();
+    await flushPromises();
+
+    await wrapper.get('[data-testid="note-body"]').setValue("too late");
+    FakeEventSource.last?.emit({
+      type: "note.closed",
+      note_id: "n-abc12345",
+      reason: "deleted",
+    });
+    await flushPromises();
+    await vi.advanceTimersByTimeAsync(600);
+    await flushPromises();
+
+    expect(putMock).not.toHaveBeenCalled();
+  });
+
+  it("offers a way back from the closed state", async () => {
+    getMock.mockResolvedValue(note());
+    const wrapper = render();
+    await flushPromises();
+
+    FakeEventSource.last?.emit({
+      type: "note.closed",
+      note_id: "n-abc12345",
+      reason: "deleted",
+    });
+    await flushPromises();
+
+    await wrapper.get('[data-testid="back-home"]').trigger("click");
+    expect(push).toHaveBeenCalledWith("/shared-notes");
   });
 });

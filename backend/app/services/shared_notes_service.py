@@ -16,6 +16,7 @@ from datetime import UTC, datetime
 from app.repositories import shared_notes_repo as repo
 from app.schemas.shared_notes import Note, NoteSummary, NoteView
 from app.services import auth_service
+from app.services import shared_notes_events as events
 
 
 def now_iso() -> str:
@@ -128,6 +129,17 @@ def update_note(
         note.updated_at = now_iso()
         updated = note.model_copy(deep=True)
 
+    # Published after the transaction commits, so a subscriber that refetches
+    # immediately cannot read the note before the new revision is on disk.
+    events.publish(
+        note_id,
+        {
+            "type": "note.changed",
+            "note_id": note_id,
+            "rev": updated.rev,
+            "actor": user,
+        },
+    )
     return _view(updated, user)
 
 
@@ -141,6 +153,10 @@ def delete_note(user: str, note_id: str) -> None:
     if note.owner != user:
         raise PermissionError("only the owner can delete this note")
     repo.delete_note(note_id)
+    events.publish(
+        note_id,
+        {"type": "note.closed", "note_id": note_id, "reason": "deleted"},
+    )
 
 
 # ── membership (Story 2.1) ────────────────────────────────────────────────────
@@ -171,6 +187,13 @@ def _validate_targets(usernames: list[str]) -> None:
             raise ValueError(f"unknown user: {username}")
 
 
+def _publish_members(note_id: str, members: list[str]) -> None:
+    events.publish(
+        note_id,
+        {"type": "members.changed", "note_id": note_id, "members": members},
+    )
+
+
 def share_note(owner: str, note_id: str, usernames: list[str]) -> NoteView:
     """Add members to a note the caller owns (owner-only, FR-8).
 
@@ -188,6 +211,7 @@ def share_note(owner: str, note_id: str, usernames: list[str]) -> NoteView:
         note.updated_at = now_iso()
         updated = note.model_copy(deep=True)
 
+    _publish_members(note_id, updated.members)
     return _view(updated, owner)
 
 
@@ -208,4 +232,16 @@ def remove_member(owner: str, note_id: str, username: str) -> NoteView:
         note.updated_at = now_iso()
         updated = note.model_copy(deep=True)
 
+    # The remaining members refresh their roster; the removed member's editor
+    # closes. The close carries `member` so only they act on it.
+    _publish_members(note_id, updated.members)
+    events.publish(
+        note_id,
+        {
+            "type": "note.closed",
+            "note_id": note_id,
+            "reason": "removed",
+            "member": username,
+        },
+    )
     return _view(updated, owner)

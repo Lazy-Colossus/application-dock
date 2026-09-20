@@ -1,6 +1,12 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
 import { api, ApiError } from "@/composables/useApi";
+import { useAuthStore } from "@/stores/useAuthStore";
+import {
+  useNoteEvents,
+  type ClosedReason,
+  type NoteEventsSubscription,
+} from "@/apps/shared-notes/composables/useNoteEvents";
 import type { Note, NoteSummary } from "@/apps/shared-notes/types";
 
 function message(e: unknown): string {
@@ -26,6 +32,21 @@ export const useSharedNotesStore = defineStore("shared-notes", () => {
   const saving = ref(false);
   const notFound = ref(false);
   const error = ref<string | null>(null);
+
+  // ── live channel for the open note (Story 2.2) ──────────────────────────
+  // Set when the note stops being mine to see — the editor watches it and
+  // leaves with a reason rather than failing on the next save.
+  const closedReason = ref<ClosedReason | null>(null);
+  // The last remote revision applied, so the editor can decide what to do with
+  // text the user has typed since their last save. Replaced, never queued: only
+  // the newest matters, because reconciliation is a full refetch.
+  const remoteChange = ref<{ rev: number; actor: string } | null>(null);
+
+  let subscription: NoteEventsSubscription | null = null;
+
+  function me(): string | null {
+    return useAuthStore().username;
+  }
 
   async function fetchNotes(): Promise<void> {
     loading.value = true;
@@ -75,6 +96,8 @@ export const useSharedNotesStore = defineStore("shared-notes", () => {
     loading.value = true;
     error.value = null;
     notFound.value = false;
+    closedReason.value = null;
+    remoteChange.value = null;
     try {
       currentNote.value = await api.get<Note>(`/shared-notes/notes/${noteId}`);
     } catch (e) {
@@ -126,9 +149,60 @@ export const useSharedNotesStore = defineStore("shared-notes", () => {
     }
   }
 
+  /** Refetch the open note without flipping `loading` — a live refetch must
+   *  not blank the editor someone is typing in. */
+  async function refetchQuietly(noteId: string): Promise<void> {
+    try {
+      currentNote.value = await api.get<Note>(`/shared-notes/notes/${noteId}`);
+    } catch (e) {
+      // A refetch that races a delete/unshare is handled by `note.closed`;
+      // anything else is worth reporting.
+      if (!(e instanceof ApiError && e.status === 404)) {
+        error.value = message(e);
+      }
+    }
+  }
+
+  function subscribeToNote(noteId: string): void {
+    unsubscribeFromNote();
+    const token = useAuthStore().token;
+    if (!token) return;
+
+    subscription = useNoteEvents(noteId, token, {
+      onChanged: (event) => {
+        // My own write echoes back to me, and a rev I already hold tells me
+        // nothing new — neither is worth a refetch.
+        if (event.actor === me()) return;
+        if (currentNote.value && event.rev <= currentNote.value.rev) return;
+        void refetchQuietly(noteId).then(() => {
+          remoteChange.value = { rev: event.rev, actor: event.actor };
+        });
+      },
+      onMembersChanged: (event) => {
+        if (currentNote.value) currentNote.value.members = event.members;
+      },
+      onClosed: (event) => {
+        // A "removed" frame reaches every subscriber; only the named member
+        // has actually lost access.
+        if (event.reason === "removed" && event.member !== me()) return;
+        closedReason.value = event.reason;
+        notes.value = notes.value.filter((n) => n.id !== noteId);
+      },
+    });
+  }
+
+  function unsubscribeFromNote(): void {
+    subscription?.close();
+    subscription = null;
+  }
+
   return {
     notes,
     currentNote,
+    closedReason,
+    remoteChange,
+    subscribeToNote,
+    unsubscribeFromNote,
     loading,
     saving,
     notFound,
