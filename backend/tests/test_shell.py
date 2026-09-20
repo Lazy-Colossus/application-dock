@@ -19,7 +19,8 @@ def test_list_apps_includes_archery() -> None:
     archery = next((a for a in response.json() if a["id"] == "archery"), None)
     assert archery is not None
     assert archery["label"] == "Archery Score Counter"
-    assert archery["icon"] == "sports_score"
+    # A single-tone target reticle, not the old generic sports_score (Story 9.2).
+    assert archery["icon"] == "adjust"
     assert archery["route"] == "/archery"
 
 

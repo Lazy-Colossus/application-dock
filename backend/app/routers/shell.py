@@ -23,7 +23,10 @@ _APPS: list[AppDescriptor] = [
     AppDescriptor(
         id="archery",
         label="Archery Score Counter",
-        icon="sports_score",
+        # Thematic monochrome target reticle, matching the shell registry
+        # (Story 9.2). This list must agree with frontend/src/apps/registry.ts
+        # — test_app_registry_parity.py enforces that.
+        icon="adjust",
         route="/archery",
     ),
     AppDescriptor(
