@@ -239,6 +239,9 @@ backend/.venv/
 # Application data (host-side)
 data/
 local-data/
+# ...but not the bundled question set: it is a shipped code asset that lives
+# under app/data/, not runtime state, and the broad `data/` rule above hides it.
+!backend/app/data/
 
 # Environment
 .env
