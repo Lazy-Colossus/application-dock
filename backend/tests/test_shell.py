@@ -152,3 +152,18 @@ def test_qotd_router_is_mounted() -> None:
     from app.routers import qotd
 
     assert qotd.router.prefix == "/api/qotd"
+
+
+def test_list_apps_includes_shared_notes() -> None:
+    response = client.get("/api/apps")
+    notes = next((a for a in response.json() if a["id"] == "shared-notes"), None)
+    assert notes is not None
+    assert notes["label"] == "Shared Notes"
+    assert notes["icon"] == "sticky_note_2"
+    assert notes["route"] == "/shared-notes"
+
+
+def test_shared_notes_router_is_mounted() -> None:
+    from app.routers import shared_notes
+
+    assert shared_notes.router.prefix == "/api/shared-notes"

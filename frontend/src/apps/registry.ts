@@ -49,4 +49,11 @@ export const apps: AppDescriptor[] = [
     icon: "help_center",
     route: "/question-of-the-day",
   },
+  {
+    id: "shared-notes",
+    label: "Shared Notes",
+    // A scratchpad glyph — the app is a shared note pad, not a task list.
+    icon: "sticky_note_2",
+    route: "/shared-notes",
+  },
 ];
