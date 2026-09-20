@@ -64,6 +64,12 @@ class CreateNoteRequest(BaseModel):
     title: str
 
 
+class ShareRequest(BaseModel):
+    # Usernames to add as members; validated against the platform roster before
+    # any write, so an unknown name leaves membership unchanged (Story 2.1).
+    usernames: list[str]
+
+
 class UpdateNoteRequest(BaseModel):
     # Both optional so a save can carry the title, the body, or both. A body of
     # `""` is a real value (the note was cleared); `None` means "leave it".

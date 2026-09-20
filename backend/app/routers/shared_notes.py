@@ -16,6 +16,7 @@ from app.schemas.shared_notes import (
     CreateNoteRequest,
     NoteSummary,
     NoteView,
+    ShareRequest,
     UpdateNoteRequest,
 )
 from app.services import shared_notes_service as service
@@ -70,6 +71,41 @@ def update_note(
 def delete_note(note_id: str, current_user: str = Depends(get_current_user)) -> None:
     try:
         service.delete_note(current_user, note_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Note not found") from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+# ── membership (Story 2.1) ────────────────────────────────────────────────────
+
+
+@router.post("/notes/{note_id}/share", response_model=NoteView)
+def share_note(
+    note_id: str,
+    req: ShareRequest,
+    current_user: str = Depends(get_current_user),
+) -> NoteView:
+    try:
+        return service.share_note(current_user, note_id, req.usernames)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Note not found") from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.delete("/notes/{note_id}/share/{username}", response_model=NoteView)
+def remove_member(
+    note_id: str,
+    username: str,
+    current_user: str = Depends(get_current_user),
+) -> NoteView:
+    try:
+        return service.remove_member(current_user, note_id, username)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Note not found") from exc
     except PermissionError as exc:

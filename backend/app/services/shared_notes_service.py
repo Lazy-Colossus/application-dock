@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 
 from app.repositories import shared_notes_repo as repo
 from app.schemas.shared_notes import Note, NoteSummary, NoteView
+from app.services import auth_service
 
 
 def now_iso() -> str:
@@ -140,3 +141,71 @@ def delete_note(user: str, note_id: str) -> None:
     if note.owner != user:
         raise PermissionError("only the owner can delete this note")
     repo.delete_note(note_id)
+
+
+# ── membership (Story 2.1) ────────────────────────────────────────────────────
+
+
+def _require_owned(caller: str, note_id: str) -> Note:
+    """Fetch a note the caller **owns**, for a management operation.
+
+    Resolves first, so a non-member gets `FileNotFoundError` (404) and never the
+    `PermissionError` (403) that would confirm the note exists. The 403 is
+    reserved for a member who is not the owner (NFR-2, FR-9).
+    """
+    note = resolve_note(caller, note_id)
+    if note.owner != caller:
+        raise PermissionError("only the owner can manage this note")
+    return note
+
+
+def _validate_targets(usernames: list[str]) -> None:
+    """Reject unknown usernames before anything is written.
+
+    Checked up front so a batch containing one bad name leaves membership
+    entirely unchanged rather than half-applied.
+    """
+    known = set(auth_service.list_usernames())
+    for username in usernames:
+        if username not in known:
+            raise ValueError(f"unknown user: {username}")
+
+
+def share_note(owner: str, note_id: str, usernames: list[str]) -> NoteView:
+    """Add members to a note the caller owns (owner-only, FR-8).
+
+    Unions rather than replaces, so re-sharing with an existing member is a
+    no-op and two owners' additions cannot erase each other.
+    """
+    _require_owned(owner, note_id)
+    _validate_targets(usernames)
+
+    with repo.note_transaction(note_id) as note:
+        for username in usernames:
+            if username not in note.members:
+                note.members.append(username)
+        # Membership is not content: `updated_at` moves, `rev` does not.
+        note.updated_at = now_iso()
+        updated = note.model_copy(deep=True)
+
+    return _view(updated, owner)
+
+
+def remove_member(owner: str, note_id: str, username: str) -> NoteView:
+    """Remove a member from a note the caller owns (owner-only, FR-8).
+
+    Removing someone who is not a member is a no-op, so a double-click cannot
+    fail. The owner cannot be removed — ownership transfer is out of scope, and
+    to fully un-share the owner removes everyone else.
+    """
+    _require_owned(owner, note_id)
+    if username == owner:
+        raise ValueError("the owner cannot be removed")
+
+    with repo.note_transaction(note_id) as note:
+        if username in note.members:
+            note.members.remove(username)
+        note.updated_at = now_iso()
+        updated = note.model_copy(deep=True)
+
+    return _view(updated, owner)
