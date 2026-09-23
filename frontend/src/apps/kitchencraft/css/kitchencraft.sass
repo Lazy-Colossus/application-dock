@@ -279,10 +279,12 @@
 // You do not draw a box round a place to write. You rule a line under it.
 // Labels sit above in .kc-label; a placeholder never stands in for a label.
 
+// 18px stays: it is the reading hand, and anything under 16px makes iOS
+// Safari zoom the page on focus. The height was padding, not type.
 .kc-field
   display: block
   width: 100%
-  min-height: var(--kc-touch)
+  min-height: 34px
   background: transparent
   border: 0
   border-bottom: 1px solid var(--kc-rule-strong)
@@ -292,7 +294,7 @@
   font-weight: 400
   font-size: 18px
   line-height: 1.5
-  padding: 8px 2px
+  padding: 4px 2px
 
 .kc-field::placeholder
   color: var(--kc-pencil)
@@ -302,7 +304,7 @@
 .kc-field:focus
   outline: none
   border-bottom: 2px solid var(--kc-burgundy)
-  padding-bottom: 7px
+  padding-bottom: 3px
 
 // The capture body is the ruled page itself, which is the whole concept in one
 // control: what you type lands on the line.
@@ -496,6 +498,9 @@
   list-style: none
 
 @media (pointer: coarse)
+  .kc-field
+    min-height: var(--kc-touch)
+
   .kc-btn
     min-height: var(--kc-touch)
 

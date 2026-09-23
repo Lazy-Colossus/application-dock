@@ -332,6 +332,7 @@ describe("shapes and touch targets", () => {
     expect(SASS).toContain("@media (pointer: coarse)");
     const coarse = SASS.slice(SASS.indexOf("@media (pointer: coarse)"));
     for (const selector of [
+      "\\.kc-field",
       "\\.kc-btn",
       "\\.kc-typeahead__add",
       "\\.kc-chip--control",
