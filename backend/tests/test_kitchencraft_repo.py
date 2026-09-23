@@ -1,4 +1,4 @@
-"""Story 1.2 — the per-user store: empty reads, atomic writes, path safety.
+"""Story 1.2 — the shared store: empty reads, atomic writes, the legacy merge.
 
 These tests are deliberately at the repository seam rather than through the API:
 the guarantees being checked are about the filesystem, and the router cannot
@@ -36,45 +36,95 @@ def _recipe(**over: object) -> Recipe:
 
 
 def test_read_doc_for_a_user_with_no_file_is_an_empty_document() -> None:
-    doc = repo.read_doc("nell")
+    doc = repo.read_doc()
     assert doc.schema_version == 3
     assert doc.recipes == []
 
 
 def test_write_then_read_round_trips() -> None:
-    repo.write_doc("nell", KitchencraftDoc(recipes=[_recipe()]))
-    assert [r.name for r in repo.read_doc("nell").recipes] == ["Pumpkin dal"]
+    repo.write_doc(KitchencraftDoc(recipes=[_recipe()]))
+    assert [r.name for r in repo.read_doc().recipes] == ["Pumpkin dal"]
 
 
-def test_each_user_gets_their_own_file(isolate: Path) -> None:
-    repo.write_doc("nell", KitchencraftDoc(recipes=[_recipe()]))
-    repo.write_doc("bram", KitchencraftDoc(recipes=[_recipe(id="r-2", name="Traybake")]))
-
-    assert [r.name for r in repo.read_doc("nell").recipes] == ["Pumpkin dal"]
-    assert [r.name for r in repo.read_doc("bram").recipes] == ["Traybake"]
-    users = sorted(p.name for p in (isolate / "kitchencraft" / "users").iterdir())
-    assert users == ["bram.json", "nell.json"]
+def test_the_collection_is_one_shared_file(isolate: Path) -> None:
+    repo.write_doc(KitchencraftDoc(recipes=[_recipe()]))
+    assert sorted(p.name for p in (isolate / "kitchencraft").iterdir()) == ["recipes.json"]
 
 
 def test_write_leaves_no_temp_file_behind(isolate: Path) -> None:
-    repo.write_doc("nell", KitchencraftDoc(recipes=[_recipe()]))
-    files = list((isolate / "kitchencraft" / "users").iterdir())
-    assert [f.name for f in files] == ["nell.json"]
+    repo.write_doc(KitchencraftDoc(recipes=[_recipe()]))
+    files = list((isolate / "kitchencraft").iterdir())
+    assert [f.name for f in files] == ["recipes.json"]
 
 
-@pytest.mark.parametrize("username", ["../escape", "nell/../bram", "", "   ", ".", ".."])
-def test_a_crafted_username_cannot_escape_the_users_directory(username: str) -> None:
-    with pytest.raises(ValueError):
-        repo.read_doc(username)
+# -- Merging the pre-sharing per-user files ----------------------------------
+
+
+def _legacy(isolate: Path, owner: str, recipes: list[dict[str, object]]) -> Path:
+    path = isolate / "kitchencraft" / "users" / f"{owner}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"schema_version": 2, "recipes": recipes}), encoding="utf-8")
+    return path
+
+
+def _raw(id: str, name: str, **over: object) -> dict[str, object]:
+    return _recipe(id=id, name=name, **over).model_dump(mode="json")
+
+
+def test_every_users_recipes_merge_into_the_shared_collection(isolate: Path) -> None:
+    _legacy(isolate, "nell", [_raw("r-1", "Dal")])
+    _legacy(isolate, "bram", [_raw("r-2", "Traybake"), _raw("r-3", "Soup")])
+
+    # Filename order: bram before nell.
+    assert [r.name for r in repo.read_doc().recipes] == ["Traybake", "Soup", "Dal"]
+
+
+def test_the_merge_migrates_each_legacy_file_on_the_way_in(isolate: Path) -> None:
+    _legacy(isolate, "nell", [_raw("r-1", "Dal", meal_type="dinner")])
+    raw = json.loads((isolate / "kitchencraft" / "users" / "nell.json").read_text())
+    raw["recipes"][0]["meal_type"] = "lunch"
+    (isolate / "kitchencraft" / "users" / "nell.json").write_text(json.dumps(raw))
+
+    assert repo.read_doc().recipes[0].meal_type == "dinner"
+
+
+def test_a_clashing_id_is_rekeyed_rather_than_a_recipe_dropped(isolate: Path) -> None:
+    _legacy(isolate, "nell", [_raw("r-1", "Nell's dal")])
+    _legacy(isolate, "bram", [_raw("r-1", "Bram's dal")])
+
+    recipes = repo.read_doc().recipes
+    assert [(r.id, r.name) for r in recipes] == [("r-1", "Bram's dal"), ("r-1-nell", "Nell's dal")]
+
+
+def test_reading_writes_nothing_and_the_first_write_persists_the_merge(isolate: Path) -> None:
+    legacy = _legacy(isolate, "nell", [_raw("r-1", "Dal")])
+    before = legacy.read_text()
+
+    repo.read_doc()
+    assert not (isolate / "kitchencraft" / "recipes.json").exists()
+
+    with repo.doc_transaction() as doc:
+        doc.recipes.append(_recipe(id="r-2", name="Traybake"))
+
+    shared = json.loads((isolate / "kitchencraft" / "recipes.json").read_text())
+    assert [r["name"] for r in shared["recipes"]] == ["Dal", "Traybake"]
+    # Kept, untouched, as the backup.
+    assert legacy.read_text() == before
+
+
+def test_once_the_shared_file_exists_the_legacy_files_are_ignored(isolate: Path) -> None:
+    repo.write_doc(KitchencraftDoc(recipes=[_recipe(name="Shared")]))
+    _legacy(isolate, "nell", [_raw("r-9", "Stale")])
+    assert [r.name for r in repo.read_doc().recipes] == ["Shared"]
 
 
 def test_a_future_schema_version_is_rejected_rather_than_guessed_at(isolate: Path) -> None:
-    path = isolate / "kitchencraft" / "users" / "nell.json"
+    path = isolate / "kitchencraft" / "recipes.json"
     path.parent.mkdir(parents=True)
     path.write_text(json.dumps({"schema_version": 99, "recipes": []}), encoding="utf-8")
 
     with pytest.raises(ValueError, match="schema_version"):
-        repo.read_doc("nell")
+        repo.read_doc()
 
 
 def test_migrate_is_a_pass_through_at_v1() -> None:
@@ -87,20 +137,20 @@ def test_a_document_with_no_schema_version_reads_as_v1() -> None:
 
 
 def test_doc_transaction_writes_on_a_clean_exit() -> None:
-    with repo.doc_transaction("nell") as doc:
+    with repo.doc_transaction() as doc:
         doc.recipes.append(_recipe())
-    assert len(repo.read_doc("nell").recipes) == 1
+    assert len(repo.read_doc().recipes) == 1
 
 
 def test_doc_transaction_writes_nothing_when_the_block_raises() -> None:
-    repo.write_doc("nell", KitchencraftDoc(recipes=[_recipe()]))
+    repo.write_doc(KitchencraftDoc(recipes=[_recipe()]))
 
     with pytest.raises(ValueError):
-        with repo.doc_transaction("nell") as doc:
+        with repo.doc_transaction() as doc:
             doc.recipes.append(_recipe(id="r-2", name="Lost"))
             raise ValueError("rejected")
 
-    assert [r.name for r in repo.read_doc("nell").recipes] == ["Pumpkin dal"]
+    assert [r.name for r in repo.read_doc().recipes] == ["Pumpkin dal"]
 
 
 # -- The shipped seed ---------------------------------------------------------
@@ -125,12 +175,11 @@ def test_the_seed_ships_the_units_a_home_cook_reaches_for() -> None:
 def test_the_seed_is_not_a_closed_set() -> None:
     """A unit that is not shipped is still accepted and joins the user's own."""
     service.create_recipe(
-        "nell",
         name="Dal",
         body="Simmer.",
         ingredients=[Ingredient(amount="2", unit="fistfuls", text="lentils")],
     )
-    assert "fistfuls" in service.get_vocabulary("nell").units
+    assert "fistfuls" in service.get_vocabulary().units
 
 
 # -- Migrating v1 ingredients to v2 ------------------------------------------
@@ -143,7 +192,7 @@ def test_a_v1_document_migrates_its_ingredients_on_read(isolate: Path) -> None:
     where there was not, so `text = specific or category` leaves every recipe
     reading exactly as it did before the upgrade.
     """
-    path = isolate / "kitchencraft" / "users" / "nell.json"
+    path = isolate / "kitchencraft" / "recipes.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(
@@ -169,7 +218,7 @@ def test_a_v1_document_migrates_its_ingredients_on_read(isolate: Path) -> None:
         encoding="utf-8",
     )
 
-    doc = repo.read_doc("nell")
+    doc = repo.read_doc()
 
     assert doc.schema_version == 3
     assert [(i.amount, i.unit, i.text) for i in doc.recipes[0].ingredients] == [
@@ -181,14 +230,14 @@ def test_a_v1_document_migrates_its_ingredients_on_read(isolate: Path) -> None:
 
 
 def test_migration_drops_the_users_coined_categories(isolate: Path) -> None:
-    path = isolate / "kitchencraft" / "users" / "nell.json"
+    path = isolate / "kitchencraft" / "recipes.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps({"schema_version": 1, "categories": ["harissa"], "recipes": []}),
         encoding="utf-8",
     )
     # There is no shared vocabulary in v2 for them to live in.
-    assert not hasattr(repo.read_doc("nell"), "categories")
+    assert not hasattr(repo.read_doc(), "categories")
 
 
 def _v2_recipe(**over: object) -> dict[str, object]:
@@ -238,7 +287,7 @@ def test_v2_to_v3_clears_snack_and_other_with_their_mark(retired: str) -> None:
 
 
 def test_a_v2_file_with_a_retired_meal_type_reads_back_as_v3(isolate: Path) -> None:
-    path = isolate / "kitchencraft" / "users" / "nell.json"
+    path = isolate / "kitchencraft" / "recipes.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(
@@ -253,7 +302,7 @@ def test_a_v2_file_with_a_retired_meal_type_reads_back_as_v3(isolate: Path) -> N
         ),
         encoding="utf-8",
     )
-    doc = repo.read_doc("nell")
+    doc = repo.read_doc()
     assert doc.schema_version == 3
     assert [r.meal_type for r in doc.recipes] == ["dinner", None, "breakfast"]
 

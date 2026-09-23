@@ -80,7 +80,7 @@ import TypeaheadInput from "@/apps/kitchencraft/components/TypeaheadInput.vue";
  * The free-tag input — the cook's own words for how they think about a recipe.
  *
  * The chips are the field; a + at their end opens a pop-over with the input on
- * top and the cook's own tags beneath it. It stays open across picks so a run
+ * top and the collection's tags beneath it. It stays open across picks so a run
  * of tags is one visit, and closes on Escape, a second tap of the +, or a tap
  * anywhere outside it. A tag that matches nothing commits straight off Enter:
  * a free tag needs no ceremony.

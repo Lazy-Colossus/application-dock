@@ -233,7 +233,7 @@ const canSave = computed(() => !timeError.value && !servingsError.value);
 const tagSuggestions = computed(() =>
   orderByUsage(store.vocabulary.tags, tagUsage(store.recipes)),
 );
-// The user's own history, most-used first — there is no shared vocabulary in
+// The collection's own history, most-used first — there is no shared vocabulary in
 // v2, so this is simply what they have typed before.
 const ingredientSuggestions = computed(() =>
   orderByUsage(store.vocabulary.ingredients, ingredientUsage(store.recipes)),

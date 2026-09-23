@@ -120,7 +120,7 @@ class ShoppingList(BaseModel):
 class Vocabulary(BaseModel):
     """What each typeahead may offer, kept strictly apart (FR-8).
 
-    `ingredients` is now the user's own previously-typed ingredient text rather
+    `ingredients` is now previously-typed ingredient text from the collection rather
     than a shared category vocabulary — there is no shared vocabulary in v2.
     `units` is the shipped list plus whatever the user has coined.
     """

@@ -128,24 +128,33 @@ def test_the_collection_is_newest_first() -> None:
     assert [r["name"] for r in listed] == ["third", "second", "first"]
 
 
-def test_one_user_never_sees_another_users_recipes() -> None:
+def test_every_user_sees_the_one_shared_collection() -> None:
     app.dependency_overrides[get_current_user] = lambda: "nell"
     create(name="Nell's dal")
     app.dependency_overrides[get_current_user] = lambda: "bram"
     create(name="Bram's traybake")
 
-    assert [r["name"] for r in client.get("/api/kitchencraft/recipes").json()] == [
-        "Bram's traybake"
-    ]
+    expected = ["Bram's traybake", "Nell's dal"]
+    assert [r["name"] for r in client.get("/api/kitchencraft/recipes").json()] == expected
     app.dependency_overrides[get_current_user] = lambda: "nell"
-    assert [r["name"] for r in client.get("/api/kitchencraft/recipes").json()] == ["Nell's dal"]
+    assert [r["name"] for r in client.get("/api/kitchencraft/recipes").json()] == expected
 
 
-def test_a_recipe_is_not_reachable_by_id_from_another_account() -> None:
+def test_a_recipe_one_user_saved_another_can_open_and_edit() -> None:
     app.dependency_overrides[get_current_user] = lambda: "nell"
     recipe = create()
     app.dependency_overrides[get_current_user] = lambda: "bram"
-    assert client.get(f"/api/kitchencraft/recipes/{recipe['id']}").status_code == 404
+    assert client.get(f"/api/kitchencraft/recipes/{recipe['id']}").status_code == 200
+    resp = client.put(f"/api/kitchencraft/recipes/{recipe['id']}", json={"favourite": True})
+    assert resp.json()["favourite"] is True
+
+
+def test_signing_in_is_still_required(monkeypatch: pytest.MonkeyPatch) -> None:
+    # A configured secret, so the dev escape hatch cannot answer for an anonymous
+    # caller and turn the 401 into a 200.
+    monkeypatch.setattr("app.core.config.settings.jwt_secret_key", "test-secret-key-for-tests-only")
+    app.dependency_overrides.pop(get_current_user, None)
+    assert client.get("/api/kitchencraft/recipes").status_code == 401
 
 
 # -- Story 1.5: read, edit, delete -------------------------------------------

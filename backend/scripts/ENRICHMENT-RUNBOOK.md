@@ -24,16 +24,16 @@ cd backend
 export DATA_DIR=./local-data
 
 # 1. What is missing, and what wording the collection already uses
-.venv/bin/python -m scripts.enrich report --user nell --out /tmp/report.json
+.venv/bin/python -m scripts.enrich report --out /tmp/report.json
 
 # 2. Work out the values. Give Claude Code /tmp/report.json and ask for a batch.
 #    Write it to /tmp/batch.json (see "Batch format" below).
 
 # 3. See what would happen. Writes nothing.
-.venv/bin/python -m scripts.enrich apply --user nell --batch /tmp/batch.json
+.venv/bin/python -m scripts.enrich apply --batch /tmp/batch.json
 
 # 4. Do it.
-.venv/bin/python -m scripts.enrich apply --user nell --batch /tmp/batch.json --write
+.venv/bin/python -m scripts.enrich apply --batch /tmp/batch.json --write
 ```
 
 ## Production
@@ -42,17 +42,17 @@ The app image already contains `backend/scripts/`, so there is nothing to copy.
 
 ```bash
 # 1. Report, out to a file inside the container, then copy it to the host to read
-docker compose exec app python -m scripts.enrich report --user nell --out /tmp/report.json
+docker compose exec app python -m scripts.enrich report --out /tmp/report.json
 docker compose cp app:/tmp/report.json ./report.json
 
 # 2. Work out the values on the host. Write ./batch.json.
 
 # 3. Copy the batch in and dry-run it
 docker compose cp ./batch.json app:/tmp/batch.json
-docker compose exec app python -m scripts.enrich apply --user nell --batch /tmp/batch.json
+docker compose exec app python -m scripts.enrich apply --batch /tmp/batch.json
 
 # 4. Apply
-docker compose exec app python -m scripts.enrich apply --user nell --batch /tmp/batch.json --write
+docker compose exec app python -m scripts.enrich apply --batch /tmp/batch.json --write
 ```
 
 `docker compose cp` is used for the **report and the batch** — never for the data

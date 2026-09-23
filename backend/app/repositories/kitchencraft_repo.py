@@ -1,13 +1,15 @@
-"""Filesystem persistence for KitchenCraft — one JSON file per user.
+"""Filesystem persistence for KitchenCraft — one shared collection, one shared list.
 
 This module is the ONLY code in the app that touches KitchenCraft's files. All
 writes go through the shared atomic writer, and every read-modify-write is held
 under the target file's lock, so a concurrent request can neither read a torn
 document nor overwrite a change it never saw (NFR-1).
 
-The per-user filename is derived from the authenticated username (passed down
-from the router, never from request input) and is validated as a bare filename,
-so a crafted username cannot escape the `users/` directory (FR-2, NFR-5).
+KitchenCraft is a household app: every signed-in user reads and writes the same
+recipes (`recipes.json`) and the same shopping list (`shopping.json`). It began
+with one file per user under `users/` and `shopping/`; until the shared file
+exists, a read merges those legacy files, and the first write persists the
+merge. The legacy files are never written again, so they stay as a backup.
 
 The shipped ingredient-category seed also lives behind this module: it is a
 committed, read-only file in the image rather than data under `DATA_DIR`, on the
@@ -40,35 +42,51 @@ _SHOPPING_SCHEMA_VERSION = 1
 _SEED_PATH = Path(__file__).resolve().parent.parent / "kitchencraft_seed" / "units.json"
 
 
-def _validate_username(username: str) -> str:
-    """Ensure `username` is a safe bare filename, never a path.
-
-    Rejects empty/whitespace names and anything containing a path separator or
-    a parent reference, so the on-disk path can never escape `users/`.
-    """
-    if not username or not username.strip():
-        raise ValueError("username must be non-empty")
-    if username != username.strip():
-        raise ValueError("username must not have surrounding whitespace")
-    if "/" in username or "\\" in username or username in {".", ".."}:
-        raise ValueError(f"unsafe username: {username!r}")
-    return username
+def _recipes_path() -> Path:
+    return settings.data_dir / _APP_DIR / "recipes.json"
 
 
-def _user_path(username: str) -> Path:
-    _validate_username(username)
-    return settings.data_dir / _APP_DIR / "users" / f"{username}.json"
-
-
-def _shopping_path(username: str) -> Path:
-    """The user's shopping list — a separate document under its own lock.
+def _shopping_path() -> Path:
+    """The shopping list — a separate document under its own lock.
 
     Deliberately not a field on the collection document: that one is read whole
     on every page load, while this is written repeatedly mid-shop. Sharing a
     file would mean rewriting every recipe to tick one item (Story 3.1).
     """
-    _validate_username(username)
-    return settings.data_dir / _APP_DIR / "shopping" / f"{username}.json"
+    return settings.data_dir / _APP_DIR / "shopping.json"
+
+
+def _legacy_docs(subdir: str, expected: int) -> list[tuple[str, dict[str, object]]]:
+    """Each pre-sharing per-user file under `subdir`, migrated, as (owner, doc).
+
+    In filename order, so the merge is the same on every read until it is
+    persisted.
+    """
+    directory = settings.data_dir / _APP_DIR / subdir
+    if not directory.is_dir():
+        return []
+    return [
+        (path.stem, migrate(json.loads(path.read_text(encoding="utf-8")), expected))
+        for path in sorted(directory.glob("*.json"))
+    ]
+
+
+def _merge(key: str, docs: list[tuple[str, dict[str, object]]]) -> list[dict[str, object]]:
+    """Concatenate every owner's `key` list, keeping every entry.
+
+    Ids are random, so two owners sharing one is all but impossible — but a
+    merge that silently dropped a recipe body would break NFR-3, so a clash is
+    re-keyed with its owner instead.
+    """
+    merged: list[dict[str, object]] = []
+    seen: set[object] = set()
+    for owner, doc in docs:
+        for entry in doc.get(key, []) or []:
+            if entry.get("id") in seen:
+                entry = {**entry, "id": f"{entry['id']}-{owner}"}
+            seen.add(entry.get("id"))
+            merged.append(entry)
+    return merged
 
 
 def _migrate_v1_ingredients(raw: dict[str, object]) -> dict[str, object]:
@@ -159,7 +177,7 @@ def read_seed_units() -> list[str]:
 
     Read-only and shared by every user, so the unit field offers something
     useful against a user's very first recipe. Not a closed set: a unit typed
-    that is not in here is accepted and joins that user's own vocabulary.
+    that is not in here is accepted and joins the collection's vocabulary.
     """
     raw = json.loads(_SEED_PATH.read_text(encoding="utf-8"))
     version = raw.get("schema_version")
@@ -168,75 +186,81 @@ def read_seed_units() -> list[str]:
     return list(raw["units"])
 
 
-def read_doc(username: str) -> KitchencraftDoc:
-    """Read a user's document, or an empty one if they have no file yet."""
-    path = _user_path(username)
+def read_doc() -> KitchencraftDoc:
+    """Read the shared collection, merging the legacy per-user files if it is new."""
     try:
-        raw = path.read_text(encoding="utf-8")
+        raw = _recipes_path().read_text(encoding="utf-8")
     except FileNotFoundError:
-        return KitchencraftDoc(schema_version=_RECIPES_SCHEMA_VERSION)
+        legacy = _legacy_docs("users", _RECIPES_SCHEMA_VERSION)
+        return KitchencraftDoc.model_validate(
+            {"schema_version": _RECIPES_SCHEMA_VERSION, "recipes": _merge("recipes", legacy)}
+        )
 
     data = migrate(json.loads(raw))
     return KitchencraftDoc.model_validate(data)
 
 
-def write_doc(username: str, doc: KitchencraftDoc) -> None:
-    """Persist a user's document atomically, creating `users/` on first write."""
-    path = _user_path(username)
+def write_doc(doc: KitchencraftDoc) -> None:
+    """Persist the collection atomically, creating the app directory on first write."""
+    path = _recipes_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     atomic_write_json(path, doc.model_dump(mode="json"))
 
 
 @contextmanager
-def doc_transaction(username: str) -> Iterator[KitchencraftDoc]:
-    """Read-modify-write a user's document under that file's lock.
+def doc_transaction() -> Iterator[KitchencraftDoc]:
+    """Read-modify-write the collection under its file's lock.
 
     The lock spans the whole block, so a concurrent request cannot read the same
     stale document and overwrite the change made here. Locking only the write
-    would not help — both writers would already hold stale reads.
+    would not help — both writers would already hold stale reads. With every
+    user on one file, this is what keeps two cooks saving at once from losing
+    each other's change.
 
     The document is written when the block exits cleanly. If the block raises —
     a validation `ValueError`, a missing-recipe `FileNotFoundError` — nothing is
     written, so a rejected request leaves no partial mutation behind.
     """
-    with key_lock(str(_user_path(username))):
-        doc = read_doc(username)
+    with key_lock(str(_recipes_path())):
+        doc = read_doc()
         yield doc
-        write_doc(username, doc)
+        write_doc(doc)
 
 
 # -- The shopping list --------------------------------------------------------
-# A second document, same rules: validated username, atomic write, lock held
-# across the whole read-modify-write.
+# A second document, same rules: atomic write, lock held across the whole
+# read-modify-write.
 
 
-def read_shopping_list(username: str) -> ShoppingList:
-    """Read a user's shopping list, or an empty one if they have no file yet."""
-    path = _shopping_path(username)
+def read_shopping_list() -> ShoppingList:
+    """Read the shared list, merging the legacy per-user lists if it is new."""
     try:
-        raw = path.read_text(encoding="utf-8")
+        raw = _shopping_path().read_text(encoding="utf-8")
     except FileNotFoundError:
-        return ShoppingList(schema_version=_SHOPPING_SCHEMA_VERSION)
+        legacy = _legacy_docs("shopping", _SHOPPING_SCHEMA_VERSION)
+        return ShoppingList.model_validate(
+            {"schema_version": _SHOPPING_SCHEMA_VERSION, "items": _merge("items", legacy)}
+        )
 
     data = migrate(json.loads(raw), _SHOPPING_SCHEMA_VERSION)
     return ShoppingList.model_validate(data)
 
 
-def write_shopping_list(username: str, shopping_list: ShoppingList) -> None:
-    """Persist a shopping list atomically, creating `shopping/` on first write."""
-    path = _shopping_path(username)
+def write_shopping_list(shopping_list: ShoppingList) -> None:
+    """Persist the shopping list atomically, creating the app directory on first write."""
+    path = _shopping_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     atomic_write_json(path, shopping_list.model_dump(mode="json"))
 
 
 @contextmanager
-def shopping_transaction(username: str) -> Iterator[ShoppingList]:
-    """Read-modify-write a user's shopping list under that file's lock.
+def shopping_transaction() -> Iterator[ShoppingList]:
+    """Read-modify-write the shopping list under that file's lock.
 
     Its own lock, keyed on its own path, so ticking an item never contends with
     saving a recipe.
     """
-    with key_lock(str(_shopping_path(username))):
-        shopping_list = read_shopping_list(username)
+    with key_lock(str(_shopping_path())):
+        shopping_list = read_shopping_list()
         yield shopping_list
-        write_shopping_list(username, shopping_list)
+        write_shopping_list(shopping_list)

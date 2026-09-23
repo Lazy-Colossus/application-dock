@@ -64,9 +64,9 @@ export interface ShoppingList {
 // under Ingredients and vice versa.
 export interface Vocabulary {
   tags: string[];
-  // The user's own previously-typed ingredients — v2 has no shared vocabulary.
+  // Ingredients already typed anywhere in the shared collection.
   ingredients: string[];
-  // The shipped list plus anything this user has coined.
+  // The shipped list plus anything coined in the collection.
   units: string[];
 }
 
