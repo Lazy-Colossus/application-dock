@@ -324,13 +324,16 @@ describe("shapes and touch targets", () => {
   });
 
   it("keeps that floor for a finger even though the chip box is leaner", () => {
-    // A filter chip is 30px tall for a mouse — above WCAG 2.5.8's 24px pointer
-    // floor — and the coarse-pointer block puts the 44px one back. Deleting
-    // that block would silently turn every filter into a 30px touch target,
-    // which is the kind of regression a visual tweak makes by accident.
+    // Buttons and filter chips are 34px and 30px for a mouse — above WCAG
+    // 2.5.8's 24px pointer floor — and the coarse-pointer block puts the 44px
+    // one back. Deleting that block would silently turn every action and every
+    // filter into an undersized touch target, which is the kind of regression
+    // a visual tweak makes by accident.
     expect(SASS).toContain("@media (pointer: coarse)");
     const coarse = SASS.slice(SASS.indexOf("@media (pointer: coarse)"));
     for (const selector of [
+      "\\.kc-btn",
+      "\\.kc-typeahead__add",
       "\\.kc-chip--control",
       "\\.kc-chip \\.kc-icon-btn",
     ]) {
