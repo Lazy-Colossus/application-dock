@@ -6,7 +6,7 @@
   -->
   <nav class="kc-tabs" aria-label="Recipe dividers">
     <!--
-      Below 640px the label is swapped for the glyph, not hidden behind a
+      Below 560px the label is swapped for the glyph, not hidden behind a
       scroll: five typed labels do not fit across a phone, and a rail you have
       to scroll to see the divider you want is a rail that has stopped doing
       the job. `aria-label` carries the name in both modes, so nothing is lost

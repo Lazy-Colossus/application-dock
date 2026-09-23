@@ -188,7 +188,7 @@
   inset: 12px 12px 22px
   border-radius: var(--kc-r-sm)
   background-color: var(--kc-paper)
-  background-image: linear-gradient(to right, transparent 0 calc(var(--kc-punch) - 10px), var(--kc-margin) calc(var(--kc-punch) - 10px) calc(var(--kc-punch) - 9px), transparent calc(var(--kc-punch) - 9px)), radial-gradient(circle var(--kc-hole) at var(--kc-hole-x) 60px, var(--kc-manila) 97%, transparent 100%)
+  background-image: linear-gradient(to right, transparent 0 calc(var(--kc-punch) - 6px), var(--kc-margin) calc(var(--kc-punch) - 6px) calc(var(--kc-punch) - 5px), transparent calc(var(--kc-punch) - 5px)), radial-gradient(circle var(--kc-hole) at var(--kc-hole-x) 60px, var(--kc-manila) 97%, transparent 100%)
   background-repeat: no-repeat, repeat-y
   background-size: 100% 100%, 100% 120px
 
@@ -1289,7 +1289,7 @@
 
 @media (max-width: 560px)
   .kitchencraft-app
-    padding: 18px 16px 56px
+    padding: 18px 16px 48px
 
   .kc-tabs
     flex-wrap: nowrap
@@ -1324,11 +1324,11 @@
 
   .kc-band
     margin-top: -1px
-    padding: 9px 9px 16px
+    padding: 8px 8px 15px
 
   .kc-band::before,
   .kc-band::after
-    inset: 9px 9px 16px
+    inset: 8px 8px 15px
 
   // No room for it, and it would sit under the writing rather than beside it.
   .kitchencraft-app
@@ -1352,13 +1352,34 @@
   .kc-modal
     rotate: -0.4deg
 
+  .kc-backdrop:not(.kc-backdrop--centred)
+    padding: 0 12px
+
+  .kc-sheet
+    rotate: -0.6deg
+
 @media (max-width: 400px)
   .kitchencraft-app,
   .kitchencraft-panel
-    --kc-punch: 22px
-    --kc-hole: 5px
-    --kc-hole-x: 10px
-    --kc-pad: 13px
+    --kc-punch: 20px
+    --kc-hole: 4px
+    --kc-hole-x: 8px
+    --kc-pad: 12px
+
+  .kc-band
+    padding: 7px 7px 13px
+
+  .kc-band::before,
+  .kc-band::after
+    inset: 7px 7px 13px
+
+  // The reading column is the point of the app and the first thing a narrow
+  // screen steals from, so it keeps what the chrome gives up.
+  .kc-read
+    padding: 14px var(--kc-pad) 24px
+
+  .kc-form
+    padding: 14px var(--kc-pad) 26px
 
 // The only motion in the app is the modal transition, and this removes it.
 @media (prefers-reduced-motion: reduce)
