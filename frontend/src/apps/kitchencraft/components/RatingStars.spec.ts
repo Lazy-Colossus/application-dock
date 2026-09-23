@@ -79,7 +79,7 @@ describe("how the rating reads", () => {
 
   it("carries the mark in ink, never in moss", () => {
     // Moss means "pressable" across the dock; a rating is status.
-    expect(mountStars(4).html()).not.toMatch(/kc-chip--on|--kc-moss/);
+    expect(mountStars(4).html()).not.toMatch(/kc-chip/);
   });
 });
 

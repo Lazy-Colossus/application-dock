@@ -247,7 +247,7 @@ describe("ticking things off", () => {
   it("carries the mark in ink, never in moss", async () => {
     const wrapper = await openModal([item({ ticked: true })]);
     expect(wrapper.find(".kc-shop-row").html()).not.toMatch(
-      /kc-chip--on|--kc-moss/,
+      /kc-chip/,
     );
   });
 

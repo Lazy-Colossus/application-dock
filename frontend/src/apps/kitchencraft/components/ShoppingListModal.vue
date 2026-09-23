@@ -133,7 +133,7 @@
                 <path
                   v-if="item.ticked"
                   d="M7.5 12.5l3 3 6-6.5"
-                  stroke="var(--kc-beige-raise)"
+                  stroke="var(--kc-cream)"
                   stroke-width="2.5"
                   fill="none"
                 />
@@ -174,7 +174,12 @@
         above it rather than a bare panel (UX-DR13).
       -->
       <form class="kc-sheet__foot" @submit.prevent="commit()">
-        <label class="kc-label" for="shopping-entry">Add an item</label>
+        <!--
+          No visible label: the field sits alone at the foot of the note with a
+          placeholder and an add button, and on a surface this small the label
+          was a line of chrome above the only input there is. The accessible
+          name stays.
+        -->
         <div class="kc-typeahead__control">
           <input
             id="shopping-entry"
@@ -183,6 +188,8 @@
             type="text"
             class="kc-field"
             autocomplete="off"
+            placeholder="add an item…"
+            aria-label="Add an item"
             data-testid="shopping-entry"
           />
           <button
