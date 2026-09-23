@@ -230,7 +230,7 @@ describe("the folder dividers", () => {
         .filter((t) => t.attributes("aria-pressed") === "true")
         .map((t) => t.text());
 
-    expect(open()).toEqual(["All recipes"]);
+    expect(open()).toEqual(["All"]);
     await wrapper.find('[data-testid="tab-dinner"]').trigger("click");
     expect(open()).toEqual(["Dinner"]);
     await wrapper.find('[data-testid="tab-kept"]').trigger("click");
@@ -246,6 +246,17 @@ describe("the folder dividers", () => {
       (wrapper.find('[data-testid="search"]').element as HTMLInputElement)
         .value,
     ).toBe("onion");
+  });
+
+  it("swaps the label for a glyph at phone width, keeping the name", async () => {
+    // The label element and the glyph both ship; CSS decides which is shown,
+    // and `aria-label` means the name survives either way.
+    const wrapper = await mountPage(twoMeals());
+    const dinner = wrapper.find('[data-testid="tab-dinner"]');
+    expect(dinner.attributes("aria-label")).toBe("Dinner");
+    expect(dinner.find(".kc-tab__label").text()).toBe("Dinner");
+    expect(dinner.find(".kc-tab__icon").exists()).toBe(true);
+    expect(dinner.find(".kc-tab__icon").attributes("aria-hidden")).toBe("true");
   });
 
   it("carries no divider for lunch, snack or other", async () => {

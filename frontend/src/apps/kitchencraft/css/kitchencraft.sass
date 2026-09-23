@@ -609,6 +609,12 @@
   // Shaded while closed, so the open one reads as nearer without moving colour.
   filter: brightness(0.86)
 
+.kc-tab__icon
+  display: none
+
+.kc-tab__label
+  display: block
+
 .kc-tab:nth-child(1)
   --kc-tab: var(--kc-burgundy)
 
@@ -1294,7 +1300,13 @@
   .kc-tab
     flex: none
     margin-bottom: 0
-    padding-right: 22px
+    padding: 6px 19px 5px 11px
+
+  .kc-tab__label
+    display: none
+
+  .kc-tab__icon
+    display: block
 
   .kc-tab[aria-pressed="true"]::after
     bottom: 0
