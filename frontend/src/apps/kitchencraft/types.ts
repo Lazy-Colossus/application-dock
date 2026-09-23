@@ -1,16 +1,10 @@
 // KitchenCraft — shared frontend types. Mirrors the backend schemas
 // (snake_case fields, as served).
 
-// Verbatim from PRD FR-4, in the PRD's order. Never re-worded, re-cased or
-// re-ordered — the meal-type chips render this array as-is (UX-DR18).
-export const MEAL_TYPES = [
-  "breakfast",
-  "lunch",
-  "dinner",
-  "snack",
-  "dessert",
-  "other",
-] as const;
+// Exactly the meal-type dividers on the folder, in their order, so every meal
+// type a cook can pick has a tab to find it under. Mirrors the backend, which
+// retired lunch, snack and other in schema v3.
+export const MEAL_TYPES = ["breakfast", "dinner", "dessert"] as const;
 
 export type MealType = (typeof MEAL_TYPES)[number];
 
@@ -70,9 +64,9 @@ export interface ShoppingList {
 // under Ingredients and vice versa.
 export interface Vocabulary {
   tags: string[];
-  // The user's own previously-typed ingredients — v2 has no shared vocabulary.
+  // Ingredients already typed anywhere in the shared collection.
   ingredients: string[];
-  // The shipped list plus anything this user has coined.
+  // The shipped list plus anything coined in the collection.
   units: string[];
 }
 

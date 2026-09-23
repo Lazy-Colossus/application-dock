@@ -97,19 +97,12 @@ describe("the form", () => {
     expect(wrapper.find('[data-testid="meal-breakfast"]').exists()).toBe(true);
   });
 
-  it("offers the six PRD meal types, verbatim and in order", async () => {
+  it("offers exactly the meal types the folder has dividers for", async () => {
     const { wrapper } = await mountPage();
     const labels = wrapper
       .findAll('[data-testid^="meal-"]')
       .map((c) => c.text());
-    expect(labels).toEqual([
-      "breakfast",
-      "lunch",
-      "dinner",
-      "snack",
-      "dessert",
-      "other",
-    ]);
+    expect(labels).toEqual(["breakfast", "dinner", "dessert"]);
   });
 
   it("keeps Tags and Ingredients as separate inputs", async () => {
@@ -181,11 +174,11 @@ describe("setting and clearing the optional fields", () => {
 
   it("selects one meal type at a time", async () => {
     const { wrapper } = await mountPage({ meal_type: "dinner" });
-    await wrapper.find('[data-testid="meal-lunch"]').trigger("click");
+    await wrapper.find('[data-testid="meal-breakfast"]').trigger("click");
     expect(wrapper.find('[data-testid="meal-dinner"]').classes()).not.toContain(
       "kc-chip--on",
     );
-    expect(wrapper.find('[data-testid="meal-lunch"]').classes()).toContain(
+    expect(wrapper.find('[data-testid="meal-breakfast"]').classes()).toContain(
       "kc-chip--on",
     );
   });
@@ -205,7 +198,7 @@ describe("setting and clearing the optional fields", () => {
       wrapper.find('[data-testid="meal-dinner"]').attributes("aria-pressed"),
     ).toBe("true");
     expect(
-      wrapper.find('[data-testid="meal-lunch"]').attributes("aria-pressed"),
+      wrapper.find('[data-testid="meal-breakfast"]').attributes("aria-pressed"),
     ).toBe("false");
   });
 });

@@ -34,10 +34,9 @@ interface Tab {
  * Five dividers, and they are mutually exclusive because a folder has one
  * divider open at a time.
  *
- * This is deliberately NOT the six meal types. `lunch`, `snack` and `other`
- * have no divider: a tab rail wide enough for all six stops reading as a
- * folder, and those three are reachable through search and tags. That is the
- * cost of the tabs replacing the meal-type chips, and it is a real one.
+ * One divider per meal type. There used to be six types and only three
+ * dividers; schema v3 cut the types to match the dividers rather than widen a
+ * rail that would stop reading as a folder.
  *
  * `Kept` is the favourites view, still one interaction from the collection
  * (Story 2.6 AC 4) — it just arrives as a divider now rather than a chip.

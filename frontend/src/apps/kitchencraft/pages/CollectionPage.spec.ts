@@ -15,7 +15,7 @@ vi.mock("vue-router", () => ({ useRouter: () => ({ push }) }));
 
 import CollectionPage from "./CollectionPage.vue";
 import { recipe, resetRecipeFixture } from "@/apps/kitchencraft/recipe.fixture";
-import type { Recipe } from "@/apps/kitchencraft/types";
+import { MEAL_TYPES, type Recipe } from "@/apps/kitchencraft/types";
 
 const VOCABULARY = {
   tags: ["batch cooking", "cheap"],
@@ -147,7 +147,7 @@ describe("search and filters on the page", () => {
       recipe({
         name: "Onion soup",
         body: "Off the packet.",
-        meal_type: "lunch",
+        meal_type: "breakfast",
         ingredients: [{ amount: null, unit: null, text: "onion" }],
       }),
     ];
@@ -218,7 +218,7 @@ describe("the folder dividers", () => {
         body: "Chicken, onion.",
         meal_type: "dinner",
       }),
-      recipe({ name: "Onion soup", body: "Onions.", meal_type: "lunch" }),
+      recipe({ name: "Onion soup", body: "Onions.", meal_type: "breakfast" }),
     ];
   }
 
@@ -263,14 +263,13 @@ describe("the folder dividers", () => {
     expect(wrapper.find(".kc-tab svg").exists()).toBe(false);
   });
 
-  it("carries no divider for lunch, snack or other", async () => {
-    // The cost of the dividers replacing the meal-type chips, asserted rather
-    // than left to be discovered: those three are reachable through search and
-    // tags, and nowhere else.
+  it("has a divider for every meal type a recipe can carry", async () => {
+    // The types were cut to the dividers in schema v3; this holds the two
+    // together so a type can never again be pickable but unfindable.
     const wrapper = await mountPage(twoMeals());
-    for (const absent of ["lunch", "snack", "other"]) {
-      expect(wrapper.find(`[data-testid="tab-${absent}"]`).exists()).toBe(
-        false,
+    for (const mealType of MEAL_TYPES) {
+      expect(wrapper.find(`[data-testid="tab-${mealType}"]`).exists()).toBe(
+        true,
       );
     }
   });
@@ -285,7 +284,7 @@ describe("the zero-result state", () => {
   async function zeroResults() {
     const wrapper = await mountPage([
       recipe({ name: "Chicken traybake", meal_type: "dinner" }),
-      recipe({ name: "Onion soup", meal_type: "lunch" }),
+      recipe({ name: "Onion soup", meal_type: "breakfast" }),
     ]);
     await wrapper.find('[data-testid="tab-dinner"]').trigger("click");
     await wrapper.find('[data-testid="search"]').setValue("crumble");

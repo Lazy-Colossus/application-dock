@@ -108,7 +108,7 @@ import type { Ingredient } from "@/apps/kitchencraft/types";
  *
  * Schema v2 replaced the two-level category + specific tag with free text, and
  * the shared vocabulary went with it. What the ingredient field suggests is now
- * this cook's own history, which is what keeps `Feta` and `feta` from becoming
+ * the household's own history, which is what keeps `Feta` and `feta` from becoming
  * two things.
  *
  * `unit` stays on the model because recipes saved before it folded into the
@@ -116,7 +116,7 @@ import type { Ingredient } from "@/apps/kitchencraft/types";
  */
 const props = defineProps<{
   modelValue: Ingredient[];
-  /** The user's own previously-typed ingredients. */
+  /** Ingredients already typed anywhere in the shared collection. */
   suggestions: string[];
 }>();
 

@@ -2,7 +2,8 @@
 
 The body is the irreplaceable asset in this app, so the interesting case is not
 "does the write land" but "can a second writer's stale read overwrite the first
-writer's paste". The per-file lock is what makes the answer no.
+writer's paste". The per-file lock is what makes the answer no — and with
+every user on the one shared collection, it is doing real work.
 """
 
 from __future__ import annotations
@@ -48,82 +49,87 @@ def _run(fns: list) -> list[BaseException]:
 def test_eight_simultaneous_captures_keep_every_recipe() -> None:
     n = 8
     errors = _run(
-        [
-            lambda i=i: service.create_recipe("nell", name=f"recipe-{i}", body=f"body-{i}")
-            for i in range(n)
-        ]
+        [lambda i=i: service.create_recipe(name=f"recipe-{i}", body=f"body-{i}") for i in range(n)]
     )
 
     assert not errors
-    recipes = service.list_recipes("nell")
+    recipes = service.list_recipes()
     assert {r.name for r in recipes} == {f"recipe-{i}" for i in range(n)}
     # Every body arrived with its own recipe — no interleaving swapped them.
     assert all(r.body == r.name.replace("recipe", "body") for r in recipes)
 
 
 def test_simultaneous_edits_to_different_recipes_both_survive() -> None:
-    first = service.create_recipe("nell", name="first", body="one")
-    second = service.create_recipe("nell", name="second", body="two")
+    first = service.create_recipe(name="first", body="one")
+    second = service.create_recipe(name="second", body="two")
 
     errors = _run(
         [
-            lambda: service.update_recipe("nell", first.id, {"meal_type": "dinner"}),
-            lambda: service.update_recipe("nell", second.id, {"servings": 4}),
+            lambda: service.update_recipe(first.id, {"meal_type": "dinner"}),
+            lambda: service.update_recipe(second.id, {"servings": 4}),
         ]
     )
 
     assert not errors
-    by_id = {r.id: r for r in service.list_recipes("nell")}
+    by_id = {r.id: r for r in service.list_recipes()}
     assert by_id[first.id].meal_type == "dinner"
     assert by_id[second.id].servings == 4
 
 
 def test_an_edit_racing_a_capture_loses_neither() -> None:
-    existing = service.create_recipe("nell", name="existing", body="keep me exactly")
+    existing = service.create_recipe(name="existing", body="keep me exactly")
 
     errors = _run(
         [
-            lambda: service.update_recipe("nell", existing.id, {"favourite": True}),
-            lambda: service.create_recipe("nell", name="new", body="pasted"),
+            lambda: service.update_recipe(existing.id, {"favourite": True}),
+            lambda: service.create_recipe(name="new", body="pasted"),
         ]
     )
 
     assert not errors
-    recipes = {r.name: r for r in service.list_recipes("nell")}
+    recipes = {r.name: r for r in service.list_recipes()}
     assert set(recipes) == {"existing", "new"}
     assert recipes["existing"].favourite is True
     assert recipes["existing"].body == "keep me exactly"
 
 
-def test_two_users_are_not_serialized_against_each_other() -> None:
-    """Different files must stay concurrent — one cook must not block another."""
+def test_a_held_shopping_list_does_not_block_a_recipe_save() -> None:
+    """Different files stay concurrent — ticking an item never stalls a paste.
+
+    Every cook shares one collection now, so two recipe saves do serialize; the
+    list and the collection are still separate files under separate locks.
+    """
     started = threading.Event()
     release = threading.Event()
 
-    def hold_nell() -> None:
-        with repo.doc_transaction("nell"):
+    def hold_list() -> None:
+        with repo.shopping_transaction():
             started.set()
-            release.wait(timeout=1)
+            release.wait(timeout=5)
 
-    holder = threading.Thread(target=hold_nell)
+    holder = threading.Thread(target=hold_list)
     holder.start()
     assert started.wait(timeout=1)
 
-    service.create_recipe("bram", name="Traybake", body="Oven.")
-    assert [r.name for r in service.list_recipes("bram")] == ["Traybake"]
+    saver = threading.Thread(target=lambda: service.create_recipe(name="Traybake", body="Oven."))
+    saver.start()
+    saver.join(timeout=1)
+    # Finished while the list's lock was still held.
+    assert not saver.is_alive()
+    assert [r.name for r in service.list_recipes()] == ["Traybake"]
 
     release.set()
     holder.join()
 
 
 def test_a_rejected_edit_writes_nothing() -> None:
-    recipe = service.create_recipe("nell", name="keep", body="keep")
+    recipe = service.create_recipe(name="keep", body="keep")
 
     with pytest.raises(ValueError):
-        service.update_recipe("nell", recipe.id, {"name": "renamed", "servings": 0})
+        service.update_recipe(recipe.id, {"name": "renamed", "servings": 0})
 
     # The valid half of the rejected update did not sneak through either.
-    stored = service.get_recipe("nell", recipe.id)
+    stored = service.get_recipe(recipe.id)
     assert stored.name == "keep"
     assert stored.servings is None
 
@@ -138,7 +144,6 @@ def test_concurrent_writes_of_one_ingredient_converge_on_one_casing() -> None:
     errors = _run(
         [
             lambda i=i: service.create_recipe(
-                "nell",
                 name=f"r{i}",
                 body="b",
                 ingredients=[Ingredient(text="Harissa" if i % 2 else "harissa")],
@@ -148,5 +153,5 @@ def test_concurrent_writes_of_one_ingredient_converge_on_one_casing() -> None:
     )
 
     assert not errors
-    used = {i.text for r in repo.read_doc("nell").recipes for i in r.ingredients}
+    used = {i.text for r in repo.read_doc().recipes for i in r.ingredients}
     assert len(used) == 1

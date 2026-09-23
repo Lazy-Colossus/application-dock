@@ -41,9 +41,18 @@ def put(recipe_id: str, **changes: object) -> dict:
 # -- Story 2.1: meal type, time, servings, source ----------------------------
 
 
-@pytest.mark.parametrize("meal_type", ["breakfast", "lunch", "dinner", "snack", "dessert", "other"])
-def test_every_prd_meal_type_is_accepted(meal_type: str) -> None:
+@pytest.mark.parametrize("meal_type", ["breakfast", "dinner", "dessert"])
+def test_every_meal_type_with_a_divider_is_accepted(meal_type: str) -> None:
     assert create(meal_type=meal_type)["meal_type"] == meal_type
+
+
+@pytest.mark.parametrize("meal_type", ["lunch", "snack", "other"])
+def test_a_meal_type_retired_in_v3_is_rejected(meal_type: str) -> None:
+    resp = client.post(
+        "/api/kitchencraft/recipes",
+        json={"name": "Dal", "body": "Simmer.", "meal_type": meal_type},
+    )
+    assert resp.status_code == 422
 
 
 def test_a_meal_type_outside_the_prd_list_is_rejected() -> None:
@@ -265,19 +274,18 @@ def test_a_tag_never_appears_in_the_ingredient_namespace_or_vice_versa() -> None
     assert "harissa" not in vocabulary["tags"]
 
 
-def test_one_users_vocabulary_is_not_anothers(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_the_vocabulary_is_the_households_not_one_users() -> None:
     from app.core.dependencies import get_current_user
 
     app.dependency_overrides[get_current_user] = lambda: "nell"
     create(tags=["batch cooking"], ingredients=[{"text": "harissa"}])
 
+    # One collection, so one set of wording: Bram is offered what Nell typed,
+    # which is what keeps the two of them converging on one casing.
     app.dependency_overrides[get_current_user] = lambda: "bram"
     vocabulary = client.get("/api/kitchencraft/vocabulary").json()
-    assert vocabulary["tags"] == []
-    # Ingredients are the user's own history in v2, so nothing crosses over.
-    assert vocabulary["ingredients"] == []
-    # The unit seed is shared, though — it ships with the app, not the account.
-    assert "tbsp" in vocabulary["units"]
+    assert vocabulary["tags"] == ["batch cooking"]
+    assert vocabulary["ingredients"] == ["harissa"]
 
 
 # -- Story 2.6: favourites ---------------------------------------------------
@@ -317,10 +325,10 @@ def test_a_user_created_recipe_carries_no_provenance_marks() -> None:
 
 def test_an_update_drops_the_mark_on_a_field_it_changes() -> None:
     recipe = create()
-    stored = repo.read_doc("test_user")
-    stored.recipes[0].meal_type = "lunch"
+    stored = repo.read_doc()
+    stored.recipes[0].meal_type = "breakfast"
     stored.recipes[0].unconfirmed = ["meal_type", "servings"]
-    repo.write_doc("test_user", stored)
+    repo.write_doc(stored)
 
     updated = put(recipe["id"], meal_type="dinner")
     assert updated["unconfirmed"] == ["servings"]
@@ -328,9 +336,9 @@ def test_an_update_drops_the_mark_on_a_field_it_changes() -> None:
 
 def test_a_mark_for_a_value_that_is_gone_is_dropped_too() -> None:
     recipe = create(tags=["cheap"])
-    stored = repo.read_doc("test_user")
+    stored = repo.read_doc()
     stored.recipes[0].unconfirmed = ["tag:cheap"]
-    repo.write_doc("test_user", stored)
+    repo.write_doc(stored)
 
     assert put(recipe["id"], tags=[])["unconfirmed"] == []
 

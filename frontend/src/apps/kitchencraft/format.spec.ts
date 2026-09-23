@@ -54,7 +54,7 @@ describe("metaLine — the absence rule", () => {
   it("never emits a dash, an unknown or an empty separator", () => {
     for (const line of [
       metaLine(recipe()),
-      metaLine(recipe({ meal_type: "lunch" })),
+      metaLine(recipe({ meal_type: "dessert" })),
       metaLine(recipe({ total_time_minutes: 5 })),
     ]) {
       expect(line ?? "").not.toMatch(/unknown|—|·\s*$|^\s*·/i);

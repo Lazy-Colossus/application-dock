@@ -1,10 +1,9 @@
 """Business logic for KitchenCraft recipe collections.
 
-Operates on a single user's document (loaded/saved via `kitchencraft_repo`).
+Operates on the one shared collection and shopping list (loaded/saved via
+`kitchencraft_repo`); every signed-in user sees and edits the same recipes.
 Raises stdlib exceptions only (`ValueError` for invalid input,
 `FileNotFoundError` for a missing recipe) — routers translate these to HTTP.
-The `username` is always supplied by the router from the JWT; it is never taken
-from request input.
 
 Two rules in here are the app's whole character, and both are load-bearing:
 
@@ -162,7 +161,7 @@ def _tag_vocabulary(doc: KitchencraftDoc) -> list[str]:
 def _ingredient_vocabulary(doc: KitchencraftDoc) -> list[str]:
     """Every ingredient text anywhere in the collection, in first-seen order.
 
-    The user's own history, not a shared vocabulary — v2 has none. It exists so
+    The collection's own history, not a curated vocabulary — v2 has none. It exists so
     the field can still suggest what this cook has typed before, which is what
     keeps `Feta` and `feta` from becoming two things.
     """
@@ -177,7 +176,7 @@ def _ingredient_vocabulary(doc: KitchencraftDoc) -> list[str]:
 
 
 def _unit_vocabulary(doc: KitchencraftDoc) -> list[str]:
-    """The shipped units, plus any this user has coined, in that order.
+    """The shipped units, plus any coined in the collection, in that order.
 
     The seed comes first so the field offers the common case before anything is
     typed. Unioned on read for the same reason as the tags: no separate index to
@@ -193,9 +192,9 @@ def _unit_vocabulary(doc: KitchencraftDoc) -> list[str]:
     return out
 
 
-def get_vocabulary(username: str) -> Vocabulary:
+def get_vocabulary() -> Vocabulary:
     """What each typeahead may offer, kept strictly apart (FR-8)."""
-    doc = repo.read_doc(username)
+    doc = repo.read_doc()
     return Vocabulary(
         tags=_tag_vocabulary(doc),
         ingredients=_ingredient_vocabulary(doc),
@@ -226,13 +225,13 @@ def _collection_order(doc: KitchencraftDoc) -> list[Recipe]:
     return sorted(by_date, key=lambda r: not r.favourite)
 
 
-def list_recipes(username: str) -> list[Recipe]:
+def list_recipes() -> list[Recipe]:
     """The whole collection, in collection order.
 
     Bodies included: search and filtering run client-side over the loaded
     collection (NFR-6), and the body is what full-text search matches (FR-11).
     """
-    return _collection_order(repo.read_doc(username))
+    return _collection_order(repo.read_doc())
 
 
 def _find(doc: KitchencraftDoc, recipe_id: str) -> Recipe:
@@ -242,16 +241,15 @@ def _find(doc: KitchencraftDoc, recipe_id: str) -> Recipe:
     raise FileNotFoundError(f"recipe {recipe_id} not found")
 
 
-def get_recipe(username: str, recipe_id: str) -> Recipe:
+def get_recipe(recipe_id: str) -> Recipe:
     """One recipe. Raises FileNotFoundError if the id is unknown."""
-    return _find(repo.read_doc(username), recipe_id)
+    return _find(repo.read_doc(), recipe_id)
 
 
 # -- Writes -------------------------------------------------------------------
 
 
 def create_recipe(
-    username: str,
     *,
     name: str,
     body: str,
@@ -284,7 +282,7 @@ def create_recipe(
         rating = _rating(rating)
 
     now = _now_iso()
-    with repo.doc_transaction(username) as doc:
+    with repo.doc_transaction() as doc:
         recipe = Recipe(
             id=_new_id(),
             name=clean_name,
@@ -321,7 +319,7 @@ def _drop_marks(recipe: Recipe, changed: set[str]) -> None:
     ]
 
 
-def update_recipe(username: str, recipe_id: str, changes: dict[str, Any]) -> Recipe:
+def update_recipe(recipe_id: str, changes: dict[str, Any]) -> Recipe:
     """Apply only the fields `changes` actually carries.
 
     A key present with `None` clears that field; an absent key leaves it alone,
@@ -331,7 +329,7 @@ def update_recipe(username: str, recipe_id: str, changes: dict[str, Any]) -> Rec
 
     Raises FileNotFoundError for an unknown id, ValueError for invalid input.
     """
-    with repo.doc_transaction(username) as doc:
+    with repo.doc_transaction() as doc:
         recipe = _find(doc, recipe_id)
         before = recipe.model_copy(deep=True)
 
@@ -391,12 +389,12 @@ def update_recipe(username: str, recipe_id: str, changes: dict[str, Any]) -> Rec
     return recipe
 
 
-def delete_recipe(username: str, recipe_id: str) -> None:
+def delete_recipe(recipe_id: str) -> None:
     """Delete a recipe outright. There is no undo and no trash, by design (FR-4).
 
     Raises FileNotFoundError if the id is unknown.
     """
-    with repo.doc_transaction(username) as doc:
+    with repo.doc_transaction() as doc:
         remaining = [r for r in doc.recipes if r.id != recipe_id]
         if len(remaining) == len(doc.recipes):
             raise FileNotFoundError(f"recipe {recipe_id} not found")
@@ -417,12 +415,12 @@ def _new_item_id() -> str:
     return f"s-{uuid.uuid4().hex[:8]}"
 
 
-def get_shopping_list(username: str) -> ShoppingList:
+def get_shopping_list() -> ShoppingList:
     """The user's list. An empty one on first read, never an error."""
-    return repo.read_shopping_list(username)
+    return repo.read_shopping_list()
 
 
-def add_shopping_item(username: str, text: str) -> ShoppingItem:
+def add_shopping_item(text: str) -> ShoppingItem:
     """Append one hand-entered item to the end of the list.
 
     Appends rather than inserts, and nothing sorts afterwards: the order items
@@ -435,7 +433,7 @@ def add_shopping_item(username: str, text: str) -> ShoppingItem:
         raise ValueError("text must not be empty")
 
     item = ShoppingItem(id=_new_item_id(), text=clean, created_at=_now_iso())
-    with repo.shopping_transaction(username) as shopping_list:
+    with repo.shopping_transaction() as shopping_list:
         shopping_list.items.append(item)
     return item
 
@@ -447,7 +445,7 @@ def _find_item(shopping_list: ShoppingList, item_id: str) -> ShoppingItem:
     raise FileNotFoundError(f"shopping item {item_id} not found")
 
 
-def set_item_ticked(username: str, item_id: str, ticked: bool) -> ShoppingItem:
+def set_item_ticked(item_id: str, ticked: bool) -> ShoppingItem:
     """Tick or untick one item, in place (Story 3.2).
 
     The item's position is untouched: nothing sorts ticked items to the bottom,
@@ -456,32 +454,32 @@ def set_item_ticked(username: str, item_id: str, ticked: bool) -> ShoppingItem:
 
     Raises FileNotFoundError for an unknown id.
     """
-    with repo.shopping_transaction(username) as shopping_list:
+    with repo.shopping_transaction() as shopping_list:
         item = _find_item(shopping_list, item_id)
         item.ticked = ticked
     return item
 
 
-def delete_shopping_item(username: str, item_id: str) -> None:
+def delete_shopping_item(item_id: str) -> None:
     """Remove one item, ticked or not. Raises FileNotFoundError if unknown."""
-    with repo.shopping_transaction(username) as shopping_list:
+    with repo.shopping_transaction() as shopping_list:
         remaining = [i for i in shopping_list.items if i.id != item_id]
         if len(remaining) == len(shopping_list.items):
             raise FileNotFoundError(f"shopping item {item_id} not found")
         shopping_list.items = remaining
 
 
-def clear_shopping_list(username: str) -> None:
+def clear_shopping_list() -> None:
     """Empty the list outright, ticked items included.
 
     Idempotent: clearing an empty list is a no-op rather than an error, because
     the confirmation the user just answered was about intent, not about state.
     """
-    with repo.shopping_transaction(username) as shopping_list:
+    with repo.shopping_transaction() as shopping_list:
         shopping_list.items = []
 
 
-def add_shopping_items(username: str, texts: list[str], mode: str = "merge") -> list[ShoppingItem]:
+def add_shopping_items(texts: list[str], mode: str = "merge") -> list[ShoppingItem]:
     """Add several items in one transaction (Stories 3.3, 3.4).
 
     One lock and one write for the whole batch, so a recipe's ingredients either
@@ -510,7 +508,7 @@ def add_shopping_items(username: str, texts: list[str], mode: str = "merge") -> 
     if not clean and mode == "merge":
         return []
 
-    with repo.shopping_transaction(username) as shopping_list:
+    with repo.shopping_transaction() as shopping_list:
         if mode == "overwrite":
             shopping_list.items = []
 
@@ -533,14 +531,14 @@ def add_shopping_items(username: str, texts: list[str], mode: str = "merge") -> 
 # goes through the repository layer, so it takes the same locks the app takes.
 
 
-def enrichment_report(username: str) -> dict[str, Any]:
+def enrichment_report() -> dict[str, Any]:
     """What a pass would need to know, without changing anything (Story 4.2).
 
     Two halves: the recipes that are missing structure, and the wording the
     collection already uses. The second half is what Story 4.4 is about — a pass
     that cannot see the existing wording will invent a near-synonym for it.
     """
-    doc = repo.read_doc(username)
+    doc = repo.read_doc()
     gaps = []
     for recipe in doc.recipes:
         missing = [f for f in _MARKED_FIELDS if getattr(recipe, f) is None]
@@ -559,7 +557,6 @@ def enrichment_report(username: str) -> dict[str, Any]:
         )
 
     return {
-        "username": username,
         "recipe_count": len(doc.recipes),
         "needing_attention": len(gaps),
         "recipes": gaps,
@@ -665,9 +662,7 @@ def _apply_batch(doc: KitchencraftDoc, updates: dict[str, dict[str, Any]]) -> di
     }
 
 
-def apply_enrichment(
-    username: str, updates: dict[str, dict[str, Any]], *, write: bool = False
-) -> dict[str, Any]:
+def apply_enrichment(updates: dict[str, dict[str, Any]], *, write: bool = False) -> dict[str, Any]:
     """Apply inferred structure to many recipes in one run (Story 4.3).
 
     `updates` is keyed by **recipe id**, never by name, so a batch still lands
@@ -685,8 +680,8 @@ def apply_enrichment(
     nothing, so `updated_at` does not churn.
     """
     if write:
-        with repo.doc_transaction(username) as doc:
+        with repo.doc_transaction() as doc:
             result = _apply_batch(doc, updates)
         return {"write": True, **result}
 
-    return {"write": False, **_apply_batch(repo.read_doc(username), updates)}
+    return {"write": False, **_apply_batch(repo.read_doc(), updates)}

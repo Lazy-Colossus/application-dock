@@ -1,4 +1,4 @@
-"""Story 3.1 — one shopping list per user, opened from anywhere.
+"""Story 3.1 — one shopping list for the household, opened from anywhere.
 
 Only the list's existence, hand-entry and persistence. Ticking (3.2), sending a
 recipe's ingredients (3.3) and add-versus-overwrite (3.4) are not covered here
@@ -7,12 +7,14 @@ because they do not exist yet.
 
 from __future__ import annotations
 
+import json
 import threading
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core.dependencies import get_current_user
 from app.main import app
 from app.repositories import kitchencraft_repo as repo
 from app.services import kitchencraft_service as service
@@ -47,7 +49,7 @@ def test_a_user_with_no_file_gets_an_empty_list_not_an_error() -> None:
 
 def test_reading_the_empty_list_writes_no_file(isolate: Path) -> None:
     get_list()
-    assert not (isolate / "kitchencraft" / "shopping").exists()
+    assert not (isolate / "kitchencraft" / "shopping.json").exists()
 
 
 # -- Hand-entry --------------------------------------------------------------
@@ -119,35 +121,41 @@ def test_a_rejected_item_leaves_the_list_untouched() -> None:
     assert [i["text"] for i in get_list()["items"]] == ["bread"]
 
 
-# -- One list per user, and no list management -------------------------------
+# -- One list for the household, and no list management -----------------------
 
 
-def test_one_users_list_is_not_anothers(monkeypatch: pytest.MonkeyPatch) -> None:
-    service.add_shopping_item("alice", "alice's bread")
-    service.add_shopping_item("bob", "bob's milk")
+def test_every_user_shares_the_one_list() -> None:
+    app.dependency_overrides[get_current_user] = lambda: "alice"
+    client.post("/api/kitchencraft/shopping-list/items", json={"text": "bread"})
+    app.dependency_overrides[get_current_user] = lambda: "bob"
+    client.post("/api/kitchencraft/shopping-list/items", json={"text": "milk"})
 
-    assert [i.text for i in service.get_shopping_list("alice").items] == ["alice's bread"]
-    assert [i.text for i in service.get_shopping_list("bob").items] == ["bob's milk"]
+    assert [i["text"] for i in get_list()["items"]] == ["bread", "milk"]
+
+
+def test_every_users_legacy_list_merges_into_the_shared_one(isolate: Path) -> None:
+    for owner, text in (("bob", "milk"), ("alice", "bread")):
+        path = isolate / "kitchencraft" / "shopping" / f"{owner}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        item = {"id": f"s-{owner}", "text": text, "ticked": False, "created_at": "2026-09-01"}
+        path.write_text(json.dumps({"schema_version": 1, "items": [item]}))
+
+    # Filename order: alice before bob.
+    assert [i.text for i in service.get_shopping_list().items] == ["bread", "milk"]
 
 
 def test_the_list_lives_beside_the_collection_not_inside_it(isolate: Path) -> None:
     # A separate document under its own lock, so ticking an item never rewrites
     # every recipe.
-    service.add_shopping_item("alice", "bread")
-    assert (isolate / "kitchencraft" / "shopping" / "alice.json").exists()
-    assert not (isolate / "kitchencraft" / "users" / "alice.json").exists()
+    service.add_shopping_item("bread")
+    assert (isolate / "kitchencraft" / "shopping.json").exists()
+    assert not (isolate / "kitchencraft" / "recipes.json").exists()
 
 
 def test_a_recipe_write_does_not_touch_the_shopping_list() -> None:
-    service.add_shopping_item("alice", "bread")
-    service.create_recipe("alice", name="Dal", body="Simmer.")
-    assert [i.text for i in service.get_shopping_list("alice").items] == ["bread"]
-
-
-@pytest.mark.parametrize("username", ["../escape", "a/b", "..", "", "  ", "a\\b"])
-def test_a_crafted_username_cannot_escape_the_shopping_directory(username: str) -> None:
-    with pytest.raises(ValueError):
-        service.get_shopping_list(username)
+    service.add_shopping_item("bread")
+    service.create_recipe(name="Dal", body="Simmer.")
+    assert [i.text for i in service.get_shopping_list().items] == ["bread"]
 
 
 def test_there_is_no_route_for_creating_or_deleting_a_list() -> None:
@@ -173,7 +181,7 @@ def test_simultaneous_adds_all_survive() -> None:
 
     def add_one(n: int) -> None:
         try:
-            service.add_shopping_item("alice", f"item {n}")
+            service.add_shopping_item(f"item {n}")
         except BaseException as exc:  # noqa: BLE001 — recorded and re-raised below
             errors.append(exc)
 
@@ -184,14 +192,14 @@ def test_simultaneous_adds_all_survive() -> None:
         t.join()
 
     assert not errors
-    assert len(service.get_shopping_list("alice").items) == 12
+    assert len(service.get_shopping_list().items) == 12
 
 
 def test_a_write_under_the_lock_reads_what_the_previous_one_wrote() -> None:
-    with repo.shopping_transaction("alice") as shopping_list:
+    with repo.shopping_transaction() as shopping_list:
         assert shopping_list.items == []
-    service.add_shopping_item("alice", "bread")
-    with repo.shopping_transaction("alice") as shopping_list:
+    service.add_shopping_item("bread")
+    with repo.shopping_transaction() as shopping_list:
         assert [i.text for i in shopping_list.items] == ["bread"]
 
 
@@ -276,23 +284,13 @@ def test_clearing_an_empty_list_is_a_no_op_not_an_error() -> None:
     assert get_list()["items"] == []
 
 
-def test_clear_does_not_touch_another_users_list() -> None:
-    service.add_shopping_item("alice", "alice's bread")
-    service.add_shopping_item("bob", "bob's milk")
-
-    service.clear_shopping_list("alice")
-
-    assert service.get_shopping_list("alice").items == []
-    assert [i.text for i in service.get_shopping_list("bob").items] == ["bob's milk"]
-
-
 def test_clear_leaves_the_recipes_alone() -> None:
-    service.create_recipe("alice", name="Dal", body="Simmer.")
-    service.add_shopping_item("alice", "bread")
+    service.create_recipe(name="Dal", body="Simmer.")
+    service.add_shopping_item("bread")
 
-    service.clear_shopping_list("alice")
+    service.clear_shopping_list()
 
-    assert len(service.list_recipes("alice")) == 1
+    assert len(service.list_recipes()) == 1
 
 
 def test_the_route_for_clearing_is_not_read_as_an_item_id() -> None:
@@ -302,12 +300,12 @@ def test_the_route_for_clearing_is_not_read_as_an_item_id() -> None:
 
 
 def test_simultaneous_ticks_do_not_lose_each_other() -> None:
-    ids = [service.add_shopping_item("alice", f"item {n}").id for n in range(8)]
+    ids = [service.add_shopping_item(f"item {n}").id for n in range(8)]
     errors: list[BaseException] = []
 
     def tick_one(item_id: str) -> None:
         try:
-            service.set_item_ticked("alice", item_id, True)
+            service.set_item_ticked(item_id, True)
         except BaseException as exc:  # noqa: BLE001 — recorded and asserted below
             errors.append(exc)
 
@@ -318,7 +316,7 @@ def test_simultaneous_ticks_do_not_lose_each_other() -> None:
         t.join()
 
     assert not errors
-    assert all(i.ticked for i in service.get_shopping_list("alice").items)
+    assert all(i.ticked for i in service.get_shopping_list().items)
 
 
 # -- Story 3.3: a recipe's ingredients, in one write -------------------------
@@ -352,20 +350,20 @@ def test_a_batch_appends_after_what_is_already_there() -> None:
 def test_a_batch_is_one_write_not_one_per_item(isolate: Path) -> None:
     # Half a recipe's ingredients landing is not a state worth having, so the
     # whole batch shares one transaction.
-    calls: list[str] = []
+    calls: list[object] = []
     real = repo.write_shopping_list
 
-    def counting(username: str, shopping_list: object) -> None:
-        calls.append(username)
-        real(username, shopping_list)  # type: ignore[arg-type]
+    def counting(shopping_list: object) -> None:
+        calls.append(shopping_list)
+        real(shopping_list)  # type: ignore[arg-type]
 
     repo.write_shopping_list = counting  # type: ignore[assignment]
     try:
-        service.add_shopping_items("alice", ["a", "b", "c", "d"])
+        service.add_shopping_items(["a", "b", "c", "d"])
     finally:
         repo.write_shopping_list = real  # type: ignore[assignment]
 
-    assert calls == ["alice"]
+    assert len(calls) == 1
 
 
 def test_items_from_a_recipe_are_ordinary_items() -> None:
@@ -393,7 +391,7 @@ def test_an_empty_batch_adds_nothing_and_is_not_an_error() -> None:
 
 def test_an_empty_batch_writes_no_file(isolate: Path) -> None:
     add_bulk([])
-    assert not (isolate / "kitchencraft" / "shopping").exists()
+    assert not (isolate / "kitchencraft" / "shopping.json").exists()
 
 
 def test_a_batch_trims_each_entry() -> None:
@@ -423,17 +421,12 @@ def test_bulk_is_not_read_as_an_item_id() -> None:
     assert add_bulk(["lemon"])[0]["text"] == "lemon"
 
 
-def test_one_users_batch_does_not_reach_another() -> None:
-    service.add_shopping_items("alice", ["lemon"])
-    assert service.get_shopping_list("bob").items == []
-
-
 def test_simultaneous_batches_do_not_lose_each_other() -> None:
     errors: list[BaseException] = []
 
     def add_batch(n: int) -> None:
         try:
-            service.add_shopping_items("alice", [f"batch {n} a", f"batch {n} b"])
+            service.add_shopping_items([f"batch {n} a", f"batch {n} b"])
         except BaseException as exc:  # noqa: BLE001 — recorded and asserted below
             errors.append(exc)
 
@@ -444,7 +437,7 @@ def test_simultaneous_batches_do_not_lose_each_other() -> None:
         t.join()
 
     assert not errors
-    assert len(service.get_shopping_list("alice").items) == 12
+    assert len(service.get_shopping_list().items) == 12
 
 
 # -- Story 3.4: merging into a list that already has items -------------------
@@ -546,21 +539,21 @@ def test_an_unknown_mode_is_rejected_with_a_detail_string() -> None:
 
 
 def test_either_mode_is_one_write() -> None:
-    calls: list[str] = []
+    calls: list[object] = []
     real = repo.write_shopping_list
 
-    def counting(username: str, shopping_list: object) -> None:
-        calls.append(username)
-        real(username, shopping_list)  # type: ignore[arg-type]
+    def counting(shopping_list: object) -> None:
+        calls.append(shopping_list)
+        real(shopping_list)  # type: ignore[arg-type]
 
     repo.write_shopping_list = counting  # type: ignore[assignment]
     try:
-        service.add_shopping_items("alice", ["a", "b", "c"], "merge")
-        service.add_shopping_items("alice", ["d", "e", "f"], "overwrite")
+        service.add_shopping_items(["a", "b", "c"], "merge")
+        service.add_shopping_items(["d", "e", "f"], "overwrite")
     finally:
         repo.write_shopping_list = real  # type: ignore[assignment]
 
-    assert calls == ["alice", "alice"]
+    assert len(calls) == 2
 
 
 def test_hand_entry_still_duplicates_freely() -> None:
