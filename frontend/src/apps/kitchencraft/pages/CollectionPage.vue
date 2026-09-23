@@ -5,17 +5,23 @@
         <!--
           Capture stays reachable without scrolling: with a collection of any
           size a footer button is below the fold the moment the page opens.
-          The empty state keeps its own block button instead — there is no list
-          to sit above, and the invitation is the whole screen there.
+
+          "Add", not "Add a recipe" — the bar shares a line with the title and
+          the shopping list, and the long label was what pushed that line to
+          wrap on a phone. The accessible name stays full, because one word
+          beside a basket icon says nothing on its own. The empty state below
+          keeps the long label: it is the whole invitation there, and an empty
+          screen has no width to save.
         -->
         <button
           v-if="store.loaded && !store.isEmpty"
           type="button"
           class="kc-btn"
+          aria-label="Add a recipe"
           data-testid="add-recipe"
           @click="goCapture()"
         >
-          Add a recipe
+          Add
         </button>
       </PageBar>
 
@@ -67,7 +73,7 @@
           data-testid="empty-favourites"
         >
           <h2 class="kc-title">No favourites yet.</h2>
-          <p class="kc-state__lede">Tap the star on any recipe.</p>
+          <p class="kc-state__lede">Tap the heart on any recipe.</p>
         </div>
 
         <div

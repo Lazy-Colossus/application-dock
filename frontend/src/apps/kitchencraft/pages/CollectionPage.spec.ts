@@ -237,7 +237,8 @@ describe("the empty favourites view", () => {
 
     const empty = wrapper.find('[data-testid="empty-favourites"]');
     expect(empty.text()).toContain("No favourites yet.");
-    expect(empty.text()).toContain("Tap the star on any recipe.");
+    // The heart since Story 2.7, when the rating took the star.
+    expect(empty.text()).toContain("Tap the heart on any recipe.");
     expect(empty.find("button").exists()).toBe(false);
     // Not the zero-result breakdown — this state has its own words.
     expect(wrapper.find('[data-testid="zero-results"]').exists()).toBe(false);
@@ -287,6 +288,22 @@ describe("reaching capture from a populated collection", () => {
     expect(add.exists()).toBe(true);
     // In the bar, not in a footer the list pushes off the screen.
     expect(add.element.closest(".kc-bar")).not.toBeNull();
+  });
+
+  it("shortens the bar label but keeps the full accessible name", async () => {
+    // "Add" saves the line from wrapping on a phone; a one-word visible label
+    // beside a basket icon needs the longer name for anyone not seeing it.
+    const wrapper = await mountPage([recipe({ name: "Dal" })]);
+    const add = wrapper.find('[data-testid="add-recipe"]');
+    expect(add.text()).toBe("Add");
+    expect(add.attributes("aria-label")).toBe("Add a recipe");
+  });
+
+  it("keeps the long label on the empty state, which has room for it", async () => {
+    const wrapper = await mountPage([]);
+    expect(wrapper.find('[data-testid="add-recipe"]').text()).toBe(
+      "Add a recipe",
+    );
   });
 
   it("offers exactly one add button, never two", async () => {
