@@ -60,7 +60,7 @@ interface Tab {
  * A sun for breakfast and a moon for dinner is the tidier pair, but dessert
  * has no hour and `Kept` has none either, so half the rail would be telling
  * the time and half would not. Drawn objects keep one register across all
- * five: a list, an egg, a cloche, a slice, a heart.
+ * five: a list, a cup, a cloche, a slice, a heart.
  *
  * `Kept` wears the same heart as the favourite mark on every row, so the
  * divider and the thing it collects are visibly the same idea.
@@ -68,9 +68,13 @@ interface Tab {
 const GLYPH = {
   // A list: three ruled lines, the last one short.
   all: "M4 7h16M4 12h16M4 17h10",
-  // A fried egg — white and yolk. The one breakfast that is not a cuisine.
+  // A cup and saucer, steam included. Was a fried egg, which read as a blob at
+  // 17px — a yolk and a white are two soft shapes nested inside each other and
+  // there is no room at that size to tell them apart. A cup is mostly straight
+  // lines, so it survives, and the steam does the "morning" work the egg was
+  // leaning on its outline for.
   breakfast:
-    "M5.4 13.6c-1.7-3.7 1-7.3 4.6-7.7 3-.3 4.3 1.9 6.3 2.2 2.2.2 3.5 1.4 3.3 3.4-.3 3.2-3.6 5.4-7.4 5.4-3.2 0-5.8-1-6.8-3.3ZM13.6 11a2.6 2.6 0 1 1-5.2 0 2.6 2.6 0 0 1 5.2 0Z",
+    "M9.2 6.2c0-1 1.1-1.2 1.1-2.2M12.8 6.2c0-1 1.1-1.2 1.1-2.2M5.2 8.8h10.6v4.4a4.6 4.6 0 0 1-4.6 4.6h-1.4a4.6 4.6 0 0 1-4.6-4.6V8.8ZM15.8 10h1.4a2.2 2.2 0 0 1 0 4.4h-1.4M4 19.6h13",
   // A cloche: a served meal, which is what dinner is and lunch is not.
   dinner: "M4 17.5h16M5.6 17.5a6.4 6.4 0 0 1 12.8 0M12 7.6V6.2",
   // A slice of cake, cut side on, with its filling and a cherry.
