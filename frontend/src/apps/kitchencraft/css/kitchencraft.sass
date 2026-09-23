@@ -489,17 +489,6 @@
   border-color: var(--kc-burgundy)
   color: var(--kc-cream)
 
-// An enrichment-written value the user has not touched yet: in PENCIL, where a
-// confirmed value is in ink — a dashed edge and a lighter hand. Two signals,
-// neither of them colour alone. Declared last so it wins over `--on`: an
-// unconfirmed value is unconfirmed whether or not it is also selected.
-.kc-chip--unconfirmed,
-.kc-chips li > .kc-chip.kc-chip--unconfirmed
-  background: transparent
-  border: 1px dashed var(--kc-pencil)
-  color: var(--kc-pencil)
-  rotate: 0deg
-
 .kc-chip .kc-icon-btn
   min-width: 20px
   min-height: 20px
@@ -520,6 +509,9 @@
   list-style: none
 
 @media (pointer: coarse)
+  .kc-tab
+    min-height: var(--kc-touch)
+
   .kc-rating__star
     min-width: 36px
     min-height: var(--kc-touch)
@@ -546,6 +538,71 @@
     min-width: var(--kc-touch)
     min-height: var(--kc-touch)
     margin-right: -8px
+
+// --- Folder tabs -------------------------------------------------------------
+// The dividers, on the folder's edge. Each one a different pen; the open one
+// rises, loses its shade and joins the cover with a strip of manila.
+
+.kc-tabs
+  display: flex
+  flex-wrap: wrap
+  align-items: flex-end
+  gap: 3px
+  max-width: 1080px
+  margin: 0 auto
+  padding-left: 14px
+
+.kc-tab
+  position: relative
+  appearance: none
+  clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 100%, 0 100%)
+  min-height: 30px
+  padding: 7px 26px 6px 14px
+  margin-bottom: -1px
+  border: 0
+  background: var(--kc-tab, var(--kc-navy))
+  color: var(--kc-cream)
+  font-family: var(--kc-typed)
+  font-size: 10px
+  letter-spacing: 0.14em
+  text-transform: uppercase
+  cursor: pointer
+  // Shaded while closed, so the open one reads as nearer without moving colour.
+  filter: brightness(0.86)
+
+.kc-tab:nth-child(1)
+  --kc-tab: var(--kc-burgundy)
+
+.kc-tab:nth-child(2)
+  --kc-tab: var(--kc-navy)
+
+.kc-tab:nth-child(3)
+  --kc-tab: var(--kc-orange-ink)
+
+.kc-tab:nth-child(4)
+  --kc-tab: var(--kc-teal)
+
+.kc-tab:nth-child(5)
+  --kc-tab: var(--kc-plum)
+
+.kc-tab:hover
+  filter: brightness(0.96)
+
+.kc-tab[aria-pressed="true"]
+  padding-top: 11px
+  filter: none
+
+// The strip of manila that joins the open divider to the cover below it.
+.kc-tab[aria-pressed="true"]::after
+  content: ""
+  position: absolute
+  inset: auto 0 -1px 0
+  height: 3px
+  background: var(--kc-manila)
+
+.kc-tab:focus-visible
+  outline: 2px solid var(--kc-cream)
+  outline-offset: -4px
 
 // --- Rows --------------------------------------------------------------------
 
@@ -1186,7 +1243,26 @@
   .kitchencraft-app
     padding: 18px 16px 56px
 
+  .kc-tabs
+    flex-wrap: nowrap
+    overflow-x: auto
+    overflow-y: hidden
+    scrollbar-width: none
+
+  .kc-tabs::-webkit-scrollbar
+    display: none
+
+  .kc-tab
+    flex: none
+    margin-bottom: 0
+    padding-right: 22px
+
+  .kc-tab[aria-pressed="true"]::after
+    bottom: 0
+    height: 4px
+
   .kc-band
+    margin-top: -1px
     padding: 9px 9px 16px
 
   .kc-band::before,

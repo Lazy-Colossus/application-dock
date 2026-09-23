@@ -1,5 +1,16 @@
 <template>
   <q-page class="kitchencraft-app">
+    <!--
+      Outside the band on purpose: the tabs are the folder's edge, and the open
+      one has to meet the cover. Absent on an empty collection — dividers appear
+      when there is something to divide.
+    -->
+    <FolderTabs
+      v-if="store.loaded && !store.isEmpty"
+      v-model="filters"
+      data-testid="folder-tabs"
+    />
+
     <div class="kc-band">
       <PageBar title="KitchenCraft">
         <!--
@@ -129,6 +140,7 @@
 import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import FilterBar from "@/apps/kitchencraft/components/FilterBar.vue";
+import FolderTabs from "@/apps/kitchencraft/components/FolderTabs.vue";
 import PageBar from "@/apps/kitchencraft/components/PageBar.vue";
 import RecipeRow from "@/apps/kitchencraft/components/RecipeRow.vue";
 import { useCollectionFilters } from "@/apps/kitchencraft/composables/useCollectionFilters";

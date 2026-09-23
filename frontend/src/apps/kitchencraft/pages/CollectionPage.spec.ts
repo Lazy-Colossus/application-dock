@@ -163,17 +163,19 @@ describe("search and filters on the page", () => {
     const wrapper = await mountPage(collection());
     expect(wrapper.find('[data-testid="count"]').exists()).toBe(false);
 
-    await wrapper.find('[data-testid="meal-dinner"]').trigger("click");
+    await wrapper.find('[data-testid="tab-dinner"]').trigger("click");
     expect(wrapper.find('[data-testid="count"]').text()).toBe("1 of 2 recipes");
   });
 
   it("clears one filter without touching the others", async () => {
     const wrapper = await mountPage(collection());
-    await wrapper.find('[data-testid="meal-dinner"]').trigger("click");
+    await wrapper.find('[data-testid="tab-dinner"]').trigger("click");
     await wrapper.find('[data-testid="search"]').setValue("onion");
     expect(wrapper.findAll(".kc-row")).toHaveLength(1);
 
-    await wrapper.find('[data-testid="meal-dinner"]').trigger("click");
+    // Back to the All divider — a folder has one divider open at a time, so
+    // there is no re-tap-to-clear the way the chip had.
+    await wrapper.find('[data-testid="tab-all"]').trigger("click");
     expect(wrapper.findAll(".kc-row")).toHaveLength(2);
     expect(
       (wrapper.find('[data-testid="search"]').element as HTMLInputElement)
@@ -186,9 +188,65 @@ describe("search and filters on the page", () => {
     list[0].favourite = true;
     const wrapper = await mountPage(list);
 
-    await wrapper.find('[data-testid="favourites-only"]').trigger("click");
+    await wrapper.find('[data-testid="tab-kept"]').trigger("click");
     expect(wrapper.findAll(".kc-row")).toHaveLength(1);
     expect(wrapper.find('[data-testid="count"]').text()).toBe("1 favourite");
+  });
+});
+
+describe("the folder dividers", () => {
+  function twoMeals() {
+    return [
+      recipe({
+        name: "Chicken traybake",
+        body: "Chicken, onion.",
+        meal_type: "dinner",
+      }),
+      recipe({ name: "Onion soup", body: "Onions.", meal_type: "lunch" }),
+    ];
+  }
+
+  it("opens one divider at a time, and All is open to begin with", async () => {
+    const wrapper = await mountPage(twoMeals());
+    const open = () =>
+      wrapper
+        .findAll(".kc-tab")
+        .filter((t) => t.attributes("aria-pressed") === "true")
+        .map((t) => t.text());
+
+    expect(open()).toEqual(["All recipes"]);
+    await wrapper.find('[data-testid="tab-dinner"]').trigger("click");
+    expect(open()).toEqual(["Dinner"]);
+    await wrapper.find('[data-testid="tab-kept"]').trigger("click");
+    expect(open()).toEqual(["Kept"]);
+  });
+
+  it("keeps the search when the divider changes, because filters combine", async () => {
+    const wrapper = await mountPage(twoMeals());
+    await wrapper.find('[data-testid="search"]').setValue("onion");
+    await wrapper.find('[data-testid="tab-dinner"]').trigger("click");
+
+    expect(
+      (wrapper.find('[data-testid="search"]').element as HTMLInputElement)
+        .value,
+    ).toBe("onion");
+  });
+
+  it("carries no divider for lunch, snack or other", async () => {
+    // The cost of the dividers replacing the meal-type chips, asserted rather
+    // than left to be discovered: those three are reachable through search and
+    // tags, and nowhere else.
+    const wrapper = await mountPage(twoMeals());
+    for (const absent of ["lunch", "snack", "other"]) {
+      expect(wrapper.find(`[data-testid="tab-${absent}"]`).exists()).toBe(
+        false,
+      );
+    }
+  });
+
+  it("is absent on an empty collection, having nothing to divide", async () => {
+    const wrapper = await mountPage([]);
+    expect(wrapper.find(".kc-tabs").exists()).toBe(false);
   });
 });
 
@@ -198,7 +256,7 @@ describe("the zero-result state", () => {
       recipe({ name: "Chicken traybake", meal_type: "dinner" }),
       recipe({ name: "Onion soup", meal_type: "lunch" }),
     ]);
-    await wrapper.find('[data-testid="meal-dinner"]').trigger("click");
+    await wrapper.find('[data-testid="tab-dinner"]').trigger("click");
     await wrapper.find('[data-testid="search"]').setValue("crumble");
     return wrapper;
   }
@@ -233,7 +291,7 @@ describe("the zero-result state", () => {
 describe("the empty favourites view", () => {
   it("says so and offers no button, because the action is on the rows behind", async () => {
     const wrapper = await mountPage([recipe(), recipe()]);
-    await wrapper.find('[data-testid="favourites-only"]').trigger("click");
+    await wrapper.find('[data-testid="tab-kept"]').trigger("click");
 
     const empty = wrapper.find('[data-testid="empty-favourites"]');
     expect(empty.text()).toContain("No favourites yet.");
@@ -245,9 +303,11 @@ describe("the empty favourites view", () => {
   });
 
   it("falls back to the zero-result breakdown when other filters are also on", async () => {
-    const wrapper = await mountPage([recipe({ meal_type: "dinner" })]);
-    await wrapper.find('[data-testid="favourites-only"]').trigger("click");
-    await wrapper.find('[data-testid="meal-dinner"]').trigger("click");
+    // Kept and a meal divider are mutually exclusive now, so the second filter
+    // has to be one the dividers do not own.
+    const wrapper = await mountPage([recipe({ name: "Dal" })]);
+    await wrapper.find('[data-testid="tab-kept"]').trigger("click");
+    await wrapper.find('[data-testid="search"]').setValue("crumble");
 
     expect(wrapper.find('[data-testid="empty-favourites"]').exists()).toBe(
       false,

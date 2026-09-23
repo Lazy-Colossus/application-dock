@@ -12,24 +12,6 @@
       @input="patch({ search: ($event.target as HTMLInputElement).value })"
     />
 
-    <div class="kc-group">
-      <span class="kc-label">Meal type</span>
-      <ul class="kc-chips">
-        <li v-for="mealType in MEAL_TYPES" :key="mealType">
-          <button
-            type="button"
-            class="kc-chip kc-chip--control"
-            :class="{ 'kc-chip--on': modelValue.mealType === mealType }"
-            :aria-pressed="modelValue.mealType === mealType"
-            :data-testid="`meal-${mealType}`"
-            @click="toggleMealType(mealType)"
-          >
-            {{ mealType }}
-          </button>
-        </li>
-      </ul>
-    </div>
-
     <!--
       Tags open on demand: a collection with many of them would be a wall of
       chips if the list were always in the way of the search field.
@@ -66,19 +48,6 @@
       </ul>
     </div>
 
-    <div class="kc-group">
-      <button
-        type="button"
-        class="kc-chip kc-chip--control"
-        :class="{ 'kc-chip--on': modelValue.favouritesOnly }"
-        :aria-pressed="modelValue.favouritesOnly"
-        data-testid="favourites-only"
-        @click="patch({ favouritesOnly: !modelValue.favouritesOnly })"
-      >
-        Favourites only
-      </button>
-    </div>
-
     <!--
       Always rendered when anything is active, in `meta`. Never hidden, never a
       badge.
@@ -108,7 +77,6 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { MEAL_TYPES, type MealType } from "@/apps/kitchencraft/types";
 import type { Filters } from "@/apps/kitchencraft/composables/useCollectionFilters";
 
 const props = defineProps<{
@@ -128,10 +96,6 @@ const showTags = ref(false);
 
 function patch(change: Partial<Filters>): void {
   emit("update:modelValue", { ...props.modelValue, ...change });
-}
-
-function toggleMealType(mealType: MealType): void {
-  patch({ mealType: props.modelValue.mealType === mealType ? null : mealType });
 }
 
 function toggleIn(key: "tags", value: string): void {

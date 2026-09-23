@@ -189,12 +189,6 @@ describe("the three traps this palette sets for itself", () => {
 });
 
 describe("status is never carried by colour alone", () => {
-  it("marks an unconfirmed value with a dashed edge as well as the pencil hand", () => {
-    const b = block(".kc-chip--unconfirmed");
-    expect(b).toMatch(/border:\s*1px dashed var\(--kc-pencil\)/);
-    expect(b).toMatch(/color:\s*var\(--kc-pencil\)/);
-  });
-
   it("marks a destructive button with a dashed edge, not a hue of its own", () => {
     // Danger and primary share burgundy in this theme; the edge is the whole
     // difference, which is the same shape-not-colour rule the heart follows.
@@ -336,6 +330,7 @@ describe("shapes and touch targets", () => {
     expect(SASS).toContain("@media (pointer: coarse)");
     const coarse = SASS.slice(SASS.indexOf("@media (pointer: coarse)"));
     for (const selector of [
+      "\\.kc-tab",
       "\\.kc-rating__star",
       "\\.kc-row > \\.kc-icon-btn",
       "\\.kc-field",
