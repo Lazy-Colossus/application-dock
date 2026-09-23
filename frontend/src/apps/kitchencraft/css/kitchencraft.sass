@@ -231,9 +231,9 @@
 // it takes the display hand there and nowhere else.
 .kc-row__open .kc-body
   font-family: var(--kc-display)
-  font-size: 26px
+  font-size: 25px
   font-weight: 600
-  line-height: 1.1
+  line-height: 1.08
 
 .kc-meta
   font-family: var(--kc-typed)
@@ -498,6 +498,14 @@
   list-style: none
 
 @media (pointer: coarse)
+  .kc-rating__star
+    min-width: 36px
+    min-height: var(--kc-touch)
+
+  .kc-row > .kc-icon-btn
+    min-width: var(--kc-touch)
+    min-height: var(--kc-touch)
+
   .kc-field
     min-height: var(--kc-touch)
 
@@ -528,9 +536,9 @@
 .kc-row
   display: flex
   align-items: center
-  gap: 12px
-  min-height: 66px
-  border-bottom: 1px dotted var(--kc-rule-strong)
+  gap: 8px
+  min-height: 0
+  border-bottom: 1px dotted var(--kc-rule)
 
 .kc-row__main
   flex: 1
@@ -540,9 +548,9 @@
   display: flex
   flex-direction: column
   justify-content: center
-  gap: 2px
-  padding: 10px var(--kc-pad)
-  min-height: 66px
+  gap: 0
+  padding: 5px var(--kc-pad)
+  min-height: 0
 
 // The name and the rating share the first line, as siblings — only the name
 // opens the recipe. Wraps rather than truncating: a clipped recipe name is
@@ -551,7 +559,7 @@
   display: flex
   align-items: center
   flex-wrap: wrap
-  gap: 2px 8px
+  gap: 0 6px
 
 // Only the name opens the recipe.
 .kc-row__open
@@ -577,7 +585,7 @@
 // colour of its own. It wears the heart since Story 2.7, because the rating
 // took the star.
 .kc-heart
-  margin-right: 4px
+  margin-right: 2px
   color: var(--kc-burgundy)
 
 .kc-rating
@@ -585,18 +593,31 @@
   flex: none
   // Pulled left so the row of stars optically aligns with the name above it,
   // which has no such padding.
-  margin-left: -4px
+  margin-left: -2px
 
-// Narrower than the 44px touch token, taller than it is wide: five full-width
-// targets plus the heart do not fit beside a name at 375px. The stars are
-// contiguous with no dead space between them, so a miss lands on a neighbour
-// rather than on nothing, and 36px stays well clear of the 24px floor.
+// The stars are contiguous with no dead space between them, so a miss lands on
+// a neighbour rather than on nothing. 24x26 clears WCAG 2.5.8's 24px pointer
+// floor; `pointer: coarse` puts the 36x44 touch target back.
 // Orange is a non-text mark at 4.3:1; filled vs outlined is what carries the
 // value, exactly as it did in ink.
 .kc-rating__star
-  min-width: 36px
-  min-height: var(--kc-touch)
+  min-width: 24px
+  min-height: 26px
   color: var(--kc-orange)
+
+.kc-rating__star svg
+  width: 14px
+  height: 14px
+
+// The favourite is the row's other 44px target, and the other reason a row
+// could not be shorter than 44px.
+.kc-row > .kc-icon-btn
+  min-width: 28px
+  min-height: 28px
+
+.kc-row > .kc-icon-btn svg
+  width: 16px
+  height: 16px
 
 // --- Typeahead ---------------------------------------------------------------
 

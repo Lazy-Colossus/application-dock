@@ -234,8 +234,12 @@ describe("the depth model", () => {
     expect(block(".kc-typeahead__panel")).toMatch(
       /border:\s*1px solid var\(--kc-rule-strong\)/,
     );
+    // Two tiers, on purpose. `rule-strong` is 3.1:1 and bounds anything a
+    // user has to find and operate — a field, a panel. The line between two
+    // list items is decoration: it divides, it is not an edge you aim at, and
+    // at 3:1 down a long collection it reads as a grid rather than a list.
     expect(block(".kc-row")).toMatch(
-      /border-bottom:\s*1px dotted var\(--kc-rule-strong\)/,
+      /border-bottom:\s*1px dotted var\(--kc-rule\)/,
     );
   });
 
@@ -332,6 +336,8 @@ describe("shapes and touch targets", () => {
     expect(SASS).toContain("@media (pointer: coarse)");
     const coarse = SASS.slice(SASS.indexOf("@media (pointer: coarse)"));
     for (const selector of [
+      "\\.kc-rating__star",
+      "\\.kc-row > \\.kc-icon-btn",
       "\\.kc-field",
       "\\.kc-btn",
       "\\.kc-typeahead__add",
