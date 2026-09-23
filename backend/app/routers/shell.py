@@ -54,6 +54,12 @@ _APPS: list[AppDescriptor] = [
         route="/kalendariq",
     ),
     AppDescriptor(
+        id="kitchencraft",
+        label="KitchenCraft",
+        icon="menu_book",
+        route="/kitchencraft",
+    ),
+    AppDescriptor(
         id="question-of-the-day",
         label="Question of the Day",
         icon="help_center",

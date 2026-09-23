@@ -28,6 +28,9 @@ client = TestClient(app)
 @pytest.fixture(autouse=True)
 def patch_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, "data_dir", tmp_path)
+    # The SSE `?token=` path mints and verifies real tokens, which needs a
+    # secret; without one these tests pass only where the environment has one.
+    monkeypatch.setattr(settings, "jwt_secret_key", "test-secret-key-for-tests-only")
     for name in ("ana", "bo", "cy"):
         auth_service.create_user(name)
 

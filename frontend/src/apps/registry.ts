@@ -43,6 +43,13 @@ export const apps: AppDescriptor[] = [
     route: "/kalendariq",
   },
   {
+    id: "kitchencraft",
+    label: "KitchenCraft",
+    // A notebook, which is what the app is: a household recipe ledger.
+    icon: "menu_book",
+    route: "/kitchencraft",
+  },
+  {
     id: "question-of-the-day",
     label: "Question of the Day",
     // A question-prompt glyph, distinct from the other apps' icons.

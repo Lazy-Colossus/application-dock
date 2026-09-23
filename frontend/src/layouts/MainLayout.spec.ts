@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { createRouter, createMemoryHistory } from "vue-router";
 import { createPinia, setActivePinia } from "pinia";
 import MainLayout from "@/layouts/MainLayout.vue";
@@ -30,6 +30,12 @@ async function mountAt(path: string) {
         component: { template: "<div />" },
         meta: { title: "Listies" },
       },
+      { path: "/kitchencraft", component: { template: "<div />" } },
+      {
+        path: "/kitchencraft/r/:id/edit",
+        component: { template: "<div />" },
+        meta: { backTo: "/kitchencraft" },
+      },
       {
         path: "/kalendariq/s/:shareToken",
         component: { template: "<div />" },
@@ -39,7 +45,8 @@ async function mountAt(path: string) {
   });
   await router.push(path);
   await router.isReady();
-  return mount(MainLayout, { global: { plugins: [router] } });
+  const wrapper = mount(MainLayout, { global: { plugins: [router] } });
+  return Object.assign(wrapper, { router });
 }
 
 describe("MainLayout toolbar control", () => {
@@ -74,6 +81,13 @@ describe("MainLayout toolbar control", () => {
   it("back arrow present on /archery", async () => {
     const wrapper = await mountAt("/archery");
     expect(wrapper.find('[aria-label="Go back"]').exists()).toBe(true);
+  });
+
+  it("back goes to the route's pinned destination, not through history", async () => {
+    const wrapper = await mountAt("/kitchencraft/r/abc/edit");
+    await wrapper.find('[aria-label="Go back"]').trigger("click");
+    await flushPromises();
+    expect(wrapper.router.currentRoute.value.path).toBe("/kitchencraft");
   });
 
   it("hides both nav buttons on a route that opts out of the shell nav", async () => {

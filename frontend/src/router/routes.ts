@@ -158,6 +158,42 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "Kalendariq", requiresAuth: true },
       },
       {
+        path: "kitchencraft",
+        name: "kitchencraft-collection",
+        component: () => import("@/apps/kitchencraft/pages/CollectionPage.vue"),
+        meta: { title: "KitchenCraft", requiresAuth: true },
+      },
+      {
+        path: "kitchencraft/new",
+        name: "kitchencraft-capture",
+        component: () => import("@/apps/kitchencraft/pages/CapturePage.vue"),
+        meta: {
+          title: "KitchenCraft",
+          requiresAuth: true,
+          backTo: "/kitchencraft",
+        },
+      },
+      {
+        path: "kitchencraft/r/:id",
+        name: "kitchencraft-recipe",
+        component: () => import("@/apps/kitchencraft/pages/RecipePage.vue"),
+        meta: {
+          title: "KitchenCraft",
+          requiresAuth: true,
+          backTo: "/kitchencraft",
+        },
+      },
+      {
+        path: "kitchencraft/r/:id/edit",
+        name: "kitchencraft-edit",
+        component: () => import("@/apps/kitchencraft/pages/EditRecipePage.vue"),
+        meta: {
+          title: "KitchenCraft",
+          requiresAuth: true,
+          backTo: "/kitchencraft",
+        },
+      },
+      {
         path: "question-of-the-day",
         name: "qotd-home",
         component: () =>

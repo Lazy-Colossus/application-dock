@@ -1,0 +1,1531 @@
+// KitchenCraft "Notebook" theme — SCOPED to the KitchenCraft app.
+//
+// A manila folder open on a dark desk. The app is a ring-bound folder of
+// recipes: the desk is the page ground, `.kc-band` is the folder cover, and
+// the paper inside it is where everything is written.
+//
+// Replaced the "Beige Ledger" theme. The four tones became a desk and eleven
+// inks, and the one serif became three hands — but every rule the old theme
+// was built on survives, because they were accessibility rules, not taste:
+//   1. Text colour is measured, never assumed. `kitchencraft.tokens.spec.ts`
+//      computes the real WCAG ratios off this file and fails on a bad edit.
+//   2. `rule` is a hairline and NEVER carries text. Quiet text is `pencil`.
+//   3. Text on any filled control is `cream`. Navy on burgundy is 1.13:1.
+//   4. Status is never colour alone — the favourite and the rating change
+//      SHAPE (filled vs outlined), and an unconfirmed value changes HAND
+//      (pencil, dashed) as well as colour.
+//
+// What genuinely changed, and why each one is a deliberate departure:
+//   - Shadows exist now, but only on things physically above the page: the
+//     folder on the desk, an index card on the folder, the note. Every flat
+//     surface still takes a rule, never a fill, as its boundary.
+//   - Danger and primary share burgundy, told apart by fill vs a DASHED edge.
+//     That is the same shape-not-colour rule the heart already followed.
+//   - Three self-hosted webfonts, ~236KB, loaded only when a KitchenCraft
+//     screen mounts (this file is imported by the pages). No CDN: the dock
+//     ships as one container and must not need the network to render type.
+//
+// The tokens are declared on TWO roots. `.kitchencraft-app` covers the pages;
+// `.kitchencraft-panel` covers modal cards, which sit outside the page in the
+// DOM and would otherwise fall back to the shell's dark Carbon theme mid-flow.
+
+// --- The three hands ---------------------------------------------------------
+// Latin + latin-ext only: the ext subset is what carries Polish recipe names
+// (Ciasto ze Śliwkami). Caveat is one variable file for the whole 400–700 range.
+
+@font-face
+  font-family: "KC Caveat"
+  font-style: normal
+  font-weight: 400 700
+  font-display: swap
+  src: url("./fonts/caveat-400-700-latin.woff2") format("woff2")
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD
+
+@font-face
+  font-family: "KC Caveat"
+  font-style: normal
+  font-weight: 400 700
+  font-display: swap
+  src: url("./fonts/caveat-400-700-latin-ext.woff2") format("woff2")
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF
+
+@font-face
+  font-family: "KC Kalam"
+  font-style: normal
+  font-weight: 300
+  font-display: swap
+  src: url("./fonts/kalam-300-latin.woff2") format("woff2")
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD
+
+@font-face
+  font-family: "KC Kalam"
+  font-style: normal
+  font-weight: 300
+  font-display: swap
+  src: url("./fonts/kalam-300-latin-ext.woff2") format("woff2")
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF
+
+@font-face
+  font-family: "KC Kalam"
+  font-style: normal
+  font-weight: 400
+  font-display: swap
+  src: url("./fonts/kalam-400-latin.woff2") format("woff2")
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD
+
+@font-face
+  font-family: "KC Kalam"
+  font-style: normal
+  font-weight: 400
+  font-display: swap
+  src: url("./fonts/kalam-400-latin-ext.woff2") format("woff2")
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF
+
+@font-face
+  font-family: "KC Elite"
+  font-style: normal
+  font-weight: 400
+  font-display: swap
+  src: url("./fonts/special-elite-400-latin.woff2") format("woff2")
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD
+
+@font-face
+  font-family: "KC Elite"
+  font-style: normal
+  font-weight: 400
+  font-display: swap
+  src: url("./fonts/special-elite-400-latin-ext.woff2") format("woff2")
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF
+
+.kitchencraft-app,
+.kitchencraft-panel
+  // Ground: the desk, the folder, and the paper in it
+  --kc-desk: #2A2320
+  --kc-manila: #C9B489
+  --kc-paper: #E9E4D5
+  --kc-paper-raise: #F3EFE3
+  // The everyday pen: all body copy, all structure. 10.4:1 on paper.
+  --kc-navy: #22304A
+  // The marking pen: headings, the primary action, and destructive. 8.6:1.
+  --kc-burgundy: #6E2233
+  // The highlighter. 4.3:1 — marks and rules ONLY, and never text.
+  --kc-orange: #A8501B
+  // The same hue darkened for small text: measures, counts. 5.5:1.
+  --kc-orange-ink: #8F4415
+  // Two tag inks, so a row of tags is not one block of colour
+  --kc-teal: #2C4A47
+  --kc-plum: #4A3555
+  // Pencil: quiet text at 4.7:1, and everything the enrichment pass guessed
+  --kc-pencil: #5D6472
+  // What ink is written on when the ground is dark
+  --kc-cream: #EFE9DA
+  // Hairlines. `rule` is decorative paper ruling; `rule-strong` is 3.1:1 and
+  // carries every control boundary and every separator.
+  --kc-rule: rgba(34, 48, 74, 0.16)
+  --kc-rule-strong: #78808F
+  --kc-margin: rgba(110, 34, 51, 0.38)
+  // Three hands, self-hosted. Each has exactly one job and never borrows:
+  // `display` titles and names, `hand` everything read, `typed` every label
+  // and every action — the printed things.
+  --kc-display: "KC Caveat", "Segoe Script", "Bradley Hand", cursive
+  --kc-hand: "KC Kalam", "Segoe Print", "Chalkboard", cursive
+  --kc-typed: "KC Elite", "Courier New", ui-monospace, monospace
+  // Square, because paper has corners. No pills.
+  --kc-r-sm: 1px
+  --kc-r-md: 2px
+  --kc-pad: 16px
+  // The ruled line. The recipe body sits on it, and nothing else sets a
+  // line-height for reading text.
+  --kc-lh: 32px
+  --kc-measure: 58ch
+  --kc-touch: 44px
+  // The punched margin: how far the writing is held off the left edge of the
+  // paper, so the holes and the red rule have somewhere to live.
+  --kc-punch: 46px
+  --kc-hole: 8px
+  --kc-hole-x: 18px
+
+.kitchencraft-app
+  background: var(--kc-desk)
+  color: var(--kc-navy)
+  font-family: var(--kc-hand)
+  font-weight: 300
+  min-height: 100%
+  padding: 22px 16px 64px
+  // KitchenCraft is light-ground only and does not follow the system colour
+  // scheme (.decision-log Entry 14). Declared so a dark-mode browser does not
+  // recolour form controls inside the app.
+  color-scheme: light
+
+.kitchencraft-panel
+  font-family: var(--kc-hand)
+  font-weight: 300
+
+// --- The folder --------------------------------------------------------------
+// `.kc-band` was a max-width wrapper; it is now the folder cover, and its
+// ::before is the paper inside. Every page already renders inside it, so the
+// whole structure arrives without a line of markup changing.
+
+.kc-band
+  position: relative
+  max-width: 1080px
+  margin: 0 auto
+  background: var(--kc-manila)
+  background-image: linear-gradient(176deg, #D2BE95 0%, #C9B489 38%, #BFA97C 100%)
+  border-radius: var(--kc-r-sm) 10px var(--kc-r-sm) var(--kc-r-sm)
+  padding: 12px 12px 22px
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.44), inset 0 2px 0 rgba(255, 255, 255, 0.22)
+
+// The paper, its red margin, and the punch holes repeating down the binding
+// edge — all one background, so a long page grows more holes the way real
+// paper in a ring binder does.
+.kc-band::before
+  content: ""
+  position: absolute
+  inset: 12px 12px 22px
+  border-radius: var(--kc-r-sm)
+  background-color: var(--kc-paper)
+  background-image: linear-gradient(to right, transparent 0 calc(var(--kc-punch) - 6px), var(--kc-margin) calc(var(--kc-punch) - 6px) calc(var(--kc-punch) - 5px), transparent calc(var(--kc-punch) - 5px)), radial-gradient(circle var(--kc-hole) at var(--kc-hole-x) 60px, var(--kc-manila) 97%, transparent 100%)
+  background-repeat: no-repeat, repeat-y
+  background-size: 100% 100%, 100% 120px
+
+.kc-band::after
+  content: ""
+  position: absolute
+  inset: 12px 12px 22px
+  pointer-events: none
+  border-radius: var(--kc-r-sm)
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.042'/%3E%3C/svg%3E")
+  background-repeat: repeat
+  background-size: 160px 160px
+
+// Everything on the page clears the punched margin. `:not(.kc-backdrop)`
+// because a modal is fixed to the viewport and must not be inset with it.
+.kc-band > *:not(.kc-backdrop)
+  position: relative
+  z-index: 1
+  margin-left: var(--kc-punch)
+
+// --- Type ramp: five roles, and no more --------------------------------------
+// Sizes are floors that honour the system font scale, not fixed pixel boxes.
+
+.kc-title
+  font-family: var(--kc-display)
+  font-size: 30px
+  line-height: 1.08
+  font-weight: 700
+  color: var(--kc-burgundy)
+  margin: 0
+  text-wrap: balance
+
+// The recipe body. The hero. 18px is a HARD FLOOR at every surface and every
+// breakpoint — never smaller, and never compressed to fit more on screen. It
+// sits ON the rule: 18/32 is what makes the page read as paper rather than as
+// a paper-coloured div.
+.kc-recipe
+  font-family: var(--kc-hand)
+  font-size: 18px
+  line-height: 32px
+  font-weight: 300
+  color: var(--kc-navy)
+  background-image: repeating-linear-gradient(to bottom, transparent 0 calc(var(--kc-lh) - 1px), var(--kc-rule) calc(var(--kc-lh) - 1px) var(--kc-lh))
+
+.kc-body
+  font-family: var(--kc-hand)
+  font-size: 17px
+  line-height: 1.6
+  font-weight: 400
+  color: var(--kc-navy)
+
+// A recipe name in the collection is the one place `.kc-body` is a title, so
+// it takes the display hand there and nowhere else.
+.kc-row__open .kc-body
+  font-family: var(--kc-display)
+  font-size: 25px
+  font-weight: 600
+  line-height: 1.08
+
+.kc-meta
+  font-family: var(--kc-typed)
+  font-size: 10px
+  line-height: 1.5
+  letter-spacing: 0.11em
+  text-transform: uppercase
+  color: var(--kc-pencil)
+  // Counts and times line up column-to-column.
+  font-variant-numeric: tabular-nums
+
+// Section labels only - Ingredients, Tags, Search. The one typed thing on the
+// page, because a label is printed, not written.
+.kc-label
+  display: block
+  font-family: var(--kc-typed)
+  font-size: 10px
+  line-height: 1.5
+  font-weight: 400
+  letter-spacing: 0.2em
+  text-transform: uppercase
+  color: var(--kc-burgundy)
+  margin: 0 0 5px
+
+// A label over labels: the section name sits a size above the field labels
+// beneath it, so the group reads as one thing with parts.
+.kc-label--heading
+  font-size: 13px
+  margin-bottom: 8px
+
+// The capture screen's name, typed straight into the heading. It keeps the
+// heading's face and takes only an underline, so it reads as the title you
+// are writing rather than as a form field that wandered into the bar.
+.kc-title-field
+  flex: 1
+  min-width: 0
+  width: 100%
+  background: transparent
+  border: 0
+  border-bottom: 1px dotted var(--kc-rule-strong)
+  border-radius: 0
+  padding: 0 2px 2px
+
+.kc-title-field:focus,
+.kc-title-field:focus-visible
+  outline: none
+  border-bottom: 1px solid var(--kc-burgundy)
+
+// Dashed, so the error is a shape change and not only a colour one.
+.kc-title-field--error
+  border-bottom: 2px dashed var(--kc-burgundy)
+
+.kc-bar > .kc-title::after,
+.kc-read__name::after
+  content: ""
+  display: block
+  width: min(300px, 78%)
+  height: 8px
+  margin-top: 1px
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 340 9' preserveAspectRatio='none'%3E%3Cpath d='M2 6 C 62 2, 108 8, 168 4 S 282 2, 338 5' fill='none' stroke='%236E2233' stroke-width='2' stroke-linecap='round' opacity='0.7'/%3E%3C/svg%3E") no-repeat left center / 100% 100%
+
+// --- Layout ------------------------------------------------------------------
+
+.kc-pad
+  padding-left: var(--kc-pad)
+  padding-right: var(--kc-pad)
+
+// Reading text never exceeds the measure, on any surface at any width. A wide
+// window buys margin, never a longer line.
+.kc-measure
+  max-width: var(--kc-measure)
+
+// The only separator in the system. Never boxed into a card outline.
+.kc-rule
+  border: 0
+  border-top: 1px solid var(--kc-rule-strong)
+  margin: 0
+
+// --- Field -------------------------------------------------------------------
+// You do not draw a box round a place to write. You rule a line under it.
+// Labels sit above in .kc-label; a placeholder never stands in for a label.
+
+// 18px stays: it is the reading hand, and anything under 16px makes iOS
+// Safari zoom the page on focus. The height was padding, not type.
+.kc-field
+  display: block
+  width: 100%
+  min-height: 34px
+  background: transparent
+  border: 0
+  border-bottom: 1px solid var(--kc-rule-strong)
+  border-radius: 0
+  color: var(--kc-navy)
+  font-family: var(--kc-hand)
+  font-weight: 400
+  font-size: 18px
+  line-height: 1.5
+  padding: 4px 2px
+
+.kc-field::placeholder
+  color: var(--kc-pencil)
+  font-weight: 300
+
+.kc-field:focus-visible,
+.kc-field:focus
+  outline: none
+  border-bottom: 2px solid var(--kc-burgundy)
+  padding-bottom: 3px
+
+// The capture body is the ruled page itself, which is the whole concept in one
+// control: what you type lands on the line.
+.kc-field--body
+  font-size: 18px
+  line-height: var(--kc-lh)
+  font-weight: 300
+  min-height: 44vh
+  border-bottom: 0
+  padding: 0 2px
+  resize: vertical
+  background-image: repeating-linear-gradient(to bottom, transparent 0 calc(var(--kc-lh) - 1px), var(--kc-rule) calc(var(--kc-lh) - 1px) var(--kc-lh))
+
+.kc-field--body:focus,
+.kc-field--body:focus-visible
+  border-bottom: 0
+  padding-bottom: 0
+  background-image: repeating-linear-gradient(to bottom, transparent 0 calc(var(--kc-lh) - 1px), var(--kc-rule-strong) calc(var(--kc-lh) - 1px) var(--kc-lh))
+
+// Dashed, so the error is a shape change and not only a colour one.
+.kc-field--error
+  border-bottom: 2px dashed var(--kc-burgundy)
+
+// A field error, associated with its field and announced.
+.kc-error
+  font-family: var(--kc-hand)
+  font-size: 15px
+  line-height: 1.5
+  color: var(--kc-burgundy)
+  margin: 5px 0 0
+
+// --- Buttons -----------------------------------------------------------------
+// Typed, not written: a button is a thing someone made, not something they
+// jotted. The height never came from the face — it came from setting 10px caps
+// at 0.16em tracking, which needs a 46px box to sit in. Sentence case at 14px
+// with almost no tracking fits the same label in 34px and reads larger, so the
+// typewriter stays and the box still comes down.
+//
+// Special Elite ships one weight. `font-weight: 400` is explicit so a browser
+// never synthesises a bold, which on a typewriter face fills in the counters
+// and turns the whole label into a smudge.
+// One filled button per surface — the thing you came to do.
+
+.kc-btn
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  min-height: 34px
+  padding: 0 14px
+  border-radius: var(--kc-r-sm)
+  font-family: var(--kc-typed)
+  font-weight: 400
+  font-size: 14px
+  letter-spacing: 0.02em
+  line-height: 1.3
+  cursor: pointer
+  background: var(--kc-burgundy)
+  border: 1px solid var(--kc-burgundy)
+  color: var(--kc-cream)
+
+.kc-btn--block
+  display: flex
+  width: 100%
+
+.kc-btn--quiet
+  background: transparent
+  border: 1px solid var(--kc-navy)
+  color: var(--kc-navy)
+
+// Destructive is the same marking pen as primary, told apart by a DASHED edge
+// and no fill. Shape, not hue — the rule the favourite mark already followed.
+.kc-btn--danger
+  background: transparent
+  border: 1px dashed var(--kc-burgundy)
+  color: var(--kc-burgundy)
+
+.kc-btn:disabled
+  cursor: default
+  opacity: 0.45
+
+.kc-btn:focus-visible
+  outline: 2px solid var(--kc-navy)
+  outline-offset: 2px
+
+// A functional icon target - the back affordance, a remove cross. Sized for a
+// thumb at the largest system font setting.
+.kc-icon-btn
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  min-width: var(--kc-touch)
+  min-height: var(--kc-touch)
+  background: transparent
+  border: 0
+  padding: 0
+  color: var(--kc-navy)
+  cursor: pointer
+
+.kc-icon-btn:focus-visible
+  outline: 2px solid var(--kc-burgundy)
+  outline-offset: 1px
+
+// --- Chip --------------------------------------------------------------------
+// A value written on a slip and stuck down. One shape for tags, ingredients,
+// meal types and filters, in three states — and the third is the one that
+// matters.
+
+.kc-chip
+  display: inline-flex
+  align-items: center
+  gap: 6px
+  min-height: 24px
+  padding: 1px 8px
+  background: var(--kc-teal)
+  border: 1px solid var(--kc-teal)
+  border-radius: var(--kc-r-sm)
+  color: var(--kc-cream)
+  font-family: var(--kc-typed)
+  font-size: 10px
+  letter-spacing: 0.1em
+  text-transform: uppercase
+  line-height: 1.5
+  rotate: -0.8deg
+
+// The tag inks alternate down a row so a row of tags is not one block of
+// colour. The count is on the `li`, because every chip sits inside one — and
+// every state below re-states `.kc-chip` to match that specificity, or the
+// decoration would win over the state.
+.kc-chips li:nth-child(even) > .kc-chip
+  background: var(--kc-plum)
+  border-color: var(--kc-plum)
+  rotate: 0.7deg
+
+.kc-chips li:nth-child(3n) > .kc-chip
+  background: var(--kc-navy)
+  border-color: var(--kc-navy)
+  rotate: -0.3deg
+
+// A chip you can press is square to the page and unfilled until it is on.
+.kc-chip--control,
+.kc-chips li > .kc-chip.kc-chip--control
+  background: transparent
+  border: 1px solid var(--kc-rule-strong)
+  color: var(--kc-navy)
+  min-height: 30px
+  padding: 0 10px
+  rotate: 0deg
+  cursor: pointer
+
+.kc-chip--control:hover,
+.kc-chips li > .kc-chip.kc-chip--control:hover
+  border-color: var(--kc-navy)
+
+// Selected - and ONLY ever on a chip that is a control. A chip merely
+// displaying a value in the reading view is never burgundy, because it is not
+// pressable. Text on the fill is cream at 9.05:1; navy would be 1.13:1.
+.kc-chip--on,
+.kc-chips li > .kc-chip.kc-chip--on
+  background: var(--kc-burgundy)
+  border-color: var(--kc-burgundy)
+  color: var(--kc-cream)
+
+.kc-chip .kc-icon-btn
+  min-width: 20px
+  min-height: 20px
+  margin-right: -3px
+
+.kc-chip:focus-visible
+  outline: 2px solid var(--kc-burgundy)
+  outline-offset: 2px
+
+.kc-chips
+  display: flex
+  flex-wrap: wrap
+  gap: 8px
+  // Chip rows wrap to as many lines as they need; they never truncate, scroll
+  // sideways or collapse behind a "+3 more".
+  margin: 0
+  padding: 0
+  list-style: none
+
+@media (pointer: coarse)
+  .kc-textbtn
+    min-height: var(--kc-touch)
+
+  .kc-tab
+    min-height: var(--kc-touch)
+
+  // Narrow but tall: the stars are contiguous, so a slim target still lands on
+  // a star, and the row gives the screen back its width.
+  .kc-rating__star
+    min-width: 28px
+    min-height: var(--kc-touch)
+
+  .kc-row > .kc-icon-btn
+    min-width: var(--kc-touch)
+    min-height: var(--kc-touch)
+
+  .kc-field
+    min-height: var(--kc-touch)
+
+  .kc-btn
+    min-height: var(--kc-touch)
+
+  .kc-typeahead__add
+    min-width: var(--kc-touch)
+    min-height: var(--kc-touch)
+
+  .kc-chip--control,
+  .kc-chips li > .kc-chip.kc-chip--control
+    min-height: var(--kc-touch)
+
+  .kc-chip .kc-icon-btn
+    min-width: var(--kc-touch)
+    min-height: var(--kc-touch)
+    margin-right: -8px
+
+// The count and the way out, on one line.
+.kc-countline
+  display: flex
+  flex-wrap: wrap
+  align-items: baseline
+  gap: 2px 12px
+  margin-top: 13px
+
+.kc-countline .kc-meta
+  margin: 0
+
+// A control that is quiet on purpose. Underlined rather than boxed, because a
+// box would make it look like the thing you came to do.
+.kc-textbtn
+  display: inline-flex
+  align-items: center
+  min-height: 24px
+  padding: 0
+  background: transparent
+  border: 0
+  font-family: var(--kc-typed)
+  font-size: 10px
+  letter-spacing: 0.11em
+  text-transform: uppercase
+  color: var(--kc-burgundy)
+  text-decoration: underline
+  text-underline-offset: 3px
+  cursor: pointer
+
+.kc-textbtn:hover
+  text-decoration-thickness: 2px
+
+.kc-textbtn:focus-visible
+  outline: 2px solid var(--kc-burgundy)
+  outline-offset: 2px
+
+// --- Folder tabs -------------------------------------------------------------
+// The dividers, on the folder's edge. Each one a different pen; the open one
+// rises, loses its shade and joins the cover with a strip of manila.
+
+.kc-tabs
+  display: flex
+  flex-wrap: wrap
+  align-items: flex-end
+  gap: 3px
+  max-width: 1080px
+  margin: 0 auto
+  padding-left: 14px
+
+.kc-tab
+  position: relative
+  appearance: none
+  clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 100%, 0 100%)
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  min-height: 30px
+  padding: 7px 26px 6px 14px
+  margin-bottom: -1px
+  border: 0
+  background: var(--kc-tab, var(--kc-navy))
+  color: var(--kc-cream)
+  font-family: var(--kc-typed)
+  font-size: 10px
+  letter-spacing: 0.14em
+  text-transform: uppercase
+  cursor: pointer
+  // Shaded while closed, so the open one reads as nearer without moving colour.
+  filter: brightness(0.86)
+
+.kc-tab:nth-child(1)
+  --kc-tab: var(--kc-burgundy)
+
+.kc-tab:nth-child(2)
+  --kc-tab: var(--kc-navy)
+
+.kc-tab:nth-child(3)
+  --kc-tab: var(--kc-orange-ink)
+
+.kc-tab:nth-child(4)
+  --kc-tab: var(--kc-teal)
+
+.kc-tab:nth-child(5)
+  --kc-tab: var(--kc-plum)
+
+.kc-tab:hover
+  filter: brightness(0.96)
+
+.kc-tab[aria-pressed="true"]
+  padding-top: 11px
+  filter: none
+
+// The strip of manila that joins the open divider to the cover below it.
+.kc-tab[aria-pressed="true"]::after
+  content: ""
+  position: absolute
+  inset: auto 0 -1px 0
+  height: 3px
+  background: var(--kc-manila)
+
+.kc-tab:focus-visible
+  outline: 2px solid var(--kc-cream)
+  outline-offset: -4px
+
+// --- Rows --------------------------------------------------------------------
+
+.kc-rows
+  margin: 0
+  padding: 0
+  list-style: none
+
+// The collection list unit. No fill, no card, no chevron.
+.kc-row
+  display: flex
+  align-items: center
+  gap: 8px
+  min-height: 0
+  border-bottom: 1px dotted var(--kc-rule)
+
+.kc-row__main
+  flex: 1
+  min-width: 0
+  // Column, so the name and the meta line are two lines with air between them
+  // rather than running together inline.
+  display: flex
+  flex-direction: column
+  justify-content: center
+  gap: 0
+  padding: 5px var(--kc-pad)
+  min-height: 0
+
+// The name and the rating share the first line, as siblings — only the name
+// opens the recipe. Wraps rather than truncating: a clipped recipe name is
+// worse than stars dropping to their own line on a narrow phone.
+.kc-row__line
+  display: flex
+  align-items: center
+  flex-wrap: wrap
+  gap: 0 6px
+
+// Only the name opens the recipe.
+.kc-row__open
+  display: block
+  flex: 1 1 auto
+  min-width: 0
+  text-align: left
+  background: transparent
+  border: 0
+  padding: 0
+  font-family: var(--kc-display)
+  color: var(--kc-navy)
+  cursor: pointer
+
+.kc-row__open:hover .kc-body
+  color: var(--kc-burgundy)
+
+.kc-row__open:focus-visible
+  outline: 2px solid var(--kc-burgundy)
+  outline-offset: 2px
+
+// The favourites mark is a SHAPE change - filled versus outlined - never a
+// colour of its own. It wears the heart since Story 2.7, because the rating
+// took the star.
+.kc-heart
+  margin-right: 2px
+  color: var(--kc-burgundy)
+
+.kc-rating
+  display: inline-flex
+  flex: none
+  // Pulled left so the row of stars optically aligns with the name above it,
+  // which has no such padding.
+  margin-left: -2px
+
+// The stars are contiguous with no dead space between them, so a miss lands on
+// a neighbour rather than on nothing. 24x26 clears WCAG 2.5.8's 24px pointer
+// floor; `pointer: coarse` makes it a 28x44 touch target.
+// Orange is a non-text mark at 4.3:1; filled vs outlined is what carries the
+// value, exactly as it did in ink.
+.kc-rating__star
+  min-width: 24px
+  min-height: 26px
+  color: var(--kc-orange)
+
+.kc-rating__star svg
+  width: 14px
+  height: 14px
+
+// The favourite is the row's other 44px target, and the other reason a row
+// could not be shorter than 44px.
+.kc-row > .kc-icon-btn
+  min-width: 28px
+  min-height: 28px
+
+.kc-row > .kc-icon-btn svg
+  width: 16px
+  height: 16px
+
+// Read aloud, never drawn: for a control whose heading is already on screen.
+.kc-sr-only
+  position: absolute
+  width: 1px
+  height: 1px
+  margin: -1px
+  overflow: hidden
+  clip-path: inset(50%)
+  white-space: nowrap
+
+// --- Stepper -----------------------------------------------------------------
+// A short field between − and +. Boxed buttons, because an unboxed glyph
+// beside an underline reads as punctuation rather than as a control.
+
+.kc-stepper
+  display: inline-flex
+  align-items: center
+  gap: 6px
+
+.kc-stepper__field
+  width: 3.5em
+  text-align: center
+  font-variant-numeric: tabular-nums
+
+.kc-stepper__btn
+  min-width: 34px
+  min-height: 34px
+  border: 1px solid var(--kc-rule-strong)
+  border-radius: var(--kc-r-sm)
+
+.kc-stepper__btn:hover:not(:disabled)
+  border-color: var(--kc-navy)
+
+.kc-stepper__btn:disabled
+  opacity: 0.4
+  cursor: default
+
+@media (pointer: coarse)
+  .kc-stepper__btn
+    min-width: var(--kc-touch)
+    min-height: var(--kc-touch)
+
+// --- Typeahead ---------------------------------------------------------------
+
+.kc-typeahead
+  position: relative
+
+// The field and its add button share a row; the field takes the slack.
+.kc-typeahead__control
+  display: flex
+  align-items: flex-end
+  gap: 8px
+
+  .kc-field
+    flex: 1
+    min-width: 0
+
+.kc-typeahead__add
+  flex: none
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  min-width: 34px
+  min-height: 34px
+  padding: 0
+
+  &:disabled
+    opacity: 0.4
+    cursor: default
+
+// Suggestions arrive on a torn slip laid under the line you are writing on.
+// The torn edge is a mask, not an image, so it costs nothing and scales.
+.kc-typeahead__panel
+  position: absolute
+  z-index: 10
+  left: 0
+  right: 0
+  background: var(--kc-paper-raise)
+  border: 1px solid var(--kc-rule-strong)
+  border-bottom: 0
+  border-radius: var(--kc-r-sm) var(--kc-r-sm) 0 0
+  margin: 3px 0 0
+  padding: 0
+  list-style: none
+  // Six suggestions, then the list scrolls — but never past the bottom of a
+  // short viewport, which is what put the foot of the list off a phone screen.
+  max-height: min(calc(var(--kc-touch) * 6), 40vh)
+  overflow-y: auto
+  overscroll-behavior: contain
+  box-shadow: 0 8px 18px rgba(42, 35, 32, 0.22)
+  mask-image: linear-gradient(#000 0 0), conic-gradient(from 135deg at 50% 100%, #0000 25%, #000 0) 50% 100% / 12px 6px repeat-x
+  mask-composite: intersect
+
+// Inside the tags pop-over the slip is the pop-over, so the list drops its own
+// paper and simply continues beneath the field.
+.kc-typeahead__panel--inline
+  position: static
+  margin-top: 8px
+  border: 0
+  border-top: 1px dotted var(--kc-rule-strong)
+  border-radius: 0
+  background: transparent
+  box-shadow: none
+  mask-image: none
+
+// --- Tags --------------------------------------------------------------------
+
+.kc-tags
+  position: relative
+
+// The height of the tag chips it sits beside, not of a pressable chip: it is
+// the end of that row. Restated at the control chip's specificity to win.
+.kc-chips li > .kc-chip.kc-tags__open
+  justify-content: center
+  min-width: 28px
+  min-height: 24px
+  padding: 0
+
+// On touch a tag chip is already 44px tall, carried by its remove button.
+@media (pointer: coarse)
+  .kc-chips li > .kc-chip.kc-tags__open
+    min-width: var(--kc-touch)
+    min-height: var(--kc-touch)
+
+// The same torn slip the suggestions have always arrived on, now holding the
+// field too, laid under the chips it adds to.
+.kc-tags__pop
+  position: absolute
+  z-index: 10
+  left: 0
+  top: 100%
+  width: min(20rem, 100%)
+  margin-top: 6px
+  padding: 10px 12px 12px
+  background: var(--kc-paper-raise)
+  border: 1px solid var(--kc-rule-strong)
+  border-bottom: 0
+  border-radius: var(--kc-r-sm) var(--kc-r-sm) 0 0
+  box-shadow: 0 8px 18px rgba(42, 35, 32, 0.22)
+  mask-image: linear-gradient(#000 0 0), conic-gradient(from 135deg at 50% 100%, #0000 25%, #000 0) 50% 100% / 12px 6px repeat-x
+  mask-composite: intersect
+
+// Not an option — it says the list is capped, and takes no pointer events so it
+// can never be mistaken for one.
+.kc-typeahead__hint
+  padding: 7px 12px 14px
+  border-top: 1px dotted var(--kc-rule-strong)
+  font-family: var(--kc-typed)
+  font-size: 9px
+  letter-spacing: 0.12em
+  text-transform: uppercase
+  color: var(--kc-pencil)
+  pointer-events: none
+
+.kc-typeahead__row
+  display: block
+  width: 100%
+  min-height: var(--kc-touch)
+  text-align: left
+  background: transparent
+  border: 0
+  padding: 9px 12px
+  font-family: var(--kc-hand)
+  font-size: 17px
+  line-height: 1.5
+  color: var(--kc-navy)
+  cursor: pointer
+
+// The highlighted row takes the same ring as a field, NOT a fill - a fill
+// would read as *selected* when it is only *highlighted*.
+.kc-typeahead__row--highlight
+  outline: 2px solid var(--kc-burgundy)
+  outline-offset: -2px
+
+// The last row of the Ingredients typeahead, and only there. Distinct by
+// position, rule, icon and wording - never by colour alone, so the distinction
+// survives at any contrast setting.
+.kc-new-category
+  border-top: 1px dotted var(--kc-rule-strong)
+  color: var(--kc-pencil)
+
+.kc-new-category__icon
+  margin-right: 8px
+
+// --- Modal -------------------------------------------------------------------
+// Every modal is an index card laid on the folder: clipped at the corner,
+// slightly off square, casting a shadow on the desk.
+
+.kc-backdrop
+  position: fixed
+  inset: 0
+  z-index: 2000
+  display: flex
+  align-items: flex-end
+  justify-content: center
+  overflow: hidden
+  background: rgba(24, 19, 16, 0.62)
+
+// A confirmation sits in the MIDDLE of the screen at every width, not as a
+// sheet off the bottom edge. It is not a surface you work in — it is a question
+// that stops you, and the centre is where a question that stops you belongs.
+// This is a deliberate departure from EXPERIENCE.md's responsive table, which
+// specifies "sheet from the bottom" on phone.
+.kc-backdrop--centred
+  align-items: center
+  // Side room so the box never touches the screen edge on a narrow phone.
+  padding: var(--kc-pad)
+
+.kc-modal
+  position: relative
+  width: 100%
+  max-width: 460px
+  max-height: 86dvh
+  overflow-y: auto
+  background: var(--kc-paper-raise)
+  border: 0
+  border-radius: var(--kc-r-md)
+  padding: 30px var(--kc-pad) 22px
+  rotate: -0.7deg
+  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.5)
+
+// The red rule across the top of every index card ever printed, and the clip
+// that holds it to the folder.
+.kc-modal::before
+  content: ""
+  position: absolute
+  left: 0
+  right: 0
+  top: 20px
+  height: 1px
+  background: var(--kc-margin)
+
+.kc-modal::after
+  content: ""
+  position: absolute
+  top: -13px
+  left: 26px
+  width: 15px
+  height: 34px
+  border: 2px solid #8C8578
+  border-radius: 8px
+  rotate: 4deg
+
+.kc-modal__actions
+  display: flex
+  flex-wrap: wrap
+  gap: 8px
+  margin-top: 22px
+
+// The shopping list. The one surface that is not paper from the folder, because
+// it is the one thing you tear off and take with you: a note, taped on, with
+// the hand-entry row at its foot inside thumb reach.
+.kc-sheet
+  position: relative
+  display: flex
+  flex-direction: column
+  width: min(420px, 100%)
+  max-height: 80dvh
+  height: auto
+  background: #D2904A
+  background-image: linear-gradient(162deg, #E3AB68 0%, #D2904A 62%, #C6823F 100%)
+  color: #33210F
+  border: 0
+  border-radius: 0
+  margin-bottom: 18px
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.44)
+  rotate: -1.1deg
+
+// The tape.
+.kc-sheet::before
+  content: ""
+  position: absolute
+  top: -10px
+  left: 50%
+  translate: -50% 0
+  width: 96px
+  height: 21px
+  rotate: -2deg
+  background: rgba(233, 228, 213, 0.74)
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22)
+
+.kc-sheet:focus
+  // Focused only so escape reaches it; the ring belongs on the controls inside.
+  outline: none
+
+// Inside the note, ink is the note's own dark brown at 5.8:1 on the darkest
+// step of the gradient — not the page's navy, which would be a different pen
+// on a different paper.
+.kc-sheet .kc-title,
+.kc-sheet .kc-body,
+.kc-sheet .kc-state__lede
+  color: #33210F
+
+.kc-sheet .kc-meta
+  color: #6B4A22
+
+.kc-sheet .kc-icon-btn
+  color: #33210F
+
+.kc-sheet .kc-btn
+  background: var(--kc-burgundy)
+  border-color: var(--kc-burgundy)
+  color: var(--kc-cream)
+
+.kc-sheet .kc-btn--quiet
+  background: transparent
+  border-color: rgba(51, 33, 15, 0.55)
+  color: #33210F
+
+.kc-sheet .kc-btn--danger
+  background: transparent
+  border: 1px dashed var(--kc-burgundy)
+  color: var(--kc-burgundy)
+
+.kc-sheet .kc-field
+  color: #33210F
+  border-bottom-color: rgba(51, 33, 15, 0.5)
+
+.kc-sheet .kc-field::placeholder
+  color: rgba(51, 33, 15, 0.6)
+
+.kc-sheet .kc-bar
+  border-bottom: 1px dashed rgba(51, 33, 15, 0.4)
+
+.kc-sheet .kc-row,
+.kc-sheet .kc-shop-row
+  border-bottom: 1px dotted rgba(51, 33, 15, 0.34)
+
+// Nothing at rest: the note is the only surface, and an item is words on it.
+// The wash appears on hover alone, so a pointer still gets a target to aim at.
+.kc-sheet .kc-shop-row__tick:hover
+  background: rgba(255, 255, 255, 0.16)
+
+.kc-sheet__body
+  flex: 1
+  min-height: 0
+  display: flex
+  flex-direction: column
+  overflow-y: auto
+  overscroll-behavior: contain
+  // No horizontal padding: rows run full-bleed so their separators reach the
+  // panel edge, and each row insets its own content instead — the collection's
+  // pattern exactly.
+  padding: 8px 0 16px
+
+// An empty list pairs its message with the hand-entry row: the spec asks for the
+// row "directly beneath", and on a tall note a message pinned under the bar
+// sits most of a screen away from an input pinned to the foot. Pushing the
+// message down to meet it — and dropping the hairline between them — makes the
+// two read as the one invitation they are.
+.kc-sheet--empty .kc-sheet__body
+  justify-content: flex-end
+  padding-bottom: 8px
+
+.kc-sheet--empty .kc-sheet__foot
+  border-top: 0
+
+// The body is full-bleed for its rows; the message is not a row, so it takes
+// the inset the rows and the foot give their own text.
+.kc-sheet__body > .kc-state__lede
+  padding-left: var(--kc-pad)
+  padding-right: var(--kc-pad)
+
+.kc-sheet__foot
+  border-top: 1px dashed rgba(51, 33, 15, 0.4)
+  padding: 12px var(--kc-pad)
+  padding-bottom: max(12px, env(safe-area-inset-bottom))
+
+// `list-row`, NOT `recipe-row`: DESIGN.md defines the two separately, and this
+// one is touch-min, not 66px. A recipe row is tall because it carries two lines;
+// a shopping row carries one, on the surface where seeing the most of the list
+// at a glance matters most.
+.kc-shop-row
+  min-height: var(--kc-touch)
+  padding: 0
+
+// The whole row ticks, so the target spans it — sized for a thumb on a phone
+// held in a hand that is also holding a basket (NFR-4).
+.kc-shop-row__tick
+  flex-direction: row
+  align-items: center
+  gap: 12px
+  cursor: pointer
+  min-height: var(--kc-touch)
+  background: transparent
+  border: 0
+  // Content insets to the 16px grid the bar title and the entry field also sit
+  // on; the separator stays full-bleed.
+  padding: 6px 0 6px var(--kc-pad)
+
+.kc-shop-row__tick:focus-visible
+  outline: 2px solid var(--kc-burgundy)
+  outline-offset: -2px
+
+.kc-shop-row__box
+  flex: none
+  color: #33210F
+
+// Ingredients read one per line, with the amounts in their own column so the
+// quantities line up down the list rather than floating at the start of each
+// sentence.
+.kc-ingredients
+  margin: 0
+  padding: 0
+  list-style: none
+
+.kc-ingredient
+  display: flex
+  align-items: baseline
+  gap: 12px
+  min-height: var(--kc-touch)
+  padding: 4px 0
+  font-size: 17px
+  line-height: 1.55
+
+// Right-aligned, typed and tabular, so 8 and 200 share an edge. Orange-ink at
+// 5.5:1, because this is small text and `--kc-orange` is not for text.
+.kc-ingredient__measure
+  flex: none
+  width: 5.4em
+  text-align: right
+  font-family: var(--kc-typed)
+  font-size: 11px
+  color: var(--kc-orange-ink)
+  font-variant-numeric: tabular-nums
+
+.kc-ingredient__name
+  flex: 1
+  min-width: 0
+  color: var(--kc-navy)
+
+.kc-ingredients--editing .kc-ingredient
+  border-bottom: 1px dotted var(--kc-rule-strong)
+
+.kc-ingredient__remove
+  flex: none
+
+// Amount and ingredient on one row; the ingredient takes the slack and
+// the row wraps to stacked fields on a narrow phone.
+.kc-ingredient-entry
+  display: flex
+  flex-wrap: wrap
+  gap: 10px
+  align-items: flex-start
+
+// Wide enough for the unit typed into it: `200 g`, `2 cloves`.
+.kc-ingredient-entry__amount
+  flex: 0 1 8rem
+
+.kc-ingredient-entry__text
+  flex: 1 1 10rem
+  min-width: 0
+
+// The native control, sized to the grid and coloured in ink like every other
+// mark. `accent-color` is the whole styling — no custom box to keep in step
+// with the browser's own checked state.
+.kc-checkbox
+  flex: none
+  width: 18px
+  height: 18px
+  accent-color: var(--kc-navy)
+  cursor: pointer
+
+.kc-sheet .kc-checkbox
+  accent-color: #33210F
+
+// Trailing target, set in from the edge the way the collection row's own
+// trailing glyph is.
+.kc-shop-row__delete
+  margin-right: 4px
+
+// Two signals on a ticked item, and neither of them is colour: a filled box and
+// a line through the text (UX-DR17). The text stays INK — three places in the
+// spec say so, and the point of "stays in place" is that a ticked item is still
+// readable when you glance back to check you really did get the bay leaves.
+// Fading it would half-remove it, which is the thing FR-15 forbids.
+.kc-shop-row__done
+  text-decoration: line-through
+
+// Standing in for rows that have not arrived: pencil dashes, because that is
+// what "not written yet" looks like. Inert: aria-hidden on the list, no
+// animation to chase.
+.kc-skeleton-row
+  height: var(--kc-touch)
+  border-bottom: 1px dashed var(--kc-pencil)
+  opacity: 0.45
+
+// --- Screen furniture --------------------------------------------------------
+
+.kc-bar
+  display: flex
+  align-items: center
+  justify-content: space-between
+  gap: 12px
+  padding: 12px var(--kc-pad)
+  border-bottom: 1px dotted var(--kc-rule-strong)
+
+// The trailing cluster on a bar: the page's own action, then the shopping list.
+.kc-bar__actions
+  display: flex
+  align-items: center
+  gap: 8px
+
+.kc-head
+  padding: 16px var(--kc-pad) 12px
+  border-bottom: 1px solid var(--kc-rule-strong)
+
+.kc-group
+  margin-top: 14px
+
+// Empty and zero-result states: carried by hand, rule and spacing, and never a
+// bare panel.
+.kc-state
+  padding: 30px var(--kc-pad)
+
+.kc-state__lede
+  font-family: var(--kc-hand)
+  font-size: 17px
+  line-height: 1.6
+  color: var(--kc-navy)
+  max-width: var(--kc-measure)
+  margin: 8px 0 22px
+
+.kc-why
+  margin: 0
+  padding: 0
+  list-style: none
+  border-top: 1px dotted var(--kc-rule-strong)
+
+.kc-why__row
+  display: flex
+  align-items: baseline
+  justify-content: space-between
+  flex-wrap: wrap
+  gap: 2px 14px
+  width: 100%
+  min-height: var(--kc-touch)
+  background: transparent
+  border: 0
+  border-bottom: 1px dotted var(--kc-rule-strong)
+  padding: 9px 0
+  font-family: var(--kc-hand)
+  font-size: 17px
+  line-height: 1.5
+  color: var(--kc-navy)
+  text-align: left
+  cursor: pointer
+
+.kc-why__row:hover
+  color: var(--kc-burgundy)
+
+.kc-foot
+  padding: 16px var(--kc-pad)
+  border-top: 1px solid var(--kc-rule-strong)
+
+.kc-form
+  padding: 16px var(--kc-pad) 32px
+  max-width: var(--kc-measure)
+
+// Capture is a paste target, and a pasted recipe is easier to check at the
+// width of the screen than wrapped to the reading measure.
+.kc-form--full
+  max-width: none
+
+.kc-form__group
+  margin-bottom: 20px
+
+.kc-actions
+  display: flex
+  flex-wrap: wrap
+  gap: 9px
+  margin-top: 22px
+
+// --- The reading view --------------------------------------------------------
+// Structure sits at the edges: above and below the body on phone, in a quiet
+// right rail on wide. Nothing frames the method.
+
+.kc-read
+  display: grid
+  gap: 16px
+  padding: 16px var(--kc-pad) 32px
+  grid-template-areas: "top" "body" "bottom"
+  grid-template-columns: minmax(0, 1fr)
+
+// Shares the bar with the shopping-list button, so it gives way before it.
+.kc-read__name
+  min-width: 0
+  overflow-wrap: break-word
+
+.kc-read__top
+  grid-area: top
+  // The rating control and the meta line share this row, wrapping rather than
+  // overflowing on a narrow phone.
+  display: flex
+  align-items: center
+  flex-wrap: wrap
+  gap: 4px 12px
+
+  .kc-meta
+    margin: 0
+
+// Line breaks and blank lines read back exactly as pasted. `pre-wrap` is the
+// whole verbatim-body contract on the rendering side: nothing re-flows,
+// re-wraps or tidies, and there is no markdown pass.
+.kc-read__body
+  grid-area: body
+  max-width: var(--kc-measure)
+  white-space: pre-wrap
+  overflow-wrap: break-word
+
+.kc-read__bottom
+  grid-area: bottom
+
+// The pale panel is the ingredients' alone; tags sit bare on the page.
+.kc-read__ingredients
+  background: rgba(243, 239, 227, 0.5)
+  border: 1px dotted var(--kc-rule-strong)
+  padding: 13px 15px 15px
+
+// --- Responsive: phone and wide as peers, split at 700px ---------------------
+// The recipe size and the measure are IDENTICAL on both sides.
+
+@media (min-width: 700px)
+  .kc-cols
+    display: grid
+    grid-template-columns: 1fr 1fr
+    column-gap: 30px
+
+  .kc-read
+    grid-template-columns: minmax(0, var(--kc-measure)) minmax(180px, 1fr)
+    column-gap: 32px
+    grid-template-areas: "top top" "body bottom"
+
+  .kc-backdrop
+    align-items: center
+
+  .kc-sheet
+    margin-bottom: 0
+
+// --- Phone -------------------------------------------------------------------
+// The folder does not become a different object on a phone; it becomes a
+// folder held closer. The punched margin gives ground first, because at 390px
+// it was taking 15% of the screen off a column that is already narrow.
+
+@media (max-width: 560px)
+  .kitchencraft-app
+    padding: 18px 16px 48px
+
+  .kc-tabs
+    flex-wrap: nowrap
+    overflow-x: auto
+    overflow-y: hidden
+    scrollbar-width: none
+
+  .kc-tabs::-webkit-scrollbar
+    display: none
+
+  .kc-tabs
+    padding-left: 8px
+    gap: 2px
+
+  .kc-tab
+    flex: 1 1 auto
+    margin-bottom: 0
+    font-size: clamp(8px, 2.3vw, 10px)
+    letter-spacing: 0.05em
+    // Lopsided on purpose: the clip-path takes 15px off the top right, so
+    // equal padding would leave the label looking pushed right.
+    padding: 8px 14px 7px 7px
+
+  .kc-tab[aria-pressed="true"]::after
+    bottom: 0
+    height: 4px
+
+  .kc-band
+    margin-top: -1px
+    padding: 8px 8px 15px
+
+  .kc-band::before,
+  .kc-band::after
+    inset: 8px 8px 15px
+
+  .kitchencraft-app,
+  .kitchencraft-panel
+    --kc-punch: 30px
+    --kc-hole: 6px
+    --kc-hole-x: 13px
+
+  // The name takes the whole line and the rating drops beneath it. Five star
+  // targets plus a heart never fit beside a name here, and a name shrunk to
+  // 56px wrapping four deep is worse than a rating on its own row.
+  .kc-row__line
+    align-items: flex-start
+
+  .kc-row__open
+    flex: 1 1 100%
+
+  // Label, field and the tags toggle share one line; the chips it opens and
+  // the count take the full width beneath. Stacked, the panel ate a third of
+  // the screen before the first recipe.
+  .kc-head
+    display: grid
+    grid-template-columns: auto minmax(0, 1fr) auto
+    align-items: center
+    column-gap: 10px
+    padding: 10px var(--kc-pad) 8px
+
+  .kc-head > .kc-label,
+  .kc-head .kc-group > .kc-label
+    margin: 0
+
+  .kc-head .kc-group
+    display: contents
+
+  // The toggle is a word-sized button; beside the field it can take the
+  // field's height as its target without making the line any taller.
+  .kc-head .kc-group > .kc-label
+    align-self: stretch
+
+  .kc-head .kc-chips,
+  .kc-head .kc-countline
+    grid-column: 1 / -1
+    margin-top: 8px
+
+  .kc-modal
+    rotate: -0.4deg
+
+  .kc-backdrop:not(.kc-backdrop--centred)
+    padding: 0 12px
+
+  .kc-sheet
+    rotate: -0.6deg
+
+@media (max-width: 400px)
+  .kitchencraft-app,
+  .kitchencraft-panel
+    --kc-punch: 20px
+    --kc-hole: 4px
+    --kc-hole-x: 8px
+    --kc-pad: 12px
+
+  .kc-band
+    padding: 7px 7px 13px
+
+  .kc-band::before,
+  .kc-band::after
+    inset: 7px 7px 13px
+
+  // The reading column is the point of the app and the first thing a narrow
+  // screen steals from, so it keeps what the chrome gives up.
+  .kc-read
+    padding: 14px var(--kc-pad) 24px
+
+  .kc-form
+    padding: 14px var(--kc-pad) 26px
+
+// The only motion in the app is the modal transition, and this removes it.
+@media (prefers-reduced-motion: reduce)
+  .kitchencraft-app *,
+  .kitchencraft-panel *
+    animation: none !important
+    transition: none !important

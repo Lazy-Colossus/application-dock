@@ -10,6 +10,7 @@ from app.routers import (
     context_switch,
     hotaru,
     kalendariq,
+    kitchencraft,
     listies,
     qotd,
     shared_notes,
@@ -38,6 +39,7 @@ app.include_router(kalendariq.share_router)
 app.include_router(qotd.router)
 app.include_router(shared_notes.router)
 app.include_router(archery.router)
+app.include_router(kitchencraft.router)
 
 
 # Serve the built Quasar SPA when present (production / post-build). In dev the
