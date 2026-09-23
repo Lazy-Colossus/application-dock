@@ -19,7 +19,8 @@ def test_list_apps_includes_archery() -> None:
     archery = next((a for a in response.json() if a["id"] == "archery"), None)
     assert archery is not None
     assert archery["label"] == "Archery Score Counter"
-    assert archery["icon"] == "sports_score"
+    # A single-tone target reticle, not the old generic sports_score (Story 9.2).
+    assert archery["icon"] == "adjust"
     assert archery["route"] == "/archery"
 
 
@@ -167,3 +168,18 @@ def test_kitchencraft_router_is_mounted() -> None:
     from app.routers import kitchencraft
 
     assert kitchencraft.router.prefix == "/api/kitchencraft"
+
+
+def test_list_apps_includes_shared_notes() -> None:
+    response = client.get("/api/apps")
+    notes = next((a for a in response.json() if a["id"] == "shared-notes"), None)
+    assert notes is not None
+    assert notes["label"] == "Shared Notes"
+    assert notes["icon"] == "sticky_note_2"
+    assert notes["route"] == "/shared-notes"
+
+
+def test_shared_notes_router_is_mounted() -> None:
+    from app.routers import shared_notes
+
+    assert shared_notes.router.prefix == "/api/shared-notes"

@@ -1116,21 +1116,38 @@ describe("SheetGrid — filtering (Story 2.9)", () => {
   const filterable = () =>
     tab({
       rows: [
-        { id: "r-1", order: 0, cells: { "c-1": "Tent", "c-2": 3 }, created_at: "t", updated_at: "t" },
-        { id: "r-2", order: 1, cells: { "c-1": "Stove", "c-2": 1 }, created_at: "t", updated_at: "t" },
-        { id: "r-3", order: 2, cells: { "c-1": "Rope", "c-2": 2 }, created_at: "t", updated_at: "t" },
+        {
+          id: "r-1",
+          order: 0,
+          cells: { "c-1": "Tent", "c-2": 3 },
+          created_at: "t",
+          updated_at: "t",
+        },
+        {
+          id: "r-2",
+          order: 1,
+          cells: { "c-1": "Stove", "c-2": 1 },
+          created_at: "t",
+          updated_at: "t",
+        },
+        {
+          id: "r-3",
+          order: 2,
+          cells: { "c-1": "Rope", "c-2": 2 },
+          created_at: "t",
+          updated_at: "t",
+        },
       ],
     });
 
   const rowOrder = (w: ReturnType<typeof mountGrid>) =>
-    w
-      .findAll('[data-testid^="row-"]')
-      .map((r) => r.attributes("data-testid"));
+    w.findAll('[data-testid^="row-"]').map((r) => r.attributes("data-testid"));
 
   const mountFiltered = (
     filters: Record<string, FilterSpec>,
     t = filterable(),
-  ) => mount(SheetGrid, { props: { tab: t, filters }, global: { stubs: STUBS } });
+  ) =>
+    mount(SheetGrid, { props: { tab: t, filters }, global: { stubs: STUBS } });
 
   const clickHeader = (w: ReturnType<typeof mountGrid>, columnId: string) =>
     w.find(`[data-testid="header-name-${columnId}"]`).trigger("click");

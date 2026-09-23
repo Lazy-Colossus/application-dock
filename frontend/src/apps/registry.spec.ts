@@ -42,6 +42,14 @@ describe("app registry", () => {
     expect(cs?.route).toBe("/context-switch");
   });
 
+  it("registers the Shared Notes app (Story 1.1)", () => {
+    const notes = apps.find((a) => a.id === "shared-notes");
+    expect(notes).toBeDefined();
+    expect(notes?.label).toBe("Shared Notes");
+    expect(notes?.icon).toBe("sticky_note_2");
+    expect(notes?.route).toBe("/shared-notes");
+  });
+
   it("registers the Question of the Day app (Story 1.1)", () => {
     const qotd = apps.find((a) => a.id === "question-of-the-day");
     expect(qotd).toBeDefined();

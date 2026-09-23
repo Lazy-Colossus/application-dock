@@ -1,98 +1,657 @@
 [
-  { "id": "q-0001", "text": "What's a small thing that made you smile today?", "type": "text" },
-  { "id": "q-0002", "text": "What's the last thing you looked up because you genuinely didn't know?", "type": "text" },
   {
-    "id": "q-0003", "text": "How's your energy today?", "type": "scale",
-    "scale": { "min": 1, "max": 5, "min_label": "Flat", "max_label": "Buzzing" }
+    "id": "q-first-game-lost-time",
+    "text": "What's the first game that made you completely lose track of time?",
+    "type": "text"
   },
-  { "id": "q-0004", "text": "What's something you're looking forward to this week?", "type": "text" },
-  { "id": "q-0005", "text": "What did you eat that was worth eating?", "type": "text" },
   {
-    "id": "q-0006", "text": "How much of today went the way you planned?", "type": "scale",
-    "scale": { "min": 1, "max": 5, "min_label": "None of it", "max_label": "All of it" }
+    "id": "q-book-you-push-on-people",
+    "text": "Which book do you push on people whether or not they asked?",
+    "type": "text"
   },
-  { "id": "q-0007", "text": "Who did you think about today who doesn't know it?", "type": "text" },
-  { "id": "q-0008", "text": "What's a song you've had on repeat lately?", "type": "text" },
   {
-    "id": "q-0009", "text": "How well did you sleep last night?", "type": "scale",
-    "scale": { "min": 1, "max": 5, "min_label": "Barely", "max_label": "Like a stone" }
+    "id": "q-small-win-this-week",
+    "text": "What's a small win from this week that nobody else would even notice?",
+    "type": "text"
   },
-  { "id": "q-0010", "text": "What's the best thing you've read, watched or listened to recently?", "type": "text" },
-  { "id": "q-0011", "text": "What's something you keep meaning to do and haven't?", "type": "text" },
   {
-    "id": "q-0012", "text": "How social are you feeling right now?", "type": "scale",
-    "scale": { "min": 1, "max": 5, "min_label": "Leave me be", "max_label": "Who's free?" }
+    "id": "q-character-you-still-think-about",
+    "text": "Tell us about a tabletop character you played who you still think about.",
+    "type": "text"
   },
-  { "id": "q-0013", "text": "What made you laugh most recently?", "type": "text" },
-  { "id": "q-0014", "text": "What's a skill you'd like to have by this time next year?", "type": "text" },
   {
-    "id": "q-0015", "text": "How's the weather where you are — honestly?", "type": "scale",
-    "scale": { "min": 1, "max": 5, "min_label": "Grim", "max_label": "Glorious" }
+    "id": "q-tab-count",
+    "text": "How many browser tabs do you have open right now, honestly?",
+    "type": "scale",
+    "scale": {
+      "min": 1,
+      "max": 5,
+      "min_label": "Under five, I'm a tidy person",
+      "max_label": "I stopped counting months ago"
+    }
   },
-  { "id": "q-0016", "text": "What's the oldest thing you own that you still use?", "type": "text" },
-  { "id": "q-0017", "text": "Where would you go right now if the travel were free and instant?", "type": "text" },
   {
-    "id": "q-0018", "text": "How stretched do you feel this week?", "type": "scale",
-    "scale": { "min": 1, "max": 5, "min_label": "Plenty of room", "max_label": "At capacity" }
+    "id": "q-board-game-you-taught-most",
+    "text": "Which board game have you successfully taught to the most people?",
+    "type": "text"
   },
-  { "id": "q-0019", "text": "What's a piece of advice you've actually taken?", "type": "text" },
-  { "id": "q-0020", "text": "What's something you changed your mind about?", "type": "text" },
   {
-    "id": "q-0021", "text": "How ready are you for the week ahead?", "type": "scale",
-    "scale": { "min": 1, "max": 5, "min_label": "Not remotely", "max_label": "Bring it on" }
+    "id": "q-scene-rent-free",
+    "text": "Which scene from a film or show lives rent-free in your head?",
+    "type": "text"
   },
-  { "id": "q-0022", "text": "What's the last photo you took?", "type": "text" },
-  { "id": "q-0023", "text": "What's a smell that takes you somewhere else?", "type": "text" },
   {
-    "id": "q-0024", "text": "How much did you move today?", "type": "scale",
-    "scale": { "min": 1, "max": 5, "min_label": "Desk to kettle", "max_label": "Properly out" }
+    "id": "q-narrator-phone-book",
+    "text": "Which audiobook narrator could read a phone book and you'd still listen?",
+    "type": "text"
   },
-  { "id": "q-0025", "text": "What's something you're better at than you were a year ago?", "type": "text" },
-  { "id": "q-0026", "text": "What would you do with an unexpected free afternoon?", "type": "text" },
   {
-    "id": "q-0027", "text": "How much are you looking forward to tomorrow?", "type": "scale",
-    "scale": { "min": 1, "max": 5, "min_label": "Not at all", "max_label": "Genuinely excited" }
+    "id": "q-unreasonably-good-at",
+    "text": "What are you unreasonably good at?",
+    "type": "text"
   },
-  { "id": "q-0028", "text": "What's a meal you could cook without a recipe?", "type": "text" },
-  { "id": "q-0029", "text": "Who taught you something that stuck?", "type": "text" },
   {
-    "id": "q-0030", "text": "How's your patience holding up today?", "type": "scale",
-    "scale": { "min": 1, "max": 5, "min_label": "Threadbare", "max_label": "Infinite" }
+    "id": "q-game-you-defend",
+    "text": "Which game do you defend even though everyone agrees it's flawed?",
+    "type": "text"
   },
-  { "id": "q-0031", "text": "What's the most useless fact you know?", "type": "text" },
-  { "id": "q-0032", "text": "What's something small you'd fix about where you live?", "type": "text" },
   {
-    "id": "q-0033", "text": "How much of today was yours?", "type": "scale",
-    "scale": { "min": 1, "max": 5, "min_label": "None of it", "max_label": "Most of it" }
+    "id": "q-tech-hill-to-die-on",
+    "text": "What's your tech hill to die on?",
+    "type": "text"
   },
-  { "id": "q-0034", "text": "What's a habit you're glad you have?", "type": "text" },
-  { "id": "q-0035", "text": "What did you almost say today but didn't?", "type": "text" },
   {
-    "id": "q-0036", "text": "How curious are you feeling lately?", "type": "scale",
-    "scale": { "min": 1, "max": 5, "min_label": "Heads down", "max_label": "Into everything" }
+    "id": "q-dnf-guilt",
+    "text": "How guilty do you feel abandoning a book halfway through?",
+    "type": "scale",
+    "scale": {
+      "min": 1,
+      "max": 5,
+      "min_label": "Zero guilt, life's short",
+      "max_label": "It haunts me for years"
+    }
   },
-  { "id": "q-0037", "text": "What's the best thing about this time of year?", "type": "text" },
-  { "id": "q-0038", "text": "What's something you'd happily do again for the first time?", "type": "text" },
   {
-    "id": "q-0039", "text": "How's your focus been today?", "type": "scale",
-    "scale": { "min": 1, "max": 5, "min_label": "Scattered", "max_label": "Locked in" }
+    "id": "q-meal-without-recipe",
+    "text": "What's the one meal you can cook without looking at a recipe?",
+    "type": "text"
   },
-  { "id": "q-0040", "text": "What's a thing you own that you'd replace immediately if it broke?", "type": "text" },
-  { "id": "q-0041", "text": "What's something you've been putting off that's smaller than it feels?", "type": "text" },
   {
-    "id": "q-0042", "text": "How rested do you feel right now?", "type": "scale",
-    "scale": { "min": 1, "max": 5, "min_label": "Running on empty", "max_label": "Fully charged" }
+    "id": "q-worst-dice-moment",
+    "text": "What's the most memorable dice roll at your table — glory or catastrophe?",
+    "type": "text"
   },
-  { "id": "q-0043", "text": "What's the last kind thing someone did for you?", "type": "text" },
-  { "id": "q-0044", "text": "What would younger you be most surprised by?", "type": "text" },
   {
-    "id": "q-0045", "text": "How's your week going so far?", "type": "scale",
-    "scale": { "min": 1, "max": 5, "min_label": "Write it off", "max_label": "One of the good ones" }
+    "id": "q-song-on-repeat",
+    "text": "What song have you had on repeat this week?",
+    "type": "text"
   },
-  { "id": "q-0046", "text": "What's a place you keep going back to?", "type": "text" },
-  { "id": "q-0047", "text": "What's something you'd like to spend more time doing?", "type": "text" },
   {
-    "id": "q-0048", "text": "How settled do you feel at the moment?", "type": "scale",
-    "scale": { "min": 1, "max": 5, "min_label": "All at sea", "max_label": "Feet on the ground" }
+    "id": "q-book-changed-your-mind",
+    "text": "What's a book that actually changed your mind about something?",
+    "type": "text"
+  },
+  {
+    "id": "q-mundane-superpower",
+    "text": "What's the most mundane superpower you'd genuinely want?",
+    "type": "text"
+  },
+  {
+    "id": "q-comfort-game",
+    "text": "What's your comfort game — the one you reinstall when life gets loud?",
+    "type": "text"
+  },
+  {
+    "id": "q-morning-or-night",
+    "text": "Where do you actually sit on the morning person / night owl spectrum?",
+    "type": "scale",
+    "scale": {
+      "min": 1,
+      "max": 5,
+      "min_label": "Up before the sun",
+      "max_label": "3am is my best hour"
+    }
+  },
+  {
+    "id": "q-shelf-of-shame",
+    "text": "What's the heaviest box on your shelf of shame — bought, still never played?",
+    "type": "text"
+  },
+  {
+    "id": "q-favourite-word",
+    "text": "What's your favourite word in any language, and why that one?",
+    "type": "text"
+  },
+  {
+    "id": "q-worst-bug-you-shipped",
+    "text": "What's the worst bug you ever shipped, and how did you find out?",
+    "type": "text"
+  },
+  {
+    "id": "q-audiobook-counts-as-reading",
+    "text": "Does listening to an audiobook count as having read the book? Defend your position.",
+    "type": "text"
+  },
+  {
+    "id": "q-fictional-world-to-live-in",
+    "text": "Which fictional world would you actually want to live in, knowing the risks?",
+    "type": "text"
+  },
+  {
+    "id": "q-thing-you-collect",
+    "text": "What do you collect — on purpose or entirely by accident?",
+    "type": "text"
+  },
+  {
+    "id": "q-gm-or-player",
+    "text": "GM or player? Be honest about why.",
+    "type": "text"
+  },
+  {
+    "id": "q-completionist",
+    "text": "Are you a completionist or a credits-and-done player?",
+    "type": "scale",
+    "scale": {
+      "min": 1,
+      "max": 5,
+      "min_label": "Credits roll, I'm out",
+      "max_label": "100% or it doesn't count"
+    }
+  },
+  {
+    "id": "q-book-you-lied-about-reading",
+    "text": "Which famous book have you quietly pretended to have read?",
+    "type": "text"
+  },
+  {
+    "id": "q-last-thing-you-fixed",
+    "text": "What's the last thing you fixed instead of replacing?",
+    "type": "text"
+  },
+  {
+    "id": "q-game-soundtrack-off-duty",
+    "text": "Which game soundtrack do you listen to when you're not playing the game?",
+    "type": "text"
+  },
+  {
+    "id": "q-changed-your-mind-recently",
+    "text": "What have you changed your mind about in the last year?",
+    "type": "text"
+  },
+  {
+    "id": "q-house-rule",
+    "text": "What house rule does your group swear by that the rulebook would hate?",
+    "type": "text"
+  },
+  {
+    "id": "q-documentary-you-recommend",
+    "text": "What documentary do you recommend to people who didn't ask?",
+    "type": "text"
+  },
+  {
+    "id": "q-spice-tolerance",
+    "text": "How much heat can you actually handle in your food?",
+    "type": "scale",
+    "scale": {
+      "min": 1,
+      "max": 5,
+      "min_label": "Black pepper is pushing it",
+      "max_label": "Bring the ghost peppers"
+    }
+  },
+  {
+    "id": "q-lore-rabbit-hole",
+    "text": "What's the deepest lore rabbit hole you've ever gone down?",
+    "type": "text"
+  },
+  {
+    "id": "q-advice-you-never-follow",
+    "text": "What advice do you give freely and never follow yourself?",
+    "type": "text"
+  },
+  {
+    "id": "q-opening-line",
+    "text": "What's the best opening line of a book you can recall without looking it up?",
+    "type": "text"
+  },
+  {
+    "id": "q-automated-something-silly",
+    "text": "What have you automated that absolutely did not need automating?",
+    "type": "text"
+  },
+  {
+    "id": "q-ttrpg-system-to-try",
+    "text": "Which tabletop RPG system have you wanted to try but never found a group for?",
+    "type": "text"
+  },
+  {
+    "id": "q-place-to-return-to",
+    "text": "Which place do you most want to go back to, and what would you do differently?",
+    "type": "text"
+  },
+  {
+    "id": "q-audiobook-speed",
+    "text": "What speed do you listen to audiobooks and podcasts at?",
+    "type": "scale",
+    "scale": {
+      "min": 1,
+      "max": 5,
+      "min_label": "1x, exactly as intended",
+      "max_label": "2x and climbing"
+    }
+  },
+  {
+    "id": "q-villain-with-a-point",
+    "text": "Which fictional villain had a point?",
+    "type": "text"
+  },
+  {
+    "id": "q-learning-badly",
+    "text": "What are you currently learning, badly?",
+    "type": "text"
+  },
+  {
+    "id": "q-game-ending-still-thinking",
+    "text": "Which game ending are you still thinking about?",
+    "type": "text"
+  },
+  {
+    "id": "q-untranslatable-word",
+    "text": "Is there a word in another language you wish English had?",
+    "type": "text"
+  },
+  {
+    "id": "q-game-that-ends-friendships",
+    "text": "Which game comes closest to ending friendships at your table?",
+    "type": "text"
+  },
+  {
+    "id": "q-first-thing-you-built",
+    "text": "What's the first thing you ever built that actually worked?",
+    "type": "text"
+  },
+  {
+    "id": "q-rewatch-comfort-show",
+    "text": "What show do you rewatch when you don't want to think?",
+    "type": "text"
+  },
+  {
+    "id": "q-session-zero",
+    "text": "How much does a proper session zero matter to you?",
+    "type": "scale",
+    "scale": {
+      "min": 1,
+      "max": 5,
+      "min_label": "Just hand me the dice",
+      "max_label": "Absolutely non-negotiable"
+    }
+  },
+  {
+    "id": "q-best-souvenir",
+    "text": "What's the best souvenir you've ever brought home?",
+    "type": "text"
+  },
+  {
+    "id": "q-book-to-forget-and-reread",
+    "text": "Which book would you erase from memory just to read it fresh one more time?",
+    "type": "text"
+  },
+  {
+    "id": "q-apocalypse-role",
+    "text": "When the apocalypse comes, what's your actual role in the group?",
+    "type": "text"
+  },
+  {
+    "id": "q-npc-stole-the-show",
+    "text": "Which NPC completely stole the show in a campaign you played?",
+    "type": "text"
+  },
+  {
+    "id": "q-music-while-working",
+    "text": "Can you work with music that has lyrics?",
+    "type": "scale",
+    "scale": {
+      "min": 1,
+      "max": 5,
+      "min_label": "Total silence or nothing",
+      "max_label": "Anything, any volume, always"
+    }
+  },
+  {
+    "id": "q-controversial-food-opinion",
+    "text": "What's your most controversial food opinion?",
+    "type": "text"
+  },
+  {
+    "id": "q-dinner-party-three",
+    "text": "Three people, living or dead, at your dinner table. Who — and what's the seating plan?",
+    "type": "text"
+  },
+  {
+    "id": "q-game-mechanic-in-real-life",
+    "text": "Which game mechanic would you most want to exist in real life?",
+    "type": "text"
+  },
+  {
+    "id": "q-compliment-you-remember",
+    "text": "What's a compliment you still remember years later?",
+    "type": "text"
+  },
+  {
+    "id": "q-component-joy",
+    "text": "Which board game has components so good you'd keep the box just for them?",
+    "type": "text"
+  },
+  {
+    "id": "q-debugging-ritual",
+    "text": "What's your debugging ritual when you're genuinely stuck?",
+    "type": "text"
+  },
+  {
+    "id": "q-adaptation-better-than-book",
+    "text": "Name an adaptation that was better than the book. Then justify yourself.",
+    "type": "text"
+  },
+  {
+    "id": "q-tutorial-skipper",
+    "text": "Do you read the manual and do the tutorial?",
+    "type": "scale",
+    "scale": {
+      "min": 1,
+      "max": 5,
+      "min_label": "Skip, skip, skip",
+      "max_label": "Cover to cover, twice"
+    }
+  },
+  {
+    "id": "q-hobby-you-quit",
+    "text": "What hobby did you quit, and would you ever go back?",
+    "type": "text"
+  },
+  {
+    "id": "q-fact-you-keep-bringing-up",
+    "text": "What's the fact you can't stop bringing up at parties?",
+    "type": "text"
+  },
+  {
+    "id": "q-derailed-campaign",
+    "text": "What's the hardest a party has ever derailed your plans for a session?",
+    "type": "text"
+  },
+  {
+    "id": "q-album-front-to-back",
+    "text": "Which album do you still listen to all the way through, in order?",
+    "type": "text"
+  },
+  {
+    "id": "q-what-recharges-you",
+    "text": "What actually recharges you, as opposed to what you tell people recharges you?",
+    "type": "text"
+  },
+  {
+    "id": "q-multiplayer-same-room",
+    "text": "What's your best memory of playing something with other people in the same room?",
+    "type": "text"
+  },
+  {
+    "id": "q-bookshelf-wrong-conclusion",
+    "text": "What would a stranger wrongly conclude about you from your bookshelf?",
+    "type": "text"
+  },
+  {
+    "id": "q-ai-changed-workflow",
+    "text": "How much has AI actually changed your day-to-day work?",
+    "type": "scale",
+    "scale": {
+      "min": 1,
+      "max": 5,
+      "min_label": "Not even slightly",
+      "max_label": "Beyond recognition"
+    }
+  },
+  {
+    "id": "q-time-travel-one-hour",
+    "text": "One hour of history to observe, with no power to interfere. Which hour?",
+    "type": "text"
+  },
+  {
+    "id": "q-game-you-quit-mid-session",
+    "text": "What made you quit a game mid-session and never go back?",
+    "type": "text"
+  },
+  {
+    "id": "q-someone-who-taught-you",
+    "text": "Who taught you something that stuck, and what was it?",
+    "type": "text"
+  },
+  {
+    "id": "q-best-two-player-game",
+    "text": "Best game for exactly two people — go.",
+    "type": "text"
+  },
+  {
+    "id": "q-procrastinating-on",
+    "text": "What are you procrastinating on right now?",
+    "type": "text"
+  },
+  {
+    "id": "q-programming-language-you-miss",
+    "text": "Is there a programming language you genuinely miss using?",
+    "type": "text"
+  },
+  {
+    "id": "q-rules-lawyer",
+    "text": "How much of a rules lawyer are you at the table?",
+    "type": "scale",
+    "scale": {
+      "min": 1,
+      "max": 5,
+      "min_label": "Pure vibes, roll something",
+      "max_label": "I have the errata memorised"
+    }
+  },
+  {
+    "id": "q-show-you-gave-up-on",
+    "text": "Which show did you give up on, and at exactly which episode?",
+    "type": "text"
+  },
+  {
+    "id": "q-nostalgia-object",
+    "text": "What object from your childhood would you pay silly money to hold again?",
+    "type": "text"
+  },
+  {
+    "id": "q-unsolved-question",
+    "text": "Which unsolved scientific question would you most want answered in your lifetime?",
+    "type": "text"
+  },
+  {
+    "id": "q-lucky-die",
+    "text": "Do you have a lucky die, a lucky controller, a lucky anything? Tell us its story.",
+    "type": "text"
+  },
+  {
+    "id": "q-where-you-listen",
+    "text": "Where do you do your best listening — walking, driving, washing up, somewhere stranger?",
+    "type": "text"
+  },
+  {
+    "id": "q-out-of-character-purchase",
+    "text": "What's the most out-of-character thing you've ever bought?",
+    "type": "text"
+  },
+  {
+    "id": "q-difficulty-setting",
+    "text": "How quickly do you drop the difficulty when a game stops being fun?",
+    "type": "scale",
+    "scale": {
+      "min": 1,
+      "max": 5,
+      "min_label": "Never — suffering is the point",
+      "max_label": "Immediately, zero shame"
+    }
+  },
+  {
+    "id": "q-genre-you-avoid",
+    "text": "What genre do you avoid entirely, and what would it take to change that?",
+    "type": "text"
+  },
+  {
+    "id": "q-good-day-shape",
+    "text": "What does a genuinely good day look like for you, hour by hour?",
+    "type": "text"
+  },
+  {
+    "id": "q-character-death-permanent",
+    "text": "Should character death be permanent in a campaign? Where do you land?",
+    "type": "text"
+  },
+  {
+    "id": "q-mispronounced-for-years",
+    "text": "Which word did you read for years before hearing it aloud — and had completely wrong?",
+    "type": "text"
+  },
+  {
+    "id": "q-download-one-skill",
+    "text": "If you could download one skill instantly, what would it be and what would you do first?",
+    "type": "text"
+  },
+  {
+    "id": "q-book-you-reread",
+    "text": "Which book do you reread, and how many times now?",
+    "type": "text"
+  },
+  {
+    "id": "q-console-of-your-youth",
+    "text": "Which console or computer defined your childhood, and what was the first thing you played on it?",
+    "type": "text"
+  },
+  {
+    "id": "q-how-is-your-week",
+    "text": "Honestly, how is your week going?",
+    "type": "scale",
+    "scale": {
+      "min": 1,
+      "max": 5,
+      "min_label": "Rough, thanks for asking",
+      "max_label": "Genuinely excellent"
+    }
+  },
+  {
+    "id": "q-coop-or-competitive",
+    "text": "Co-op or competitive, and what does your answer say about you?",
+    "type": "text"
+  },
+  {
+    "id": "q-last-great-meal",
+    "text": "What's the last meal that genuinely impressed you?",
+    "type": "text"
+  },
+  {
+    "id": "q-sci-fi-future-most-likely",
+    "text": "Which fictional future do you think we're actually heading toward?",
+    "type": "text"
+  },
+  {
+    "id": "q-fandom-you-lurk-in",
+    "text": "Which fandom do you quietly lurk in without ever admitting it?",
+    "type": "text"
+  },
+  {
+    "id": "q-editor-setup",
+    "text": "What's your editor or desk setup, and how much have you needlessly customised it?",
+    "type": "text"
+  },
+  {
+    "id": "q-solo-board-game",
+    "text": "Do you play anything solo? What, and what's the appeal?",
+    "type": "text"
+  },
+  {
+    "id": "q-subtitles",
+    "text": "How often are the subtitles on?",
+    "type": "scale",
+    "scale": {
+      "min": 1,
+      "max": 5,
+      "min_label": "Never, they're distracting",
+      "max_label": "Always, even in my own language"
+    }
+  },
+  {
+    "id": "q-narrator-ruined-a-book",
+    "text": "Has a narrator ever ruined a book for you?",
+    "type": "text"
+  },
+  {
+    "id": "q-stuck-in-a-lift",
+    "text": "Six hours stuck in a lift with one fictional character. Choose carefully, and explain.",
+    "type": "text"
+  },
+  {
+    "id": "q-song-no-irony",
+    "text": "What song do you love with zero irony that others might side-eye?",
+    "type": "text"
+  },
+  {
+    "id": "q-unfinished-game-still-installed",
+    "text": "What game are you never going to finish, and why is it still installed?",
+    "type": "text"
+  },
+  {
+    "id": "q-miniature-painting",
+    "text": "Painted minis, 3D printing, custom inserts — what's your craft side project?",
+    "type": "text"
+  },
+  {
+    "id": "q-would-you-go-to-mars",
+    "text": "Would you take a one-way ticket to Mars?",
+    "type": "scale",
+    "scale": {
+      "min": 1,
+      "max": 5,
+      "min_label": "Absolutely not, ever",
+      "max_label": "Where do I sign?"
+    }
+  },
+  {
+    "id": "q-best-game-villain",
+    "text": "Who's the best villain in any game you've played, and what made them work?",
+    "type": "text"
+  },
+  {
+    "id": "q-commute-ritual",
+    "text": "What's your commute or walk ritual — what goes in your ears, and why?",
+    "type": "text"
+  },
+  {
+    "id": "q-physical-or-digital-books",
+    "text": "Physical, e-reader, or audio — what's your honest split, and what decides it?",
+    "type": "text"
+  },
+  {
+    "id": "q-snack-while-playing",
+    "text": "What's the official snack of your game nights?",
+    "type": "text"
+  },
+  {
+    "id": "q-concert-you-regret-missing",
+    "text": "Which gig or concert do you most regret missing?",
+    "type": "text"
+  },
+  {
+    "id": "q-cinema-or-home",
+    "text": "Cinema or at home — and what's the last film that had to be on the big screen?",
+    "type": "text"
+  },
+  {
+    "id": "q-what-are-you-building",
+    "text": "What are you building or tinkering with at the moment, however small?",
+    "type": "text"
+  },
+  {
+    "id": "q-what-a-game-taught-you",
+    "text": "What's something a game taught you that turned out to be genuinely useful in real life?",
+    "type": "text"
   }
 ]

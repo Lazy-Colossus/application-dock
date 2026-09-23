@@ -1,6 +1,6 @@
-"""Live sheet events (Story 5.2) — Listies' instance of the platform bus.
+"""Live note events (Story 2.2) — Shared Notes' instance of the platform bus.
 
-Keyed by `sheet_id`. The mechanics, and the single-worker assumption they rest
+Keyed by `note_id`. The mechanics, and the single-worker assumption they rest
 on, live in `app.core.events`.
 """
 
@@ -8,9 +8,9 @@ from __future__ import annotations
 
 from app.core.events import Event, EventBus
 
-_bus = EventBus("listies")
+_bus = EventBus("shared-notes")
 
-# Module-level aliases so callers read `events.publish(sheet_id, ...)` rather
+# Module-level aliases so callers read `events.publish(note_id, ...)` rather
 # than reaching through a private instance.
 subscribe = _bus.subscribe
 unsubscribe = _bus.unsubscribe

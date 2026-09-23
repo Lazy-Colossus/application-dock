@@ -239,11 +239,9 @@ backend/.venv/
 # Application data (host-side)
 data/
 local-data/
-# ...but `backend/app/data/` is bundled read-only app content, not host data —
-# the QOTD curated question set ships there (AR-3). The directory has to be
-# re-included before the files inside it can be.
-!/backend/app/data/
-!/backend/app/data/**
+# ...but not the bundled question set: it is a shipped code asset that lives
+# under app/data/, not runtime state, and the broad `data/` rule above hides it.
+!backend/app/data/
 
 # Environment
 .env

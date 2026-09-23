@@ -13,6 +13,7 @@ from app.routers import (
     kitchencraft,
     listies,
     qotd,
+    shared_notes,
     shell,
 )
 
@@ -36,6 +37,7 @@ app.include_router(kalendariq.router)
 # Unauthenticated by design — the invitee link. See the note in routers/kalendariq.py.
 app.include_router(kalendariq.share_router)
 app.include_router(qotd.router)
+app.include_router(shared_notes.router)
 app.include_router(archery.router)
 app.include_router(kitchencraft.router)
 

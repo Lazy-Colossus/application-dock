@@ -53,7 +53,9 @@
       >
         <q-item-section>
           <q-item-label class="row items-center no-wrap q-gutter-xs">
-            <span class="kalendariq-calendar-name ellipsis">{{ calendar.name }}</span>
+            <span class="kalendariq-calendar-name ellipsis">{{
+              calendar.name
+            }}</span>
             <span
               class="kalendariq-headcount"
               :data-testid="`headcount-${calendar.id}`"

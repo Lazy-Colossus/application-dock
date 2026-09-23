@@ -94,7 +94,7 @@ def test_overflow_marks_the_subscriber_stale_and_drops_the_event() -> None:
     async def scenario() -> tuple[bool, int]:
         q = events.subscribe("s-1")
         try:
-            for i in range(events._MAX_QUEUE):
+            for i in range(events.MAX_QUEUE):
                 q.put_nowait({"n": i})  # fill to capacity
             events.publish("s-1", {"type": "overflow"})
             # Let the scheduled delivery callback run.
@@ -106,7 +106,7 @@ def test_overflow_marks_the_subscriber_stale_and_drops_the_event() -> None:
 
     stale, size = asyncio.run(scenario())
     assert stale is True
-    assert size == events._MAX_QUEUE  # the overflow event was dropped, not queued
+    assert size == events.MAX_QUEUE  # the overflow event was dropped, not queued
 
 
 # ── emission from the service ───────────────────────────────────────────────────

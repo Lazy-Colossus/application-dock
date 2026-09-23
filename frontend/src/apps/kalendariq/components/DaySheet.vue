@@ -58,10 +58,14 @@
             :data-testid="`note-${row.invitee.id}`"
           >
             <q-icon name="sticky_note_2" size="14px" />
-            <q-tooltip class="kalendariq-panel kalendariq-note-pop" :delay="120">{{
+            <q-tooltip
+              class="kalendariq-panel kalendariq-note-pop"
+              :delay="120"
+              >{{ row.note }}</q-tooltip
+            >
+            <q-menu class="kalendariq-panel kalendariq-note-pop">{{
               row.note
-            }}</q-tooltip>
-            <q-menu class="kalendariq-panel kalendariq-note-pop">{{ row.note }}</q-menu>
+            }}</q-menu>
           </button>
 
           <span v-if="row.status === 'if_needed'" class="tag">IF NEEDED</span>
@@ -404,7 +408,11 @@ function glyphFor(status: VoteStatus | undefined): string {
   background: var(--kalendariq-wash-6);
 }
 .g.maybe {
-  background: linear-gradient(90deg, var(--kalendariq-wash-6) 50%, transparent 50%);
+  background: linear-gradient(
+    90deg,
+    var(--kalendariq-wash-6) 50%,
+    transparent 50%
+  );
   box-shadow: inset 0 0 0 1.5px var(--kalendariq-wash-6);
 }
 .g.no {
@@ -470,7 +478,11 @@ function glyphFor(status: VoteStatus | undefined): string {
   background: var(--kalendariq-yes);
 }
 .ans-btn .g.maybe {
-  background: linear-gradient(90deg, var(--kalendariq-maybe) 50%, transparent 50%);
+  background: linear-gradient(
+    90deg,
+    var(--kalendariq-maybe) 50%,
+    transparent 50%
+  );
   box-shadow: inset 0 0 0 1.5px var(--kalendariq-maybe);
 }
 </style>

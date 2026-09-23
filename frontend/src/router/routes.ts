@@ -214,6 +214,19 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "Past question", requiresAuth: true },
       },
       {
+        path: "shared-notes",
+        name: "shared-notes-home",
+        component: () =>
+          import("@/apps/shared-notes/pages/SharedNotesHomePage.vue"),
+        meta: { title: "Shared Notes", requiresAuth: true },
+      },
+      {
+        path: "shared-notes/notes/:noteId",
+        name: "shared-notes-note",
+        component: () => import("@/apps/shared-notes/pages/NotePage.vue"),
+        meta: { title: "Shared Notes", requiresAuth: true },
+      },
+      {
         // The invitee link. Deliberately NOT `requiresAuth`: an invitee arrives
         // from a group chat with no account, and bouncing them to a login they
         // cannot pass would be the whole feature failing. The token in the path
