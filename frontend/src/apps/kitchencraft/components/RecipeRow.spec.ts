@@ -84,11 +84,15 @@ describe("the favourites glyph", () => {
     expect(on.attributes("fill")).toBe("currentColor");
   });
 
-  it("carries the mark in ink, never in moss", () => {
-    // Moss means "pressable" across the dock; the mark is status.
+  it("carries the mark as a glyph, never as a filled control", () => {
+    // Originally "never in moss": moss meant "pressable" across the dock and a
+    // status mark could not wear it. The Notebook theme has no moss, and its
+    // burgundy is both the marking pen and the interactive colour — so the
+    // colour clause is gone and the shape clause above is the whole guard.
+    // What still has to hold is that the mark is a glyph and not a chip fill.
     const { wrapper } = mountRow({ favourite: true });
-    expect(wrapper.find(".kc-heart").classes()).toContain("kc-heart");
-    expect(wrapper.html()).not.toMatch(/kc-chip--on|--kc-moss/);
+    expect(wrapper.find(".kc-heart").exists()).toBe(true);
+    expect(wrapper.html()).not.toMatch(/kc-chip/);
   });
 });
 
