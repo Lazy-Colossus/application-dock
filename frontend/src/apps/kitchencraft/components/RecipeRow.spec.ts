@@ -34,8 +34,8 @@ describe("what the row shows", () => {
   });
 
   it("shows just the meal type when there is no time", () => {
-    const { wrapper } = mountRow({ meal_type: "lunch" });
-    expect(wrapper.find('[data-testid="row-meta"]').text()).toBe("lunch");
+    const { wrapper } = mountRow({ meal_type: "breakfast" });
+    expect(wrapper.find('[data-testid="row-meta"]').text()).toBe("breakfast");
   });
 
   it("has no chevron, no card and no fill", () => {

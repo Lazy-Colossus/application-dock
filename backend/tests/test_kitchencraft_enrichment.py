@@ -242,11 +242,11 @@ def test_an_identical_batch_run_twice_is_a_no_op() -> None:
 
 
 def test_a_user_set_field_is_left_alone_and_the_skip_is_reported() -> None:
-    recipe = make(meal_type="lunch")
+    recipe = make(meal_type="breakfast")
     result = service.apply_enrichment("nell", {recipe.id: {"meal_type": "dinner"}}, write=True)
 
     assert result["skipped"] == {recipe.id: ["meal_type"]}
-    assert service.get_recipe("nell", recipe.id).meal_type == "lunch"
+    assert service.get_recipe("nell", recipe.id).meal_type == "breakfast"
 
 
 def test_a_machine_set_field_may_be_revised_by_a_later_pass() -> None:

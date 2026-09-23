@@ -24,18 +24,12 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-# Verbatim from PRD FR-4, in the PRD's order. Never re-worded, re-cased or
-# re-ordered — the UI renders this sequence as-is.
-MealType = Literal["breakfast", "lunch", "dinner", "snack", "dessert", "other"]
+# Exactly the meal-type dividers on the folder, in their order, so every meal
+# type a cook can pick has a tab to find it under. PRD FR-4 listed six; lunch,
+# snack and other were cut in schema v3 because no divider could reach them.
+MealType = Literal["breakfast", "dinner", "dessert"]
 
-MEAL_TYPES: tuple[str, ...] = (
-    "breakfast",
-    "lunch",
-    "dinner",
-    "snack",
-    "dessert",
-    "other",
-)
+MEAL_TYPES: tuple[str, ...] = ("breakfast", "dinner", "dessert")
 
 
 class Ingredient(BaseModel):
@@ -85,7 +79,7 @@ class Recipe(BaseModel):
 
 
 class KitchencraftDoc(BaseModel):
-    schema_version: int = 2
+    schema_version: int = 3
     recipes: list[Recipe] = Field(default_factory=list)
 
 

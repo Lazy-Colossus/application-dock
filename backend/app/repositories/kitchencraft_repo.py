@@ -33,7 +33,7 @@ _APP_DIR = "kitchencraft"
 # The two documents version independently: the collection reached v2 when
 # ingredients became amount + unit + free text, and the shopping list was
 # untouched by that change.
-_RECIPES_SCHEMA_VERSION = 2
+_RECIPES_SCHEMA_VERSION = 3
 _SHOPPING_SCHEMA_VERSION = 1
 
 # Ships in the image (committed, read-only at runtime), NOT under DATA_DIR.
@@ -110,6 +110,30 @@ def _migrate_v1_ingredients(raw: dict[str, object]) -> dict[str, object]:
     return raw
 
 
+# Lunch folds into dinner, the nearest divider; snack and other have no near
+# neighbour, so they go back to unset rather than being filed somewhere wrong.
+_V3_MEAL_TYPES: dict[str, str | None] = {"lunch": "dinner", "snack": None, "other": None}
+
+
+def _migrate_v2_meal_types(raw: dict[str, object]) -> dict[str, object]:
+    """v2 -> v3: the meal types narrow to the three the folder has dividers for.
+
+    A value the pass clears loses its provenance mark with it: there is nothing
+    left to confirm. A value it moves keeps its mark, since whoever set `lunch`
+    — the cook or the enrichment pass — is still who stands behind `dinner`.
+    """
+    for recipe in raw.get("recipes", []):
+        if not isinstance(recipe, dict) or recipe.get("meal_type") not in _V3_MEAL_TYPES:
+            continue
+        recipe["meal_type"] = _V3_MEAL_TYPES[recipe["meal_type"]]
+        if recipe["meal_type"] is None:
+            recipe["unconfirmed"] = [
+                key for key in (recipe.get("unconfirmed") or []) if key != "meal_type"
+            ]
+    raw["schema_version"] = 3
+    return raw
+
+
 def migrate(raw: dict[str, object], expected: int = _RECIPES_SCHEMA_VERSION) -> dict[str, object]:
     """Upgrade a raw document to `expected`.
 
@@ -121,8 +145,12 @@ def migrate(raw: dict[str, object], expected: int = _RECIPES_SCHEMA_VERSION) -> 
     version = raw.get("schema_version", expected)
     if version == expected:
         return raw
-    if expected == _RECIPES_SCHEMA_VERSION and version == 1:
-        return _migrate_v1_ingredients(raw)
+    if expected == _RECIPES_SCHEMA_VERSION and version in (1, 2):
+        # Each step hands the next a document at its own version, so a v1 file
+        # walks the whole chain.
+        if version == 1:
+            raw = _migrate_v1_ingredients(raw)
+        return _migrate_v2_meal_types(raw)
     raise ValueError(f"Unsupported kitchencraft schema_version: {version!r}")
 
 

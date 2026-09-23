@@ -37,7 +37,7 @@ def _recipe(**over: object) -> Recipe:
 
 def test_read_doc_for_a_user_with_no_file_is_an_empty_document() -> None:
     doc = repo.read_doc("nell")
-    assert doc.schema_version == 2
+    assert doc.schema_version == 3
     assert doc.recipes == []
 
 
@@ -171,7 +171,7 @@ def test_a_v1_document_migrates_its_ingredients_on_read(isolate: Path) -> None:
 
     doc = repo.read_doc("nell")
 
-    assert doc.schema_version == 2
+    assert doc.schema_version == 3
     assert [(i.amount, i.unit, i.text) for i in doc.recipes[0].ingredients] == [
         (None, None, "feta"),
         (None, None, "cucumber"),
@@ -191,21 +191,87 @@ def test_migration_drops_the_users_coined_categories(isolate: Path) -> None:
     assert not hasattr(repo.read_doc("nell"), "categories")
 
 
-def test_a_v2_document_is_left_alone() -> None:
+def _v2_recipe(**over: object) -> dict[str, object]:
+    recipe: dict[str, object] = {
+        "id": "r-1",
+        "name": "Dal",
+        "body": "Simmer.",
+        "created_at": "2026-09-01T00:00:00+00:00",
+        "updated_at": "2026-09-01T00:00:00+00:00",
+        "ingredients": [{"amount": "2", "unit": "tsp", "text": "cumin"}],
+    }
+    recipe.update(over)
+    return recipe
+
+
+def test_a_v3_document_is_left_alone() -> None:
+    raw = {"schema_version": 3, "recipes": [_v2_recipe(meal_type="dinner")]}
+    assert repo.migrate(json.loads(json.dumps(raw))) == raw
+
+
+def test_v2_to_v3_touches_nothing_but_the_version_when_no_meal_type_is_retired() -> None:
+    raw = {"schema_version": 2, "recipes": [_v2_recipe(meal_type="dessert")]}
+    migrated = repo.migrate(json.loads(json.dumps(raw)))
+    assert migrated == {**raw, "schema_version": 3}
+
+
+def test_v2_to_v3_files_lunch_under_dinner_and_keeps_its_mark() -> None:
     raw = {
         "schema_version": 2,
-        "recipes": [
+        "recipes": [_v2_recipe(meal_type="lunch", unconfirmed=["meal_type", "servings"])],
+    }
+    recipe = repo.migrate(raw)["recipes"][0]
+    assert recipe["meal_type"] == "dinner"
+    # Whoever set lunch still stands behind dinner.
+    assert recipe["unconfirmed"] == ["meal_type", "servings"]
+
+
+@pytest.mark.parametrize("retired", ["snack", "other"])
+def test_v2_to_v3_clears_snack_and_other_with_their_mark(retired: str) -> None:
+    raw = {
+        "schema_version": 2,
+        "recipes": [_v2_recipe(meal_type=retired, unconfirmed=["meal_type", "servings"])],
+    }
+    recipe = repo.migrate(raw)["recipes"][0]
+    assert recipe["meal_type"] is None
+    assert recipe["unconfirmed"] == ["servings"]
+
+
+def test_a_v2_file_with_a_retired_meal_type_reads_back_as_v3(isolate: Path) -> None:
+    path = isolate / "kitchencraft" / "users" / "nell.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
             {
-                "id": "r-1",
-                "name": "Dal",
-                "body": "Simmer.",
-                "created_at": "2026-09-01T00:00:00+00:00",
-                "updated_at": "2026-09-01T00:00:00+00:00",
-                "ingredients": [{"amount": "2", "unit": "tsp", "text": "cumin"}],
+                "schema_version": 2,
+                "recipes": [
+                    _v2_recipe(id="r-1", meal_type="lunch"),
+                    _v2_recipe(id="r-2", meal_type="snack"),
+                    _v2_recipe(id="r-3", meal_type="breakfast"),
+                ],
             }
+        ),
+        encoding="utf-8",
+    )
+    doc = repo.read_doc("nell")
+    assert doc.schema_version == 3
+    assert [r.meal_type for r in doc.recipes] == ["dinner", None, "breakfast"]
+
+
+def test_a_v1_file_walks_the_whole_chain() -> None:
+    raw = {
+        "schema_version": 1,
+        "recipes": [
+            _v2_recipe(
+                meal_type="lunch",
+                ingredients=[{"category": "cheese", "specific": "feta"}],
+            )
         ],
     }
-    assert repo.migrate(dict(raw)) == raw
+    migrated = repo.migrate(raw)
+    assert migrated["schema_version"] == 3
+    assert migrated["recipes"][0]["meal_type"] == "dinner"
+    assert migrated["recipes"][0]["ingredients"] == [{"amount": None, "unit": None, "text": "feta"}]
 
 
 def test_an_unknown_future_version_is_refused_rather_than_coerced() -> None:

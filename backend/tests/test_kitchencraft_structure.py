@@ -41,9 +41,18 @@ def put(recipe_id: str, **changes: object) -> dict:
 # -- Story 2.1: meal type, time, servings, source ----------------------------
 
 
-@pytest.mark.parametrize("meal_type", ["breakfast", "lunch", "dinner", "snack", "dessert", "other"])
-def test_every_prd_meal_type_is_accepted(meal_type: str) -> None:
+@pytest.mark.parametrize("meal_type", ["breakfast", "dinner", "dessert"])
+def test_every_meal_type_with_a_divider_is_accepted(meal_type: str) -> None:
     assert create(meal_type=meal_type)["meal_type"] == meal_type
+
+
+@pytest.mark.parametrize("meal_type", ["lunch", "snack", "other"])
+def test_a_meal_type_retired_in_v3_is_rejected(meal_type: str) -> None:
+    resp = client.post(
+        "/api/kitchencraft/recipes",
+        json={"name": "Dal", "body": "Simmer.", "meal_type": meal_type},
+    )
+    assert resp.status_code == 422
 
 
 def test_a_meal_type_outside_the_prd_list_is_rejected() -> None:
@@ -318,7 +327,7 @@ def test_a_user_created_recipe_carries_no_provenance_marks() -> None:
 def test_an_update_drops_the_mark_on_a_field_it_changes() -> None:
     recipe = create()
     stored = repo.read_doc("test_user")
-    stored.recipes[0].meal_type = "lunch"
+    stored.recipes[0].meal_type = "breakfast"
     stored.recipes[0].unconfirmed = ["meal_type", "servings"]
     repo.write_doc("test_user", stored)
 

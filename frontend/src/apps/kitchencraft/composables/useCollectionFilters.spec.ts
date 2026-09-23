@@ -38,7 +38,7 @@ function collection() {
     recipe({
       name: "Onion soup",
       body: "Off the back of the packet.",
-      meal_type: "lunch",
+      meal_type: "breakfast",
       ingredients: [{ amount: null, unit: null, text: "onion" }],
     }),
     recipe({
@@ -96,7 +96,7 @@ describe("search", () => {
   it("narrows WITHIN the filtered set rather than replacing it", () => {
     const { filters, results } = setup(collection());
     filters.value = { ...filters.value, mealType: "dinner", search: "onion" };
-    // "Onion soup" matches the search but is lunch, so the filter still applies.
+    // "Onion soup" matches the search but is breakfast, so the filter still applies.
     expect(results.value.map((r) => r.name)).toEqual([
       "Chicken and onion traybake",
     ]);
@@ -104,9 +104,13 @@ describe("search", () => {
 
   it("leaves every filter untouched when the search is cleared", () => {
     const { filters, results } = setup(collection());
-    filters.value = { ...filters.value, mealType: "lunch", search: "onion" };
+    filters.value = {
+      ...filters.value,
+      mealType: "breakfast",
+      search: "onion",
+    };
     filters.value = { ...filters.value, search: "" };
-    expect(filters.value.mealType).toBe("lunch");
+    expect(filters.value.mealType).toBe("breakfast");
     expect(results.value.map((r) => r.name)).toEqual(["Onion soup"]);
   });
 });
@@ -175,7 +179,11 @@ describe("countLabel", () => {
 describe("reasons", () => {
   it("includes the search term as its own clearable line", () => {
     const { filters, reasons } = setup(collection());
-    filters.value = { ...filters.value, search: "paprika", mealType: "lunch" };
+    filters.value = {
+      ...filters.value,
+      search: "paprika",
+      mealType: "breakfast",
+    };
     expect(reasons.value.map((r) => r.kind)).toEqual(["search", "mealType"]);
     expect(reasons.value[0].label).toBe("paprika — 1 on its own");
   });

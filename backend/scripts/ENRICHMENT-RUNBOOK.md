@@ -68,7 +68,7 @@ after the user has renamed something.
 ```jsonc
 {
   "r-13a77c8e": {
-    "meal_type": "dinner",          // one of: breakfast lunch dinner snack dessert other
+    "meal_type": "dinner",          // one of: breakfast dinner dessert
     "total_time_minutes": 60,       // positive integer
     "servings": 6,
     "source": "Ottolenghi, Jerusalem",
