@@ -205,15 +205,17 @@ describe("status is never carried by colour alone", () => {
 describe("the depth model", () => {
   it("lifts only the surfaces that are physically above the page", () => {
     // The Beige Ledger had no shadows at all. The Notebook has four, and each
-    // one is an object resting on another: the folder on the desk, a slip and
-    // an index card on the folder, the note taped over everything.
+    // one is an object resting on another: the folder on the desk, a slip (the
+    // suggestions, or the tags pop-over) and an index card on the folder, the
+    // note taped over everything.
     const lifted = blocks()
-      .filter((b) => /box-shadow:\s*(?!none)/.test(b))
+      .filter((b) => /box-shadow:(?!\s*none)/.test(b))
       .map((b) => b.split("\n")[0].replace(/,$/, ""));
     expect(new Set(lifted)).toEqual(
       new Set([
         ".kc-band",
         ".kc-typeahead__panel",
+        ".kc-tags__pop",
         ".kc-modal",
         ".kc-sheet",
         ".kc-sheet::before",

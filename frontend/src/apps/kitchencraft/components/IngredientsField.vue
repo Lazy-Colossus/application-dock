@@ -39,12 +39,13 @@
     </ul>
 
     <!--
-      Amount, unit, ingredient — in the order they are spoken and written.
-      Only the ingredient is required: `garlic` is a complete entry, and no
-      optional field may stand between a paste and a saved recipe (FR-3).
+      Amount, then ingredient — in the order they are spoken and written. The
+      unit is typed into the amount (`200 g`, `a pinch`), because a separate
+      unit field was a third box to fill for no gain. Only the ingredient is
+      required: `garlic` is a complete entry (FR-3).
     -->
     <div class="kc-group">
-      <span class="kc-label">Ingredients</span>
+      <span class="kc-label kc-label--heading">Ingredients</span>
       <div class="kc-ingredient-entry">
         <div class="kc-ingredient-entry__amount">
           <label class="kc-label" for="ingredient-amount">Amount</label>
@@ -54,32 +55,9 @@
             type="text"
             class="kc-field"
             autocomplete="off"
-            inputmode="decimal"
             data-testid="ingredient-amount"
             @keydown.enter.prevent="commit()"
           />
-        </div>
-
-        <!--
-          A native datalist rather than the custom typeahead: it is exactly
-          "offer a list, accept anything", which is what both of these fields
-          are. No coining ceremony — v2 has no shared vocabulary to protect.
-        -->
-        <div class="kc-ingredient-entry__unit">
-          <label class="kc-label" for="ingredient-unit">Unit</label>
-          <input
-            id="ingredient-unit"
-            v-model="unit"
-            type="text"
-            class="kc-field"
-            autocomplete="off"
-            list="kc-units"
-            data-testid="ingredient-unit"
-            @keydown.enter.prevent="commit()"
-          />
-          <datalist id="kc-units">
-            <option v-for="u in units" :key="u" :value="u" />
-          </datalist>
         </div>
 
         <div class="kc-ingredient-entry__text">
@@ -94,6 +72,11 @@
             data-testid="ingredient-text"
             @keydown.enter.prevent="commit()"
           />
+          <!--
+            A native datalist rather than the custom typeahead: it is exactly
+            "offer a list, accept anything". No coining ceremony — v2 has no
+            shared vocabulary to protect.
+          -->
           <datalist id="kc-ingredient-suggestions">
             <option v-for="i in suggestions" :key="i" :value="i" />
           </datalist>
@@ -121,20 +104,20 @@ import { ingredientLabel } from "@/apps/kitchencraft/format";
 import type { Ingredient } from "@/apps/kitchencraft/types";
 
 /**
- * The ingredient input: an amount, a unit and the ingredient itself.
+ * The ingredient input: an amount (unit included) and the ingredient itself.
  *
  * Schema v2 replaced the two-level category + specific tag with free text, and
  * the shared vocabulary went with it. What the ingredient field suggests is now
  * this cook's own history, which is what keeps `Feta` and `feta` from becoming
- * two things. Units suggest from the shipped list plus whatever they have
- * coined.
+ * two things.
+ *
+ * `unit` stays on the model because recipes saved before it folded into the
+ * amount still carry one; new entries leave it null.
  */
 const props = defineProps<{
   modelValue: Ingredient[];
   /** The user's own previously-typed ingredients. */
   suggestions: string[];
-  /** The shipped unit list plus this user's own. */
-  units: string[];
 }>();
 
 const emit = defineEmits<{
@@ -142,7 +125,6 @@ const emit = defineEmits<{
 }>();
 
 const amount = ref("");
-const unit = ref("");
 const text = ref("");
 
 const label = ingredientLabel;
@@ -158,19 +140,17 @@ function commit(): void {
 
   const entry: Ingredient = {
     amount: amount.value.trim() || null,
-    unit: unit.value.trim() || null,
+    unit: null,
     text: name,
   };
   const duplicate = props.modelValue.some(
     (i) =>
       i.text.toLowerCase() === entry.text.toLowerCase() &&
-      (i.amount ?? "") === (entry.amount ?? "") &&
-      (i.unit ?? "") === (entry.unit ?? ""),
+      measure(i).toLowerCase() === measure(entry).toLowerCase(),
   );
   if (!duplicate) emit("update:modelValue", [...props.modelValue, entry]);
 
   amount.value = "";
-  unit.value = "";
   text.value = "";
 }
 

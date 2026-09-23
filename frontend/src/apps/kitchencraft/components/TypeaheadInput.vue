@@ -1,6 +1,11 @@
 <template>
   <div class="kc-typeahead">
-    <label class="kc-label" :for="inputId">{{ label }}</label>
+    <label
+      class="kc-label"
+      :class="{ 'kc-sr-only': hideLabel }"
+      :for="inputId"
+      >{{ label }}</label
+    >
     <!--
       Enter still commits, but it is not the only way in: the add button next to
       the field does the same thing for anyone who does not expect a bare field
@@ -20,11 +25,11 @@
         :aria-controls="`${inputId}-list`"
         :data-testid="`${inputId}-input`"
         @focus="open = true"
-        @blur="close()"
+        @blur="persistent || close()"
         @keydown.down.prevent="move(1)"
         @keydown.up.prevent="move(-1)"
         @keydown.enter.prevent="commitHighlighted()"
-        @keydown.esc="close()"
+        @keydown.esc="escape()"
       />
       <button
         type="button"
@@ -53,6 +58,7 @@
       v-if="open && rows.length > 0"
       :id="`${inputId}-list`"
       class="kc-typeahead__panel"
+      :class="{ 'kc-typeahead__panel--inline': persistent }"
       role="listbox"
     >
       <li v-for="(row, index) in rows" :key="row" role="presentation">
@@ -97,6 +103,10 @@ import { computed, ref, watch } from "vue";
  * ceremony went with it, so Tags is now this component's only caller: a free
  * tag needs no ceremony and commits straight off Enter. Ingredients uses a
  * native datalist instead, which is exactly "offer a list, accept anything".
+ *
+ * `persistent` is for a host that owns the open state, as the tags pop-over
+ * does: the list is always showing and sits in flow beneath the field, a pick
+ * leaves it open for the next one, and Escape asks the host to close.
  */
 const props = withDefaults(
   defineProps<{
@@ -105,14 +115,17 @@ const props = withDefaults(
     suggestions: string[];
     /** Values already chosen, so the list stops offering them. */
     exclude?: string[];
+    persistent?: boolean;
+    /** Kept for screen readers when the host's own heading names the field. */
+    hideLabel?: boolean;
   }>(),
-  { exclude: () => [] },
+  { exclude: () => [], persistent: false, hideLabel: false },
 );
 
-const emit = defineEmits<{ commit: [value: string] }>();
+const emit = defineEmits<{ commit: [value: string]; dismiss: [] }>();
 
 const query = ref("");
-const open = ref(false);
+const open = ref(props.persistent);
 const highlight = ref(-1);
 const input = ref<HTMLInputElement | null>(null);
 
@@ -173,10 +186,16 @@ function close(): void {
   highlight.value = -1;
 }
 
+function escape(): void {
+  if (props.persistent) emit("dismiss");
+  else close();
+}
+
 function commit(value: string): void {
   emit("commit", value);
   query.value = "";
-  close();
+  if (props.persistent) highlight.value = -1;
+  else close();
   // Keep focus so a run of tags can be typed without re-tapping.
   input.value?.focus();
 }

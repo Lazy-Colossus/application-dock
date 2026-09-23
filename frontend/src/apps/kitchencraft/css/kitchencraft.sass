@@ -268,6 +268,34 @@
   color: var(--kc-burgundy)
   margin: 0 0 5px
 
+// A label over labels: the section name sits a size above the field labels
+// beneath it, so the group reads as one thing with parts.
+.kc-label--heading
+  font-size: 13px
+  margin-bottom: 8px
+
+// The capture screen's name, typed straight into the heading. It keeps the
+// heading's face and takes only an underline, so it reads as the title you
+// are writing rather than as a form field that wandered into the bar.
+.kc-title-field
+  flex: 1
+  min-width: 0
+  width: 100%
+  background: transparent
+  border: 0
+  border-bottom: 1px dotted var(--kc-rule-strong)
+  border-radius: 0
+  padding: 0 2px 2px
+
+.kc-title-field:focus,
+.kc-title-field:focus-visible
+  outline: none
+  border-bottom: 1px solid var(--kc-burgundy)
+
+// Dashed, so the error is a shape change and not only a colour one.
+.kc-title-field--error
+  border-bottom: 2px dashed var(--kc-burgundy)
+
 .kc-bar > .kc-title::after,
 .kc-read__name::after
   content: ""
@@ -739,6 +767,48 @@
   width: 16px
   height: 16px
 
+// Read aloud, never drawn: for a control whose heading is already on screen.
+.kc-sr-only
+  position: absolute
+  width: 1px
+  height: 1px
+  margin: -1px
+  overflow: hidden
+  clip-path: inset(50%)
+  white-space: nowrap
+
+// --- Stepper -----------------------------------------------------------------
+// A short field between − and +. Boxed buttons, because an unboxed glyph
+// beside an underline reads as punctuation rather than as a control.
+
+.kc-stepper
+  display: inline-flex
+  align-items: center
+  gap: 6px
+
+.kc-stepper__field
+  width: 3.5em
+  text-align: center
+  font-variant-numeric: tabular-nums
+
+.kc-stepper__btn
+  min-width: 34px
+  min-height: 34px
+  border: 1px solid var(--kc-rule-strong)
+  border-radius: var(--kc-r-sm)
+
+.kc-stepper__btn:hover:not(:disabled)
+  border-color: var(--kc-navy)
+
+.kc-stepper__btn:disabled
+  opacity: 0.4
+  cursor: default
+
+@media (pointer: coarse)
+  .kc-stepper__btn
+    min-width: var(--kc-touch)
+    min-height: var(--kc-touch)
+
 // --- Typeahead ---------------------------------------------------------------
 
 .kc-typeahead
@@ -786,6 +856,55 @@
   max-height: min(calc(var(--kc-touch) * 6), 40vh)
   overflow-y: auto
   overscroll-behavior: contain
+  box-shadow: 0 8px 18px rgba(42, 35, 32, 0.22)
+  mask-image: linear-gradient(#000 0 0), conic-gradient(from 135deg at 50% 100%, #0000 25%, #000 0) 50% 100% / 12px 6px repeat-x
+  mask-composite: intersect
+
+// Inside the tags pop-over the slip is the pop-over, so the list drops its own
+// paper and simply continues beneath the field.
+.kc-typeahead__panel--inline
+  position: static
+  margin-top: 8px
+  border: 0
+  border-top: 1px dotted var(--kc-rule-strong)
+  border-radius: 0
+  background: transparent
+  box-shadow: none
+  mask-image: none
+
+// --- Tags --------------------------------------------------------------------
+
+.kc-tags
+  position: relative
+
+// The height of the tag chips it sits beside, not of a pressable chip: it is
+// the end of that row. Restated at the control chip's specificity to win.
+.kc-chips li > .kc-chip.kc-tags__open
+  justify-content: center
+  min-width: 28px
+  min-height: 24px
+  padding: 0
+
+// On touch a tag chip is already 44px tall, carried by its remove button.
+@media (pointer: coarse)
+  .kc-chips li > .kc-chip.kc-tags__open
+    min-width: var(--kc-touch)
+    min-height: var(--kc-touch)
+
+// The same torn slip the suggestions have always arrived on, now holding the
+// field too, laid under the chips it adds to.
+.kc-tags__pop
+  position: absolute
+  z-index: 10
+  left: 0
+  top: 100%
+  width: min(20rem, 100%)
+  margin-top: 6px
+  padding: 10px 12px 12px
+  background: var(--kc-paper-raise)
+  border: 1px solid var(--kc-rule-strong)
+  border-bottom: 0
+  border-radius: var(--kc-r-sm) var(--kc-r-sm) 0 0
   box-shadow: 0 8px 18px rgba(42, 35, 32, 0.22)
   mask-image: linear-gradient(#000 0 0), conic-gradient(from 135deg at 50% 100%, #0000 25%, #000 0) 50% 100% / 12px 6px repeat-x
   mask-composite: intersect
@@ -1005,6 +1124,12 @@
 .kc-sheet--empty .kc-sheet__foot
   border-top: 0
 
+// The body is full-bleed for its rows; the message is not a row, so it takes
+// the inset the rows and the foot give their own text.
+.kc-sheet__body > .kc-state__lede
+  padding-left: var(--kc-pad)
+  padding-right: var(--kc-pad)
+
 .kc-sheet__foot
   border-top: 1px dashed rgba(51, 33, 15, 0.4)
   padding: 12px var(--kc-pad)
@@ -1079,7 +1204,7 @@
 .kc-ingredient__remove
   flex: none
 
-// Amount, unit and ingredient on one row; the ingredient takes the slack and
+// Amount and ingredient on one row; the ingredient takes the slack and
 // the row wraps to stacked fields on a narrow phone.
 .kc-ingredient-entry
   display: flex
@@ -1087,11 +1212,9 @@
   gap: 10px
   align-items: flex-start
 
+// Wide enough for the unit typed into it: `200 g`, `2 cloves`.
 .kc-ingredient-entry__amount
-  flex: 0 1 5rem
-
-.kc-ingredient-entry__unit
-  flex: 0 1 7rem
+  flex: 0 1 8rem
 
 .kc-ingredient-entry__text
   flex: 1 1 10rem
@@ -1202,6 +1325,11 @@
 .kc-form
   padding: 16px var(--kc-pad) 32px
   max-width: var(--kc-measure)
+
+// Capture is a paste target, and a pasted recipe is easier to check at the
+// width of the screen than wrapped to the reading measure.
+.kc-form--full
+  max-width: none
 
 .kc-form__group
   margin-bottom: 20px

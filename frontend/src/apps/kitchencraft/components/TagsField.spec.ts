@@ -12,23 +12,37 @@ function mountField(
   });
 }
 
-async function commit(wrapper: ReturnType<typeof mountField>, value: string) {
-  const input = wrapper.find('[data-testid="tags-input"]');
-  await input.trigger("focus");
+type Wrapper = ReturnType<typeof mountField>;
+
+async function openPop(wrapper: Wrapper) {
+  await wrapper.find('[data-testid="tags-open"]').trigger("click");
+  return wrapper.find('[data-testid="tags-input"]');
+}
+
+async function commit(wrapper: Wrapper, value: string) {
+  const input = await openPop(wrapper);
   await input.setValue(value);
   await input.trigger("keydown", { key: "Enter" });
 }
 
+function options(wrapper: Wrapper): string[] {
+  return wrapper.findAll('[data-testid="tags-option"]').map((o) => o.text());
+}
+
 describe("chips", () => {
-  it("renders nothing at all when there are no tags", () => {
-    expect(mountField().find('[data-testid="tag-chips"]').exists()).toBe(false);
+  it("shows no chips when there are no tags, only the +", () => {
+    const wrapper = mountField();
+    expect(wrapper.findAll('[data-testid="tag-chip"]')).toHaveLength(0);
+    expect(wrapper.find('[data-testid="tags-open"]').exists()).toBe(true);
   });
 
-  it("renders one chip per tag", () => {
+  it("renders one chip per tag, with the + after them", () => {
     const wrapper = mountField(["cheap", "batch cooking"]);
-    expect(wrapper.findAll('[data-testid="tag-chips"] .kc-chip')).toHaveLength(
-      2,
-    );
+    expect(wrapper.findAll('[data-testid="tag-chip"]')).toHaveLength(2);
+    const items = wrapper.findAll(".kc-chips > li");
+    expect(
+      items[items.length - 1].find('[data-testid="tags-open"]').exists(),
+    ).toBe(true);
   });
 
   it("removes a tag", async () => {
@@ -36,17 +50,71 @@ describe("chips", () => {
     await wrapper.find('[data-testid="remove-tag-cheap"]').trigger("click");
     expect(wrapper.emitted("update:modelValue")).toEqual([[["batch cooking"]]]);
   });
+
+  it("is headed Tags", () => {
+    expect(mountField().find(".kc-label").text()).toBe("Tags");
+  });
+});
+
+describe("the pop-over", () => {
+  it("has no input line until the + is tapped", () => {
+    const wrapper = mountField();
+    expect(wrapper.find('[data-testid="tags-input"]').exists()).toBe(false);
+    expect(
+      wrapper.find('[data-testid="tags-open"]').attributes("aria-expanded"),
+    ).toBe("false");
+  });
+
+  it("opens with the input focused and the suggestions already showing", async () => {
+    const wrapper = mountField();
+    const input = await openPop(wrapper);
+    expect(document.activeElement).toBe(input.element);
+    expect(options(wrapper)).toEqual(["batch cooking", "cheap"]);
+    expect(
+      wrapper.find('[data-testid="tags-open"]').attributes("aria-expanded"),
+    ).toBe("true");
+  });
+
+  it("stays open after a pick, so a run of tags is one visit", async () => {
+    const wrapper = mountField();
+    await commit(wrapper, "weeknight");
+    expect(wrapper.find('[data-testid="tags-pop"]').exists()).toBe(true);
+    expect(options(wrapper).length).toBeGreaterThan(0);
+  });
+
+  it("closes on a second tap of the +", async () => {
+    const wrapper = mountField();
+    await openPop(wrapper);
+    await wrapper.find('[data-testid="tags-open"]').trigger("click");
+    expect(wrapper.find('[data-testid="tags-pop"]').exists()).toBe(false);
+  });
+
+  it("closes on escape and hands focus back to the +", async () => {
+    const wrapper = mountField();
+    const input = await openPop(wrapper);
+    await input.trigger("keydown", { key: "Escape" });
+    expect(wrapper.find('[data-testid="tags-pop"]').exists()).toBe(false);
+    expect(document.activeElement).toBe(
+      wrapper.find('[data-testid="tags-open"]').element,
+    );
+  });
+
+  it("closes on a tap outside it, adding nothing", async () => {
+    const wrapper = mountField();
+    await openPop(wrapper);
+    document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('[data-testid="tags-pop"]').exists()).toBe(false);
+    expect(wrapper.emitted("update:modelValue")).toBeUndefined();
+  });
 });
 
 describe("adding", () => {
-  it("takes an existing tag from the typeahead", async () => {
+  it("takes an existing tag from the list", async () => {
     const wrapper = mountField();
-    const input = wrapper.find('[data-testid="tags-input"]');
-    await input.trigger("focus");
+    const input = await openPop(wrapper);
     await input.setValue("bat");
-    await wrapper
-      .findAll('[data-testid="tags-option"]')[0]
-      .trigger("mousedown");
+    await wrapper.find('[data-testid="tags-option"]').trigger("mousedown");
     expect(wrapper.emitted("update:modelValue")).toEqual([[["batch cooking"]]]);
   });
 
@@ -54,14 +122,6 @@ describe("adding", () => {
     const wrapper = mountField();
     await commit(wrapper, "weeknight");
     expect(wrapper.emitted("update:modelValue")).toEqual([[["weeknight"]]]);
-  });
-
-  it("never offers a new-category row — that ceremony is for ingredients only", async () => {
-    const wrapper = mountField();
-    const input = wrapper.find('[data-testid="tags-input"]');
-    await input.trigger("focus");
-    await input.setValue("weeknight");
-    expect(wrapper.find('[data-testid="tags-coin"]').exists()).toBe(false);
   });
 
   it("appends to the tags already held", async () => {
@@ -80,14 +140,7 @@ describe("adding", () => {
 
   it("stops offering a tag already on the recipe", async () => {
     const wrapper = mountField(["cheap"]);
-    const input = wrapper.find('[data-testid="tags-input"]');
-    await input.trigger("focus");
-    expect(
-      wrapper.findAll('[data-testid="tags-option"]').map((o) => o.text()),
-    ).toEqual(["batch cooking"]);
-  });
-
-  it("is labelled Tags", () => {
-    expect(mountField().find("label").text()).toBe("Tags");
+    await openPop(wrapper);
+    expect(options(wrapper)).toEqual(["batch cooking"]);
   });
 });

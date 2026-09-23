@@ -2,13 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { postMock, push } = vi.hoisted(() => ({
+const { getMock, postMock, push } = vi.hoisted(() => ({
+  getMock: vi.fn(),
   postMock: vi.fn(),
   push: vi.fn(),
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
-  api: { get: vi.fn(), post: postMock, put: vi.fn(), del: vi.fn() },
+  api: { get: getMock, post: postMock, put: vi.fn(), del: vi.fn() },
 }));
 vi.mock("vue-router", () => ({ useRouter: () => ({ push }) }));
 
@@ -32,6 +33,11 @@ beforeEach(() => {
   setActivePinia(createPinia());
   resetRecipeFixture();
   vi.clearAllMocks();
+  getMock.mockResolvedValue({
+    tags: ["batch cooking"],
+    ingredients: ["feta"],
+    units: ["g"],
+  });
 });
 
 function mountPage() {
@@ -39,29 +45,39 @@ function mountPage() {
 }
 
 describe("opening", () => {
-  it("puts focus in the body field, not the name", () => {
-    // The name reads first, but the keyboard lands in the body: paste, tap UP
-    // to the name, Save — three interactions, under ten seconds.
+  it("opens on New Recipe as the name, focused and selected", () => {
+    // Typing replaces it outright; a paste-and-save that never touches it
+    // still has a name.
     const wrapper = mountPage();
-    expect(document.activeElement).toBe(
-      wrapper.find('[data-testid="body"]').element,
+    const input = wrapper.find('[data-testid="name"]')
+      .element as HTMLInputElement;
+    expect(input.value).toBe("New Recipe");
+    expect(document.activeElement).toBe(input);
+    expect(input.selectionStart).toBe(0);
+    expect(input.selectionEnd).toBe("New Recipe".length);
+  });
+
+  it("holds the name in the bar, as the screen's heading", () => {
+    const wrapper = mountPage();
+    expect(wrapper.find('.kc-bar [data-testid="name"]').exists()).toBe(true);
+    expect(wrapper.text()).not.toContain("Add a recipe");
+  });
+
+  it("saves on Enter in the name, though it sits outside the form", () => {
+    const wrapper = mountPage();
+    expect(wrapper.find('[data-testid="name"]').attributes("form")).toBe(
+      wrapper.find("form").attributes("id"),
     );
   });
 
-  it("reads name first, body second", () => {
-    const wrapper = mountPage();
-    const ids = wrapper
-      .findAll("textarea, input")
-      .map((el) => el.attributes("id"));
-    expect(ids).toEqual(["capture-name", "capture-body"]);
-  });
-
-  it("labels both fields properly rather than leaning on placeholders", () => {
+  it("names both fields for everyone rather than leaning on placeholders", () => {
     const wrapper = mountPage();
     expect(wrapper.find('label[for="capture-body"]').text()).toBe(
       "Recipe text",
     );
-    expect(wrapper.find('label[for="capture-name"]').text()).toBe("Name");
+    expect(wrapper.find('[data-testid="name"]').attributes("aria-label")).toBe(
+      "Recipe name",
+    );
     expect(
       wrapper.find('[data-testid="body"]').attributes("placeholder"),
     ).toBeUndefined();
@@ -84,10 +100,11 @@ describe("saving", () => {
     expect(postMock).toHaveBeenCalledWith("/kitchencraft/recipes", {
       name: "Pumpkin dal",
       body: "Simmer.",
+      servings: 1,
     });
   });
 
-  it("sends no other field, so nothing optional can block the save", async () => {
+  it("sends nothing the cook didn't fill beyond the default serving", async () => {
     postMock.mockResolvedValueOnce(recipe());
     const wrapper = mountPage();
     await wrapper.find('[data-testid="body"]').setValue("Simmer.");
@@ -95,7 +112,11 @@ describe("saving", () => {
     await wrapper.find("form").trigger("submit");
     await flushPromises();
 
-    expect(Object.keys(postMock.mock.calls[0][1])).toEqual(["name", "body"]);
+    expect(Object.keys(postMock.mock.calls[0][1])).toEqual([
+      "name",
+      "body",
+      "servings",
+    ]);
   });
 
   it("sends the paste unaltered — no bullet, case or blank-line tidying", async () => {
@@ -120,10 +141,12 @@ describe("saving", () => {
     expect(push).toHaveBeenCalledWith("/kitchencraft");
   });
 
-  it("offers exactly one primary action", () => {
+  it("offers exactly one primary action for the form", () => {
+    // The tags field carries its own Add button; the form's actions are the
+    // row at the foot.
     const wrapper = mountPage();
     const primaries = wrapper.findAll(
-      ".kc-btn:not(.kc-btn--quiet):not(.kc-btn--danger)",
+      ".kc-actions .kc-btn:not(.kc-btn--quiet):not(.kc-btn--danger)",
     );
     expect(primaries).toHaveLength(1);
     expect(primaries[0].text()).toBe("Save");
@@ -133,6 +156,7 @@ describe("saving", () => {
 describe("rejection", () => {
   it("names the missing name and keeps the paste on screen", async () => {
     const wrapper = mountPage();
+    await wrapper.find('[data-testid="name"]').setValue("");
     await wrapper.find('[data-testid="body"]').setValue(MESSY_PASTE);
     await wrapper.find("form").trigger("submit");
     await flushPromises();
@@ -162,6 +186,7 @@ describe("rejection", () => {
 
   it("names both when both are empty", async () => {
     const wrapper = mountPage();
+    await wrapper.find('[data-testid="name"]').setValue("");
     await wrapper.find("form").trigger("submit");
     await flushPromises();
 
@@ -195,6 +220,7 @@ describe("rejection", () => {
 
   it("clears the error once the field is filled and re-saved", async () => {
     const wrapper = mountPage();
+    await wrapper.find('[data-testid="name"]').setValue("");
     await wrapper.find('[data-testid="body"]').setValue("Simmer.");
     await wrapper.find("form").trigger("submit");
     await flushPromises();
@@ -251,6 +277,122 @@ describe("cancelling", () => {
     const wrapper = mountPage();
     await wrapper.find('[data-testid="cancel"]').trigger("click");
     expect(push).toHaveBeenCalledWith("/kitchencraft");
+  });
+});
+
+describe("tags and ingredients", () => {
+  it("offers both fields on the capture screen", () => {
+    const wrapper = mountPage();
+    expect(wrapper.find('[data-testid="tags-open"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="ingredient-text"]').exists()).toBe(true);
+  });
+
+  it("suggests tags from the vocabulary", async () => {
+    const wrapper = mountPage();
+    await flushPromises();
+    await wrapper.find('[data-testid="tags-open"]').trigger("click");
+    const input = wrapper.find('[data-testid="tags-input"]');
+    await input.trigger("focus");
+    await input.setValue("bat");
+
+    expect(
+      wrapper.findAll('[data-testid="tags-option"]').map((o) => o.text()),
+    ).toEqual(["batch cooking"]);
+  });
+
+  it("sends the tags and ingredients with the recipe", async () => {
+    postMock.mockResolvedValueOnce(recipe());
+    const wrapper = mountPage();
+    await wrapper.find('[data-testid="body"]').setValue("Simmer.");
+    await wrapper.find('[data-testid="name"]').setValue("Dal");
+
+    await wrapper.find('[data-testid="tags-open"]').trigger("click");
+    const tags = wrapper.find('[data-testid="tags-input"]');
+    await tags.trigger("focus");
+    await tags.setValue("cheap");
+    await tags.trigger("keydown", { key: "Enter" });
+
+    await wrapper.find('[data-testid="ingredient-amount"]').setValue("200 g");
+    await wrapper.find('[data-testid="ingredient-text"]').setValue("lentils");
+    await wrapper.find('[data-testid="add-ingredient"]').trigger("click");
+
+    await wrapper.find("form").trigger("submit");
+    await flushPromises();
+
+    expect(postMock).toHaveBeenCalledWith("/kitchencraft/recipes", {
+      name: "Dal",
+      body: "Simmer.",
+      servings: 1,
+      tags: ["cheap"],
+      ingredients: [{ amount: "200 g", unit: null, text: "lentils" }],
+    });
+  });
+});
+
+describe("meal type and servings", () => {
+  async function fill(wrapper: ReturnType<typeof mountPage>) {
+    await wrapper.find('[data-testid="body"]').setValue("Simmer.");
+    await wrapper.find('[data-testid="name"]').setValue("Dal");
+  }
+
+  it("sends the chosen meal type and servings", async () => {
+    postMock.mockResolvedValueOnce(recipe());
+    const wrapper = mountPage();
+    await fill(wrapper);
+    await wrapper.find('[data-testid="meal-dinner"]').trigger("click");
+    await wrapper.find('[data-testid="servings"]').setValue("4");
+    await wrapper.find("form").trigger("submit");
+    await flushPromises();
+
+    expect(postMock).toHaveBeenCalledWith("/kitchencraft/recipes", {
+      name: "Dal",
+      body: "Simmer.",
+      meal_type: "dinner",
+      servings: 4,
+    });
+  });
+
+  it("starts servings at one", () => {
+    const wrapper = mountPage();
+    expect(
+      (wrapper.find('[data-testid="servings"]').element as HTMLInputElement)
+        .value,
+    ).toBe("1");
+  });
+
+  it("leaves servings off when the cook clears the field", async () => {
+    postMock.mockResolvedValueOnce(recipe());
+    const wrapper = mountPage();
+    await fill(wrapper);
+    await wrapper.find('[data-testid="servings"]').setValue("");
+    await wrapper.find("form").trigger("submit");
+    await flushPromises();
+    expect(postMock.mock.calls[0][1]).not.toHaveProperty("servings");
+  });
+
+  it("clears the meal type when the chosen chip is tapped again", async () => {
+    const wrapper = mountPage();
+    const chip = wrapper.find('[data-testid="meal-dinner"]');
+    await chip.trigger("click");
+    expect(chip.attributes("aria-pressed")).toBe("true");
+    await chip.trigger("click");
+    expect(chip.attributes("aria-pressed")).toBe("false");
+  });
+
+  it("names a servings value that is not a whole number and holds the save", async () => {
+    const wrapper = mountPage();
+    await fill(wrapper);
+    await wrapper.find('[data-testid="servings"]').setValue("a few");
+
+    expect(wrapper.find('[data-testid="servings-error"]').text()).toBe(
+      "A whole number of servings.",
+    );
+    expect(
+      wrapper.find('[data-testid="save"]').attributes("disabled"),
+    ).toBeDefined();
+    await wrapper.find("form").trigger("submit");
+    await flushPromises();
+    expect(postMock).not.toHaveBeenCalled();
   });
 });
 

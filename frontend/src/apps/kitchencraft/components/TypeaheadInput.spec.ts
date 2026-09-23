@@ -306,3 +306,31 @@ describe("closing the panel without choosing", () => {
     expect(optionText(wrapper).length).toBeGreaterThan(0);
   });
 });
+
+describe("persistent, for a host that owns the open state", () => {
+  it("shows its list before anything is focused", () => {
+    const wrapper = mountField({ persistent: true });
+    expect(optionText(wrapper)).toEqual(CATEGORIES);
+  });
+
+  it("keeps the list after a pick and after blur", async () => {
+    const wrapper = mountField({ persistent: true });
+    const input = await type(wrapper, "chi");
+    await input.trigger("keydown", { key: "Enter" });
+    await input.trigger("blur");
+    expect(optionText(wrapper)).toEqual(CATEGORIES);
+  });
+
+  it("asks the host to close on escape", async () => {
+    const wrapper = mountField({ persistent: true });
+    const input = await type(wrapper, "chi");
+    await input.trigger("keydown", { key: "Escape" });
+    expect(wrapper.emitted("dismiss")).toHaveLength(1);
+  });
+
+  it("keeps a hidden label for screen readers", () => {
+    const wrapper = mountField({ hideLabel: true });
+    expect(wrapper.find("label").classes()).toContain("kc-sr-only");
+    expect(wrapper.find("label").attributes("for")).toBe("ingredients");
+  });
+});

@@ -115,3 +115,22 @@ export function ingredientUsage(recipes: Recipe[]): Map<string, number> {
   }
   return counts;
 }
+
+/**
+ * Why a typed whole number is not one yet, or `""` when it is fine.
+ *
+ * Empty is always valid: an absent time is a legitimate recipe, not an
+ * incomplete one.
+ */
+export function numberError(text: string, message: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) return "";
+  if (!/^\d+$/.test(trimmed)) return message;
+  return Number(trimmed) < 1 ? message : "";
+}
+
+/** A validated number field's text as the value to send: blank is `null`. */
+export function toNumber(text: string): number | null {
+  const trimmed = text.trim();
+  return trimmed ? Number(trimmed) : null;
+}

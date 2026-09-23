@@ -114,14 +114,16 @@ describe("the form", () => {
 
   it("keeps Tags and Ingredients as separate inputs", async () => {
     // FR-8 still holds: a value typed into one never lands in the other's
-    // namespace. Ingredients is now three fields rather than one.
+    // namespace. Ingredients is two fields: amount (unit included) and name.
     const { wrapper } = await mountPage();
-    expect(wrapper.find('[data-testid="tags-input"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="tags-open"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="ingredient-text"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="ingredient-amount"]').exists()).toBe(
       true,
     );
-    expect(wrapper.find('[data-testid="ingredient-unit"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="ingredient-unit"]').exists()).toBe(
+      false,
+    );
   });
 });
 
@@ -289,6 +291,7 @@ describe("validation at the field, not at save", () => {
 describe("tags and ingredients", () => {
   it("offers tags only in the Tags input", async () => {
     const { wrapper } = await mountPage();
+    await wrapper.find('[data-testid="tags-open"]').trigger("click");
     const input = wrapper.find('[data-testid="tags-input"]');
     await input.trigger("focus");
     await input.setValue("bat");
@@ -315,13 +318,13 @@ describe("tags and ingredients", () => {
     const { wrapper } = await mountPage();
     putMock.mockResolvedValueOnce(recipe());
 
+    await wrapper.find('[data-testid="tags-open"]').trigger("click");
     const tags = wrapper.find('[data-testid="tags-input"]');
     await tags.trigger("focus");
     await tags.setValue("cheap");
     await tags.trigger("keydown", { key: "Enter" });
 
-    await wrapper.find('[data-testid="ingredient-amount"]').setValue("400");
-    await wrapper.find('[data-testid="ingredient-unit"]').setValue("g");
+    await wrapper.find('[data-testid="ingredient-amount"]').setValue("400 g");
     await wrapper
       .find('[data-testid="ingredient-text"]')
       .setValue("dried chickpeas");
@@ -331,7 +334,7 @@ describe("tags and ingredients", () => {
 
     expect(sent().tags).toEqual(["cheap"]);
     expect(sent().ingredients).toEqual([
-      { amount: "400", unit: "g", text: "dried chickpeas" },
+      { amount: "400 g", unit: null, text: "dried chickpeas" },
     ]);
   });
 

@@ -147,7 +147,6 @@
           <IngredientsField
             v-model="form.ingredients"
             :suggestions="ingredientSuggestions"
-            :units="store.vocabulary.units"
           />
         </div>
 
@@ -185,6 +184,8 @@ import {
   orderByUsage,
   tagUsage,
   ingredientUsage,
+  numberError,
+  toNumber,
 } from "@/apps/kitchencraft/format";
 import { useKitchencraftStore } from "@/apps/kitchencraft/stores/useKitchencraftStore";
 import {
@@ -220,20 +221,8 @@ const servingsText = ref("");
 const nameError = ref("");
 const bodyError = ref("");
 
-/**
- * Validation happens **at the field, not at save** (UX-DR15).
- *
- * These are computed rather than checked in `save`, so the message appears on
- * the keystroke that made the value invalid. Empty is always valid: an absent
- * time is a legitimate recipe, not an incomplete one.
- */
-function numberError(text: string, message: string): string {
-  const trimmed = text.trim();
-  if (!trimmed) return "";
-  if (!/^\d+$/.test(trimmed)) return message;
-  return Number(trimmed) < 1 ? message : "";
-}
-
+// Validation happens at the field, not at save (UX-DR15): computed, so the
+// message appears on the keystroke that made the value invalid.
 const timeError = computed(() => numberError(timeText.value, "Minutes only."));
 const servingsError = computed(() =>
   numberError(servingsText.value, "A whole number of servings."),
@@ -269,11 +258,6 @@ onMounted(async () => {
   servingsText.value = recipe.servings === null ? "" : String(recipe.servings);
   loaded.value = true;
 });
-
-function toNumber(text: string): number | null {
-  const trimmed = text.trim();
-  return trimmed ? Number(trimmed) : null;
-}
 
 async function save(): Promise<void> {
   nameError.value = form.value.name.trim() ? "" : "Give it a name.";
