@@ -167,7 +167,7 @@ describe("updateRecipe", () => {
 });
 
 describe("toggleFavourite", () => {
-  it("fills the row and re-orders it immediately, before the request resolves", async () => {
+  it("fills the row immediately, before the request resolves, without moving it", async () => {
     const older = recipe({ name: "older" });
     const newer = recipe({ name: "newer" });
     getMock.mockResolvedValueOnce([older, newer]);
@@ -179,8 +179,20 @@ describe("toggleFavourite", () => {
     putMock.mockReturnValueOnce(new Promise(() => {}));
     void store.toggleFavourite(older.id);
 
+    // The mark fills; the order does not change. Favourites are lifted when the
+    // collection loads, not re-derived on every tap.
+    expect(store.recipes.map((r) => r.name)).toEqual(["newer", "older"]);
+    expect(store.recipes.find((r) => r.id === older.id)?.favourite).toBe(true);
+  });
+
+  it("still lifts favourites above everything on the next load", async () => {
+    const older = recipe({ name: "older", favourite: true });
+    const newer = recipe({ name: "newer" });
+    getMock.mockResolvedValueOnce([newer, older]);
+    const store = useKitchencraftStore();
+    await store.fetchCollection();
+
     expect(store.recipes.map((r) => r.name)).toEqual(["older", "newer"]);
-    expect(store.recipes[0].favourite).toBe(true);
   });
 
   it("does not set the global loading flag, so a scrolling list is never blocked", async () => {

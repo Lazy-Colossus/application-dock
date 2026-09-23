@@ -101,7 +101,10 @@ describe("the populated collection", () => {
     expect(push).not.toHaveBeenCalled();
   });
 
-  it("re-orders the row into the favourites group in place", async () => {
+  it("leaves the row exactly where it was, so the list never moves underfoot", async () => {
+    // Favourites still sort above everything — but on LOAD, not on tap. A row
+    // that leaps to the top under the finger that tapped it costs the user
+    // their place in the list, which is what made it confusing in use.
     const older = recipe({ name: "older" });
     const newer = recipe({ name: "newer" });
     const wrapper = await mountPage([older, newer]);
@@ -117,9 +120,14 @@ describe("the populated collection", () => {
     await flushPromises();
 
     expect(wrapper.findAll(".kc-row .kc-body").map((n) => n.text())).toEqual([
-      "older",
       "newer",
+      "older",
     ]);
+    expect(
+      wrapper
+        .find(`[data-testid="favourite-${older.id}"]`)
+        .attributes("aria-pressed"),
+    ).toBe("true");
   });
 });
 

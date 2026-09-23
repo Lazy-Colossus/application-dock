@@ -125,6 +125,17 @@ export const useKitchencraftStore = defineStore("kitchencraft", () => {
    * moment it is tapped, and a global loading flag here would let a spinner or
    * a disabled state reach a list the user is still scrolling. On a failed
    * write the row reverts and the surface says so in one line.
+   *
+   * It does NOT re-sort, for the same reason `setRating` does not: a row that
+   * leaps to the top of the list under the finger that tapped it loses the
+   * user their place, and they have to find where they were again. Favourites
+   * still sort above everything — `sortRecipes` and the server's
+   * `_collection_order` both still do that — but the order is settled when the
+   * collection LOADS, not re-derived on every tap. A recipe favourited now
+   * takes its place in the favourites group on the next load.
+   *
+   * This reverses Story 2.6's "the row jumps to the favourites group", which
+   * was written before anyone had used it on a real collection.
    */
   async function toggleFavourite(id: string): Promise<void> {
     const recipe = recipes.value.find((r) => r.id === id);
@@ -132,24 +143,18 @@ export const useKitchencraftStore = defineStore("kitchencraft", () => {
 
     const previous = recipe.favourite;
     error.value = null;
-    recipes.value = sortRecipes(
-      recipes.value.map((r) =>
-        r.id === id ? { ...r, favourite: !previous } : r,
-      ),
+    recipes.value = recipes.value.map((r) =>
+      r.id === id ? { ...r, favourite: !previous } : r,
     );
     try {
       const saved = await api.put<Recipe>(`/kitchencraft/recipes/${id}`, {
         favourite: !previous,
       });
-      recipes.value = sortRecipes(
-        recipes.value.map((r) => (r.id === id ? saved : r)),
-      );
+      recipes.value = recipes.value.map((r) => (r.id === id ? saved : r));
     } catch (e) {
       error.value = message(e);
-      recipes.value = sortRecipes(
-        recipes.value.map((r) =>
-          r.id === id ? { ...r, favourite: previous } : r,
-        ),
+      recipes.value = recipes.value.map((r) =>
+        r.id === id ? { ...r, favourite: previous } : r,
       );
     }
   }
