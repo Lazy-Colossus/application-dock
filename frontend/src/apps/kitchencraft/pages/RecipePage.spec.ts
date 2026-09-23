@@ -139,11 +139,54 @@ describe("the absence rule", () => {
       meal_type: "dinner",
       total_time_minutes: 40,
       servings: 4,
-      source: "Nan's book",
     });
     expect(wrapper.find('[data-testid="recipe-meta"]').text()).toBe(
-      "dinner · 40 min · serves 4 · Nan's book",
+      "dinner · 40 min · serves 4",
     );
+  });
+
+  it("puts the source at the foot of the recipe, not in the meta line", async () => {
+    const { wrapper } = await mountPage({
+      meal_type: "dinner",
+      source: "Nan's book",
+    });
+    expect(wrapper.find('[data-testid="recipe-meta"]').text()).toBe("dinner");
+    const source = wrapper.find('[data-testid="recipe-source"]');
+    expect(source.text()).toBe("Source: Nan's book");
+    // Last in the recipe, and so above the edit and delete buttons.
+    expect(
+      source.element.compareDocumentPosition(
+        wrapper.find('[data-testid="edit"]').element,
+      ) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(wrapper.find(".kc-read").element.lastElementChild).toBe(
+      source.element,
+    );
+  });
+
+  it("links a web address, opening it in a new tab", async () => {
+    const { wrapper } = await mountPage({
+      source: "https://example.com/traybake",
+    });
+    const link = wrapper.find('[data-testid="recipe-source-link"]');
+    expect(link.attributes("href")).toBe("https://example.com/traybake");
+    expect(link.attributes("target")).toBe("_blank");
+    expect(link.attributes("rel")).toBe("noopener noreferrer");
+  });
+
+  it("leaves a source that is not a web address as plain text", async () => {
+    const { wrapper } = await mountPage({ source: "javascript:alert(1)" });
+    expect(wrapper.find('[data-testid="recipe-source-link"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('[data-testid="recipe-source"]').text()).toBe(
+      "Source: javascript:alert(1)",
+    );
+  });
+
+  it("shows no source line when there is no source", async () => {
+    const { wrapper } = await mountPage({ source: null });
+    expect(wrapper.find('[data-testid="recipe-source"]').exists()).toBe(false);
   });
 
   it("never counts how much structure a recipe has or invites more", async () => {
