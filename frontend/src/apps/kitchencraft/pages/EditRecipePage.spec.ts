@@ -88,6 +88,51 @@ describe("the form", () => {
     );
   });
 
+  it("holds the name in the bar, as capture does", async () => {
+    const { wrapper } = await mountPage();
+    expect(wrapper.find('.kc-bar [data-testid="name"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="name"]').attributes("aria-label")).toBe(
+      "Recipe name",
+    );
+    expect(wrapper.text()).not.toContain("Edit");
+  });
+
+  it("saves on Enter in the name, though it sits outside the form", async () => {
+    const { wrapper } = await mountPage();
+    expect(wrapper.find('[data-testid="name"]').attributes("form")).toBe(
+      wrapper.find("form").attributes("id"),
+    );
+  });
+
+  it("lays out capture's fields in capture's order, the rest after", async () => {
+    const { wrapper } = await mountPage();
+    const order = [
+      "body",
+      "ingredient-text",
+      "meal-breakfast",
+      "servings",
+      "tags-open",
+      "edit-rating-1",
+      "time",
+      "source",
+    ].map((id) => wrapper.find(`[data-testid="${id}"]`).element);
+    for (let i = 1; i < order.length; i++) {
+      expect(
+        order[i - 1].compareDocumentPosition(order[i]) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    }
+  });
+
+  it("gives servings the same stepper capture has", async () => {
+    const { wrapper } = await mountPage({ servings: 4 });
+    await wrapper.find('[data-testid="servings-up"]').trigger("click");
+    expect(
+      (wrapper.find('[data-testid="servings"]').element as HTMLInputElement)
+        .value,
+    ).toBe("5");
+  });
+
   it("is the one surface that shows every field, filled or not", async () => {
     // The single exception to the absence rule — this is where they get set.
     const { wrapper } = await mountPage();

@@ -514,7 +514,10 @@
   border-color: var(--kc-burgundy)
   color: var(--kc-cream)
 
+// The remove × takes the chip's own ink: navy on the teal, plum and navy
+// fills ran 1.0–1.4:1, and cream is 8–11:1 on all three.
 .kc-chip .kc-icon-btn
+  color: inherit
   min-width: 20px
   min-height: 20px
   margin-right: -3px
@@ -1198,6 +1201,9 @@
   min-width: 0
   color: var(--kc-navy)
 
+.kc-ingredients--editing
+  margin-bottom: 12px
+
 .kc-ingredients--editing .kc-ingredient
   border-bottom: 1px dotted var(--kc-rule-strong)
 
@@ -1348,7 +1354,7 @@
   display: grid
   gap: 16px
   padding: 16px var(--kc-pad) 32px
-  grid-template-areas: "top" "body" "bottom"
+  grid-template-areas: "top" "body" "bottom" "source"
   grid-template-columns: minmax(0, 1fr)
 
 // Shares the bar with the shopping-list button, so it gives way before it.
@@ -1380,6 +1386,22 @@
 .kc-read__bottom
   grid-area: bottom
 
+.kc-read__source
+  grid-area: source
+  margin: 0
+  color: var(--kc-pencil)
+  font-size: 13px
+  overflow-wrap: anywhere
+
+// Underlined, so it reads as a link without leaning on colour alone.
+.kc-read__source a
+  color: inherit
+  text-decoration: underline
+  text-underline-offset: 2px
+
+.kc-read__source a:hover
+  color: var(--kc-navy)
+
 // The pale panel is the ingredients' alone; tags sit bare on the page.
 .kc-read__ingredients
   background: rgba(243, 239, 227, 0.5)
@@ -1398,7 +1420,7 @@
   .kc-read
     grid-template-columns: minmax(0, var(--kc-measure)) minmax(180px, 1fr)
     column-gap: 32px
-    grid-template-areas: "top top" "body bottom"
+    grid-template-areas: "top top" "body bottom" "source source"
 
   .kc-backdrop
     align-items: center

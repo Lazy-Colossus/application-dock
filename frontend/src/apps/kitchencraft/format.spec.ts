@@ -6,6 +6,7 @@ import {
   metaLine,
   orderByUsage,
   sortRecipes,
+  sourceUrl,
   tagUsage,
 } from "@/apps/kitchencraft/format";
 import { recipe, resetRecipeFixture } from "@/apps/kitchencraft/recipe.fixture";
@@ -167,5 +168,30 @@ describe("orderByUsage", () => {
       "pepper",
       "cumin",
     ]);
+  });
+});
+
+describe("sourceUrl", () => {
+  it("links a web address", () => {
+    expect(sourceUrl("https://example.com/traybake")).toBe(
+      "https://example.com/traybake",
+    );
+    expect(sourceUrl("  http://example.com  ")).toBe("http://example.com/");
+  });
+
+  it("leaves a name or a book as plain text", () => {
+    expect(sourceUrl("Nonna, approximately")).toBeNull();
+    expect(sourceUrl("River Cafe")).toBeNull();
+    expect(sourceUrl(null)).toBeNull();
+  });
+
+  it("never links anything but http and https", () => {
+    expect(sourceUrl("javascript:alert(1)")).toBeNull();
+    expect(sourceUrl("ftp://example.com")).toBeNull();
+    expect(sourceUrl("data:text/html,hi")).toBeNull();
+  });
+
+  it("leaves a sentence with an address in it alone", () => {
+    expect(sourceUrl("from https://example.com")).toBeNull();
   });
 });

@@ -134,3 +134,19 @@ export function toNumber(text: string): number | null {
   const trimmed = text.trim();
   return trimmed ? Number(trimmed) : null;
 }
+
+/**
+ * The source as a link target when it is a web address, else `null`.
+ *
+ * Only `http(s)` counts: the source is free text anyone in the household can
+ * type, and a `javascript:` source must never become something to click.
+ */
+export function sourceUrl(source: string | null): string | null {
+  const trimmed = source?.trim() ?? "";
+  if (!/^https?:\/\/\S+$/i.test(trimmed)) return null;
+  try {
+    return new URL(trimmed).href;
+  } catch {
+    return null;
+  }
+}

@@ -1,8 +1,11 @@
 <template>
   <div>
+    <span class="kc-label kc-label--heading">Ingredients</span>
+
     <!--
       One per line, in entry order, reading the way they will read on the recipe.
-      A list, not a bag of chips: these are things you read down.
+      A list, not a bag of chips: these are things you read down. It sits under
+      the heading it belongs to, with the entry for the next one beneath it.
     -->
     <ul
       v-if="modelValue.length > 0"
@@ -44,56 +47,53 @@
       unit field was a third box to fill for no gain. Only the ingredient is
       required: `garlic` is a complete entry (FR-3).
     -->
-    <div class="kc-group">
-      <span class="kc-label kc-label--heading">Ingredients</span>
-      <div class="kc-ingredient-entry">
-        <div class="kc-ingredient-entry__amount">
-          <label class="kc-label" for="ingredient-amount">Amount</label>
-          <input
-            id="ingredient-amount"
-            v-model="amount"
-            type="text"
-            class="kc-field"
-            autocomplete="off"
-            data-testid="ingredient-amount"
-            @keydown.enter.prevent="commit()"
-          />
-        </div>
-
-        <div class="kc-ingredient-entry__text">
-          <label class="kc-label" for="ingredient-text">Ingredient</label>
-          <input
-            id="ingredient-text"
-            v-model="text"
-            type="text"
-            class="kc-field"
-            autocomplete="off"
-            list="kc-ingredient-suggestions"
-            data-testid="ingredient-text"
-            @keydown.enter.prevent="commit()"
-          />
-          <!--
-            A native datalist rather than the custom typeahead: it is exactly
-            "offer a list, accept anything". No coining ceremony — v2 has no
-            shared vocabulary to protect.
-          -->
-          <datalist id="kc-ingredient-suggestions">
-            <option v-for="i in suggestions" :key="i" :value="i" />
-          </datalist>
-        </div>
+    <div class="kc-ingredient-entry">
+      <div class="kc-ingredient-entry__amount">
+        <label class="kc-label" for="ingredient-amount">Amount</label>
+        <input
+          id="ingredient-amount"
+          v-model="amount"
+          type="text"
+          class="kc-field"
+          autocomplete="off"
+          data-testid="ingredient-amount"
+          @keydown.enter.prevent="commit()"
+        />
       </div>
 
-      <div class="kc-actions">
-        <button
-          type="button"
-          class="kc-btn kc-btn--quiet"
-          :disabled="text.trim() === ''"
-          data-testid="add-ingredient"
-          @click="commit()"
-        >
-          Add ingredient
-        </button>
+      <div class="kc-ingredient-entry__text">
+        <label class="kc-label" for="ingredient-text">Ingredient</label>
+        <input
+          id="ingredient-text"
+          v-model="text"
+          type="text"
+          class="kc-field"
+          autocomplete="off"
+          list="kc-ingredient-suggestions"
+          data-testid="ingredient-text"
+          @keydown.enter.prevent="commit()"
+        />
+        <!--
+          A native datalist rather than the custom typeahead: it is exactly
+          "offer a list, accept anything". No coining ceremony — v2 has no
+          shared vocabulary to protect.
+        -->
+        <datalist id="kc-ingredient-suggestions">
+          <option v-for="i in suggestions" :key="i" :value="i" />
+        </datalist>
       </div>
+    </div>
+
+    <div class="kc-actions">
+      <button
+        type="button"
+        class="kc-btn kc-btn--quiet"
+        :disabled="text.trim() === ''"
+        data-testid="add-ingredient"
+        @click="commit()"
+      >
+        Add ingredient
+      </button>
     </div>
   </div>
 </template>

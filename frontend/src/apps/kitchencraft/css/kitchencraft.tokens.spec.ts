@@ -141,6 +141,15 @@ describe("text contrast, measured not assumed", () => {
     }
   });
 
+  it("draws a chip's remove × in the chip's own ink, never navy on the fill", () => {
+    // The icon button defaults to navy, which on the tag fills measured
+    // 1.0–1.4:1 and all but vanished on a navy chip.
+    for (const fill of [teal(), plum(), navy()]) {
+      expect(ratio(navy(), fill)).toBeLessThan(3);
+    }
+    expect(block(".kc-chip .kc-icon-btn")).toMatch(/(^|\n)\s*color:\s*inherit/);
+  });
+
   it("clears the 3:1 non-text floor for rule-strong, which bounds every control", () => {
     expect(ratio(ruleStrong(), paper())).toBeGreaterThanOrEqual(3);
     expect(ratio(ruleStrong(), paperRaise())).toBeGreaterThanOrEqual(3);

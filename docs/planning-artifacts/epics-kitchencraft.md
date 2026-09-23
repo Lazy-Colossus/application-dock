@@ -18,13 +18,13 @@ missingInputs:
 
 ## Overview
 
-This document is the complete epic and story breakdown for **KitchenCraft**, a per-user recipe
+This document is the complete epic and story breakdown for **KitchenCraft**, a household recipe
 collection shipped as a new self-contained app inside the Application Dock platform.
 
 A user captures a recipe by pasting text and giving it a name — that alone is a complete, valid
 recipe, forever. Every other field is optional: meal type, total time, servings, source, free tags,
 and **ingredients** (an optional amount and unit plus the ingredient itself, as free text). The
-collection is browsable, full-text searchable, and filterable by meal type and tag. Recipes can be favourited, and their ingredients pushed onto a single per-user
+collection is browsable, full-text searchable, and filterable by meal type and tag. Recipes can be favourited, and their ingredients pushed onto the household's single
 **shopping list** that opens as a modal from anywhere and behaves like a shopping companion.
 
 Structure that the user never enters by hand is filled in later by an **offline enrichment pass** —
@@ -45,9 +45,10 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
 - FR-1: KitchenCraft is registered in the Application Dock shell — a card on the landing page
   (`src/apps/registry.ts`), lazy-loaded route(s) (`src/router/routes.ts`), and an entry in the
   backend `_APPS` list (`app/routers/shell.py`) with its own router under `/api/kitchencraft`.
-- FR-2: All data is bound to the logged-in user — scoped by the JWT username via
-  `get_current_user`, one JSON file per user. No `user` field is accepted in any request path or
-  body; it is derived from the token.
+- FR-2: All data sits behind the dock's login — every route requires `get_current_user` — and is
+  **shared by the household**: one collection file and one shopping-list file, read and written by
+  every signed-in user. Who is signed in never selects a file, and no `user` field is accepted in
+  any request path or body. *(Revised 2026-09-23; see "Amendments".)*
 
 **F2 — Capture & Edit** *(PRD FR-1 – FR-3)*
 - FR-3: A recipe can be created from a **name and a body alone**. No other field is required, and
@@ -59,9 +60,9 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
   lines preserved — and is never reformatted by the app or by an enrichment pass.
 
 **F3 — Structured Fields** *(PRD FR-4 – FR-7)*
-- FR-6: A recipe may optionally carry meal type (breakfast / lunch / dinner / snack / dessert /
-  other), total time in minutes, servings, and source (free text). Each is independently settable
-  and clearable; time and servings accept positive integers only.
+- FR-6: A recipe may optionally carry meal type (breakfast / dinner / dessert — exactly the
+  folder dividers), total time in minutes, servings, and source (free text). Each is independently settable
+  and clearable; time and servings accept positive integers only. *(Revised 2026-09-23; see "Amendments".)*
 - FR-7: An **ingredient** is an optional **amount**, an optional **unit**, and the ingredient
   itself as free text. Only the name is required. Ingredients display one per line, in entry order,
   with amount and unit in their own column. *(Revised 2026-09-15; see "Amendments".)*
@@ -90,9 +91,10 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
   view is one interaction from the collection screen.
 
 **F6 — Shopping List** *(PRD FR-12 – FR-16)*
-- FR-14: Exactly **one shopping list per user**, opened as a modal by a button in the app's
+- FR-14: Exactly **one shopping list for the household**, opened as a modal by a button in the app's
   top-right corner, present on every KitchenCraft screen. Opening and closing it never navigates
   away from or loses the state of the current screen. There is no list-management surface.
+  *(Revised 2026-09-23; see "Amendments".)*
 - FR-15: List items can be added by hand, ticked as purchased (struck through, staying in place),
   unticked, and deleted. Ticking is a single tap on the row. A **clear** action empties the list
   behind a confirmation. An empty list says so and offers hand-entry.
@@ -125,7 +127,8 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
 
 ### NonFunctional Requirements
 
-- NFR-1: **Persistence** — JSON files on disk, one file per user, every write atomic
+- NFR-1: **Persistence** — JSON files on disk (one for the collection, one for the shopping
+  list), every write atomic
   (write-`.tmp`-then-`os.replace`), per-file locking around read-modify-write. No database, no new
   backend dependency.
 - NFR-2: **Layering** — strict router → service → repository; the repository is the only code
@@ -135,7 +138,8 @@ registry + lazy routes, JWT auth, atomic JSON file persistence). Stories live un
   standard as the app.
 - NFR-4: **Mobile-first** — every screen usable one-handed at phone width; the recipe reading view
   legible at arm's length without pinch-zoom.
-- NFR-5: **Auth** — behind the dock's existing JWT auth; a user reaches only their own collection.
+- NFR-5: **Auth** — behind the dock's existing JWT auth; an anonymous caller reaches nothing, and
+  every signed-in user reaches the one shared collection. *(Revised 2026-09-23; see "Amendments".)*
 - NFR-6: **Performance** — search and filter stay instant at personal scale (hundreds of recipes);
   client-side filtering over the loaded collection is acceptable.
 - NFR-7: **Capture cost** — clipboard to saved recipe in under 10 seconds and no more than three
@@ -260,14 +264,14 @@ These are first-class requirements, at the same rigour as the FRs above.
   against the very first recipe. Deliberately open — anything typed is accepted. Follows the
   Hotaru shipped-seed precedent (commits `24422ce`, `f95697c`). **Revised 2026-09-15**: the shipped
   seed is now a list of **units**, not ingredient categories. Story 4.4 guards ingredient *wording*
-  rather than a controlled vocabulary, and the Ingredients input suggests from the user's own
-  history, so it does have a genuine first-run empty state.
+  rather than a controlled vocabulary, and the Ingredients input suggests from the collection's
+  own history, so it does have a genuine first-run empty state.
 
 ### Architecture Gaps
 
 **No KitchenCraft architecture document exists.** The platform architecture
 (`docs/planning-artifacts/architecture.md`) and `CLAUDE.md` supply the chassis — strict
-router → service → repository layering, `_atomic_write_json`, `DATA_DIR`, per-user JSON files, JWT
+router → service → repository layering, `_atomic_write_json`, `DATA_DIR`, JSON files, JWT
 scoping — and those are inherited, not re-decided. The PRD also refers to an `addendum.md` that has
 never been written.
 
@@ -275,7 +279,7 @@ The following are therefore **assumed by the stories below rather than cited fro
 is a genuine architecture question and should be settled before or during the story it first bites:
 
 1. **Recipe schema and stable id.** FR-20 requires bulk updates addressed by stable recipe **id**,
-   never by name. The id's shape, how it is generated, and where it lives in the per-user JSON are
+   never by name. The id's shape, how it is generated, and where it lives in the JSON are
    undecided. First bites **Story 1.2**.
 2. ~~**Shared ingredient-category vocabulary storage.**~~ **Closed 2026-09-15** — moot; there is no
    shared vocabulary. The ingredient field suggests from the user's own history, derived on read.
@@ -293,7 +297,7 @@ is a genuine architecture question and should be settled before or during the st
 ### FR Coverage Map
 
 FR-1: Epic 1 — Shell registration (card, route, `_APPS`, `/api/kitchencraft` router)
-FR-2: Epic 1 — Per-user scoping via `get_current_user`; one JSON file per user
+FR-2: Epic 1 — Login required via `get_current_user`; one shared collection file (revised 2026-09-23)
 FR-3: Epic 1 — Create a recipe from name and body alone
 FR-4: Epic 1 — Edit any field; delete behind a confirmation
 FR-5: Epic 1 — Body stored verbatim, never reformatted
@@ -305,7 +309,7 @@ FR-10: Epic 1 — Browse the collection, newest first, favourites first
 FR-11: Epic 2 — Full-text search over names and bodies
 FR-12: Epic 2 — Filter by meal type and tag
 FR-13: Epic 2 — Favourite toggle, favourites-first ordering, favourites-only view
-FR-14: Epic 3 — One list per user, opened as a modal from the top-right
+FR-14: Epic 3 — One list for the household, opened as a modal from the top-right
 FR-15: Epic 3 — Tick / untick / delete / clear behaviour
 FR-16: Epic 3 — Add-from-recipe modal, staples unchecked by default
 FR-17: Epic 3 — Add-vs-overwrite prompt on a non-empty list
@@ -319,7 +323,7 @@ FR-22: Epic 4 — Reuse the ingredient wording already in use; report new wordin
 
 ### Epic 1: Foundation & the capture loop
 
-A user can open KitchenCraft from the dock, paste a recipe with a name, see it in their private
+A user can open KitchenCraft from the dock, paste a recipe with a name, see it in the household's
 collection, open it, edit it, and delete it. Nothing else is required to save, and the pasted text
 comes back exactly as it went in. This epic is the whole app in miniature — after it, KitchenCraft
 is genuinely usable as a recipe store, and everything later is about finding and shopping.
@@ -382,8 +386,9 @@ epic is what makes Epic 2's structure viable for a user who never tags anything.
 
 ## Epic 1: Foundation & the capture loop
 
-A logged-in user can open KitchenCraft from the dock, paste a recipe, see it in their own private
-collection, read it, edit it and delete it — everything scoped to their account.
+A logged-in user can open KitchenCraft from the dock, paste a recipe, see it in the household's
+collection, read it, edit it and delete it. *(Originally scoped to each account; shared since
+2026-09-23 — see "Amendments".)*
 
 ### Story 1.1: Register KitchenCraft in the Application Dock shell
 
@@ -410,7 +415,12 @@ apps, and selecting it routes to `/kitchencraft` (FR-1).
 `Depends(get_current_user)`, and `docs/stories/kitchencraft/{for-review,done}/` exist. Existing
 `pytest` / `npm test` stay green; `black`, `ruff` and `eslint` clean.
 
-### Story 1.2: Per-user recipe store — repository, schemas, service
+### Story 1.2: Per-user recipe store — repository, schemas, service — PARTLY SUPERSEDED 2026-09-23
+
+> **The store is no longer per user.** There is one collection file for the household
+> (`kitchencraft/recipes.json`); the legacy per-user files are merged into it on first read. The
+> repository, the atomic writer, the schemas and the service layer all still stand. The
+> path-safety AC is void: no path is built from a username any more.
 
 As the platform,
 I want a JSON file per user with an atomic-write repository and typed schemas,
@@ -430,10 +440,10 @@ writer with `key_lock` held across each read-modify-write (NFR-1, NFR-2).
 and `updated_at`, and nullable structured fields; the top-level document carries `schema_version`
 and a `migrate()` runs on read so later schema bumps are handled.
 
-**Given** the per-user filename
-**When** it is derived from the authenticated username
-**Then** it is validated as a bare filename so a crafted username cannot escape the app's directory,
-and no `user` field is accepted in any request path or body (FR-2, NFR-5).
+~~**Given** the per-user filename / **When** it is derived from the authenticated username /
+**Then** it is validated as a bare filename so a crafted username cannot escape the app's
+directory~~ — **void 2026-09-23**, no filename comes from a username. No `user` field is accepted in
+any request path or body still holds (FR-2, NFR-5).
 
 **Given** the service layer
 **When** it operates on the document
@@ -493,7 +503,8 @@ name is the whole entry, and this story is complete without them (FR-10).
 
 **Given** two different authenticated users
 **When** each opens the collection
-**Then** neither sees any recipe belonging to the other (FR-2, NFR-5).
+**Then** both see the same recipes (FR-2). *(Reversed 2026-09-23: originally "neither sees any
+recipe belonging to the other".)*
 
 **Given** this story
 **When** ordering is implemented
@@ -546,7 +557,7 @@ so that I can later narrow my collection down to what fits tonight.
 
 **Given** a recipe
 **When** it is edited
-**Then** meal type (breakfast / lunch / dinner / snack / dessert / other), total time in minutes,
+**Then** meal type (breakfast / dinner / dessert — six until 2026-09-23), total time in minutes,
 servings and source can each be set and cleared independently, and clearing one leaves the others
 untouched (FR-6).
 
@@ -751,13 +762,14 @@ were, scroll position intact (FR-14).
 
 **Given** the app
 **When** a user looks for list management
-**Then** there is exactly one list per user and no surface for creating, naming or deleting lists
-(FR-14).
+**Then** there is exactly one list for the household and no surface for creating, naming or
+deleting lists (FR-14). *(One per user until 2026-09-23.)*
 
 **Given** the persistence layer
 **When** the list is stored
-**Then** it is scoped to the authenticated username and written through the repository's atomic
-path under lock, like every other document (FR-2, NFR-1, NFR-5).
+**Then** it is written through the repository's atomic path under its own lock, like every other
+document, and requires a signed-in caller (FR-2, NFR-1, NFR-5). *(Revised 2026-09-23: it was
+scoped to the authenticated username.)*
 
 ### Story 3.2: Tick things off in the shop
 
@@ -1018,3 +1030,36 @@ Stories 2.7 (star rating) and 2.8 were both built before this document described
 them, and PRD FR-21 was written after the fact from the built behaviour. Recorded
 plainly because the direction of travel matters: the code led and the specs
 followed, which is the opposite of how the rest of this document was produced.
+
+### 2026-09-23 — Meal types cut to the three dividers
+
+FR-6's meal types went from six to **breakfast, dinner and dessert**, the
+folder dividers the Notebook retheme introduced (commit `4c5867a`, schema v3).
+`lunch` migrates to `dinner` and keeps its provenance mark; `snack` and `other`
+are cleared. This closes the trade-off Story 2.5 recorded, where three meal
+types could be set but had no divider to filter on. Now they can't be set at all.
+
+| Changed | Effect |
+|---|---|
+| FR-6 | Three meal types, matching the dividers |
+| Story 2.1 | AC 1's list revised; the story is marked, not rewritten |
+| Story 2.5 | The "dividers cost three meal types" trade-off is resolved |
+
+### 2026-09-23 — One collection and one shopping list for the household
+
+KitchenCraft stopped keeping data per user (commit `34b23f4`). There is one
+`kitchencraft/recipes.json` and one `kitchencraft/shopping.json`. Every
+signed-in user reads and writes both, and the favourite and the rating are one
+value per recipe. The legacy per-user files are merged on first read, and a
+recipe whose id clashes with one already merged gets its owner's name appended
+to the id rather than being dropped. The enrichment script no longer takes
+`--user`.
+
+| Changed | Effect |
+|---|---|
+| FR-2 | Login still required; the user no longer selects the data |
+| FR-14 | One list for the household, not one per user |
+| NFR-1, NFR-5 | Two shared files; every signed-in user reaches them |
+| Story 1.2 | Partly superseded: the path-safety AC is void |
+| Story 1.4 | The isolation AC is reversed: two users see the same collection |
+| Story 3.1 | One list for the household; stored in a shared file, not per user |

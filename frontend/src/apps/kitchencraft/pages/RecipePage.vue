@@ -89,6 +89,28 @@
               </ul>
             </div>
           </div>
+
+          <!--
+            Where it came from is worth keeping but not worth reading first, so
+            it closes the recipe in the quiet ink, just above the actions.
+          -->
+          <p
+            v-if="recipe.source"
+            class="kc-read__source"
+            data-testid="recipe-source"
+          >
+            Source:
+            <!-- A new tab, so following the link never loses the recipe. -->
+            <a
+              v-if="sourceHref"
+              :href="sourceHref"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="recipe-source-link"
+              >{{ recipe.source }}</a
+            >
+            <template v-else>{{ recipe.source }}</template>
+          </p>
         </div>
 
         <div class="kc-foot">
@@ -164,7 +186,7 @@ import AddToListModal from "@/apps/kitchencraft/components/AddToListModal.vue";
 import ConfirmModal from "@/apps/kitchencraft/components/ConfirmModal.vue";
 import PageBar from "@/apps/kitchencraft/components/PageBar.vue";
 import RatingStars from "@/apps/kitchencraft/components/RatingStars.vue";
-import { formatTime } from "@/apps/kitchencraft/format";
+import { formatTime, sourceUrl } from "@/apps/kitchencraft/format";
 import type { Ingredient } from "@/apps/kitchencraft/types";
 import { useKitchencraftStore } from "@/apps/kitchencraft/stores/useKitchencraftStore";
 import type { Recipe } from "@/apps/kitchencraft/types";
@@ -196,9 +218,10 @@ const metaParts = computed(() => {
     current.meal_type,
     formatTime(current.total_time_minutes),
     servings,
-    current.source,
   ].filter((part): part is string => Boolean(part));
 });
+
+const sourceHref = computed(() => sourceUrl(recipe.value?.source ?? null));
 
 onMounted(async () => {
   const found = await store.fetchRecipe(recipeId);

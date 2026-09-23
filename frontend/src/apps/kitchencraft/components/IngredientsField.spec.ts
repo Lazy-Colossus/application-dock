@@ -204,3 +204,20 @@ describe("suggestions", () => {
     expect(wrapper.text()).not.toMatch(/new category|new ingredient/i);
   });
 });
+
+describe("the section", () => {
+  it("lists what is already there under the heading, above the entry", () => {
+    const wrapper = mountField([{ amount: "2", unit: null, text: "onions" }]);
+    const heading = wrapper.find(".kc-label--heading").element;
+    const rows = wrapper.find('[data-testid="ingredient-rows"]').element;
+    const entry = wrapper.find('[data-testid="ingredient-amount"]').element;
+
+    expect(heading.textContent).toBe("Ingredients");
+    expect(
+      heading.compareDocumentPosition(rows) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      rows.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+});

@@ -2,7 +2,7 @@
 title: KitchenCraft — Recipe Store
 status: final
 created: 2026-09-09
-updated: 2026-09-10
+updated: 2026-09-23
 ---
 
 # PRD: KitchenCraft
@@ -13,7 +13,7 @@ Defines what KitchenCraft is and what v1 must do. Capabilities only — technica
 
 ## 1. Vision
 
-A private recipe collection that never punishes you for being in a hurry.
+A household's recipe collection that never punishes you for being in a hurry.
 
 The user finds a recipe — on a website, in a message from a friend, in their own head — and gets it into KitchenCraft in one paste and one tap. No form to fill, no fields to satisfy, no "please select a category" before it will save. A recipe is a **name and a block of text**, and that is a complete, valid, first-class recipe forever.
 
@@ -23,7 +23,7 @@ The payoff for structure is **finding things**: search the full text, narrow by 
 
 ## 2. Target User
 
-The builder and their household — people cooking ordinary meals at home, standing in the kitchen with a phone, deciding what to make. Single-user in practice: each dock account holds its own private collection. [ASSUMPTION] Per-user storage keyed by the authenticated username, following the Listies pattern; no sharing surface in v1.
+The builder and their household — people cooking ordinary meals at home, standing in the kitchen with a phone, deciding what to make. The household shares **one collection and one shopping list**: every signed-in dock account reads and writes the same recipes, favourites, ratings and list. There is no per-person view and no sharing surface, because there is nothing to share — it is already everyone's. *(Revised 2026-09-23; this was one private collection per account. See §12.)*
 
 ### 2.1 Jobs To Be Done
 
@@ -46,10 +46,10 @@ The builder and their household — people cooking ordinary meals at home, stand
 - **Body** — the free-text block holding the recipe as the user captured it. Ingredients, method, notes, whatever they pasted, in whatever shape it arrived. Never rewritten by the system.
 - **Tag** — a free-text label on a recipe. One flat namespace covering cuisine, occasion, diet, and anything else the user invents.
 - **Ingredient** — a line in a namespace of its own, separate from ordinary tags: an optional **amount** (`200`, `1/2`, `a few`), an optional **unit** (`g`, `tbsp`, `clove`), and the **ingredient itself** as free text (`smoked paprika`, `chicken thighs`). Only the last is required — `garlic` is a complete ingredient. *(Revised 2026-09-15; see §12.)*
-- **Unit list** — a shipped starter set of units offered by the unit field. Not a closed set: anything typed is accepted and joins that user's own list.
+- **Unit list** — a shipped starter set of units offered by the unit field. Not a closed set: anything typed is accepted and joins the collection's list.
 - **Staple** — an ingredient assumed to be in every kitchen (salt, black pepper). Tagged like any other, but excluded by default when sending ingredients to the shopping list.
 - **Enrichment pass** — an offline, LLM-assisted batch over stored bodies that populates structured fields and tags. Run by the builder in Claude Code against the data volume, not by the app.
-- **Shopping list** — one running list per user of items to buy, filled from recipes or typed by hand.
+- **Shopping list** — the household's one running list of items to buy, filled from recipes or typed by hand.
 
 ## 4. Features
 
@@ -93,7 +93,9 @@ The body is stored as the user entered it and is never reformatted, re-flowed, o
 
 #### FR-4: Optional metadata on a recipe
 
-A recipe may carry: **meal type** (breakfast / lunch / dinner / snack / dessert / other), **total time** in minutes, **servings**, **source** (free text — a URL, a person's name, a book), **tags**, and **ingredient tags**.
+*Revised 2026-09-23: the meal types are the three the collection has dividers for; see §12.*
+
+A recipe may carry: **meal type** (breakfast / dinner / dessert), **total time** in minutes, **servings**, **source** (free text — a URL, a person's name, a book), **tags**, and **ingredient tags**.
 
 **Consequences (testable):**
 - Each field can be set and cleared independently; clearing one does not disturb the others.
@@ -140,7 +142,7 @@ When entering tags or ingredients, the user is offered the values already presen
 
 #### FR-8: Browse the collection
 
-The user sees their recipes as a scannable list, newest first by default. [ASSUMPTION] Creation date descending is the default order; alternative sorts are not in v1.
+The user sees the collection as a scannable list, newest first by default. [ASSUMPTION] Creation date descending is the default order; alternative sorts are not in v1.
 
 **Consequences (testable):**
 - Each entry shows at minimum the name, and shows meal type and time when present.
@@ -184,13 +186,15 @@ The user can toggle a favourite flag on any recipe; favourites surface first in 
 
 ### 4.5 Shopping List
 
-**Description:** Exactly one list per user, reachable from anywhere in the app, filled from recipes or by hand, and emptied at the shop. It is a shopping companion, not a second notes app: open it in the aisle, cross things off, clear it on the way out.
+**Description:** Exactly one list for the household, reachable from anywhere in the app, filled from recipes or by hand, and emptied at the shop. It is a shopping companion, not a second notes app: open it in the aisle, cross things off, clear it on the way out.
 
 **Functional Requirements:**
 
 #### FR-12: One shopping list, always one tap away
 
-A button in the app's top-right corner opens the shopping list as a modal over whatever the user was doing. There is exactly one list per user.
+*Revised 2026-09-23: one list for the household, not one per user; see §12.*
+
+A button in the app's top-right corner opens the shopping list as a modal over whatever the user was doing. There is exactly one list, shared by everyone signed in.
 
 **Consequences (testable):**
 - The button is present on every KitchenCraft screen, and opening the list never navigates away from or loses the state of the current screen.
@@ -270,9 +274,9 @@ Structured fields and tags for many recipes can be updated in one operation, add
 A field the user set by hand is not silently replaced by an enrichment pass.
 
 **Consequences (testable):**
-- A recipe whose meal type the user set to `lunch` still reads `lunch` after a pass that would have inferred `dinner`.
+- A recipe whose meal type the user set to `breakfast` still reads `breakfast` after a pass that would have inferred `dinner`.
 - Enrichment fills empty fields and adds tags; the user's own values and tags survive.
-- [OPEN] The mechanism for distinguishing user-set from machine-set values is a design question for architecture, not a PRD decision.
+- The mechanism is per-field provenance: a value enrichment wrote carries a mark until the user confirms or changes it, and only marked or empty fields are a pass's to fill. *(Resolved 2026-09-23 from Story 4.1 and `architectures/kitchencraft-enrichment-2026-09-15.md` §1; see §8.)*
 
 #### FR-20: Enrichment respects the ingredient wording already in use
 
@@ -305,7 +309,7 @@ A recipe can be rated 1–5 stars, independently of whether it is a favourite.
 - **Servings scaling.** Requires reliably parsed quantities, not just ingredient names.
 - **Meal planning / calendar.** Kalendariq exists; KitchenCraft does not become a planner.
 - **Nutrition, calories, macros.**
-- **Sharing, publishing, multi-user collaboration on a collection.**
+- **Sharing beyond the household, publishing.** Within the household the collection is already shared (§2); there is no invite, permission or per-person view. *(Revised 2026-09-23; see §12.)*
 - **Rich-text or structured recipe editing** (separate ingredient rows, numbered step objects). The body is text.
 
 ## 6. MVP Scope
@@ -343,28 +347,29 @@ Everything in §5, plus: alternative sort orders, trash/restore, tag rename and 
 
 **Still open:**
 
-1. **Distinguishing user-set from machine-set field values** (FR-19). Needed so enrichment can fill gaps without overwriting deliberate input. An architecture decision — provenance flags, a separate machine-written layer, or something else.
+1. ~~**Distinguishing user-set from machine-set field values** (FR-19).~~ **Closed** — per-field provenance marks on the recipe (Story 4.1; enrichment architecture §1). A value enrichment wrote is marked until the user confirms or edits it.
 2. ~~**Seeding the category vocabulary.**~~ **Closed 2026-09-15** — moot. There is no category vocabulary; ingredients are free text (FR-5). A shipped starter list of *units* took its place, and it is deliberately open: anything typed is accepted.
-3. **Reaching the volume from the host.** Direct access is decided; the mechanics are not — bind mount, `docker cp`, or running the script inside the container. Belongs to architecture, but the answer determines whether a pass can run against a live app at all.
+3. ~~**Reaching the volume from the host.**~~ **Closed** — the script runs inside the running container via `docker compose exec`, because the file locks are in-process and only real there (enrichment architecture §2; `backend/scripts/ENRICHMENT-RUNBOOK.md`). A bind mount and `docker cp` were both rejected for bypassing the locks.
 
 ## 9. Assumptions Index
 
-- **[ASSUMPTION]** Per-user private collection keyed by authenticated username (Listies pattern); no sharing in v1.
+- ~~**[ASSUMPTION]** Per-user private collection keyed by authenticated username (Listies pattern); no sharing in v1.~~ **Replaced 2026-09-23:** one collection and one shopping list for the household, shared by every signed-in account (§12). Assumes one dock instance serves one household.
 - **[ASSUMPTION]** Default browse order is creation date descending, favourites first; no alternative sorts.
 - **[ASSUMPTION]** No trash or undo; deletion is confirmed and permanent.
 - **[ASSUMPTION]** No cap on tag count per recipe.
 - **[ASSUMPTION]** Quantities are not parsed out of bodies. An amount is whatever the cook typed into the amount field, and the shopping list receives the ingredient line as it reads on the recipe. *(Revised 2026-09-15.)*
 - **[ASSUMPTION]** Staples are hard-coded as salt and black pepper, not user-configurable in v1.
+- **[ASSUMPTION]** Everyone signed in is trusted equally: any account can edit or delete any recipe, and there is no record of who did.
 - **[ASSUMPTION]** The shopping list holds plain text items with no link back to the recipe they came from.
 - **[ASSUMPTION]** Mobile-first web, same Quasar SPA as every other dock app — no native app, no offline mode.
 
 ## 10. Cross-Cutting NFRs
 
-- **Persistence.** JSON files on disk, one file per user, all writes atomic, per-file locking on read-modify-write — the established dock pattern. No database, no new backend dependency.
+- **Persistence.** JSON files on disk — one for the collection, one for the shopping list — all writes atomic, per-file locking on read-modify-write — the established dock pattern. No database, no new backend dependency.
 - **Layering.** Strict router → service → repository; the repository is the only code touching the filesystem.
 - **Data safety.** The body is the irreplaceable asset. No operation — edit, enrichment, bulk update, migration — may lose or silently alter a body. Offline enrichment is held to the same standard as the app: same repository layer, same atomic writes, same locks.
 - **Mobile-first.** Every screen usable one-handed at phone width; the recipe reading view is legible at arm's length.
-- **Auth.** Behind the dock's existing JWT auth like every other app; a user reaches only their own collection.
+- **Auth.** Behind the dock's existing JWT auth like every other app; an anonymous caller reaches nothing, and every signed-in user reaches the one shared collection. *(Revised 2026-09-23.)*
 - **Performance.** Search and filter stay instant over a personal-scale collection (hundreds, not millions, of recipes). [ASSUMPTION] Client-side filtering over the loaded collection is acceptable at this scale.
 
 ## 11. Aesthetic & Tone
@@ -424,3 +429,45 @@ rating is in).
 PRD is catching up with the code rather than the other way round, which is worth
 noting as a process fact: the requirement was written after the fact, from the
 built behaviour.
+
+### 2026-09-23 — Meal types are the dividers: breakfast, dinner, dessert
+
+**What changed.** FR-4's meal types went from six (breakfast / lunch / dinner /
+snack / dessert / other) to three: breakfast, dinner and dessert. The API
+rejects the retired values. The schema went to v3 and existing recipes migrate
+on read: `lunch` becomes `dinner` and keeps its provenance mark; `snack` and
+`other` are cleared, mark included.
+
+**Why.** The Notebook retheme made the meal-type filter a row of folder
+dividers, and there are dividers for only three types. Lunch, snack and other
+could be picked on the edit screen but could only be found again through
+search. Now the only meal types are the ones the dividers show, and a test
+checks that every meal type has a tab.
+
+**What it cost.** A recipe filed as `snack` or `other` loses its meal type.
+`lunch` → `dinner` is the nearest divider, not an exact match.
+
+### 2026-09-23 — One collection and one shopping list for the household
+
+**What changed.** The per-account collection and shopping list became one of
+each for the whole household: `kitchencraft/recipes.json` and
+`kitchencraft/shopping.json`. Every signed-in user reads and writes both, and
+the favourite and the rating are one value per recipe rather than one per
+person. Signing in is still required; who is signed in no longer picks a file.
+§2, the Glossary, FR-4, FR-12, FR-19, §5, §9 and §10 changed to match.
+
+**How existing data moved.** Until a shared file exists, reading it
+concatenates every legacy per-user file (`users/*.json`, `shopping/*.json`) in
+filename order, migrating each one first. The first write saves the merged
+result. If two recipes share an id, the second gets its owner's name appended
+to the id, so no recipe is dropped. The legacy files are never written again and
+stay as a backup.
+
+**Why.** KitchenCraft is a household app: the people cooking from it cook from
+the same shelf and shop from the same list. Tags and ingredients now suggest
+from the whole collection, which keeps two cooks converging on one spelling.
+
+**What it cost.** The PRD's non-goal of "multi-user collaboration on a
+collection" is reversed within the household, but only there: there are still no
+permissions, no per-person view, and no record of who changed what (§9). One
+dock instance is assumed to serve one household.
