@@ -25,8 +25,8 @@
       <span class="kc-tab__label">{{ tab.label }}</span>
       <svg
         class="kc-tab__icon"
-        width="17"
-        height="17"
+        width="18"
+        height="18"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -60,7 +60,7 @@ interface Tab {
  * A sun for breakfast and a moon for dinner is the tidier pair, but dessert
  * has no hour and `Kept` has none either, so half the rail would be telling
  * the time and half would not. Drawn objects keep one register across all
- * five: a list, a cup, a cloche, a slice, a heart.
+ * five: a list, a cup, a knife and fork, a slice, a heart.
  *
  * `Kept` wears the same heart as the favourite mark on every row, so the
  * divider and the thing it collects are visibly the same idea.
@@ -75,10 +75,16 @@ const GLYPH = {
   // leaning on its outline for.
   breakfast:
     "M9.2 6.2c0-1 1.1-1.2 1.1-2.2M12.8 6.2c0-1 1.1-1.2 1.1-2.2M5.2 8.8h10.6v4.4a4.6 4.6 0 0 1-4.6 4.6h-1.4a4.6 4.6 0 0 1-4.6-4.6V8.8ZM15.8 10h1.4a2.2 2.2 0 0 1 0 4.4h-1.4M4 19.6h13",
-  // A cloche: a served meal, which is what dinner is and lunch is not.
-  dinner: "M4 17.5h16M5.6 17.5a6.4 6.4 0 0 1 12.8 0M12 7.6V6.2",
-  // A slice of cake, cut side on, with its filling and a cherry.
-  dessert: "M5.6 18h12.8M6.4 18 12 8l5.6 10M8.6 14.2h6.8M12 6.9v-.8",
+  // A fork and knife. Was a cloche, which is a truer picture of "a served
+  // meal" but is also one soft closed shape, and that is exactly what failed
+  // for the egg. Cutlery is all straight lines, and in a set that already
+  // holds a cup and a slice of cake it can only mean the main meal.
+  dinner:
+    "M6.2 3.6v4.3a2.4 2.4 0 0 0 4.8 0V3.6M8.6 3.6v4.1M8.6 10.3v10.1M17.4 20.4V3.6c1.7 1.3 2.3 3.5 1.8 5.4-.3 1.1-1 1.8-1.8 2",
+  // A slice of cake, cut side on, with its filling. The cherry went: three
+  // marks inside a triangle this small is a crowd, and it was the one saying
+  // the least.
+  dessert: "M5.6 18.6h12.8M6.6 18.6 12 8.4l5.4 10.2M9 14.4h6",
   // The favourite mark, at divider size.
   kept: "M12 19.6l-1.2-1.1C6.2 14 3.2 11.4 3.2 8.2A4.4 4.4 0 0 1 7.6 3.8c1.5 0 2.9.7 4.4 2 1.1-1.3 2.5-2 4-2a4.4 4.4 0 0 1 4.4 4.4c0 3.2-3 5.8-7.6 10.3L12 19.6Z",
 };
