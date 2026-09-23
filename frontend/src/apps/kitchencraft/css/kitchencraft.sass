@@ -144,6 +144,9 @@
   --kc-punch: 46px
   --kc-hole: 8px
   --kc-hole-x: 18px
+  // One coffee ring, bottom right, because there always is one. A variable so
+  // a narrow screen can drop the layer without restating the grain beside it.
+  --kc-ring: radial-gradient(circle 52px at calc(100% - 84px) calc(100% - 76px), transparent 0 45px, rgba(168, 80, 27, 0.11) 45px 50px, transparent 50px)
 
 .kitchencraft-app
   background: var(--kc-desk)
@@ -188,6 +191,16 @@
   background-image: linear-gradient(to right, transparent 0 calc(var(--kc-punch) - 10px), var(--kc-margin) calc(var(--kc-punch) - 10px) calc(var(--kc-punch) - 9px), transparent calc(var(--kc-punch) - 9px)), radial-gradient(circle var(--kc-hole) at var(--kc-hole-x) 60px, var(--kc-manila) 97%, transparent 100%)
   background-repeat: no-repeat, repeat-y
   background-size: 100% 100%, 100% 120px
+
+.kc-band::after
+  content: ""
+  position: absolute
+  inset: 12px 12px 22px
+  pointer-events: none
+  border-radius: var(--kc-r-sm)
+  background-image: var(--kc-ring), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.042'/%3E%3C/svg%3E")
+  background-repeat: no-repeat, repeat
+  background-size: auto, 160px 160px
 
 // Everything on the page clears the punched margin. `:not(.kc-backdrop)`
 // because a modal is fixed to the viewport and must not be inset with it.
@@ -257,6 +270,15 @@
   text-transform: uppercase
   color: var(--kc-burgundy)
   margin: 0 0 5px
+
+.kc-bar > .kc-title::after,
+.kc-read__name::after
+  content: ""
+  display: block
+  width: min(300px, 78%)
+  height: 8px
+  margin-top: 1px
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 340 9' preserveAspectRatio='none'%3E%3Cpath d='M2 6 C 62 2, 108 8, 168 4 S 282 2, 338 5' fill='none' stroke='%236E2233' stroke-width='2' stroke-linecap='round' opacity='0.7'/%3E%3C/svg%3E") no-repeat left center / 100% 100%
 
 // --- Layout ------------------------------------------------------------------
 
@@ -1130,6 +1152,11 @@
 .kc-read__bottom
   grid-area: bottom
 
+.kc-read__bottom > div
+  background: rgba(243, 239, 227, 0.5)
+  border: 1px dotted var(--kc-rule-strong)
+  padding: 13px 15px 15px
+
 // --- Responsive: phone and wide as peers, split at 700px ---------------------
 // The recipe size and the measure are IDENTICAL on both sides.
 
@@ -1162,8 +1189,13 @@
   .kc-band
     padding: 9px 9px 16px
 
-  .kc-band::before
+  .kc-band::before,
+  .kc-band::after
     inset: 9px 9px 16px
+
+  // No room for it, and it would sit under the writing rather than beside it.
+  .kitchencraft-app
+    --kc-ring: none
 
   .kitchencraft-app,
   .kitchencraft-panel
