@@ -1,11 +1,13 @@
 <template>
   <div class="kc-bar">
-    <h1 v-if="title" class="kc-title">{{ title }}</h1>
     <!--
-      Without a title the bar is still a bar: the reading view's heading is the
-      recipe name in the page below, so this holds the chrome alone.
+      The reading view fills the `title` slot with the recipe name, so its own
+      heading sits beside the chrome rather than beneath it.
     -->
-    <span v-else />
+    <slot name="title">
+      <h1 v-if="title" class="kc-title">{{ title }}</h1>
+      <span v-else />
+    </slot>
 
     <div class="kc-bar__actions">
       <!-- The page's own action, where it has one — the moss button. -->

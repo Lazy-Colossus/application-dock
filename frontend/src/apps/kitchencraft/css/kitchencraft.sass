@@ -144,9 +144,6 @@
   --kc-punch: 46px
   --kc-hole: 8px
   --kc-hole-x: 18px
-  // One coffee ring, bottom right, because there always is one. A variable so
-  // a narrow screen can drop the layer without restating the grain beside it.
-  --kc-ring: radial-gradient(circle 52px at calc(100% - 84px) calc(100% - 76px), transparent 0 45px, rgba(168, 80, 27, 0.11) 45px 50px, transparent 50px)
 
 .kitchencraft-app
   background: var(--kc-desk)
@@ -198,9 +195,9 @@
   inset: 12px 12px 22px
   pointer-events: none
   border-radius: var(--kc-r-sm)
-  background-image: var(--kc-ring), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.042'/%3E%3C/svg%3E")
-  background-repeat: no-repeat, repeat
-  background-size: auto, 160px 160px
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.042'/%3E%3C/svg%3E")
+  background-repeat: repeat
+  background-size: 160px 160px
 
 // Everything on the page clears the punched margin. `:not(.kc-backdrop)`
 // because a modal is fixed to the viewport and must not be inset with it.
@@ -515,8 +512,10 @@
   .kc-tab
     min-height: var(--kc-touch)
 
+  // Narrow but tall: the stars are contiguous, so a slim target still lands on
+  // a star, and the row gives the screen back its width.
   .kc-rating__star
-    min-width: 36px
+    min-width: 28px
     min-height: var(--kc-touch)
 
   .kc-row > .kc-icon-btn
@@ -718,7 +717,7 @@
 
 // The stars are contiguous with no dead space between them, so a miss lands on
 // a neighbour rather than on nothing. 24x26 clears WCAG 2.5.8's 24px pointer
-// floor; `pointer: coarse` puts the 36x44 touch target back.
+// floor; `pointer: coarse` makes it a 28x44 touch target.
 // Orange is a non-text mark at 4.3:1; filled vs outlined is what carries the
 // value, exactly as it did in ink.
 .kc-rating__star
@@ -1221,11 +1220,13 @@
   display: grid
   gap: 16px
   padding: 16px var(--kc-pad) 32px
-  grid-template-areas: "name" "top" "body" "bottom"
+  grid-template-areas: "top" "body" "bottom"
   grid-template-columns: minmax(0, 1fr)
 
+// Shares the bar with the shopping-list button, so it gives way before it.
 .kc-read__name
-  grid-area: name
+  min-width: 0
+  overflow-wrap: break-word
 
 .kc-read__top
   grid-area: top
@@ -1251,7 +1252,8 @@
 .kc-read__bottom
   grid-area: bottom
 
-.kc-read__bottom > div
+// The pale panel is the ingredients' alone; tags sit bare on the page.
+.kc-read__ingredients
   background: rgba(243, 239, 227, 0.5)
   border: 1px dotted var(--kc-rule-strong)
   padding: 13px 15px 15px
@@ -1268,7 +1270,7 @@
   .kc-read
     grid-template-columns: minmax(0, var(--kc-measure)) minmax(180px, 1fr)
     column-gap: 32px
-    grid-template-areas: "name top" "body bottom"
+    grid-template-areas: "top top" "body bottom"
 
   .kc-backdrop
     align-items: center
@@ -1319,10 +1321,6 @@
   .kc-band::after
     inset: 8px 8px 15px
 
-  // No room for it, and it would sit under the writing rather than beside it.
-  .kitchencraft-app
-    --kc-ring: none
-
   .kitchencraft-app,
   .kitchencraft-panel
     --kc-punch: 30px
@@ -1337,6 +1335,33 @@
 
   .kc-row__open
     flex: 1 1 100%
+
+  // Label, field and the tags toggle share one line; the chips it opens and
+  // the count take the full width beneath. Stacked, the panel ate a third of
+  // the screen before the first recipe.
+  .kc-head
+    display: grid
+    grid-template-columns: auto minmax(0, 1fr) auto
+    align-items: center
+    column-gap: 10px
+    padding: 10px var(--kc-pad) 8px
+
+  .kc-head > .kc-label,
+  .kc-head .kc-group > .kc-label
+    margin: 0
+
+  .kc-head .kc-group
+    display: contents
+
+  // The toggle is a word-sized button; beside the field it can take the
+  // field's height as its target without making the line any taller.
+  .kc-head .kc-group > .kc-label
+    align-self: stretch
+
+  .kc-head .kc-chips,
+  .kc-head .kc-countline
+    grid-column: 1 / -1
+    margin-top: 8px
 
   .kc-modal
     rotate: -0.4deg

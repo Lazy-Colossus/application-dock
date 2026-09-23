@@ -107,8 +107,13 @@ watch(
   () => pageDetail.clearDetail(),
 );
 
+// A route can pin where back leads. KitchenCraft does, because stepping back
+// through history walks a saved recipe back into its own edit form.
 function goBack(): void {
-  if (window.history.length > 1) {
+  const backTo = route.meta?.backTo;
+  if (typeof backTo === "string") {
+    void router.push(backTo);
+  } else if (window.history.length > 1) {
     router.back();
   } else {
     void router.push("/");

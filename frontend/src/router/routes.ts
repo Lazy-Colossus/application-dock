@@ -167,19 +167,31 @@ const routes: RouteRecordRaw[] = [
         path: "kitchencraft/new",
         name: "kitchencraft-capture",
         component: () => import("@/apps/kitchencraft/pages/CapturePage.vue"),
-        meta: { title: "KitchenCraft", requiresAuth: true },
+        meta: {
+          title: "KitchenCraft",
+          requiresAuth: true,
+          backTo: "/kitchencraft",
+        },
       },
       {
         path: "kitchencraft/r/:id",
         name: "kitchencraft-recipe",
         component: () => import("@/apps/kitchencraft/pages/RecipePage.vue"),
-        meta: { title: "KitchenCraft", requiresAuth: true },
+        meta: {
+          title: "KitchenCraft",
+          requiresAuth: true,
+          backTo: "/kitchencraft",
+        },
       },
       {
         path: "kitchencraft/r/:id/edit",
         name: "kitchencraft-edit",
         component: () => import("@/apps/kitchencraft/pages/EditRecipePage.vue"),
-        meta: { title: "KitchenCraft", requiresAuth: true },
+        meta: {
+          title: "KitchenCraft",
+          requiresAuth: true,
+          backTo: "/kitchencraft",
+        },
       },
       {
         path: "question-of-the-day",

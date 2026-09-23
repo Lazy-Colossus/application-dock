@@ -2,11 +2,16 @@
   <q-page class="kitchencraft-app">
     <div class="kc-band">
       <!--
-        The reading view had no bar; it gains a titleless one so the shopping
-        list is reachable here too (FR-14). No title, because the recipe name
-        below is already this screen's heading.
+        The recipe name is this screen's heading, and it rides in the bar
+        beside the shopping list (FR-14) rather than on a line of its own.
       -->
-      <PageBar />
+      <PageBar>
+        <template v-if="recipe" #title>
+          <h1 class="kc-title kc-read__name" data-testid="recipe-name">
+            {{ recipe.name }}
+          </h1>
+        </template>
+      </PageBar>
 
       <p v-if="store.error" class="kc-error kc-pad" data-testid="error">
         {{ store.error }}
@@ -19,21 +24,12 @@
           body, and nothing else appears (the absence rule, UX-DR9).
         -->
         <div class="kc-read">
-          <h1 class="kc-title kc-read__name" data-testid="recipe-name">
-            {{ recipe.name }}
-          </h1>
-
           <!--
             The rating is a control, not a value, so it renders whether or not
             the recipe carries one — five outlined stars for unrated, which is
             the absence rule met by showing nothing rather than a placeholder.
           -->
           <div class="kc-read__top">
-            <RatingStars
-              :model-value="recipe.rating"
-              testid="recipe-rating"
-              @update:model-value="rate($event)"
-            />
             <p
               v-if="metaParts.length > 0"
               class="kc-meta"
@@ -41,6 +37,11 @@
             >
               {{ metaParts.join(" · ") }}
             </p>
+            <RatingStars
+              :model-value="recipe.rating"
+              testid="recipe-rating"
+              @update:model-value="rate($event)"
+            />
           </div>
 
           <!--
@@ -54,7 +55,10 @@
           </div>
 
           <div class="kc-read__bottom">
-            <div v-if="recipe.ingredients.length > 0">
+            <div
+              v-if="recipe.ingredients.length > 0"
+              class="kc-read__ingredients"
+            >
               <span class="kc-label">Ingredients</span>
               <!--
                 One per line, in the order the cook entered them — a list to
