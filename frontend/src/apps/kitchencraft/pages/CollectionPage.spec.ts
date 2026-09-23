@@ -248,15 +248,19 @@ describe("the folder dividers", () => {
     ).toBe("onion");
   });
 
-  it("swaps the label for a glyph at phone width, keeping the name", async () => {
-    // The label element and the glyph both ship; CSS decides which is shown,
-    // and `aria-label` means the name survives either way.
+  it("names every divider in text, at every width", async () => {
+    // No glyphs: a meal category has no conventional icon, so the word is the
+    // only thing that says what the divider is. The phone shrinks the type
+    // rather than swapping the label out.
     const wrapper = await mountPage(twoMeals());
-    const dinner = wrapper.find('[data-testid="tab-dinner"]');
-    expect(dinner.attributes("aria-label")).toBe("Dinner");
-    expect(dinner.find(".kc-tab__label").text()).toBe("Dinner");
-    expect(dinner.find(".kc-tab__icon").exists()).toBe(true);
-    expect(dinner.find(".kc-tab__icon").attributes("aria-hidden")).toBe("true");
+    expect(wrapper.findAll(".kc-tab").map((t) => t.text())).toEqual([
+      "All",
+      "Breakfast",
+      "Dinner",
+      "Dessert",
+      "Kept",
+    ]);
+    expect(wrapper.find(".kc-tab svg").exists()).toBe(false);
   });
 
   it("carries no divider for lunch, snack or other", async () => {

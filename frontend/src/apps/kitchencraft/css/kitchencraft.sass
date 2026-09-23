@@ -612,12 +612,6 @@
   // Shaded while closed, so the open one reads as nearer without moving colour.
   filter: brightness(0.86)
 
-.kc-tab__icon
-  display: none
-
-.kc-tab__label
-  display: block
-
 .kc-tab:nth-child(1)
   --kc-tab: var(--kc-burgundy)
 
@@ -1305,18 +1299,13 @@
     gap: 2px
 
   .kc-tab
-    flex: 1 1 0
-    min-width: 50px
+    flex: 1 1 auto
     margin-bottom: 0
+    font-size: clamp(8px, 2.3vw, 10px)
+    letter-spacing: 0.05em
     // Lopsided on purpose: the clip-path takes 15px off the top right, so
-    // equal padding would leave the glyph looking pushed right.
-    padding: 8px 15px 7px 8px
-
-  .kc-tab__label
-    display: none
-
-  .kc-tab__icon
-    display: block
+    // equal padding would leave the label looking pushed right.
+    padding: 8px 14px 7px 7px
 
   .kc-tab[aria-pressed="true"]::after
     bottom: 0
