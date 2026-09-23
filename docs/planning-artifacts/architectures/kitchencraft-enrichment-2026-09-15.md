@@ -64,10 +64,10 @@ directly against a local `DATA_DIR`.
 
 ```bash
 # Production
-docker compose exec app python -m scripts.enrich report --user nell
+docker compose exec app python -m scripts.enrich report
 
 # Development
-cd backend && DATA_DIR=./local-data .venv/bin/python -m scripts.enrich report --user nell
+cd backend && DATA_DIR=./local-data .venv/bin/python -m scripts.enrich report
 ```
 
 ### Why this, and not the alternatives
