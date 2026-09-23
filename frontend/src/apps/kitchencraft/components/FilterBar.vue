@@ -52,20 +52,19 @@
       Always rendered when anything is active, in `meta`. Never hidden, never a
       badge.
     -->
-    <p
-      v-if="countLabel"
-      class="kc-meta"
-      style="margin: 12px 0 0"
-      data-testid="count"
-    >
-      {{ countLabel }}
-    </p>
-
-    <div v-if="anyActive" class="kc-group">
+    <div v-if="countLabel" class="kc-countline">
+      <p class="kc-meta" data-testid="count">{{ countLabel }}</p>
+      <!--
+        The way out sits on the same line as the count that made you want it,
+        as quiet text rather than a button: clearing is a retreat, not the
+        thing you came to the screen to do, and a filled control said
+        otherwise. The zero-result state keeps its own full-sized button —
+        there the exit IS the offer.
+      -->
       <button
+        v-if="anyActive"
         type="button"
-        class="kc-btn kc-btn--quiet"
-        style="min-height: 44px"
+        class="kc-textbtn"
         data-testid="clear-filters"
         @click="emit('clear-all')"
       >

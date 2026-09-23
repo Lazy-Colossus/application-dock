@@ -167,6 +167,22 @@ describe("search and filters on the page", () => {
     expect(wrapper.find('[data-testid="count"]').text()).toBe("1 of 2 recipes");
   });
 
+  it("offers the way out beside the count, as text rather than a button", async () => {
+    const wrapper = await mountPage(collection());
+    expect(wrapper.find('[data-testid="clear-filters"]').exists()).toBe(false);
+
+    await wrapper.find('[data-testid="tab-dinner"]').trigger("click");
+    const clear = wrapper.find('[data-testid="clear-filters"]');
+    // On the count's own line, and quiet: not the filled `.kc-btn` treatment.
+    expect(clear.classes()).toContain("kc-textbtn");
+    expect(clear.classes()).not.toContain("kc-btn");
+    expect(clear.element.closest(".kc-countline")).not.toBeNull();
+
+    await clear.trigger("click");
+    expect(wrapper.find('[data-testid="count"]').exists()).toBe(false);
+    expect(wrapper.findAll(".kc-row")).toHaveLength(2);
+  });
+
   it("clears one filter without touching the others", async () => {
     const wrapper = await mountPage(collection());
     await wrapper.find('[data-testid="tab-dinner"]').trigger("click");

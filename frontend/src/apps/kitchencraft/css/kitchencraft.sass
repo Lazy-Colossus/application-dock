@@ -509,6 +509,9 @@
   list-style: none
 
 @media (pointer: coarse)
+  .kc-textbtn
+    min-height: var(--kc-touch)
+
   .kc-tab
     min-height: var(--kc-touch)
 
@@ -538,6 +541,42 @@
     min-width: var(--kc-touch)
     min-height: var(--kc-touch)
     margin-right: -8px
+
+// The count and the way out, on one line.
+.kc-countline
+  display: flex
+  flex-wrap: wrap
+  align-items: baseline
+  gap: 2px 12px
+  margin-top: 13px
+
+.kc-countline .kc-meta
+  margin: 0
+
+// A control that is quiet on purpose. Underlined rather than boxed, because a
+// box would make it look like the thing you came to do.
+.kc-textbtn
+  display: inline-flex
+  align-items: center
+  min-height: 24px
+  padding: 0
+  background: transparent
+  border: 0
+  font-family: var(--kc-typed)
+  font-size: 10px
+  letter-spacing: 0.11em
+  text-transform: uppercase
+  color: var(--kc-burgundy)
+  text-decoration: underline
+  text-underline-offset: 3px
+  cursor: pointer
+
+.kc-textbtn:hover
+  text-decoration-thickness: 2px
+
+.kc-textbtn:focus-visible
+  outline: 2px solid var(--kc-burgundy)
+  outline-offset: 2px
 
 // --- Folder tabs -------------------------------------------------------------
 // The dividers, on the folder's edge. Each one a different pen; the open one
