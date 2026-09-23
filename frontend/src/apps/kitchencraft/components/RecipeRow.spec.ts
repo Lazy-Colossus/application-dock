@@ -53,7 +53,7 @@ describe("the favourites glyph", () => {
       .trigger("click");
 
     expect(wrapper.emitted("toggle-favourite")).toHaveLength(1);
-    // Crucially, no `open` — tapping the star must not navigate.
+    // Crucially, no `open` — tapping the heart must not navigate.
     expect(wrapper.emitted("open")).toBeUndefined();
   });
 
