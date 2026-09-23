@@ -81,10 +81,9 @@ const showBack = computed(() => route.path !== "/" && !hideShellNav.value);
 // reads as part of the app, not a foreign grey chrome strip.
 const inHotaru = computed(() => route.path.startsWith("/hotaru"));
 
-// KitchenCraft is the dock's first light-ground app, and its design contract is
-// explicit that "the dock's dark shell does not bleed into it" — so the bar
-// takes the app's paper and serif rather than leaving a foreign dark strip
-// above a beige page. Same mechanism as the Hotaru variant above.
+// KitchenCraft is a folder lying on a dark desk, so the bar takes the desk
+// rather than the paper: a light strip above a dark ground would be the foreign
+// chrome this variant exists to avoid. Same mechanism as the Hotaru variant.
 const inKitchencraft = computed(() => route.path.startsWith("/kitchencraft"));
 const isHome = computed(() => route.path === "/");
 
@@ -140,18 +139,25 @@ function handleLogout(): void {
 .app-bar--hotaru .app-bar__title
   color: #f1f0ff
 
-// Beige Ledger: lifted paper, a taupe hairline for the boundary (the fill step
-// alone is only 1.14:1), and ink for everything read on it.
+// Notebook: the bar IS the desk the folder lies on, so it needs no boundary —
+// it meets the page ground directly and the shell reads as the surface the app
+// is sitting on rather than a strip above it. Manila on near-black is 8.9:1.
+//
+// `KC Elite` is declared by kitchencraft.sass, which only loads on a
+// KitchenCraft route — the same routes this class applies to. The fallback
+// stack covers the swap window.
 .app-bar--kitchencraft
-  background: #F5F0E2
-  border-bottom: 1px solid #96775F
+  background: #1A1613
 
 .app-bar--kitchencraft .app-bar__title
-  color: #141310
-  font-family: ui-serif, Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif
+  color: #C9B489
+  font-family: "KC Elite", "Courier New", ui-monospace, monospace
+  font-weight: 400
+  font-size: 15px
+  letter-spacing: 0.1em
 
 // Quasar's `color="grey-5"` / `color="primary"` on the shell's own buttons sets
 // a `text-*` class with `!important`, so overriding it needs the same weight.
 .app-bar--kitchencraft :deep(.q-btn)
-  color: #141310 !important
+  color: #C9B489 !important
 </style>
