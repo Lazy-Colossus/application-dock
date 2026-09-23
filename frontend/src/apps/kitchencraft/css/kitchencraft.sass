@@ -404,8 +404,8 @@
   display: inline-flex
   align-items: center
   gap: 6px
-  min-height: 32px
-  padding: 3px 7px
+  min-height: 24px
+  padding: 1px 8px
   background: var(--kc-teal)
   border: 1px solid var(--kc-teal)
   border-radius: var(--kc-r-sm)
@@ -437,8 +437,8 @@
   background: transparent
   border: 1px solid var(--kc-rule-strong)
   color: var(--kc-navy)
-  min-height: var(--kc-touch)
-  padding: 0 9px
+  min-height: 30px
+  padding: 0 10px
   rotate: 0deg
   cursor: pointer
 
@@ -466,6 +466,11 @@
   color: var(--kc-pencil)
   rotate: 0deg
 
+.kc-chip .kc-icon-btn
+  min-width: 20px
+  min-height: 20px
+  margin-right: -3px
+
 .kc-chip:focus-visible
   outline: 2px solid var(--kc-burgundy)
   outline-offset: 2px
@@ -479,6 +484,16 @@
   margin: 0
   padding: 0
   list-style: none
+
+@media (pointer: coarse)
+  .kc-chip--control,
+  .kc-chips li > .kc-chip.kc-chip--control
+    min-height: var(--kc-touch)
+
+  .kc-chip .kc-icon-btn
+    min-width: var(--kc-touch)
+    min-height: var(--kc-touch)
+    margin-right: -8px
 
 // --- Rows --------------------------------------------------------------------
 
