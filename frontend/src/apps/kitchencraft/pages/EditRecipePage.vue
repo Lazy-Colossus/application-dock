@@ -1,7 +1,30 @@
 <template>
   <q-page class="kitchencraft-app">
     <div class="kc-band">
-      <PageBar title="Edit" />
+      <!--
+        Laid out as the capture screen is, so adding and editing read as one
+        screen: the name in the bar, then capture's fields in capture's order.
+        `form` ties the name to the form below, so Enter in the bar saves.
+      -->
+      <PageBar>
+        <template #title>
+          <input
+            v-if="loaded"
+            id="edit-name"
+            v-model="form.name"
+            form="edit-form"
+            type="text"
+            class="kc-title kc-title-field"
+            :class="{ 'kc-title-field--error': nameError }"
+            autocomplete="off"
+            aria-label="Recipe name"
+            :aria-invalid="Boolean(nameError)"
+            aria-describedby="edit-name-error"
+            data-testid="name"
+          />
+          <span v-else />
+        </template>
+      </PageBar>
 
       <p v-if="store.error" class="kc-error kc-pad" data-testid="error">
         {{ store.error }}
@@ -12,27 +35,21 @@
         field, because this is the surface for setting them. Nothing here counts
         how much structure the recipe has or invites the user to add more.
       -->
-      <form v-if="loaded" class="kc-form" @submit.prevent="save()">
-        <div class="kc-form__group">
-          <label class="kc-label" for="edit-name">Name</label>
-          <input
-            id="edit-name"
-            v-model="form.name"
-            type="text"
-            class="kc-field"
-            :class="{ 'kc-field--error': nameError }"
-            autocomplete="off"
-            data-testid="name"
-          />
-          <p
-            class="kc-error"
-            role="alert"
-            aria-live="polite"
-            data-testid="name-error"
-          >
-            {{ nameError }}
-          </p>
-        </div>
+      <form
+        v-if="loaded"
+        id="edit-form"
+        class="kc-form kc-form--full"
+        @submit.prevent="save()"
+      >
+        <p
+          id="edit-name-error"
+          class="kc-error"
+          role="alert"
+          aria-live="polite"
+          data-testid="name-error"
+        >
+          {{ nameError }}
+        </p>
 
         <div class="kc-form__group">
           <label class="kc-label" for="edit-body">Recipe text</label>
@@ -41,9 +58,12 @@
             v-model="form.body"
             class="kc-field kc-field--body"
             :class="{ 'kc-field--error': bodyError }"
+            :aria-invalid="Boolean(bodyError)"
+            aria-describedby="edit-body-error"
             data-testid="body"
           ></textarea>
           <p
+            id="edit-body-error"
             class="kc-error"
             role="alert"
             aria-live="polite"
@@ -54,8 +74,10 @@
         </div>
 
         <div class="kc-form__group">
-          <span class="kc-label">Rating</span>
-          <RatingStars v-model="form.rating" testid="edit-rating" />
+          <IngredientsField
+            v-model="form.ingredients"
+            :suggestions="ingredientSuggestions"
+          />
         </div>
 
         <div class="kc-form__group">
@@ -77,6 +99,37 @@
               </button>
             </li>
           </ul>
+        </div>
+
+        <div class="kc-form__group">
+          <label class="kc-label" for="edit-servings">Servings</label>
+          <StepperField
+            id="edit-servings"
+            v-model="servingsText"
+            testid="servings"
+            noun="servings"
+            :invalid="Boolean(servingsError)"
+            describedby="edit-servings-error"
+          />
+          <p
+            id="edit-servings-error"
+            class="kc-error"
+            role="alert"
+            aria-live="polite"
+            data-testid="servings-error"
+          >
+            {{ servingsError }}
+          </p>
+        </div>
+
+        <div class="kc-form__group">
+          <TagsField v-model="form.tags" :suggestions="tagSuggestions" />
+        </div>
+
+        <!-- The fields capture leaves for later, below everything it shares. -->
+        <div class="kc-form__group">
+          <span class="kc-label">Rating</span>
+          <RatingStars v-model="form.rating" testid="edit-rating" />
         </div>
 
         <div class="kc-form__group">
@@ -102,28 +155,6 @@
         </div>
 
         <div class="kc-form__group">
-          <label class="kc-label" for="edit-servings">Servings</label>
-          <input
-            id="edit-servings"
-            v-model="servingsText"
-            type="text"
-            inputmode="numeric"
-            class="kc-field"
-            :class="{ 'kc-field--error': servingsError }"
-            autocomplete="off"
-            data-testid="servings"
-          />
-          <p
-            class="kc-error"
-            role="alert"
-            aria-live="polite"
-            data-testid="servings-error"
-          >
-            {{ servingsError }}
-          </p>
-        </div>
-
-        <div class="kc-form__group">
           <label class="kc-label" for="edit-source">Source</label>
           <input
             id="edit-source"
@@ -132,21 +163,6 @@
             class="kc-field"
             autocomplete="off"
             data-testid="source"
-          />
-        </div>
-
-        <!--
-          Two separate inputs, never merged, each suggesting only from its own
-          namespace (FR-8).
-        -->
-        <div class="kc-form__group">
-          <TagsField v-model="form.tags" :suggestions="tagSuggestions" />
-        </div>
-
-        <div class="kc-form__group">
-          <IngredientsField
-            v-model="form.ingredients"
-            :suggestions="ingredientSuggestions"
           />
         </div>
 
@@ -179,6 +195,7 @@ import { useRoute, useRouter } from "vue-router";
 import PageBar from "@/apps/kitchencraft/components/PageBar.vue";
 import IngredientsField from "@/apps/kitchencraft/components/IngredientsField.vue";
 import RatingStars from "@/apps/kitchencraft/components/RatingStars.vue";
+import StepperField from "@/apps/kitchencraft/components/StepperField.vue";
 import TagsField from "@/apps/kitchencraft/components/TagsField.vue";
 import {
   orderByUsage,
