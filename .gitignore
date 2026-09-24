@@ -259,3 +259,6 @@ frontend/quasar.config.*.temporary.compiled.*
 
 # macOS
 .DS_Store
+
+# Superpowers visual brainstorming companion (local mockup scratch)
+.superpowers/

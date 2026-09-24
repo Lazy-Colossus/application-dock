@@ -23,8 +23,8 @@ inventing that entity twice.
 - A per-user cabinet of teas with collector-grade fields: provenance, purchase, storage, notes.
 - A shared catalogue tree (the Almanac's spine) classifying every tea from broad class to named
   tea, seeded in the repo and extensible by the user.
-- A grouped card shelf, a full detail page per tea, and inline editing of grams remaining.
-- A per-tea "running low" threshold surfaced as a badge on the card.
+- A grouped shelf, a full detail page per tea, and editing grams without leaving the shelf.
+- A per-tea "running low" threshold, shown on the rim gauge as a dashed fill and a threshold tick.
 
 **Explicitly out of scope (v1), with the reason:**
 
@@ -77,12 +77,15 @@ lifecycle-free entity.
 - **FR-11** — Within a section, teas sort by `name` A–Z, except that teas at `grams_remaining: 0`
   sort to the end of *their own section* — not to the end of the shelf. A class section remains
   the single place to look for that class.
-- **FR-12** — A tea card shows the name (with `name_zh` when its node carries one), the catalogue
-  path as a subtitle, remaining-of-purchased grams, and a low badge when applicable.
+- **FR-12** — A tea on the shelf shows the name (with `name_zh` when its node carries one), the
+  catalogue path as a subtitle, and a **rim gauge**: a circular stroke drawn to
+  `grams_remaining / grams_purchased` in the class's liquor colour, with the grams inside it. The
+  gauge carries class and quantity together, so a tea needs no badge, chip or pill.
 - **FR-13** — A tea is below its threshold when `low_threshold_grams` is set and
   `grams_remaining` is at or below it. A null threshold is never low.
-- **FR-14** — `grams_remaining` is editable inline on the card, committed on Enter or blur and
-  cancelled on Escape, without navigating away from the shelf.
+- **FR-14** — Tapping a rim gauge on the shelf opens the grams sheet — minus, value, plus, Save —
+  without navigating away. The change is optimistic and rolls back on failure. The same sheet is
+  the only way grams change anywhere in the app.
 - **FR-15** — Every other field is edited on the tea's own page at `/tea/:teaId`. Creating a tea
   happens at `/tea/new`.
 - **FR-16** — Navigating away from a form with unsaved changes asks before discarding.
@@ -231,13 +234,18 @@ service that merges it. This is the layering rule most likely to be quietly viol
 src/apps/tea/
 ├── types.ts                      Tea, CatalogueNode, TeaClass
 ├── catalogue.ts                  pure: buildTree, rootClassOf, pathOf, childrenOf
-├── shelf.ts                      pure: groupByClass, sortSection, isLow
+├── shelf.ts                      pure: groupByClass, sortSection, isLow, gaugeArc
+├── composables/
+│   └── useSectionInView.ts       which class owns its leaves while scrolling
 ├── stores/
 │   ├── useTeaCabinetStore.ts     shelf CRUD; loading/error
 │   └── useTeaCatalogueStore.ts   tree fetch + cache; add/delete node
 ├── components/
-│   ├── TeaCard.vue
+│   ├── TeaRow.vue                name, path and its rim gauge
+│   ├── RimGauge.vue              proportion, threshold tick, dashed-when-low, empty state
+│   ├── ClassLeaves.vue           the sinensis/assamica silhouettes behind a section
 │   ├── ShelfSection.vue
+│   ├── GramsSheet.vue            the stepper, opened from any rim
 │   ├── TeaForm.vue               the field set, shared by both pages
 │   ├── CataloguePicker.vue
 │   └── AddNodeDialog.vue
@@ -257,48 +265,69 @@ both `src/apps/registry.ts` and `_APPS`; routes lazy-loaded in `src/router/route
 
 ## Interaction design
 
-**The shelf.** Sections in class order, empty sections hidden, cards sorted per FR-11. A FAB opens
-`/tea/new`. A fresh cabinet shows an empty state rather than a bare page.
+**The shelf.** Sections in class order, empty sections hidden, teas sorted per FR-11. Scrolling
+moves the leaves from one class to the next and nothing else animates. A fresh cabinet shows an
+empty state rather than a bare page.
 
-**Inline grams.** The recurring act is "I brewed 7g, knock it off". Making that a navigate → edit →
-save → back round trip is four steps for a two-digit change, and an app that is annoying at the tea
-table will not get used. Tapping the grams figure opens a number input in place; the store already
-holds the full record from the list response, so the full-replace PUT costs nothing extra. The
-update is optimistic and rolls back on failure.
+**Grams.** The recurring act is "I brewed 7g, knock it off". Making that a navigate → edit → save →
+back round trip is four steps for a two-digit change, and an app that is annoying at the tea table
+will not get used. Tapping any rim opens the grams sheet — minus, value, plus, Save, with a hint
+stating where you started so a mis-tap is obvious before it commits. The store already holds the
+full record from the list response, so the full-replace PUT costs nothing extra. The update is
+optimistic and rolls back on failure.
 
-**The picker.** Cascading selects: class required, then a level appears only when the chosen node
-has children. Each level carries an "Add new…" option opening `AddNodeDialog` with the parent
-preset.
+**The picker.** Chips, not dropdowns: every option at a tier stays visible, so the taxonomy is
+learned in passing rather than hunted through, and it is all one thumb. Tiers appear as you narrow
+and stop when the tea has no deeper kinds. Every tier below the first ends with "+ Add one",
+opening `AddNodeDialog` with the parent stated rather than asked for.
 
 **Prefill.** Walk from the picked node up its ancestors, take the first `default_origin` found,
-write it into `origin` only if untouched (FR-9). The payload is thin in v1 by design — it is the
+write it into `origin` only if untouched (FR-9). The picker's footer states what is about to be
+filled in, and that it can be changed, before it happens. The payload is thin in v1 by design — it is the
 seam the Almanac will widen into suggested brewing parameters and harvest windows.
 
 ## Visual direction
 
-Intent and constraints only. The pixel-level pass happens against a running app with a real shelf
-in it, using the `frontend-design` skill, and — following the Kalendariq precedent — may produce a
-full token set under `docs/planning-artifacts/ux-designs/`.
+**Settled in the design session of 2026-09-24. The contracts are
+[`DESIGN.md`](../../planning-artifacts/ux-designs/ux-tea-2026-09-24/DESIGN.md) (how it looks) and
+[`EXPERIENCE.md`](../../planning-artifacts/ux-designs/ux-tea-2026-09-24/EXPERIENCE.md) (how it
+works), with mockups beside them. Both win over this summary and over any mock.**
 
-The Cabinet inherits the dock's **Carbon** theme (`#141414` field, `#F0F0F0` ink, `#C8960A` gold as
-the interactive accent) rather than inventing a world of its own. It is a reference tool consulted
-between infusions, not a stage: the shelf should read like a well-kept ledger, quiet enough that
-the tea names carry it.
+Identity: **Yancha**. The Cabinet is its own world, not the dock's Carbon theme — as Kalendariq and
+Hotaru are. A warm **clay-black** ground (`#17120E`) with a faint fractal grain, the colour of
+unglazed zisha rather than of a screen.
 
-Constraints that are expensive to change later, and so are settled now:
+**Liquor is the only colour system.** A hue appears only because a tea makes that colour in the
+cup: jade for green, straw for yellow, silver for white, amber for oolong, copper for red,
+mahogany for dark. Those six classify, measure and illustrate. Interactive elements carry no hue at
+all — a primary action is a bone fill with dark type — because the app's amber *is* oolong, and a
+colour that also meant "button" would stop being a trustworthy class cue. The dock's gold is doubly
+forbidden: it means interactive everywhere else and sits a few degrees from the oolong liquor.
 
-- **The class section is the only structural device.** No colour-coding by class, no per-class
-  imagery. Seven saturated colours competing on one screen would make the shelf harder to scan,
-  not easier, and would collide with the gold that means "interactive" everywhere on the platform.
-- **Grams are the one number with presence.** Remaining-of-purchased is what the card exists to
-  answer at a glance; provenance is subtitle weight.
-- **The low badge is a shape, not a colour alone** — it must survive being glanced at in a dim room
-  and must not be the only thing distinguishing two otherwise identical cards.
-- **`name_zh` sits with the name, at secondary weight**, never as a replacement for it. Chinese
-  glyphs need more vertical room than Latin text at the same point size; the card's line height is
-  set by the larger of the two.
-- **Mobile-first, one-handed.** The inline grams control and the FAB must both be reachable with a
-  thumb. Anything that only works with a mouse has failed the primary use case.
+Two serifs, no sans: **Newsreader** for all Latin, **Noto Serif SC** for Chinese, which is always
+present and always secondary to the Latin name beside it.
+
+The interface has one instrument, the **rim gauge** — a cup seen from above whose stroke is drawn
+round to how much leaf is left, in its class's liquor, with the grams inside. It carries class and
+quantity together, which is why nothing on the shelf is badged. Below the low threshold its fill
+goes dashed, and a tick outside the rim marks where the threshold sits, so you see how far past the
+line a tea has gone. With no `grams_purchased` the proportion is unknowable and the ring is drawn
+unbroken rather than implying a full vessel.
+
+Behind each class sit the **leaves of the plant it comes from** — narrow *sinensis*, or broad
+*assamica* for the dark teas, because that is genuinely the plant pu-erh is made from. Flat
+silhouettes, two or three per section, bleeding off the edge, never contained. The section nearest
+42% of the viewport draws them at full strength; the rest rest at 14%, crossfading over 0.85s as
+you scroll, and not at all under `prefers-reduced-motion`.
+
+Nothing is a box: no card borders, no outlines, no shadows except on sheets. Structure comes from
+the leaves, the space and the alignment. Mobile-first and one-handed throughout — the gauge is a
+44px target and *is* the tap target for editing grams.
+
+**This supersedes the pre-session direction, which had the app inheriting Carbon and forbade
+colour-coding by class.** Both were wrong: the app deserves its own world like its siblings, and
+liquor colours are not decoration but the tea's own identity, muted and ordered by a classification
+that already exists.
 
 ## Testing
 
@@ -319,7 +348,9 @@ Backend tests in `backend/tests/` as `test_tea_*.py`, each with an autouse fixtu
 | `useTeaCabinetStore.spec.ts` | `loading` set and cleared on failure; `ApiError.detail` lands in `error.value`; optimistic grams edit rolls back on rejection. |
 | `useTeaCatalogueStore.spec.ts` | Tree fetched once and cached; a newly added node is immediately pickable without a refetch. |
 | `CataloguePicker.spec.ts` | A level appears only when the parent has children; "Add new…" emits the right parent; prefill fills an untouched `origin` and refuses to overwrite a typed one. |
-| `TeaCard.spec.ts` | Grams rendering; low badge presence and absence; inline edit commits on Enter, cancels on Escape. |
+| `RimGauge.spec.ts` | Arc length from proportion; dashed fill below threshold; tick at the threshold angle; unbroken track when `grams_purchased` is null; empty state at 0g. |
+| `TeaRow.spec.ts` | Name, Chinese and path rendering; the row opens the grams sheet when its gauge is tapped. |
+| `GramsSheet.spec.ts` | Steps by 1g; refuses more than `grams_purchased` with the stated message; optimistic commit rolls back on rejection. |
 | `CabinetPage.spec.ts` | Empty state; sections in order; spinner while loading; banner on error. |
 
 Two things deliberately not tested: Quasar's own components, and the seed catalogue's *content* — a
@@ -339,10 +370,11 @@ Proposed shape — the authoritative breakdown will be generated into
   the catalogue endpoints.
 - **Epic 2 — The tea record:** tea CRUD across router, service and repository; every validation
   rule; prefill resolution (FR-9); `class_id` resolution on the view (AR-5).
-- **Epic 3 — The shelf:** `catalogue.ts` and `shelf.ts`; both stores; `TeaCard`, `ShelfSection`
-  and `CabinetPage` with grouping, ordering, the low badge, empty and error states.
+- **Epic 3 — The shelf:** `catalogue.ts` and `shelf.ts`; both stores; `RimGauge`, `TeaRow`,
+  `ClassLeaves`, `ShelfSection` and `CabinetPage` with grouping, ordering, leaf ghosting, empty and
+  error states.
 - **Epic 4 — Adding and editing:** `TeaForm`, `CataloguePicker`, `AddNodeDialog`, `NewTeaPage`,
-  `TeaDetailPage`, the dirty-state guard, and inline grams editing on the card (FR-14).
+  `TeaDetailPage`, the dirty-state guard, and `GramsSheet` opened from any rim (FR-14).
 
 Epic 2 depends on Epic 1 (a tea cannot validate its node without the tree). Epic 3 depends on
 Epic 2. Epic 4 depends on Epic 3. No epic depends on a later one.

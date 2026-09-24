@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tea Cabinet — the catalogue picker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;400;500;600&family=Noto+Serif+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --field:#17120E; --raised:#1E1712; --hairline:#241E19; --track:#2C241D;
+    --ink-hi:#EFE7DA; --ink:#E4D9C6; --ink-lo:#6B5F52; --ink-zh:#A99781;
+    --oolong:#B8832F; --oolong-head:#C7A271;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#0B0908; color:#8B7A63; font-family:'Newsreader',serif;
+         display:flex; flex-direction:column; align-items:center; padding:36px 16px 60px; }
+  .caption { max-width:620px; text-align:center; font-size:14px; line-height:1.6; margin:0 0 26px; }
+  .caption b { color:var(--oolong-head); font-weight:500; }
+  .pair { display:flex; gap:30px; flex-wrap:wrap; justify-content:center; align-items:flex-start; }
+  .phone { width:360px; max-width:100%; border-radius:8px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,.6); }
+  .sub { max-width:360px; font-size:13px; line-height:1.55; margin:12px 2px 0; }
+
+  .dv { position:relative; background:var(--field); min-height:620px; overflow:hidden; }
+  .grain { position:absolute; inset:0; pointer-events:none; z-index:1; opacity:.5;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E"); }
+  .z { position:relative; z-index:2; }
+
+  .bar { display:flex; align-items:center; justify-content:space-between; padding:16px 18px 6px; }
+  .back { color:#8B7A63; font-size:15px; }
+  .act { color:#EFE7DA; font-size:15px; }
+  .ttl { color:var(--ink-hi); font-size:22px; font-weight:500; padding:6px 18px 0; }
+
+  dl { margin:0; padding:0 18px; }
+  .fld { padding:11px 0; border-bottom:1px solid var(--hairline); display:flex; justify-content:space-between; gap:14px; align-items:baseline; }
+  dt { color:var(--ink-lo); font-size:12.5px; flex:none; }
+  dd { color:var(--ink); font-size:15px; margin:0; text-align:right; }
+  .ph { color:#8B7A63; }
+
+  .sheet { position:absolute; left:0; right:0; bottom:0; z-index:8; background:var(--raised);
+           border-top:1px solid #33291F; border-radius:14px 14px 0 0; padding:16px 0 22px;
+           box-shadow:0 -20px 40px rgba(0,0,0,.5); }
+  .grab { width:34px; height:3px; background:#3B3026; border-radius:2px; margin:0 auto 14px; }
+  .sheet-t { color:#9A8B78; font-size:13px; padding:0 18px 12px; }
+  .tier { color:var(--ink-lo); font-size:11.5px; padding:0 18px 4px; }
+  .chips { display:flex; gap:7px; flex-wrap:wrap; padding:6px 18px 14px; }
+  .chip { border:1px solid #2E271F; font-size:13px; padding:5px 11px; border-radius:14px; color:var(--oolong-head); }
+  .chip.on { background:var(--oolong); border-color:var(--oolong); color:#17120E; font-weight:600; }
+  .chip.add { border-style:dashed; border-color:#4A3D2E; color:#8B7A63; }
+  .foot { border-top:1px solid #2A231C; margin-top:4px; padding:14px 18px 0; color:#7A6D5E; font-size:12.5px; }
+  .foot em { color:var(--oolong-head); font-style:normal; }
+  .dim { opacity:.32; }
+
+  .field-in { background:#241C16; border:1px solid #3B3026; border-radius:3px; padding:11px 12px;
+              color:var(--ink-hi); font-size:15px; margin:0 18px; }
+  .lbl { color:var(--ink-lo); font-size:11.5px; padding:0 18px 5px; }
+</style>
+</head>
+<body>
+
+<p class="caption">
+  <b>Classifying a tea.</b> Chips rather than dropdowns: every choice at a tier stays visible, so you learn
+  the taxonomy instead of hunting through a menu — and it is all one thumb. Tiers appear as you narrow and
+  stop when there is nothing deeper. Every tier ends with <b>+ Add one</b>.
+</p>
+
+<div class="pair">
+
+  <div>
+    <div class="phone">
+      <div class="dv">
+        <div class="grain"></div>
+        <div class="z dim">
+          <div class="bar"><span class="back">← Cabinet</span><span class="act">Save</span></div>
+          <div class="ttl">New tea</div>
+          <dl style="padding-top:10px">
+            <div class="fld"><dt>Name</dt><dd>Rou Gui</dd></div>
+            <div class="fld"><dt>Class</dt><dd class="ph">choose…</dd></div>
+          </dl>
+        </div>
+
+        <div class="sheet z">
+          <div class="grab"></div>
+          <div class="sheet-t">What is it?</div>
+
+          <div class="tier">Class</div>
+          <div class="chips">
+            <span class="chip" style="color:#96AF8D">Green 綠</span>
+            <span class="chip" style="color:#B5A472">Yellow 黃</span>
+            <span class="chip" style="color:#C3BCAA">White 白</span>
+            <span class="chip on">Oolong 烏龍</span>
+            <span class="chip" style="color:#B8846E">Red 紅</span>
+            <span class="chip" style="color:#BC8578">Dark 黑</span>
+          </div>
+
+          <div class="tier">Kind of oolong</div>
+          <div class="chips">
+            <span class="chip on">Wuyi yancha</span>
+            <span class="chip">Anxi</span>
+            <span class="chip">Phoenix Dancong</span>
+            <span class="chip">Taiwanese</span>
+            <span class="chip add">+ Add one</span>
+          </div>
+
+          <div class="tier">Which yancha</div>
+          <div class="chips">
+            <span class="chip">Da Hong Pao 大紅袍</span>
+            <span class="chip on">Rou Gui 肉桂</span>
+            <span class="chip">Shui Xian 水仙</span>
+            <span class="chip">Tie Luohan 鐵羅漢</span>
+            <span class="chip add">+ Add one</span>
+          </div>
+
+          <div class="foot">Origin will fill in as <em>Wuyi Shan, Fujian</em> — you can change it.</div>
+        </div>
+      </div>
+    </div>
+    <p class="sub">Three tiers deep. The footer says what prefill is about to do before it does it, rather than silently writing into a field you later find already filled.</p>
+  </div>
+
+  <div>
+    <div class="phone">
+      <div class="dv">
+        <div class="grain"></div>
+        <div class="z dim">
+          <div class="bar"><span class="back">← Cabinet</span><span class="act">Save</span></div>
+          <div class="ttl">New tea</div>
+          <dl style="padding-top:10px">
+            <div class="fld"><dt>Name</dt><dd>Bai Ji Guan</dd></div>
+          </dl>
+        </div>
+
+        <div class="sheet z">
+          <div class="grab"></div>
+          <div class="sheet-t">Add to Oolong › Wuyi yancha</div>
+
+          <div class="lbl">Name</div>
+          <div class="field-in">Bai Ji Guan</div>
+
+          <div class="lbl" style="padding-top:16px">Chinese <span style="color:#5E5445">optional</span></div>
+          <div class="field-in" style="font-family:'Noto Serif SC',serif">白雞冠</div>
+
+          <div class="lbl" style="padding-top:16px">Usually from <span style="color:#5E5445">optional</span></div>
+          <div class="field-in ph">Wuyi Shan, Fujian</div>
+
+          <div class="foot" style="margin-top:20px">Everyone's catalogue starts the same; what you add is yours alone, and the teas that ship with the app are never changed by it.</div>
+
+          <div style="margin:18px 18px 0; background:#E4D9C6; color:#17120E; text-align:center;
+                      font-size:15px; font-weight:600; padding:12px; border-radius:3px">Add to catalogue</div>
+        </div>
+      </div>
+    </div>
+    <p class="sub">Adding a missing tea, in place. The parent is stated rather than asked for, since you were already standing in it. Three fields, two optional — the cost of adding must stay lower than the cost of giving up and typing it into the notes.</p>
+  </div>
+
+</div>
+</body>
+</html>
