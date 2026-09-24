@@ -73,7 +73,9 @@ _APPS: list[AppDescriptor] = [
     ),
     AppDescriptor(
         id="tea",
-        label="Tea Cabinet",
+        # Must match frontend/src/apps/registry.ts — test_app_registry_parity.py
+        # enforces it. The card is the app; "Cabinet" is its first screen.
+        label="Tea",
         icon="emoji_food_beverage",
         route="/tea",
     ),

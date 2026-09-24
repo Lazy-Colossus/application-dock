@@ -45,6 +45,64 @@ inventing that entity twice.
 sorted to the bottom of its section. This was chosen over archiving to keep v1 to a single
 lifecycle-free entity.
 
+## Relationship to the Tea PRD
+
+A PRD for this app exists upstream and was not visible in this working copy when the spec was
+written: [`prd-tea-2026-09-06/prd.md`](../../planning-artifacts/prds/prd-tea-2026-09-06/prd.md),
+dated 2026-09-06. It was found on 2026-09-25, after this spec and its plan were already written,
+when the working copy turned out to be 47 commits behind `origin/main`. The branch was rebased
+onto the remote and the two documents reconciled. **Where they disagree, the more recent decision
+wins, and every divergence is listed here rather than left implicit.**
+
+**The PRD's open questions that this spec answers.** These were never settled upstream, so this is
+new information flowing *to* the PRD, not a conflict:
+
+- *Open question 5 — "Running Low threshold: single global grams threshold vs. per-tea — start
+  global?"* Answered: **per-tea**, because a 25g sample and a 357g cake have incompatible
+  definitions of "low". The PRD's `[ASSUMPTION: a single global threshold]` on FR-3 is superseded.
+- *Open question 1 — photo storage.* Still open; this spec defers photos entirely and says why.
+- *Open question 4 — Almanac seed breadth.* Partly answered: this spec ships a concrete seeded
+  catalogue of the seven Chinese classes and their common subtypes and named teas, which is the
+  taxonomy half of the Almanac's starter content.
+
+**Where this spec deliberately diverges from the PRD:**
+
+- **Scope.** PRD §6.1 puts all nine idea-pool features in the MVP, "per the user's decision to ship
+  the full idea pool in the first pass". On 2026-09-21 the user scoped v1 to the Cabinet alone.
+  The later decision governs. The PRD's own feature ordering already puts the Cabinets first, so
+  this is a narrowing, not a contradiction.
+- **Grams decrement.** PRD FR-2 decrements grams from finalized Sessions and allows manual
+  correction. Sessions do not exist in this v1, so only the manual half ships. The automatic half
+  arrives with the Session Timer and is compatible with this data model.
+- **Archiving.** PRD FR-1 requires archiving a Tea. The user chose instead that a finished tea
+  stays on the shelf at 0g with no lifecycle state. Archiving exists in the PRD mainly to keep
+  empty teas out of the Session tea-picker — and there is no picker in v1 — so the feature loses
+  most of its purpose here. Superseded for now; revisit when Sessions land.
+- **Aesthetic references.** PRD §11 points at the platform's existing ukiyo-e / "hotaru" paper-ink-
+  dusk explorations. The design session of 2026-09-24 produced *Yancha* instead, chosen by the user
+  from three directions. Yancha honours §11's binding qualities — quiet, warm, deliberate,
+  uncluttered, restraint over density, no gamification or badges — while rejecting its reference
+  images. The qualities are the requirement; the references were a suggestion.
+
+**Known gaps against the PRD, deferred with reasons:**
+
+- **FR-1's Brewing Parameters** (recommended grams, water temperature, per-infusion steep times on
+  a Tea) are not in this v1. Nothing consumes them until the Session Timer exists, and this
+  codebase's standing rule is YAGNI with no dead fields. They are optional fields with defaults,
+  so adding them later needs no migration.
+- **FR-4's search and filter** (by name, type/family, form, Running Low, Origin region) is not in
+  this v1. Seven grouped sections answer "what do I have" at a personal shelf's scale; search earns
+  its place when the shelf outgrows a scroll.
+- **FR-5's aggregated memory** (session history, times brewed, last brewed, aggregated flavour
+  fingerprint) depends entirely on Sessions and is out of scope by construction.
+- **§4.2's Teaware Cabinet** is a first-tranche peer in the PRD and is not scoped here at all.
+
+**Vocabulary.** The PRD's §3 Glossary is mandated verbatim for downstream work. This spec uses
+*Cabinet*, *Running Low*, *Origin*, *Almanac* and *Tea* in the PRD's senses. One naming change
+follows from it: the dock card is labelled **Tea** — the app — and *Cabinet* is the name of its
+first screen, exactly as the PRD structures them. The later Timer and Journal join the same app
+rather than arriving as separate cards.
+
 ## Requirements
 
 ### Functional

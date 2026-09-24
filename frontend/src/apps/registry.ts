@@ -65,8 +65,10 @@ export const apps: AppDescriptor[] = [
   },
   {
     id: "tea",
-    // A teacup glyph; the Cabinet is the tea app's first screen.
-    label: "Tea Cabinet",
+    // A teacup glyph. The card is the app; "Cabinet" is its first screen,
+    // the way prd-tea-2026-09-06 structures them — the Session Timer and the
+    // Journal will join this same app rather than adding cards of their own.
+    label: "Tea",
     icon: "emoji_food_beverage",
     route: "/tea",
   },
