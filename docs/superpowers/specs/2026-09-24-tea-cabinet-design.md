@@ -200,7 +200,7 @@ Router prefix `/api/tea`, matching the `shared-notes` shape.
 ```
 GET    /api/tea/catalogue            → 200 list[CatalogueNodeView]   flat, seed+user merged
 POST   /api/tea/catalogue            → 201 CatalogueNodeView         adds one user node
-DELETE /api/tea/catalogue/{node_id}  → 204 | 409 in use | 400 seed node | 404 unknown
+DELETE /api/tea/catalogue/{node_id}  → 204 | 409 in use | 422 seed node | 404 unknown
 
 GET    /api/tea/teas                 → 200 list[TeaView]
 POST   /api/tea/teas                 → 201 TeaView
@@ -209,8 +209,9 @@ PUT    /api/tea/teas/{tea_id}        → 200 TeaView | 404   full replace, as no
 DELETE /api/tea/teas/{tea_id}        → 204 | 404
 ```
 
-Exception mapping, in the router and nowhere else: `FileNotFoundError` → 404, `ValueError` → 400,
-`NodeInUseError` → 409.
+Exception mapping, in the router and nowhere else: `FileNotFoundError` → 404, `ValueError` → 422,
+`NodeInUseError` → 409. (422 rather than 400: that is this codebase's existing convention — see
+`routers/context_switch.py` — and consistency beats the abstractly tidier code.)
 
 ## Backend structure
 
@@ -340,7 +341,7 @@ Backend tests in `backend/tests/` as `test_tea_*.py`, each with an autouse fixtu
 | `test_tea_repo.py` | Round trip through the per-user file; an absent file reads as an empty cabinet without creating anything; teas and user nodes persist together; unsafe usernames rejected before becoming a path. |
 | `test_tea_catalogue.py` | Seed loads and parses; user nodes merge over seed; a user node cannot shadow or mutate a seed node; root-class resolution at every depth; `NodeInUseError` on a node with teas; seed-node delete refused; unused user-node delete succeeds. |
 | `test_tea_service.py` | Each validation rule as its own case — empty name, unresolvable node id, negatives, `year` bounds, `grams_remaining > grams_purchased`. Prefill: nearest ancestor wins, walks past nodes with none, yields nothing when no ancestor has one. |
-| `test_tea_api.py` | CRUD round trip through the router; 201/204 codes; 404 unknown id, 400 bad payload, 409 in-use node delete. |
+| `test_tea_api.py` | CRUD round trip through the router; 201/204 codes; 404 unknown id, 422 bad payload, 409 in-use node delete. |
 | `test_tea_concurrency.py` | Interleaved writes to one cabinet lose nothing, mirroring `test_context_switch_concurrency.py`. This is the test that earns AR-1. |
 | `test_app_registry_parity.py` | Already exists; fails until both registries list `tea`. |
 | `catalogue.spec.ts` | Tree building from the flat list, path rendering, ancestor walking, children lookup. |
