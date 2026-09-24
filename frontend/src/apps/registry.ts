@@ -63,4 +63,11 @@ export const apps: AppDescriptor[] = [
     icon: "sticky_note_2",
     route: "/shared-notes",
   },
+  {
+    id: "tea",
+    // A teacup glyph; the Cabinet is the tea app's first screen.
+    label: "Tea Cabinet",
+    icon: "emoji_food_beverage",
+    route: "/tea",
+  },
 ];

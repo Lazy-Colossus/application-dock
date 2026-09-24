@@ -71,6 +71,12 @@ _APPS: list[AppDescriptor] = [
         icon="sticky_note_2",
         route="/shared-notes",
     ),
+    AppDescriptor(
+        id="tea",
+        label="Tea Cabinet",
+        icon="emoji_food_beverage",
+        route="/tea",
+    ),
 ]
 
 
