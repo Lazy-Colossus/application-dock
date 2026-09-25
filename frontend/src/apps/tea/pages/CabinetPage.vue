@@ -3,10 +3,26 @@
     <div ref="scrollEl" class="cabinet__scroll">
       <header class="cabinet__header">
         <span class="cabinet__title">Cabinet</span>
-        <span class="cabinet__count" data-testid="cabinet-count">{{ countLabel }}</span>
+        <div class="cabinet__header-right">
+          <button
+            class="cabinet__almanac"
+            data-testid="cabinet-almanac-link"
+            aria-label="Open the Almanac"
+            @click="openAlmanac"
+          >
+            Almanac
+          </button>
+          <span class="cabinet__count" data-testid="cabinet-count">{{
+            countLabel
+          }}</span>
+        </div>
       </header>
 
-      <div v-if="cabinet.error" class="cabinet__error" data-testid="cabinet-error">
+      <div
+        v-if="cabinet.error"
+        class="cabinet__error"
+        data-testid="cabinet-error"
+      >
         {{ cabinet.error }}
       </div>
 
@@ -35,7 +51,12 @@
       </div>
     </div>
 
-    <button class="cabinet__add" data-testid="cabinet-add" aria-label="Add a tea" @click="addTea">
+    <button
+      class="cabinet__add"
+      data-testid="cabinet-add"
+      aria-label="Add a tea"
+      @click="addTea"
+    >
       +
     </button>
 
@@ -105,6 +126,10 @@ function addTea(): void {
   void router.push({ name: "tea-new" });
 }
 
+function openAlmanac(): void {
+  void router.push({ name: "tea-almanac" });
+}
+
 const editingTeaId = ref<string | null>(null);
 const editingTea = computed(
   () => cabinet.teas.find((tea) => tea.id === editingTeaId.value) ?? null,
@@ -153,6 +178,20 @@ onMounted(() => {
 .cabinet__count {
   color: #6b5f52;
   font-size: 13px;
+}
+.cabinet__header-right {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+.cabinet__almanac {
+  background: transparent;
+  border: 0;
+  color: v-bind("GROUND.inkMuted");
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0;
 }
 .cabinet__empty,
 .cabinet__error {

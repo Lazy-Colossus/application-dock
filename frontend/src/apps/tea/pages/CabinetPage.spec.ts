@@ -112,7 +112,9 @@ describe("CabinetPage", () => {
     const wrapper = render();
     await flushPromises();
 
-    const names = wrapper.findAll('[data-testid="section-name"]').map((n) => n.text());
+    const names = wrapper
+      .findAll('[data-testid="section-name"]')
+      .map((n) => n.text());
     expect(names).toEqual(["Green", "Oolong"]);
   });
 
@@ -133,7 +135,9 @@ describe("CabinetPage", () => {
   });
 
   it("surfaces an error with what to do next, and hides the empty state", async () => {
-    mockApiError("Couldn't load your cabinet. Check your connection and try again.");
+    mockApiError(
+      "Couldn't load your cabinet. Check your connection and try again.",
+    );
     const wrapper = render();
     await flushPromises();
 
@@ -149,7 +153,9 @@ describe("CabinetPage", () => {
     await flushPromises();
     expect(wrapper.findAll('[data-testid="section-name"]')).toHaveLength(1);
 
-    mockApiError("Couldn't load your cabinet. Check your connection and try again.");
+    mockApiError(
+      "Couldn't load your cabinet. Check your connection and try again.",
+    );
     await useTeaCabinetStore().fetchTeas();
     await flushPromises();
 
@@ -198,5 +204,15 @@ describe("CabinetPage", () => {
 
     expect(wrapper.find('[data-testid="grams-sheet"]').exists()).toBe(false);
     expect(putMock).not.toHaveBeenCalled();
+  });
+
+  it("opens the almanac from the header link", async () => {
+    mockApi([]);
+    const wrapper = render();
+    await flushPromises();
+
+    await wrapper.get('[data-testid="cabinet-almanac-link"]').trigger("click");
+
+    expect(push).toHaveBeenCalledWith({ name: "tea-almanac" });
   });
 });
