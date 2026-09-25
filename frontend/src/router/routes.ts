@@ -239,6 +239,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "New tea", requiresAuth: true },
       },
       {
+        path: "tea/almanac",
+        name: "tea-almanac",
+        component: () => import("@/apps/tea/pages/AlmanacPage.vue"),
+        meta: { title: "Almanac", requiresAuth: true },
+      },
+      {
+        path: "tea/almanac/:catalogueNodeId",
+        name: "tea-almanac-entry",
+        component: () => import("@/apps/tea/pages/AlmanacEntryDetailPage.vue"),
+        meta: { title: "Almanac", requiresAuth: true },
+      },
+      {
         path: "tea/:teaId",
         name: "tea-detail",
         component: () => import("@/apps/tea/pages/TeaDetailPage.vue"),
