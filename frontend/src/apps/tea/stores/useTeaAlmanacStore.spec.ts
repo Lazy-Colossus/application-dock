@@ -74,4 +74,52 @@ describe("useTeaAlmanacStore", () => {
     expect(store.error).toContain("Couldn't load");
     expect(store.loading).toBe(false);
   });
+
+  it("ignores a stale response when a newer fetch has already started", async () => {
+    let resolveFirst: (v: AlmanacEntryView[]) => void = () => {};
+    const first = new Promise<AlmanacEntryView[]>((resolve) => {
+      resolveFirst = resolve;
+    });
+    getMock.mockReturnValueOnce(first);
+    const store = useTeaAlmanacStore();
+
+    const firstCall = store.fetchEntries("", "lon");
+    getMock.mockResolvedValueOnce([
+      entry({ catalogue_node_id: "green.japanese.sencha" }),
+    ]);
+    const secondCall = store.fetchEntries("", "longjing");
+    await secondCall;
+    resolveFirst([entry()]);
+    await firstCall;
+
+    expect(store.entries).toHaveLength(1);
+    expect(store.entries[0].catalogue_node_id).toBe("green.japanese.sencha");
+  });
+
+  it("fetchEntry adds a new entry to the list", async () => {
+    getMock.mockResolvedValue(
+      entry({ catalogue_node_id: "green.japanese.matcha" }),
+    );
+    const store = useTeaAlmanacStore();
+
+    await store.fetchEntry("green.japanese.matcha");
+
+    expect(getMock).toHaveBeenCalledWith("/tea/almanac/green.japanese.matcha");
+    expect(store.entries).toHaveLength(1);
+    expect(store.entries[0].catalogue_node_id).toBe("green.japanese.matcha");
+  });
+
+  it("fetchEntry replaces an existing entry with the same id in place", async () => {
+    getMock.mockResolvedValue([entry({ country: "China" })]);
+    const store = useTeaAlmanacStore();
+    await store.fetchEntries();
+    getMock.mockResolvedValue(
+      entry({ country: "China", summary: "Updated summary" }),
+    );
+
+    await store.fetchEntry("green.longjing");
+
+    expect(store.entries).toHaveLength(1);
+    expect(store.entries[0].summary).toBe("Updated summary");
+  });
 });

@@ -23,11 +23,42 @@ export const useTeaAlmanacStore = defineStore("tea-almanac", () => {
   const entries = ref<AlmanacEntryView[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  let requestId = 0;
 
   async function fetchEntries(country = "", q = ""): Promise<void> {
+    const thisRequest = ++requestId;
     loading.value = true;
     try {
-      entries.value = await api.get<AlmanacEntryView[]>(path(country, q));
+      const result = await api.get<AlmanacEntryView[]>(path(country, q));
+      if (thisRequest !== requestId) return;
+      entries.value = result;
+      error.value = null;
+    } catch (e) {
+      if (thisRequest !== requestId) return;
+      error.value = message(e);
+    } finally {
+      if (thisRequest === requestId) loading.value = false;
+    }
+  }
+
+  async function fetchEntry(catalogueNodeId: string): Promise<void> {
+    loading.value = true;
+    try {
+      const found = await api.get<AlmanacEntryView>(
+        `/tea/almanac/${catalogueNodeId}`,
+      );
+      const index = entries.value.findIndex(
+        (e) => e.catalogue_node_id === found.catalogue_node_id,
+      );
+      if (index === -1) {
+        entries.value = [...entries.value, found];
+      } else {
+        entries.value = [
+          ...entries.value.slice(0, index),
+          found,
+          ...entries.value.slice(index + 1),
+        ];
+      }
       error.value = null;
     } catch (e) {
       error.value = message(e);
@@ -36,5 +67,5 @@ export const useTeaAlmanacStore = defineStore("tea-almanac", () => {
     }
   }
 
-  return { entries, loading, error, fetchEntries };
+  return { entries, loading, error, fetchEntries, fetchEntry };
 });

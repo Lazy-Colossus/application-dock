@@ -28,3 +28,16 @@ def test_every_seed_entry_references_a_real_catalogue_node() -> None:
 
 def test_read_seed_entries_is_cached() -> None:
     assert repo.read_seed_entries() is repo.read_seed_entries()
+
+
+def test_every_seed_entry_references_a_leaf_catalogue_node() -> None:
+    """A parent/category node (e.g. 'green') is not a valid target — only named teas are."""
+    catalogue = tea_repo.read_seed_catalogue()
+    parent_ids = {n.parent_id for n in catalogue if n.parent_id is not None}
+    for entry in repo.read_seed_entries():
+        assert entry.catalogue_node_id not in parent_ids, entry.catalogue_node_id
+
+
+def test_seed_entry_catalogue_node_ids_are_unique_across_country_files() -> None:
+    ids = [e.catalogue_node_id for e in repo.read_seed_entries()]
+    assert len(ids) == len(set(ids))

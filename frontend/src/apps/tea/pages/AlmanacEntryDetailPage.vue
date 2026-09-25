@@ -5,7 +5,14 @@
     </header>
 
     <p
-      v-if="!entry && !almanac.loading"
+      v-if="almanac.error"
+      class="tea-page__error"
+      data-testid="almanac-entry-error"
+    >
+      {{ almanac.error }}
+    </p>
+    <p
+      v-else-if="!entry && !almanac.loading"
       class="tea-page__missing"
       data-testid="almanac-entry-missing"
     >
@@ -28,6 +35,13 @@
         data-testid="almanac-entry-reading"
       >
         {{ entry.reading }}
+      </p>
+      <p
+        v-if="entry.default_origin"
+        class="almanac-detail__origin"
+        data-testid="almanac-entry-origin"
+      >
+        {{ entry.default_origin }}
       </p>
 
       <p class="almanac-detail__summary" data-testid="almanac-entry-summary">
@@ -82,7 +96,7 @@ const steepsLabel = computed(() => {
 });
 
 onMounted(() => {
-  if (almanac.entries.length === 0) void almanac.fetchEntries();
+  if (!entry.value) void almanac.fetchEntry(catalogueNodeId.value);
 });
 </script>
 
@@ -101,6 +115,12 @@ onMounted(() => {
   padding: 0 18px;
   margin: 4px 0 0;
   font-style: italic;
+}
+.almanac-detail__origin {
+  color: #7a6244;
+  font-size: 13px;
+  padding: 0 18px;
+  margin: 4px 0 0;
 }
 .almanac-detail__summary {
   color: #e4d9c6;
