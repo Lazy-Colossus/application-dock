@@ -70,6 +70,9 @@
   { "id": "oolong.taiwanese.lishan", "parent_id": "oolong.taiwanese", "name": "Lishan", "name_zh": "梨山", "source": "seed", "default_origin": "Taichung, Taiwan" },
   { "id": "oolong.taiwanese.oriental-beauty", "parent_id": "oolong.taiwanese", "name": "Oriental Beauty", "name_zh": "東方美人", "source": "seed", "default_origin": "Hsinchu, Taiwan" },
   { "id": "oolong.taiwanese.baozhong", "parent_id": "oolong.taiwanese", "name": "Wenshan Baozhong", "name_zh": "文山包種", "source": "seed", "default_origin": "Pinglin, Taiwan" },
+  { "id": "oolong.taiwanese.shan-lin-xi", "parent_id": "oolong.taiwanese", "name": "Shan Lin Xi", "name_zh": "杉林溪", "source": "seed", "default_origin": "Nantou, Taiwan" },
+  { "id": "oolong.taiwanese.jin-xuan", "parent_id": "oolong.taiwanese", "name": "Jin Xuan", "name_zh": "金萱", "source": "seed", "default_origin": "Taiwan-wide; especially Zhushan, Nantou and Alishan, Chiayi" },
+  { "id": "oolong.taiwanese.muzha-tieguanyin", "parent_id": "oolong.taiwanese", "name": "Muzha Tieguanyin", "name_zh": "木柵鐵觀音", "source": "seed", "default_origin": "Muzha, Taipei, Taiwan" },
 
   { "id": "red", "parent_id": null, "name": "Red", "name_zh": "紅茶", "source": "seed" },
   { "id": "red.zhengshan-xiaozhong", "parent_id": "red", "name": "Zhengshan Xiaozhong", "name_zh": "正山小種", "source": "seed", "default_origin": "Tongmu, Fujian" },
@@ -79,6 +82,7 @@
   { "id": "red.tanyang-gongfu", "parent_id": "red", "name": "Tanyang Gongfu", "name_zh": "坦洋工夫", "source": "seed", "default_origin": "Fu'an, Fujian" },
   { "id": "red.yingde-hongcha", "parent_id": "red", "name": "Yingde Hongcha", "name_zh": "英德紅茶", "source": "seed", "default_origin": "Yingde, Guangdong" },
   { "id": "red.wakoucha", "parent_id": "red", "name": "Wakoucha", "name_zh": "和紅茶", "source": "seed", "default_origin": "Japan (originally Meiji-era export; today small-scale in Shizuoka, Miyazaki, and other prefectures)" },
+  { "id": "red.hongyu", "parent_id": "red", "name": "Hongyu", "name_zh": "紅玉", "source": "seed", "default_origin": "Yuchi, Nantou, Taiwan" },
 
   { "id": "dark", "parent_id": null, "name": "Dark", "name_zh": "黑茶", "source": "seed" },
   { "id": "dark.sheng-puerh", "parent_id": "dark", "name": "Sheng pu-erh", "name_zh": "生普洱", "source": "seed", "default_origin": "Yunnan" },

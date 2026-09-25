@@ -1,0 +1,65 @@
+[
+  {
+    "catalogue_node_id": "oolong.taiwanese.dong-ding",
+    "country": "Taiwan",
+    "reading": "Dòngdǐng",
+    "summary": "The original Taiwanese oolong style, grown around Dong Ding mountain in Lugu, Nantou, from the Qingxin cultivar reportedly brought from Wuyi Shan around 150 years ago. It is rolled into tight balls, moderately oxidized (roughly 30-40%), and charcoal-roasted over two to five rounds — the roasting, not elevation, is what defines Dong Ding, since its gardens sit at a comparatively modest 600-800 meters. The result is a warm, toasty cup with notes of roasted chestnut and dried fruit, markedly different from the greener, lightly roasted high-mountain oolongs grown at altitude further south.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 95, "steep_seconds": [20, 25, 35, 45] }
+  },
+  {
+    "catalogue_node_id": "oolong.taiwanese.alishan",
+    "country": "Taiwan",
+    "reading": "Ālǐshān",
+    "summary": "A high-mountain (gaoshan) oolong from gardens spanning roughly 1,000 to 1,800 meters around Mount Ali in Chiayi County, the southernmost of Taiwan's major high-mountain tea regions. Balled and only lightly oxidized and roasted, its cooler growing conditions and near-daily cloud cover slow leaf growth, producing a sweet, floral cup with a smooth, buttery, creamy body. It is often treated as the benchmark high-mountain style — milder and more overtly sweet than the higher, cooler Lishan grown further north.",
+    "brewing": { "leaf_grams": 6, "water_temp_c": 90, "steep_seconds": [30, 40, 50, 60] }
+  },
+  {
+    "catalogue_node_id": "oolong.taiwanese.lishan",
+    "country": "Taiwan",
+    "reading": "Líshān",
+    "summary": "The highest-grown of Taiwan's named oolongs, from gardens in Taichung's Lishan (Pear Mountain) district that range from about 1,600 up to 2,600 meters — among the highest tea gardens in the world. The greater elevation and colder nights slow the leaf further than at Alishan, concentrating aromatics into a lighter-bodied, more delicate cup with a cooling floral sweetness and less of Alishan's buttery weight. Processing is the same as other high-mountain oolongs — balled, lightly oxidized, lightly roasted — so the difference between the two comes down almost entirely to altitude.",
+    "brewing": { "leaf_grams": 6, "water_temp_c": 85, "steep_seconds": [30, 40, 50, 60] }
+  },
+  {
+    "catalogue_node_id": "oolong.taiwanese.oriental-beauty",
+    "country": "Taiwan",
+    "reading": "Dōngfāng Měirén",
+    "summary": "Grown at low elevation in Hsinchu and Miaoli counties, Oriental Beauty is unique among oolongs for depending on an insect: tiny leafhoppers (Jacobiasca formosana) bite the growing leaf tips, and the plant's defensive response produces terpenes that give the finished tea its signature honeyed, muscatel sweetness. The bitten leaves are heavily oxidized (roughly 50-70%) and left twisted rather than rolled into balls, yielding a reddish-amber liquor closer in color to a black tea than to other oolongs. Only summer leaf picked after the leafhoppers have fed is used, making it one of the few teas prized for insect damage rather than despite it.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 85, "steep_seconds": [30, 40, 50, 60] }
+  },
+  {
+    "catalogue_node_id": "oolong.taiwanese.baozhong",
+    "country": "Taiwan",
+    "reading": "Wénshān Bāozhǒng",
+    "summary": "Wenshan Baozhong, grown at 400-800 meters around Pinglin, is Taiwan's lightest oolong: oxidized only about 8-15%, putting it closer to a green tea than to the balled high-mountain styles. Unlike almost every other Taiwanese oolong it is left twisted rather than rolled into pellets, and it typically receives no more than a very light roast, if any. The result is a pale, highly fragrant cup with fresh floral and orchid notes and almost none of the roast character found in Dong Ding or Muzha Tieguanyin.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 80, "steep_seconds": [20, 30, 40, 50] }
+  },
+  {
+    "catalogue_node_id": "oolong.taiwanese.shan-lin-xi",
+    "country": "Taiwan",
+    "reading": "Shānlínxī",
+    "summary": "A high-mountain oolong from gardens around 1,200 to 1,800 meters in Nantou, geographically and stylistically between Dong Ding's low foothills and Lishan's peaks, and — alongside Alishan and Lishan — one of Taiwan's three classic high-mountain tea areas. Balled and lightly oxidized like its neighbors and grown mostly from the Qingxin cultivar, it is generally described as silkier and more cedar-and-floral than Alishan's buttery sweetness, without reaching Lishan's cooling delicacy. Growers and drinkers comparing the three high-mountain oolongs side by side often place Shan Lin Xi as the middle point of the range.",
+    "brewing": { "leaf_grams": 6, "water_temp_c": 90, "steep_seconds": [30, 40, 50, 60] }
+  },
+  {
+    "catalogue_node_id": "oolong.taiwanese.jin-xuan",
+    "country": "Taiwan",
+    "reading": "Jīnxuān",
+    "summary": "Jin Xuan, sold internationally as Milk Oolong or Nai Xiang, is not a place but a cultivar — Taiwan Tea Experiment Station cultivar #12, bred by Wu Zhenduo and released in 1981 after decades of crossing Taiwanese varietals. It is grown across many of Taiwan's tea regions, from lower-elevation Zhushan to high-mountain Alishan, and is balled and lightly oxidized like other modern Taiwanese oolongs. Its defining trait is a naturally creamy, milk-like sweetness in both aroma and taste that comes from the cultivar itself rather than any additive, though cheaper commercial lots are sometimes artificially milk-flavored to accentuate it.",
+    "brewing": { "leaf_grams": 6, "water_temp_c": 90, "steep_seconds": [25, 30, 40, 50] }
+  },
+  {
+    "catalogue_node_id": "oolong.taiwanese.muzha-tieguanyin",
+    "country": "Taiwan",
+    "reading": "Mùzhà Tiěguānyīn",
+    "summary": "A Taiwanese take on Tieguanyin, grown in Muzha on Taipei's southern edge, where Anxi tea farmers who emigrated in the late 19th century established the cultivar and its name. Unlike the greener, lightly oxidized Anxi original, Muzha Tieguanyin is oxidized further (roughly 30-50%) and finished with a medium-to-heavy charcoal roast, giving a reddish-brown liquor with nutty, stone-fruit, roasted flavors in place of Anxi's floral lift. Traditional producers repeat the roast over multiple sessions, sometimes spread across months, to deepen and stabilize the flavor before sale.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 95, "steep_seconds": [20, 25, 30, 40] }
+  },
+  {
+    "catalogue_node_id": "red.hongyu",
+    "country": "Taiwan",
+    "reading": "Hóngyù",
+    "summary": "Hongyu, marketed internationally as Ruby 18 or Taiwan Tea #18, is a fully oxidized black tea made from a cultivar bred at the Taiwan Tea Research and Extension Station by crossing a wild Taiwanese mountain tea with a large-leaf Burmese assamica, released in 1999 after decades of work. It is grown around Sun Moon Lake in Yuchi, Nantou, where the surrounding mist and humidity suit the large-leaf hybrid. The cultivar produces a naturally sweet cup with cinnamon and mint-like notes without any added flavoring — often marketed as needing neither milk nor sugar — and it lacks the heavy astringency typical of Assam-style black teas.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 95, "steep_seconds": [15, 20, 30, 45] }
+  }
+]
