@@ -102,7 +102,7 @@ def create_node(username: str, req: CreateNodeRequest) -> CatalogueNode:
 def delete_node(username: str, node_id: str) -> None:
     """Remove one of the user's own nodes, if nothing is classified under it."""
     if any(node.id == node_id for node in repo.read_seed_catalogue()):
-        raise ValueError("Teas that ship with the app cannot be removed")
+        raise ValueError("Catalogue entries that ship with the app cannot be removed")
 
     with repo.doc_transaction(username) as doc:
         if all(node.id != node_id for node in doc.catalogue_nodes):

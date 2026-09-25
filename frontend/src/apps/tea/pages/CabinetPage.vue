@@ -118,7 +118,6 @@ async function commitGrams(grams: number): Promise<void> {
   editingTeaId.value = null;
   if (teaId) await cabinet.setGrams(teaId, grams);
 }
-defineExpose({ editingTeaId });
 
 onMounted(() => {
   void cabinet.fetchTeas();

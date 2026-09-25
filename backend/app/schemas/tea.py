@@ -73,7 +73,7 @@ class TeaView(Tea):
     apart (AR-5).
     """
 
-    class_id: str
+    class_id: TeaClass
 
 
 class TeaDoc(BaseModel):

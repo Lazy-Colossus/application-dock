@@ -84,4 +84,36 @@ describe("TeaForm", () => {
     const wrapper = form({ ...blank(), price_paid: 68, grams_purchased: 0 });
     expect(wrapper.find('[data-testid="price-per-gram"]').exists()).toBe(false);
   });
+
+  it("has no input for grams left — the grams sheet is the only way that changes", () => {
+    expect(form().find('[data-testid="field-remaining"]').exists()).toBe(false);
+  });
+
+  it("round-trips a chosen form into the emitted write", async () => {
+    const wrapper = form();
+    await wrapper.get('[data-testid="field-form"]').setValue("cake");
+    const last = wrapper.emitted("update:modelValue")?.at(-1)?.[0] as TeaWrite;
+    expect(last.form).toBe("cake");
+  });
+
+  it("clears form back to null when the empty option is chosen", async () => {
+    const wrapper = form({ ...blank(), form: "cake" });
+    await wrapper.get('[data-testid="field-form"]').setValue("");
+    const last = wrapper.emitted("update:modelValue")?.at(-1)?.[0] as TeaWrite;
+    expect(last.form).toBeNull();
+  });
+
+  it("round-trips a chosen harvest season into the emitted write", async () => {
+    const wrapper = form();
+    await wrapper.get('[data-testid="field-harvest-season"]').setValue("spring");
+    const last = wrapper.emitted("update:modelValue")?.at(-1)?.[0] as TeaWrite;
+    expect(last.harvest_season).toBe("spring");
+  });
+
+  it("clears harvest season back to null when the empty option is chosen", async () => {
+    const wrapper = form({ ...blank(), harvest_season: "spring" });
+    await wrapper.get('[data-testid="field-harvest-season"]').setValue("");
+    const last = wrapper.emitted("update:modelValue")?.at(-1)?.[0] as TeaWrite;
+    expect(last.harvest_season).toBeNull();
+  });
 });

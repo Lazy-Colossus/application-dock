@@ -40,6 +40,19 @@
       :value="modelValue.year ?? ''"
       @input="patch({ year: asNumber($event) })"
     />
+    <select
+      class="form__field"
+      data-testid="field-harvest-season"
+      aria-label="Harvest season"
+      :value="modelValue.harvest_season ?? ''"
+      @change="patch({ harvest_season: asHarvestSeason($event) })"
+    >
+      <option value="">Harvest season: not recorded</option>
+      <option value="spring">Spring</option>
+      <option value="summer">Summer</option>
+      <option value="autumn">Autumn</option>
+      <option value="winter">Winter</option>
+    </select>
     <input
       class="form__field"
       data-testid="field-vendor"
@@ -77,14 +90,23 @@
     />
 
     <p class="form__group" data-testid="group">On the shelf</p>
-    <input
+    <select
       class="form__field"
-      data-testid="field-remaining"
-      placeholder="Grams left"
-      inputmode="decimal"
-      :value="modelValue.grams_remaining"
-      @input="patch({ grams_remaining: asNumber($event) ?? 0 })"
-    />
+      data-testid="field-form"
+      aria-label="Form"
+      :value="modelValue.form ?? ''"
+      @change="patch({ form: asTeaForm($event) })"
+    >
+      <option value="">Form: not recorded</option>
+      <option value="loose">Loose</option>
+      <option value="cake">Cake</option>
+      <option value="brick">Brick</option>
+      <option value="tuo">Tuo</option>
+      <option value="ball">Ball</option>
+      <option value="bag">Bag</option>
+      <option value="sample">Sample</option>
+      <option value="other">Other</option>
+    </select>
     <input
       class="form__field"
       data-testid="field-storage"
@@ -116,7 +138,7 @@
 import { computed, ref } from "vue";
 import CataloguePicker from "./CataloguePicker.vue";
 import { pricePerGram } from "../shelf";
-import type { CatalogueNode, Tea, TeaWrite } from "../types";
+import type { CatalogueNode, HarvestSeason, Tea, TeaForm as TeaFormValue, TeaWrite } from "../types";
 
 const props = defineProps<{ modelValue: TeaWrite; nodes: CatalogueNode[] }>();
 const emit = defineEmits<{
@@ -137,6 +159,18 @@ function asNumber(event: Event): number | null {
   if (raw === "") return null;
   const parsed = Number(raw);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+// Both selects use an empty option for "not recorded"; the empty string is
+// never a valid enum member, so it collapses to `null` on either field.
+function asTeaForm(event: Event): TeaFormValue | null {
+  const raw = (event.target as HTMLSelectElement).value;
+  return raw === "" ? null : (raw as TeaFormValue);
+}
+
+function asHarvestSeason(event: Event): HarvestSeason | null {
+  const raw = (event.target as HTMLSelectElement).value;
+  return raw === "" ? null : (raw as HarvestSeason);
 }
 
 function patch(change: Partial<TeaWrite>): void {

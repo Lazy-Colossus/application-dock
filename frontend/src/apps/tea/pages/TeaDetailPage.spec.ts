@@ -136,6 +136,31 @@ describe("TeaDetailPage", () => {
     expect(wrapper.find('[data-testid="grams-sheet"]').exists()).toBe(true);
   });
 
+  // Bug: commitGrams used to replace the whole draft with the server tea,
+  // silently discarding anything typed since the page loaded (e.g. Notes),
+  // and clearing `dirty` so the leave guard stopped warning about it.
+  it("keeps other unsaved edits, and stays dirty, after a grams write commits", async () => {
+    const wrapper = await page();
+
+    await wrapper.get('[data-testid="field-notes"]').setValue("Mid-session notes.");
+    expect(
+      (wrapper.get('[data-testid="tea-save"]').element as HTMLButtonElement).disabled,
+    ).toBe(false);
+
+    putMock.mockResolvedValue(tea({ grams_remaining: 39 }));
+    await wrapper.get('[data-testid="tea-rim-button"]').trigger("click");
+    await wrapper.get('[data-testid="grams-plus"]').trigger("click");
+    await wrapper.get('[data-testid="grams-save"]').trigger("click");
+    await flushPromises();
+
+    expect((wrapper.get('[data-testid="field-notes"]').element as HTMLTextAreaElement).value).toBe(
+      "Mid-session notes.",
+    );
+    expect(
+      (wrapper.get('[data-testid="tea-save"]').element as HTMLButtonElement).disabled,
+    ).toBe(false);
+  });
+
   // Correction: AddNodeDialog must be wired here too, not only on NewTeaPage —
   // reclassifying a tea you already own is exactly when the catalogue gap
   // shows up.

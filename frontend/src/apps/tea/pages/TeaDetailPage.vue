@@ -168,7 +168,13 @@ async function createNode(payload: {
 async function commitGrams(grams: number): Promise<void> {
   editing.value = false;
   await cabinet.setGrams(teaId.value, grams);
-  if (tea.value) draft.value = toWrite(tea.value);
+  // Merge only the grams into the existing draft: a grams write must never
+  // clobber notes or any other field the person is mid-edit on. Read back
+  // from `tea.value` rather than the `grams` argument so a failed write's
+  // rollback is reflected too, not the rejected optimistic value.
+  if (draft.value && tea.value) {
+    draft.value = { ...draft.value, grams_remaining: tea.value.grams_remaining };
+  }
 }
 
 async function save(): Promise<void> {
