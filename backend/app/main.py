@@ -15,6 +15,7 @@ from app.routers import (
     qotd,
     shared_notes,
     shell,
+    tea,
 )
 
 app = FastAPI(title="Application Dock")
@@ -38,6 +39,7 @@ app.include_router(kalendariq.router)
 app.include_router(kalendariq.share_router)
 app.include_router(qotd.router)
 app.include_router(shared_notes.router)
+app.include_router(tea.router)
 app.include_router(archery.router)
 app.include_router(kitchencraft.router)
 
