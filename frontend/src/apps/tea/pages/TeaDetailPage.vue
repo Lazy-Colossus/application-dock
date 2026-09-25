@@ -36,7 +36,12 @@
 
       <div class="tea-page__body">
         <TeaForm v-if="draft" v-model="draft" :nodes="catalogue.nodes" @add-node="openAddNode" />
-        <button class="tea-page__apply" data-testid="tea-save" :disabled="!dirty" @click="save">
+        <button
+          class="tea-page__apply"
+          data-testid="tea-save"
+          :disabled="!dirty || !canSave || cabinet.saving"
+          @click="save"
+        >
           Save changes
         </button>
       </div>
@@ -77,6 +82,7 @@ import { useTeaCatalogueStore } from "../stores/useTeaCatalogueStore";
 import { proportionOf, thresholdFractionOf, isLow } from "../shelf";
 import { pathOf } from "../catalogue";
 import { CLASS_TOKENS } from "../tokens";
+import { canSaveTea } from "../validation";
 import type { Tea, TeaWrite } from "../types";
 
 const route = useRoute();
@@ -114,6 +120,12 @@ const dirty = computed(
     draft.value !== null &&
     JSON.stringify(draft.value) !== JSON.stringify(toWrite(tea.value)),
 );
+
+// Same rule as NewTeaPage's `canSave` (FR-2): a name and a classification.
+// Editing must not be able to save its way into invalid data any more than
+// creating can — clearing the name or reclassifying to nothing disables Save
+// here exactly as it would there.
+const canSave = computed(() => draft.value !== null && canSaveTea(draft.value));
 
 const chain = computed(() =>
   tea.value ? pathOf(catalogue.nodes, tea.value.catalogue_node_id) : [],

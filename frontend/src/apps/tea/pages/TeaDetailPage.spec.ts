@@ -16,10 +16,17 @@ vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
   api: { get: getMock, post: postMock, put: putMock, del: delMock },
 }));
+
+// Captures the guard callback so tests can invoke it directly and observe
+// whether it prompts — a `vi.fn()` stub here would never call the callback,
+// silently "proving" both the dirty and the clean case at once.
+let leaveGuard: (() => boolean) | null = null;
 vi.mock("vue-router", () => ({
   useRouter: () => ({ push, back: backMock }),
   useRoute: () => ({ params: { teaId: "t-1" } }),
-  onBeforeRouteLeave: vi.fn(),
+  onBeforeRouteLeave: (cb: () => boolean) => {
+    leaveGuard = cb;
+  },
 }));
 
 import TeaDetailPage from "./TeaDetailPage.vue";
@@ -156,5 +163,46 @@ describe("TeaDetailPage", () => {
       expect.objectContaining({ parent_id: "oolong", name: "Rou Gui" }),
     );
     expect(wrapper.find('[data-testid="add-node"]').exists()).toBe(false);
+  });
+
+  it("disables Save changes when the name is cleared, even though something changed", async () => {
+    const wrapper = await page();
+    await wrapper.get('[data-testid="field-name"]').setValue("");
+    const button = wrapper.get('[data-testid="tea-save"]').element as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+  });
+
+  it("enables Save changes once something changed and the required fields are still present", async () => {
+    const wrapper = await page();
+    expect((wrapper.get('[data-testid="tea-save"]').element as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+
+    await wrapper.get('[data-testid="field-notes"]').setValue("Updated notes.");
+    expect((wrapper.get('[data-testid="tea-save"]').element as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+  });
+
+  it("leaves silently when nothing has changed", async () => {
+    await page();
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    expect(leaveGuard).not.toBeNull();
+    expect(leaveGuard?.()).toBe(true);
+    expect(confirmSpy).not.toHaveBeenCalled();
+    confirmSpy.mockRestore();
+  });
+
+  it("asks before leaving when the draft is dirty", async () => {
+    const wrapper = await page();
+    await wrapper.get('[data-testid="field-notes"]').setValue("Changed my mind.");
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    expect(leaveGuard?.()).toBe(false);
+    expect(confirmSpy).toHaveBeenCalledWith(
+      "Leave without saving? Your changes to this tea will be lost.",
+    );
+    confirmSpy.mockRestore();
   });
 });

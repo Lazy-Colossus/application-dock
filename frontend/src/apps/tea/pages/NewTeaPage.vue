@@ -37,6 +37,7 @@ import AddNodeDialog from "../components/AddNodeDialog.vue";
 import { useTeaCabinetStore } from "../stores/useTeaCabinetStore";
 import { useTeaCatalogueStore } from "../stores/useTeaCatalogueStore";
 import { pathOf } from "../catalogue";
+import { canSaveTea } from "../validation";
 import type { TeaWrite } from "../types";
 
 const router = useRouter();
@@ -68,10 +69,8 @@ const addingParentId = ref<string | null>(null);
 const saved = ref(false);
 
 // FR-2's two required fields, enforced here so the server's 422 is never the
-// first thing the person sees.
-const canSave = computed(
-  () => draft.value.name.trim().length > 0 && draft.value.catalogue_node_id.length > 0,
-);
+// first thing the person sees. Shared with TeaDetailPage via canSaveTea.
+const canSave = computed(() => canSaveTea(draft.value));
 
 const dirty = computed(
   () => !saved.value && JSON.stringify(draft.value) !== JSON.stringify(blank()),
