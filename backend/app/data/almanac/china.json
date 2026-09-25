@@ -1,0 +1,44 @@
+[
+  {
+    "catalogue_node_id": "green.longjing",
+    "country": "China",
+    "reading": "Lóngjǐng",
+    "summary": "A flat, pan-fired green tea from the hills around West Lake in Hangzhou, Zhejiang. The leaves are wok-fired by hand into a smooth, sword-like flat shape, which gives Longjing its characteristic chestnut-like sweetness and lack of the grassy bitterness common in steamed greens. Widely regarded as China's most famous green tea.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [30, 45, 60] }
+  },
+  {
+    "catalogue_node_id": "white.fuding.bai-hao-yinzhen",
+    "country": "China",
+    "reading": "Bái Háo Yínzhēn",
+    "summary": "Silver Needle, the most minimally processed of China's white teas: only the unopened downy buds are picked, then simply withered and dried with no rolling or shaping. The dense white down gives the dry leaf a silvery sheen and the liquor a delicate, faintly sweet, honeyed character.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 90, "steep_seconds": [45, 60, 90, 120] }
+  },
+  {
+    "catalogue_node_id": "oolong.anxi.tieguanyin",
+    "country": "China",
+    "reading": "Tiěguānyīn",
+    "summary": "Iron Goddess of Mercy, a lightly to moderately oxidized oolong from Anxi, Fujian, rolled into tight, hard pellets that slowly unfurl over several infusions. Modern Anxi Tieguanyin is typically processed toward a greener, floral style with an orchid-like aroma rather than the darker, more roasted style once traditional.",
+    "brewing": { "leaf_grams": 6, "water_temp_c": 95, "steep_seconds": [20, 25, 30, 40] }
+  },
+  {
+    "catalogue_node_id": "oolong.wuyi-yancha.da-hong-pao",
+    "country": "China",
+    "reading": "Dà Hóng Páo",
+    "summary": "Big Red Robe, the best-known of the Wuyi \"rock teas\" (yancha) grown among the mineral-rich cliffs of Wuyi Shan, Fujian. A heavily oxidized, charcoal-roasted, twisted-leaf oolong prized for its \"yan yun\" (rock rhyme) — a mineral, roasted-fruit depth said to come from the cliff-face soil.",
+    "brewing": { "leaf_grams": 8, "water_temp_c": 100, "steep_seconds": [20, 25, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "red.dianhong",
+    "country": "China",
+    "reading": "Diān Hóng",
+    "summary": "A fully oxidized black (\"red\") tea from Yunnan, made from the region's large-leaf varietal. The best grades are golden-tipped, giving a bright coppery liquor with a naturally sweet, malty, sometimes honeyed character and little astringency.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 95, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "dark.sheng-puerh",
+    "country": "China",
+    "reading": "Shēng Pǔ'ěr",
+    "summary": "Raw pu-erh: sun-dried Yunnan large-leaf tea (maocha) that is steamed and compressed, most often into cakes, then aged. Young sheng is bright, bitter and astringent with floral or fruity notes; years of aging mellow and deepen it, driven by slow oxidation and microbial activity in storage.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 100, "steep_seconds": [10, 15, 20, 30] }
+  }
+]

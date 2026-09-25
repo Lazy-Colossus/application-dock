@@ -1,0 +1,30 @@
+[
+  {
+    "catalogue_node_id": "green.japanese.sencha",
+    "country": "Japan",
+    "reading": "sencha",
+    "summary": "Japan's everyday green tea: leaves are steamed shortly after picking, which halts oxidation quickly and preserves a vivid green color, then rolled into fine needles and dried. Steaming (rather than the pan-firing used in China) gives sencha its characteristic vegetal, grassy-sweet flavor.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 70, "steep_seconds": [60, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "green.japanese.gyokuro",
+    "country": "Japan",
+    "reading": "gyokuro",
+    "summary": "A shaded green tea: the bushes are covered for roughly the last three weeks before harvest, which lowers catechin (bitterness) production and raises theanine, giving gyokuro an intensely savory, sweet, umami-rich character quite unlike sun-grown sencha. Traditionally brewed with a lot of leaf and very little, cool water.",
+    "brewing": { "leaf_grams": 10, "water_temp_c": 55, "steep_seconds": [90, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "green.japanese.matcha",
+    "country": "Japan",
+    "reading": "matcha",
+    "summary": "Shade-grown tea leaves (tencha) that are steamed, dried, and stone-ground into a fine powder, then whisked directly into water rather than steeped and strained. Central to Japanese tea ceremony (chanoyu). Flavor is intensely vegetal and umami, with body and bitterness varying widely by grade.",
+    "brewing": { "leaf_grams": 2, "water_temp_c": 80, "steep_seconds": [] }
+  },
+  {
+    "catalogue_node_id": "green.japanese.hojicha",
+    "country": "Japan",
+    "reading": "hōjicha",
+    "summary": "Green tea, typically bancha or sencha leaf and stems, roasted at high heat after processing. Roasting turns the leaf reddish-brown and destroys most of the catechins responsible for bitterness, giving hojicha a toasty, nutty, low-caffeine cup that tolerates near-boiling water well.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 95, "steep_seconds": [30, 30] }
+  }
+]
