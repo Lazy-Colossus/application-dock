@@ -229,5 +229,131 @@
     "reading": "Lù'ān",
     "summary": "A dark tea historically associated with the Lu'an region of Anhui — again read \"Lù'ān\" rather than the more common \"liù\" — first recorded in Ming-dynasty tea writing and once traded as far as Guangdong's coastal teahouses. Leaves are steamed and packed into bamboo-leaf-lined baskets, then fired to slowly drive off moisture over a day or two; production had nearly vanished by the 1940s and was revived from archived samples in the 1980s. Traditionally it is not sold until it has rested for at least three years.",
     "brewing": { "leaf_grams": 7, "water_temp_c": 100, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "green.xinyang-maojian",
+    "country": "China",
+    "reading": "Xìnyáng Máojiān",
+    "summary": "A green tea from the mountains around Xinyang, Henan, one of China's oldest tea-growing areas with cultivation traced back over two millennia. The tea is plucked as a tight bud with one young leaf, pan-fired, rolled into thin, slightly curved needles, and finished over charcoal, giving a bright green liquor with a fresh, chestnut-sweet taste. It won a gold medal at the 1915 Panama-Pacific Exposition and is counted among China's traditional Ten Great Teas.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [30, 45, 60] }
+  },
+  {
+    "catalogue_node_id": "green.lushan-yunwu",
+    "country": "China",
+    "reading": "Lúshān Yúnwù",
+    "summary": "Clouds and Mist tea, a green tea grown around 800 meters up Lushan (Mount Lu) in Jiangxi, on the southern bank of the Yangtze, where cloud cover blankets the slopes for much of the year. Legend credits the monk Huiyuan of Donglin Monastery with first cultivating wild tea bushes there, and it was a tribute tea from the Song dynasty onward. The leaves are pan-fired into a flat, slightly curled shape, yielding a thick, mellow liquor with little bitterness thanks to the mountain's wide day-night temperature swing.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [30, 45, 60] }
+  },
+  {
+    "catalogue_node_id": "green.enshi-yulu",
+    "country": "China",
+    "reading": "Ēnshī Yùlù",
+    "summary": "Jade Dew, a green tea from Enshi, Hubei, and one of the very few Chinese teas still fixed by steaming rather than pan-firing — the technique that gave rise to Japanese sencha, but largely abandoned in China after the Ming dynasty switched to wok-firing. Steaming locks in an unusually deep, jade-green color in both the dry needle-shaped leaf and the liquor, with a mellow, seaweed-like savoriness. The steaming method was revived commercially in Enshi in 1936 after Sha Qing production there shifted away from pan-firing.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 75, "steep_seconds": [30, 45, 60] }
+  },
+  {
+    "catalogue_node_id": "green.mengding-ganlu",
+    "country": "China",
+    "reading": "Méngdǐng Gānlù",
+    "summary": "Sweet Dew, a green tea from Mengding Mountain in Ya'an, Sichuan, a site credited by legend with China's earliest deliberate tea cultivation, when the Daoist Wu Lizhen planted seven bushes there in the 1st century BCE. Made only from early spring buds, the leaf is pan-fired and hand-rolled three separate times to shape it and concentrate its sweetness before a final baking. From the Tang to the Qing dynasty it was picked and prepared by Buddhist monks as imperial tribute tea.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 75, "steep_seconds": [20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "green.zhuyeqing",
+    "country": "China",
+    "reading": "Zhúyèqīng",
+    "summary": "Bamboo Leaf Green, a green tea from the high-altitude gardens of Emeishan, Sichuan, made entirely from tiny, flat, slightly curved single buds picked in early spring and shaped by hand to resemble young bamboo leaves. Though Emeishan has grown tea for over a thousand years, Zhuyeqing itself is a modern cultivar and style developed only in the 1960s. Its low yield and pure-bud pluck make it one of Sichuan's more expensive green teas, with a smooth, creamy, vegetal cup and little astringency.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 75, "steep_seconds": [20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "green.gunpowder",
+    "country": "China",
+    "reading": "Zhūchá",
+    "summary": "Pearl Tea, a green tea from Pingshui, near Shaoxing in Zhejiang, whose leaves are rolled tightly into small round pellets rather than flattened or needled — a Tang-dynasty technique that gave the tea an unusually long shelf life for shipping. A 19th-century British buyer nicknamed it \"gunpowder tea\" for the pellets' resemblance to shot, and it became one of China's largest tea exports, especially to North Africa, where it forms the base of Maghrebi mint tea. The pellets unfurl slowly, releasing a brisk, slightly smoky cup over many infusions.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 85, "steep_seconds": [30, 45, 60] }
+  },
+  {
+    "catalogue_node_id": "yellow.mengding-huangya",
+    "country": "China",
+    "reading": "Méngdǐng Huángyá",
+    "summary": "Yellow Buds, a rare yellow tea also from Mengding Mountain in Sichuan, made from the same early spring buds as the mountain's green Mengding Ganlu but taken through a slow \"sealed yellowing\" (men huang) rest between several rounds of pan-firing. The buds are repeatedly wrapped in paper while still hot and left to steam gently in their own warmth for days, lightly oxidizing them and softening green tea's grassy edge into a mellower, sweeter cup. It is one of only a handful of yellow teas still produced at scale.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [30, 45, 60] }
+  },
+  {
+    "catalogue_node_id": "yellow.weishan-maojian",
+    "country": "China",
+    "reading": "Wéishān Máojiān",
+    "summary": "A yellow tea from Weishan, in Ningxiang County, Hunan, processed through the usual fixing, sealed-yellowing and rolling steps of a yellow tea but finished with a final pine-smoking stage unique to this tea among China's yellow teas. The smoking leaves the glossy, curled leaf with a bright orange-yellow liquor carrying a distinct pine-smoke aroma alongside the mellow sweetness typical of the category.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 85, "steep_seconds": [30, 45, 60] }
+  },
+  {
+    "catalogue_node_id": "white.zhenghe-bai-mudan",
+    "country": "China",
+    "reading": "Zhènghé Bái Mǔdān",
+    "summary": "White Peony from Zhenghe, a mountainous inland county in northern Fujian that, alongside coastal Fuding, is one of the two historic origins of Bai Mudan. Zhenghe uses its own Zhenghe Da Bai cultivar rather than Fuding's, and its higher, cooler terrain slows leaf maturation, producing a darker, more heavily withered leaf than Fuding Bai Mudan. The resulting cup is fuller-bodied and sharper, with more fruit and less of Fuding's lighter, greener sweetness.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 90, "steep_seconds": [30, 45, 60, 90] }
+  },
+  {
+    "catalogue_node_id": "white.yue-guang-bai",
+    "country": "China",
+    "reading": "Yuèguāngbái",
+    "summary": "Moonlight White, a white tea from Jinggu county in Yunnan's Lincang region, made not from the Fujian white-tea bushes but from the same large-leaf assamica varietal used for pu-erh. The plucked bud-and-leaf sets are withered and air-dried slowly out of direct sun, without the final oven-drying step Fujian white teas get, leaving the buds pale on the underside and the leaf dark on top — the two-tone look that gives the tea its name. Its Yunnan varietal and processing give it a thicker, sweeter, more malty cup than Fujian white teas, and it darkens further with age.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 90, "steep_seconds": [30, 45, 60, 90] }
+  },
+  {
+    "catalogue_node_id": "oolong.qi-lan",
+    "country": "China",
+    "reading": "Qílán",
+    "summary": "Special Orchid, an oolong grown around Daqinshan mountain in Pinghe County, southern Fujian, near the Guangdong border. It traces to a distinctive tea bush found beside a well at the mountain's foot during the Qianlong era of the Qing dynasty, but its modern form was fixed in the 1990s; today it ranks alongside Tieguanyin, Wuyi yancha and Zhangping Shui Xian as one of Fujian's four best-known oolong styles. Processed in the southern Fujian rolled style, it produces a pale, tightly balled leaf with a pronounced honeyed orchid aroma.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 100, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "oolong.anxi.maoxie",
+    "country": "China",
+    "reading": "Máoxiè",
+    "summary": "Hairy Crab, one of Anxi, Fujian's four major oolong cultivars alongside Tieguanyin, Huang Jin Gui and Benshan, first propagated in Daping township in the early 20th century. Its name refers to the fine hairs on the underside of its leaves, which shed and float on the surface of the brewed cup. Rolled into tight pellets like Tieguanyin and lightly oxidized, it gives a lighter, less complex aroma than Tieguanyin but is valued for its hardiness and reliable yield.",
+    "brewing": { "leaf_grams": 6, "water_temp_c": 95, "steep_seconds": [20, 25, 30, 40] }
+  },
+  {
+    "catalogue_node_id": "oolong.anxi.huang-guan-yin",
+    "country": "China",
+    "reading": "Huáng Guānyīn",
+    "summary": "Golden Guanyin, a hybrid Anxi oolong cultivar bred over two decades (1977-1997) by the Fujian Academy of Agricultural Sciences, crossing Tieguanyin as the mother plant with Huangdan (the source of Huang Jin Gui) as the father. It buds earlier than Tieguanyin and is lightly oxidized and roasted, producing a glossy yellow-green leaf and a highly aromatic, floral cup that leans toward the fragrance of its Huang Jin Gui parent more than its Tieguanyin one.",
+    "brewing": { "leaf_grams": 6, "water_temp_c": 90, "steep_seconds": [15, 20, 25, 35] }
+  },
+  {
+    "catalogue_node_id": "oolong.yongchun-foshou",
+    "country": "China",
+    "reading": "Yǒngchūn Fóshǒu",
+    "summary": "Buddha's Hand, an oolong named for its cultivar's unusually large leaves, which can grow to the size of a hand, from Yongchun County in southern Fujian, with a cultivation history of roughly 300 years. In its home style the leaf is only lightly oxidized and rolled, closer to Anxi Tieguanyin in aroma and appearance than to a roasted yancha, though the same cultivar is also grown in Wuyi Shan and finished there in the heavier yancha style. The large leaf yields an unusually smooth, low-astringency cup.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 95, "steep_seconds": [20, 30, 40, 55] }
+  },
+  {
+    "catalogue_node_id": "red.tanyang-gongfu",
+    "country": "China",
+    "reading": "Tǎnyáng Gōngfu",
+    "summary": "A fully oxidized black tea from Fu'an, Fujian, created in 1851 when local tea makers adapted the smoke-drying process of nearby Zhengshan Xiaozhong into an unsmoked, finely worked \"gongfu\" style using the local Tanyang Caicha varietal. It is generally regarded as the first modern gongfu black tea and, alongside Bailin Gongfu and Zhenghe Gongfu, one of Fujian's three historic gongfu black teas; it won a gold medal at the 1915 Panama-Pacific Exposition. The cup is sweet and mellow with a light floral note and little astringency.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 95, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "red.yingde-hongcha",
+    "country": "China",
+    "reading": "Yīngdé Hóngchá",
+    "summary": "Ying Hong, a fully oxidized black tea from Yingde, Guangdong, developed from 1959 as part of a state push to expand China's black tea exports beyond Yunnan and Anhui, using local bushes crossed with Yunnan large-leaf stock. Made by the broken-leaf (CTC-style rotorvane) method finalized there in the late 1970s, it gives a strong, brisk, coppery-red liquor with a malty, slightly peppery, cocoa-like character, and Yingde is now counted among the world's most productive black tea regions.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 95, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "dark.qian-liang-cha",
+    "country": "China",
+    "reading": "Qiān Liǎng Chá",
+    "summary": "Thousand-Tael Tea, a dark tea from Anhua, Hunan, compressed into one of the most distinctive shapes in all of tea: a bamboo-wrapped cylindrical log roughly 1.5 meters long and weighing about 36 kilograms, the traditional weight of 1,000 taels of silver. Piled maocha is packed by hand into a sheath of bamboo strips, palm bark and bamboo leaves, then compacted by teams of workers walking a leverage pole around it, before curing outdoors under sun and dew for weeks. It developed in the 19th century for the overland tea trade to China's northwest and is recognized as national intangible cultural heritage.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 100, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "dark.kang-zhuan",
+    "country": "China",
+    "reading": "Kāng Zhuān",
+    "summary": "A dark tea brick from Ya'an, Sichuan, made from mature leaf and stem and compressed for the historic Tea-Horse Road trade to Kham and central Tibet, where it was traditionally boiled with yak butter and salt into butter tea. Ya'an supplied this border-sale tea (bianxiao cha) to Tibet for over two centuries, moved by porters and pack animals along the Sichuan-Tibet route through Kangding. Its name references Kangding, the route's key trading post, and its coarse, fully post-fermented leaf yields a mellow, thick liquor built to stand up to simmering.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 100, "steep_seconds": [15, 20, 30, 45] }
   }
 ]

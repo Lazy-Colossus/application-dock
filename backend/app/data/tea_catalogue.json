@@ -6,6 +6,12 @@
   { "id": "green.taiping-houkui", "parent_id": "green", "name": "Taiping Houkui", "name_zh": "太平猴魁", "source": "seed", "default_origin": "Taiping, Anhui" },
   { "id": "green.anji-baicha", "parent_id": "green", "name": "Anji Baicha", "name_zh": "安吉白茶", "source": "seed", "default_origin": "Anji, Zhejiang" },
   { "id": "green.liu-an-gua-pian", "parent_id": "green", "name": "Liu An Gua Pian", "name_zh": "六安瓜片", "source": "seed", "default_origin": "Lu'an, Anhui" },
+  { "id": "green.xinyang-maojian", "parent_id": "green", "name": "Xinyang Maojian", "name_zh": "信陽毛尖", "source": "seed", "default_origin": "Xinyang, Henan" },
+  { "id": "green.lushan-yunwu", "parent_id": "green", "name": "Lushan Yunwu", "name_zh": "廬山雲霧", "source": "seed", "default_origin": "Lushan, Jiangxi" },
+  { "id": "green.enshi-yulu", "parent_id": "green", "name": "Enshi Yulu", "name_zh": "恩施玉露", "source": "seed", "default_origin": "Enshi, Hubei" },
+  { "id": "green.mengding-ganlu", "parent_id": "green", "name": "Mengding Ganlu", "name_zh": "蒙頂甘露", "source": "seed", "default_origin": "Mengding Mountain, Sichuan" },
+  { "id": "green.zhuyeqing", "parent_id": "green", "name": "Zhuyeqing", "name_zh": "竹葉青", "source": "seed", "default_origin": "Emeishan, Sichuan" },
+  { "id": "green.gunpowder", "parent_id": "green", "name": "Gunpowder (Zhucha)", "name_zh": "珠茶", "source": "seed", "default_origin": "Pingshui, Zhejiang" },
   { "id": "green.japanese", "parent_id": "green", "name": "Japanese green", "name_zh": "日本綠茶", "source": "seed", "default_origin": "Japan" },
   { "id": "green.japanese.sencha", "parent_id": "green.japanese", "name": "Sencha", "name_zh": "煎茶", "source": "seed" },
   { "id": "green.japanese.gyokuro", "parent_id": "green.japanese", "name": "Gyokuro", "name_zh": "玉露", "source": "seed" },
@@ -16,6 +22,8 @@
   { "id": "yellow", "parent_id": null, "name": "Yellow", "name_zh": "黃茶", "source": "seed" },
   { "id": "yellow.junshan-yinzhen", "parent_id": "yellow", "name": "Junshan Yinzhen", "name_zh": "君山銀針", "source": "seed", "default_origin": "Junshan Island, Hunan" },
   { "id": "yellow.huoshan-huangya", "parent_id": "yellow", "name": "Huoshan Huangya", "name_zh": "霍山黃芽", "source": "seed", "default_origin": "Huoshan, Anhui" },
+  { "id": "yellow.mengding-huangya", "parent_id": "yellow", "name": "Mengding Huangya", "name_zh": "蒙頂黃芽", "source": "seed", "default_origin": "Mengding Mountain, Sichuan" },
+  { "id": "yellow.weishan-maojian", "parent_id": "yellow", "name": "Weishan Maojian", "name_zh": "溈山毛尖", "source": "seed", "default_origin": "Weishan, Ningxiang, Hunan" },
 
   { "id": "white", "parent_id": null, "name": "White", "name_zh": "白茶", "source": "seed" },
   { "id": "white.fuding", "parent_id": "white", "name": "Fuding", "name_zh": "福鼎", "source": "seed", "default_origin": "Fuding, Fujian" },
@@ -23,6 +31,8 @@
   { "id": "white.fuding.bai-mudan", "parent_id": "white.fuding", "name": "Bai Mudan", "name_zh": "白牡丹", "source": "seed" },
   { "id": "white.fuding.shou-mei", "parent_id": "white.fuding", "name": "Shou Mei", "name_zh": "壽眉", "source": "seed" },
   { "id": "white.fuding.gong-mei", "parent_id": "white.fuding", "name": "Gong Mei", "name_zh": "貢眉", "source": "seed" },
+  { "id": "white.zhenghe-bai-mudan", "parent_id": "white", "name": "Zhenghe Bai Mudan", "name_zh": "政和白牡丹", "source": "seed", "default_origin": "Zhenghe, Fujian" },
+  { "id": "white.yue-guang-bai", "parent_id": "white", "name": "Yue Guang Bai", "name_zh": "月光白", "source": "seed", "default_origin": "Jinggu, Yunnan" },
 
   { "id": "oolong", "parent_id": null, "name": "Oolong", "name_zh": "烏龍", "source": "seed" },
   { "id": "oolong.wuyi-yancha", "parent_id": "oolong", "name": "Wuyi yancha", "name_zh": "武夷岩茶", "source": "seed", "default_origin": "Wuyi Shan, Fujian" },
@@ -36,10 +46,14 @@
   { "id": "oolong.anxi.tieguanyin", "parent_id": "oolong.anxi", "name": "Tieguanyin", "name_zh": "鐵觀音", "source": "seed" },
   { "id": "oolong.anxi.huang-jin-gui", "parent_id": "oolong.anxi", "name": "Huang Jin Gui", "name_zh": "黃金桂", "source": "seed" },
   { "id": "oolong.anxi.benshan", "parent_id": "oolong.anxi", "name": "Benshan", "name_zh": "本山", "source": "seed" },
+  { "id": "oolong.anxi.maoxie", "parent_id": "oolong.anxi", "name": "Maoxie", "name_zh": "毛蟹", "source": "seed" },
+  { "id": "oolong.anxi.huang-guan-yin", "parent_id": "oolong.anxi", "name": "Huangguanyin", "name_zh": "黃觀音", "source": "seed" },
   { "id": "oolong.dancong", "parent_id": "oolong", "name": "Phoenix Dancong", "name_zh": "鳳凰單叢", "source": "seed", "default_origin": "Phoenix Mountain, Guangdong" },
   { "id": "oolong.dancong.mi-lan-xiang", "parent_id": "oolong.dancong", "name": "Mi Lan Xiang", "name_zh": "蜜蘭香", "source": "seed" },
   { "id": "oolong.dancong.ya-shi-xiang", "parent_id": "oolong.dancong", "name": "Ya Shi Xiang", "name_zh": "鴨屎香", "source": "seed" },
   { "id": "oolong.dancong.zhi-lan-xiang", "parent_id": "oolong.dancong", "name": "Zhi Lan Xiang", "name_zh": "芝蘭香", "source": "seed" },
+  { "id": "oolong.qi-lan", "parent_id": "oolong", "name": "Qi Lan", "name_zh": "奇蘭", "source": "seed", "default_origin": "Pinghe, Fujian" },
+  { "id": "oolong.yongchun-foshou", "parent_id": "oolong", "name": "Yongchun Foshou", "name_zh": "永春佛手", "source": "seed", "default_origin": "Yongchun, Fujian" },
   { "id": "oolong.taiwanese", "parent_id": "oolong", "name": "Taiwanese", "name_zh": "台灣烏龍", "source": "seed", "default_origin": "Taiwan" },
   { "id": "oolong.taiwanese.dong-ding", "parent_id": "oolong.taiwanese", "name": "Dong Ding", "name_zh": "凍頂", "source": "seed", "default_origin": "Nantou, Taiwan" },
   { "id": "oolong.taiwanese.alishan", "parent_id": "oolong.taiwanese", "name": "Alishan", "name_zh": "阿里山", "source": "seed", "default_origin": "Chiayi, Taiwan" },
@@ -52,6 +66,8 @@
   { "id": "red.jin-jun-mei", "parent_id": "red", "name": "Jin Jun Mei", "name_zh": "金駿眉", "source": "seed", "default_origin": "Tongmu, Fujian" },
   { "id": "red.dianhong", "parent_id": "red", "name": "Dianhong", "name_zh": "滇紅", "source": "seed", "default_origin": "Yunnan" },
   { "id": "red.qimen", "parent_id": "red", "name": "Qimen", "name_zh": "祁門", "source": "seed", "default_origin": "Qimen, Anhui" },
+  { "id": "red.tanyang-gongfu", "parent_id": "red", "name": "Tanyang Gongfu", "name_zh": "坦洋工夫", "source": "seed", "default_origin": "Fu'an, Fujian" },
+  { "id": "red.yingde-hongcha", "parent_id": "red", "name": "Yingde Hongcha", "name_zh": "英德紅茶", "source": "seed", "default_origin": "Yingde, Guangdong" },
 
   { "id": "dark", "parent_id": null, "name": "Dark", "name_zh": "黑茶", "source": "seed" },
   { "id": "dark.sheng-puerh", "parent_id": "dark", "name": "Sheng pu-erh", "name_zh": "生普洱", "source": "seed", "default_origin": "Yunnan" },
@@ -59,6 +75,8 @@
   { "id": "dark.liu-bao", "parent_id": "dark", "name": "Liu Bao", "name_zh": "六堡", "source": "seed", "default_origin": "Wuzhou, Guangxi" },
   { "id": "dark.fu-zhuan", "parent_id": "dark", "name": "Fu Zhuan", "name_zh": "茯磚", "source": "seed", "default_origin": "Hunan" },
   { "id": "dark.liu-an", "parent_id": "dark", "name": "Liu An", "name_zh": "六安", "source": "seed", "default_origin": "Anhui" },
+  { "id": "dark.qian-liang-cha", "parent_id": "dark", "name": "Qian Liang Cha", "name_zh": "千兩茶", "source": "seed", "default_origin": "Anhua, Hunan" },
+  { "id": "dark.kang-zhuan", "parent_id": "dark", "name": "Kang Zhuan", "name_zh": "康磚", "source": "seed", "default_origin": "Ya'an, Sichuan" },
 
   { "id": "other", "parent_id": null, "name": "Other", "name_zh": "其他", "source": "seed" }
 ]
