@@ -1,0 +1,72 @@
+[
+  {
+    "catalogue_node_id": "red.indian.darjeeling-first-flush",
+    "country": "India",
+    "reading": "",
+    "summary": "The first harvest of the Darjeeling season, plucked from Camellia sinensis var. sinensis bushes in the Darjeeling and Kalimpong hill districts of West Bengal between late February and mid-April, as soon as the bushes break winter dormancy. The tender young leaf is withered and only lightly, briefly oxidized before drying — closer to the oxidation level of an oolong than a fully oxidized black tea — producing a pale golden-amber liquor with greenish tips, a brisk, floral aroma, and light body. Because the flush is small and highly sought by collectors, first-flush lots are sold and auctioned as single-garden, single-flush teas and command some of the highest prices of any Indian tea.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 85, "steep_seconds": [180] }
+  },
+  {
+    "catalogue_node_id": "red.indian.darjeeling-second-flush",
+    "country": "India",
+    "reading": "",
+    "summary": "Picked from the same Darjeeling and Kalimpong gardens in May and June, after weeks of warm-season growth, second flush is more fully oxidized and fuller-bodied than first flush and is widely considered Darjeeling's finest harvest. Its signature is the 'muscatel' character — a wine-like, grape-and-honey note that develops because leafhoppers (jassids) feed on the young leaf during this period, and the plant's defensive terpene response is what gives the tea its distinctive flavor. The liquor is a rounder, coppery amber with less astringency than first flush, and top lots from historic gardens such as Makaibari and Castleton are marketed and auctioned as Darjeeling's flagship product.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 90, "steep_seconds": [180, 240] }
+  },
+  {
+    "catalogue_node_id": "red.indian.darjeeling-autumnal",
+    "country": "India",
+    "reading": "",
+    "summary": "The final flush of the Darjeeling season, picked in October and November once the summer monsoon eases and cooler, drier weather sets in. It is processed the same way as second flush — withered, orthodox-rolled, and fully oxidized — but the leaf is coarser and darker, giving a fuller, deeper copper liquor with a rounder, nuttier profile and less of the second flush's floral muscatel lift. It is generally the least expensive of the three main Darjeeling flushes, reflecting its position as the most muted of the harvests rather than any defect in quality.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 95, "steep_seconds": [200, 260] }
+  },
+  {
+    "catalogue_node_id": "green.indian.darjeeling",
+    "country": "India",
+    "reading": "",
+    "summary": "A minority product of a handful of Darjeeling gardens — Makaibari among the best known — made from the same Camellia sinensis var. sinensis bushes that supply the district's famous black teas, but pan-fired or steamed immediately after withering to halt oxidation rather than rolled and fully oxidized. The result is a lighter, more delicate cup than most Chinese or Japanese greens, retaining the floral character distinctive of Darjeeling terroir rather than the grassier, more vegetal notes typical of the category elsewhere.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [90, 120] }
+  },
+  {
+    "catalogue_node_id": "red.indian.assam-ctc",
+    "country": "India",
+    "reading": "",
+    "summary": "Assam's dominant tea product by volume, made by crush-tear-curl (CTC) processing from Camellia sinensis var. assamica — the tea plant native to the Brahmaputra valley that British planters began cultivating commercially in the 1830s with knowledge from the local Singpho tribe. Withered leaf is passed through toothed rollers that mince it into small, dense granules rather than the twisted whole leaves of orthodox rolling, dramatically increasing cut surface area for a fast, strong, dark infusion. The cup is brisk, full-bodied, and malty with an up-front punch that can turn bitter if oversteeped, and it holds its color and strength well against milk — the reason CTC Assam anchors most Indian and British tea-bag 'breakfast tea' blends.",
+    "brewing": { "leaf_grams": 2.5, "water_temp_c": 100, "steep_seconds": [180] }
+  },
+  {
+    "catalogue_node_id": "red.indian.assam-orthodox",
+    "country": "India",
+    "reading": "",
+    "summary": "A whole-leaf, slower-processed counterpart to Assam's much larger CTC output, made from the same Camellia sinensis var. assamica bushes but gently rolled rather than shredded, so the leaf keeps its twisted shape, often with visible golden tips in a fine lot. Orthodox processing is slower and lower-yield than CTC, which is why it is a minority of Assam's production, but it develops a more layered cup: still recognizably malty, but with notes of dried fruit, caramel, and honey that CTC's speed does not allow to form. It is sold as a specialty, single-estate product and brews slower and smoother than CTC, without CTC's fast, bracing strength.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 95, "steep_seconds": [180, 240] }
+  },
+  {
+    "catalogue_node_id": "red.indian.nilgiri",
+    "country": "India",
+    "reading": "",
+    "summary": "Grown in the Western Ghats of Tamil Nadu, and neighboring parts of Kerala, at elevations up to roughly 2,500 meters, Nilgiri is south India's major tea region and stylistically distinct from the northern Indian teas. It is processed orthodox and fully oxidized much like other Indian black teas, but its naturally low tannin content gives it a smooth, mellow character that rarely turns bitter or cloudy — a trait that makes it a preferred base for iced and ready-to-drink tea. The cup is brisk, aromatic, and light-to-medium bodied with citrus and floral notes, a lighter profile than the malty depth of Assam or the muscatel of Darjeeling.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 95, "steep_seconds": [180, 210] }
+  },
+  {
+    "catalogue_node_id": "red.indian.sikkim",
+    "country": "India",
+    "reading": "",
+    "summary": "India's smallest black-tea-producing state has, in practice, a single commercial garden: Temi Tea Garden near Namchi, established in 1969 by Sikkim's last monarch, Palden Thondup Namgyal, originally to give the local Tibetan refugee community employment, and organic-certified since 2008. Grown on one high-altitude hillside and processed orthodox-style much like its Darjeeling neighbors, Temi's tea was historically sold under the Darjeeling name before being rebranded and marketed as Sikkim tea around 2000. Its first-flush black tea shares Darjeeling's delicate, floral, brisk-yet-smooth character, though it comes from a distinct garden and terroir outside the Darjeeling GI zone.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 85, "steep_seconds": [180, 210] }
+  },
+  {
+    "catalogue_node_id": "red.indian.kangra",
+    "country": "India",
+    "reading": "",
+    "summary": "Grown in the Kangra Valley of Himachal Pradesh, in India's northwestern Himalayan foothills, since British planters identified the valley as suited to tea in 1849; production peaked in the late 19th century before the 1905 Kangra earthquake devastated processing infrastructure and pushed many growers toward green tea instead. Kangra holds its own Geographical Indication (granted 2005), distinct from Darjeeling, and today orthodox black tea remains its largest product at roughly 80% of regional output, from small gardens at moderate Himalayan elevations. The black tea is light-bodied and less astringent than Assam, with a sweet, lingering aftertaste that growers attribute to the valley's particular soil and climate.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 90, "steep_seconds": [180, 240] }
+  },
+  {
+    "catalogue_node_id": "green.indian.kangra",
+    "country": "India",
+    "reading": "",
+    "summary": "The other historic strand of Kangra Valley production: after the 1905 earthquake disrupted the region's black-tea factories, many growers shifted to green tea, much of it hand-rolled and orthodox-processed, and exported to Afghanistan and the Middle East — a trade link that shaped the region's tea character for decades. Made from the same Himachal Pradesh gardens as Kangra black tea but pan-fired or steamed to halt oxidation rather than fully oxidized, it produces a pale liquor with a delicate, woody aroma, markedly different from the sweeter black tea grown alongside it.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [90, 120] }
+  }
+]
