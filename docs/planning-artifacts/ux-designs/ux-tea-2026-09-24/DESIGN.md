@@ -37,6 +37,7 @@ colour in the cup. Buttons, links, errors and chrome are colourless — see *Int
 | `ink-hi` | `#EFE7DA` | Tea names, page titles, the number in a gauge. |
 | `ink` | `#E4D9C6` | Field values. Also every interactive fill. |
 | `ink-lo` | `#6B5F52` | Labels, paths, captions, counts. |
+| `ink-muted` | `#8B7A63` | Quieter than `ink-hi`, warmer than `ink-lo`: the back link, the hint under a control, an empty state's invitation. |
 | `ink-zh` | `#A99781` | Chinese beside a tea's name. |
 | `ink-out` | `#574D43` | A tea at 0g — name, path and number together. |
 | `ink-on-fill` | `#17120E` | Type on a bone fill. |
