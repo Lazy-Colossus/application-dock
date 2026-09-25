@@ -11,7 +11,9 @@ This module is the only place tea exceptions become HTTP: `FileNotFoundError`
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.dependencies import get_current_user
+from app.schemas.almanac import AlmanacEntryView
 from app.schemas.tea import CatalogueNode, CreateNodeRequest, TeaView, TeaWriteRequest
+from app.services import almanac_service
 from app.services import tea_catalogue_service as catalogue
 from app.services import tea_service as service
 
@@ -89,3 +91,22 @@ def delete_tea(tea_id: str, current_user: str = Depends(get_current_user)) -> No
         service.delete_tea(current_user, tea_id)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Tea not found") from exc
+
+
+@router.get("/almanac", response_model=list[AlmanacEntryView])
+def list_almanac(
+    country: str | None = None,
+    q: str | None = None,
+    current_user: str = Depends(get_current_user),
+) -> list[AlmanacEntryView]:
+    return almanac_service.list_entries(current_user, country=country, q=q)
+
+
+@router.get("/almanac/{catalogue_node_id}", response_model=AlmanacEntryView)
+def get_almanac_entry(
+    catalogue_node_id: str, current_user: str = Depends(get_current_user)
+) -> AlmanacEntryView:
+    try:
+        return almanac_service.get_entry(current_user, catalogue_node_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Almanac entry not found") from exc
