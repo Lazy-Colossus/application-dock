@@ -1,0 +1,44 @@
+[
+  {
+    "catalogue_node_id": "green.vietnamese.shan-tuyet",
+    "country": "Vietnam",
+    "reading": "chè Shan tuyết",
+    "summary": "Vietnam's best-known tea, picked from Shan Tuyet (Camellia sinensis var. pubilimba/assamica) trees growing wild in the highland forests of Ha Giang, Yen Bai, Lao Cai, and neighboring provinces, some individually over a century old and now protected as heritage trees. The buds and young leaves carry a dense coat of white down, giving the variety its name ('snow mountain tea'), and are pan-fired and rolled in the standard green-tea manner to halt oxidation. The cup is fuller-bodied and less delicate than lowland Vietnamese green tea, with a honeyed sweetness and mineral depth that growers and buyers attribute to the trees' age and high-altitude, low-intervention forest growing conditions.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 80, "steep_seconds": [30, 40, 55] }
+  },
+  {
+    "catalogue_node_id": "green.vietnamese.thai-nguyen",
+    "country": "Vietnam",
+    "reading": "chè Thái Nguyên (Tân Cương)",
+    "summary": "Thai Nguyen, and its flagship commune Tan Cuong, is Vietnam's most celebrated lowland green tea region, grown from cultivated Camellia sinensis var. sinensis bushes rather than wild trees, and holds a geographical-indication certification distinct from the ancient-tree Shan Tuyet teas of the northern mountains. Hand-picked leaf is pan-fired in wood-fired pans and rolled tightly into a curved 'fish hook' shape, a processing signature of the region. The result is a mineral, vegetal cup — often compared to cooked spinach or asparagus — with a sharp initial bitterness that gives way to a long, sweet finish that Vietnamese drinkers prize as the tea's defining trait.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "green.vietnamese.lotus",
+    "country": "Vietnam",
+    "reading": "chè ướp sen / trà sen",
+    "summary": "A traditional Hanoi scented tea in which high-grade green tea, typically from Thai Nguyen, is layered with the fragrant stamens ('lotus rice', gạo sen) hand-picked from Nelumbo nucifera flowers at dawn. Artisans repeat the layering and drying cycle up to seven times over one to two weeks to build depth of aroma, a process demanding enough that roughly a thousand flowers are needed for a single kilogram of finished tea. Historically associated with Hanoi's West Lake and reserved for royalty and scholars, it yields a green tea with a soft, sweet floral perfume rather than the sharper jasmine note more familiar from Chinese scented teas.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [30, 40, 55] }
+  },
+  {
+    "catalogue_node_id": "white.vietnamese.shan-tuyet",
+    "country": "Vietnam",
+    "reading": "bạch trà Shan tuyết",
+    "summary": "The same wild, downy-budded Shan Tuyet trees of Ha Giang's high mountains processed as white tea: an extended wither with minimal handling and no rolling, letting the buds and young leaves dry slowly with little oxidation. It brews a bright, clear yellow liquor, notably sweeter and more full-bodied than most Chinese white teas, with nutty, almond-and-marzipan notes that specialty buyers single out as distinctive to the cultivar. As with the green version, the defining factor is the source material — ancient, wild, high-altitude trees — rather than anything unusual about the processing itself.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 85, "steep_seconds": [45, 60, 90] }
+  },
+  {
+    "catalogue_node_id": "red.vietnamese.shan-tuyet",
+    "country": "Vietnam",
+    "reading": "hồng trà Shan tuyết",
+    "summary": "A fully oxidized, orthodox-rolled black tea made from the same wild Shan Tuyet trees of Ha Giang's high mountains that supply the region's green and white teas, distinct from Vietnam's much larger commodity CTC black tea export trade, which is made from ordinary cultivated bushes for bulk blending. Small-batch producers wither, roll, and fully oxidize the downy buds and leaves before drying, yielding a smooth, low-astringency cup with fruity, red-grape and roasted-cacao notes. It is sold by specialty tea vendors as a single-origin, ancient-tree counterpart to the mass-market Vietnamese CTC sold for blends.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 95, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "oolong.vietnamese.bao-loc",
+    "country": "Vietnam",
+    "reading": "trà Ô Long Bảo Lộc",
+    "summary": "Vietnam's oolong industry took shape in Bao Loc, Lam Dong province, after Taiwanese cultivars such as Kim Tuyen (the Vietnamese name for Taiwan's Jin Xuan, TTES #12) and Tu Quy were introduced between 1988 and 1994 along with Taiwanese processing know-how. Grown at roughly 850 meters, the leaf is sun-withered, then rolled in bamboo baskets to promote partial oxidation before a low-temperature drying locks in aroma, closely following the balled, lightly oxidized style of Taiwan's high-mountain and milk oolongs. The resulting golden-green cup is refreshing with a naturally sweet, creamy finish, and is explicitly marketed and compared by producers as a Vietnamese-grown counterpart to Taiwanese oolong.",
+    "brewing": { "leaf_grams": 6, "water_temp_c": 90, "steep_seconds": [25, 30, 40, 50] }
+  }
+]

@@ -29,6 +29,11 @@
   { "id": "green.japanese.konacha", "parent_id": "green.japanese", "name": "Konacha", "name_zh": "粉茶", "source": "seed", "default_origin": "Byproduct of sencha/gyokuro processing nationwide, principally Shizuoka, Japan" },
   { "id": "green.japanese.mecha", "parent_id": "green.japanese", "name": "Mecha", "name_zh": "芽茶", "source": "seed", "default_origin": "Byproduct of sencha/gyokuro processing nationwide, principally Shizuoka, Japan" },
 
+  { "id": "green.vietnamese", "parent_id": "green", "name": "Vietnamese", "name_zh": "", "source": "seed", "default_origin": "Vietnam" },
+  { "id": "green.vietnamese.shan-tuyet", "parent_id": "green.vietnamese", "name": "Shan Tuyet Green", "name_zh": "", "source": "seed", "default_origin": "Ha Giang, Yen Bai and Lao Cai provinces, Vietnam" },
+  { "id": "green.vietnamese.thai-nguyen", "parent_id": "green.vietnamese", "name": "Thai Nguyen (Tan Cuong)", "name_zh": "", "source": "seed", "default_origin": "Tan Cuong, Thai Nguyen province, Vietnam" },
+  { "id": "green.vietnamese.lotus", "parent_id": "green.vietnamese", "name": "Lotus tea", "name_zh": "", "source": "seed", "default_origin": "Hanoi (West Lake), Vietnam" },
+
   { "id": "yellow", "parent_id": null, "name": "Yellow", "name_zh": "黃茶", "source": "seed" },
   { "id": "yellow.junshan-yinzhen", "parent_id": "yellow", "name": "Junshan Yinzhen", "name_zh": "君山銀針", "source": "seed", "default_origin": "Junshan Island, Hunan" },
   { "id": "yellow.huoshan-huangya", "parent_id": "yellow", "name": "Huoshan Huangya", "name_zh": "霍山黃芽", "source": "seed", "default_origin": "Huoshan, Anhui" },
@@ -43,6 +48,8 @@
   { "id": "white.fuding.gong-mei", "parent_id": "white.fuding", "name": "Gong Mei", "name_zh": "貢眉", "source": "seed" },
   { "id": "white.zhenghe-bai-mudan", "parent_id": "white", "name": "Zhenghe Bai Mudan", "name_zh": "政和白牡丹", "source": "seed", "default_origin": "Zhenghe, Fujian" },
   { "id": "white.yue-guang-bai", "parent_id": "white", "name": "Yue Guang Bai", "name_zh": "月光白", "source": "seed", "default_origin": "Jinggu, Yunnan" },
+  { "id": "white.vietnamese", "parent_id": "white", "name": "Vietnamese", "name_zh": "", "source": "seed", "default_origin": "Vietnam" },
+  { "id": "white.vietnamese.shan-tuyet", "parent_id": "white.vietnamese", "name": "Shan Tuyet White", "name_zh": "", "source": "seed", "default_origin": "Ha Giang province, Vietnam" },
 
   { "id": "oolong", "parent_id": null, "name": "Oolong", "name_zh": "烏龍", "source": "seed" },
   { "id": "oolong.wuyi-yancha", "parent_id": "oolong", "name": "Wuyi yancha", "name_zh": "武夷岩茶", "source": "seed", "default_origin": "Wuyi Shan, Fujian" },
@@ -73,6 +80,8 @@
   { "id": "oolong.taiwanese.shan-lin-xi", "parent_id": "oolong.taiwanese", "name": "Shan Lin Xi", "name_zh": "杉林溪", "source": "seed", "default_origin": "Nantou, Taiwan" },
   { "id": "oolong.taiwanese.jin-xuan", "parent_id": "oolong.taiwanese", "name": "Jin Xuan", "name_zh": "金萱", "source": "seed", "default_origin": "Taiwan-wide; especially Zhushan, Nantou and Alishan, Chiayi" },
   { "id": "oolong.taiwanese.muzha-tieguanyin", "parent_id": "oolong.taiwanese", "name": "Muzha Tieguanyin", "name_zh": "木柵鐵觀音", "source": "seed", "default_origin": "Muzha, Taipei, Taiwan" },
+  { "id": "oolong.vietnamese", "parent_id": "oolong", "name": "Vietnamese", "name_zh": "", "source": "seed", "default_origin": "Vietnam" },
+  { "id": "oolong.vietnamese.bao-loc", "parent_id": "oolong.vietnamese", "name": "Bao Loc Oolong", "name_zh": "", "source": "seed", "default_origin": "Bao Loc, Lam Dong province, Vietnam" },
 
   { "id": "red", "parent_id": null, "name": "Red", "name_zh": "紅茶", "source": "seed" },
   { "id": "red.zhengshan-xiaozhong", "parent_id": "red", "name": "Zhengshan Xiaozhong", "name_zh": "正山小種", "source": "seed", "default_origin": "Tongmu, Fujian" },
@@ -83,6 +92,8 @@
   { "id": "red.yingde-hongcha", "parent_id": "red", "name": "Yingde Hongcha", "name_zh": "英德紅茶", "source": "seed", "default_origin": "Yingde, Guangdong" },
   { "id": "red.wakoucha", "parent_id": "red", "name": "Wakoucha", "name_zh": "和紅茶", "source": "seed", "default_origin": "Japan (originally Meiji-era export; today small-scale in Shizuoka, Miyazaki, and other prefectures)" },
   { "id": "red.hongyu", "parent_id": "red", "name": "Hongyu", "name_zh": "紅玉", "source": "seed", "default_origin": "Yuchi, Nantou, Taiwan" },
+  { "id": "red.vietnamese", "parent_id": "red", "name": "Vietnamese", "name_zh": "", "source": "seed", "default_origin": "Vietnam" },
+  { "id": "red.vietnamese.shan-tuyet", "parent_id": "red.vietnamese", "name": "Shan Tuyet Black", "name_zh": "", "source": "seed", "default_origin": "Ha Giang province, Vietnam" },
 
   { "id": "dark", "parent_id": null, "name": "Dark", "name_zh": "黑茶", "source": "seed" },
   { "id": "dark.sheng-puerh", "parent_id": "dark", "name": "Sheng pu-erh", "name_zh": "生普洱", "source": "seed", "default_origin": "Yunnan" },
