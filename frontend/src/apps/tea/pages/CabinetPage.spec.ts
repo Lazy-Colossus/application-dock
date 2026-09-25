@@ -13,6 +13,7 @@ vi.mock("@/composables/useApi", () => ({
 vi.mock("vue-router", () => ({ useRouter: () => ({ push }) }));
 
 import CabinetPage from "./CabinetPage.vue";
+import { useTeaCabinetStore } from "../stores/useTeaCabinetStore";
 import type { Tea, CatalogueNode } from "../types";
 
 const STUBS = {
@@ -139,6 +140,22 @@ describe("CabinetPage", () => {
       "Couldn't load",
     );
     expect(wrapper.find('[data-testid="cabinet-empty"]').exists()).toBe(false);
+  });
+
+  it("does not render stale teas under the error banner when a later load fails", async () => {
+    mockApi([tea("a")]);
+    const wrapper = render();
+    await flushPromises();
+    expect(wrapper.findAll('[data-testid="section-name"]')).toHaveLength(1);
+
+    mockApiError("Couldn't load your cabinet. Check your connection and try again.");
+    await useTeaCabinetStore().fetchTeas();
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="cabinet-error"]').text()).toContain(
+      "Couldn't load",
+    );
+    expect(wrapper.findAll('[data-testid="section-name"]')).toHaveLength(0);
   });
 
   it("loads the shelf and the catalogue on mount", async () => {

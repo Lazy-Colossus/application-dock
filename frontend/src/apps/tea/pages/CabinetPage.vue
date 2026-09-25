@@ -50,6 +50,7 @@ import { useTeaCatalogueStore } from "../stores/useTeaCatalogueStore";
 import { useSectionInView } from "../composables/useSectionInView";
 import { groupByClass } from "../shelf";
 import { pathOf } from "../catalogue";
+import { GROUND } from "../tokens";
 import type { Tea } from "../types";
 
 const router = useRouter();
@@ -139,7 +140,7 @@ onMounted(() => {
 }
 .cabinet__empty,
 .cabinet__error {
-  color: #8b7a63;
+  color: v-bind("GROUND.inkMuted");
   font-size: 14.5px;
   padding: 0 18px;
 }

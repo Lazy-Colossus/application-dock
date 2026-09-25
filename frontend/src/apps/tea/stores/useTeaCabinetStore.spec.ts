@@ -75,6 +75,19 @@ describe("useTeaCabinetStore", () => {
     expect(store.teas).toEqual([]);
   });
 
+  it("a fetch failing after a successful one clears the stale list, not just the error", async () => {
+    getMock.mockResolvedValueOnce([tea()]);
+    const store = useTeaCabinetStore();
+    await store.fetchTeas();
+    expect(store.teas).toHaveLength(1);
+
+    getMock.mockRejectedValueOnce(Object.assign(new Error("boom"), { detail: "Server exploded" }));
+    await store.fetchTeas();
+
+    expect(store.teas).toEqual([]);
+    expect(store.error).not.toBeNull();
+  });
+
   it("clears a previous error when a later fetch succeeds", async () => {
     const store = useTeaCabinetStore();
     getMock.mockRejectedValueOnce(new Error("boom"));
@@ -144,6 +157,7 @@ describe("useTeaCabinetStore", () => {
 
     await store.setGrams("t-1", 500);
 
+    expect(store.teas).toHaveLength(1);
     expect(store.teas[0].grams_remaining).toBe(38);
     expect(store.error).toContain("only bought");
   });

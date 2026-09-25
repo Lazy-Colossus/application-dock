@@ -46,6 +46,12 @@ export const useTeaCabinetStore = defineStore("tea-cabinet", () => {
       teas.value = await api.get<Tea[]>("/tea/teas");
       error.value = null;
     } catch (e) {
+      // A failed LOAD must not leave a stale shelf under the error banner
+      // (EXPERIENCE.md: "the shelf below stays empty rather than showing
+      // stale data"). Write failures (setGrams/replaceTea/deleteTea) set the
+      // same `error` but intentionally never touch `teas` here — they must
+      // leave the shelf exactly as it was.
+      teas.value = [];
       error.value = message(e);
     } finally {
       loading.value = false;

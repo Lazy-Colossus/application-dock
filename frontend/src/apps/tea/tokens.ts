@@ -18,6 +18,7 @@ export const GROUND = {
   inkHi: "#EFE7DA",
   ink: "#E4D9C6",
   inkLo: "#6B5F52",
+  inkMuted: "#8B7A63",
   inkZh: "#A99781",
   inkOut: "#574D43",
   inkOnFill: "#17120E",
