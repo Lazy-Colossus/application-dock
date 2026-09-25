@@ -38,6 +38,8 @@
   { "id": "green.indian", "parent_id": "green", "name": "Indian", "name_zh": "", "source": "seed", "default_origin": "India" },
   { "id": "green.indian.darjeeling", "parent_id": "green.indian", "name": "Darjeeling Green", "name_zh": "", "source": "seed", "default_origin": "Darjeeling, West Bengal" },
   { "id": "green.indian.kangra", "parent_id": "green.indian", "name": "Kangra Green", "name_zh": "", "source": "seed", "default_origin": "Kangra Valley, Himachal Pradesh" },
+  { "id": "green.sri-lankan", "parent_id": "green", "name": "Sri Lankan", "name_zh": "", "source": "seed", "default_origin": "Sri Lanka" },
+  { "id": "green.sri-lankan.ceylon-green", "parent_id": "green.sri-lankan", "name": "Ceylon Green", "name_zh": "", "source": "seed", "default_origin": "Uva Province, Sri Lanka" },
 
   { "id": "yellow", "parent_id": null, "name": "Yellow", "name_zh": "黃茶", "source": "seed" },
   { "id": "yellow.junshan-yinzhen", "parent_id": "yellow", "name": "Junshan Yinzhen", "name_zh": "君山銀針", "source": "seed", "default_origin": "Junshan Island, Hunan" },
@@ -59,6 +61,8 @@
   { "id": "white.kenyan.silver-needle", "parent_id": "white.kenyan", "name": "Kenya Silver Needle", "name_zh": "", "source": "seed", "default_origin": "Kirinyaga, Kenya" },
   { "id": "white.malawian", "parent_id": "white", "name": "Malawian", "name_zh": "", "source": "seed", "default_origin": "Malawi" },
   { "id": "white.malawian.antlers", "parent_id": "white.malawian", "name": "Antlers", "name_zh": "", "source": "seed", "default_origin": "Thyolo, Malawi" },
+  { "id": "white.sri-lankan", "parent_id": "white", "name": "Sri Lankan", "name_zh": "", "source": "seed", "default_origin": "Sri Lanka" },
+  { "id": "white.sri-lankan.silver-tips", "parent_id": "white.sri-lankan", "name": "Ceylon Silver Tips", "name_zh": "", "source": "seed", "default_origin": "Nuwara Eliya, Sri Lanka" },
 
   { "id": "oolong", "parent_id": null, "name": "Oolong", "name_zh": "烏龍", "source": "seed" },
   { "id": "oolong.wuyi-yancha", "parent_id": "oolong", "name": "Wuyi yancha", "name_zh": "武夷岩茶", "source": "seed", "default_origin": "Wuyi Shan, Fujian" },
@@ -116,6 +120,12 @@
   { "id": "red.indian.nilgiri", "parent_id": "red.indian", "name": "Nilgiri", "name_zh": "", "source": "seed", "default_origin": "Nilgiris, Tamil Nadu" },
   { "id": "red.indian.sikkim", "parent_id": "red.indian", "name": "Sikkim Black", "name_zh": "", "source": "seed", "default_origin": "Temi, Sikkim" },
   { "id": "red.indian.kangra", "parent_id": "red.indian", "name": "Kangra Black", "name_zh": "", "source": "seed", "default_origin": "Kangra Valley, Himachal Pradesh" },
+  { "id": "red.sri-lankan", "parent_id": "red", "name": "Sri Lankan", "name_zh": "", "source": "seed", "default_origin": "Sri Lanka" },
+  { "id": "red.sri-lankan.nuwara-eliya", "parent_id": "red.sri-lankan", "name": "Nuwara Eliya", "name_zh": "", "source": "seed", "default_origin": "Nuwara Eliya, Sri Lanka" },
+  { "id": "red.sri-lankan.uva", "parent_id": "red.sri-lankan", "name": "Uva", "name_zh": "", "source": "seed", "default_origin": "Uva Province, Sri Lanka" },
+  { "id": "red.sri-lankan.dimbula", "parent_id": "red.sri-lankan", "name": "Dimbula", "name_zh": "", "source": "seed", "default_origin": "Dimbula, Central Province, Sri Lanka" },
+  { "id": "red.sri-lankan.kandy", "parent_id": "red.sri-lankan", "name": "Kandy", "name_zh": "", "source": "seed", "default_origin": "Kandy district, Central Province, Sri Lanka" },
+  { "id": "red.sri-lankan.ruhuna", "parent_id": "red.sri-lankan", "name": "Ruhuna", "name_zh": "", "source": "seed", "default_origin": "Ruhuna (southern lowlands), Sri Lanka" },
 
   { "id": "dark", "parent_id": null, "name": "Dark", "name_zh": "黑茶", "source": "seed" },
   { "id": "dark.sheng-puerh", "parent_id": "dark", "name": "Sheng pu-erh", "name_zh": "生普洱", "source": "seed", "default_origin": "Yunnan" },

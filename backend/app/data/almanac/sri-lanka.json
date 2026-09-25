@@ -1,0 +1,51 @@
+[
+  {
+    "catalogue_node_id": "red.sri-lankan.nuwara-eliya",
+    "country": "Sri Lanka",
+    "reading": "",
+    "summary": "Grown around the town of Nuwara Eliya at roughly 1,880–2,500 meters, the highest elevation of any Ceylon tea district, where cool air and slow leaf growth concentrate aroma while keeping the leaf tender. The result is often called the 'Champagne of Ceylon teas': a pale golden liquor, feather-light body, and a bright, floral character — orchid, rose, and citrus notes with a crisp, almost wintry edge from the surrounding eucalyptus-scented hills — rather than the malt or brawn typical of lower-grown Ceylon black tea. It is the most delicate of Sri Lanka's high-grown teas and is usually taken without milk to preserve its aromatics.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 85, "steep_seconds": [150, 180] }
+  },
+  {
+    "catalogue_node_id": "red.sri-lankan.uva",
+    "country": "Sri Lanka",
+    "reading": "",
+    "summary": "Grown on the eastern slopes of Sri Lanka's central highlands, Uva's most prized 'seasonal' lots come from July to September, when the dry, desiccating kacchan wind blowing in off the Bay of Bengal stresses the bushes during the eastern quality season. That stress drives the plant's production of volatile defense compounds, including methyl salicylate, giving well-made Uva a distinctive cooling wintergreen-menthol note alongside honey and citrus that no other Ceylon district reliably produces. The cup is brisk and intense rather than delicate, making Uva the most assertive of the high-grown Ceylon teas.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 95, "steep_seconds": [180, 210] }
+  },
+  {
+    "catalogue_node_id": "red.sri-lankan.dimbula",
+    "country": "Sri Lanka",
+    "reading": "",
+    "summary": "Grown on the western slopes of the central highlands at roughly 1,100–1,600 meters, where the northeast monsoon between January and March and cool, misty conditions shape the leaf. Dimbula produces a bright, coppery-orange liquor that is brisk and aromatic yet notably mellow and rounded — sitting between Uva's intense, wintergreen-edged bite and Nuwara Eliya's featherweight delicacy — with a gentle astringency that never turns harsh. It is prized as a classic, well-balanced everyday Ceylon black tea and a favored base for blending.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 90, "steep_seconds": [180, 210] }
+  },
+  {
+    "catalogue_node_id": "red.sri-lankan.kandy",
+    "country": "Sri Lanka",
+    "reading": "",
+    "summary": "Kandy in Sri Lanka's Central Province is where commercial tea growing on the island began — James Taylor's Loolecondera estate first planted tea there in 1867 after coffee rust devastated the island's coffee industry. Sitting at a mid elevation of roughly 650–1,300 meters, lower and warmer than Nuwara Eliya, Uva, or Dimbula, Kandy tea is classed 'mid-grown' and produces a bright copper liquor that is fuller-bodied and stronger than the high-grown districts, with mild citrus notes and a balanced, moderate astringency rather than the high-grown teas' floral delicacy.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 95, "steep_seconds": [180, 240] }
+  },
+  {
+    "catalogue_node_id": "red.sri-lankan.ruhuna",
+    "country": "Sri Lanka",
+    "reading": "",
+    "summary": "Ruhuna covers Sri Lanka's low-country south, from coastal plains up to about 600 meters near the edge of the Sinharaja rainforest, where tropical heat and humidity push the bushes to grow rapidly into long, dark leaves. The tea is processed the same orthodox way as the island's high-grown teas but the warmer, faster growth yields a completely different cup: a deep, dark reddish-brown liquor that is bold, earthy, and full-bodied, with notes of honey, molasses, and dark fruit and a pronounced astringency — a world away from the bright, delicate high-grown teas of Nuwara Eliya or Dimbula. Its strength and color make it a favored base for tea blended strong with milk.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 100, "steep_seconds": [180, 240] }
+  },
+  {
+    "catalogue_node_id": "green.sri-lankan.ceylon-green",
+    "country": "Sri Lanka",
+    "reading": "",
+    "summary": "A minority product first exported commercially in 1982, made mainly in the Uva region from Assamica-descended bushes, pan-fired or steamed immediately after rolling to halt oxidation rather than fully oxidized as with the island's much larger black tea output. Sri Lanka supplies only a small share of world green tea, and the cup reflects its Assamica origins: fuller-bodied and maltier, with more nutty depth than the grassier, more vegetal character typical of Chinese or Japanese greens.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [90, 120] }
+  },
+  {
+    "catalogue_node_id": "white.sri-lankan.silver-tips",
+    "country": "Sri Lanka",
+    "reading": "",
+    "summary": "Ceylon Silver Tips is Sri Lanka's white tea, hand-plucked before sunrise from high-elevation bushes around Nuwara Eliya and Adam's Peak — only the unopened silvery bud is taken, hand-rolled to a slight curve, and sun-withered and dried without the machine processing used for the island's black tea. Yields are extremely low, roughly five kilograms of fresh buds to one kilogram of finished tea, making it Sri Lanka's most expensive tea by weight. The cup is very light and pale gold, with delicate pine and honey notes, and is traditionally drunk plain, without milk or sweetener.",
+    "brewing": { "leaf_grams": 2.5, "water_temp_c": 75, "steep_seconds": [120, 180] }
+  }
+]
