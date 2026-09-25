@@ -28,6 +28,11 @@
   { "id": "green.japanese.shincha", "parent_id": "green.japanese", "name": "Shincha", "name_zh": "新茶", "source": "seed", "default_origin": "Japan-wide; earliest harvests from Kagoshima and Tanegashima" },
   { "id": "green.japanese.konacha", "parent_id": "green.japanese", "name": "Konacha", "name_zh": "粉茶", "source": "seed", "default_origin": "Byproduct of sencha/gyokuro processing nationwide, principally Shizuoka, Japan" },
   { "id": "green.japanese.mecha", "parent_id": "green.japanese", "name": "Mecha", "name_zh": "芽茶", "source": "seed", "default_origin": "Byproduct of sencha/gyokuro processing nationwide, principally Shizuoka, Japan" },
+  { "id": "green.korean", "parent_id": "green", "name": "Korean green", "name_zh": "韓國綠茶", "source": "seed", "default_origin": "Boseong, Hadong, and Jeju, South Korea" },
+  { "id": "green.korean.ujeon", "parent_id": "green.korean", "name": "Ujeon", "name_zh": "雨前", "source": "seed" },
+  { "id": "green.korean.sejak", "parent_id": "green.korean", "name": "Sejak", "name_zh": "細雀", "source": "seed" },
+  { "id": "green.korean.jungjak", "parent_id": "green.korean", "name": "Jungjak", "name_zh": "中雀", "source": "seed" },
+  { "id": "green.korean.daejak", "parent_id": "green.korean", "name": "Daejak", "name_zh": "大雀", "source": "seed" },
 
   { "id": "green.vietnamese", "parent_id": "green", "name": "Vietnamese", "name_zh": "", "source": "seed", "default_origin": "Vietnam" },
   { "id": "green.vietnamese.shan-tuyet", "parent_id": "green.vietnamese", "name": "Shan Tuyet Green", "name_zh": "", "source": "seed", "default_origin": "Ha Giang, Yen Bai and Lao Cai provinces, Vietnam" },
@@ -48,6 +53,7 @@
   { "id": "yellow.huoshan-huangya", "parent_id": "yellow", "name": "Huoshan Huangya", "name_zh": "霍山黃芽", "source": "seed", "default_origin": "Huoshan, Anhui" },
   { "id": "yellow.mengding-huangya", "parent_id": "yellow", "name": "Mengding Huangya", "name_zh": "蒙頂黃芽", "source": "seed", "default_origin": "Mengding Mountain, Sichuan" },
   { "id": "yellow.weishan-maojian", "parent_id": "yellow", "name": "Weishan Maojian", "name_zh": "溈山毛尖", "source": "seed", "default_origin": "Weishan, Ningxiang, Hunan" },
+  { "id": "yellow.hwangcha", "parent_id": "yellow", "name": "Hwangcha", "name_zh": "黃茶", "source": "seed", "default_origin": "Boseong, South Korea" },
 
   { "id": "white", "parent_id": null, "name": "White", "name_zh": "白茶", "source": "seed" },
   { "id": "white.fuding", "parent_id": "white", "name": "Fuding", "name_zh": "福鼎", "source": "seed", "default_origin": "Fuding, Fujian" },
@@ -132,6 +138,7 @@
   { "id": "red.sri-lankan.ruhuna", "parent_id": "red.sri-lankan", "name": "Ruhuna", "name_zh": "", "source": "seed", "default_origin": "Ruhuna (southern lowlands), Sri Lanka" },
   { "id": "red.nepali", "parent_id": "red", "name": "Nepali", "name_zh": "", "source": "seed", "default_origin": "Nepal" },
   { "id": "red.nepali.ilam", "parent_id": "red.nepali", "name": "Nepal Orthodox Black", "name_zh": "", "source": "seed", "default_origin": "Ilam, Dhankuta, Panchthar and Terhathum districts, eastern Nepal" },
+  { "id": "red.balhyocha", "parent_id": "red", "name": "Balhyocha", "name_zh": "醱酵茶", "source": "seed", "default_origin": "Hadong, South Korea" },
 
   { "id": "dark", "parent_id": null, "name": "Dark", "name_zh": "黑茶", "source": "seed" },
   { "id": "dark.sheng-puerh", "parent_id": "dark", "name": "Sheng pu-erh", "name_zh": "生普洱", "source": "seed", "default_origin": "Yunnan" },
@@ -147,6 +154,7 @@
   { "id": "dark.japanese.goishicha", "parent_id": "dark.japanese", "name": "Goishicha", "name_zh": "碁石茶", "source": "seed", "default_origin": "Otoyo, Kochi, Japan" },
   { "id": "dark.japanese.ishizuchi-kurocha", "parent_id": "dark.japanese", "name": "Ishizuchi Kurocha", "name_zh": "石鎚黒茶", "source": "seed", "default_origin": "Saijō, Ehime, Japan" },
   { "id": "dark.japanese.batabatacha", "parent_id": "dark.japanese", "name": "Batabatacha", "name_zh": "バタバタ茶", "source": "seed", "default_origin": "Asahi, Toyama, Japan" },
+  { "id": "dark.cheongtaejeon", "parent_id": "dark", "name": "Cheongtaejeon", "name_zh": "靑苔錢", "source": "seed", "default_origin": "Jangheung, South Jeolla, South Korea" },
 
   { "id": "other", "parent_id": null, "name": "Other", "name_zh": "其他", "source": "seed" }
 ]

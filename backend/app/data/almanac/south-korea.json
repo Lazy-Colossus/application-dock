@@ -1,0 +1,51 @@
+[
+  {
+    "catalogue_node_id": "green.korean.ujeon",
+    "country": "South Korea",
+    "reading": "ujeon",
+    "summary": "The earliest and most prized grade of Korean green tea, hand-picked before Gogu (Grain Rain, around April 20) using only the unopened bud tip — the name literally means \"before the rain.\" Yields are tiny, so ujeon commands the highest price of any Korean grade. Like most Korean green tea it is usually pan-fired (deokgeumcha) rather than steamed (jeungjeacha, the rarer, more Japanese-influenced method), giving even this delicate grade a faint toasted note beneath its dominant sweetness and near-total lack of astringency.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 60, "steep_seconds": [90, 60, 60] }
+  },
+  {
+    "catalogue_node_id": "green.korean.sejak",
+    "country": "South Korea",
+    "reading": "sejak",
+    "summary": "Picked from Gogu through early Ipha (around May 5–6), one bud plus one or two just-opening leaves — coarser and later than ujeon but still an early, fine-grade harvest. The tiny curled leaf resembles a sparrow's tongue, giving this class its older name jakseol. Sejak has more body and flavor complexity than ujeon, trading some of its delicacy for a fuller, still gently sweet cup, and is the everyday-premium grade most commonly sold as Korean nokcha.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 70, "steep_seconds": [60, 45, 45] }
+  },
+  {
+    "catalogue_node_id": "green.korean.jungjak",
+    "country": "South Korea",
+    "reading": "jungjak",
+    "summary": "Harvested from mid- to late May, after sejak, from a bud plus two or more further-opened leaves. Jungjak is the mainstream, workhorse grade of Korean green tea: fuller-bodied and more astringent than sejak, without the delicacy of the earlier pickings, but still made and sold to be drunk straight rather than used as a cooking ingredient.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 80, "steep_seconds": [45, 30, 30] }
+  },
+  {
+    "catalogue_node_id": "green.korean.daejak",
+    "country": "South Korea",
+    "reading": "daejak",
+    "summary": "The latest and coarsest grade, harvested from late May into summer from fully mature leaves. It is the most astringent and least refined of the four grades, and by far the cheapest — often used as a cooking ingredient (tea rice, tea noodles) or in blends rather than brewed on its own the way ujeon, sejak, and jungjak are.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 85, "steep_seconds": [30, 30] }
+  },
+  {
+    "catalogue_node_id": "yellow.hwangcha",
+    "country": "South Korea",
+    "reading": "hwangcha",
+    "summary": "Korea's own \"yellow tea,\" and despite the name it does not follow Chinese yellow tea's men huang process — a kill-green step followed by a gentle, largely non-enzymatic sealed \"smothering.\" Korean hwangcha skips kill-green entirely: withered, rolled leaf is heaped while its enzymes are still active, so genuine oxidation (not simple humid yellowing) proceeds during the pile, and the final drying step doubles as kill-green. The result is a moderately oxidized, golden-amber cup closer in character to a light oolong or mild black tea than to China's gently non-oxidized Junshan Yinzhen — the lighter end of Korea's broader balhyocha (oxidized-tea) spectrum, most closely associated with Boseong.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 90, "steep_seconds": [180, 120, 120] }
+  },
+  {
+    "catalogue_node_id": "red.balhyocha",
+    "country": "South Korea",
+    "reading": "balhyocha",
+    "summary": "\"Fermented tea\" is the broad Korean term for oxidized tea, also spelled paryocha and, in its Hadong homeland, also called jaeksal or jaeksul. In its fullest, most traditional form it is oxidized to roughly the level of a black tea (around 70%), made from Hadong's indigenous heirloom cultivar rather than the Yabukita clone common in Boseong. Processing follows the same order as hwangcha — withering, rolling, heaping, drying — but the pile is left considerably longer, deepening the cup toward cocoa, roasted grain, and honey notes; historically each household kept its own recipe and aged the finished leaf in onggi earthenware jars through the winter.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 90, "steep_seconds": [120, 60, 90] }
+  },
+  {
+    "catalogue_node_id": "dark.cheongtaejeon",
+    "country": "South Korea",
+    "reading": "cheongtaejeon",
+    "summary": "\"Green moss coin,\" also known as doncha (\"coin tea\") or tteokcha (\"rice-cake tea\"), is Korea's one genuinely post-fermented dark tea, made around Jangheung on the south coast since at least the Unified Silla period. Leaves are steamed, pounded in a mortar, pressed into small coin-shaped discs, strung on cord, and left to dry and age — during which resident bacteria (chiefly Pantoea and Klebsiella species) drive true microbial fermentation, unlike hwangcha or balhyocha's purely enzymatic oxidation. Long aging mellows it into an earthy, smooth cup comparable to Chinese dark tea or Japan's goishicha, though today it survives only as a small-scale specialty rather than a commercial staple.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 100, "steep_seconds": [600, 300, 300] }
+  }
+]
