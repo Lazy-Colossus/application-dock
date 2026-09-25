@@ -5185,6 +5185,13 @@ describe("TeaDetailPage", () => {
 Run: `cd frontend && npx vitest run src/apps/tea`
 Expected: FAIL — `TeaForm.vue` does not exist and the detail page is still a stub.
 
+> **PLAN DEFECT, found by the final whole-branch review (2026-09-25).** The `TeaForm.vue` code
+> below omits inputs for `form` and `harvest_season`, and includes a "Grams left" input that FR-14
+> forbids — grams change only through the grams sheet. Both were carried faithfully into the
+> implementation, because every per-task review compared the diff against this brief and the brief
+> was the defect. Fixed in a follow-up commit. If you are reading this plan as a template: the
+> field list here is not the contract; `EXPERIENCE.md`, the mockups and the spec's FRs are.
+
 - [ ] **Step 4: Write TeaForm**
 
 `frontend/src/apps/tea/components/TeaForm.vue`. Built from `mockups/tea-detail.html`: the picker
