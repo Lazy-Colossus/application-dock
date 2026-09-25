@@ -1,0 +1,54 @@
+// Mirrors backend/app/schemas/tea.py. snake_case because the API serializes
+// directly, with no envelope.
+
+export type TeaClass =
+  | "green"
+  | "yellow"
+  | "white"
+  | "oolong"
+  | "red"
+  | "dark"
+  | "other";
+
+export type TeaForm = "loose" | "cake" | "brick" | "tuo" | "ball" | "other";
+
+export type HarvestSeason = "spring" | "summer" | "autumn" | "winter";
+
+export type NodeSource = "seed" | "user";
+
+export interface CatalogueNode {
+  id: string;
+  parent_id: string | null;
+  name: string;
+  name_zh: string;
+  source: NodeSource;
+  default_origin: string;
+}
+
+export interface Tea {
+  id: string;
+  name: string;
+  catalogue_node_id: string;
+  class_id: TeaClass;
+  form: TeaForm | null;
+  origin: string;
+  vendor: string;
+  year: number | null;
+  harvest_season: HarvestSeason | null;
+  cultivar: string;
+  grams_purchased: number | null;
+  grams_remaining: number;
+  price_paid: number | null;
+  purchase_date: string | null;
+  storage_location: string;
+  low_threshold_grams: number | null;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** The body for both create and replace — every field except the server's. */
+export type TeaWrite = Omit<
+  Tea,
+  "id" | "class_id" | "created_at" | "updated_at"
+>;
