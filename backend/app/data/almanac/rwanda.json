@@ -1,0 +1,9 @@
+[
+  {
+    "catalogue_node_id": "red.rwandan.orthodox",
+    "country": "Rwanda",
+    "reading": "",
+    "summary": "Rwanda's tea industry is, like most of East Africa, built mainly around CTC for export blending, but Sorwathe, founded in 1975 at the Rukeri estate near Lake Kivu, was the first Rwandan factory to produce orthodox — whole-leaf, rolled rather than machine-crushed — black and green tea instead of CTC. Grown at high altitude on volcanic soil in a cool, consistently rainy climate, the leaf is withered, rolled (not crushed) to keep it largely intact, fully oxidized, and dried, giving a bright, brisk, smooth cup with malty and floral-fruity notes that specialty buyers distinguish from Rwanda's higher-volume commodity CTC.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 95, "steep_seconds": [180, 240] }
+  }
+]

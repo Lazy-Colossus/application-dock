@@ -1,0 +1,23 @@
+[
+  {
+    "catalogue_node_id": "red.kenyan.ctc",
+    "country": "Kenya",
+    "reading": "",
+    "summary": "Kenya's dominant tea product and one of the world's largest-volume black teas, made almost entirely by CTC (crush-tear-curl) processing: withered leaf is passed through toothed rollers that mince it into small, dense, uniform granules rather than the twisted whole leaves of orthodox rolling. The greater cut surface area speeds and intensifies oxidation and gives a fast, strong infusion, which is why CTC became the standard for tea-bag manufacture after its invention in 1930s Assam and was adopted almost universally by Kenya's export-oriented factories. The cup is brisk, full-bodied, and deep copper-colored, holding its color and strength well when milk is added — the reason CTC dominates British-style milk tea and blends. The Kericho and Nandi Hills belt on the highlands west of the Rift Valley is the country's principal growing region and among the most productive tea areas in the world by volume.",
+    "brewing": { "leaf_grams": 2.5, "water_temp_c": 100, "steep_seconds": [240] }
+  },
+  {
+    "catalogue_node_id": "green.kenyan.purple-tea",
+    "country": "Kenya",
+    "reading": "",
+    "summary": "Made from TRFK 306, a purple-leafed Camellia sinensis var. assamica cultivar bred over roughly 25 years by Kenya's Tea Research Institute and released to growers around 2011, grown mainly in the highlands around Nandi Hills at elevations above 2,000 meters. The purple color comes from unusually high anthocyanin content — Kenyan purple tea is reported to carry far more anthocyanin than ordinary green tea — and specialty producers process it gently, green-tea style (a quick kill-green by panning or steaming, then rolling and low-temperature drying), to avoid the lengthy oxidation that would break down the pigment. The result is a light-bodied liquor with a distinctive blue-to-purple tinge, earthy flavor, and mild berry-like sweetness, marketed as a higher-value specialty alternative to Kenya's commodity CTC.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [60, 90] }
+  },
+  {
+    "catalogue_node_id": "white.kenyan.silver-needle",
+    "country": "Kenya",
+    "reading": "",
+    "summary": "A bud-only white tea from Kangaita Tea Factory on the southern slopes of Mount Kenya in Kirinyaga County, one of the smaller number of Kenyan orthodox/specialty factories (also known for processing purple tea) alongside the country's much larger CTC commodity sector. Made only from unopened buds with minimal handling — withering and slow drying, no rolling or oxidation — it produces a delicate, sweet, smooth liquor with melon and sweetcorn notes and little to no astringency, a marked contrast to the brisk, tannic strength of Kenyan CTC.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 85, "steep_seconds": [150, 180] }
+  }
+]

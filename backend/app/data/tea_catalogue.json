@@ -33,6 +33,8 @@
   { "id": "green.vietnamese.shan-tuyet", "parent_id": "green.vietnamese", "name": "Shan Tuyet Green", "name_zh": "", "source": "seed", "default_origin": "Ha Giang, Yen Bai and Lao Cai provinces, Vietnam" },
   { "id": "green.vietnamese.thai-nguyen", "parent_id": "green.vietnamese", "name": "Thai Nguyen (Tan Cuong)", "name_zh": "", "source": "seed", "default_origin": "Tan Cuong, Thai Nguyen province, Vietnam" },
   { "id": "green.vietnamese.lotus", "parent_id": "green.vietnamese", "name": "Lotus tea", "name_zh": "", "source": "seed", "default_origin": "Hanoi (West Lake), Vietnam" },
+  { "id": "green.kenyan", "parent_id": "green", "name": "Kenyan", "name_zh": "", "source": "seed", "default_origin": "Kenya" },
+  { "id": "green.kenyan.purple-tea", "parent_id": "green.kenyan", "name": "Purple Tea", "name_zh": "", "source": "seed", "default_origin": "Nandi Hills, Kenya" },
 
   { "id": "yellow", "parent_id": null, "name": "Yellow", "name_zh": "黃茶", "source": "seed" },
   { "id": "yellow.junshan-yinzhen", "parent_id": "yellow", "name": "Junshan Yinzhen", "name_zh": "君山銀針", "source": "seed", "default_origin": "Junshan Island, Hunan" },
@@ -50,6 +52,10 @@
   { "id": "white.yue-guang-bai", "parent_id": "white", "name": "Yue Guang Bai", "name_zh": "月光白", "source": "seed", "default_origin": "Jinggu, Yunnan" },
   { "id": "white.vietnamese", "parent_id": "white", "name": "Vietnamese", "name_zh": "", "source": "seed", "default_origin": "Vietnam" },
   { "id": "white.vietnamese.shan-tuyet", "parent_id": "white.vietnamese", "name": "Shan Tuyet White", "name_zh": "", "source": "seed", "default_origin": "Ha Giang province, Vietnam" },
+  { "id": "white.kenyan", "parent_id": "white", "name": "Kenyan", "name_zh": "", "source": "seed", "default_origin": "Kenya" },
+  { "id": "white.kenyan.silver-needle", "parent_id": "white.kenyan", "name": "Kenya Silver Needle", "name_zh": "", "source": "seed", "default_origin": "Kirinyaga, Kenya" },
+  { "id": "white.malawian", "parent_id": "white", "name": "Malawian", "name_zh": "", "source": "seed", "default_origin": "Malawi" },
+  { "id": "white.malawian.antlers", "parent_id": "white.malawian", "name": "Antlers", "name_zh": "", "source": "seed", "default_origin": "Thyolo, Malawi" },
 
   { "id": "oolong", "parent_id": null, "name": "Oolong", "name_zh": "烏龍", "source": "seed" },
   { "id": "oolong.wuyi-yancha", "parent_id": "oolong", "name": "Wuyi yancha", "name_zh": "武夷岩茶", "source": "seed", "default_origin": "Wuyi Shan, Fujian" },
@@ -94,6 +100,10 @@
   { "id": "red.hongyu", "parent_id": "red", "name": "Hongyu", "name_zh": "紅玉", "source": "seed", "default_origin": "Yuchi, Nantou, Taiwan" },
   { "id": "red.vietnamese", "parent_id": "red", "name": "Vietnamese", "name_zh": "", "source": "seed", "default_origin": "Vietnam" },
   { "id": "red.vietnamese.shan-tuyet", "parent_id": "red.vietnamese", "name": "Shan Tuyet Black", "name_zh": "", "source": "seed", "default_origin": "Ha Giang province, Vietnam" },
+  { "id": "red.kenyan", "parent_id": "red", "name": "Kenyan", "name_zh": "", "source": "seed", "default_origin": "Kenya" },
+  { "id": "red.kenyan.ctc", "parent_id": "red.kenyan", "name": "Kenyan CTC", "name_zh": "", "source": "seed", "default_origin": "Kericho, Kenya" },
+  { "id": "red.rwandan", "parent_id": "red", "name": "Rwandan", "name_zh": "", "source": "seed", "default_origin": "Rwanda" },
+  { "id": "red.rwandan.orthodox", "parent_id": "red.rwandan", "name": "Rwandan Orthodox Black", "name_zh": "", "source": "seed", "default_origin": "Rukeri, Rwanda" },
 
   { "id": "dark", "parent_id": null, "name": "Dark", "name_zh": "黑茶", "source": "seed" },
   { "id": "dark.sheng-puerh", "parent_id": "dark", "name": "Sheng pu-erh", "name_zh": "生普洱", "source": "seed", "default_origin": "Yunnan" },
