@@ -1,5 +1,13 @@
-import { describe, it, expect } from "vitest";
-import { mount } from "@vue/test-utils";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { mount, flushPromises } from "@vue/test-utils";
+import { setActivePinia, createPinia } from "pinia";
+
+const { postMock } = vi.hoisted(() => ({ postMock: vi.fn() }));
+vi.mock("@/composables/useApi", () => ({
+  ApiError: class extends Error {},
+  api: { get: vi.fn(), post: postMock, put: vi.fn(), del: vi.fn() },
+}));
+
 import TeaForm from "./TeaForm.vue";
 import type { CatalogueNode, TeaWrite } from "../types";
 
@@ -44,6 +52,11 @@ function blank(): TeaWrite {
 
 const form = (value: TeaWrite = blank()) =>
   mount(TeaForm, { props: { modelValue: value, nodes } });
+
+beforeEach(() => {
+  setActivePinia(createPinia());
+  postMock.mockReset();
+});
 
 describe("TeaForm", () => {
   it("groups the fields under the three headings", () => {
@@ -115,5 +128,63 @@ describe("TeaForm", () => {
     await wrapper.get('[data-testid="field-harvest-season"]').setValue("");
     const last = wrapper.emitted("update:modelValue")?.at(-1)?.[0] as TeaWrite;
     expect(last.harvest_season).toBeNull();
+  });
+
+  it("disables the autofill button while the name is empty", () => {
+    const wrapper = form();
+    expect(wrapper.get('[data-testid="autofill"]').attributes("disabled")).toBeDefined();
+  });
+
+  it("applies the suggested category and origin on autofill", async () => {
+    postMock.mockResolvedValue({
+      catalogue_node_id: "oolong.wuyi-yancha.da-hong-pao",
+      origin: "Wuyi Shan, Fujian",
+    });
+    const wrapper = form({ ...blank(), name: "Da Hong Pao" });
+
+    await wrapper.get('[data-testid="autofill"]').trigger("click");
+    await flushPromises();
+
+    expect(postMock).toHaveBeenCalledWith("/tea/autofill", { name: "Da Hong Pao" });
+    const last = wrapper.emitted("update:modelValue")?.at(-1)?.[0] as TeaWrite;
+    expect(last.catalogue_node_id).toBe("oolong.wuyi-yancha.da-hong-pao");
+    expect(last.origin).toBe("Wuyi Shan, Fujian");
+  });
+
+  it("never overwrites an origin the person already typed, even from autofill", async () => {
+    postMock.mockResolvedValue({
+      catalogue_node_id: "oolong.wuyi-yancha.da-hong-pao",
+      origin: "Wuyi Shan, Fujian",
+    });
+    const wrapper = form({ ...blank(), name: "Da Hong Pao", origin: "A shop in Prague" });
+
+    await wrapper.get('[data-testid="autofill"]').trigger("click");
+    await flushPromises();
+
+    const last = wrapper.emitted("update:modelValue")?.at(-1)?.[0] as TeaWrite;
+    expect(last.origin).toBe("A shop in Prague");
+  });
+
+  it("shows a message when Jev isn't confident about the name", async () => {
+    postMock.mockResolvedValue(null);
+    const wrapper = form({ ...blank(), name: "some tea" });
+
+    await wrapper.get('[data-testid="autofill"]').trigger("click");
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="autofill-message"]').text()).toContain("pick a category");
+    expect(wrapper.emitted("update:modelValue")).toBeUndefined();
+  });
+
+  it("shows the real error when autofill fails outright", async () => {
+    postMock.mockRejectedValue(
+      Object.assign(new Error("down"), { detail: "Autofill is not configured on this server" }),
+    );
+    const wrapper = form({ ...blank(), name: "Da Hong Pao" });
+
+    await wrapper.get('[data-testid="autofill"]').trigger("click");
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="autofill-message"]').text()).toContain("not configured");
   });
 });

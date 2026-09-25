@@ -9,13 +9,27 @@
     />
 
     <label class="form__label" for="tea-name">Name</label>
-    <input
-      id="tea-name"
-      class="form__field"
-      data-testid="field-name"
-      :value="modelValue.name"
-      @input="patch({ name: asText($event) })"
-    />
+    <div class="form__name-row">
+      <input
+        id="tea-name"
+        class="form__field"
+        data-testid="field-name"
+        :value="modelValue.name"
+        @input="patch({ name: asText($event) })"
+      />
+      <button
+        type="button"
+        class="form__autofill"
+        data-testid="autofill"
+        :disabled="!modelValue.name.trim() || autofilling"
+        @click="onAutofill"
+      >
+        Autofill
+      </button>
+    </div>
+    <p v-if="autofillMessage" class="form__autofill-message" data-testid="autofill-message">
+      {{ autofillMessage }}
+    </p>
 
     <p class="form__group" data-testid="group">Where it's from</p>
     <input
@@ -138,9 +152,11 @@
 import { computed, ref } from "vue";
 import CataloguePicker from "./CataloguePicker.vue";
 import { pricePerGram } from "../shelf";
+import { useTeaCatalogueStore } from "../stores/useTeaCatalogueStore";
 import type { CatalogueNode, HarvestSeason, Tea, TeaForm as TeaFormValue, TeaWrite } from "../types";
 
 const props = defineProps<{ modelValue: TeaWrite; nodes: CatalogueNode[] }>();
+const catalogueStore = useTeaCatalogueStore();
 const emit = defineEmits<{
   "update:modelValue": [value: TeaWrite];
   "add-node": [parentId: string];
@@ -186,6 +202,33 @@ function onPrefill(origin: string): void {
   patch({ origin });
 }
 
+const autofilling = ref(false);
+const autofillMessage = ref("");
+
+async function onAutofill(): Promise<void> {
+  const name = props.modelValue.name.trim();
+  if (!name) return;
+  autofillMessage.value = "";
+  autofilling.value = true;
+  try {
+    const suggestion = await catalogueStore.autofill(name);
+    if (!suggestion) {
+      autofillMessage.value = catalogueStore.error || "Couldn't tell — pick a category below";
+      return;
+    }
+    // One merged patch: two separate patch() calls here would each read the
+    // same not-yet-updated props.modelValue, and the second would silently
+    // discard the first (FR-9's guard still applies to origin).
+    const change: Partial<TeaWrite> = { catalogue_node_id: suggestion.catalogue_node_id };
+    if (suggestion.origin && !touchedOrigin.value && !props.modelValue.origin) {
+      change.origin = suggestion.origin;
+    }
+    patch(change);
+  } finally {
+    autofilling.value = false;
+  }
+}
+
 const perGram = computed(() => pricePerGram({ ...props.modelValue } as Tea));
 </script>
 
@@ -218,5 +261,38 @@ const perGram = computed(() => pricePerGram({ ...props.modelValue } as Tea));
   color: #7a6d5e;
   font-size: 12.5px;
   margin: -4px 0 8px;
+}
+.form__name-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+
+  .form__field {
+    flex: 1;
+    margin-bottom: 0;
+  }
+}
+.form__autofill {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid #4a3d2e;
+  border-radius: 3px;
+  padding: 0 14px;
+  height: 42px;
+  color: #c7a271;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+
+  &:disabled {
+    color: #6b5f52;
+    border-color: #3b3026;
+    cursor: default;
+  }
+}
+.form__autofill-message {
+  color: #7a6d5e;
+  font-size: 12.5px;
+  margin: 4px 0 8px;
 }
 </style>

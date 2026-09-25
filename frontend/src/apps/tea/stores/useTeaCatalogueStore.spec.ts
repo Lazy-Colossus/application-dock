@@ -119,4 +119,41 @@ describe("useTeaCatalogueStore", () => {
     expect(store.nodes).toHaveLength(1);
     expect(store.error).toContain("3 teas");
   });
+
+  it("autofill posts the name and returns the suggestion", async () => {
+    postMock.mockResolvedValue({ catalogue_node_id: "oolong.wuyi-yancha.da-hong-pao", origin: "Wuyi Shan, Fujian" });
+    const store = useTeaCatalogueStore();
+
+    const result = await store.autofill("Da Hong Pao");
+
+    expect(postMock).toHaveBeenCalledWith("/tea/autofill", { name: "Da Hong Pao" });
+    expect(result).toEqual({
+      catalogue_node_id: "oolong.wuyi-yancha.da-hong-pao",
+      origin: "Wuyi Shan, Fujian",
+    });
+    expect(store.loading).toBe(false);
+    expect(store.error).toBeNull();
+  });
+
+  it("autofill returns null when Jev isn't confident, without setting an error", async () => {
+    postMock.mockResolvedValue(null);
+    const store = useTeaCatalogueStore();
+
+    const result = await store.autofill("some tea");
+
+    expect(result).toBeNull();
+    expect(store.error).toBeNull();
+  });
+
+  it("autofill surfaces a failure and returns null", async () => {
+    postMock.mockRejectedValue(
+      Object.assign(new Error("down"), { detail: "Autofill is not configured on this server" }),
+    );
+    const store = useTeaCatalogueStore();
+
+    const result = await store.autofill("Da Hong Pao");
+
+    expect(result).toBeNull();
+    expect(store.error).toContain("not configured");
+  });
 });

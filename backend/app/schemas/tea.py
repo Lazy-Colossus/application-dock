@@ -107,3 +107,14 @@ class TeaWriteRequest(BaseModel):
     storage_location: str = ""
     low_threshold_grams: float | None = Field(default=None, ge=0)
     notes: str = ""
+
+
+class AutofillRequest(BaseModel):
+    name: str
+
+
+class AutofillSuggestion(BaseModel):
+    """A Jev-matched category, plus the best origin guess to go with it."""
+
+    catalogue_node_id: str
+    origin: str = ""

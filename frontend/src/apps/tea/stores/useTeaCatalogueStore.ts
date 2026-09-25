@@ -1,7 +1,7 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
 import { api } from "@/composables/useApi";
-import type { CatalogueNode } from "@/apps/tea/types";
+import type { AutofillSuggestion, CatalogueNode } from "@/apps/tea/types";
 
 export interface CreateNodeBody {
   parent_id: string;
@@ -68,5 +68,21 @@ export const useTeaCatalogueStore = defineStore("tea-catalogue", () => {
     }
   }
 
-  return { nodes, loading, error, fetchNodes, addNode, removeNode };
+  // Returns null both when Jev isn't confident (no error — a normal outcome)
+  // and when the request itself failed (error.value is set instead).
+  async function autofill(name: string): Promise<AutofillSuggestion | null> {
+    loading.value = true;
+    try {
+      const suggestion = await api.post<AutofillSuggestion | null>("/tea/autofill", { name });
+      error.value = null;
+      return suggestion;
+    } catch (e) {
+      error.value = message(e);
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  return { nodes, loading, error, fetchNodes, addNode, removeNode, autofill };
 });

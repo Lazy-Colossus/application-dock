@@ -12,8 +12,16 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.dependencies import get_current_user
 from app.schemas.almanac import AlmanacEntryView
-from app.schemas.tea import CatalogueNode, CreateNodeRequest, TeaView, TeaWriteRequest
+from app.schemas.tea import (
+    AutofillRequest,
+    AutofillSuggestion,
+    CatalogueNode,
+    CreateNodeRequest,
+    TeaView,
+    TeaWriteRequest,
+)
 from app.services import almanac_service
+from app.services import tea_autofill_service as autofill
 from app.services import tea_catalogue_service as catalogue
 from app.services import tea_service as service
 
@@ -91,6 +99,20 @@ def delete_tea(tea_id: str, current_user: str = Depends(get_current_user)) -> No
         service.delete_tea(current_user, tea_id)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Tea not found") from exc
+
+
+@router.post("/autofill", response_model=AutofillSuggestion | None)
+def autofill_tea(
+    req: AutofillRequest, current_user: str = Depends(get_current_user)
+) -> AutofillSuggestion | None:
+    try:
+        return autofill.suggest(current_user, req.name)
+    except autofill.AutofillNotConfiguredError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except autofill.AutofillUpstreamError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @router.get("/almanac", response_model=list[AlmanacEntryView])

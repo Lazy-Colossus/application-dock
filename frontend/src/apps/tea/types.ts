@@ -63,6 +63,11 @@ export type TeaWrite = Omit<
   "id" | "class_id" | "created_at" | "updated_at"
 >;
 
+export interface AutofillSuggestion {
+  catalogue_node_id: string;
+  origin: string;
+}
+
 export interface BrewingParameters {
   leaf_grams: number | null;
   water_temp_c: number | null;
