@@ -10,7 +10,8 @@ export type TeaClass =
   | "dark"
   | "other";
 
-export type TeaForm = "loose" | "cake" | "brick" | "tuo" | "ball" | "other";
+// Eight values matching backend/app/schemas/tea.py:TeaForm.
+export type TeaForm = "loose" | "cake" | "brick" | "tuo" | "ball" | "bag" | "sample" | "other";
 
 export type HarvestSeason = "spring" | "summer" | "autumn" | "winter";
 
@@ -29,6 +30,7 @@ export interface Tea {
   id: string;
   name: string;
   catalogue_node_id: string;
+  // Backend types class_id as string; client narrows to TeaClass union for safety.
   class_id: TeaClass;
   form: TeaForm | null;
   origin: string;

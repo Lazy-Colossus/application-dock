@@ -107,6 +107,22 @@ describe("prefillOriginFor", () => {
   it("returns empty for an unknown id", () => {
     expect(prefillOriginFor(tree, "ghost")).toBe("");
   });
+
+  it("returns the nearest origin, not a distant ancestor's", () => {
+    // Fixture: oolong (root) has "Fujian", oolong.wuyi has "Wuyi Shan, Fujian".
+    // When asking for oolong.wuyi.dhp, must return the NEAREST ancestor's origin.
+    const treeWithMultiOrigins: CatalogueNode[] = [
+      node("oolong", null, { name: "Oolong", default_origin: "Fujian" }),
+      node("oolong.wuyi", "oolong", {
+        name: "Wuyi yancha",
+        default_origin: "Wuyi Shan, Fujian",
+      }),
+      node("oolong.wuyi.dhp", "oolong.wuyi", { name: "Da Hong Pao" }),
+    ];
+    expect(prefillOriginFor(treeWithMultiOrigins, "oolong.wuyi.dhp")).toBe(
+      "Wuyi Shan, Fujian",
+    );
+  });
 });
 
 describe("buildIndex", () => {
