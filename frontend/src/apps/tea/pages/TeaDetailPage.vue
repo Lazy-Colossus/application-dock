@@ -1,7 +1,13 @@
 <template>
   <q-page class="tea-page">
     <header class="tea-page__bar">
-      <button class="tea-page__back" @click="router.back()">← Cabinet</button>
+      <button
+        class="tea-page__back"
+        data-testid="page-back"
+        @click="router.push({ name: 'tea-cabinet' })"
+      >
+        ← Cabinet
+      </button>
     </header>
 
     <p v-if="!tea && !cabinet.loading" class="tea-page__missing" data-testid="tea-missing">

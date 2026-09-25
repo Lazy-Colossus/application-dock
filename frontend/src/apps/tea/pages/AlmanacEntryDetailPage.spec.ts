@@ -8,8 +8,9 @@ vi.mock("@/composables/useApi", () => ({
   api: { get: getMock },
 }));
 const back = vi.fn();
+const push = vi.fn();
 vi.mock("vue-router", () => ({
-  useRouter: () => ({ back }),
+  useRouter: () => ({ back, push }),
   useRoute: () => ({ params: { catalogueNodeId: "green.longjing" } }),
 }));
 
@@ -43,6 +44,17 @@ beforeEach(() => {
 });
 
 describe("AlmanacEntryDetailPage", () => {
+  it("takes '← Almanac' straight to the almanac, not one step back through history", async () => {
+    getMock.mockResolvedValue(entry());
+    const wrapper = render();
+    await flushPromises();
+
+    await wrapper.get('[data-testid="page-back"]').trigger("click");
+
+    expect(back).not.toHaveBeenCalled();
+    expect(push).toHaveBeenCalledWith({ name: "tea-almanac" });
+  });
+
   it("fetches and renders the entry when the store starts empty", async () => {
     getMock.mockResolvedValue(entry());
     const wrapper = render();

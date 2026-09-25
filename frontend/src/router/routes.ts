@@ -236,7 +236,9 @@ const routes: RouteRecordRaw[] = [
         path: "tea/new",
         name: "tea-new",
         component: () => import("@/apps/tea/pages/NewTeaPage.vue"),
-        meta: { title: "New tea", requiresAuth: true },
+        // Without this, the shell's back arrow falls back to browser history,
+        // which after a save no longer points here — see routes.spec.ts.
+        meta: { title: "New tea", requiresAuth: true, backTo: "/tea" },
       },
       {
         path: "tea/almanac",
@@ -248,13 +250,13 @@ const routes: RouteRecordRaw[] = [
         path: "tea/almanac/:catalogueNodeId",
         name: "tea-almanac-entry",
         component: () => import("@/apps/tea/pages/AlmanacEntryDetailPage.vue"),
-        meta: { title: "Almanac", requiresAuth: true },
+        meta: { title: "Almanac", requiresAuth: true, backTo: "/tea/almanac" },
       },
       {
         path: "tea/:teaId",
         name: "tea-detail",
         component: () => import("@/apps/tea/pages/TeaDetailPage.vue"),
-        meta: { title: "Tea", requiresAuth: true },
+        meta: { title: "Tea", requiresAuth: true, backTo: "/tea" },
       },
       {
         // The invitee link. Deliberately NOT `requiresAuth`: an invitee arrives

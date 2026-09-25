@@ -4,10 +4,11 @@ import { setActivePinia, createPinia } from "pinia";
 
 // Repo pattern (see CabinetPage.spec.ts / TeaDetailPage.spec.ts): real Pinia,
 // useApi mocked, vue-router mocked.
-const { getMock, postMock, push } = vi.hoisted(() => ({
+const { getMock, postMock, push, backMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
   postMock: vi.fn(),
   push: vi.fn(),
+  backMock: vi.fn(),
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
@@ -19,7 +20,7 @@ vi.mock("@/composables/useApi", () => ({
 // when dirty" nor "silent when clean" would actually be exercised.
 let leaveGuard: (() => boolean) | null = null;
 vi.mock("vue-router", () => ({
-  useRouter: () => ({ push, back: vi.fn() }),
+  useRouter: () => ({ push, back: backMock }),
   onBeforeRouteLeave: (cb: () => boolean) => {
     leaveGuard = cb;
   },
@@ -96,6 +97,14 @@ beforeEach(() => {
 });
 
 describe("NewTeaPage", () => {
+  it("takes '← Cabinet' straight to the cabinet, not one step back through history", async () => {
+    const wrapper = await render();
+    await wrapper.get('[data-testid="page-back"]').trigger("click");
+
+    expect(backMock).not.toHaveBeenCalled();
+    expect(push).toHaveBeenCalledWith({ name: "tea-cabinet" });
+  });
+
   it("disables Save with an empty name, then with a name but no classification, and enables once both are set", async () => {
     const wrapper = await render();
     const saveButton = () =>

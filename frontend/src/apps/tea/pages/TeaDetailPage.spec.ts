@@ -119,6 +119,17 @@ describe("TeaDetailPage", () => {
     expect((await page()).get('[data-testid="tea-remove"]').text()).toBe("Remove from cabinet");
   });
 
+  it("takes '← Cabinet' straight to the cabinet, not one step back through history", async () => {
+    const wrapper = await page();
+    await wrapper.get('[data-testid="page-back"]').trigger("click");
+
+    // A plain history.back() would land on whatever page preceded this one in
+    // the browser's history stack — e.g. the New Tea form right after saving —
+    // not necessarily the Cabinet the label promises.
+    expect(backMock).not.toHaveBeenCalled();
+    expect(push).toHaveBeenCalledWith({ name: "tea-cabinet" });
+  });
+
   it("asks before removing, and only removes after the confirm", async () => {
     const wrapper = await page();
     await wrapper.get('[data-testid="tea-remove"]').trigger("click");

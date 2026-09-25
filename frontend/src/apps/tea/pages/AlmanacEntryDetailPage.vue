@@ -1,7 +1,13 @@
 <template>
   <q-page class="tea-page">
     <header class="tea-page__bar">
-      <button class="tea-page__back" @click="router.back()">← Almanac</button>
+      <button
+        class="tea-page__back"
+        data-testid="page-back"
+        @click="router.push({ name: 'tea-almanac' })"
+      >
+        ← Almanac
+      </button>
     </header>
 
     <p
