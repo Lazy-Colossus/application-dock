@@ -40,5 +40,194 @@
     "reading": "Shēng Pǔ'ěr",
     "summary": "Raw pu-erh: sun-dried Yunnan large-leaf tea (maocha) that is steamed and compressed, most often into cakes, then aged. Young sheng is bright, bitter and astringent with floral or fruity notes; years of aging mellow and deepen it, driven by slow oxidation and microbial activity in storage.",
     "brewing": { "leaf_grams": 7, "water_temp_c": 100, "steep_seconds": [10, 15, 20, 30] }
+  },
+  {
+    "catalogue_node_id": "green.biluochun",
+    "country": "China",
+    "reading": "Bìluóchūn",
+    "summary": "A green tea from Dongting, on the shores of Lake Tai in Jiangsu, picked as tiny single buds and rolled by hand into tight, downy spirals. Tea bushes there are traditionally interplanted with peach, plum, and apricot trees, which the tea is often credited with picking up a faint fruity note from. According to legend the tea was originally called \"Scary Fragrance\" for its intensity, before the Kangxi Emperor renamed it Biluochun — \"Green Snail Spring\" — for its curled shape and early harvest.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 75, "steep_seconds": [20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "green.huangshan-maofeng",
+    "country": "China",
+    "reading": "Huángshān Máofēng",
+    "summary": "A green tea from Huangshan (Yellow Mountain), Anhui, plucked as a bud with one or two young leaves, lightly pan-fired, then baked over charcoal in stages. The dry leaf is pale yellow-green and covered in fine white down, giving the tea its name — \"Yellow Mountain Fur Peak\" — and a delicate, orchid-like fragrance. Higher grades show a faint golden tint near the stem, prized as a mark of quality.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [30, 45, 60] }
+  },
+  {
+    "catalogue_node_id": "green.taiping-houkui",
+    "country": "China",
+    "reading": "Tàipíng Hóukuí",
+    "summary": "A green tea from Taiping, Anhui, made from unusually large paired leaves and a bud that are hand-pressed flat between wire mesh screens while drying, rather than rolled or curled. The finished leaves can run 5-7 cm long, straight and flat, with an orchid-like aroma and a mellow, faintly sweet taste with almost no bitterness. Its size and flatness make it easy to distinguish from any other Chinese green tea.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [30, 45, 60] }
+  },
+  {
+    "catalogue_node_id": "green.anji-baicha",
+    "country": "China",
+    "reading": "Ānjí Báichá",
+    "summary": "Despite its name (\"Anji white tea\"), this is a green tea from Anji, Zhejiang, made from an albino cultivar whose new spring leaves emerge pale yellow-white when temperatures stay below about 23°C, deepening toward green as the season warms. It is processed like an ordinary green tea — withered and pan-fired — but the cultivar's unusually high amino acid content gives the liquor a distinctively sweet, brothy character with little astringency.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 75, "steep_seconds": [30, 45, 60] }
+  },
+  {
+    "catalogue_node_id": "green.liu-an-gua-pian",
+    "country": "China",
+    "reading": "Lù'ān Guāpiàn",
+    "summary": "A green tea from Lu'an, Anhui — the city name takes the literary reading \"Lù'ān\" rather than the usual \"liù\" for the character 六. It is unique among Chinese teas in being made only from single mature leaves, with the bud and stem picked off and discarded rather than included. The leaves are pan-fired and then baked in stages over charcoal into a flat, slightly curled shape resembling melon seeds, giving a toasty, faintly sweet cup.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 85, "steep_seconds": [30, 45, 60] }
+  },
+  {
+    "catalogue_node_id": "yellow.junshan-yinzhen",
+    "country": "China",
+    "reading": "Jūnshān Yínzhēn",
+    "summary": "A yellow tea made from downy buds picked on Junshan Island in Dongting Lake, Hunan. After pan-firing, the buds are wrapped and left to rest through a slow \"sealed yellowing\" (men huang) step that lightly oxidizes them, softening the grassy edge of green tea into a mellower, sweeter cup. Brewed upright in a glass, the buds are said to perform \"three rises and three falls,\" floating up and sinking back before finally settling.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [45, 60, 90] }
+  },
+  {
+    "catalogue_node_id": "yellow.huoshan-huangya",
+    "country": "China",
+    "reading": "Huòshān Huángyá",
+    "summary": "A yellow tea from Huoshan, Anhui, picked as a bud with one young leaf and, like other yellow teas, given a brief sealed-yellowing rest after firing to soften its edge. It was a tribute tea as early as the Tang dynasty, but production nearly disappeared in the 20th century and was only revived in the 1970s. The cup is mild and sweet, closer to a soft green tea than to Junshan Yinzhen's fuller yellow character.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [30, 45, 60] }
+  },
+  {
+    "catalogue_node_id": "white.fuding.bai-mudan",
+    "country": "China",
+    "reading": "Bái Mǔdān",
+    "summary": "White Peony, a white tea from Fuding, Fujian, picked as a bud with one or two young leaves — a coarser standard than Silver Needle's buds-only pluck — then simply withered and dried with no rolling or firing. The mix of downy bud and leaf is said to resemble an opening flower, giving the tea its name, and produces a fuller-bodied, more leaf-forward cup than Silver Needle.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 90, "steep_seconds": [30, 45, 60, 90] }
+  },
+  {
+    "catalogue_node_id": "white.fuding.shou-mei",
+    "country": "China",
+    "reading": "Shòuméi",
+    "summary": "Longevity Eyebrow, the lowest and latest-picked grade of Fuding white tea, made from mature leaves with little or no bud, harvested toward the end of spring. The larger, more oxidized leaf gives a darker liquor and a fuller, earthier taste than Bai Mudan or Silver Needle. It presses and ages well, and aged Shou Mei is often simmered rather than steeped.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 95, "steep_seconds": [30, 45, 60, 90] }
+  },
+  {
+    "catalogue_node_id": "white.fuding.gong-mei",
+    "country": "China",
+    "reading": "Gòngméi",
+    "summary": "Tribute Eyebrow, a white tea grade from Fuding, Fujian that sits between Bai Mudan and Shou Mei: its buds are thinner and its leaves consistently longer than the buds they accompany, and picking often continues into autumn to take advantage of cooler weather. It yields a mellower, less bud-forward cup than Bai Mudan, without the fully mature leaf and stem character of Shou Mei.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 90, "steep_seconds": [30, 45, 60, 90] }
+  },
+  {
+    "catalogue_node_id": "oolong.wuyi-yancha.rou-gui",
+    "country": "China",
+    "reading": "Ròuguì",
+    "summary": "Cinnamon, the most widely planted cultivar among modern Wuyi rock teas (yancha), named for the warm, spicy-sweet aroma its leaves can carry. Leaves are withered, bruised, partially oxidized and twisted, then charcoal-roasted — often heavily — building a deep, mineral \"rock rhyme\" (yan yun) around the cinnamon note. Its distinctive aroma and reliable yield have made it the best-selling Wuyi yancha in recent decades, overtaking older cultivars like Shui Xian.",
+    "brewing": { "leaf_grams": 8, "water_temp_c": 100, "steep_seconds": [15, 20, 25, 35] }
+  },
+  {
+    "catalogue_node_id": "oolong.wuyi-yancha.shui-xian",
+    "country": "China",
+    "reading": "Shuǐxiān",
+    "summary": "Narcissus, one of the oldest and most widely grown cultivars among the Wuyi rock teas (yancha), predating the current fashion for Rou Gui. Its twisted, dark leaves are heavily oxidized and roasted, giving a mellow, woody cup with a soft orchid-like note rather than Rou Gui's more assertive spice. Old-bush (lao cong) Shui Xian, from plants decades old, is particularly prized for a mossy, woody depth.",
+    "brewing": { "leaf_grams": 8, "water_temp_c": 100, "steep_seconds": [20, 25, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "oolong.wuyi-yancha.tie-luohan",
+    "country": "China",
+    "reading": "Tiě Luóhàn",
+    "summary": "Iron Arhat, one of the Wuyi \"Four Great Bushes\" (si da ming cong) along with Da Hong Pao, Bai Ji Guan, and Shui Jin Gui, and reputedly the oldest named Wuyi rock tea, with records reaching back to the Song dynasty. It is a heavily oxidized, charcoal-roasted oolong with the dense, mineral, slightly medicinal character typical of yancha grown among the region's rocky cliffs.",
+    "brewing": { "leaf_grams": 8, "water_temp_c": 100, "steep_seconds": [20, 25, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "oolong.wuyi-yancha.bai-ji-guan",
+    "country": "China",
+    "reading": "Bái Jī Guān",
+    "summary": "White Cockscomb, one of the Wuyi \"Four Great Bushes,\" set apart from its siblings by a natural low-chlorophyll mutation that gives its young leaves a pale yellow-green color instead of the usual dark green. It is oxidized and roasted more lightly than the other three bushes, producing a lighter-bodied, less mineral cup with a soft, faintly honeyed sweetness. The bush is low-yielding and needs unusually generous spacing, keeping production small.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 95, "steep_seconds": [20, 25, 35, 45] }
+  },
+  {
+    "catalogue_node_id": "oolong.wuyi-yancha.shui-jin-gui",
+    "country": "China",
+    "reading": "Shuǐ Jīn Guī",
+    "summary": "Golden Water Turtle, one of the Wuyi \"Four Great Bushes.\" Local legend holds that the original bush grew in a monastery garden until a storm washed it, roots and clay clump together, down the mountainside onto a farmer's land — its mossy, shell-like look in the water giving rise to the name, and the ensuing ownership dispute reportedly settled by a court in the farmer's favor. Like the other Four Great Bushes it is heavily oxidized and roasted, giving a robust, mineral cup.",
+    "brewing": { "leaf_grams": 8, "water_temp_c": 100, "steep_seconds": [20, 25, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "oolong.anxi.huang-jin-gui",
+    "country": "China",
+    "reading": "Huáng Jīn Guì",
+    "summary": "Golden Osmanthus, one of Anxi, Fujian's major oolong cultivars alongside Tieguanyin, prized above all for the intensity of its floral aroma, often compared to osmanthus blossom. It sprouts earlier than Tieguanyin and is lightly oxidized and only lightly roasted to preserve its fragrance, yielding a pale, highly aromatic cup that is less mineral and more purely floral than most other Anxi oolongs.",
+    "brewing": { "leaf_grams": 6, "water_temp_c": 90, "steep_seconds": [15, 20, 25, 35] }
+  },
+  {
+    "catalogue_node_id": "oolong.anxi.benshan",
+    "country": "China",
+    "reading": "Běnshān",
+    "summary": "A lightly to moderately oxidized oolong from Anxi, Fujian, processed much like Tieguanyin and rolled into similar tight pellets, but grown from a distinct cultivar. It has historically been sold as a cheaper substitute for, or blended with, Tieguanyin, though its aroma is generally lighter and fades faster across infusions.",
+    "brewing": { "leaf_grams": 6, "water_temp_c": 95, "steep_seconds": [20, 25, 30, 40] }
+  },
+  {
+    "catalogue_node_id": "oolong.dancong.mi-lan-xiang",
+    "country": "China",
+    "reading": "Mì Lán Xiāng",
+    "summary": "Honey Orchid, one of the most widely grown Phoenix Dancong cultivars from Fenghuang (Phoenix Mountain), Guangdong. \"Dancong\" (\"single bush\") reflects the tradition of processing each old tree's leaves separately to preserve its individual character; Mi Lan Xiang's long, twisted, dark leaves are moderately to heavily oxidized and lightly roasted, producing a cup with the pronounced sweet, honeyed, orchid-like aroma that gives the cultivar its name.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 100, "steep_seconds": [10, 15, 20, 30] }
+  },
+  {
+    "catalogue_node_id": "oolong.dancong.ya-shi-xiang",
+    "country": "China",
+    "reading": "Yā Shǐ Xiāng",
+    "summary": "Duck Shit Aroma, a Phoenix Dancong oolong cultivar from Wudong Mountain in Fenghuang, Guangdong, whose unflattering name is generally explained as a growers' ruse: the tea's distinctive fragrance was so sought-after that farmers protecting the source claimed the bushes only grew well in ordinary-looking soil they described as resembling duck droppings. In 2014 Fenghuang tea authorities proposed the more marketable name \"Honeysuckle Fragrance\" (Yin Hua Xiang), but the original name has remained the one most drinkers use.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 100, "steep_seconds": [10, 15, 20, 30] }
+  },
+  {
+    "catalogue_node_id": "oolong.dancong.zhi-lan-xiang",
+    "country": "China",
+    "reading": "Zhī Lán Xiāng",
+    "summary": "Orchid Fragrance, a Phoenix Dancong oolong cultivar from Fenghuang, Guangdong, named — like most Dancong cultivars — for the dominant note in its aroma, here a cool, green orchid scent rather than the honeyed or fruited notes of other Dancong types. It is processed like other Dancong teas: withered, bruised to encourage partial oxidation along the leaf edges, then twisted and roasted.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 100, "steep_seconds": [10, 15, 20, 30] }
+  },
+  {
+    "catalogue_node_id": "red.zhengshan-xiaozhong",
+    "country": "China",
+    "reading": "Zhèngshān Xiǎozhǒng",
+    "summary": "Lapsang Souchong, a fully oxidized black tea from Tongmu, in the Wuyi Shan reserve of Fujian, generally regarded as the world's first black tea, dating to the late Ming dynasty. Traditional production dries the leaf over pinewood fires, giving the classic export style its heavy smoked aroma, though much of what is made and sold locally today as \"Zhengshan Xiaozhong\" is unsmoked, with a naturally sweet, malty character closer to other Wuyi black teas.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 95, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "red.jin-jun-mei",
+    "country": "China",
+    "reading": "Jīn Jùn Méi",
+    "summary": "Golden Eyebrow, a black tea from Tongmu, Fujian, developed in 2005 by tea maker Jiang Yuanxun and his team as a bud-only, unsmoked alternative to traditional Zhengshan Xiaozhong. Made entirely from early spring buds, fully oxidized and gently roasted, it produces a golden-tipped leaf and a sweet, fruity, honeyed liquor; its labor-intensive, buds-only picking has made it one of China's most expensive black teas.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 90, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "red.qimen",
+    "country": "China",
+    "reading": "Qímén",
+    "summary": "Keemun, a fully oxidized black tea from Qimen County, Anhui, made from a local varietal and finished with a distinctive fine-rolling and extended roasting process. It is known internationally for a layered aroma often described as rose- or orchid-like alongside fruity and lightly smoky notes — sometimes called simply \"Qimen fragrance\" — and was historically a key component of English breakfast tea blends.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 95, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "dark.shu-puerh",
+    "country": "China",
+    "reading": "Shú Pǔ'ěr",
+    "summary": "Ripe pu-erh, a dark tea made from Yunnan large-leaf maocha that is artificially aged through wet-piling (wo dui): the leaf is heaped, dampened, and covered, generating heat and microbial activity that rapidly darkens and mellows it over 45-60 days, before it is pressed into cakes or left loose. The technique was developed in 1973-74 by the Kunming and Menghai tea factories to replicate the taste of long-aged sheng pu-erh without years of storage, producing a smooth, earthy, low-astringency cup much faster than natural aging.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 100, "steep_seconds": [10, 15, 20, 30] }
+  },
+  {
+    "catalogue_node_id": "dark.liu-bao",
+    "country": "China",
+    "reading": "Liùbǎo",
+    "summary": "A dark tea from Liubao town in Wuzhou, Guangxi, historically compressed into baskets for export along southern trade routes to Southeast Asia. Like other hei cha it undergoes a post-fermentation (piling) step that darkens the leaf and softens its edge; the cup is smooth and mellow, often carrying a distinctive betel-nut-like note, and it is traditionally valued for improving with age.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 100, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "dark.fu-zhuan",
+    "country": "China",
+    "reading": "Fú Zhuān",
+    "summary": "Fu Brick, a dark tea from Hunan made from mature leaf and stem that is steamed and compressed into bricks, then held under controlled heat and humidity to encourage the growth of Eurotium cristatum — a golden-spored fungus tea drinkers call \"golden flowers\" (jin hua). The brick's density is calibrated to hold in warmth and moisture while still letting enough oxygen through for the fungus to colonize the leaf, giving the tea a mellow, faintly sweet, distinctively fungal-earthy character.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 100, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "dark.liu-an",
+    "country": "China",
+    "reading": "Lù'ān",
+    "summary": "A dark tea historically associated with the Lu'an region of Anhui — again read \"Lù'ān\" rather than the more common \"liù\" — first recorded in Ming-dynasty tea writing and once traded as far as Guangdong's coastal teahouses. Leaves are steamed and packed into bamboo-leaf-lined baskets, then fired to slowly drive off moisture over a day or two; production had nearly vanished by the 1940s and was revived from archived samples in the 1980s. Traditionally it is not sold until it has rested for at least three years.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 100, "steep_seconds": [15, 20, 30, 45] }
   }
 ]
