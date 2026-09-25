@@ -303,7 +303,9 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 TeaClass = Literal["green", "yellow", "white", "oolong", "red", "dark", "other"]
-TeaForm = Literal["loose", "cake", "brick", "tuo", "ball", "other"]
+TeaForm = Literal[
+    "loose", "cake", "brick", "tuo", "ball", "bag", "sample", "other"
+]  # bag/sample come from prd-tea-2026-09-06 FR-1; see Ruling 11.
 HarvestSeason = Literal["spring", "summer", "autumn", "winter"]
 NodeSource = Literal["seed", "user"]
 
@@ -1938,7 +1940,17 @@ export type TeaClass =
   | "dark"
   | "other";
 
-export type TeaForm = "loose" | "cake" | "brick" | "tuo" | "ball" | "other";
+// Eight values, matching backend TeaForm: the union of this spec's formats
+// with the PRD's bag/sample (Ruling 11).
+export type TeaForm =
+  | "loose"
+  | "cake"
+  | "brick"
+  | "tuo"
+  | "ball"
+  | "bag"
+  | "sample"
+  | "other";
 
 export type HarvestSeason = "spring" | "summer" | "autumn" | "winter";
 
