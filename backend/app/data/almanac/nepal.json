@@ -1,0 +1,23 @@
+[
+  {
+    "catalogue_node_id": "red.nepali.ilam",
+    "country": "Nepal",
+    "reading": "",
+    "summary": "Nepal's principal tea product comes from smallholder gardens in the eastern hill districts of Ilam, Dhankuta, Panchthar, and Terhathum, immediately west of and geologically continuous with Darjeeling, sharing its cool, misty high-altitude climate. Unlike Darjeeling, where colonial-era estates own their land and process their own leaf, almost all Nepali tea is grown on tiny independent farmer plots that sell fresh leaf to separate factories, and most of the bushes are decades younger than Darjeeling's 19th-century plantings — in the industry's early decades Nepali leaf was in fact bought by Darjeeling factories to offset the declining yield of their own aging bushes. The May-to-July second flush develops the same leafhopper-triggered muscatel character prized in Darjeeling, but is typically described with more honey, malt, and stone-fruit notes and less astringency. Because Nepali tea sells for roughly half the price of Darjeeling and the two are hard to distinguish once blended, a substantial share of tea marketed internationally as 'Darjeeling' is understood within the trade to contain Nepali leaf — a long-running labeling dispute that is itself evidence of how close, yet commercially and legally distinct, the two teas are.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 90, "steep_seconds": [180, 240] }
+  },
+  {
+    "catalogue_node_id": "oolong.nepali.dhankuta",
+    "country": "Nepal",
+    "reading": "",
+    "summary": "A partially oxidized style from a handful of very high-altitude Dhankuta district gardens, most documented at Jun Chiyabari near Hile — founded in 2001 at 1,650-2,110 meters and organic-certified since 2012 — which deliberately produces a spectrum of lightly, medium, and highly oxidized leaf from the same bushes rather than settling on one fixed style. Growers there describe the results as 'partially oxidised' rather than 'oolong,' treating that term as a borrowed Chinese and Taiwanese category rather than a native label for their own process, even though the lighter grades cup closest to a delicate Taiwanese oolong. The altitude — among the highest of any commercial tea garden in the world — slows leaf growth enough to concentrate aromatics, giving a floral, honeyed cup that is noticeably lighter and less brisk than the fully oxidized black tea made from the same Dhankuta gardens.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 90, "steep_seconds": [30, 40, 50, 60] }
+  },
+  {
+    "catalogue_node_id": "green.nepali.ilam",
+    "country": "Nepal",
+    "reading": "",
+    "summary": "A minority product of Ilam district's high-altitude gardens (roughly 1,200-2,000 meters), made from the same bushes that supply the district's orthodox black tea but pan-fired immediately after withering to halt oxidation rather than rolled and fully oxidized. Where Chinese pan-fired greens tend toward a grassy, vegetal cup, Ilam green tea is usually described as light and floral-herbal, with sweet-corn warmth, honeyed sweetness, and soft stone-fruit or white-peach notes rather than sharp vegetal bite — a profile growers attribute to the same slow, cool high-altitude growth that gives the district's black tea its delicacy. It remains a small fraction of Ilam's output next to orthodox black tea, made mainly by specialty smallholder-supplied factories rather than as a historic regional style in its own right.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [90, 120] }
+  }
+]

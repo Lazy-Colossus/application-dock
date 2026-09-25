@@ -40,6 +40,8 @@
   { "id": "green.indian.kangra", "parent_id": "green.indian", "name": "Kangra Green", "name_zh": "", "source": "seed", "default_origin": "Kangra Valley, Himachal Pradesh" },
   { "id": "green.sri-lankan", "parent_id": "green", "name": "Sri Lankan", "name_zh": "", "source": "seed", "default_origin": "Sri Lanka" },
   { "id": "green.sri-lankan.ceylon-green", "parent_id": "green.sri-lankan", "name": "Ceylon Green", "name_zh": "", "source": "seed", "default_origin": "Uva Province, Sri Lanka" },
+  { "id": "green.nepali", "parent_id": "green", "name": "Nepali", "name_zh": "", "source": "seed", "default_origin": "Nepal" },
+  { "id": "green.nepali.ilam", "parent_id": "green.nepali", "name": "Ilam Green", "name_zh": "", "source": "seed", "default_origin": "Ilam district, eastern Nepal" },
 
   { "id": "yellow", "parent_id": null, "name": "Yellow", "name_zh": "黃茶", "source": "seed" },
   { "id": "yellow.junshan-yinzhen", "parent_id": "yellow", "name": "Junshan Yinzhen", "name_zh": "君山銀針", "source": "seed", "default_origin": "Junshan Island, Hunan" },
@@ -95,6 +97,8 @@
   { "id": "oolong.taiwanese.muzha-tieguanyin", "parent_id": "oolong.taiwanese", "name": "Muzha Tieguanyin", "name_zh": "木柵鐵觀音", "source": "seed", "default_origin": "Muzha, Taipei, Taiwan" },
   { "id": "oolong.vietnamese", "parent_id": "oolong", "name": "Vietnamese", "name_zh": "", "source": "seed", "default_origin": "Vietnam" },
   { "id": "oolong.vietnamese.bao-loc", "parent_id": "oolong.vietnamese", "name": "Bao Loc Oolong", "name_zh": "", "source": "seed", "default_origin": "Bao Loc, Lam Dong province, Vietnam" },
+  { "id": "oolong.nepali", "parent_id": "oolong", "name": "Nepali", "name_zh": "", "source": "seed", "default_origin": "Nepal" },
+  { "id": "oolong.nepali.dhankuta", "parent_id": "oolong.nepali", "name": "Dhankuta Partially Oxidized", "name_zh": "", "source": "seed", "default_origin": "Dhankuta district, eastern Nepal" },
 
   { "id": "red", "parent_id": null, "name": "Red", "name_zh": "紅茶", "source": "seed" },
   { "id": "red.zhengshan-xiaozhong", "parent_id": "red", "name": "Zhengshan Xiaozhong", "name_zh": "正山小種", "source": "seed", "default_origin": "Tongmu, Fujian" },
@@ -126,6 +130,8 @@
   { "id": "red.sri-lankan.dimbula", "parent_id": "red.sri-lankan", "name": "Dimbula", "name_zh": "", "source": "seed", "default_origin": "Dimbula, Central Province, Sri Lanka" },
   { "id": "red.sri-lankan.kandy", "parent_id": "red.sri-lankan", "name": "Kandy", "name_zh": "", "source": "seed", "default_origin": "Kandy district, Central Province, Sri Lanka" },
   { "id": "red.sri-lankan.ruhuna", "parent_id": "red.sri-lankan", "name": "Ruhuna", "name_zh": "", "source": "seed", "default_origin": "Ruhuna (southern lowlands), Sri Lanka" },
+  { "id": "red.nepali", "parent_id": "red", "name": "Nepali", "name_zh": "", "source": "seed", "default_origin": "Nepal" },
+  { "id": "red.nepali.ilam", "parent_id": "red.nepali", "name": "Nepal Orthodox Black", "name_zh": "", "source": "seed", "default_origin": "Ilam, Dhankuta, Panchthar and Terhathum districts, eastern Nepal" },
 
   { "id": "dark", "parent_id": null, "name": "Dark", "name_zh": "黑茶", "source": "seed" },
   { "id": "dark.sheng-puerh", "parent_id": "dark", "name": "Sheng pu-erh", "name_zh": "生普洱", "source": "seed", "default_origin": "Yunnan" },
