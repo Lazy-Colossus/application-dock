@@ -40,6 +40,9 @@ describe("CataloguePicker", () => {
   it("reveals the next tier once a class with children is chosen", async () => {
     const wrapper = picker();
     await wrapper.get('[data-testid="chip-oolong"]').trigger("click");
+    // A bare mount() has no parent to round-trip the emit into modelValue —
+    // in real use this is v-model, which does that synchronously.
+    await wrapper.setProps({ modelValue: "oolong" });
     expect(wrapper.findAll('[data-testid="tier"]')).toHaveLength(2);
   });
 

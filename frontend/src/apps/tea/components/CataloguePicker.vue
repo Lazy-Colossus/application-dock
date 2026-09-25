@@ -6,7 +6,6 @@
         <button
           v-for="node in tier.nodes"
           :key="node.id"
-          type="button"
           :class="['chip', { 'chip--on': chosenIds.includes(node.id) }]"
           :style="chipStyle(node.id)"
           :data-testid="`chip-${node.id}`"
@@ -18,7 +17,6 @@
 
         <button
           v-if="tier.parentId"
-          type="button"
           class="chip chip--add"
           :data-testid="`add-${tier.parentId}`"
           @click="emit('add-node', tier.parentId)"
@@ -35,9 +33,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed } from "vue";
 import { childrenOf, pathOf, prefillOriginFor } from "../catalogue";
-import { CLASS_TOKENS, GROUND } from "../tokens";
+import { CLASS_TOKENS } from "../tokens";
 import type { CatalogueNode, TeaClass } from "../types";
 
 const props = defineProps<{ nodes: CatalogueNode[]; modelValue: string | null }>();
@@ -53,21 +51,9 @@ interface Tier {
   nodes: CatalogueNode[];
 }
 
-// The picker reflects a choice the moment it is tapped, without waiting on
-// the parent to round-trip `modelValue` back down — the caller (Task 15's
-// page) still owns the value and can override it at any time, which this
-// local copy stays in sync with via the watcher below.
-const selected = ref(props.modelValue);
-watch(
-  () => props.modelValue,
-  (value) => {
-    selected.value = value;
-  },
-);
-
 /** Root-first ancestry of the current choice — which is also which tiers are open. */
 const chosen = computed(() =>
-  selected.value ? pathOf(props.nodes, selected.value) : [],
+  props.modelValue ? pathOf(props.nodes, props.modelValue) : [],
 );
 const chosenIds = computed(() => chosen.value.map((node) => node.id));
 
@@ -90,7 +76,7 @@ const tiers = computed<Tier[]>(() => {
 });
 
 const prefill = computed(() =>
-  selected.value ? prefillOriginFor(props.nodes, selected.value) : "",
+  props.modelValue ? prefillOriginFor(props.nodes, props.modelValue) : "",
 );
 
 const classTokens = computed(() => {
@@ -105,12 +91,11 @@ function chipStyle(nodeId: string): Record<string, string> {
     ? (CLASS_TOKENS[nodeId as TeaClass] ?? CLASS_TOKENS.other)
     : classTokens.value;
   return chosenIds.value.includes(nodeId)
-    ? { background: tokens.liquor, borderColor: tokens.liquor, color: GROUND.inkOnFill }
+    ? { background: tokens.liquor, borderColor: tokens.liquor, color: "#17120E" }
     : { color: tokens.head };
 }
 
 function choose(nodeId: string): void {
-  selected.value = nodeId;
   emit("update:modelValue", nodeId);
   emit("prefill", prefillOriginFor(props.nodes, nodeId));
 }
