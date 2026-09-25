@@ -233,6 +233,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "Tea Cabinet", requiresAuth: true },
       },
       {
+        path: "tea/new",
+        name: "tea-new",
+        component: () => import("@/apps/tea/pages/NewTeaPage.vue"),
+        meta: { title: "New tea", requiresAuth: true },
+      },
+      {
+        path: "tea/:teaId",
+        name: "tea-detail",
+        component: () => import("@/apps/tea/pages/TeaDetailPage.vue"),
+        meta: { title: "Tea", requiresAuth: true },
+      },
+      {
         // The invitee link. Deliberately NOT `requiresAuth`: an invitee arrives
         // from a group chat with no account, and bouncing them to a login they
         // cannot pass would be the whole feature failing. The token in the path
