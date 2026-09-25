@@ -38,6 +38,13 @@
     <button class="cabinet__add" data-testid="cabinet-add" aria-label="Add a tea" @click="addTea">
       +
     </button>
+
+    <GramsSheet
+      v-if="editingTea"
+      :tea="editingTea"
+      @save="commitGrams"
+      @cancel="editingTeaId = null"
+    />
   </q-page>
 </template>
 
@@ -45,6 +52,7 @@
 import { computed, onBeforeUpdate, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import ShelfSection from "../components/ShelfSection.vue";
+import GramsSheet from "../components/GramsSheet.vue";
 import { useTeaCabinetStore } from "../stores/useTeaCabinetStore";
 import { useTeaCatalogueStore } from "../stores/useTeaCatalogueStore";
 import { useSectionInView } from "../composables/useSectionInView";
@@ -98,8 +106,17 @@ function addTea(): void {
 }
 
 const editingTeaId = ref<string | null>(null);
+const editingTea = computed(
+  () => cabinet.teas.find((tea) => tea.id === editingTeaId.value) ?? null,
+);
 function editGrams(teaId: string): void {
   editingTeaId.value = teaId;
+}
+
+async function commitGrams(grams: number): Promise<void> {
+  const teaId = editingTeaId.value;
+  editingTeaId.value = null;
+  if (teaId) await cabinet.setGrams(teaId, grams);
 }
 defineExpose({ editingTeaId });
 

@@ -2,13 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, push } = vi.hoisted(() => ({
+const { getMock, putMock, push } = vi.hoisted(() => ({
   getMock: vi.fn(),
+  putMock: vi.fn(),
   push: vi.fn(),
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
-  api: { get: getMock, post: vi.fn(), put: vi.fn(), del: vi.fn() },
+  api: { get: getMock, post: vi.fn(), put: putMock, del: vi.fn() },
 }));
 vi.mock("vue-router", () => ({ useRouter: () => ({ push }) }));
 
@@ -165,5 +166,37 @@ describe("CabinetPage", () => {
 
     expect(getMock).toHaveBeenCalledWith("/tea/teas");
     expect(getMock).toHaveBeenCalledWith("/tea/catalogue");
+  });
+
+  it("opens the grams sheet for the tapped rim, and saving commits it and closes it", async () => {
+    mockApi([tea("a", { grams_remaining: 38 })]);
+    putMock.mockResolvedValue(tea("a", { grams_remaining: 37 }));
+    const wrapper = render();
+    await flushPromises();
+
+    await wrapper.get('[data-testid="row-rim"]').trigger("click");
+    expect(wrapper.get('[data-testid="grams-value"]').text()).toContain("38");
+
+    await wrapper.get('[data-testid="grams-minus"]').trigger("click");
+    await wrapper.get('[data-testid="grams-save"]').trigger("click");
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith(
+      "/tea/teas/a",
+      expect.objectContaining({ grams_remaining: 37 }),
+    );
+    expect(wrapper.find('[data-testid="grams-sheet"]').exists()).toBe(false);
+  });
+
+  it("closes the sheet on cancel without writing anything", async () => {
+    mockApi([tea("a")]);
+    const wrapper = render();
+    await flushPromises();
+
+    await wrapper.get('[data-testid="row-rim"]').trigger("click");
+    await wrapper.get('[data-testid="grams-cancel"]').trigger("click");
+
+    expect(wrapper.find('[data-testid="grams-sheet"]').exists()).toBe(false);
+    expect(putMock).not.toHaveBeenCalled();
   });
 });
