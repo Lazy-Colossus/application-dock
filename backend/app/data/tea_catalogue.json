@@ -18,6 +18,12 @@
   { "id": "green.japanese.matcha", "parent_id": "green.japanese", "name": "Matcha", "name_zh": "抹茶", "source": "seed" },
   { "id": "green.japanese.hojicha", "parent_id": "green.japanese", "name": "Hojicha", "name_zh": "焙じ茶", "source": "seed" },
   { "id": "green.japanese.genmaicha", "parent_id": "green.japanese", "name": "Genmaicha", "name_zh": "玄米茶", "source": "seed" },
+  { "id": "green.japanese.bancha", "parent_id": "green.japanese", "name": "Bancha", "name_zh": "番茶", "source": "seed" },
+  { "id": "green.japanese.kukicha", "parent_id": "green.japanese", "name": "Kukicha", "name_zh": "茎茶", "source": "seed" },
+  { "id": "green.japanese.kabusecha", "parent_id": "green.japanese", "name": "Kabusecha", "name_zh": "かぶせ茶", "source": "seed" },
+  { "id": "green.japanese.fukamushicha", "parent_id": "green.japanese", "name": "Fukamushicha", "name_zh": "深蒸し茶", "source": "seed" },
+  { "id": "green.japanese.tamaryokucha", "parent_id": "green.japanese", "name": "Tamaryokucha", "name_zh": "玉緑茶", "source": "seed" },
+  { "id": "green.japanese.kamairicha", "parent_id": "green.japanese", "name": "Kamairicha", "name_zh": "釜炒り茶", "source": "seed" },
 
   { "id": "yellow", "parent_id": null, "name": "Yellow", "name_zh": "黃茶", "source": "seed" },
   { "id": "yellow.junshan-yinzhen", "parent_id": "yellow", "name": "Junshan Yinzhen", "name_zh": "君山銀針", "source": "seed", "default_origin": "Junshan Island, Hunan" },

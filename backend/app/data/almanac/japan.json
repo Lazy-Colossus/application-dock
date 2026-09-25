@@ -26,5 +26,54 @@
     "reading": "hōjicha",
     "summary": "Green tea, typically bancha or sencha leaf and stems, roasted at high heat after processing. Roasting turns the leaf reddish-brown and destroys most of the catechins responsible for bitterness, giving hojicha a toasty, nutty, low-caffeine cup that tolerates near-boiling water well.",
     "brewing": { "leaf_grams": 5, "water_temp_c": 95, "steep_seconds": [30, 30] }
+  },
+  {
+    "catalogue_node_id": "green.japanese.genmaicha",
+    "country": "Japan",
+    "reading": "genmaicha",
+    "summary": "Sencha or bancha leaf blended with roasted, popped brown rice (genmai). Originating in the Edo period as a way for merchants to stretch scarce tea leaf, it became a household staple during wartime and postwar shortages. The rice mellows the cup and adds a nutty, toasted-grain flavor alongside the tea's vegetal notes; caffeine content is lower than straight sencha simply because leaf makes up less of the blend.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 85, "steep_seconds": [45, 30] }
+  },
+  {
+    "catalogue_node_id": "green.japanese.bancha",
+    "country": "Japan",
+    "reading": "bancha",
+    "summary": "The everyday, lower grade of Japanese green tea, made from the larger, more mature leaves of later summer or autumn harvests rather than the tender spring flush used for sencha. It is steamed and processed the same way as sencha, but mature leaf develops fewer catechins, giving bancha a milder, drier, less vegetal cup with far less astringency and bitterness than sencha or shaded teas.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 85, "steep_seconds": [45, 30] }
+  },
+  {
+    "catalogue_node_id": "green.japanese.kukicha",
+    "country": "Japan",
+    "reading": "kukicha",
+    "summary": "Twig tea: the stems, stalks, and leaf ribs sorted out during the final refinement of sencha or gyokuro, rather than a leaf picked and processed on its own. Because stems receive less sunlight on the growing plant, they accumulate fewer catechins, giving kukicha a notably sweet, creamy, low-astringency cup with a soft woody aroma. Stem tea sorted from gyokuro production is sometimes sold separately as the more prized \"karigane\".",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 85, "steep_seconds": [45, 30] }
+  },
+  {
+    "catalogue_node_id": "green.japanese.kabusecha",
+    "country": "Japan",
+    "reading": "kabusecha",
+    "summary": "A shade-grown green tea positioned between sencha and gyokuro: the bushes are covered with cloth laid directly over the canopy (jikagake) for roughly one to two weeks before harvest, a shorter and less complete shading than gyokuro's elevated tana frames. The result carries more umami and sweetness than unshaded sencha without the intense, broth-like character of gyokuro.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 65, "steep_seconds": [60, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "green.japanese.fukamushicha",
+    "country": "Japan",
+    "reading": "fukamushicha",
+    "summary": "Deep-steamed sencha: the kill-green steaming step runs 60 seconds or longer, roughly double the time used for standard sencha, which softens the leaf and breaks it into smaller fragments during rolling. The longer steaming lowers astringency and produces a fuller, sweeter, more full-bodied cup, but it also releases more fine particles into the liquor, giving fukamushicha its characteristically cloudy, deep-green brew.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 70, "steep_seconds": [30, 20, 30] }
+  },
+  {
+    "catalogue_node_id": "green.japanese.tamaryokucha",
+    "country": "Japan",
+    "reading": "tamaryokucha",
+    "summary": "Also called guricha, a green tea processed like sencha except for the final shaping step, which is skipped; without it the leaf dries into loose curls and coils rather than straight needles. The steamed version (mushisei) was developed in 1925 to mimic the pan-fired teas Russian buyers preferred for export, while a pan-fired version (kamairi) also exists. Skipping the shaping step reduces cell damage, giving tamaryokucha a milder, less astringent cup than sencha.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 75, "steep_seconds": [60, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "green.japanese.kamairicha",
+    "country": "Japan",
+    "reading": "kamairicha",
+    "summary": "A rare exception among Japanese greens: instead of steaming, the leaf is fired in a hot iron pan (up to around 300°C) to halt oxidation, the same basic approach used for most Chinese green tea. Produced mainly in Kyushu (Ureshino in Saga, and the Aoyagi style of Kumamoto and Miyazaki), pan-firing leaves out the grassy, marine notes steaming produces and gives kamairicha a mellow, sweet cup with a light roasted aroma and little astringency.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 80, "steep_seconds": [45, 30, 45] }
   }
 ]
