@@ -24,6 +24,10 @@
   { "id": "green.japanese.fukamushicha", "parent_id": "green.japanese", "name": "Fukamushicha", "name_zh": "深蒸し茶", "source": "seed" },
   { "id": "green.japanese.tamaryokucha", "parent_id": "green.japanese", "name": "Tamaryokucha", "name_zh": "玉緑茶", "source": "seed" },
   { "id": "green.japanese.kamairicha", "parent_id": "green.japanese", "name": "Kamairicha", "name_zh": "釜炒り茶", "source": "seed" },
+  { "id": "green.japanese.sayama-cha", "parent_id": "green.japanese", "name": "Sayama-cha", "name_zh": "狭山茶", "source": "seed", "default_origin": "Sayama region, Saitama (and adjoining western Tokyo), Japan" },
+  { "id": "green.japanese.shincha", "parent_id": "green.japanese", "name": "Shincha", "name_zh": "新茶", "source": "seed", "default_origin": "Japan-wide; earliest harvests from Kagoshima and Tanegashima" },
+  { "id": "green.japanese.konacha", "parent_id": "green.japanese", "name": "Konacha", "name_zh": "粉茶", "source": "seed", "default_origin": "Byproduct of sencha/gyokuro processing nationwide, principally Shizuoka, Japan" },
+  { "id": "green.japanese.mecha", "parent_id": "green.japanese", "name": "Mecha", "name_zh": "芽茶", "source": "seed", "default_origin": "Byproduct of sencha/gyokuro processing nationwide, principally Shizuoka, Japan" },
 
   { "id": "yellow", "parent_id": null, "name": "Yellow", "name_zh": "黃茶", "source": "seed" },
   { "id": "yellow.junshan-yinzhen", "parent_id": "yellow", "name": "Junshan Yinzhen", "name_zh": "君山銀針", "source": "seed", "default_origin": "Junshan Island, Hunan" },
@@ -74,6 +78,7 @@
   { "id": "red.qimen", "parent_id": "red", "name": "Qimen", "name_zh": "祁門", "source": "seed", "default_origin": "Qimen, Anhui" },
   { "id": "red.tanyang-gongfu", "parent_id": "red", "name": "Tanyang Gongfu", "name_zh": "坦洋工夫", "source": "seed", "default_origin": "Fu'an, Fujian" },
   { "id": "red.yingde-hongcha", "parent_id": "red", "name": "Yingde Hongcha", "name_zh": "英德紅茶", "source": "seed", "default_origin": "Yingde, Guangdong" },
+  { "id": "red.wakoucha", "parent_id": "red", "name": "Wakoucha", "name_zh": "和紅茶", "source": "seed", "default_origin": "Japan (originally Meiji-era export; today small-scale in Shizuoka, Miyazaki, and other prefectures)" },
 
   { "id": "dark", "parent_id": null, "name": "Dark", "name_zh": "黑茶", "source": "seed" },
   { "id": "dark.sheng-puerh", "parent_id": "dark", "name": "Sheng pu-erh", "name_zh": "生普洱", "source": "seed", "default_origin": "Yunnan" },
@@ -83,6 +88,12 @@
   { "id": "dark.liu-an", "parent_id": "dark", "name": "Liu An", "name_zh": "六安", "source": "seed", "default_origin": "Anhui" },
   { "id": "dark.qian-liang-cha", "parent_id": "dark", "name": "Qian Liang Cha", "name_zh": "千兩茶", "source": "seed", "default_origin": "Anhua, Hunan" },
   { "id": "dark.kang-zhuan", "parent_id": "dark", "name": "Kang Zhuan", "name_zh": "康磚", "source": "seed", "default_origin": "Ya'an, Sichuan" },
+
+  { "id": "dark.japanese", "parent_id": "dark", "name": "Japanese post-fermented", "name_zh": "後発酵茶", "source": "seed", "default_origin": "Japan" },
+  { "id": "dark.japanese.awa-bancha", "parent_id": "dark.japanese", "name": "Awa Bancha", "name_zh": "阿波晩茶", "source": "seed", "default_origin": "Kamikatsu and Naka, Tokushima, Japan" },
+  { "id": "dark.japanese.goishicha", "parent_id": "dark.japanese", "name": "Goishicha", "name_zh": "碁石茶", "source": "seed", "default_origin": "Otoyo, Kochi, Japan" },
+  { "id": "dark.japanese.ishizuchi-kurocha", "parent_id": "dark.japanese", "name": "Ishizuchi Kurocha", "name_zh": "石鎚黒茶", "source": "seed", "default_origin": "Saijō, Ehime, Japan" },
+  { "id": "dark.japanese.batabatacha", "parent_id": "dark.japanese", "name": "Batabatacha", "name_zh": "バタバタ茶", "source": "seed", "default_origin": "Asahi, Toyama, Japan" },
 
   { "id": "other", "parent_id": null, "name": "Other", "name_zh": "其他", "source": "seed" }
 ]

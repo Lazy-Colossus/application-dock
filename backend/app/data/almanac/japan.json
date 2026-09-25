@@ -75,5 +75,68 @@
     "reading": "kamairicha",
     "summary": "A rare exception among Japanese greens: instead of steaming, the leaf is fired in a hot iron pan (up to around 300°C) to halt oxidation, the same basic approach used for most Chinese green tea. Produced mainly in Kyushu (Ureshino in Saga, and the Aoyagi style of Kumamoto and Miyazaki), pan-firing leaves out the grassy, marine notes steaming produces and gives kamairicha a mellow, sweet cup with a light roasted aroma and little astringency.",
     "brewing": { "leaf_grams": 4, "water_temp_c": 80, "steep_seconds": [45, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "green.japanese.sayama-cha",
+    "country": "Japan",
+    "reading": "sayamacha",
+    "summary": "A sencha-style green tea from Saitama, traditionally named alongside Shizuoka and Uji as one of Japan's three great teas, per the old saying \"color is Shizuoka, aroma is Uji, taste is Sayama\" (色は静岡、香りは宇治、味は狭山). What sets it apart is not a different base process but its finishing roast, Sayama hi-ire, developed in 1802 and run hotter than standard sencha firing; it was devised to dry out the unusually thick leaves the region's cold winters and frost-prone climate produce. The deeper roast gives Sayama-cha a nutty, toasty sweetness and body beyond typical sencha.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 75, "steep_seconds": [60, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "green.japanese.shincha",
+    "country": "Japan",
+    "reading": "shincha",
+    "summary": "The season's first-flush sencha: leaf picked at the very start of harvest (from late March in the south to May further north) and rushed to market fresh rather than blended with or aged alongside later pickings. Winter dormancy lets the youngest leaves accumulate more theanine and less catechin than later flushes, giving shincha a sweeter, more delicate, less astringent cup than standard sencha from the same garden. It is sold as a limited, dated seasonal release, with its own devoted yearly following rather than any single growing region to call its own.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 60, "steep_seconds": [60, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "green.japanese.konacha",
+    "country": "Japan",
+    "reading": "konacha",
+    "summary": "The fine leaf particles and dust sifted out during the final refinement of sencha and gyokuro, rather than leaf grown and processed on its own — the same waste-nothing logic that produces kukicha from stems, applied here to fragments. The small particle size infuses quickly into a strong, brisk cup, which is why konacha, served under the name agari, is the tea most commonly poured free at sushi restaurants to cut the richness of fish between courses.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 90, "steep_seconds": [20, 15] }
+  },
+  {
+    "catalogue_node_id": "green.japanese.mecha",
+    "country": "Japan",
+    "reading": "mecha",
+    "summary": "The tightly curled young buds and shoot tips separated out during sencha and gyokuro refinement because they don't roll into the long, straight needles graders require, rather than leaf harvested and processed as its own crop. Because buds concentrate more of the plant's compounds than mature leaf, mecha brews stronger, more astringent, and more deeply umami than the sencha it was sorted from, at a lower price than the parent grade.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 70, "steep_seconds": [45, 30, 30] }
+  },
+  {
+    "catalogue_node_id": "dark.japanese.awa-bancha",
+    "country": "Japan",
+    "reading": "awa bancha",
+    "summary": "Made by parboiling coarse summer leaf, then packing it while still hot into barrels under a weighted lid, where anaerobic lactic-acid bacteria ferment it for two to several weeks before it is sun-dried — a wholly different process from the steaming or pan-firing used for green tea, closer to pickling than to conventional tea-making. The lactic fermentation lowers catechins, caffeine, and theanine while raising lactic and other organic acids, giving awa bancha a distinctly sour, tangy, faintly effervescent cup unlike any steamed sencha. Produced traditionally around Kamikatsu and Naka in Tokushima, it is listed on Slow Food's Ark of Taste.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 100, "steep_seconds": [120, 90] }
+  },
+  {
+    "catalogue_node_id": "dark.japanese.goishicha",
+    "country": "Japan",
+    "reading": "goishicha",
+    "summary": "Undergoes two separate fermentations rather than a single kill-green step: leaves are steamed, then spread on straw mats for about a week of aerobic mold fermentation, then packed into barrels for weeks of anaerobic bacterial fermentation, before being pressed into blocks, cut into small squares, and sun-dried on straw mats — a process closer to aged pu-erh than to any green tea. The dried squares resemble the black stones (goishi) of the board game go, giving the tea its name. Production has for centuries been confined to the mountain town of Otoyo in Kochi; the method was recognized as an Intangible Cultural Property of Japan in 2018, and it yields a smooth, mildly sour, mellow cup with little of green tea's astringency.",
+    "brewing": { "leaf_grams": 6, "water_temp_c": 100, "steep_seconds": [60, 45, 45] }
+  },
+  {
+    "catalogue_node_id": "dark.japanese.ishizuchi-kurocha",
+    "country": "Japan",
+    "reading": "ishizuchi kurocha",
+    "summary": "Like goishicha, it undergoes a two-stage fermentation rather than steaming: leaves are first left to ferment aerobically until coated in a white \"noble mold,\" then packed tightly into barrels for about two weeks of anaerobic bacterial fermentation before drying. Produced only around Mount Ishizuchi in Ehime, using a method dating to the Edo period that nearly died out in 1996 when a single farmer remained who knew it, the tea yields a fresh, fruity, plum-like acidity distinct from both green tea and from the milder goishicha.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 100, "steep_seconds": [180, 120, 90] }
+  },
+  {
+    "catalogue_node_id": "dark.japanese.batabatacha",
+    "country": "Japan",
+    "reading": "batabatacha",
+    "summary": "Bancha-grade leaf undergoes roughly a month of aerobic koji-mold fermentation, with no lactic-acid stage, then is dried and traditionally boiled rather than steeped — a mold-driven fermentation, and a boiled rather than infused preparation, both unlike any steamed Japanese green tea. A pinch of salt is added to the boiled liquor, which is then whisked into a stable foam with a double-headed bamboo whisk (batabatachasen); the back-and-forth whisking motion gives the tea its onomatopoeic name. The tradition, centered on the village of Birudan in Toyama's Asahi district, is recorded as far back as 1472.",
+    "brewing": { "leaf_grams": 10, "water_temp_c": 100, "steep_seconds": [] }
+  },
+  {
+    "catalogue_node_id": "red.wakoucha",
+    "country": "Japan",
+    "reading": "wakōcha",
+    "summary": "Japan's own black tea, fully oxidized rather than steamed like sencha, developed from the 1870s as a Meiji-era export crop meant to compete with Chinese, Indian, and Ceylon black teas — production even drew on Assam seed stock a Japanese delegation brought back from India in 1876. Made mostly from Japanese cultivars bred for green tea's low tannin and high theanine rather than from Assam-type bushes, wakoucha comes out lighter, sweeter, and less astringent than Indian or Sri Lankan black teas, usually without the malty bitterness typical of the style. Export demand collapsed after trade liberalization in 1971, and today wakoucha is a small-scale specialty made in Shizuoka, Miyazaki, and other prefectures rather than an export commodity.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 90, "steep_seconds": [90, 60, 60] }
   }
 ]
