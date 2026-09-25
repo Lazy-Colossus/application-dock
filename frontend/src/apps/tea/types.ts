@@ -11,7 +11,15 @@ export type TeaClass =
   | "other";
 
 // Eight values matching backend/app/schemas/tea.py:TeaForm.
-export type TeaForm = "loose" | "cake" | "brick" | "tuo" | "ball" | "bag" | "sample" | "other";
+export type TeaForm =
+  | "loose"
+  | "cake"
+  | "brick"
+  | "tuo"
+  | "ball"
+  | "bag"
+  | "sample"
+  | "other";
 
 export type HarvestSeason = "spring" | "summer" | "autumn" | "winter";
 
@@ -54,3 +62,23 @@ export type TeaWrite = Omit<
   Tea,
   "id" | "class_id" | "created_at" | "updated_at"
 >;
+
+export interface BrewingParameters {
+  leaf_grams: number | null;
+  water_temp_c: number | null;
+  steep_seconds: number[];
+}
+
+export type AlmanacEntrySource = "seed" | "user";
+
+export interface AlmanacEntryView {
+  catalogue_node_id: string;
+  country: string;
+  reading: string;
+  summary: string;
+  brewing: BrewingParameters;
+  source: AlmanacEntrySource;
+  name: string;
+  name_zh: string;
+  default_origin: string;
+}
