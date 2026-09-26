@@ -13,7 +13,9 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PositiveInt
+
+from app.schemas.almanac import BrewingParameters
 
 TeaClass = Literal["green", "yellow", "white", "oolong", "red", "dark", "other"]
 TeaForm = Literal["loose", "cake", "brick", "tuo", "ball", "bag", "sample", "other"]
@@ -34,6 +36,18 @@ CATALOGUE_CLASSES: tuple[str, ...] = (
 
 # A tea recorded before 1900 is a typo, not a collector's item.
 _MIN_YEAR = 1900
+
+
+class BrewingWrite(BaseModel):
+    """A tea's own brewing parameters as the form sends them.
+
+    Stricter than the Almanac's `BrewingParameters`, which describes curated seed
+    data rather than input.
+    """
+
+    leaf_grams: float | None = Field(default=None, gt=0)
+    water_temp_c: int | None = Field(default=None, ge=1, le=100)
+    steep_seconds: list[PositiveInt] = Field(default_factory=list)
 
 
 class CatalogueNode(BaseModel):
@@ -63,6 +77,7 @@ class Tea(BaseModel):
     low_threshold_grams: float | None = None
     notes: str = ""
     image_url: str | None = None
+    brewing: BrewingParameters | None = None
     created_at: str
     updated_at: str
 
@@ -109,6 +124,7 @@ class TeaWriteRequest(BaseModel):
     low_threshold_grams: float | None = Field(default=None, ge=0)
     notes: str = ""
     image_url: str | None = None
+    brewing: BrewingWrite | None = None
 
 
 class AutofillRequest(BaseModel):
