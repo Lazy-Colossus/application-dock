@@ -270,7 +270,9 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
   }
 
   function setWaterTemp(celsius: number | null): void {
-    if (live.value) live.value.waterTempC = celsius;
+    if (!live.value) return;
+    const valid = celsius !== null && Number.isInteger(celsius) && celsius >= 1 && celsius <= 100;
+    live.value.waterTempC = valid ? celsius : null;
   }
 
   async function finish(rating: number | null): Promise<string | null> {

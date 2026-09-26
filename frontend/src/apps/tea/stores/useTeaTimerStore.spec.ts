@@ -156,6 +156,26 @@ describe("attaching a tea", () => {
   });
 });
 
+describe("water temp", () => {
+  it("accepts only an integer 1-100, otherwise stores null", () => {
+    const store = useTeaTimerStore();
+    store.start();
+    store.setWaterTemp(95);
+    expect(store.live?.waterTempC).toBe(95);
+    store.setWaterTemp(0);
+    expect(store.live?.waterTempC).toBeNull();
+    store.setWaterTemp(95);
+    store.setWaterTemp(950);
+    expect(store.live?.waterTempC).toBeNull();
+    store.setWaterTemp(95);
+    store.setWaterTemp(95.5);
+    expect(store.live?.waterTempC).toBeNull();
+    store.setWaterTemp(95);
+    store.setWaterTemp(null);
+    expect(store.live?.waterTempC).toBeNull();
+  });
+});
+
 describe("sync failures", () => {
   it("marks unsynced on a failed push and clears it on the next success", async () => {
     getMock.mockResolvedValue(ALMANAC);

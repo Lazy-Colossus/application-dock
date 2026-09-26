@@ -39,6 +39,8 @@
           class="sheet__field"
           data-testid="pick-temp"
           inputmode="numeric"
+          min="1"
+          max="100"
           :value="waterTempC ?? ''"
           @input="emit('update-temp', asNumber($event))"
         />
