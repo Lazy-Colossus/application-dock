@@ -195,6 +195,8 @@ onMounted(() => {
 .cabinet__scroll {
   height: 100%;
   overflow-y: auto;
+  // Room to scroll the last shelf clear of the floating + button.
+  padding-bottom: 80px;
 }
 .cabinet__header {
   position: sticky;
@@ -257,6 +259,9 @@ onMounted(() => {
 }
 .cabinet__add {
   position: fixed;
+  // Above the shelf strips (z-index 2) and the sticky header, below the
+  // filter sheet's scrim.
+  z-index: 6;
   right: 18px;
   bottom: 18px;
   width: 52px;
