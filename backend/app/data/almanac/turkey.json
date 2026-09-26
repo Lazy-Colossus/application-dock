@@ -1,0 +1,9 @@
+[
+  {
+    "catalogue_node_id": "red.turkish.rize",
+    "country": "Turkey",
+    "reading": "çay",
+    "summary": "Nearly all Turkish tea grows on the steep, rain-soaked slopes of the eastern Black Sea coast between the Georgian border and Trabzon, with Rize province at its centre. Commercial cultivation was a deliberate early-Republic project: a 1924 law promoted tea growing in Rize, the first state tea factory opened there in 1947, and the state enterprise Çaykur held a monopoly on processing until the market was opened to private factories in 1984 — it remains the dominant producer. Leaf is picked from May to October in three main harvests, the first-flush 'filiz' being the most prized, and cold, snowy winters mean the bushes need little or no pesticide. Processing yields small, broken black leaf made to be brewed strong and long rather than steeped briefly: in the stacked double kettle (çaydanlık), a concentrated brew steeps over the boiling water below and is diluted in each tulip-shaped glass to the drinker's taste, from açık (light) to koyu (dark), the ideal colour often called tavşan kanı, 'rabbit's blood.' The cup is mild and brisk rather than malty, drunk without milk, many glasses a day — Turkey consistently ranks at or near the top of the world for per-capita tea consumption.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 100, "steep_seconds": [900] }
+  }
+]
