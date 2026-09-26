@@ -77,6 +77,18 @@ def resolve_class(index: dict[str, CatalogueNode], node_id: str) -> str:
     return _OTHER
 
 
+def ancestry(index: dict[str, CatalogueNode], node_id: str) -> list[CatalogueNode]:
+    """`node_id`'s node, then each parent up to the root. Stops rather than loop on a cycle."""
+    chain: list[CatalogueNode] = []
+    seen: set[str] = set()
+    current = index.get(node_id)
+    while current is not None and current.id not in seen:
+        seen.add(current.id)
+        chain.append(current)
+        current = index.get(current.parent_id) if current.parent_id else None
+    return chain
+
+
 def create_node(username: str, req: CreateNodeRequest) -> CatalogueNode:
     """Add one node under an existing parent and return it."""
     name = req.name.strip()
