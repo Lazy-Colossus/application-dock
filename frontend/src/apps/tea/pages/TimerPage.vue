@@ -199,7 +199,9 @@ async function onSave(payload: { rating: number | null; leafGrams: number | null
   if (teaId === null) return;
   finishing.value = false;
   await cabinet.fetchTeas();
-  void router.push({ name: "tea-detail", params: { teaId } });
+  // Replace, not push: a pushed timer entry would let Back re-attach the
+  // tea and start an empty new session.
+  void router.replace({ name: "tea-detail", params: { teaId } });
 }
 
 async function onDiscard(): Promise<void> {

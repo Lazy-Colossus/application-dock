@@ -2,11 +2,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, putMock, delMock, push, routeQuery } = vi.hoisted(() => ({
+const { getMock, putMock, delMock, push, replace, routeQuery } = vi.hoisted(() => ({
   getMock: vi.fn(),
   putMock: vi.fn(),
   delMock: vi.fn(),
   push: vi.fn(),
+  replace: vi.fn(),
   routeQuery: { value: {} as Record<string, string> },
 }));
 vi.mock("@/composables/useApi", () => ({
@@ -14,7 +15,7 @@ vi.mock("@/composables/useApi", () => ({
   api: { get: getMock, put: putMock, del: delMock, post: vi.fn() },
 }));
 vi.mock("vue-router", () => ({
-  useRouter: () => ({ push }),
+  useRouter: () => ({ push, replace }),
   useRoute: () => ({ query: routeQuery.value }),
 }));
 
@@ -104,6 +105,7 @@ beforeEach(() => {
   putMock.mockReset().mockImplementation((_p: string, body: unknown) => Promise.resolve(body));
   delMock.mockReset().mockResolvedValue(undefined);
   push.mockReset();
+  replace.mockReset();
   routeQuery.value = {};
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-09-26T18:00:00Z"));
@@ -243,7 +245,8 @@ describe("TimerPage", () => {
     await wrapper.get("[data-testid=finish-save]").trigger("click");
     await flushPromises();
     expect(putMock.mock.calls.at(-1)![1]).toMatchObject({ status: "finalised" });
-    expect(push).toHaveBeenCalledWith({ name: "tea-detail", params: { teaId: "t-1" } });
+    expect(replace).toHaveBeenCalledWith({ name: "tea-detail", params: { teaId: "t-1" } });
+    expect(push).not.toHaveBeenCalled();
   });
 
   it("closes the finish sheet when the tea was deleted elsewhere", async () => {
