@@ -1,0 +1,9 @@
+[
+  {
+    "catalogue_node_id": "oolong.thai.mae-salong",
+    "country": "Thailand",
+    "reading": "",
+    "summary": "Doi Mae Salong, a mountain village in Chiang Rai province now officially named Santikhiri, was settled by remnants of the Kuomintang's 93rd Division who retreated from Yunnan through Burma after 1949, and it remains a Chinese-speaking community with strong ties to Taiwan. As Thai royal and government projects worked to replace the region's opium poppies with other crops, tea became the village's livelihood, and from the 1980s Taiwanese cultivars and expertise were brought in — chiefly Jin Xuan (known locally by its cultivar number, No. 12), Ruan Zhi (No. 17) and Si Ji Chun. The resulting teas are made the Taiwanese way: lightly oxidized, tightly rolled into balls, and often lightly roasted, grown at around 1,000–1,400 meters. They cup like a mid-elevation Taiwanese high-mountain oolong — floral, buttery (especially the Jin Xuan) and sweet — and are generally sold at a fraction of the price of comparable Taiwanese leaf.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 95, "steep_seconds": [45, 30, 40, 50, 60] }
+  }
+]

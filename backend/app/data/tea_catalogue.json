@@ -107,6 +107,8 @@
   { "id": "oolong.vietnamese.bao-loc", "parent_id": "oolong.vietnamese", "name": "Bao Loc Oolong", "name_zh": "", "source": "seed", "default_origin": "Bao Loc, Lam Dong province, Vietnam" },
   { "id": "oolong.nepali", "parent_id": "oolong", "name": "Nepali", "name_zh": "", "source": "seed", "default_origin": "Nepal" },
   { "id": "oolong.nepali.dhankuta", "parent_id": "oolong.nepali", "name": "Dhankuta Partially Oxidized", "name_zh": "", "source": "seed", "default_origin": "Dhankuta district, eastern Nepal" },
+  { "id": "oolong.thai", "parent_id": "oolong", "name": "Thai", "name_zh": "", "source": "seed", "default_origin": "Thailand" },
+  { "id": "oolong.thai.mae-salong", "parent_id": "oolong.thai", "name": "Doi Mae Salong Oolong", "name_zh": "美斯樂烏龍", "source": "seed", "default_origin": "Doi Mae Salong (Santikhiri), Chiang Rai, Thailand" },
 
   { "id": "red", "parent_id": null, "name": "Red", "name_zh": "紅茶", "source": "seed" },
   { "id": "red.zhengshan-xiaozhong", "parent_id": "red", "name": "Zhengshan Xiaozhong", "name_zh": "正山小種", "source": "seed", "default_origin": "Tongmu, Fujian" },
