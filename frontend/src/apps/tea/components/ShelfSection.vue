@@ -11,7 +11,10 @@
         </span>
       </header>
     </div>
-    <div class="section__strip" data-testid="section-strip">
+    <div
+      :class="['section__strip', { 'section__strip--two-rows': twoRows }]"
+      data-testid="section-strip"
+    >
       <TeaCard
         v-for="tea in section.teas"
         :key="tea.id"
@@ -40,6 +43,7 @@ const props = defineProps<{
 const emit = defineEmits<{ open: [teaId: string] }>();
 
 const tokens = computed(() => CLASS_TOKENS[props.section.classId]);
+const twoRows = computed(() => props.section.teas.length > 6);
 </script>
 
 <style scoped lang="scss">
@@ -61,13 +65,24 @@ const tokens = computed(() => CLASS_TOKENS[props.section.classId]);
 .section__strip {
   position: relative;
   z-index: 2;
-  display: flex;
-  gap: 12px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 112px;
+  // Cards are buttons, which centre their content; pinning each to the top
+  // keeps the pictures level when one name wraps to two lines and another
+  // does not.
+  align-items: start;
+  gap: 16px 12px;
   overflow-x: auto;
   scroll-snap-type: x proximity;
   scroll-padding: 0 18px;
   padding: 0 18px 4px;
   scrollbar-width: none;
+}
+// Column flow fills top-then-bottom, so alphabetical neighbours stay side by
+// side while scrolling rather than splitting the list across the two rows.
+.section__strip--two-rows {
+  grid-template-rows: auto auto;
 }
 .section__strip::-webkit-scrollbar {
   display: none;

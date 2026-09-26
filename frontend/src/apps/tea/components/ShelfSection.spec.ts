@@ -34,10 +34,10 @@ function tea(id: string, overrides: Partial<Tea> = {}): Tea {
   };
 }
 
-function section(active = false) {
+function section(active = false, teas: Tea[] = [tea("t-1"), tea("t-2")]) {
   return mount(ShelfSection, {
     props: {
-      section: { classId: "oolong" as const, teas: [tea("t-1"), tea("t-2")] },
+      section: { classId: "oolong" as const, teas },
       index: 0,
       active,
       nameZhFor: () => "大紅袍",
@@ -70,5 +70,19 @@ describe("ShelfSection", () => {
     const wrapper = section();
     await wrapper.get('[data-testid="card"]').trigger("click");
     expect(wrapper.emitted("open")?.[0]).toEqual(["t-1"]);
+  });
+
+  it("keeps up to 6 teas on one row", () => {
+    const teas = Array.from({ length: 6 }, (_, i) => tea(`t-${i}`));
+    expect(section(false, teas).get('[data-testid="section-strip"]').classes()).not.toContain(
+      "section__strip--two-rows",
+    );
+  });
+
+  it("splits more than 6 teas across two rows", () => {
+    const teas = Array.from({ length: 7 }, (_, i) => tea(`t-${i}`));
+    expect(section(false, teas).get('[data-testid="section-strip"]').classes()).toContain(
+      "section__strip--two-rows",
+    );
   });
 });
