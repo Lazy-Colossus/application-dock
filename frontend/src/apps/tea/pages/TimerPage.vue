@@ -34,7 +34,7 @@
         <button
           data-testid="timer-redo"
           :disabled="timer.running || timer.brewed.length === 0"
-          @click="menu = false; timer.redoLast()"
+          @click="onRedo"
         >
           Redo last infusion
         </button>
@@ -202,6 +202,11 @@ async function onSave(payload: { rating: number | null; leafGrams: number | null
   // Replace, not push: a pushed timer entry would let Back re-attach the
   // tea and start an empty new session.
   void router.replace({ name: "tea-detail", params: { teaId } });
+}
+
+function onRedo(): void {
+  menu.value = false;
+  void timer.redoLast();
 }
 
 async function onDiscard(): Promise<void> {
