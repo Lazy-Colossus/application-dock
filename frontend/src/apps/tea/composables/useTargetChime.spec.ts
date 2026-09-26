@@ -3,11 +3,18 @@ import { effectScope, nextTick, ref } from "vue";
 import { useTargetChime } from "./useTargetChime";
 
 const started = vi.fn();
+let instances: FakeContext[] = [];
 
 class FakeContext {
   currentTime = 0;
   destination = {};
   resume = vi.fn().mockResolvedValue(undefined);
+  close = vi.fn().mockResolvedValue(undefined);
+
+  constructor() {
+    instances.push(this);
+  }
+
   createOscillator() {
     return {
       type: "",
@@ -27,6 +34,7 @@ class FakeContext {
 
 beforeEach(() => {
   started.mockReset();
+  instances = [];
   vi.stubGlobal("AudioContext", FakeContext);
 });
 afterEach(() => {
@@ -80,5 +88,13 @@ describe("useTargetChime", () => {
     expect(started).not.toHaveBeenCalled();
     off.scope.stop();
     locked.scope.stop();
+  });
+
+  it("closes the audio context when its scope is disposed", () => {
+    const { unlock, scope } = setup(true);
+    unlock();
+    expect(instances).toHaveLength(1);
+    scope.stop();
+    expect(instances[0].close).toHaveBeenCalled();
   });
 });

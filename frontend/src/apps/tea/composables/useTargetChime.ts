@@ -1,4 +1,4 @@
-import { watch, type Ref } from "vue";
+import { onScopeDispose, watch, type Ref } from "vue";
 
 /**
  * A soft chime the moment a steep reaches its target. Mobile browsers only
@@ -45,6 +45,8 @@ export function useTargetChime(
     fired = true;
     if (enabled.value) play();
   });
+
+  onScopeDispose(() => void context?.close?.());
 
   return { unlock };
 }
