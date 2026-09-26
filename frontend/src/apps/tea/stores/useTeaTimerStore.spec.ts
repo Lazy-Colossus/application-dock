@@ -178,6 +178,27 @@ describe("sync failures", () => {
     expect(store.notice).toContain("Tieguanyin");
     expect(store.unsynced).toBe(false);
   });
+
+  it("ignores a stale push result after the session has already ended", async () => {
+    getMock.mockResolvedValue(ALMANAC);
+    const store = useTeaTimerStore();
+    await store.attachTea(tea());
+
+    let rejectPut!: (reason: unknown) => void;
+    putMock.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectPut = reject;
+        }),
+    );
+    const pushing = store.push();
+    store.end();
+    rejectPut(httpError(404));
+    await pushing;
+
+    expect(store.unsynced).toBe(false);
+    expect(store.notice).toBeNull();
+  });
 });
 
 describe("finishing", () => {
@@ -233,6 +254,30 @@ describe("discard", () => {
     store.start();
     expect(await store.discard()).toBe(true);
     expect(delMock).not.toHaveBeenCalled();
+  });
+
+  it("deletes on the server even while the first push is still pending", async () => {
+    getMock.mockResolvedValue(ALMANAC);
+    let resolvePut!: (value: unknown) => void;
+    putMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePut = resolve;
+        }),
+    );
+    const store = useTeaTimerStore();
+    const attaching = store.attachTea(tea());
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    const id = store.live?.sessionId;
+
+    expect(await store.discard()).toBe(true);
+    expect(delMock).toHaveBeenCalledWith(`/tea/sessions/${id}`);
+    expect(store.live).toBeNull();
+
+    resolvePut({});
+    await attaching;
   });
 });
 

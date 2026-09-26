@@ -177,13 +177,21 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
     const session = live.value;
     const tea = session?.tea;
     if (!session || !tea) return;
+    // Mark as pushed before the request lands, not after: a discard tapped
+    // while this PUT is in flight must still DELETE, whether the PUT
+    // eventually succeeds, fails, or its response is simply lost.
+    session.pushed = true;
     try {
       await api.put<TeaSession>(`/tea/sessions/${session.sessionId}`, {
         ...snapshot(session, tea, "in_progress", null),
       });
-      session.pushed = true;
+      // The session may have ended, been discarded, or been replaced (finish,
+      // resume, a fresh start) while this request was in flight — a stale
+      // result must not resurrect state on whatever session is live now.
+      if (live.value !== session) return;
       unsynced.value = false;
     } catch (e) {
+      if (live.value !== session) return;
       if (statusOf(e) === 404) {
         // The tea was removed elsewhere: keep timing as a plain timer rather
         // than retrying a push that can never land.
@@ -241,6 +249,9 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
     } catch {
       curve = genericCurve("generic gongfu (couldn't load tea curve)");
     }
+    // The session may have ended or been replaced while the curve fetch was
+    // in flight — don't attach the tea to a detached object.
+    if (live.value !== session) return;
     session.tea = liveTea(tea);
     session.curve = curve;
     session.leafGrams = curve.leaf_grams;
