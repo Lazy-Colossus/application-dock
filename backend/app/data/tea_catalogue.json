@@ -145,6 +145,8 @@
   { "id": "red.georgian.orthodox", "parent_id": "red.georgian", "name": "Georgian Black", "name_zh": "", "source": "seed", "default_origin": "Guria, Imereti, Adjara and Samegrelo, western Georgia" },
   { "id": "red.turkish", "parent_id": "red", "name": "Turkish", "name_zh": "", "source": "seed", "default_origin": "Turkey" },
   { "id": "red.turkish.rize", "parent_id": "red.turkish", "name": "Rize Çay", "name_zh": "", "source": "seed", "default_origin": "Rize and the eastern Black Sea coast, Turkey" },
+  { "id": "red.iranian", "parent_id": "red", "name": "Iranian", "name_zh": "", "source": "seed", "default_origin": "Iran" },
+  { "id": "red.iranian.lahijan", "parent_id": "red.iranian", "name": "Lahijan Black", "name_zh": "", "source": "seed", "default_origin": "Lahijan, Gilan, and western Mazandaran, Iran" },
 
   { "id": "dark", "parent_id": null, "name": "Dark", "name_zh": "黑茶", "source": "seed" },
   { "id": "dark.sheng-puerh", "parent_id": "dark", "name": "Sheng pu-erh", "name_zh": "生普洱", "source": "seed", "default_origin": "Yunnan" },
