@@ -52,7 +52,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { CUP_LIQUOR } from "../timer";
-import { imageSrc } from "../shelf";
+import { imageSrc, sortSection } from "../shelf";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { Tea } from "../types";
 
@@ -74,13 +74,8 @@ const query = ref("");
 
 const shown = computed(() => {
   const needle = query.value.trim().toLowerCase();
-  return props.teas
-    .filter((tea) => tea.name.toLowerCase().includes(needle))
-    .sort(
-      (a, b) =>
-        Number(a.grams_remaining <= 0) - Number(b.grams_remaining <= 0) ||
-        a.name.localeCompare(b.name),
-    );
+  const filtered = props.teas.filter((tea) => tea.name.toLowerCase().includes(needle));
+  return sortSection(filtered);
 });
 
 function photo(tea: Tea): string | null {
