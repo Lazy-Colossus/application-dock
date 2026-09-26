@@ -65,4 +65,12 @@ describe("tea back navigation", () => {
 
     expect(router.currentRoute.value.meta.backTo).toBe("/tea/almanac");
   });
+
+  it("points the timer's back arrow at the cabinet, not at a tea called 'timer'", async () => {
+    const router = makeRouter();
+    await router.push("/tea/timer");
+
+    expect(router.currentRoute.value.name).toBe("tea-timer");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea");
+  });
 });

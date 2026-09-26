@@ -253,6 +253,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "Almanac", requiresAuth: true, backTo: "/tea/almanac" },
       },
       {
+        path: "tea/timer",
+        name: "tea-timer",
+        component: () => import("@/apps/tea/pages/TimerPage.vue"),
+        meta: { title: "Brew", requiresAuth: true, backTo: "/tea" },
+      },
+      {
         path: "tea/:teaId",
         name: "tea-detail",
         component: () => import("@/apps/tea/pages/TeaDetailPage.vue"),
