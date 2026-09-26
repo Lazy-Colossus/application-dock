@@ -151,6 +151,9 @@
   { "id": "red.iranian.lahijan", "parent_id": "red.iranian", "name": "Lahijan Black", "name_zh": "", "source": "seed", "default_origin": "Lahijan, Gilan, and western Mazandaran, Iran" },
   { "id": "red.argentine", "parent_id": "red", "name": "Argentine", "name_zh": "", "source": "seed", "default_origin": "Argentina" },
   { "id": "red.argentine.misiones", "parent_id": "red.argentine", "name": "Misiones Black", "name_zh": "", "source": "seed", "default_origin": "Misiones and northeastern Corrientes, Argentina" },
+  { "id": "red.indonesian", "parent_id": "red", "name": "Indonesian", "name_zh": "", "source": "seed", "default_origin": "Indonesia" },
+  { "id": "red.indonesian.java", "parent_id": "red.indonesian", "name": "Java Black", "name_zh": "", "source": "seed", "default_origin": "Priangan highlands, West Java, Indonesia" },
+  { "id": "red.indonesian.sumatra", "parent_id": "red.indonesian", "name": "Sumatra Black", "name_zh": "", "source": "seed", "default_origin": "North Sumatra and the Kerinci highlands, Sumatra, Indonesia" },
 
   { "id": "dark", "parent_id": null, "name": "Dark", "name_zh": "黑茶", "source": "seed" },
   { "id": "dark.sheng-puerh", "parent_id": "dark", "name": "Sheng pu-erh", "name_zh": "生普洱", "source": "seed", "default_origin": "Yunnan" },
