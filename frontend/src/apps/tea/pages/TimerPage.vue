@@ -209,10 +209,23 @@ onMounted(async () => {
   if (cabinet.teas.length === 0) await cabinet.fetchTeas();
   const wanted = typeof route.query.tea === "string" ? route.query.tea : null;
   const tea = wanted ? cabinet.teas.find((t) => t.id === wanted) : undefined;
-  if (tea && timer.live?.tea?.id !== tea.id) {
-    await timer.attachTea(tea);
-  } else if (!timer.live) {
+
+  if (!timer.live) {
+    // A local session always wins over the server, but with none, an
+    // unfinished server session for the requested tea must be resumed
+    // rather than orphaned by attaching a brand-new one.
     await sessions.fetchInProgress();
+    const existing = wanted ? sessions.inProgress.find((s) => s.tea_id === wanted) : undefined;
+    if (existing) {
+      onResume(existing);
+      return;
+    }
+    if (tea) await timer.attachTea(tea);
+    return;
+  }
+
+  if (tea && timer.live.tea?.id !== tea.id) {
+    await timer.attachTea(tea);
   }
 });
 </script>

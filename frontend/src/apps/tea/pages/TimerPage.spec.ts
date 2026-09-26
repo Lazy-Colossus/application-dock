@@ -136,6 +136,30 @@ describe("TimerPage", () => {
     expect(wrapper.find("[data-testid=recovery-card]").exists()).toBe(false);
   });
 
+  it("resumes an unfinished server session for ?tea= automatically, without fetching its curve", async () => {
+    routes([
+      {
+        id: "s-9",
+        tea_id: "t-1",
+        status: "in_progress",
+        started_at: "2026-09-25T19:40:00Z",
+        updated_at: "2026-09-25T19:55:00Z",
+        finished_at: null,
+        leaf_grams: 6,
+        water_temp_c: 95,
+        rating: null,
+        curve_source: "almanac",
+        curve_source_label: "almanac: Tieguanyin",
+        infusions: [{ number: 1, target_seconds: 20, actual_seconds: 21 }],
+      },
+    ]);
+    routeQuery.value = { tea: "t-1" };
+    mount(TimerPage);
+    await flushPromises();
+    expect(useTeaTimerStore().live?.sessionId).toBe("s-9");
+    expect(getMock).not.toHaveBeenCalledWith("/tea/teas/t-1/curve");
+  });
+
   it("finishes, refreshes the cabinet and goes to the tea", async () => {
     routes();
     routeQuery.value = { tea: "t-1" };
