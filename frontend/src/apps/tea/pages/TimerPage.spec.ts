@@ -245,4 +245,21 @@ describe("TimerPage", () => {
     expect(putMock.mock.calls.at(-1)![1]).toMatchObject({ status: "finalised" });
     expect(push).toHaveBeenCalledWith({ name: "tea-detail", params: { teaId: "t-1" } });
   });
+
+  it("closes the finish sheet when the tea was deleted elsewhere", async () => {
+    routes();
+    routeQuery.value = { tea: "t-1" };
+    putMock.mockImplementation((_path: string, body: { status: string }) => {
+      if (body.status === "finalised") return Promise.reject(httpError(404));
+      return Promise.resolve(body);
+    });
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    await wrapper.get("[data-testid=timer-finish]").trigger("click");
+    expect(wrapper.find("[data-testid=finish-save]").exists()).toBe(true);
+    await wrapper.get("[data-testid=finish-save]").trigger("click");
+    await flushPromises();
+    expect(wrapper.find("[data-testid=finish-save]").exists()).toBe(false);
+    expect(useTeaTimerStore().notice).toContain("Tieguanyin");
+  });
 });
