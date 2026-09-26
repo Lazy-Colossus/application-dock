@@ -413,4 +413,43 @@ describe("TeaDetailPage", () => {
       confirmSpy.mockRestore();
     });
   });
+
+  it("opens the timer with this tea from the Brew button", async () => {
+    const wrapper = await page();
+    await wrapper.get("[data-testid=tea-brew]").trigger("click");
+    expect(push).toHaveBeenCalledWith({ name: "tea-timer", query: { tea: "t-1" } });
+  });
+
+  it("lists the tea's finished sessions", async () => {
+    const finished = {
+      id: "s-1",
+      tea_id: "t-1",
+      status: "finalised",
+      started_at: "2026-09-25T19:40:00Z",
+      updated_at: "2026-09-25T20:10:00Z",
+      finished_at: "2026-09-25T20:10:00Z",
+      leaf_grams: 6,
+      water_temp_c: 95,
+      rating: 5,
+      curve_source: "almanac",
+      curve_source_label: "almanac: Tieguanyin",
+      infusions: [{ number: 1, target_seconds: 20, actual_seconds: 21 }],
+    };
+    getMock.mockImplementation((path: string) => {
+      if (path === "/tea/teas") return Promise.resolve([tea()]);
+      if (path === "/tea/catalogue") return Promise.resolve([OOLONG, WUYI]);
+      if (path === "/tea/teas/t-1/sessions") return Promise.resolve([finished]);
+      return Promise.resolve([]);
+    });
+    const wrapper = mount(TeaDetailPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    expect(wrapper.get("[data-testid=tea-sessions]").text()).toContain("★★★★★");
+  });
+
+  it("shows the tea's own brewing parameters as a fact", async () => {
+    const wrapper = await page([
+      tea({ brewing: { leaf_grams: 7, water_temp_c: 95, steep_seconds: [15, 20] } }),
+    ]);
+    expect(wrapper.get("[data-testid=fact-brewing]").text()).toBe("7g · 95°C · 15s, 20s");
+  });
 });

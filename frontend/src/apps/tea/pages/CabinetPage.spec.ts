@@ -233,4 +233,12 @@ describe("CabinetPage", () => {
       expect(wrapper.get('[data-testid="filters-done"]').text()).toBe("Show 1 tea");
     });
   });
+
+  it("opens the timer from the Brew button", async () => {
+    getMock.mockResolvedValue([]);
+    const wrapper = render();
+    await flushPromises();
+    await wrapper.get("[data-testid=cabinet-brew]").trigger("click");
+    expect(push).toHaveBeenCalledWith({ name: "tea-timer" });
+  });
 });

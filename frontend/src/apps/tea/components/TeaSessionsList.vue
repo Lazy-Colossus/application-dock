@@ -1,0 +1,71 @@
+<template>
+  <p v-if="sessions.length === 0" class="sessions__empty" data-testid="sessions-empty">
+    No sessions yet. Brew it and it will show up here.
+  </p>
+  <ul v-else class="sessions">
+    <li
+      v-for="session in sessions"
+      :key="session.id"
+      class="sessions__row"
+      :data-testid="`sessions-row-${session.id}`"
+    >
+      <span class="sessions__date">{{ dateOf(session) }}</span>
+      <span class="sessions__stars">{{ starsOf(session) }}</span>
+      <span class="sessions__meta">
+        {{ session.infusions.length }} {{ session.infusions.length === 1 ? "infusion" : "infusions" }}
+        <template v-if="session.leaf_grams !== null"> · {{ session.leaf_grams }} g</template>
+      </span>
+    </li>
+  </ul>
+</template>
+
+<script setup lang="ts">
+import type { TeaSession } from "../types";
+
+defineProps<{ sessions: TeaSession[] }>();
+
+function dateOf(session: TeaSession): string {
+  return new Date(session.finished_at ?? session.started_at).toLocaleDateString([], {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+function starsOf(session: TeaSession): string {
+  if (session.rating === null) return "unrated";
+  return "★".repeat(session.rating) + "☆".repeat(5 - session.rating);
+}
+</script>
+
+<style scoped lang="scss">
+.sessions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.sessions__row {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  padding: 8px 0;
+  border-bottom: 1px solid #241e19;
+  font-size: 14px;
+}
+.sessions__date {
+  color: #efe7da;
+  min-width: 56px;
+}
+.sessions__stars {
+  color: #d9a45b;
+  letter-spacing: 1px;
+}
+.sessions__meta {
+  color: #8b7a63;
+  margin-left: auto;
+}
+.sessions__empty {
+  color: #8b7a63;
+  font-size: 14px;
+  margin: 0;
+}
+</style>

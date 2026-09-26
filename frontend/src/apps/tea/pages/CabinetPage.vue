@@ -5,6 +5,14 @@
         <span class="cabinet__title">Cabinet</span>
         <div class="cabinet__header-right">
           <button
+            class="cabinet__almanac"
+            data-testid="cabinet-brew"
+            aria-label="Open the brewing timer"
+            @click="router.push({ name: 'tea-timer' })"
+          >
+            Brew
+          </button>
+          <button
             :class="[
               'cabinet__almanac',
               { 'cabinet__filters--on': filters.activeCount > 0 },

@@ -9,18 +9,28 @@
         ← Cabinet
       </button>
       <template v-if="tea">
-        <button
-          v-if="!editMode"
-          class="tea-page__mode"
-          data-testid="tea-edit"
-          aria-label="Edit tea"
-          @click="editMode = true"
-        >
-          ✎ Edit
-        </button>
-        <button v-else class="tea-page__mode" data-testid="tea-edit-done" @click="leaveEditMode">
-          Done
-        </button>
+        <div class="tea-page__actions">
+          <button
+            v-if="!editMode"
+            class="tea-page__mode"
+            data-testid="tea-brew"
+            @click="router.push({ name: 'tea-timer', query: { tea: teaId } })"
+          >
+            Brew
+          </button>
+          <button
+            v-if="!editMode"
+            class="tea-page__mode"
+            data-testid="tea-edit"
+            aria-label="Edit tea"
+            @click="editMode = true"
+          >
+            ✎ Edit
+          </button>
+          <button v-else class="tea-page__mode" data-testid="tea-edit-done" @click="leaveEditMode">
+            Done
+          </button>
+        </div>
       </template>
     </header>
 
@@ -140,6 +150,11 @@
             Open in the almanac →
           </button>
         </section>
+
+        <section class="tea-view__section" data-testid="tea-sessions">
+          <h2 class="tea-view__heading">Sessions</h2>
+          <TeaSessionsList :sessions="sessions.byTea[teaId] ?? []" />
+        </section>
       </template>
 
       <template v-else>
@@ -187,9 +202,11 @@ import RimGauge from "../components/RimGauge.vue";
 import GramsSheet from "../components/GramsSheet.vue";
 import TeaForm from "../components/TeaForm.vue";
 import AddNodeDialog from "../components/AddNodeDialog.vue";
+import TeaSessionsList from "../components/TeaSessionsList.vue";
 import { useTeaCabinetStore } from "../stores/useTeaCabinetStore";
 import { useTeaCatalogueStore } from "../stores/useTeaCatalogueStore";
 import { useTeaAlmanacStore } from "../stores/useTeaAlmanacStore";
+import { useTeaSessionsStore } from "../stores/useTeaSessionsStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { proportionOf, thresholdFractionOf, isLow, imageSrc, pricePerGram } from "../shelf";
 import { nearestAlmanacEntry, pathOf } from "../catalogue";
@@ -202,6 +219,7 @@ const router = useRouter();
 const cabinet = useTeaCabinetStore();
 const catalogue = useTeaCatalogueStore();
 const almanac = useTeaAlmanacStore();
+const sessions = useTeaSessionsStore();
 const auth = useAuthStore();
 
 const teaId = computed(() => String(route.params.teaId));
@@ -271,6 +289,16 @@ interface Fact {
   value: string;
 }
 
+function brewingLabel(t: Tea): string {
+  if (!t.brewing) return "";
+  const parts = [
+    t.brewing.leaf_grams !== null ? `${t.brewing.leaf_grams}g` : "",
+    t.brewing.water_temp_c !== null ? `${t.brewing.water_temp_c}°C` : "",
+    t.brewing.steep_seconds.map((s) => `${s}s`).join(", "),
+  ];
+  return parts.filter(Boolean).join(" · ");
+}
+
 const facts = computed<Fact[]>(() => {
   const t = tea.value;
   if (!t) return [];
@@ -297,6 +325,7 @@ const facts = computed<Fact[]>(() => {
     ["purchase-date", "Bought on", t.purchase_date ?? ""],
     ["storage", "Kept in", t.storage_location],
     ["low", "Low at", t.low_threshold_grams !== null ? `${t.low_threshold_grams}g` : ""],
+    ["brewing", "Brewing", brewingLabel(t)],
   ];
   return rows
     .filter(([, , value]) => value !== "")
@@ -422,6 +451,7 @@ onMounted(() => {
   // Unfiltered on purpose: the Almanac page may have left a country/search
   // subset in the store that would hide this tea's entry.
   void almanac.fetchEntries();
+  void sessions.fetchForTea(teaId.value);
 });
 </script>
 
@@ -455,6 +485,10 @@ onMounted(() => {
   margin-right: 14px;
   font-family: inherit;
   cursor: pointer;
+}
+.tea-page__actions {
+  display: flex;
+  gap: 14px;
 }
 .tea-page__mode {
   background: transparent;
