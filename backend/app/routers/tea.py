@@ -5,10 +5,10 @@ route is scoped to the authenticated user via `get_current_user`; the username
 selects the on-disk document and is never taken from request input.
 
 This module is the only place tea exceptions become HTTP: `FileNotFoundError`
--> 404, `ValueError` -> 422, `NodeInUseError` -> 409.
+-> 404, `ValueError` -> 422, `NodeInUseError` and `SessionFinalisedError` -> 409.
 """
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
@@ -23,10 +23,13 @@ from app.schemas.tea import (
     TeaView,
     TeaWriteRequest,
 )
+from app.schemas.tea_session import BrewingCurve, TeaSession, TeaSessionWrite
 from app.services import almanac_service
 from app.services import tea_autofill_service as autofill
 from app.services import tea_catalogue_service as catalogue
+from app.services import tea_curve_service as curves
 from app.services import tea_service as service
+from app.services import tea_session_service as sessions
 
 router = APIRouter(prefix="/api/tea", tags=["tea"])
 
@@ -179,3 +182,53 @@ def get_almanac_entry(
         return almanac_service.get_entry(current_user, catalogue_node_id)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Almanac entry not found") from exc
+
+
+@router.get("/sessions", response_model=list[TeaSession])
+def list_sessions(
+    status: Literal["in_progress"], current_user: str = Depends(get_current_user)
+) -> list[TeaSession]:
+    # Only the recovery check lists across teas; finished sessions are read per tea.
+    return sessions.list_in_progress(current_user)
+
+
+@router.put("/sessions/{session_id}", response_model=TeaSession)
+def upsert_session(
+    session_id: str,
+    req: TeaSessionWrite,
+    current_user: str = Depends(get_current_user),
+) -> TeaSession:
+    try:
+        return sessions.upsert(current_user, session_id, req)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Tea not found") from exc
+    except sessions.SessionFinalisedError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.delete("/sessions/{session_id}", status_code=204)
+def discard_session(session_id: str, current_user: str = Depends(get_current_user)) -> None:
+    try:
+        sessions.discard(current_user, session_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Session not found") from exc
+    except sessions.SessionFinalisedError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.get("/teas/{tea_id}/sessions", response_model=list[TeaSession])
+def list_tea_sessions(
+    tea_id: str, current_user: str = Depends(get_current_user)
+) -> list[TeaSession]:
+    try:
+        return sessions.list_for_tea(current_user, tea_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Tea not found") from exc
+
+
+@router.get("/teas/{tea_id}/curve", response_model=BrewingCurve)
+def get_curve(tea_id: str, current_user: str = Depends(get_current_user)) -> BrewingCurve:
+    try:
+        return curves.curve_for(current_user, tea_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Tea not found") from exc
