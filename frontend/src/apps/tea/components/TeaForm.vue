@@ -31,6 +31,14 @@
       {{ autofillMessage }}
     </p>
 
+    <input
+      class="form__field"
+      data-testid="field-image-url"
+      placeholder="Photo URL"
+      :value="modelValue.image_url ?? ''"
+      @input="patch({ image_url: asText($event) || null })"
+    />
+
     <p class="form__group" data-testid="group">Where it's from</p>
     <input
       class="form__field"

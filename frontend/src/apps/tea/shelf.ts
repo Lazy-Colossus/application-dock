@@ -80,6 +80,20 @@ export function groupByClass(teas: Tea[]): ShelfSectionData[] {
   }));
 }
 
+/**
+ * The `<img>` src for a tea's photo, or null when there is none to show.
+ *
+ * A pasted external URL is used as-is. Our own served route
+ * (`/api/tea/teas/{id}/image`) needs the bearer token as a `?token=` query
+ * param instead — an `<img>` tag cannot send an `Authorization` header — so
+ * without a token there is nothing valid to point it at.
+ */
+export function imageSrc(imageUrl: string | null, token: string | null): string | null {
+  if (!imageUrl) return null;
+  if (!imageUrl.startsWith("/api/")) return imageUrl;
+  return token ? `${imageUrl}?token=${encodeURIComponent(token)}` : null;
+}
+
 /** Which section owns its leaves: the one whose centre is nearest `mid`. */
 export function nearestSectionIndex(centers: number[], mid: number): number {
   let best = -1;

@@ -47,6 +47,7 @@ function blank(): TeaWrite {
     storage_location: "",
     low_threshold_grams: null,
     notes: "",
+    image_url: null,
   };
 }
 
@@ -163,6 +164,20 @@ describe("TeaForm", () => {
 
     const last = wrapper.emitted("update:modelValue")?.at(-1)?.[0] as TeaWrite;
     expect(last.origin).toBe("A shop in Prague");
+  });
+
+  it("emits a pasted image URL", async () => {
+    const wrapper = form();
+    await wrapper.get('[data-testid="field-image-url"]').setValue("https://example.com/photo.jpg");
+    const last = wrapper.emitted("update:modelValue")?.at(-1)?.[0] as TeaWrite;
+    expect(last.image_url).toBe("https://example.com/photo.jpg");
+  });
+
+  it("clears image_url back to null when the field is emptied", async () => {
+    const wrapper = form({ ...blank(), image_url: "https://example.com/photo.jpg" });
+    await wrapper.get('[data-testid="field-image-url"]').setValue("");
+    const last = wrapper.emitted("update:modelValue")?.at(-1)?.[0] as TeaWrite;
+    expect(last.image_url).toBeNull();
   });
 
   it("shows a message when Jev isn't confident about the name", async () => {

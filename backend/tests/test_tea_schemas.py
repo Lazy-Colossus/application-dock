@@ -35,6 +35,7 @@ def test_tea_requires_only_name_and_node() -> None:
     assert tea.form is None
     assert tea.grams_remaining == 0
     assert tea.origin == ""
+    assert tea.image_url is None
 
 
 def test_seed_parses_and_every_root_is_a_class() -> None:

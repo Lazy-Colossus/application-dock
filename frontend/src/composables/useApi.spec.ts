@@ -89,6 +89,40 @@ describe("useApi", () => {
     });
   });
 
+  describe("upload", () => {
+    it("sends the file as multipart form data with no explicit Content-Type", async () => {
+      mockAuthStore.token = "valid-token";
+      let capturedInit: RequestInit | undefined;
+      mockFetch(async (_url, init) => {
+        capturedInit = init as RequestInit;
+        return new Response(JSON.stringify({ id: "t-1" }), { status: 201 });
+      });
+
+      const file = new File(["bytes"], "photo.jpg", { type: "image/jpeg" });
+      const result = await api.upload<{ id: string }>("/tea/teas/t-1/image", file);
+
+      expect(result).toEqual({ id: "t-1" });
+      expect(capturedInit?.body).toBeInstanceOf(FormData);
+      expect((capturedInit?.body as FormData).get("file")).toBe(file);
+      const headers = capturedInit?.headers as Record<string, string> | undefined;
+      expect(headers?.["Content-Type"]).toBeUndefined();
+      expect(headers?.Authorization).toBe("Bearer valid-token");
+    });
+
+    it("surfaces ApiError with .status and .detail on a rejected upload", async () => {
+      mockFetch(
+        async () =>
+          new Response(JSON.stringify({ detail: "Only JPEG, PNG, WebP, or GIF" }), {
+            status: 422,
+          }),
+      );
+      const file = new File(["bytes"], "doc.pdf", { type: "application/pdf" });
+      await expect(
+        api.upload("/tea/teas/t-1/image", file),
+      ).rejects.toMatchObject({ status: 422, detail: "Only JPEG, PNG, WebP, or GIF" });
+    });
+  });
+
   describe("401 redirect behaviour", () => {
     beforeEach(() => {
       Object.defineProperty(window, "location", {

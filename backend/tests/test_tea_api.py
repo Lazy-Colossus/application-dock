@@ -113,3 +113,94 @@ def test_deleting_a_seed_node_is_422() -> None:
 
 def test_deleting_an_unknown_node_is_404() -> None:
     assert client.delete("/api/tea/catalogue/u-nosuchid").status_code == 404
+
+
+def _token(username: str) -> str:
+    from app.services import auth_service
+
+    return auth_service.create_access_token(username)
+
+
+def test_uploading_an_image_sets_image_url_and_returns_the_tea() -> None:
+    tea_id = client.post("/api/tea/teas", json=_payload()).json()["id"]
+
+    response = client.post(
+        f"/api/tea/teas/{tea_id}/image",
+        files={"file": ("photo.jpg", b"fake-jpeg-bytes", "image/jpeg")},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["image_url"] == f"/api/tea/teas/{tea_id}/image"
+
+
+def test_uploading_an_unsupported_content_type_is_422() -> None:
+    tea_id = client.post("/api/tea/teas", json=_payload()).json()["id"]
+
+    response = client.post(
+        f"/api/tea/teas/{tea_id}/image",
+        files={"file": ("doc.pdf", b"whatever", "application/pdf")},
+    )
+
+    assert response.status_code == 422
+
+
+def test_uploading_to_an_unknown_tea_is_404() -> None:
+    response = client.post(
+        "/api/tea/teas/t-nosuchid/image",
+        files={"file": ("photo.jpg", b"bytes", "image/jpeg")},
+    )
+    assert response.status_code == 404
+
+
+def test_fetching_the_image_returns_the_bytes(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "jwt_secret_key", "test-secret-key-for-tests-only")
+    tea_id = client.post("/api/tea/teas", json=_payload()).json()["id"]
+    client.post(
+        f"/api/tea/teas/{tea_id}/image",
+        files={"file": ("photo.jpg", b"fake-jpeg-bytes", "image/jpeg")},
+    )
+
+    response = client.get(f"/api/tea/teas/{tea_id}/image?token={_token('test_user')}")
+
+    assert response.status_code == 200
+    assert response.content == b"fake-jpeg-bytes"
+    assert response.headers["content-type"] == "image/jpeg"
+
+
+def test_fetching_the_image_without_a_token_is_422() -> None:
+    tea_id = client.post("/api/tea/teas", json=_payload()).json()["id"]
+    assert client.get(f"/api/tea/teas/{tea_id}/image").status_code == 422
+
+
+def test_fetching_the_image_with_a_bad_token_is_401() -> None:
+    tea_id = client.post("/api/tea/teas", json=_payload()).json()["id"]
+    assert client.get(f"/api/tea/teas/{tea_id}/image?token=garbage").status_code == 401
+
+
+def test_fetching_the_image_for_a_tea_with_none_is_404(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "jwt_secret_key", "test-secret-key-for-tests-only")
+    tea_id = client.post("/api/tea/teas", json=_payload()).json()["id"]
+
+    response = client.get(f"/api/tea/teas/{tea_id}/image?token={_token('test_user')}")
+    assert response.status_code == 404
+
+
+def test_deleting_the_image_clears_image_url() -> None:
+    tea_id = client.post("/api/tea/teas", json=_payload()).json()["id"]
+    client.post(
+        f"/api/tea/teas/{tea_id}/image",
+        files={"file": ("photo.jpg", b"bytes", "image/jpeg")},
+    )
+
+    response = client.delete(f"/api/tea/teas/{tea_id}/image")
+
+    assert response.status_code == 200
+    assert response.json()["image_url"] is None
+
+
+def test_deleting_the_image_for_an_unknown_tea_is_404() -> None:
+    assert client.delete("/api/tea/teas/t-nosuchid/image").status_code == 404

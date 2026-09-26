@@ -180,3 +180,67 @@ def test_seed_nodes_are_never_written_into_a_users_document() -> None:
     service.create_tea("alice", _req())
     assert repo.read_doc("alice").catalogue_nodes == []
     assert isinstance(repo.read_seed_catalogue()[0], CatalogueNode)
+
+
+def test_save_image_sets_the_served_url_and_bumps_updated_at() -> None:
+    tea = service.create_tea("alice", _req())
+    updated = service.save_image("alice", tea.id, b"fake-jpeg-bytes", "image/jpeg")
+    assert updated.image_url == f"/api/tea/teas/{tea.id}/image"
+    assert updated.updated_at >= tea.updated_at
+
+
+def test_save_image_persists_the_file_via_the_repo() -> None:
+    tea = service.create_tea("alice", _req())
+    service.save_image("alice", tea.id, b"fake-jpeg-bytes", "image/jpeg")
+    found = repo.find_image("alice", tea.id)
+    assert found is not None
+    assert found.read_bytes() == b"fake-jpeg-bytes"
+
+
+def test_save_image_rejects_an_unsupported_content_type() -> None:
+    tea = service.create_tea("alice", _req())
+    with pytest.raises(ValueError):
+        service.save_image("alice", tea.id, b"whatever", "application/pdf")
+
+
+def test_save_image_rejects_content_over_five_megabytes() -> None:
+    tea = service.create_tea("alice", _req())
+    oversized = b"x" * (5 * 1024 * 1024 + 1)
+    with pytest.raises(ValueError):
+        service.save_image("alice", tea.id, oversized, "image/jpeg")
+
+
+def test_save_image_raises_not_found_for_an_unknown_tea() -> None:
+    with pytest.raises(FileNotFoundError):
+        service.save_image("alice", "t-nosuchid", b"bytes", "image/jpeg")
+
+
+def test_delete_image_clears_the_url_and_removes_the_file() -> None:
+    tea = service.create_tea("alice", _req())
+    service.save_image("alice", tea.id, b"bytes", "image/jpeg")
+
+    updated = service.delete_image("alice", tea.id)
+    assert updated.image_url is None
+    assert repo.find_image("alice", tea.id) is None
+
+
+def test_delete_image_raises_not_found_for_an_unknown_tea() -> None:
+    with pytest.raises(FileNotFoundError):
+        service.delete_image("alice", "t-nosuchid")
+
+
+def test_image_path_returns_the_stored_file() -> None:
+    tea = service.create_tea("alice", _req())
+    service.save_image("alice", tea.id, b"bytes", "image/jpeg")
+    assert service.image_path("alice", tea.id).read_bytes() == b"bytes"
+
+
+def test_image_path_raises_not_found_when_the_tea_has_no_image() -> None:
+    tea = service.create_tea("alice", _req())
+    with pytest.raises(FileNotFoundError):
+        service.image_path("alice", tea.id)
+
+
+def test_image_path_raises_not_found_for_an_unknown_tea() -> None:
+    with pytest.raises(FileNotFoundError):
+        service.image_path("alice", "t-nosuchid")

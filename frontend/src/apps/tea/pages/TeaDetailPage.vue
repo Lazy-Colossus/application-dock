@@ -16,12 +16,44 @@
 
     <template v-if="tea">
       <div class="tea-page__wrapper">
+        <img
+          v-if="photoSrc"
+          class="tea-page__photo"
+          data-testid="tea-photo"
+          :src="photoSrc"
+          alt=""
+        />
         <div class="tea-page__ident">
           <p class="tea-page__crumb" data-testid="tea-crumb">{{ crumb }}</p>
           <h1 class="tea-page__title" data-testid="tea-title">
             {{ tea.name }}
             <span v-if="nameZh" class="tea-page__zh" lang="zh">{{ nameZh }}</span>
           </h1>
+          <button
+            class="tea-page__photo-action"
+            data-testid="tea-upload-photo"
+            :disabled="cabinet.saving"
+            @click="photoInput?.click()"
+          >
+            {{ tea.image_url ? "Replace photo" : "Add a photo" }}
+          </button>
+          <button
+            v-if="tea.image_url"
+            class="tea-page__photo-action"
+            data-testid="tea-remove-photo"
+            :disabled="cabinet.saving"
+            @click="removePhoto"
+          >
+            Remove photo
+          </button>
+          <input
+            ref="photoInput"
+            type="file"
+            accept="image/*"
+            class="tea-page__photo-input"
+            data-testid="tea-photo-input"
+            @change="onPhotoChosen"
+          />
         </div>
         <button class="tea-page__rim" data-testid="tea-rim-button" @click="editing = true">
           <RimGauge
@@ -85,7 +117,8 @@ import TeaForm from "../components/TeaForm.vue";
 import AddNodeDialog from "../components/AddNodeDialog.vue";
 import { useTeaCabinetStore } from "../stores/useTeaCabinetStore";
 import { useTeaCatalogueStore } from "../stores/useTeaCatalogueStore";
-import { proportionOf, thresholdFractionOf, isLow } from "../shelf";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { proportionOf, thresholdFractionOf, isLow, imageSrc } from "../shelf";
 import { pathOf } from "../catalogue";
 import { CLASS_TOKENS } from "../tokens";
 import { canSaveTea } from "../validation";
@@ -95,6 +128,7 @@ const route = useRoute();
 const router = useRouter();
 const cabinet = useTeaCabinetStore();
 const catalogue = useTeaCatalogueStore();
+const auth = useAuthStore();
 
 const teaId = computed(() => String(route.params.teaId));
 const tea = computed(() => cabinet.teas.find((t) => t.id === teaId.value) ?? null);
@@ -144,6 +178,29 @@ const color = computed(() =>
 const proportion = computed(() => (tea.value ? proportionOf(tea.value) : null));
 const thresholdFraction = computed(() => (tea.value ? thresholdFractionOf(tea.value) : null));
 const low = computed(() => (tea.value ? isLow(tea.value) : false));
+
+const photoSrc = computed(() => imageSrc(tea.value?.image_url ?? null, auth.token));
+const photoInput = ref<HTMLInputElement | null>(null);
+
+// Merge only image_url into the existing draft, the same way commitGrams
+// merges grams_remaining: a photo write must never clobber notes or any
+// other field the person is mid-edit on.
+async function onPhotoChosen(event: Event): Promise<void> {
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (photoInput.value) photoInput.value.value = "";
+  if (!file) return;
+  await cabinet.uploadImage(teaId.value, file);
+  if (draft.value && tea.value) {
+    draft.value = { ...draft.value, image_url: tea.value.image_url };
+  }
+}
+
+async function removePhoto(): Promise<void> {
+  await cabinet.removeImage(teaId.value);
+  if (draft.value && tea.value) {
+    draft.value = { ...draft.value, image_url: tea.value.image_url };
+  }
+}
 
 const addingParentId = ref<string | null>(null);
 function openAddNode(parentId: string): void {
@@ -218,6 +275,27 @@ onMounted(() => {
 .tea-page__ident {
   flex: 1;
   min-width: 0;
+}
+.tea-page__photo {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  object-fit: cover;
+  margin-right: 14px;
+}
+.tea-page__photo-action {
+  background: transparent;
+  border: 0;
+  color: #8b6a5e;
+  font-size: 12.5px;
+  padding: 6px 0 0;
+  margin-right: 14px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.tea-page__photo-input {
+  display: none;
 }
 .tea-page__crumb {
   color: #7a6244;

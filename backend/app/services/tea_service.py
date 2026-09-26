@@ -10,10 +10,19 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, date, datetime
+from pathlib import Path
 
 from app.repositories import tea_repo as repo
 from app.schemas.tea import CatalogueNode, Tea, TeaView, TeaWriteRequest
 from app.services import tea_catalogue_service as catalogue
+
+_MAX_IMAGE_BYTES = 5 * 1024 * 1024
+_IMAGE_EXTENSIONS = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/gif": "gif",
+}
 
 
 def _now_iso() -> str:
@@ -126,3 +135,47 @@ def delete_tea(username: str, tea_id: str) -> None:
         if len(remaining) == len(doc.teas):
             raise FileNotFoundError(f"No tea with id {tea_id!r}")
         doc.teas = remaining
+
+
+def save_image(username: str, tea_id: str, content: bytes, content_type: str) -> TeaView:
+    """Store an uploaded photo for `tea_id` and point `image_url` at its served route."""
+    extension = _IMAGE_EXTENSIONS.get(content_type)
+    if extension is None:
+        raise ValueError("Only JPEG, PNG, WebP, or GIF images are supported")
+    if len(content) > _MAX_IMAGE_BYTES:
+        raise ValueError("Images must be 5MB or smaller")
+
+    index = catalogue.node_index(catalogue.merged_nodes(username))
+    with repo.doc_transaction(username) as doc:
+        for position, existing in enumerate(doc.teas):
+            if existing.id == tea_id:
+                repo.save_image(username, tea_id, content, extension)
+                updated = existing.model_copy(
+                    update={"image_url": f"/api/tea/teas/{tea_id}/image", "updated_at": _now_iso()}
+                )
+                doc.teas[position] = updated
+                return _view(updated, index)
+        raise FileNotFoundError(f"No tea with id {tea_id!r}")
+
+
+def delete_image(username: str, tea_id: str) -> TeaView:
+    """Remove a tea's stored photo and clear `image_url`."""
+    index = catalogue.node_index(catalogue.merged_nodes(username))
+    with repo.doc_transaction(username) as doc:
+        for position, existing in enumerate(doc.teas):
+            if existing.id == tea_id:
+                repo.delete_image(username, tea_id)
+                updated = existing.model_copy(update={"image_url": None, "updated_at": _now_iso()})
+                doc.teas[position] = updated
+                return _view(updated, index)
+        raise FileNotFoundError(f"No tea with id {tea_id!r}")
+
+
+def image_path(username: str, tea_id: str) -> Path:
+    """The on-disk path of `tea_id`'s stored photo. 404s cover both a missing tea and no photo."""
+    if not any(tea.id == tea_id for tea in repo.read_doc(username).teas):
+        raise FileNotFoundError(f"No tea with id {tea_id!r}")
+    path = repo.find_image(username, tea_id)
+    if path is None:
+        raise FileNotFoundError(f"No image for tea {tea_id!r}")
+    return path

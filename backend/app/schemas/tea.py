@@ -62,6 +62,7 @@ class Tea(BaseModel):
     storage_location: str = ""
     low_threshold_grams: float | None = None
     notes: str = ""
+    image_url: str | None = None
     created_at: str
     updated_at: str
 
@@ -107,6 +108,7 @@ class TeaWriteRequest(BaseModel):
     storage_location: str = ""
     low_threshold_grams: float | None = Field(default=None, ge=0)
     notes: str = ""
+    image_url: str | None = None
 
 
 class AutofillRequest(BaseModel):

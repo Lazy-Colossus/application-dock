@@ -29,6 +29,7 @@ function toWrite(tea: Tea): TeaWrite {
     storage_location: tea.storage_location,
     low_threshold_grams: tea.low_threshold_grams,
     notes: tea.notes,
+    image_url: tea.image_url,
   };
 }
 
@@ -132,6 +133,32 @@ export const useTeaCabinetStore = defineStore("tea-cabinet", () => {
     }
   }
 
+  async function uploadImage(teaId: string, file: File): Promise<void> {
+    saving.value = true;
+    try {
+      const updated = await api.upload<Tea>(`/tea/teas/${teaId}/image`, file);
+      teas.value = teas.value.map((tea) => (tea.id === teaId ? updated : tea));
+      error.value = null;
+    } catch (e) {
+      error.value = message(e);
+    } finally {
+      saving.value = false;
+    }
+  }
+
+  async function removeImage(teaId: string): Promise<void> {
+    saving.value = true;
+    try {
+      const updated = await api.del<Tea>(`/tea/teas/${teaId}/image`);
+      teas.value = teas.value.map((tea) => (tea.id === teaId ? updated : tea));
+      error.value = null;
+    } catch (e) {
+      error.value = message(e);
+    } finally {
+      saving.value = false;
+    }
+  }
+
   return {
     teas,
     loading,
@@ -142,5 +169,7 @@ export const useTeaCabinetStore = defineStore("tea-cabinet", () => {
     replaceTea,
     deleteTea,
     setGrams,
+    uploadImage,
+    removeImage,
   };
 });

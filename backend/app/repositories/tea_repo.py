@@ -15,6 +15,8 @@ Layering: callers MUST be services. Routers do not call this directly.
 from __future__ import annotations
 
 import json
+import os
+import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
 from functools import lru_cache
@@ -85,6 +87,48 @@ def doc_transaction(username: str) -> Iterator[TeaDoc]:
         doc = read_doc(username)
         yield doc
         write_doc(username, doc)
+
+
+def _images_dir(username: str) -> Path:
+    _validate_username(username)
+    return settings.data_dir / _APP_DIR / "images" / username
+
+
+def find_image(username: str, tea_id: str) -> Path | None:
+    """The one stored image file for `tea_id`, whatever its extension."""
+    directory = _images_dir(username)
+    if not directory.is_dir():
+        return None
+    matches = sorted(directory.glob(f"{tea_id}.*"))
+    return matches[0] if matches else None
+
+
+def save_image(username: str, tea_id: str, content: bytes, extension: str) -> Path:
+    """Store `content` as `tea_id`'s image, atomically and replacing any prior upload."""
+    delete_image(username, tea_id)
+    directory = _images_dir(username)
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / f"{tea_id}.{extension}"
+
+    fd, tmp_name = tempfile.mkstemp(dir=directory, prefix=f"{path.name}.", suffix=".tmp")
+    tmp = Path(tmp_name)
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp, path)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
+    return path
+
+
+def delete_image(username: str, tea_id: str) -> None:
+    """Remove `tea_id`'s stored image, if any. Harmless when none exists."""
+    existing = find_image(username, tea_id)
+    if existing is not None:
+        existing.unlink(missing_ok=True)
 
 
 @lru_cache(maxsize=1)

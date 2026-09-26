@@ -4,17 +4,18 @@ import { setActivePinia, createPinia } from "pinia";
 
 // Repo pattern (see CabinetPage.spec.ts): real Pinia, useApi mocked, vue-router
 // mocked. Not @pinia/testing — it isn't a dependency here.
-const { getMock, putMock, postMock, delMock, push, backMock } = vi.hoisted(() => ({
+const { getMock, putMock, postMock, delMock, uploadMock, push, backMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
   putMock: vi.fn(),
   postMock: vi.fn(),
   delMock: vi.fn(),
+  uploadMock: vi.fn(),
   push: vi.fn(),
   backMock: vi.fn(),
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
-  api: { get: getMock, post: postMock, put: putMock, del: delMock },
+  api: { get: getMock, post: postMock, put: putMock, del: delMock, upload: uploadMock },
 }));
 
 // Captures the guard callback so tests can invoke it directly and observe
@@ -55,6 +56,7 @@ function tea(overrides: Partial<Tea> = {}): Tea {
     storage_location: "Cupboard, top shelf",
     low_threshold_grams: 15,
     notes: "Heavy roast.",
+    image_url: null,
     created_at: "2026-09-25T10:00:00Z",
     updated_at: "2026-09-25T10:00:00Z",
     ...overrides,
@@ -240,5 +242,43 @@ describe("TeaDetailPage", () => {
       "Leave without saving? Your changes to this tea will be lost.",
     );
     confirmSpy.mockRestore();
+  });
+
+  it("shows the tea's photo when it has one", async () => {
+    const wrapper = await page([tea({ image_url: "https://example.com/photo.jpg" })]);
+    expect(wrapper.get('[data-testid="tea-photo"]').attributes("src")).toBe(
+      "https://example.com/photo.jpg",
+    );
+  });
+
+  it("shows no photo and no remove button when the tea has none", async () => {
+    const wrapper = await page([tea({ image_url: null })]);
+    expect(wrapper.find('[data-testid="tea-photo"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="tea-remove-photo"]').exists()).toBe(false);
+  });
+
+  it("uploads a chosen photo and shows the server's image", async () => {
+    const wrapper = await page([tea({ image_url: null })]);
+    uploadMock.mockResolvedValue(tea({ image_url: "https://example.com/photo.jpg" }));
+    const file = new File(["bytes"], "photo.jpg", { type: "image/jpeg" });
+
+    const input = wrapper.get('[data-testid="tea-photo-input"]').element as HTMLInputElement;
+    Object.defineProperty(input, "files", { value: [file] });
+    await wrapper.get('[data-testid="tea-photo-input"]').trigger("change");
+    await flushPromises();
+
+    expect(uploadMock).toHaveBeenCalledWith("/tea/teas/t-1/image", file);
+    expect(wrapper.find('[data-testid="tea-photo"]').exists()).toBe(true);
+  });
+
+  it("removes the photo and hides it once gone", async () => {
+    const wrapper = await page([tea({ image_url: "https://example.com/photo.jpg" })]);
+    delMock.mockResolvedValue(tea({ image_url: null }));
+
+    await wrapper.get('[data-testid="tea-remove-photo"]').trigger("click");
+    await flushPromises();
+
+    expect(delMock).toHaveBeenCalledWith("/tea/teas/t-1/image");
+    expect(wrapper.find('[data-testid="tea-photo"]').exists()).toBe(false);
   });
 });

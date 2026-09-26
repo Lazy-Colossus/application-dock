@@ -8,9 +8,12 @@ This module is the only place tea exceptions become HTTP: `FileNotFoundError`
 -> 404, `ValueError` -> 422, `NodeInUseError` -> 409.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Annotated
 
-from app.core.dependencies import get_current_user
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi.responses import FileResponse
+
+from app.core.dependencies import get_current_user, user_from_token
 from app.schemas.almanac import AlmanacEntryView
 from app.schemas.tea import (
     AutofillRequest,
@@ -26,6 +29,13 @@ from app.services import tea_catalogue_service as catalogue
 from app.services import tea_service as service
 
 router = APIRouter(prefix="/api/tea", tags=["tea"])
+
+_IMAGE_MEDIA_TYPES = {
+    "jpg": "image/jpeg",
+    "png": "image/png",
+    "webp": "image/webp",
+    "gif": "image/gif",
+}
 
 
 @router.get("/catalogue", response_model=list[CatalogueNode])
@@ -97,6 +107,43 @@ def replace_tea(
 def delete_tea(tea_id: str, current_user: str = Depends(get_current_user)) -> None:
     try:
         service.delete_tea(current_user, tea_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Tea not found") from exc
+
+
+@router.post("/teas/{tea_id}/image", response_model=TeaView, status_code=201)
+async def upload_tea_image(
+    tea_id: str,
+    file: Annotated[UploadFile, File()],
+    current_user: str = Depends(get_current_user),
+) -> TeaView:
+    content = await file.read()
+    try:
+        return service.save_image(current_user, tea_id, content, file.content_type or "")
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Tea not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/teas/{tea_id}/image")
+def get_tea_image(tea_id: str, token: str = Query(...)) -> FileResponse:
+    """Authenticated via `?token=` because an `<img>` tag cannot send an
+    `Authorization` header — verified with the same logic as the bearer path.
+    """
+    current_user = user_from_token(token)
+    try:
+        path = service.image_path(current_user, tea_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Image not found") from exc
+    media_type = _IMAGE_MEDIA_TYPES.get(path.suffix.removeprefix("."), "application/octet-stream")
+    return FileResponse(path, media_type=media_type)
+
+
+@router.delete("/teas/{tea_id}/image", response_model=TeaView)
+def delete_tea_image(tea_id: str, current_user: str = Depends(get_current_user)) -> TeaView:
+    try:
+        return service.delete_image(current_user, tea_id)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Tea not found") from exc
 

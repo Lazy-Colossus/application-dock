@@ -19,6 +19,7 @@ function blank(): TeaWrite {
     storage_location: "",
     low_threshold_grams: null,
     notes: "",
+    image_url: null,
   };
 }
 

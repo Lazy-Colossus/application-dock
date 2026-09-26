@@ -1,18 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, postMock, putMock, delMock } = vi.hoisted(() => ({
+const { getMock, postMock, putMock, delMock, uploadMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
   postMock: vi.fn(),
   putMock: vi.fn(),
   delMock: vi.fn(),
+  uploadMock: vi.fn(),
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {
     status = 0;
     detail = "";
   },
-  api: { get: getMock, post: postMock, put: putMock, del: delMock },
+  api: { get: getMock, post: postMock, put: putMock, del: delMock, upload: uploadMock },
 }));
 
 import { useTeaCabinetStore } from "./useTeaCabinetStore";
@@ -37,6 +38,7 @@ function tea(overrides: Partial<Tea> = {}): Tea {
     storage_location: "",
     low_threshold_grams: null,
     notes: "",
+    image_url: null,
     created_at: "2026-09-25T10:00:00Z",
     updated_at: "2026-09-25T10:00:00Z",
     ...overrides,
@@ -49,6 +51,7 @@ beforeEach(() => {
   postMock.mockReset();
   putMock.mockReset();
   delMock.mockReset();
+  uploadMock.mockReset();
 });
 
 describe("useTeaCabinetStore", () => {
@@ -166,6 +169,47 @@ describe("useTeaCabinetStore", () => {
     const store = useTeaCabinetStore();
     await store.setGrams("t-nope", 10);
     expect(putMock).not.toHaveBeenCalled();
+    expect(store.error).toBeNull();
+  });
+
+  it("uploadImage swaps the tea in place with the server's response", async () => {
+    getMock.mockResolvedValue([tea({ id: "t-1", image_url: null })]);
+    const store = useTeaCabinetStore();
+    await store.fetchTeas();
+    const file = new File(["bytes"], "photo.jpg", { type: "image/jpeg" });
+    uploadMock.mockResolvedValue(tea({ id: "t-1", image_url: "/api/tea/teas/t-1/image" }));
+
+    await store.uploadImage("t-1", file);
+
+    expect(uploadMock).toHaveBeenCalledWith("/tea/teas/t-1/image", file);
+    expect(store.teas[0].image_url).toBe("/api/tea/teas/t-1/image");
+    expect(store.error).toBeNull();
+  });
+
+  it("uploadImage routes a rejected upload into error and leaves the tea untouched", async () => {
+    getMock.mockResolvedValue([tea({ id: "t-1", image_url: null })]);
+    const store = useTeaCabinetStore();
+    await store.fetchTeas();
+    uploadMock.mockRejectedValue(
+      Object.assign(new Error("nope"), { detail: "Only JPEG, PNG, WebP, or GIF" }),
+    );
+
+    await store.uploadImage("t-1", new File(["bytes"], "doc.pdf"));
+
+    expect(store.teas[0].image_url).toBeNull();
+    expect(store.error).toContain("Only JPEG");
+  });
+
+  it("removeImage clears the tea's image_url", async () => {
+    getMock.mockResolvedValue([tea({ id: "t-1", image_url: "/api/tea/teas/t-1/image" })]);
+    const store = useTeaCabinetStore();
+    await store.fetchTeas();
+    delMock.mockResolvedValue(tea({ id: "t-1", image_url: null }));
+
+    await store.removeImage("t-1");
+
+    expect(delMock).toHaveBeenCalledWith("/tea/teas/t-1/image");
+    expect(store.teas[0].image_url).toBeNull();
     expect(store.error).toBeNull();
   });
 });

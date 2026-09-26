@@ -1,7 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
+import { setActivePinia, createPinia } from "pinia";
 import TeaRow from "./TeaRow.vue";
 import type { Tea } from "../types";
+
+beforeEach(() => {
+  setActivePinia(createPinia());
+});
 
 function tea(overrides: Partial<Tea> = {}): Tea {
   return {
@@ -22,6 +27,7 @@ function tea(overrides: Partial<Tea> = {}): Tea {
     storage_location: "",
     low_threshold_grams: null,
     notes: "",
+    image_url: null,
     created_at: "2026-09-25T10:00:00Z",
     updated_at: "2026-09-25T10:00:00Z",
     ...overrides,
@@ -75,5 +81,15 @@ describe("TeaRow", () => {
     const wrapper = row(tea({ name: "A".repeat(120) }));
     expect(wrapper.get('[data-testid="row-name"]').classes()).toContain("row__name--truncate");
     expect(wrapper.find('[data-testid="row-rim"]').exists()).toBe(true);
+  });
+
+  it("shows a thumbnail when the tea has a photo", () => {
+    const wrapper = row(tea({ image_url: "https://example.com/photo.jpg" }));
+    const img = wrapper.get('[data-testid="row-photo"]');
+    expect(img.attributes("src")).toBe("https://example.com/photo.jpg");
+  });
+
+  it("omits the thumbnail when the tea has no photo", () => {
+    expect(row(tea({ image_url: null })).find('[data-testid="row-photo"]').exists()).toBe(false);
   });
 });

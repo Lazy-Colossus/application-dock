@@ -1,5 +1,13 @@
 <template>
   <div :class="['row', { 'row--empty': empty }]" data-testid="row">
+    <img
+      v-if="photoSrc"
+      class="row__photo"
+      data-testid="row-photo"
+      :src="photoSrc"
+      alt=""
+      @click="emit('open', tea.id)"
+    />
     <div class="row__body" data-testid="row-body" @click="emit('open', tea.id)">
       <div class="row__name row__name--truncate" data-testid="row-name">
         {{ tea.name }}
@@ -25,11 +33,15 @@
 import { computed } from "vue";
 import RimGauge from "./RimGauge.vue";
 import { CLASS_TOKENS } from "../tokens";
-import { proportionOf, thresholdFractionOf, isLow } from "../shelf";
+import { proportionOf, thresholdFractionOf, isLow, imageSrc } from "../shelf";
+import { useAuthStore } from "@/stores/useAuthStore";
 import type { Tea } from "../types";
 
 const props = defineProps<{ tea: Tea; path: string; nameZh: string }>();
 const emit = defineEmits<{ open: [teaId: string]; "edit-grams": [teaId: string] }>();
+
+const auth = useAuthStore();
+const photoSrc = computed(() => imageSrc(props.tea.image_url, auth.token));
 
 const proportion = computed(() => proportionOf(props.tea));
 const thresholdFraction = computed(() => thresholdFractionOf(props.tea));
@@ -49,6 +61,14 @@ const caption = computed(() =>
   padding: 8px 0;
   position: relative;
   z-index: 2;
+}
+.row__photo {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  object-fit: cover;
+  cursor: pointer;
 }
 .row__body {
   flex: 1;

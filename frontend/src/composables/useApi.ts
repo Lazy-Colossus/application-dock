@@ -21,17 +21,20 @@ const BASE_URL = "/api";
 
 type JsonBody = Record<string, unknown> | unknown[] | null;
 
-async function request<T>(
+async function send<T>(
   method: string,
   path: string,
-  body?: JsonBody,
+  body: BodyInit | undefined,
+  jsonContentType: boolean,
 ): Promise<T> {
   // Lazy import to avoid circular dependency (useAuthStore imports useApi)
   const { useAuthStore } = await import("@/stores/useAuthStore");
   const authStore = useAuthStore();
 
   const headers: Record<string, string> = {};
-  if (body !== undefined) headers["Content-Type"] = "application/json";
+  // A FormData body must never get an explicit Content-Type — the browser
+  // sets it (with the multipart boundary) only when this header is absent.
+  if (jsonContentType) headers["Content-Type"] = "application/json";
   if (authStore.token) headers["Authorization"] = `Bearer ${authStore.token}`;
 
   let response: Response;
@@ -39,7 +42,7 @@ async function request<T>(
     response = await fetch(`${BASE_URL}${path}`, {
       method,
       headers: Object.keys(headers).length > 0 ? headers : undefined,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body,
     });
   } catch {
     // Network failure — no response at all.
@@ -90,12 +93,32 @@ async function request<T>(
   return parsed as T;
 }
 
+async function request<T>(
+  method: string,
+  path: string,
+  body?: JsonBody,
+): Promise<T> {
+  return send<T>(
+    method,
+    path,
+    body !== undefined ? JSON.stringify(body) : undefined,
+    body !== undefined,
+  );
+}
+
+async function upload<T>(path: string, file: File): Promise<T> {
+  const form = new FormData();
+  form.append("file", file);
+  return send<T>("POST", path, form, false);
+}
+
 export const api = {
   get: <T>(path: string) => request<T>("GET", path),
   post: <T>(path: string, body?: JsonBody) => request<T>("POST", path, body),
   put: <T>(path: string, body?: JsonBody) => request<T>("PUT", path, body),
   patch: <T>(path: string, body?: JsonBody) => request<T>("PATCH", path, body),
   del: <T = void>(path: string) => request<T>("DELETE", path),
+  upload: <T>(path: string, file: File) => upload<T>(path, file),
 };
 
 export default api;

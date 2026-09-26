@@ -97,3 +97,41 @@ def test_seed_catalogue_loads_and_is_cached() -> None:
 def test_seed_catalogue_is_not_in_the_data_dir(tmp_path: Path) -> None:
     repo.read_seed_catalogue()
     assert not (tmp_path / "tea" / "catalogue.json").exists()
+
+
+def test_find_image_returns_none_when_absent() -> None:
+    assert repo.find_image("alice", "t-abc12345") is None
+
+
+def test_save_image_then_find_image_returns_the_path(tmp_path: Path) -> None:
+    repo.save_image("alice", "t-abc12345", b"fake-bytes", "jpg")
+    found = repo.find_image("alice", "t-abc12345")
+    assert found is not None
+    assert found.name == "t-abc12345.jpg"
+    assert found.read_bytes() == b"fake-bytes"
+    assert found.parent == tmp_path / "tea" / "images" / "alice"
+
+
+def test_save_image_replaces_a_previous_upload_of_a_different_extension() -> None:
+    repo.save_image("alice", "t-abc12345", b"first", "jpg")
+    repo.save_image("alice", "t-abc12345", b"second", "png")
+
+    found = repo.find_image("alice", "t-abc12345")
+    assert found is not None
+    assert found.name == "t-abc12345.png"
+    assert found.read_bytes() == b"second"
+
+
+def test_delete_image_removes_the_file() -> None:
+    repo.save_image("alice", "t-abc12345", b"first", "jpg")
+    repo.delete_image("alice", "t-abc12345")
+    assert repo.find_image("alice", "t-abc12345") is None
+
+
+def test_delete_image_is_harmless_when_none_exists() -> None:
+    repo.delete_image("alice", "t-nosuchimage")
+
+
+def test_images_are_scoped_per_user() -> None:
+    repo.save_image("alice", "t-abc12345", b"alice-photo", "jpg")
+    assert repo.find_image("bob", "t-abc12345") is None

@@ -1,7 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
+import { setActivePinia, createPinia } from "pinia";
 import ShelfSection from "./ShelfSection.vue";
 import type { Tea } from "../types";
+
+beforeEach(() => {
+  setActivePinia(createPinia());
+});
 
 function tea(id: string, overrides: Partial<Tea> = {}): Tea {
   return {
@@ -22,6 +27,7 @@ function tea(id: string, overrides: Partial<Tea> = {}): Tea {
     storage_location: "",
     low_threshold_grams: null,
     notes: "",
+    image_url: null,
     created_at: "2026-09-25T10:00:00Z",
     updated_at: "2026-09-25T10:00:00Z",
     ...overrides,

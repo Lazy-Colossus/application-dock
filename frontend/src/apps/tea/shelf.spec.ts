@@ -7,6 +7,7 @@ import {
   sortSection,
   groupByClass,
   nearestSectionIndex,
+  imageSrc,
 } from "./shelf";
 import type { Tea, TeaClass } from "./types";
 
@@ -29,6 +30,7 @@ function tea(overrides: Partial<Tea> = {}): Tea {
     storage_location: "",
     low_threshold_grams: null,
     notes: "",
+    image_url: null,
     created_at: "2026-09-25T10:00:00Z",
     updated_at: "2026-09-25T10:00:00Z",
     ...overrides,
@@ -191,5 +193,27 @@ describe("nearestSectionIndex", () => {
 
   it("returns -1 with no sections", () => {
     expect(nearestSectionIndex([], 100)).toBe(-1);
+  });
+});
+
+describe("imageSrc", () => {
+  it("returns null when the tea has no image", () => {
+    expect(imageSrc(null, "a-token")).toBeNull();
+  });
+
+  it("passes an external URL through unchanged", () => {
+    expect(imageSrc("https://example.com/photo.jpg", "a-token")).toBe(
+      "https://example.com/photo.jpg",
+    );
+  });
+
+  it("appends the auth token as a query param for our own served image route", () => {
+    expect(imageSrc("/api/tea/teas/t-1/image", "a-token")).toBe(
+      "/api/tea/teas/t-1/image?token=a-token",
+    );
+  });
+
+  it("returns null for our own served route when there is no token to authenticate with", () => {
+    expect(imageSrc("/api/tea/teas/t-1/image", null)).toBeNull();
   });
 });

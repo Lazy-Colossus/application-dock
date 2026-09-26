@@ -53,6 +53,7 @@ export interface Tea {
   storage_location: string;
   low_threshold_grams: number | null;
   notes: string;
+  image_url: string | null;
   created_at: string;
   updated_at: string;
 }
