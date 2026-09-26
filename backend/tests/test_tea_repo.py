@@ -35,9 +35,10 @@ def _tea(tea_id: str = "t-abc12345") -> Tea:
 def test_read_doc_returns_empty_doc_when_file_absent() -> None:
     doc = repo.read_doc("alice")
     assert isinstance(doc, TeaDoc)
-    assert doc.schema_version == 1
+    assert doc.schema_version == 2
     assert doc.teas == []
     assert doc.catalogue_nodes == []
+    assert doc.sessions == []
 
 
 def test_read_doc_does_not_create_a_file(tmp_path: Path) -> None:
@@ -135,3 +136,14 @@ def test_delete_image_is_harmless_when_none_exists() -> None:
 def test_images_are_scoped_per_user() -> None:
     repo.save_image("alice", "t-abc12345", b"alice-photo", "jpg")
     assert repo.find_image("bob", "t-abc12345") is None
+
+
+def test_migrate_upgrades_a_v1_doc_to_v2_with_no_sessions() -> None:
+    raw: dict[str, object] = {"schema_version": 1, "teas": [], "catalogue_nodes": []}
+    upgraded = repo.migrate(raw)
+    assert upgraded["schema_version"] == 2
+    assert upgraded["sessions"] == []
+
+
+def test_an_empty_doc_is_v2() -> None:
+    assert repo.read_doc("nobody").schema_version == 2

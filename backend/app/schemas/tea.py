@@ -1,9 +1,9 @@
 """Pydantic v2 schemas for the Tea Cabinet.
 
 The persisted document is one JSON file per user
-(`DATA_DIR/tea/users/{username}.json`) holding both that user's teas and the
-catalogue nodes they added themselves. Seeded nodes are never written there —
-they ship in `app/data/tea_catalogue.json` and are merged on read.
+(`DATA_DIR/tea/users/{username}.json`) holding that user's teas, the catalogue
+nodes they added themselves, and their brewing sessions. Seeded nodes are never
+written there — they ship in `app/data/tea_catalogue.json` and are merged on read.
 
 Only `name` and `catalogue_node_id` are required on a tea: adding a tea must
 never feel like a form to fill in (FR-2).
@@ -16,6 +16,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, PositiveInt
 
 from app.schemas.almanac import BrewingParameters
+from app.schemas.tea_session import TeaSession
 
 TeaClass = Literal["green", "yellow", "white", "oolong", "red", "dark", "other"]
 TeaForm = Literal["loose", "cake", "brick", "tuo", "ball", "bag", "sample", "other"]
@@ -93,9 +94,10 @@ class TeaView(Tea):
 
 
 class TeaDoc(BaseModel):
-    schema_version: int = 1
+    schema_version: int = 2
     teas: list[Tea] = Field(default_factory=list)
     catalogue_nodes: list[CatalogueNode] = Field(default_factory=list)
+    sessions: list[TeaSession] = Field(default_factory=list)
 
 
 class CreateNodeRequest(BaseModel):

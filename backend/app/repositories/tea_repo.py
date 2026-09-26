@@ -28,7 +28,7 @@ from app.core.storage import atomic_write_json
 from app.schemas.tea import CatalogueNode, TeaDoc
 
 _APP_DIR = "tea"
-_CURRENT_SCHEMA_VERSION = 1
+_CURRENT_SCHEMA_VERSION = 2
 _SEED_PATH = Path(__file__).resolve().parents[1] / "data" / "tea_catalogue.json"
 
 
@@ -54,7 +54,9 @@ def _user_path(username: str) -> Path:
 
 
 def migrate(raw: dict[str, object]) -> dict[str, object]:
-    """Upgrade a raw document to the current schema. v1 is a pass-through."""
+    """Upgrade a raw document to the current schema. v2 added `sessions`."""
+    if raw.get("schema_version", 1) == 1:
+        raw = {**raw, "schema_version": 2, "sessions": []}
     return raw
 
 
