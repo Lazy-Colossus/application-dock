@@ -47,6 +47,8 @@
   { "id": "green.sri-lankan.ceylon-green", "parent_id": "green.sri-lankan", "name": "Ceylon Green", "name_zh": "", "source": "seed", "default_origin": "Uva Province, Sri Lanka" },
   { "id": "green.nepali", "parent_id": "green", "name": "Nepali", "name_zh": "", "source": "seed", "default_origin": "Nepal" },
   { "id": "green.nepali.ilam", "parent_id": "green.nepali", "name": "Ilam Green", "name_zh": "", "source": "seed", "default_origin": "Ilam district, eastern Nepal" },
+  { "id": "green.georgian", "parent_id": "green", "name": "Georgian", "name_zh": "", "source": "seed", "default_origin": "Georgia" },
+  { "id": "green.georgian.orthodox", "parent_id": "green.georgian", "name": "Georgian Green", "name_zh": "", "source": "seed", "default_origin": "Guria and Imereti, western Georgia" },
 
   { "id": "yellow", "parent_id": null, "name": "Yellow", "name_zh": "黃茶", "source": "seed" },
   { "id": "yellow.junshan-yinzhen", "parent_id": "yellow", "name": "Junshan Yinzhen", "name_zh": "君山銀針", "source": "seed", "default_origin": "Junshan Island, Hunan" },
@@ -139,6 +141,8 @@
   { "id": "red.nepali", "parent_id": "red", "name": "Nepali", "name_zh": "", "source": "seed", "default_origin": "Nepal" },
   { "id": "red.nepali.ilam", "parent_id": "red.nepali", "name": "Nepal Orthodox Black", "name_zh": "", "source": "seed", "default_origin": "Ilam, Dhankuta, Panchthar and Terhathum districts, eastern Nepal" },
   { "id": "red.balhyocha", "parent_id": "red", "name": "Balhyocha", "name_zh": "醱酵茶", "source": "seed", "default_origin": "Hadong, South Korea" },
+  { "id": "red.georgian", "parent_id": "red", "name": "Georgian", "name_zh": "", "source": "seed", "default_origin": "Georgia" },
+  { "id": "red.georgian.orthodox", "parent_id": "red.georgian", "name": "Georgian Black", "name_zh": "", "source": "seed", "default_origin": "Guria, Imereti, Adjara and Samegrelo, western Georgia" },
 
   { "id": "dark", "parent_id": null, "name": "Dark", "name_zh": "黑茶", "source": "seed" },
   { "id": "dark.sheng-puerh", "parent_id": "dark", "name": "Sheng pu-erh", "name_zh": "生普洱", "source": "seed", "default_origin": "Yunnan" },
