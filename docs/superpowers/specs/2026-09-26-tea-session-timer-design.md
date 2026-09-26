@@ -192,7 +192,7 @@ the low hundreds of KB. `migrate` upgrades v1 by adding `sessions: []` and setti
 ### Server rules
 
 - Upsert of an unknown `tea_id` → `FileNotFoundError` → 404.
-- Upsert of a session already stored as `finalised` → `ValueError` → 409.
+- Upsert of a session already stored as `finalised` → `SessionFinalisedError` → 409.
 - Upsert that transitions to `finalised`: drop infusions with `actual_seconds: null` (the
   pending next steep); set `finished_at`; if `leaf_grams` is set,
   `grams_remaining = max(0, grams_remaining - leaf_grams)` on the tea; both in one transaction.
@@ -244,7 +244,8 @@ Cabinet header, and a Brew button on tea detail.
 
 ### Units
 
-- **`useSteepClock`** (composable) — `start()`, `stop(): number`, reactive `elapsed`. Derived from
+- **`useSteepClock`** (composable) — takes the running steep's `startedAt` (epoch ms, held in the
+  timer store so it survives a reload) and returns reactive `elapsed`, derived from
   `Date.now() - startedAt`. Knows nothing of sessions.
 - **`useWakeLock`** — acquire while live, re-acquire on `visibilitychange`, no-op if unsupported.
 - **`useTargetChime`** — plays a soft chime once when `elapsed` crosses the target, if the
