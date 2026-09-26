@@ -30,6 +30,7 @@ function toWrite(tea: Tea): TeaWrite {
     low_threshold_grams: tea.low_threshold_grams,
     notes: tea.notes,
     image_url: tea.image_url,
+    brewing: tea.brewing,
   };
 }
 

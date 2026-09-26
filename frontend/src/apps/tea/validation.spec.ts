@@ -20,6 +20,7 @@ function blank(): TeaWrite {
     low_threshold_grams: null,
     notes: "",
     image_url: null,
+    brewing: null,
   };
 }
 

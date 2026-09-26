@@ -54,6 +54,7 @@ export interface Tea {
   low_threshold_grams: number | null;
   notes: string;
   image_url: string | null;
+  brewing: BrewingParameters | null;
   created_at: string;
   updated_at: string;
 }
@@ -87,4 +88,40 @@ export interface AlmanacEntryView {
   name: string;
   name_zh: string;
   default_origin: string;
+}
+
+export type SessionStatus = "in_progress" | "finalised";
+
+export type CurveSource = "best_session" | "tea" | "almanac" | "generic";
+
+export interface Infusion {
+  number: number;
+  target_seconds: number;
+  actual_seconds: number | null;
+}
+
+export interface TeaSessionWrite {
+  tea_id: string;
+  status: SessionStatus;
+  started_at: string;
+  leaf_grams: number | null;
+  water_temp_c: number | null;
+  rating: number | null;
+  curve_source: CurveSource;
+  curve_source_label: string;
+  infusions: Infusion[];
+}
+
+export interface TeaSession extends TeaSessionWrite {
+  id: string;
+  updated_at: string;
+  finished_at: string | null;
+}
+
+export interface BrewingCurve {
+  leaf_grams: number | null;
+  water_temp_c: number | null;
+  steep_seconds: number[];
+  source: CurveSource;
+  source_label: string;
 }

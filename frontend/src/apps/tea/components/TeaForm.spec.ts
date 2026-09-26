@@ -48,6 +48,7 @@ function blank(): TeaWrite {
     low_threshold_grams: null,
     notes: "",
     image_url: null,
+    brewing: null,
   };
 }
 
@@ -60,11 +61,11 @@ beforeEach(() => {
 });
 
 describe("TeaForm", () => {
-  it("groups the fields under the three headings", () => {
+  it("groups the fields under the four headings", () => {
     const headings = form()
       .findAll('[data-testid="group"]')
       .map((h) => h.text());
-    expect(headings).toEqual(["Where it's from", "What it cost", "On the shelf"]);
+    expect(headings).toEqual(["Where it's from", "What it cost", "On the shelf", "Brewing"]);
   });
 
   it("emits the typed name", async () => {
@@ -201,5 +202,42 @@ describe("TeaForm", () => {
     await flushPromises();
 
     expect(wrapper.get('[data-testid="autofill-message"]').text()).toContain("not configured");
+  });
+});
+
+describe("TeaForm brewing", () => {
+  it("patches leaf grams and water temperature into brewing", async () => {
+    const wrapper = form();
+    await wrapper.get("[data-testid=field-brew-grams]").setValue("7");
+    const emitted = wrapper.emitted("update:modelValue")!.at(-1)![0] as TeaWrite;
+    expect(emitted.brewing).toEqual({ leaf_grams: 7, water_temp_c: null, steep_seconds: [] });
+  });
+
+  it("parses a comma list of steep times", async () => {
+    const wrapper = form();
+    await wrapper.get("[data-testid=field-brew-steeps]").setValue("10, 15,20 ,");
+    const emitted = wrapper.emitted("update:modelValue")!.at(-1)![0] as TeaWrite;
+    expect(emitted.brewing?.steep_seconds).toEqual([10, 15, 20]);
+    expect(wrapper.find("[data-testid=brew-steeps-error]").exists()).toBe(false);
+  });
+
+  it("flags a bad steep list and keeps the last good one", async () => {
+    const wrapper = form({
+      ...blank(),
+      brewing: { leaf_grams: null, water_temp_c: null, steep_seconds: [10] },
+    });
+    await wrapper.get("[data-testid=field-brew-steeps]").setValue("10, abc");
+    expect(wrapper.get("[data-testid=brew-steeps-error]").text()).toContain("whole seconds");
+    expect(wrapper.emitted("update:modelValue")).toBeUndefined();
+  });
+
+  it("collapses brewing back to null when every field is cleared", async () => {
+    const wrapper = form({
+      ...blank(),
+      brewing: { leaf_grams: 5, water_temp_c: null, steep_seconds: [] },
+    });
+    await wrapper.get("[data-testid=field-brew-grams]").setValue("");
+    const emitted = wrapper.emitted("update:modelValue")!.at(-1)![0] as TeaWrite;
+    expect(emitted.brewing).toBeNull();
   });
 });

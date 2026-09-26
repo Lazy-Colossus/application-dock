@@ -41,6 +41,7 @@ function tea(id: string, catalogue_node_id: string): Tea {
     low_threshold_grams: null,
     notes: "",
     image_url: null,
+    brewing: null,
     created_at: "2026-09-25T10:00:00Z",
     updated_at: "2026-09-25T10:00:00Z",
   };

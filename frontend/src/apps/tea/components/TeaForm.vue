@@ -145,6 +145,35 @@
       @input="patch({ low_threshold_grams: asNumber($event) })"
     />
 
+    <p class="form__group" data-testid="group">Brewing</p>
+    <input
+      class="form__field"
+      data-testid="field-brew-grams"
+      placeholder="Leaf (grams)"
+      inputmode="decimal"
+      :value="modelValue.brewing?.leaf_grams ?? ''"
+      @input="patchBrewing({ leaf_grams: asNumber($event) })"
+    />
+    <input
+      class="form__field"
+      data-testid="field-brew-temp"
+      placeholder="Water (°C)"
+      inputmode="numeric"
+      :value="modelValue.brewing?.water_temp_c ?? ''"
+      @input="patchBrewing({ water_temp_c: asNumber($event) })"
+    />
+    <input
+      class="form__field"
+      data-testid="field-brew-steeps"
+      placeholder="Steeps in seconds (10, 15, 20, 30)"
+      inputmode="numeric"
+      :value="steepsText"
+      @input="onSteeps"
+    />
+    <span v-if="steepsError" class="form__sub" data-testid="brew-steeps-error">
+      Steep times are whole seconds, like 10, 15, 20
+    </span>
+
     <p class="form__group form__group--notes">Notes</p>
     <textarea
       class="form__field form__field--notes"
@@ -161,7 +190,14 @@ import { computed, ref } from "vue";
 import CataloguePicker from "./CataloguePicker.vue";
 import { pricePerGram } from "../shelf";
 import { useTeaCatalogueStore } from "../stores/useTeaCatalogueStore";
-import type { CatalogueNode, HarvestSeason, Tea, TeaForm as TeaFormValue, TeaWrite } from "../types";
+import type {
+  BrewingParameters,
+  CatalogueNode,
+  HarvestSeason,
+  Tea,
+  TeaForm as TeaFormValue,
+  TeaWrite,
+} from "../types";
 
 const props = defineProps<{ modelValue: TeaWrite; nodes: CatalogueNode[] }>();
 const catalogueStore = useTeaCatalogueStore();
@@ -199,6 +235,34 @@ function asHarvestSeason(event: Event): HarvestSeason | null {
 
 function patch(change: Partial<TeaWrite>): void {
   emit("update:modelValue", { ...props.modelValue, ...change });
+}
+
+function patchBrewing(change: Partial<BrewingParameters>): void {
+  const current = props.modelValue.brewing ?? {
+    leaf_grams: null,
+    water_temp_c: null,
+    steep_seconds: [],
+  };
+  const next = { ...current, ...change };
+  const empty =
+    next.leaf_grams === null && next.water_temp_c === null && next.steep_seconds.length === 0;
+  patch({ brewing: empty ? null : next });
+}
+
+// Held as text so "10, " survives while typing; the model only takes a list
+// that fully parses.
+const steepsText = ref((props.modelValue.brewing?.steep_seconds ?? []).join(", "));
+const steepsError = ref(false);
+
+function onSteeps(event: Event): void {
+  steepsText.value = asText(event);
+  const tokens = steepsText.value
+    .split(",")
+    .map((token) => token.trim())
+    .filter((token) => token !== "");
+  const valid = tokens.every((token) => /^\d+$/.test(token) && Number(token) > 0);
+  steepsError.value = !valid;
+  if (valid) patchBrewing({ steep_seconds: tokens.map(Number) });
 }
 
 /**
