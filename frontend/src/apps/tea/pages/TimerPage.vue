@@ -50,6 +50,9 @@
     </p>
 
     <template v-if="!timer.live">
+      <p v-if="sessions.error" class="timer__notice" data-testid="timer-sessions-error">
+        {{ sessions.error }}
+      </p>
       <RecoveryCard
         v-for="session in sessions.inProgress"
         :key="session.id"

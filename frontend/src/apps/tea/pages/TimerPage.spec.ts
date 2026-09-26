@@ -48,6 +48,10 @@ function tea(): Tea {
   };
 }
 
+function httpError(status: number): Error {
+  return Object.assign(new Error(`${status}`), { status, detail: `HTTP ${status}` });
+}
+
 function tea2(): Tea {
   return { ...tea(), id: "t-2", name: "Dragonwell", class_id: "green" };
 }
@@ -217,6 +221,17 @@ describe("TimerPage", () => {
     await flushPromises();
     expect(useTeaTimerStore().live?.tea?.id).toBe("t-2");
     expect(wrapper.find("[data-testid=timer-notice]").exists()).toBe(false);
+  });
+
+  it("shows a failed recovery fetch", async () => {
+    getMock.mockImplementation((path: string) => {
+      if (path === "/tea/teas") return Promise.resolve([tea(), tea2()]);
+      if (path === "/tea/sessions?status=in_progress") return Promise.reject(httpError(500));
+      return Promise.resolve([]);
+    });
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    expect(wrapper.get("[data-testid=timer-sessions-error]").text()).toContain("HTTP 500");
   });
 
   it("finishes, refreshes the cabinet and goes to the tea", async () => {
