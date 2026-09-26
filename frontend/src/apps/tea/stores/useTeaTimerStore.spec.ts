@@ -246,6 +246,18 @@ describe("finishing", () => {
     expect(store.live).toBeNull();
   });
 
+  it("detaches the tea on a 404 and carries on as a plain timer", async () => {
+    getMock.mockResolvedValue(ALMANAC);
+    const store = useTeaTimerStore();
+    await store.attachTea(tea());
+    putMock.mockRejectedValueOnce(httpError(404));
+    expect(await store.finish(4)).toBeNull();
+    expect(store.live).not.toBeNull();
+    expect(store.live?.tea).toBeNull();
+    expect(store.notice).toContain("Tieguanyin");
+    expect(store.error).toBeNull();
+  });
+
   it("keeps the session and reports the error when finishing fails", async () => {
     getMock.mockResolvedValue(ALMANAC);
     const store = useTeaTimerStore();

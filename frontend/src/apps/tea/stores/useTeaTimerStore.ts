@@ -293,6 +293,14 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
         clear();
         return teaId;
       }
+      if (statusOf(e) === 404) {
+        // The tea was removed elsewhere: detach it rather than leaving the
+        // finish sheet stuck on an error that can never be retried away.
+        session.tea = null;
+        notice.value = `${tea.name} is no longer in your cabinet — carrying on as a plain timer.`;
+        error.value = null;
+        return null;
+      }
       error.value = message(e);
       return null;
     } finally {
