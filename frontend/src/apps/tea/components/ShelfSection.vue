@@ -10,14 +10,14 @@
           {{ tokens.labelZh }}
         </span>
       </header>
-      <TeaRow
+    </div>
+    <div class="section__strip" data-testid="section-strip">
+      <TeaCard
         v-for="tea in section.teas"
         :key="tea.id"
         :tea="tea"
-        :path="pathFor(tea)"
         :name-zh="nameZhFor(tea)"
         @open="emit('open', $event)"
-        @edit-grams="emit('edit-grams', $event)"
       />
     </div>
   </section>
@@ -26,7 +26,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import ClassLeaves from "./ClassLeaves.vue";
-import TeaRow from "./TeaRow.vue";
+import TeaCard from "./TeaCard.vue";
 import { CLASS_TOKENS } from "../tokens";
 import type { ShelfSectionData } from "../shelf";
 import type { Tea } from "../types";
@@ -35,10 +35,9 @@ const props = defineProps<{
   section: ShelfSectionData;
   index: number;
   active: boolean;
-  pathFor: (tea: Tea) => string;
   nameZhFor: (tea: Tea) => string;
 }>();
-const emit = defineEmits<{ open: [teaId: string]; "edit-grams": [teaId: string] }>();
+const emit = defineEmits<{ open: [teaId: string] }>();
 
 const tokens = computed(() => CLASS_TOKENS[props.section.classId]);
 </script>
@@ -58,6 +57,20 @@ const tokens = computed(() => CLASS_TOKENS[props.section.classId]);
   align-items: center;
   gap: 9px;
   margin-bottom: 9px;
+}
+.section__strip {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding: 0 18px;
+  padding: 0 18px 4px;
+  scrollbar-width: none;
+}
+.section__strip::-webkit-scrollbar {
+  display: none;
 }
 .section__name {
   font-size: 13px;

@@ -2,14 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, putMock, push } = vi.hoisted(() => ({
+const { getMock, push } = vi.hoisted(() => ({
   getMock: vi.fn(),
-  putMock: vi.fn(),
   push: vi.fn(),
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
-  api: { get: getMock, post: vi.fn(), put: putMock, del: vi.fn() },
+  api: { get: getMock, post: vi.fn(), put: vi.fn(), del: vi.fn() },
 }));
 vi.mock("vue-router", () => ({ useRouter: () => ({ push }) }));
 
@@ -113,9 +112,7 @@ describe("CabinetPage", () => {
     const wrapper = render();
     await flushPromises();
 
-    const names = wrapper
-      .findAll('[data-testid="section-name"]')
-      .map((n) => n.text());
+    const names = wrapper.findAll('[data-testid="section-name"]').map((n) => n.text());
     expect(names).toEqual(["Green", "Oolong"]);
   });
 
@@ -136,15 +133,11 @@ describe("CabinetPage", () => {
   });
 
   it("surfaces an error with what to do next, and hides the empty state", async () => {
-    mockApiError(
-      "Couldn't load your cabinet. Check your connection and try again.",
-    );
+    mockApiError("Couldn't load your cabinet. Check your connection and try again.");
     const wrapper = render();
     await flushPromises();
 
-    expect(wrapper.get('[data-testid="cabinet-error"]').text()).toContain(
-      "Couldn't load",
-    );
+    expect(wrapper.get('[data-testid="cabinet-error"]').text()).toContain("Couldn't load");
     expect(wrapper.find('[data-testid="cabinet-empty"]').exists()).toBe(false);
   });
 
@@ -154,15 +147,11 @@ describe("CabinetPage", () => {
     await flushPromises();
     expect(wrapper.findAll('[data-testid="section-name"]')).toHaveLength(1);
 
-    mockApiError(
-      "Couldn't load your cabinet. Check your connection and try again.",
-    );
+    mockApiError("Couldn't load your cabinet. Check your connection and try again.");
     await useTeaCabinetStore().fetchTeas();
     await flushPromises();
 
-    expect(wrapper.get('[data-testid="cabinet-error"]').text()).toContain(
-      "Couldn't load",
-    );
+    expect(wrapper.get('[data-testid="cabinet-error"]').text()).toContain("Couldn't load");
     expect(wrapper.findAll('[data-testid="section-name"]')).toHaveLength(0);
   });
 
@@ -175,36 +164,14 @@ describe("CabinetPage", () => {
     expect(getMock).toHaveBeenCalledWith("/tea/catalogue");
   });
 
-  it("opens the grams sheet for the tapped rim, and saving commits it and closes it", async () => {
-    mockApi([tea("a", { grams_remaining: 38 })]);
-    putMock.mockResolvedValue(tea("a", { grams_remaining: 37 }));
-    const wrapper = render();
-    await flushPromises();
-
-    await wrapper.get('[data-testid="row-rim"]').trigger("click");
-    expect(wrapper.get('[data-testid="grams-value"]').text()).toContain("38");
-
-    await wrapper.get('[data-testid="grams-minus"]').trigger("click");
-    await wrapper.get('[data-testid="grams-save"]').trigger("click");
-    await flushPromises();
-
-    expect(putMock).toHaveBeenCalledWith(
-      "/tea/teas/a",
-      expect.objectContaining({ grams_remaining: 37 }),
-    );
-    expect(wrapper.find('[data-testid="grams-sheet"]').exists()).toBe(false);
-  });
-
-  it("closes the sheet on cancel without writing anything", async () => {
+  it("opens a tea's page when its card is tapped", async () => {
     mockApi([tea("a")]);
     const wrapper = render();
     await flushPromises();
 
-    await wrapper.get('[data-testid="row-rim"]').trigger("click");
-    await wrapper.get('[data-testid="grams-cancel"]').trigger("click");
+    await wrapper.get('[data-testid="card"]').trigger("click");
 
-    expect(wrapper.find('[data-testid="grams-sheet"]').exists()).toBe(false);
-    expect(putMock).not.toHaveBeenCalled();
+    expect(push).toHaveBeenCalledWith({ name: "tea-detail", params: { teaId: "a" } });
   });
 
   it("opens the almanac from the header link", async () => {

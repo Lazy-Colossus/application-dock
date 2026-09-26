@@ -40,7 +40,6 @@ function section(active = false) {
       section: { classId: "oolong" as const, teas: [tea("t-1"), tea("t-2")] },
       index: 0,
       active,
-      pathFor: () => "Wuyi yancha",
       nameZhFor: () => "大紅袍",
     },
   });
@@ -53,8 +52,9 @@ describe("ShelfSection", () => {
     expect(wrapper.get('[data-testid="section-zh"]').text()).toBe("烏龍");
   });
 
-  it("renders a row per tea", () => {
-    expect(section().findAll('[data-testid="row"]')).toHaveLength(2);
+  it("lays its teas out as cards in one horizontal strip", () => {
+    const strip = section().get('[data-testid="section-strip"]');
+    expect(strip.findAll('[data-testid="card"]')).toHaveLength(2);
   });
 
   it("draws its leaves at full strength only when it is the section in view", () => {
@@ -66,9 +66,9 @@ describe("ShelfSection", () => {
     );
   });
 
-  it("passes a row's open event up", async () => {
+  it("passes a card's open event up", async () => {
     const wrapper = section();
-    await wrapper.get('[data-testid="row-body"]').trigger("click");
+    await wrapper.get('[data-testid="card"]').trigger("click");
     expect(wrapper.emitted("open")?.[0]).toEqual(["t-1"]);
   });
 });

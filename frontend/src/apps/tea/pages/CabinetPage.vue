@@ -43,10 +43,8 @@
           :section="section"
           :index="index"
           :active="index === activeIndex"
-          :path-for="pathFor"
           :name-zh-for="nameZhFor"
           @open="openTea"
-          @edit-grams="editGrams"
         />
       </div>
     </div>
@@ -59,13 +57,6 @@
     >
       +
     </button>
-
-    <GramsSheet
-      v-if="editingTea"
-      :tea="editingTea"
-      @save="commitGrams"
-      @cancel="editingTeaId = null"
-    />
   </q-page>
 </template>
 
@@ -73,7 +64,6 @@
 import { computed, onBeforeUpdate, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import ShelfSection from "../components/ShelfSection.vue";
-import GramsSheet from "../components/GramsSheet.vue";
 import { useTeaCabinetStore } from "../stores/useTeaCabinetStore";
 import { useTeaCatalogueStore } from "../stores/useTeaCatalogueStore";
 import { useSectionInView } from "../composables/useSectionInView";
@@ -106,13 +96,6 @@ function setSectionEl(el: HTMLElement | null, index: number): void {
   if (el) sectionEls.value[index] = el;
 }
 
-/** The deepest-but-one label: "Wuyi yancha" under the name "Da Hong Pao". */
-function pathFor(tea: Tea): string {
-  const chain = pathOf(catalogue.nodes, tea.catalogue_node_id);
-  if (chain.length <= 1) return tea.origin;
-  return chain[chain.length - 2].name;
-}
-
 function nameZhFor(tea: Tea): string {
   const chain = pathOf(catalogue.nodes, tea.catalogue_node_id);
   return chain.length ? chain[chain.length - 1].name_zh : "";
@@ -128,20 +111,6 @@ function addTea(): void {
 
 function openAlmanac(): void {
   void router.push({ name: "tea-almanac" });
-}
-
-const editingTeaId = ref<string | null>(null);
-const editingTea = computed(
-  () => cabinet.teas.find((tea) => tea.id === editingTeaId.value) ?? null,
-);
-function editGrams(teaId: string): void {
-  editingTeaId.value = teaId;
-}
-
-async function commitGrams(grams: number): Promise<void> {
-  const teaId = editingTeaId.value;
-  editingTeaId.value = null;
-  if (teaId) await cabinet.setGrams(teaId, grams);
 }
 
 onMounted(() => {
