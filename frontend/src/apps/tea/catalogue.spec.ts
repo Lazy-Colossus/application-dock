@@ -5,8 +5,9 @@ import {
   pathOf,
   rootClassOf,
   prefillOriginFor,
+  nearestAlmanacEntry,
 } from "./catalogue";
-import type { CatalogueNode } from "./types";
+import type { AlmanacEntryView, CatalogueNode } from "./types";
 
 function node(
   id: string,
@@ -128,5 +129,35 @@ describe("prefillOriginFor", () => {
 describe("buildIndex", () => {
   it("keys every node by id", () => {
     expect(buildIndex(tree).get("green.longjing")?.name).toBe("Longjing");
+  });
+});
+
+describe("nearestAlmanacEntry", () => {
+  function entry(catalogue_node_id: string): AlmanacEntryView {
+    return {
+      catalogue_node_id,
+      country: "China",
+      reading: "",
+      summary: "",
+      brewing: { leaf_grams: null, water_temp_c: null, steep_seconds: [] },
+      source: "seed",
+      name: catalogue_node_id,
+      name_zh: "",
+      default_origin: "",
+    };
+  }
+
+  it("prefers the node's own entry", () => {
+    const own = entry("oolong.wuyi.dhp");
+    expect(nearestAlmanacEntry(tree, [entry("oolong.wuyi"), own], "oolong.wuyi.dhp")).toBe(own);
+  });
+
+  it("falls back to the nearest ancestor with an entry", () => {
+    const wuyi = entry("oolong.wuyi");
+    expect(nearestAlmanacEntry(tree, [entry("oolong"), wuyi], "oolong.wuyi.dhp")).toBe(wuyi);
+  });
+
+  it("is null when nothing in the chain has an entry", () => {
+    expect(nearestAlmanacEntry(tree, [entry("green")], "oolong.wuyi.dhp")).toBeNull();
   });
 });

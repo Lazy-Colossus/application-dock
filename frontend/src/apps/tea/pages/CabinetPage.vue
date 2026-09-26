@@ -5,6 +5,20 @@
         <span class="cabinet__title">Cabinet</span>
         <div class="cabinet__header-right">
           <button
+            :class="[
+              'cabinet__almanac',
+              { 'cabinet__filters--on': filters.activeCount > 0 },
+            ]"
+            data-testid="cabinet-filters"
+            @click="filtering = true"
+          >
+            {{
+              filters.activeCount > 0
+                ? `Filters · ${filters.activeCount}`
+                : "Filters"
+            }}
+          </button>
+          <button
             class="cabinet__almanac"
             data-testid="cabinet-almanac-link"
             aria-label="Open the Almanac"
@@ -27,11 +41,26 @@
       </div>
 
       <p
-        v-else-if="!cabinet.loading && sections.length === 0"
+        v-else-if="!cabinet.loading && cabinet.teas.length === 0"
         class="cabinet__empty"
         data-testid="cabinet-empty"
       >
         Nothing on the shelf yet. Add the first tea.
+      </p>
+
+      <p
+        v-else-if="sections.length === 0"
+        class="cabinet__empty"
+        data-testid="cabinet-no-match"
+      >
+        No teas match these filters.
+        <button
+          class="cabinet__clear"
+          data-testid="cabinet-clear-filters"
+          @click="filters.clear()"
+        >
+          Clear filters
+        </button>
       </p>
 
       <div
@@ -48,6 +77,15 @@
         />
       </div>
     </div>
+
+    <CabinetFilters
+      v-if="filtering"
+      :teas="cabinet.teas"
+      :nodes="catalogue.nodes"
+      :country-for="countryFor"
+      :match-count="visibleTeas.length"
+      @close="filtering = false"
+    />
 
     <button
       class="cabinet__add"
@@ -66,24 +104,52 @@ import { useRouter } from "vue-router";
 import ShelfSection from "../components/ShelfSection.vue";
 import { useTeaCabinetStore } from "../stores/useTeaCabinetStore";
 import { useTeaCatalogueStore } from "../stores/useTeaCatalogueStore";
+import { useTeaAlmanacStore } from "../stores/useTeaAlmanacStore";
+import { useTeaCabinetFiltersStore } from "../stores/useTeaCabinetFiltersStore";
+import CabinetFilters from "../components/CabinetFilters.vue";
+import { matchesFilters } from "../filters";
 import { useSectionInView } from "../composables/useSectionInView";
 import { groupByClass } from "../shelf";
-import { pathOf } from "../catalogue";
+import { nearestAlmanacEntry, pathOf } from "../catalogue";
 import { GROUND } from "../tokens";
 import type { Tea } from "../types";
 
 const router = useRouter();
 const cabinet = useTeaCabinetStore();
 const catalogue = useTeaCatalogueStore();
+const almanac = useTeaAlmanacStore();
+const filters = useTeaCabinetFiltersStore();
+const filtering = ref(false);
 
 const scrollEl = ref<HTMLElement | null>(null);
 const sectionEls = ref<HTMLElement[]>([]);
 const { activeIndex } = useSectionInView(scrollEl, sectionEls);
 
-const sections = computed(() => groupByClass(cabinet.teas));
-const countLabel = computed(() =>
-  cabinet.teas.length === 1 ? "1 tea" : `${cabinet.teas.length} teas`,
+function countryFor(tea: Tea): string | null {
+  return (
+    nearestAlmanacEntry(catalogue.nodes, almanac.entries, tea.catalogue_node_id)
+      ?.country ?? null
+  );
+}
+
+const visibleTeas = computed(() =>
+  cabinet.teas.filter((tea) =>
+    matchesFilters(
+      tea,
+      filters.state,
+      pathOf(catalogue.nodes, tea.catalogue_node_id).map((node) => node.id),
+      countryFor(tea),
+    ),
+  ),
 );
+const sections = computed(() => groupByClass(visibleTeas.value));
+const countLabel = computed(() => {
+  const total = cabinet.teas.length;
+  const noun = total === 1 ? "tea" : "teas";
+  return visibleTeas.value.length === total
+    ? `${total} ${noun}`
+    : `${visibleTeas.value.length} of ${total} ${noun}`;
+});
 
 // Sections are keyed by class, so a deleted tea can remove a whole section
 // and shift every later index. Clearing before each re-collection stops a
@@ -116,6 +182,7 @@ function openAlmanac(): void {
 onMounted(() => {
   void cabinet.fetchTeas();
   void catalogue.fetchNodes();
+  void almanac.fetchEntries();
 });
 </script>
 
@@ -161,6 +228,19 @@ onMounted(() => {
   font-family: inherit;
   cursor: pointer;
   padding: 0;
+}
+.cabinet__filters--on {
+  color: v-bind("GROUND.inkHi");
+}
+.cabinet__clear {
+  display: block;
+  background: transparent;
+  border: 0;
+  color: v-bind("GROUND.inkHi");
+  font-family: inherit;
+  font-size: 14px;
+  padding: 10px 0 0;
+  cursor: pointer;
 }
 .cabinet__empty,
 .cabinet__error {

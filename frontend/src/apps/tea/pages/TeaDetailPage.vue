@@ -192,7 +192,7 @@ import { useTeaCatalogueStore } from "../stores/useTeaCatalogueStore";
 import { useTeaAlmanacStore } from "../stores/useTeaAlmanacStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { proportionOf, thresholdFractionOf, isLow, imageSrc, pricePerGram } from "../shelf";
-import { pathOf } from "../catalogue";
+import { nearestAlmanacEntry, pathOf } from "../catalogue";
 import { CLASS_TOKENS } from "../tokens";
 import { canSaveTea } from "../validation";
 import type { Tea, TeaWrite } from "../types";
@@ -303,16 +303,11 @@ const facts = computed<Fact[]>(() => {
     .map(([key, label, value]) => ({ key, label, value }));
 });
 
-// A tea often sits on a node finer than any almanac entry (a specific Wuyi
-// rock tea under "Wuyi yancha"), so fall back to the nearest ancestor that
-// has one rather than showing nothing.
-const almanacEntry = computed(() => {
-  for (const node of [...chain.value].reverse()) {
-    const found = almanac.entries.find((e) => e.catalogue_node_id === node.id);
-    if (found) return found;
-  }
-  return null;
-});
+const almanacEntry = computed(() =>
+  tea.value
+    ? nearestAlmanacEntry(catalogue.nodes, almanac.entries, tea.value.catalogue_node_id)
+    : null,
+);
 const almanacIsAncestor = computed(
   () =>
     almanacEntry.value !== null &&

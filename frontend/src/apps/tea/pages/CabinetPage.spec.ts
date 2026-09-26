@@ -14,6 +14,7 @@ vi.mock("vue-router", () => ({ useRouter: () => ({ push }) }));
 
 import CabinetPage from "./CabinetPage.vue";
 import { useTeaCabinetStore } from "../stores/useTeaCabinetStore";
+import { useTeaCabinetFiltersStore } from "../stores/useTeaCabinetFiltersStore";
 import type { Tea, CatalogueNode } from "../types";
 
 const STUBS = {
@@ -182,5 +183,53 @@ describe("CabinetPage", () => {
     await wrapper.get('[data-testid="cabinet-almanac-link"]').trigger("click");
 
     expect(push).toHaveBeenCalledWith({ name: "tea-almanac" });
+  });
+
+  describe("filters", () => {
+    it("hides teas with 0g left once empties are switched off, and counts what is shown", async () => {
+      mockApi([tea("full"), tea("gone", { grams_remaining: 0 })]);
+      const wrapper = render();
+      await flushPromises();
+
+      useTeaCabinetFiltersStore().showEmpty = false;
+      await flushPromises();
+
+      expect(wrapper.findAll('[data-testid="card"]')).toHaveLength(1);
+      expect(wrapper.get('[data-testid="cabinet-count"]').text()).toBe("1 of 2 teas");
+      expect(wrapper.get('[data-testid="cabinet-filters"]').text()).toBe("Filters · 1");
+    });
+
+    it("says nothing matches, not that the shelf is empty, and clears from there", async () => {
+      mockApi([tea("a")]);
+      const wrapper = render();
+      await flushPromises();
+
+      useTeaCabinetFiltersStore().query = "nothing like this";
+      await flushPromises();
+
+      expect(wrapper.find('[data-testid="cabinet-empty"]').exists()).toBe(false);
+      await wrapper.get('[data-testid="cabinet-clear-filters"]').trigger("click");
+      expect(wrapper.findAll('[data-testid="card"]')).toHaveLength(1);
+    });
+
+    it("filters by the country of the tea's almanac entry", async () => {
+      const wuyi: CatalogueNode = { ...NODE, id: "oolong.wuyi", parent_id: "oolong" };
+      getMock.mockImplementation((path: string) => {
+        if (path === "/tea/teas")
+          return Promise.resolve([tea("a", { catalogue_node_id: "oolong.wuyi" }), tea("b")]);
+        if (path === "/tea/catalogue") return Promise.resolve([NODE, wuyi]);
+        if (path === "/tea/almanac")
+          return Promise.resolve([{ catalogue_node_id: "oolong.wuyi", country: "China" }]);
+        return Promise.resolve([]);
+      });
+      const wrapper = render();
+      await flushPromises();
+
+      await wrapper.get('[data-testid="cabinet-filters"]').trigger("click");
+      await wrapper.get('[data-testid="filter-country-China"]').trigger("click");
+
+      expect(wrapper.findAll('[data-testid="section-strip"] [data-testid="card"]')).toHaveLength(1);
+      expect(wrapper.get('[data-testid="filters-done"]').text()).toBe("Show 1 tea");
+    });
   });
 });

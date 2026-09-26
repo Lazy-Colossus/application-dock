@@ -2,7 +2,7 @@
 // stores — the rules that are easy to get subtly wrong are unit-tested without
 // mounting anything.
 
-import type { CatalogueNode, TeaClass } from "./types";
+import type { AlmanacEntryView, CatalogueNode, TeaClass } from "./types";
 import { CLASS_ORDER } from "./tokens";
 
 export function buildIndex(nodes: CatalogueNode[]): Map<string, CatalogueNode> {
@@ -58,4 +58,24 @@ export function prefillOriginFor(nodes: CatalogueNode[], id: string): string {
     if (chain[i].default_origin) return chain[i].default_origin;
   }
   return "";
+}
+
+/**
+ * The almanac entry for a node, else for its nearest ancestor that has one.
+ * A tea often sits finer than any entry (a specific Wuyi rock tea under
+ * "Wuyi yancha"), and the nearest entry still describes it.
+ */
+export function nearestAlmanacEntry(
+  nodes: CatalogueNode[],
+  entries: AlmanacEntryView[],
+  id: string,
+): AlmanacEntryView | null {
+  const chain = pathOf(nodes, id);
+  for (let i = chain.length - 1; i >= 0; i -= 1) {
+    const found = entries.find(
+      (entry) => entry.catalogue_node_id === chain[i].id,
+    );
+    if (found) return found;
+  }
+  return null;
 }
