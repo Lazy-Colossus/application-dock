@@ -48,6 +48,10 @@ function tea(): Tea {
   };
 }
 
+function tea2(): Tea {
+  return { ...tea(), id: "t-2", name: "Dragonwell", class_id: "green" };
+}
+
 const CURVE: BrewingCurve = {
   leaf_grams: 6,
   water_temp_c: 95,
@@ -56,12 +60,36 @@ const CURVE: BrewingCurve = {
   source_label: "almanac: Tieguanyin",
 };
 
+const CURVE_2: BrewingCurve = {
+  leaf_grams: 4,
+  water_temp_c: 80,
+  steep_seconds: [15, 20],
+  source: "almanac",
+  source_label: "almanac: Dragonwell",
+};
+
 function routes(inProgress: TeaSession[] = []) {
   getMock.mockImplementation((path: string) => {
-    if (path === "/tea/teas") return Promise.resolve([tea()]);
+    if (path === "/tea/teas") return Promise.resolve([tea(), tea2()]);
     if (path === "/tea/sessions?status=in_progress") return Promise.resolve(inProgress);
     if (path === "/tea/teas/t-1/curve") return Promise.resolve(CURVE);
+    if (path === "/tea/teas/t-2/curve") return Promise.resolve(CURVE_2);
     return Promise.resolve([]);
+  });
+}
+
+function localLiveSession(infusions: TeaSession["infusions"]): string {
+  return JSON.stringify({
+    version: 1,
+    sessionId: "s-a",
+    startedAt: "2026-09-26T17:00:00Z",
+    tea: { id: "t-1", name: "Tieguanyin", class_id: "oolong", grams_remaining: 42 },
+    curve: CURVE,
+    leafGrams: 6,
+    waterTempC: 95,
+    infusions,
+    steepStartedAt: null,
+    pushed: true,
   });
 }
 
@@ -158,6 +186,37 @@ describe("TimerPage", () => {
     await flushPromises();
     expect(useTeaTimerStore().live?.sessionId).toBe("s-9");
     expect(getMock).not.toHaveBeenCalledWith("/tea/teas/t-1/curve");
+  });
+
+  it("blocks swapping to a different tea while the unfinished session has brewed steeps", async () => {
+    routes();
+    localStorage.setItem(
+      "tea-timer:live",
+      localLiveSession([
+        { number: 1, target_seconds: 20, actual_seconds: 21 },
+        { number: 2, target_seconds: 25, actual_seconds: null },
+      ]),
+    );
+    routeQuery.value = { tea: "t-2" };
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    expect(useTeaTimerStore().live?.tea?.id).toBe("t-1");
+    expect(wrapper.get("[data-testid=timer-notice]").text()).toContain("Tieguanyin");
+    expect(wrapper.get("[data-testid=timer-notice]").text()).toContain("Dragonwell");
+    expect(getMock).not.toHaveBeenCalledWith("/tea/teas/t-2/curve");
+  });
+
+  it("still swaps to a different tea when the unfinished session has no brewed steeps", async () => {
+    routes();
+    localStorage.setItem(
+      "tea-timer:live",
+      localLiveSession([{ number: 1, target_seconds: 20, actual_seconds: null }]),
+    );
+    routeQuery.value = { tea: "t-2" };
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    expect(useTeaTimerStore().live?.tea?.id).toBe("t-2");
+    expect(wrapper.find("[data-testid=timer-notice]").exists()).toBe(false);
   });
 
   it("finishes, refreshes the cabinet and goes to the tea", async () => {

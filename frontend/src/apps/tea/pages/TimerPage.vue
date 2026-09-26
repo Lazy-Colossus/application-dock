@@ -224,9 +224,16 @@ onMounted(async () => {
     return;
   }
 
-  if (tea && timer.live.tea?.id !== tea.id) {
-    await timer.attachTea(tea);
+  if (!tea || timer.live.tea?.id === tea.id) return;
+
+  const current = timer.live.tea;
+  if (current && (timer.brewed.length > 0 || timer.running)) {
+    // Swapping now would file the current tea's steeps under the new one —
+    // require the user to finish or discard it first.
+    timer.notice = `You have an unfinished ${current.name} session — finish or discard it before brewing ${tea.name}.`;
+    return;
   }
+  await timer.attachTea(tea);
 });
 </script>
 
