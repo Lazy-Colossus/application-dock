@@ -15,7 +15,13 @@ const { getMock, putMock, postMock, delMock, uploadMock, push, backMock } = vi.h
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
-  api: { get: getMock, post: postMock, put: putMock, del: delMock, upload: uploadMock },
+  api: {
+    get: getMock,
+    post: postMock,
+    put: putMock,
+    del: delMock,
+    upload: uploadMock,
+  },
 }));
 
 // Captures the guard callback so tests can invoke it directly and observe
@@ -31,7 +37,7 @@ vi.mock("vue-router", () => ({
 }));
 
 import TeaDetailPage from "./TeaDetailPage.vue";
-import type { Tea, CatalogueNode } from "../types";
+import type { Tea, CatalogueNode, AlmanacEntryView } from "../types";
 
 const STUBS = {
   "q-page": { template: "<div><slot /></div>" },
@@ -81,19 +87,45 @@ const WUYI: CatalogueNode = {
   default_origin: "Wuyi Shan, Fujian",
 };
 
-/** Resolves `/tea/teas` and `/tea/catalogue` from one mock, by path. */
-function mockApi(teas: Tea[], nodes: CatalogueNode[] = [OOLONG, WUYI]) {
+function entry(overrides: Partial<AlmanacEntryView> = {}): AlmanacEntryView {
+  return {
+    catalogue_node_id: "oolong.wuyi",
+    country: "China",
+    reading: "wǔyí yánchá",
+    summary: "Rock teas from the Wuyi mountains.",
+    brewing: { leaf_grams: 7, water_temp_c: 98, steep_seconds: [10, 15, 20] },
+    source: "seed",
+    name: "Wuyi yancha",
+    name_zh: "武夷岩茶",
+    default_origin: "Wuyi Shan, Fujian",
+    ...overrides,
+  };
+}
+
+/** Resolves `/tea/teas`, `/tea/catalogue` and `/tea/almanac` from one mock, by path. */
+function mockApi(teas: Tea[], nodes: CatalogueNode[], entries: AlmanacEntryView[]) {
   getMock.mockImplementation((path: string) => {
     if (path === "/tea/teas") return Promise.resolve(teas);
     if (path === "/tea/catalogue") return Promise.resolve(nodes);
+    if (path === "/tea/almanac") return Promise.resolve(entries);
     return Promise.resolve([]);
   });
 }
 
-async function page(teas: Tea[] = [tea()], nodes: CatalogueNode[] = [OOLONG, WUYI]) {
-  mockApi(teas, nodes);
+async function page(
+  teas: Tea[] = [tea()],
+  nodes: CatalogueNode[] = [OOLONG, WUYI],
+  entries: AlmanacEntryView[] = [],
+) {
+  mockApi(teas, nodes, entries);
   const wrapper = mount(TeaDetailPage, { global: { stubs: STUBS } });
   await flushPromises();
+  return wrapper;
+}
+
+async function editPage(teas: Tea[] = [tea()]) {
+  const wrapper = await page(teas);
+  await wrapper.get('[data-testid="tea-edit"]').trigger("click");
   return wrapper;
 }
 
@@ -118,7 +150,7 @@ describe("TeaDetailPage", () => {
   });
 
   it("names the removal action as what it does", async () => {
-    expect((await page()).get('[data-testid="tea-remove"]').text()).toBe("Remove from cabinet");
+    expect((await editPage()).get('[data-testid="tea-remove"]').text()).toBe("Remove from cabinet");
   });
 
   it("takes '← Cabinet' straight to the cabinet, not one step back through history", async () => {
@@ -133,7 +165,7 @@ describe("TeaDetailPage", () => {
   });
 
   it("asks before removing, and only removes after the confirm", async () => {
-    const wrapper = await page();
+    const wrapper = await editPage();
     await wrapper.get('[data-testid="tea-remove"]').trigger("click");
     expect(delMock).not.toHaveBeenCalled();
     expect(wrapper.get('[data-testid="remove-confirm"]').text()).toContain("Da Hong Pao");
@@ -153,12 +185,12 @@ describe("TeaDetailPage", () => {
   // silently discarding anything typed since the page loaded (e.g. Notes),
   // and clearing `dirty` so the leave guard stopped warning about it.
   it("keeps other unsaved edits, and stays dirty, after a grams write commits", async () => {
-    const wrapper = await page();
+    const wrapper = await editPage();
 
     await wrapper.get('[data-testid="field-notes"]').setValue("Mid-session notes.");
-    expect(
-      (wrapper.get('[data-testid="tea-save"]').element as HTMLButtonElement).disabled,
-    ).toBe(false);
+    expect((wrapper.get('[data-testid="tea-save"]').element as HTMLButtonElement).disabled).toBe(
+      false,
+    );
 
     putMock.mockResolvedValue(tea({ grams_remaining: 39 }));
     await wrapper.get('[data-testid="tea-rim-button"]').trigger("click");
@@ -169,16 +201,16 @@ describe("TeaDetailPage", () => {
     expect((wrapper.get('[data-testid="field-notes"]').element as HTMLTextAreaElement).value).toBe(
       "Mid-session notes.",
     );
-    expect(
-      (wrapper.get('[data-testid="tea-save"]').element as HTMLButtonElement).disabled,
-    ).toBe(false);
+    expect((wrapper.get('[data-testid="tea-save"]').element as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 
   // Correction: AddNodeDialog must be wired here too, not only on NewTeaPage —
   // reclassifying a tea you already own is exactly when the catalogue gap
   // shows up.
   it("adds a catalogue node from the picker while editing a tea", async () => {
-    const wrapper = await page();
+    const wrapper = await editPage();
 
     await wrapper.get('[data-testid="add-oolong"]').trigger("click");
     expect(wrapper.find('[data-testid="add-node"]').exists()).toBe(true);
@@ -204,14 +236,14 @@ describe("TeaDetailPage", () => {
   });
 
   it("disables Save changes when the name is cleared, even though something changed", async () => {
-    const wrapper = await page();
+    const wrapper = await editPage();
     await wrapper.get('[data-testid="field-name"]').setValue("");
     const button = wrapper.get('[data-testid="tea-save"]').element as HTMLButtonElement;
     expect(button.disabled).toBe(true);
   });
 
   it("enables Save changes once something changed and the required fields are still present", async () => {
-    const wrapper = await page();
+    const wrapper = await editPage();
     expect((wrapper.get('[data-testid="tea-save"]').element as HTMLButtonElement).disabled).toBe(
       true,
     );
@@ -233,7 +265,7 @@ describe("TeaDetailPage", () => {
   });
 
   it("asks before leaving when the draft is dirty", async () => {
-    const wrapper = await page();
+    const wrapper = await editPage();
     await wrapper.get('[data-testid="field-notes"]').setValue("Changed my mind.");
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
 
@@ -252,13 +284,13 @@ describe("TeaDetailPage", () => {
   });
 
   it("shows no photo and no remove button when the tea has none", async () => {
-    const wrapper = await page([tea({ image_url: null })]);
+    const wrapper = await editPage([tea({ image_url: null })]);
     expect(wrapper.find('[data-testid="tea-photo"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="tea-remove-photo"]').exists()).toBe(false);
   });
 
   it("uploads a chosen photo and shows the server's image", async () => {
-    const wrapper = await page([tea({ image_url: null })]);
+    const wrapper = await editPage([tea({ image_url: null })]);
     uploadMock.mockResolvedValue(tea({ image_url: "https://example.com/photo.jpg" }));
     const file = new File(["bytes"], "photo.jpg", { type: "image/jpeg" });
 
@@ -272,7 +304,7 @@ describe("TeaDetailPage", () => {
   });
 
   it("removes the photo and hides it once gone", async () => {
-    const wrapper = await page([tea({ image_url: "https://example.com/photo.jpg" })]);
+    const wrapper = await editPage([tea({ image_url: "https://example.com/photo.jpg" })]);
     delMock.mockResolvedValue(tea({ image_url: null }));
 
     await wrapper.get('[data-testid="tea-remove-photo"]').trigger("click");
@@ -280,5 +312,104 @@ describe("TeaDetailPage", () => {
 
     expect(delMock).toHaveBeenCalledWith("/tea/teas/t-1/image");
     expect(wrapper.find('[data-testid="tea-photo"]').exists()).toBe(false);
+  });
+
+  describe("view mode", () => {
+    it("opens read-only: no form, no save, no removal", async () => {
+      const wrapper = await page();
+      expect(wrapper.find('[data-testid="field-name"]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="tea-save"]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="tea-remove"]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="tea-upload-photo"]').exists()).toBe(false);
+    });
+
+    it("shows the tea's recorded details and notes", async () => {
+      const wrapper = await page([tea({ catalogue_node_id: "oolong.wuyi" })]);
+      expect(wrapper.get('[data-testid="fact-origin"]').text()).toBe("Wuyi Shan, Fujian");
+      expect(wrapper.get('[data-testid="fact-form"]').text()).toBe("Loose");
+      expect(wrapper.get('[data-testid="fact-harvest"]').text()).toBe("Spring 2021");
+      expect(wrapper.get('[data-testid="fact-price"]').text()).toBe("68 (0.68 per gram)");
+      expect(wrapper.get('[data-testid="tea-notes"]').text()).toBe("Heavy roast.");
+    });
+
+    it("leaves out details that were never recorded", async () => {
+      const wrapper = await page([tea({ vendor: "", year: null, harvest_season: null })]);
+      expect(wrapper.find('[data-testid="fact-vendor"]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid="fact-harvest"]').exists()).toBe(false);
+    });
+
+    it("shows the almanac entry for the tea's catalogue node", async () => {
+      const wrapper = await page(
+        [tea({ catalogue_node_id: "oolong.wuyi" })],
+        [OOLONG, WUYI],
+        [entry()],
+      );
+      expect(wrapper.get('[data-testid="tea-almanac-summary"]').text()).toBe(
+        "Rock teas from the Wuyi mountains.",
+      );
+      expect(wrapper.get('[data-testid="tea-almanac-temp"]').text()).toBe("98°C");
+      expect(wrapper.get('[data-testid="tea-almanac-steeps"]').text()).toBe("10s, 15s, 20s");
+      expect(wrapper.find('[data-testid="tea-almanac-via"]').exists()).toBe(false);
+    });
+
+    it("falls back to the nearest ancestor's almanac entry, and says whose it is", async () => {
+      const rougui: CatalogueNode = {
+        id: "oolong.wuyi.rougui",
+        parent_id: "oolong.wuyi",
+        name: "Rou Gui",
+        name_zh: "",
+        source: "seed",
+        default_origin: "",
+      };
+      const wrapper = await page(
+        [tea({ catalogue_node_id: rougui.id })],
+        [OOLONG, WUYI, rougui],
+        [entry()],
+      );
+      expect(wrapper.get('[data-testid="tea-almanac-via"]').text()).toContain("Wuyi yancha");
+    });
+
+    it("shows no almanac section when nothing in the chain has an entry", async () => {
+      const wrapper = await page([tea()], [OOLONG, WUYI], [entry({ catalogue_node_id: "green" })]);
+      expect(wrapper.find('[data-testid="tea-almanac"]').exists()).toBe(false);
+    });
+
+    it("opens the full almanac entry", async () => {
+      const wrapper = await page(
+        [tea({ catalogue_node_id: "oolong.wuyi" })],
+        [OOLONG, WUYI],
+        [entry()],
+      );
+      await wrapper.get('[data-testid="tea-almanac-open"]').trigger("click");
+      expect(push).toHaveBeenCalledWith({
+        name: "tea-almanac-entry",
+        params: { catalogueNodeId: "oolong.wuyi" },
+      });
+    });
+
+    it("returns to view mode after a successful save", async () => {
+      const wrapper = await editPage();
+      await wrapper.get('[data-testid="field-notes"]').setValue("Lighter than expected.");
+      putMock.mockResolvedValue(tea({ notes: "Lighter than expected." }));
+      await wrapper.get('[data-testid="tea-save"]').trigger("click");
+      await flushPromises();
+      expect(wrapper.find('[data-testid="field-notes"]').exists()).toBe(false);
+      expect(wrapper.get('[data-testid="tea-notes"]').text()).toBe("Lighter than expected.");
+    });
+
+    it("Done with unsaved edits asks first, and discards them on confirm", async () => {
+      const wrapper = await editPage();
+      await wrapper.get('[data-testid="field-notes"]').setValue("Scrap this.");
+      const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+      await wrapper.get('[data-testid="tea-edit-done"]').trigger("click");
+      expect(wrapper.find('[data-testid="field-notes"]').exists()).toBe(true);
+
+      confirmSpy.mockReturnValue(true);
+      await wrapper.get('[data-testid="tea-edit-done"]').trigger("click");
+      expect(wrapper.get('[data-testid="tea-notes"]').text()).toBe("Heavy roast.");
+      expect(leaveGuard?.()).toBe(true);
+      confirmSpy.mockRestore();
+    });
   });
 });
