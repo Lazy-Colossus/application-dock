@@ -25,6 +25,23 @@ describe("TeaHomePage", () => {
     expect(labels).toEqual(["Cabinet", "Teaware", "Brew", "Almanac"]);
   });
 
+  it("draws each section's own icon, with just the name beside it", () => {
+    const sections = render().findAll('[data-testid="tea-home-section"]');
+
+    expect(sections.map((s) => s.get("svg").attributes("data-icon"))).toEqual([
+      "leaf",
+      "pot",
+      "pour",
+      "tome",
+    ]);
+    expect(sections.map((s) => s.text())).toEqual([
+      "Cabinet",
+      "Teaware",
+      "Brew",
+      "Almanac",
+    ]);
+  });
+
   it.each([
     ["Cabinet", "tea-cabinet"],
     ["Teaware", "tea-ware"],

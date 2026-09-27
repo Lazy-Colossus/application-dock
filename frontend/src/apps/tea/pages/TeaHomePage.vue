@@ -4,19 +4,16 @@
       <span class="tea-home__title">Tea</span>
     </header>
 
-    <nav class="tea-home__sections" aria-label="Tea sections">
+    <nav class="tea-home__grid" aria-label="Tea sections">
       <button
         v-for="section in SECTIONS"
         :key="section.route"
-        class="tea-home__section"
+        class="tea-home__tile"
         data-testid="tea-home-section"
         @click="router.push({ name: section.route })"
       >
-        <span class="tea-home__label">
-          <span class="tea-home__name">{{ section.name }}</span>
-          <span class="tea-home__zh" lang="zh">{{ section.nameZh }}</span>
-        </span>
-        <span class="tea-home__blurb">{{ section.blurb }}</span>
+        <SectionIcon :name="section.icon" class="tea-home__icon" />
+        <span class="tea-home__name">{{ section.name }}</span>
       </button>
     </nav>
   </q-page>
@@ -24,39 +21,21 @@
 
 <script setup lang="ts">
 import { useRouter } from "vue-router";
+import SectionIcon, {
+  type SectionIconName,
+} from "../components/SectionIcon.vue";
 
 interface Section {
   name: string;
-  nameZh: string;
-  blurb: string;
+  icon: SectionIconName;
   route: string;
 }
 
 const SECTIONS: Section[] = [
-  {
-    name: "Cabinet",
-    nameZh: "茶櫃",
-    blurb: "The teas you have, and how much of each is left.",
-    route: "tea-cabinet",
-  },
-  {
-    name: "Teaware",
-    nameZh: "茶具",
-    blurb: "Your gaiwans, pots and cups, and what's been brewed in each.",
-    route: "tea-ware",
-  },
-  {
-    name: "Brew",
-    nameZh: "泡茶",
-    blurb: "Time a session, infusion by infusion.",
-    route: "tea-timer",
-  },
-  {
-    name: "Almanac",
-    nameZh: "茶經",
-    blurb: "Tea families, origins and how to brew them.",
-    route: "tea-almanac",
-  },
+  { name: "Cabinet", icon: "leaf", route: "tea-cabinet" },
+  { name: "Teaware", icon: "pot", route: "tea-ware" },
+  { name: "Brew", icon: "pour", route: "tea-timer" },
+  { name: "Almanac", icon: "tome", route: "tea-almanac" },
 ];
 
 const router = useRouter();
@@ -75,41 +54,42 @@ const router = useRouter();
   font-size: 19px;
   font-weight: 500;
 }
-.tea-home__sections {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.tea-home__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
   padding: 4px 18px 24px;
 }
-.tea-home__section {
+@media (min-width: 768px) {
+  .tea-home__grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.tea-home__tile {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  text-align: left;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  aspect-ratio: 1;
   background: #1e1712;
   border: 1px solid #241e19;
-  border-radius: 3px;
-  padding: 18px 16px;
+  border-radius: 12px;
+  padding: 14px;
   font-family: inherit;
   cursor: pointer;
 }
-.tea-home__section:hover,
-.tea-home__section:focus-visible {
+.tea-home__tile:hover,
+.tea-home__tile:focus-visible {
   border-color: #7a6244;
+  outline: none;
+}
+.tea-home__icon {
+  width: 62%;
+  height: auto;
 }
 .tea-home__name {
-  color: #efe7da;
-  font-size: 17px;
-  font-weight: 500;
-}
-.tea-home__zh {
-  color: #a99781;
-  font-weight: 300;
-  margin-left: 8px;
-}
-.tea-home__blurb {
   color: #a99781;
   font-size: 13px;
-  line-height: 1.4;
 }
 </style>
