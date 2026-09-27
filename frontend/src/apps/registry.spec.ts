@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { apps } from "./registry";
+import { mapIcon } from "@/boot/icons";
 
 describe("app registry", () => {
   it("archery app uses a thematic monochrome target icon (Story 9.2)", () => {
@@ -56,5 +57,11 @@ describe("app registry", () => {
     expect(qotd?.label).toBe("Question of the Day");
     expect(qotd?.icon).toBe("help_center");
     expect(qotd?.route).toBe("/question-of-the-day");
+  });
+
+  it("gives the Tea app the tea-sprig drawing from its own home screen", () => {
+    const tea = apps.find((a) => a.id === "tea");
+    expect(tea?.icon).toBe("app:tea-leaf");
+    expect(mapIcon(tea!.icon)).toBeDefined();
   });
 });

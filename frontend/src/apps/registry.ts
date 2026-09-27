@@ -6,7 +6,7 @@
 export interface AppDescriptor {
   id: string;
   label: string;
-  icon: string; // Material Icons name
+  icon: string; // Material Icons name, or an `app:` drawing from boot/icons.ts
   route: string;
 }
 
@@ -65,11 +65,11 @@ export const apps: AppDescriptor[] = [
   },
   {
     id: "tea",
-    // A teacup glyph. The card is the app; its first screen is a home that
-    // lists the tea sections (Cabinet, Brew, Almanac) — new sections join
-    // that home rather than adding cards of their own.
+    // The tea sprig from the app's own home screen. The card is the app; its
+    // first screen lists the tea sections — new sections join that home
+    // rather than adding cards of their own.
     label: "Tea",
-    icon: "emoji_food_beverage",
+    icon: "app:tea-leaf",
     route: "/tea",
   },
 ];
