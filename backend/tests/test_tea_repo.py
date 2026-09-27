@@ -208,6 +208,38 @@ def test_adopt_legacy_never_reuses_a_mapped_cabinet(tmp_path: Path) -> None:
     assert repo.adopt_legacy("alice", referenced={mapped}) != mapped
 
 
+def test_adopt_legacy_recovers_from_a_crash_between_cabinet_write_and_image_move(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A crash after the cabinet doc lands but before the photo folder moves must
+    not orphan the image or double-write the cabinet on retry."""
+    _write_legacy(tmp_path)
+    legacy_images = tmp_path / "tea" / "images" / "alice"
+    legacy_images.mkdir(parents=True)
+    (legacy_images / "t-abc12345.jpg").write_bytes(b"photo")
+
+    real_rename = Path.rename
+
+    def boom(self: Path, target: object) -> Path:
+        raise OSError("simulated crash before the image move")
+
+    monkeypatch.setattr(Path, "rename", boom)
+    with pytest.raises(OSError):
+        repo.adopt_legacy("alice", referenced=set())
+
+    # The interrupted attempt did write the orphan cabinet doc; the image move
+    # never happened.
+    assert len(list((tmp_path / "tea" / "cabinets").glob("c_*.json"))) == 1
+    assert legacy_images.is_dir()
+
+    monkeypatch.setattr(Path, "rename", real_rename)
+    cabinet_id = repo.adopt_legacy("alice", referenced=set())
+
+    assert len(list((tmp_path / "tea" / "cabinets").glob("c_*.json"))) == 1
+    assert repo.find_image(cabinet_id, "t-abc12345") is not None
+    assert not legacy_images.exists()
+
+
 def test_seed_catalogue_loads_and_is_cached() -> None:
     first = repo.read_seed_catalogue()
     assert first is repo.read_seed_catalogue()
