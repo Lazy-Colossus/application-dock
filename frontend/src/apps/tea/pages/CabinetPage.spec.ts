@@ -15,6 +15,7 @@ vi.mock("vue-router", () => ({ useRouter: () => ({ push }) }));
 import CabinetPage from "./CabinetPage.vue";
 import { useTeaCabinetStore } from "../stores/useTeaCabinetStore";
 import { useTeaCabinetFiltersStore } from "../stores/useTeaCabinetFiltersStore";
+import { useAuthStore } from "@/stores/useAuthStore";
 import type { Tea, CatalogueNode } from "../types";
 
 const STUBS = {
@@ -114,7 +115,9 @@ describe("CabinetPage", () => {
     const wrapper = render();
     await flushPromises();
 
-    const names = wrapper.findAll('[data-testid="section-name"]').map((n) => n.text());
+    const names = wrapper
+      .findAll('[data-testid="section-name"]')
+      .map((n) => n.text());
     expect(names).toEqual(["Green", "Oolong"]);
   });
 
@@ -135,11 +138,15 @@ describe("CabinetPage", () => {
   });
 
   it("surfaces an error with what to do next, and hides the empty state", async () => {
-    mockApiError("Couldn't load your cabinet. Check your connection and try again.");
+    mockApiError(
+      "Couldn't load your cabinet. Check your connection and try again.",
+    );
     const wrapper = render();
     await flushPromises();
 
-    expect(wrapper.get('[data-testid="cabinet-error"]').text()).toContain("Couldn't load");
+    expect(wrapper.get('[data-testid="cabinet-error"]').text()).toContain(
+      "Couldn't load",
+    );
     expect(wrapper.find('[data-testid="cabinet-empty"]').exists()).toBe(false);
   });
 
@@ -149,11 +156,15 @@ describe("CabinetPage", () => {
     await flushPromises();
     expect(wrapper.findAll('[data-testid="section-name"]')).toHaveLength(1);
 
-    mockApiError("Couldn't load your cabinet. Check your connection and try again.");
+    mockApiError(
+      "Couldn't load your cabinet. Check your connection and try again.",
+    );
     await useTeaCabinetStore().fetchTeas();
     await flushPromises();
 
-    expect(wrapper.get('[data-testid="cabinet-error"]').text()).toContain("Couldn't load");
+    expect(wrapper.get('[data-testid="cabinet-error"]').text()).toContain(
+      "Couldn't load",
+    );
     expect(wrapper.findAll('[data-testid="section-name"]')).toHaveLength(0);
   });
 
@@ -173,7 +184,10 @@ describe("CabinetPage", () => {
 
     await wrapper.get('[data-testid="card"]').trigger("click");
 
-    expect(push).toHaveBeenCalledWith({ name: "tea-detail", params: { teaId: "a" } });
+    expect(push).toHaveBeenCalledWith({
+      name: "tea-detail",
+      params: { teaId: "a" },
+    });
   });
 
   it("opens the almanac from the header link", async () => {
@@ -196,8 +210,12 @@ describe("CabinetPage", () => {
       await flushPromises();
 
       expect(wrapper.findAll('[data-testid="card"]')).toHaveLength(1);
-      expect(wrapper.get('[data-testid="cabinet-count"]').text()).toBe("1 of 2 teas");
-      expect(wrapper.get('[data-testid="cabinet-filters"]').text()).toBe("Filters · 1");
+      expect(wrapper.get('[data-testid="cabinet-count"]').text()).toBe(
+        "1 of 2 teas",
+      );
+      expect(wrapper.get('[data-testid="cabinet-filters"]').text()).toBe(
+        "Filters · 1",
+      );
     });
 
     it("says nothing matches, not that the shelf is empty, and clears from there", async () => {
@@ -208,29 +226,48 @@ describe("CabinetPage", () => {
       useTeaCabinetFiltersStore().query = "nothing like this";
       await flushPromises();
 
-      expect(wrapper.find('[data-testid="cabinet-empty"]').exists()).toBe(false);
-      await wrapper.get('[data-testid="cabinet-clear-filters"]').trigger("click");
+      expect(wrapper.find('[data-testid="cabinet-empty"]').exists()).toBe(
+        false,
+      );
+      await wrapper
+        .get('[data-testid="cabinet-clear-filters"]')
+        .trigger("click");
       expect(wrapper.findAll('[data-testid="card"]')).toHaveLength(1);
     });
 
     it("filters by the country of the tea's almanac entry", async () => {
-      const wuyi: CatalogueNode = { ...NODE, id: "oolong.wuyi", parent_id: "oolong" };
+      const wuyi: CatalogueNode = {
+        ...NODE,
+        id: "oolong.wuyi",
+        parent_id: "oolong",
+      };
       getMock.mockImplementation((path: string) => {
         if (path === "/tea/teas")
-          return Promise.resolve([tea("a", { catalogue_node_id: "oolong.wuyi" }), tea("b")]);
+          return Promise.resolve([
+            tea("a", { catalogue_node_id: "oolong.wuyi" }),
+            tea("b"),
+          ]);
         if (path === "/tea/catalogue") return Promise.resolve([NODE, wuyi]);
         if (path === "/tea/almanac")
-          return Promise.resolve([{ catalogue_node_id: "oolong.wuyi", country: "China" }]);
+          return Promise.resolve([
+            { catalogue_node_id: "oolong.wuyi", country: "China" },
+          ]);
         return Promise.resolve([]);
       });
       const wrapper = render();
       await flushPromises();
 
       await wrapper.get('[data-testid="cabinet-filters"]').trigger("click");
-      await wrapper.get('[data-testid="filter-country-China"]').trigger("click");
+      await wrapper
+        .get('[data-testid="filter-country-China"]')
+        .trigger("click");
 
-      expect(wrapper.findAll('[data-testid="section-strip"] [data-testid="card"]')).toHaveLength(1);
-      expect(wrapper.get('[data-testid="filters-done"]').text()).toBe("Show 1 tea");
+      expect(
+        wrapper.findAll('[data-testid="section-strip"] [data-testid="card"]'),
+      ).toHaveLength(1);
+      expect(wrapper.get('[data-testid="filters-done"]').text()).toBe(
+        "Show 1 tea",
+      );
     });
   });
 
@@ -240,5 +277,37 @@ describe("CabinetPage", () => {
     await flushPromises();
     await wrapper.get("[data-testid=cabinet-brew]").trigger("click");
     expect(push).toHaveBeenCalledWith({ name: "tea-timer" });
+  });
+
+  it("says who the cabinet is shared with and opens the household sheet", async () => {
+    useAuthStore().username = "jakub";
+    getMock.mockImplementation((path: string) => {
+      if (path === "/tea/cabinet")
+        return Promise.resolve({
+          id: "c_1",
+          owner: "jakub",
+          members: ["jakub", "mia"],
+          is_owner: true,
+        });
+      if (path === "/auth/users") return Promise.resolve({ usernames: [] });
+      return Promise.resolve([]);
+    });
+    const wrapper = render();
+    await flushPromises();
+    expect(wrapper.get("[data-testid=cabinet-household]").text()).toContain(
+      "with mia",
+    );
+
+    await wrapper.get("[data-testid=cabinet-household]").trigger("click");
+    expect(wrapper.find("[data-testid=household-sheet]").exists()).toBe(true);
+  });
+
+  it("keeps the plain title when nobody shares the cabinet", async () => {
+    mockApi([]);
+    const wrapper = render();
+    await flushPromises();
+    expect(wrapper.get("[data-testid=cabinet-household]").text()).toBe(
+      "Cabinet",
+    );
   });
 });

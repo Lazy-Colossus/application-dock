@@ -2,7 +2,16 @@
   <q-page class="cabinet">
     <div ref="scrollEl" class="cabinet__scroll">
       <header class="cabinet__header">
-        <span class="cabinet__title">Cabinet</span>
+        <button
+          class="cabinet__title"
+          data-testid="cabinet-household"
+          aria-label="Who shares this cabinet"
+          @click="householding = true"
+        >
+          Cabinet<small v-if="household.shared" class="cabinet__with">
+            · with {{ sharedWith }}</small
+          >
+        </button>
         <div class="cabinet__header-right">
           <button
             class="cabinet__almanac"
@@ -103,6 +112,8 @@
     >
       +
     </button>
+
+    <HouseholdSheet v-if="householding" @close="householding = false" />
   </q-page>
 </template>
 
@@ -110,10 +121,12 @@
 import { computed, onBeforeUpdate, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import ShelfSection from "../components/ShelfSection.vue";
+import HouseholdSheet from "../components/HouseholdSheet.vue";
 import { useTeaCabinetStore } from "../stores/useTeaCabinetStore";
 import { useTeaCatalogueStore } from "../stores/useTeaCatalogueStore";
 import { useTeaAlmanacStore } from "../stores/useTeaAlmanacStore";
 import { useTeaCabinetFiltersStore } from "../stores/useTeaCabinetFiltersStore";
+import { useTeaHouseholdStore } from "../stores/useTeaHouseholdStore";
 import CabinetFilters from "../components/CabinetFilters.vue";
 import { matchesFilters } from "../filters";
 import { useSectionInView } from "../composables/useSectionInView";
@@ -128,6 +141,13 @@ const catalogue = useTeaCatalogueStore();
 const almanac = useTeaAlmanacStore();
 const filters = useTeaCabinetFiltersStore();
 const filtering = ref(false);
+const household = useTeaHouseholdStore();
+const householding = ref(false);
+const sharedWith = computed(() =>
+  household.others.length === 1
+    ? household.others[0]
+    : `${household.others.length} others`,
+);
 
 const scrollEl = ref<HTMLElement | null>(null);
 const sectionEls = ref<HTMLElement[]>([]);
@@ -191,6 +211,7 @@ onMounted(() => {
   void cabinet.fetchTeas();
   void catalogue.fetchNodes();
   void almanac.fetchEntries();
+  void household.fetchCabinet();
 });
 </script>
 
@@ -220,6 +241,16 @@ onMounted(() => {
   color: #efe7da;
   font-size: 19px;
   font-weight: 500;
+  font-family: inherit;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.cabinet__with {
+  color: #8b7a63;
+  font-size: 13px;
+  font-weight: 400;
 }
 .cabinet__count {
   color: #6b5f52;
