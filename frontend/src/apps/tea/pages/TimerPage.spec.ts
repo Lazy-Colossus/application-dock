@@ -274,6 +274,24 @@ describe("TimerPage", () => {
     expect(useTeaTimerStore().notice).toContain("Tieguanyin");
   });
 
+  it("attaches the tea without waiting for the teaware fetch", async () => {
+    let resolveTeaware!: (value: unknown) => void;
+    getMock.mockImplementation((path: string) => {
+      if (path === "/tea/teaware") return new Promise((resolve) => (resolveTeaware = resolve));
+      if (path.startsWith("/tea/teaware/last-used")) return Promise.resolve(null);
+      if (path === "/tea/teas") return Promise.resolve([tea(), tea2()]);
+      if (path === "/tea/sessions?status=in_progress") return Promise.resolve([]);
+      if (path === "/tea/teas/t-1/curve") return Promise.resolve(CURVE);
+      return Promise.resolve([]);
+    });
+    routeQuery.value = { tea: "t-1" };
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    expect(wrapper.get("[data-testid=timer-tea]").text()).toContain("Tieguanyin");
+    resolveTeaware([]);
+    await flushPromises();
+  });
+
   it("shows the vessel, and picks another from the sheet", async () => {
     getMock.mockImplementation((path: string) => {
       if (path.startsWith("/tea/teaware/last-used")) return Promise.resolve(null);

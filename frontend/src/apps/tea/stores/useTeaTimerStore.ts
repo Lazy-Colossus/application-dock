@@ -33,6 +33,10 @@ export interface LiveSession {
   tea: LiveTea | null;
   // Optional: sessions saved before vessels existed still hydrate.
   teaware?: LiveVessel | null;
+  // Optional: sessions saved before this existed still hydrate as unset,
+  // which reads the same as "never touched" — safe, since the prefill only
+  // ever fires once, right after a tea is attached.
+  vesselChosen?: boolean;
   curve: BrewingCurve;
   leafGrams: number | null;
   waterTempC: number | null;
@@ -219,8 +223,8 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
         unsynced.value = false;
         return;
       }
-      if (statusOf(e) === 422) {
-        if (sentVesselId !== null && session.teaware?.id === sentVesselId) {
+      if (statusOf(e) === 422 && sentVesselId !== null) {
+        if (session.teaware?.id === sentVesselId) {
           // The vessel was retired or removed elsewhere: carry on without it
           // rather than retrying a push that can never land.
           notice.value = `${session.teaware.name} can't be brewed in any more — carrying on without a vessel.`;
@@ -292,11 +296,13 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
         ? { ...i, target_seconds: targetFor(curve.steep_seconds, i.number) }
         : i,
     );
-    // Prefill only an empty slot, so a vessel picked by hand always wins.
-    if (!session.teaware) {
+    // Prefill only an empty, never-touched slot, so a vessel picked by hand —
+    // including explicitly choosing "No vessel" — always wins.
+    if (!session.teaware && !session.vesselChosen) {
       const vessel = await useTeawareStore().lastUsed(tea.id);
       if (live.value !== session) return;
-      if (vessel && !session.teaware) session.teaware = liveVessel(vessel);
+      const stillEmpty = vessel && !session.teaware && !session.vesselChosen;
+      if (stillEmpty && session.tea?.id === tea.id) session.teaware = liveVessel(vessel);
     }
     notice.value = null;
     await push();
@@ -315,6 +321,7 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
   async function setVessel(item: Teaware | null): Promise<void> {
     const session = ensureSession();
     session.teaware = item ? liveVessel(item) : null;
+    session.vesselChosen = true;
     await push();
   }
 
@@ -348,7 +355,7 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
       if (statusOf(e) === 422 && sentVesselId !== null && session.teaware?.id === sentVesselId) {
         // Don't lose the finish over a vessel that became unusable: drop it and let
         // the person save again.
-        notice.value = `${session.teaware.name} can't be brewed in any more — saved without a vessel if you finish again.`;
+        notice.value = `${session.teaware.name} can't be brewed in any more — tap Save again to finish without it.`;
         session.teaware = null;
         error.value = null;
         return null;
@@ -403,12 +410,19 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
         actual_seconds: null,
       });
     }
+    // No item found in the loaded teaware list (fetch failed, or list stale)
+    // must not read as "no vessel" — that would clear teaware_id on the next
+    // push. Fall back to a stub the 422 path can still drop if refused.
+    const fallback: LiveVessel | null =
+      session.teaware_id !== null
+        ? { id: session.teaware_id, name: "your vessel", volume_ml: session.vessel_volume_ml }
+        : null;
     live.value = {
       version: 1,
       sessionId: session.id,
       startedAt: session.started_at,
       tea: liveTea(tea),
-      teaware: vessel ? liveVessel(vessel) : null,
+      teaware: vessel ? liveVessel(vessel) : fallback,
       curve,
       leafGrams: session.leaf_grams,
       waterTempC: session.water_temp_c,

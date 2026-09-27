@@ -46,6 +46,17 @@ async function render(items: Teaware[]) {
   return wrapper;
 }
 
+function renderPending() {
+  let resolveFetch!: (value: Teaware[]) => void;
+  getMock.mockImplementation((path: string) =>
+    path === "/tea/teaware"
+      ? new Promise((resolve) => (resolveFetch = resolve))
+      : Promise.resolve([]),
+  );
+  const wrapper = mount(WareCabinetPage, { global: { stubs: STUBS } });
+  return { wrapper, resolveFetch: (items: Teaware[]) => resolveFetch(items) };
+}
+
 beforeEach(() => {
   setActivePinia(createPinia());
   vi.clearAllMocks();
@@ -73,6 +84,12 @@ describe("WareCabinetPage", () => {
     );
     expect(wrapper.get("[data-testid=ware-count]").text()).toBe("3 pieces");
     expect(wrapper.findAll("[data-testid=ware-card-meta]")[1].text()).toBe("110 ml · clay");
+  });
+
+  it("does not flash 'Nothing matches' while the first fetch is pending", async () => {
+    const { wrapper } = renderPending();
+    await flushPromises();
+    expect(wrapper.find("[data-testid=ware-no-match]").exists()).toBe(false);
   });
 
   it("filters, and offers to clear when nothing matches", async () => {

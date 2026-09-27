@@ -25,7 +25,11 @@
       >
         No teaware yet. Add your first gaiwan or pot.
       </p>
-      <p v-else-if="sections.length === 0" class="ware__empty" data-testid="ware-no-match">
+      <p
+        v-else-if="!teaware.loading && sections.length === 0"
+        class="ware__empty"
+        data-testid="ware-no-match"
+      >
         Nothing matches these filters.
         <button class="ware__clear" data-testid="ware-clear-filters" @click="filters.clear()">
           Clear filters

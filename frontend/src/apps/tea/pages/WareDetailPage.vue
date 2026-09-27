@@ -102,7 +102,12 @@
             Save changes
           </button>
         </div>
-        <button class="ware-page__remove" data-testid="ware-remove" @click="confirming = true">
+        <button
+          class="ware-page__remove"
+          data-testid="ware-remove"
+          :disabled="teaware.saving"
+          @click="confirming = true"
+        >
           Delete from cabinet
         </button>
       </template>
@@ -115,7 +120,12 @@
             they keep their record.
           </template>
         </p>
-        <button class="ware-page__sheet-yes" data-testid="ware-remove-yes" @click="remove">
+        <button
+          class="ware-page__sheet-yes"
+          data-testid="ware-remove-yes"
+          :disabled="teaware.saving"
+          @click="remove"
+        >
           Delete
         </button>
         <button class="ware-page__sheet-no" data-testid="ware-remove-no" @click="confirming = false">
@@ -242,8 +252,13 @@ function leaveEditMode(): void {
 }
 
 async function remove(): Promise<void> {
-  confirming.value = false;
-  if (await teaware.deleteItem(wareId.value)) void router.push({ name: "tea-ware" });
+  // Close only on success — closing first would let another tap of
+  // "Delete from cabinet" reopen the sheet and fire a second delete while
+  // this one is still in flight, and would hide a failure with no retry.
+  if (await teaware.deleteItem(wareId.value)) {
+    confirming.value = false;
+    void router.push({ name: "tea-ware" });
+  }
 }
 
 onBeforeRouteLeave(() => {

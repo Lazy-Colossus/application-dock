@@ -202,6 +202,35 @@ describe("attaching a tea", () => {
     await store.attachTea(tea());
     expect(store.live?.teaware?.id).toBe("w-2");
   });
+
+  it("does not prefill after explicitly picking No vessel", async () => {
+    getMock.mockImplementation((path: string) =>
+      Promise.resolve(path.startsWith("/tea/teaware/last-used") ? POT : ALMANAC),
+    );
+    const store = useTeaTimerStore();
+    await store.setVessel(null);
+    await store.attachTea(tea());
+    expect(store.live?.teaware).toBeNull();
+  });
+
+  it("does not let a slow prefill for one tea land on a session already switched to another", async () => {
+    let resolveLastUsedX!: (value: unknown) => void;
+    getMock.mockImplementation((path: string) => {
+      if (path === "/tea/teaware/last-used?tea_id=t-1")
+        return new Promise((resolve) => (resolveLastUsedX = resolve));
+      if (path.startsWith("/tea/teaware/last-used")) return Promise.resolve(null);
+      return Promise.resolve(ALMANAC);
+    });
+    const store = useTeaTimerStore();
+    const attachingX = store.attachTea(tea());
+    await Promise.resolve();
+    await Promise.resolve();
+    await store.attachTea(tea({ id: "t-2", name: "Dragonwell" }));
+    resolveLastUsedX(POT);
+    await attachingX;
+    expect(store.live?.tea?.id).toBe("t-2");
+    expect(store.live?.teaware ?? null).toBeNull();
+  });
 });
 
 describe("water temp", () => {
@@ -281,6 +310,15 @@ describe("sync failures", () => {
       expect.any(String),
       expect.objectContaining({ teaware_id: null }),
     );
+  });
+
+  it("marks unsynced on a 422 that isn't about a vessel that was ever sent", async () => {
+    mockCurve(ALMANAC);
+    const store = useTeaTimerStore();
+    await store.attachTea(tea());
+    putMock.mockRejectedValueOnce(httpError(422));
+    await steep(store, 21);
+    expect(store.unsynced).toBe(true);
   });
 
   it("keeps a newly picked vessel when an older push's 422 catches up for the vessel it replaced", async () => {
@@ -368,6 +406,7 @@ describe("finishing", () => {
     expect(store.live?.teaware).toBeNull();
     expect(store.live?.tea).not.toBeNull();
     expect(store.error).toBeNull();
+    expect(store.notice).toBe("Zhuni can't be brewed in any more — tap Save again to finish without it.");
   });
 });
 
@@ -490,5 +529,34 @@ describe("resume", () => {
     expect(store.live?.sessionId).toBe("s-abc");
     expect(store.live?.pushed).toBe(true);
     expect(store.current).toEqual({ number: 2, target_seconds: 25, actual_seconds: null });
+  });
+
+  it("keeps a fallback vessel when the session has a teaware_id but no item was found", async () => {
+    mockCurve(ALMANAC);
+    const session: TeaSession = {
+      id: "s-abc",
+      brewed_by: "jakub",
+      teaware_id: "w-1",
+      vessel_volume_ml: 110,
+      tea_id: "t-1",
+      status: "in_progress",
+      started_at: "2026-09-25T19:40:00Z",
+      updated_at: "2026-09-25T19:55:00Z",
+      finished_at: null,
+      leaf_grams: 6,
+      water_temp_c: 95,
+      rating: null,
+      curve_source: "almanac",
+      curve_source_label: "almanac: Tieguanyin",
+      infusions: [{ number: 1, target_seconds: 20, actual_seconds: 22 }],
+    };
+    const store = useTeaTimerStore();
+    store.resume(session, tea(), null);
+    expect(store.live?.teaware).toEqual({ id: "w-1", name: "your vessel", volume_ml: 110 });
+    await store.push();
+    expect(putMock).toHaveBeenLastCalledWith(
+      expect.any(String),
+      expect.objectContaining({ teaware_id: "w-1" }),
+    );
   });
 });

@@ -246,7 +246,9 @@ async function onDiscard(): Promise<void> {
 }
 
 onMounted(async () => {
-  if (teaware.items.length === 0) await teaware.fetchItems();
+  // Not awaited here: the cabinet/in-progress fetches below don't need it,
+  // and only the resume branch does — await it there instead.
+  const teawareLoad = teaware.items.length === 0 ? teaware.fetchItems() : Promise.resolve();
   if (cabinet.teas.length === 0) await cabinet.fetchTeas();
   const wanted = typeof route.query.tea === "string" ? route.query.tea : null;
   const tea = wanted ? cabinet.teas.find((t) => t.id === wanted) : undefined;
@@ -258,6 +260,7 @@ onMounted(async () => {
     await sessions.fetchInProgress();
     const existing = wanted ? sessions.inProgress.find((s) => s.tea_id === wanted) : undefined;
     if (existing) {
+      await teawareLoad;
       onResume(existing);
       return;
     }

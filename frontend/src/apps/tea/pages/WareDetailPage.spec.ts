@@ -126,6 +126,20 @@ describe("WareDetailPage", () => {
     expect(push).toHaveBeenCalledWith({ name: "tea-ware" });
   });
 
+  it("disables delete and its confirm while saving", async () => {
+    let resolveDel!: (value: unknown) => void;
+    delMock.mockImplementation(() => new Promise((resolve) => (resolveDel = resolve)));
+    const wrapper = await page();
+    await wrapper.get("[data-testid=ware-edit]").trigger("click");
+    await wrapper.get("[data-testid=ware-remove]").trigger("click");
+    void wrapper.get("[data-testid=ware-remove-yes]").trigger("click");
+    await flushPromises();
+    expect(wrapper.get("[data-testid=ware-remove]").attributes("disabled")).toBeDefined();
+    expect(wrapper.get("[data-testid=ware-remove-yes]").attributes("disabled")).toBeDefined();
+    resolveDel(undefined);
+    await flushPromises();
+  });
+
   it("saves edits", async () => {
     putMock.mockResolvedValue({ ...POT, name: "Renamed" });
     const wrapper = await page();
