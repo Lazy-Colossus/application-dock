@@ -1,7 +1,6 @@
 <template>
   <q-page class="tea-home">
     <header class="tea-home__header">
-      <span class="tea-home__title">Tea</span>
       <button
         class="tea-home__household"
         data-testid="tea-home-household"
@@ -76,8 +75,7 @@ onMounted(() => {
 }
 .tea-home__header {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+  justify-content: flex-end;
   padding: 20px 18px 12px;
 }
 .tea-home__household {
@@ -88,11 +86,6 @@ onMounted(() => {
   font-size: 13px;
   font-family: inherit;
   cursor: pointer;
-}
-.tea-home__title {
-  color: #efe7da;
-  font-size: 19px;
-  font-weight: 500;
 }
 .tea-home__grid {
   display: grid;

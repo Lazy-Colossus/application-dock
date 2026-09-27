@@ -85,6 +85,14 @@ describe("TeaHomePage", () => {
     expect(push).toHaveBeenCalledWith({ name: routeName });
   });
 
+  // The shell bar already says "Tea"; the header only carries sharing.
+  it("has no heading of its own, just the share button", async () => {
+    const wrapper = render();
+    await flushPromises();
+
+    expect(wrapper.get("header").text()).toBe("Share");
+  });
+
   it("offers to share when nobody else is in the cabinet", async () => {
     const wrapper = render();
     await flushPromises();
