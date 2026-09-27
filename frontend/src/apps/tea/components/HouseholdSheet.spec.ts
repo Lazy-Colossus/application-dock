@@ -13,14 +13,16 @@ vi.mock("@/composables/useApi", () => ({
 }));
 
 import HouseholdSheet from "./HouseholdSheet.vue";
-import { useTeaHouseholdStore } from "../stores/useTeaHouseholdStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { Cabinet } from "../types";
 
 async function sheet(cabinet: Cabinet, me = "jakub") {
   useAuthStore().username = me;
-  useTeaHouseholdStore().cabinet = cabinet;
-  getMock.mockResolvedValue({ usernames: ["jakub", "mia", "ola"] });
+  getMock.mockImplementation((path: string) => {
+    if (path === "/tea/cabinet") return Promise.resolve(cabinet);
+    if (path === "/auth/users") return Promise.resolve({ usernames: ["jakub", "mia", "ola"] });
+    return Promise.resolve([]);
+  });
   const wrapper = mount(HouseholdSheet);
   await flushPromises();
   return wrapper;
@@ -124,5 +126,37 @@ describe("HouseholdSheet", () => {
     await flushPromises();
     expect(delMock).toHaveBeenCalledWith("/tea/cabinet/members/jakub");
     expect(wrapper.emitted("close")).toHaveLength(1);
+  });
+
+  it("fetches its own cabinet on open", async () => {
+    await sheet(MINE);
+    expect(getMock).toHaveBeenCalledWith("/tea/cabinet");
+  });
+
+  it("shows an error and a retry, and no controls, while its cabinet fetch has failed", async () => {
+    useAuthStore().username = "jakub";
+    getMock.mockImplementation((path: string) => {
+      if (path === "/tea/cabinet") return Promise.reject(new Error("network down"));
+      if (path === "/auth/users") return Promise.resolve({ usernames: [] });
+      return Promise.resolve([]);
+    });
+    const wrapper = mount(HouseholdSheet);
+    await flushPromises();
+
+    expect(wrapper.get("[data-testid=household-error]").text()).toBe("network down");
+    expect(wrapper.find("[data-testid=household-retry]").exists()).toBe(true);
+    expect(wrapper.find("[data-testid=household-add-input]").exists()).toBe(false);
+    expect(wrapper.find("[data-testid=household-leave]").exists()).toBe(false);
+
+    getMock.mockImplementation((path: string) => {
+      if (path === "/tea/cabinet") return Promise.resolve(MINE);
+      if (path === "/auth/users") return Promise.resolve({ usernames: ["jakub", "mia", "ola"] });
+      return Promise.resolve([]);
+    });
+    await wrapper.get("[data-testid=household-retry]").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find("[data-testid=household-error]").exists()).toBe(false);
+    expect(wrapper.find("[data-testid=household-add-input]").exists()).toBe(true);
   });
 });

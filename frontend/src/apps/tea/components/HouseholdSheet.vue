@@ -32,57 +32,67 @@
     >
       {{ household.error }}
     </p>
+    <button
+      v-if="household.error"
+      class="sheet__cancel"
+      data-testid="household-retry"
+      @click="household.fetchCabinet()"
+    >
+      Try again
+    </button>
 
-    <template v-if="isOwner">
-      <label class="household__label" for="household-add">Add someone</label>
-      <input
-        id="household-add"
-        v-model="draft"
-        class="sheet__field"
-        list="household-roster"
-        placeholder="their dock username"
-        data-testid="household-add-input"
-      />
-      <datalist id="household-roster">
-        <option v-for="name in addable" :key="name" :value="name" />
-      </datalist>
-      <button
-        class="sheet__save"
-        data-testid="household-add"
-        :disabled="draft.trim() === '' || household.loading"
-        @click="add"
-      >
-        Add to cabinet
-      </button>
-    </template>
+    <template v-if="loaded">
+      <template v-if="isOwner">
+        <label class="household__label" for="household-add">Add someone</label>
+        <input
+          id="household-add"
+          v-model="draft"
+          class="sheet__field"
+          list="household-roster"
+          placeholder="their dock username"
+          data-testid="household-add-input"
+        />
+        <datalist id="household-roster">
+          <option v-for="name in addable" :key="name" :value="name" />
+        </datalist>
+        <button
+          class="sheet__save"
+          data-testid="household-add"
+          :disabled="draft.trim() === '' || household.loading"
+          @click="add"
+        >
+          Add to cabinet
+        </button>
+      </template>
 
-    <template v-else-if="confirmingLeave">
-      <p class="household__hint">
-        You'll start with an empty cabinet. Everything you logged stays here.
-      </p>
+      <template v-else-if="confirmingLeave">
+        <p class="household__hint">
+          You'll start with an empty cabinet. Everything you logged stays here.
+        </p>
+        <button
+          class="sheet__save"
+          data-testid="household-leave-yes"
+          @click="leave"
+        >
+          Leave cabinet
+        </button>
+        <button
+          class="sheet__cancel"
+          data-testid="household-leave-no"
+          @click="confirmingLeave = false"
+        >
+          Stay
+        </button>
+      </template>
       <button
-        class="sheet__save"
-        data-testid="household-leave-yes"
-        @click="leave"
+        v-else
+        class="sheet__cancel"
+        data-testid="household-leave"
+        @click="confirmingLeave = true"
       >
         Leave cabinet
       </button>
-      <button
-        class="sheet__cancel"
-        data-testid="household-leave-no"
-        @click="confirmingLeave = false"
-      >
-        Stay
-      </button>
     </template>
-    <button
-      v-else
-      class="sheet__cancel"
-      data-testid="household-leave"
-      @click="confirmingLeave = true"
-    >
-      Leave cabinet
-    </button>
 
     <button
       class="sheet__cancel"
@@ -110,14 +120,14 @@ const confirmingLeave = ref(false);
 
 const me = computed(() => auth.username);
 const members = computed(() => household.cabinet?.members ?? []);
-// A user with no cabinet yet owns their implicit one.
-const isOwner = computed(() => household.cabinet?.is_owner ?? true);
+const loaded = computed(() => household.cabinet !== null);
+const isOwner = computed(() => household.cabinet?.is_owner ?? false);
 const addable = computed(() =>
   roster.value.filter((u) => u !== me.value && !members.value.includes(u)),
 );
 
 onMounted(async () => {
-  household.error = null;
+  await household.fetchCabinet();
   roster.value = await household.fetchRoster();
 });
 
