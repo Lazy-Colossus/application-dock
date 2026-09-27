@@ -7,7 +7,8 @@ taken from request input.
 
 This module is the only place tea exceptions become HTTP: `FileNotFoundError`
 -> 404, `ValueError` -> 422, `NodeInUseError` and `SessionFinalisedError` -> 409,
-`CabinetGoneError` -> 410 on every route, via `_TeaRoute`.
+`CabinetGoneError` -> 410 on every route, via `_TeaRoute`, `PermissionError` ->
+403 on `/cabinet` membership refusals.
 """
 
 from collections.abc import Callable, Coroutine
@@ -20,8 +21,10 @@ from fastapi.routing import APIRoute
 from app.core.dependencies import get_current_user, user_from_token
 from app.schemas.almanac import AlmanacEntryView
 from app.schemas.tea import (
+    AddMemberRequest,
     AutofillRequest,
     AutofillSuggestion,
+    CabinetView,
     CatalogueNode,
     CreateNodeRequest,
     TeaView,
@@ -258,3 +261,34 @@ def get_curve(tea_id: str, current_user: str = Depends(get_current_user)) -> Bre
         return curves.curve_for(current_user, tea_id)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Tea not found") from exc
+
+
+@router.get("/cabinet", response_model=CabinetView)
+def get_cabinet(current_user: str = Depends(get_current_user)) -> CabinetView:
+    return cabinets.get_cabinet(current_user)
+
+
+@router.post("/cabinet/members", response_model=CabinetView)
+def add_cabinet_member(
+    req: AddMemberRequest, current_user: str = Depends(get_current_user)
+) -> CabinetView:
+    try:
+        return cabinets.add_member(current_user, req.username)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.delete("/cabinet/members/{username}", response_model=CabinetView)
+def remove_cabinet_member(
+    username: str, current_user: str = Depends(get_current_user)
+) -> CabinetView:
+    try:
+        return cabinets.remove_member(current_user, username)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Member not found") from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

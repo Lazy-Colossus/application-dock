@@ -143,3 +143,19 @@ class AutofillSuggestion(BaseModel):
 
     catalogue_node_id: str
     origin: str = ""
+
+
+class CabinetView(BaseModel):
+    """The caller's cabinet as the Household sheet shows it. `members` includes the owner.
+
+    `id` is None while the caller has no cabinet yet — they own an implicit empty one.
+    """
+
+    id: str | None
+    owner: str
+    members: list[str]
+    is_owner: bool
+
+
+class AddMemberRequest(BaseModel):
+    username: str

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from app.repositories import tea_repo as repo
 from app.schemas.tea import TeaDoc
+from app.services import auth_service
 from app.services import tea_cabinet_service as cabinets
 
 
@@ -22,3 +23,12 @@ def cabinet_of(username: str) -> str:
     cabinet_id = cabinets.resolve(username)
     assert cabinet_id is not None
     return cabinet_id
+
+
+def share(owner: str, *members: str) -> None:
+    """Put `members` in `owner`'s cabinet, registering everyone on the dock roster."""
+    for name in (owner, *members):
+        if name not in auth_service.list_usernames():
+            auth_service.create_user(name)
+    for name in members:
+        cabinets.add_member(owner, name)
