@@ -13,7 +13,8 @@ Ready for Review
 2. Tapping a section opens it (`tea-cabinet`, `tea-timer`, `tea-almanac`).
 3. The Cabinet lives at `/tea/cabinet` (route name unchanged); its back arrow returns to the tea home.
 4. New tea and tea detail pages lead back to the Cabinet; Brew and Almanac lead back to the tea home.
-5. The Cabinet header keeps its Brew and Almanac shortcuts.
+5. The Cabinet header holds only Filters — no title, tea count, Brew or Almanac buttons (the shell bar names the page; the tea home reaches the other sections).
+8. Household sharing opens from the tea home header: "Share" when solo, "Shared with <name>" / "Shared with N others" when shared. It covers teas and teaware alike, so it sits above both.
 6. Sections are square tiles in the dock's grid (2 columns, 4 from 768px): a large solid-amber icon over a small name — no Chinese name, no description.
 7. Icons: Cabinet a tea sprig (stem, top leaf, two side leaves); Teaware a Xi Shi pot with a short, flat-ended spout; Brew that same pot tipped, pouring into a cup; Almanac a leather-bound tome with banded spine, corner pieces, strap clasp and a sprig seal.
 

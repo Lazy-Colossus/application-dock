@@ -3,50 +3,19 @@
     <div ref="scrollEl" class="cabinet__scroll">
       <header class="cabinet__header">
         <button
-          class="cabinet__title"
-          data-testid="cabinet-household"
-          :aria-label="titleLabel"
-          @click="householding = true"
+          :class="[
+            'cabinet__filters',
+            { 'cabinet__filters--on': filters.activeCount > 0 },
+          ]"
+          data-testid="cabinet-filters"
+          @click="filtering = true"
         >
-          Cabinet<small v-if="household.shared" class="cabinet__with">
-            · with {{ sharedWith }}</small
-          >
+          {{
+            filters.activeCount > 0
+              ? `Filters · ${filters.activeCount}`
+              : "Filters"
+          }}
         </button>
-        <div class="cabinet__header-right">
-          <button
-            class="cabinet__almanac"
-            data-testid="cabinet-brew"
-            aria-label="Open the brewing timer"
-            @click="router.push({ name: 'tea-timer' })"
-          >
-            Brew
-          </button>
-          <button
-            :class="[
-              'cabinet__almanac',
-              { 'cabinet__filters--on': filters.activeCount > 0 },
-            ]"
-            data-testid="cabinet-filters"
-            @click="filtering = true"
-          >
-            {{
-              filters.activeCount > 0
-                ? `Filters · ${filters.activeCount}`
-                : "Filters"
-            }}
-          </button>
-          <button
-            class="cabinet__almanac"
-            data-testid="cabinet-almanac-link"
-            aria-label="Open the Almanac"
-            @click="openAlmanac"
-          >
-            Almanac
-          </button>
-          <span class="cabinet__count" data-testid="cabinet-count">{{
-            countLabel
-          }}</span>
-        </div>
       </header>
 
       <div
@@ -113,7 +82,6 @@
       +
     </button>
 
-    <HouseholdSheet v-if="householding" @close="householding = false" />
   </q-page>
 </template>
 
@@ -121,12 +89,10 @@
 import { computed, onBeforeUpdate, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import ShelfSection from "../components/ShelfSection.vue";
-import HouseholdSheet from "../components/HouseholdSheet.vue";
 import { useTeaCabinetStore } from "../stores/useTeaCabinetStore";
 import { useTeaCatalogueStore } from "../stores/useTeaCatalogueStore";
 import { useTeaAlmanacStore } from "../stores/useTeaAlmanacStore";
 import { useTeaCabinetFiltersStore } from "../stores/useTeaCabinetFiltersStore";
-import { useTeaHouseholdStore } from "../stores/useTeaHouseholdStore";
 import CabinetFilters from "../components/CabinetFilters.vue";
 import { matchesFilters } from "../filters";
 import { useSectionInView } from "../composables/useSectionInView";
@@ -141,18 +107,6 @@ const catalogue = useTeaCatalogueStore();
 const almanac = useTeaAlmanacStore();
 const filters = useTeaCabinetFiltersStore();
 const filtering = ref(false);
-const household = useTeaHouseholdStore();
-const householding = ref(false);
-const sharedWith = computed(() =>
-  household.others.length === 1
-    ? household.others[0]
-    : `${household.others.length} others`,
-);
-const titleLabel = computed(() =>
-  household.shared
-    ? `Cabinet, shared with ${sharedWith.value} — who shares this cabinet`
-    : "Cabinet — who shares this cabinet",
-);
 
 const scrollEl = ref<HTMLElement | null>(null);
 const sectionEls = ref<HTMLElement[]>([]);
@@ -176,13 +130,6 @@ const visibleTeas = computed(() =>
   ),
 );
 const sections = computed(() => groupByClass(visibleTeas.value));
-const countLabel = computed(() => {
-  const total = cabinet.teas.length;
-  const noun = total === 1 ? "tea" : "teas";
-  return visibleTeas.value.length === total
-    ? `${total} ${noun}`
-    : `${visibleTeas.value.length} of ${total} ${noun}`;
-});
 
 // Sections are keyed by class, so a deleted tea can remove a whole section
 // and shift every later index. Clearing before each re-collection stops a
@@ -208,15 +155,10 @@ function addTea(): void {
   void router.push({ name: "tea-new" });
 }
 
-function openAlmanac(): void {
-  void router.push({ name: "tea-almanac" });
-}
-
 onMounted(() => {
   void cabinet.fetchTeas();
   void catalogue.fetchNodes();
   void almanac.fetchEntries();
-  void household.fetchCabinet();
 });
 </script>
 
@@ -239,34 +181,9 @@ onMounted(() => {
   background: linear-gradient(#17120e 76%, rgba(23, 18, 14, 0));
   padding: 20px 18px 16px;
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+  justify-content: flex-end;
 }
-.cabinet__title {
-  color: #efe7da;
-  font-size: 19px;
-  font-weight: 500;
-  font-family: inherit;
-  background: transparent;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-}
-.cabinet__with {
-  color: #8b7a63;
-  font-size: 13px;
-  font-weight: 400;
-}
-.cabinet__count {
-  color: #6b5f52;
-  font-size: 13px;
-}
-.cabinet__header-right {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-}
-.cabinet__almanac {
+.cabinet__filters {
   background: transparent;
   border: 0;
   color: v-bind("GROUND.inkMuted");

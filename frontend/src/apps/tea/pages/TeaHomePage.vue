@@ -2,6 +2,14 @@
   <q-page class="tea-home">
     <header class="tea-home__header">
       <span class="tea-home__title">Tea</span>
+      <button
+        class="tea-home__household"
+        data-testid="tea-home-household"
+        aria-label="Who shares this cabinet"
+        @click="householding = true"
+      >
+        {{ householdLabel }}
+      </button>
     </header>
 
     <nav class="tea-home__grid" aria-label="Tea sections">
@@ -16,14 +24,19 @@
         <span class="tea-home__name">{{ section.name }}</span>
       </button>
     </nav>
+
+    <HouseholdSheet v-if="householding" @close="householding = false" />
   </q-page>
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import HouseholdSheet from "../components/HouseholdSheet.vue";
 import SectionIcon, {
   type SectionIconName,
 } from "../components/SectionIcon.vue";
+import { useTeaHouseholdStore } from "../stores/useTeaHouseholdStore";
 
 interface Section {
   name: string;
@@ -39,6 +52,21 @@ const SECTIONS: Section[] = [
 ];
 
 const router = useRouter();
+const household = useTeaHouseholdStore();
+const householding = ref(false);
+
+// Sharing spans the teas and the teaware alike, so it lives above both.
+const householdLabel = computed(() => {
+  if (!household.shared) return "Share";
+  const others = household.others;
+  return others.length === 1
+    ? `Shared with ${others[0]}`
+    : `Shared with ${others.length} others`;
+});
+
+onMounted(() => {
+  void household.fetchCabinet();
+});
 </script>
 
 <style scoped lang="scss">
@@ -47,7 +75,19 @@ const router = useRouter();
   min-height: 100%;
 }
 .tea-home__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
   padding: 20px 18px 12px;
+}
+.tea-home__household {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: #8b7a63;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
 }
 .tea-home__title {
   color: #efe7da;

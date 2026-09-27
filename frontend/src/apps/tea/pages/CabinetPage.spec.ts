@@ -15,8 +15,7 @@ vi.mock("vue-router", () => ({ useRouter: () => ({ push }) }));
 import CabinetPage from "./CabinetPage.vue";
 import { useTeaCabinetStore } from "../stores/useTeaCabinetStore";
 import { useTeaCabinetFiltersStore } from "../stores/useTeaCabinetFiltersStore";
-import { useAuthStore } from "@/stores/useAuthStore";
-import type { Tea, CatalogueNode, Cabinet } from "../types";
+import type { Tea, CatalogueNode } from "../types";
 
 const STUBS = {
   "q-page": { template: "<div><slot /></div>" },
@@ -58,20 +57,11 @@ const NODE: CatalogueNode = {
   default_origin: "",
 };
 
-/** An unshared cabinet — what the real `/tea/cabinet` returns for a lone user. */
-const SOLO: Cabinet = {
-  id: null,
-  owner: "jakub",
-  members: ["jakub"],
-  is_owner: true,
-};
-
 /** Resolves `/tea/teas` and `/tea/catalogue` from one mock, by path. */
 function mockApi(teas: Tea[], nodes: CatalogueNode[] = [NODE]) {
   getMock.mockImplementation((path: string) => {
     if (path === "/tea/teas") return Promise.resolve(teas);
     if (path === "/tea/catalogue") return Promise.resolve(nodes);
-    if (path === "/tea/cabinet") return Promise.resolve(SOLO);
     return Promise.resolve([]);
   });
 }
@@ -80,7 +70,6 @@ function mockApi(teas: Tea[], nodes: CatalogueNode[] = [NODE]) {
 function mockApiPending() {
   getMock.mockImplementation((path: string) => {
     if (path === "/tea/catalogue") return Promise.resolve([NODE]);
-    if (path === "/tea/cabinet") return Promise.resolve(SOLO);
     return new Promise(() => {});
   });
 }
@@ -88,7 +77,6 @@ function mockApiPending() {
 function mockApiError(detail: string) {
   getMock.mockImplementation((path: string) => {
     if (path === "/tea/catalogue") return Promise.resolve([NODE]);
-    if (path === "/tea/cabinet") return Promise.resolve(SOLO);
     return Promise.reject(new Error(detail));
   });
 }
@@ -103,6 +91,16 @@ beforeEach(() => {
 });
 
 describe("CabinetPage", () => {
+  // The shell bar already names the page, and the tea home carries Brew,
+  // the Almanac and household sharing — the header is just the filters.
+  it("keeps only the filters in its header", async () => {
+    mockApi([tea("a"), tea("b")]);
+    const wrapper = render();
+    await flushPromises();
+
+    expect(wrapper.get("header").text()).toBe("Filters");
+  });
+
   it("invites you to add the first tea when the cabinet is empty", async () => {
     mockApi([]);
     const wrapper = render();
@@ -130,22 +128,6 @@ describe("CabinetPage", () => {
       .findAll('[data-testid="section-name"]')
       .map((n) => n.text());
     expect(names).toEqual(["Green", "Oolong"]);
-  });
-
-  it("counts the teas in the header", async () => {
-    mockApi([tea("a"), tea("b")]);
-    const wrapper = render();
-    await flushPromises();
-
-    expect(wrapper.get('[data-testid="cabinet-count"]').text()).toBe("2 teas");
-  });
-
-  it("says one tea in the singular", async () => {
-    mockApi([tea("a")]);
-    const wrapper = render();
-    await flushPromises();
-
-    expect(wrapper.get('[data-testid="cabinet-count"]').text()).toBe("1 tea");
   });
 
   it("surfaces an error with what to do next, and hides the empty state", async () => {
@@ -201,18 +183,8 @@ describe("CabinetPage", () => {
     });
   });
 
-  it("opens the almanac from the header link", async () => {
-    mockApi([]);
-    const wrapper = render();
-    await flushPromises();
-
-    await wrapper.get('[data-testid="cabinet-almanac-link"]').trigger("click");
-
-    expect(push).toHaveBeenCalledWith({ name: "tea-almanac" });
-  });
-
   describe("filters", () => {
-    it("hides teas with 0g left once empties are switched off, and counts what is shown", async () => {
+    it("hides teas with 0g left once empties are switched off, and counts the active filter", async () => {
       mockApi([tea("full"), tea("gone", { grams_remaining: 0 })]);
       const wrapper = render();
       await flushPromises();
@@ -221,9 +193,6 @@ describe("CabinetPage", () => {
       await flushPromises();
 
       expect(wrapper.findAll('[data-testid="card"]')).toHaveLength(1);
-      expect(wrapper.get('[data-testid="cabinet-count"]').text()).toBe(
-        "1 of 2 teas",
-      );
       expect(wrapper.get('[data-testid="cabinet-filters"]').text()).toBe(
         "Filters · 1",
       );
@@ -259,8 +228,7 @@ describe("CabinetPage", () => {
             tea("b"),
           ]);
         if (path === "/tea/catalogue") return Promise.resolve([NODE, wuyi]);
-        if (path === "/tea/cabinet") return Promise.resolve(SOLO);
-        if (path === "/tea/almanac")
+            if (path === "/tea/almanac")
           return Promise.resolve([
             { catalogue_node_id: "oolong.wuyi", country: "China" },
           ]);
@@ -281,50 +249,5 @@ describe("CabinetPage", () => {
         "Show 1 tea",
       );
     });
-  });
-
-  it("opens the timer from the Brew button", async () => {
-    getMock.mockImplementation((path: string) =>
-      Promise.resolve(path === "/tea/cabinet" ? SOLO : []),
-    );
-    const wrapper = render();
-    await flushPromises();
-    await wrapper.get("[data-testid=cabinet-brew]").trigger("click");
-    expect(push).toHaveBeenCalledWith({ name: "tea-timer" });
-  });
-
-  it("says who the cabinet is shared with and opens the household sheet", async () => {
-    useAuthStore().username = "jakub";
-    getMock.mockImplementation((path: string) => {
-      if (path === "/tea/cabinet")
-        return Promise.resolve({
-          id: "c_1",
-          owner: "jakub",
-          members: ["jakub", "mia"],
-          is_owner: true,
-        });
-      if (path === "/auth/users") return Promise.resolve({ usernames: [] });
-      return Promise.resolve([]);
-    });
-    const wrapper = render();
-    await flushPromises();
-    expect(wrapper.get("[data-testid=cabinet-household]").text()).toContain(
-      "with mia",
-    );
-    expect(
-      wrapper.get("[data-testid=cabinet-household]").attributes("aria-label"),
-    ).toContain("shared with mia");
-
-    await wrapper.get("[data-testid=cabinet-household]").trigger("click");
-    expect(wrapper.find("[data-testid=household-sheet]").exists()).toBe(true);
-  });
-
-  it("keeps the plain title when nobody shares the cabinet", async () => {
-    mockApi([]);
-    const wrapper = render();
-    await flushPromises();
-    expect(wrapper.get("[data-testid=cabinet-household]").text()).toBe(
-      "Cabinet",
-    );
   });
 });
