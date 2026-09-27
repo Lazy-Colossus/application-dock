@@ -64,4 +64,8 @@ describe("app registry", () => {
     expect(tea?.icon).toBe("app:tea-leaf");
     expect(mapIcon(tea!.icon)).toBeDefined();
   });
+
+  it("puts the Tea card fourth in the dock", () => {
+    expect(apps[3].id).toBe("tea");
+  });
 });

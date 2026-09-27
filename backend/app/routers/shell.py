@@ -42,6 +42,14 @@ _APPS: list[AppDescriptor] = [
         route="/context-switch",
     ),
     AppDescriptor(
+        id="tea",
+        # Must match frontend/src/apps/registry.ts — test_app_registry_parity.py
+        # enforces it. `app:tea-leaf` is a drawn icon the frontend resolves.
+        label="Tea",
+        icon="app:tea-leaf",
+        route="/tea",
+    ),
+    AppDescriptor(
         id="listies",
         label="Listies",
         icon="table_chart",
@@ -70,14 +78,6 @@ _APPS: list[AppDescriptor] = [
         label="Shared Notes",
         icon="sticky_note_2",
         route="/shared-notes",
-    ),
-    AppDescriptor(
-        id="tea",
-        # Must match frontend/src/apps/registry.ts — test_app_registry_parity.py
-        # enforces it. `app:tea-leaf` is a drawn icon the frontend resolves.
-        label="Tea",
-        icon="app:tea-leaf",
-        route="/tea",
     ),
 ]
 

@@ -31,6 +31,15 @@ export const apps: AppDescriptor[] = [
     route: "/context-switch",
   },
   {
+    id: "tea",
+    // The tea sprig from the app's own home screen. The card is the app; its
+    // first screen lists the tea sections — new sections join that home
+    // rather than adding cards of their own.
+    label: "Tea",
+    icon: "app:tea-leaf",
+    route: "/tea",
+  },
+  {
     id: "listies",
     label: "Listies",
     icon: "table_chart",
@@ -62,14 +71,5 @@ export const apps: AppDescriptor[] = [
     // A scratchpad glyph — the app is a shared note pad, not a task list.
     icon: "sticky_note_2",
     route: "/shared-notes",
-  },
-  {
-    id: "tea",
-    // The tea sprig from the app's own home screen. The card is the app; its
-    // first screen lists the tea sections — new sections join that home
-    // rather than adding cards of their own.
-    label: "Tea",
-    icon: "app:tea-leaf",
-    route: "/tea",
   },
 ];
