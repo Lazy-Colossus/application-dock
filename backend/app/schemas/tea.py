@@ -2,7 +2,7 @@
 
 The persisted document is one JSON file per cabinet
 (`DATA_DIR/tea/cabinets/{cabinet_id}.json`) holding the cabinet's teas, the
-catalogue nodes its members added, and their brewing sessions. Who belongs to a
+catalogue nodes its members added, their brewing sessions and their teaware. Who belongs to a
 cabinet is recorded separately, in `DATA_DIR/tea/memberships.json`. Seeded nodes
 are never written there — they ship in `app/data/tea_catalogue.json` and are
 merged on read.
@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field, PositiveInt
 
 from app.schemas.almanac import BrewingParameters
 from app.schemas.tea_session import TeaSession
+from app.schemas.teaware import Teaware
 
 TeaClass = Literal["green", "yellow", "white", "oolong", "red", "dark", "other"]
 TeaForm = Literal["loose", "cake", "brick", "tuo", "ball", "bag", "sample", "other"]
@@ -96,13 +97,14 @@ class TeaView(Tea):
 
 
 class TeaDoc(BaseModel):
-    schema_version: int = 3
+    schema_version: int = 4
     # Empty only on the implicit cabinet of a user who has not written anything yet.
     id: str = ""
     owner: str = ""
     teas: list[Tea] = Field(default_factory=list)
     catalogue_nodes: list[CatalogueNode] = Field(default_factory=list)
     sessions: list[TeaSession] = Field(default_factory=list)
+    teaware: list[Teaware] = Field(default_factory=list)
 
 
 class CreateNodeRequest(BaseModel):

@@ -91,7 +91,7 @@ def migrate(
     """Upgrade a raw document to the current schema.
 
     v2 added `sessions`. v3 made the document a cabinet with an `id` and an
-    `owner`, and gave every session a `brewed_by`. Only a legacy per-user file is
+    `owner`, and gave every session a `brewed_by`. v4 added `teaware`. Only a legacy per-user file is
     ever below v3, and its user owns and brewed everything in it.
     """
     if raw.get("schema_version", 1) == 1:
@@ -107,6 +107,8 @@ def migrate(
             "owner": owner,
             "sessions": [{**session, "brewed_by": owner} for session in sessions],
         }
+    if raw["schema_version"] == 3:
+        raw = {**raw, "schema_version": 4, "teaware": []}
     return raw
 
 

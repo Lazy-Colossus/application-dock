@@ -19,7 +19,7 @@ def _seed_nodes() -> list[CatalogueNode]:
 
 def test_empty_doc_defaults_are_usable() -> None:
     doc = TeaDoc()
-    assert doc.schema_version == 3
+    assert doc.schema_version == 4
     assert doc.teas == []
     assert doc.catalogue_nodes == []
     assert doc.sessions == []
@@ -65,3 +65,31 @@ def test_every_seed_node_is_marked_seed() -> None:
 def test_class_order_is_the_chinese_classification(class_id: str) -> None:
     assert class_id in ("green", "yellow", "white", "oolong", "red", "dark", "other")
     assert CATALOGUE_CLASSES.index("green") < CATALOGUE_CLASSES.index("dark")
+
+
+def test_a_session_without_a_vessel_parses() -> None:
+    from app.schemas.tea_session import TeaSession
+
+    session = TeaSession.model_validate(
+        {
+            "id": "s-1",
+            "tea_id": "t-1",
+            "status": "finalised",
+            "started_at": "2026-09-27T18:00:00+00:00",
+            "curve_source": "generic",
+            "brewed_by": "alice",
+            "updated_at": "2026-09-27T18:30:00+00:00",
+        }
+    )
+    assert (session.teaware_id, session.vessel_volume_ml) == (None, None)
+
+
+def test_teaware_write_refuses_a_zero_volume_and_a_negative_price() -> None:
+    from pydantic import ValidationError
+
+    from app.schemas.teaware import TeawareWriteRequest
+
+    with pytest.raises(ValidationError):
+        TeawareWriteRequest.model_validate({"name": "Pot", "type": "pot", "volume_ml": 0})
+    with pytest.raises(ValidationError):
+        TeawareWriteRequest.model_validate({"name": "Pot", "type": "pot", "price_paid": -1})

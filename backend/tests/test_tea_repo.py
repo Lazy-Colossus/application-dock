@@ -54,12 +54,13 @@ def _write_legacy(tmp_path: Path, username: str = "alice", version: int = 2) -> 
     path.write_text(json.dumps(raw), encoding="utf-8")
 
 
-def test_new_cabinet_writes_an_empty_v3_doc_owned_by_the_user(tmp_path: Path) -> None:
+def test_new_cabinet_writes_an_empty_current_doc_owned_by_the_user(tmp_path: Path) -> None:
     cabinet_id = repo.new_cabinet("alice")
     assert cabinet_id.startswith("c_")
     doc = repo.read_doc(cabinet_id)
-    assert (doc.schema_version, doc.id, doc.owner) == (3, cabinet_id, "alice")
+    assert (doc.schema_version, doc.id, doc.owner) == (4, cabinet_id, "alice")
     assert doc.teas == [] and doc.sessions == [] and doc.catalogue_nodes == []
+    assert doc.teaware == []
     assert (tmp_path / "tea" / "cabinets" / f"{cabinet_id}.json").is_file()
 
 
@@ -157,11 +158,12 @@ def test_delete_cabinet_removes_the_doc_and_its_photos(tmp_path: Path) -> None:
     assert not (tmp_path / "tea" / "images" / cabinet_id).exists()
 
 
-def test_migrate_v1_goes_all_the_way_to_v3() -> None:
+def test_migrate_v1_goes_all_the_way_to_v4() -> None:
     raw: dict[str, object] = {"schema_version": 1, "teas": [], "catalogue_nodes": []}
     upgraded = repo.migrate(raw, cabinet_id="c_" + "1" * 32, owner="alice")
-    assert upgraded["schema_version"] == 3
+    assert upgraded["schema_version"] == 4
     assert upgraded["sessions"] == []
+    assert upgraded["teaware"] == []
     assert (upgraded["id"], upgraded["owner"]) == ("c_" + "1" * 32, "alice")
 
 
@@ -238,6 +240,13 @@ def test_adopt_legacy_recovers_from_a_crash_between_cabinet_write_and_image_move
     assert len(list((tmp_path / "tea" / "cabinets").glob("c_*.json"))) == 1
     assert repo.find_image(cabinet_id, "t-abc12345") is not None
     assert not legacy_images.exists()
+
+
+def test_migrate_v3_adds_an_empty_teaware_list() -> None:
+    raw: dict[str, object] = {"schema_version": 3, "id": "c_" + "1" * 32, "owner": "alice"}
+    upgraded = repo.migrate(raw)
+    assert upgraded["schema_version"] == 4
+    assert upgraded["teaware"] == []
 
 
 def test_seed_catalogue_loads_and_is_cached() -> None:

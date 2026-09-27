@@ -35,6 +35,7 @@ class TeaSessionWrite(BaseModel):
     curve_source: CurveSource
     curve_source_label: str = ""
     infusions: list[Infusion] = Field(default_factory=list)
+    teaware_id: str | None = None
 
     @model_validator(mode="after")
     def _numbered_in_order(self) -> TeaSessionWrite:
@@ -47,6 +48,8 @@ class TeaSession(TeaSessionWrite):
     id: str
     # Server-owned like `id`: set from the caller on first write, never read from a body.
     brewed_by: str
+    # Server-owned: copied from the vessel on every write, so it survives the pot's deletion.
+    vessel_volume_ml: int | None = None
     updated_at: str
     finished_at: str | None = None
 
