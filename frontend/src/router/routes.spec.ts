@@ -45,18 +45,28 @@ describe("legacy KDH paths", () => {
 // preceded it — e.g. the New Tea form right after saving a tea — rather than
 // the fixed place these pages actually lead back to.
 describe("tea back navigation", () => {
+  it("opens the tea app on its home screen, with the cabinet one level down", async () => {
+    const router = makeRouter();
+    await router.push("/tea");
+    expect(router.currentRoute.value.name).toBe("tea-home");
+
+    await router.push("/tea/cabinet");
+    expect(router.currentRoute.value.name).toBe("tea-cabinet");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea");
+  });
+
   it("points New Tea's back arrow at the cabinet", async () => {
     const router = makeRouter();
     await router.push("/tea/new");
 
-    expect(router.currentRoute.value.meta.backTo).toBe("/tea");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea/cabinet");
   });
 
   it("points a tea's detail page back arrow at the cabinet", async () => {
     const router = makeRouter();
     await router.push("/tea/t-1");
 
-    expect(router.currentRoute.value.meta.backTo).toBe("/tea");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea/cabinet");
   });
 
   it("points an almanac entry's back arrow at the almanac", async () => {
@@ -66,7 +76,14 @@ describe("tea back navigation", () => {
     expect(router.currentRoute.value.meta.backTo).toBe("/tea/almanac");
   });
 
-  it("points the timer's back arrow at the cabinet, not at a tea called 'timer'", async () => {
+  it("points the almanac's back arrow at the tea home screen", async () => {
+    const router = makeRouter();
+    await router.push("/tea/almanac");
+
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea");
+  });
+
+  it("points the timer's back arrow at the tea home screen, not at a tea called 'timer'", async () => {
     const router = makeRouter();
     await router.push("/tea/timer");
 
