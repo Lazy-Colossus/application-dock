@@ -153,7 +153,7 @@
 
         <section class="tea-view__section" data-testid="tea-sessions">
           <h2 class="tea-view__heading">Sessions</h2>
-          <TeaSessionsList :sessions="teaSessions" :shared="household.shared" :me="auth.username" />
+          <TeaSessionsList :sessions="teaSessions" :shared="household.shared" :me="auth.username" :vessels="teaware.items" />
         </section>
       </template>
 
@@ -212,6 +212,7 @@ import { useTeaCabinetStore } from "../stores/useTeaCabinetStore";
 import { useTeaCatalogueStore } from "../stores/useTeaCatalogueStore";
 import { useTeaAlmanacStore } from "../stores/useTeaAlmanacStore";
 import { useTeaSessionsStore } from "../stores/useTeaSessionsStore";
+import { useTeawareStore } from "../stores/useTeawareStore";
 import { useTeaHouseholdStore } from "../stores/useTeaHouseholdStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { proportionOf, thresholdFractionOf, isLow, imageSrc, pricePerGram } from "../shelf";
@@ -226,6 +227,7 @@ const cabinet = useTeaCabinetStore();
 const catalogue = useTeaCatalogueStore();
 const almanac = useTeaAlmanacStore();
 const sessions = useTeaSessionsStore();
+const teaware = useTeawareStore();
 const auth = useAuthStore();
 const household = useTeaHouseholdStore();
 
@@ -464,6 +466,7 @@ onMounted(() => {
   // subset in the store that would hide this tea's entry.
   void almanac.fetchEntries();
   void sessions.fetchForTea(teaId.value);
+  if (teaware.items.length === 0) void teaware.fetchItems();
   void household.fetchCabinet();
 });
 </script>

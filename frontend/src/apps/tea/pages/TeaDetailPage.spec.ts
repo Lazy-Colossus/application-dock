@@ -579,4 +579,28 @@ describe("TeaDetailPage", () => {
     ]);
     expect(wrapper.get("[data-testid=fact-brewing]").text()).toBe("7g · 95°C · 15s, 20s");
   });
+
+  it("names the vessel each session was brewed in", async () => {
+    getMock.mockImplementation((path: string) => {
+      if (path === "/tea/teas") return Promise.resolve([tea()]);
+      if (path === "/tea/catalogue") return Promise.resolve([OOLONG, WUYI]);
+      if (path === "/tea/cabinet") return Promise.resolve(SOLO);
+      if (path === "/tea/teaware") return Promise.resolve([{ id: "w-1", name: "Zhuni" }]);
+      if (path === "/tea/teas/t-1/sessions")
+        return Promise.resolve([
+          {
+            id: "s-1", brewed_by: "jakub", tea_id: "t-1", status: "finalised",
+            started_at: "2026-09-25T19:40:00Z", updated_at: "2026-09-25T20:10:00Z",
+            finished_at: "2026-09-25T20:10:00Z", leaf_grams: 6, water_temp_c: 95, rating: 5,
+            curve_source: "almanac", curve_source_label: "almanac: Tieguanyin",
+            infusions: [{ number: 1, target_seconds: 20, actual_seconds: 21 }],
+            teaware_id: "w-1", vessel_volume_ml: 110,
+          },
+        ]);
+      return Promise.resolve([]);
+    });
+    const wrapper = mount(TeaDetailPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    expect(wrapper.get("[data-testid=sessions-vessel-s-1]").text()).toBe("· Zhuni 110 ml");
+  });
 });

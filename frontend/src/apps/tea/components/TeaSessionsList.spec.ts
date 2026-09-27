@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import TeaSessionsList from "./TeaSessionsList.vue";
-import type { TeaSession } from "../types";
+import type { TeaSession, Teaware } from "../types";
 
 function session(id: string, overrides: Partial<TeaSession> = {}): TeaSession {
   return {
@@ -69,5 +69,22 @@ describe("TeaSessionsList", () => {
     });
     expect(wrapper.get("[data-testid=sessions-tea-s-1]").text()).toBe("Longjing");
     expect(wrapper.get("[data-testid=sessions-tea-s-2]").text()).toBe("a removed tea");
+  });
+
+  it("says which vessel each session was brewed in, or that it was removed", () => {
+    const pot = { id: "w-1", name: "Zhuni" } as Teaware;
+    const wrapper = mount(TeaSessionsList, {
+      props: {
+        sessions: [
+          session("s-1", { teaware_id: "w-1", vessel_volume_ml: 110 }),
+          session("s-2", { teaware_id: null, vessel_volume_ml: 110 }),
+          session("s-3"),
+        ],
+        vessels: [pot],
+      },
+    });
+    expect(wrapper.get("[data-testid=sessions-vessel-s-1]").text()).toBe("· Zhuni 110 ml");
+    expect(wrapper.get("[data-testid=sessions-vessel-s-2]").text()).toBe("· 110 ml, vessel removed");
+    expect(wrapper.find("[data-testid=sessions-vessel-s-3]").exists()).toBe(false);
   });
 });

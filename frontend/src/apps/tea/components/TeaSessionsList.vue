@@ -23,13 +23,19 @@
       <span class="sessions__meta">
         {{ session.infusions.length }} {{ session.infusions.length === 1 ? "infusion" : "infusions" }}
         <template v-if="session.leaf_grams !== null"> · {{ session.leaf_grams }} g</template>
+        <span
+          v-if="vessels && vesselLabel(session, vessels)"
+          :data-testid="`sessions-vessel-${session.id}`"
+          >· {{ vesselLabel(session, vessels) }}</span
+        >
       </span>
     </li>
   </ul>
 </template>
 
 <script setup lang="ts">
-import type { TeaSession } from "../types";
+import type { TeaSession, Teaware } from "../types";
+import { vesselLabel } from "../ware";
 
 // Brewers are named only once the cabinet is shared, so a cabinet of one looks as it always did.
 defineProps<{
@@ -37,6 +43,7 @@ defineProps<{
   shared?: boolean;
   me?: string | null;
   teaNames?: Record<string, string>;
+  vessels?: Teaware[];
 }>();
 
 function dateOf(session: TeaSession): string {
