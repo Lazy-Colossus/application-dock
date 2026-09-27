@@ -1,9 +1,11 @@
 """Pydantic v2 schemas for the Tea Cabinet.
 
-The persisted document is one JSON file per user
-(`DATA_DIR/tea/users/{username}.json`) holding that user's teas, the catalogue
-nodes they added themselves, and their brewing sessions. Seeded nodes are never
-written there — they ship in `app/data/tea_catalogue.json` and are merged on read.
+The persisted document is one JSON file per cabinet
+(`DATA_DIR/tea/cabinets/{cabinet_id}.json`) holding the cabinet's teas, the
+catalogue nodes its members added, and their brewing sessions. Who belongs to a
+cabinet is recorded separately, in `DATA_DIR/tea/memberships.json`. Seeded nodes
+are never written there — they ship in `app/data/tea_catalogue.json` and are
+merged on read.
 
 Only `name` and `catalogue_node_id` are required on a tea: adding a tea must
 never feel like a form to fill in (FR-2).
@@ -94,7 +96,10 @@ class TeaView(Tea):
 
 
 class TeaDoc(BaseModel):
-    schema_version: int = 2
+    schema_version: int = 3
+    # Empty only on the implicit cabinet of a user who has not written anything yet.
+    id: str = ""
+    owner: str = ""
     teas: list[Tea] = Field(default_factory=list)
     catalogue_nodes: list[CatalogueNode] = Field(default_factory=list)
     sessions: list[TeaSession] = Field(default_factory=list)

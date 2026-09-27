@@ -1,6 +1,6 @@
 """Pydantic v2 schemas for Gongfu Session Timer sessions.
 
-A session is stored inside the user's tea doc (see `app/schemas/tea.py`) so that
+A session is stored inside the cabinet's tea doc (see `app/schemas/tea.py`) so that
 finalising and the grams deduction it causes are one atomic write. The phone
 owns a live session and sends it as a whole snapshot; the server only ever
 replaces it.
@@ -45,6 +45,8 @@ class TeaSessionWrite(BaseModel):
 
 class TeaSession(TeaSessionWrite):
     id: str
+    # Server-owned like `id`: set from the caller on first write, never read from a body.
+    brewed_by: str
     updated_at: str
     finished_at: str | None = None
 
