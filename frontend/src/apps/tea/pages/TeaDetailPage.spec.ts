@@ -434,6 +434,8 @@ describe("TeaDetailPage", () => {
     const finished = {
       id: "s-1",
       brewed_by: "jakub",
+      teaware_id: null,
+      vessel_volume_ml: null,
       tea_id: "t-1",
       status: "finalised",
       started_at: "2026-09-25T19:40:00Z",
@@ -463,6 +465,8 @@ describe("TeaDetailPage", () => {
     const finished = (id: string, brewedBy: string) => ({
       id,
       brewed_by: brewedBy,
+      teaware_id: null,
+      vessel_volume_ml: null,
       tea_id: "t-1",
       status: "finalised",
       started_at: "2026-09-25T19:40:00Z",
@@ -501,6 +505,8 @@ describe("TeaDetailPage", () => {
     const finished = {
       id: "s-1",
       brewed_by: "mia",
+      teaware_id: null,
+      vessel_volume_ml: null,
       tea_id: "t-1",
       status: "finalised",
       started_at: "2026-09-25T19:40:00Z",
@@ -538,6 +544,8 @@ describe("TeaDetailPage", () => {
     const finished = {
       id: "s-1",
       brewed_by: "mia",
+      teaware_id: null,
+      vessel_volume_ml: null,
       tea_id: "t-1",
       status: "finalised",
       started_at: "2026-09-25T19:40:00Z",

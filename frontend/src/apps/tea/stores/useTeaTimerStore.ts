@@ -164,6 +164,7 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
       curve_source: session.curve.source,
       curve_source_label: session.curve.source_label,
       infusions: session.infusions,
+      teaware_id: null,
     };
   }
 

@@ -7,6 +7,8 @@ function session(id: string, overrides: Partial<TeaSession> = {}): TeaSession {
   return {
     id,
     brewed_by: "jakub",
+    teaware_id: null,
+    vessel_volume_ml: null,
     tea_id: "t-1",
     status: "finalised",
     started_at: "2026-09-25T19:40:00Z",
