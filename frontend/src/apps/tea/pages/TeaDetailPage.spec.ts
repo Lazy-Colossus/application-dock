@@ -423,6 +423,7 @@ describe("TeaDetailPage", () => {
   it("lists the tea's finished sessions", async () => {
     const finished = {
       id: "s-1",
+      brewed_by: "jakub",
       tea_id: "t-1",
       status: "finalised",
       started_at: "2026-09-25T19:40:00Z",

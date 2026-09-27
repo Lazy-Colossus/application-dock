@@ -114,6 +114,7 @@ export interface TeaSessionWrite {
 
 export interface TeaSession extends TeaSessionWrite {
   id: string;
+  brewed_by: string;
   updated_at: string;
   finished_at: string | null;
 }
@@ -124,4 +125,12 @@ export interface BrewingCurve {
   steep_seconds: number[];
   source: CurveSource;
   source_label: string;
+}
+
+/** The caller's cabinet. `members` includes the owner; `id` is null until the first write. */
+export interface Cabinet {
+  id: string | null;
+  owner: string;
+  members: string[];
+  is_owner: boolean;
 }

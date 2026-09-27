@@ -6,6 +6,7 @@ import type { TeaSession } from "../types";
 function session(id: string, overrides: Partial<TeaSession> = {}): TeaSession {
   return {
     id,
+    brewed_by: "jakub",
     tea_id: "t-1",
     status: "finalised",
     started_at: "2026-09-25T19:40:00Z",

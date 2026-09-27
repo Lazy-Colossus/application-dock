@@ -347,6 +347,7 @@ describe("resume", () => {
   it("loads a server snapshot and adds the pending steep", () => {
     const session: TeaSession = {
       id: "s-abc",
+      brewed_by: "jakub",
       tea_id: "t-1",
       status: "in_progress",
       started_at: "2026-09-25T19:40:00Z",
