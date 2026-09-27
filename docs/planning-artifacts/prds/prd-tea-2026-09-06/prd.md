@@ -110,7 +110,7 @@ Opening a Tea shows its recommended Brewing Parameters, grams remaining, reverse
 
 ### 4.2 The Teaware Cabinet
 
-**Description:** A parallel inventory for *ware* — every gaiwan, pot, kyusu, pitcher, cup, and chawan. Each Teaware item carries a type, material, volume, optional photo, and notes. Porous pots additionally carry a **Seasoning Log**: the record of which Teas have been brewed in them, supporting the practice of dedicating one pot to one tea-type. A Session references the Teaware used, and that reference is what feeds each pot's Seasoning Log.
+**Description:** A parallel inventory for *ware* — every gaiwan, pot, kyusu, pitcher, cup, and chawan. Each Teaware item carries a type, material, volume, optional photo, and notes. Porous pots additionally carry a **Seasoning Log**: the record of which Teas have been brewed in them, supporting the practice of dedicating one pot to one tea-type. A Session references the Teaware used, and that reference is what feeds each pot's Seasoning Log. Designed in `docs/superpowers/specs/2026-09-27-tea-teaware-cabinet-design.md`, which supersedes the details below where they differ: materials are porcelain / clay / stoneware / glass / other; the Seasoning Log is derived from the sessions that name a pot rather than stored; a pot is dedicated to a catalogue node; archiving is an undoable Retire, and a hard delete exists.
 
 **Functional Requirements:**
 
