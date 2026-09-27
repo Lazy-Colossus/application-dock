@@ -192,6 +192,10 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
     const session = live.value;
     const tea = session?.tea;
     if (!session || !tea) return;
+    // Captured before the request lands: a later push (e.g. picking a
+    // different vessel) may replace session.teaware before this one's
+    // response arrives, and a 422 must only ever blame what it actually sent.
+    const sentVesselId = session.teaware?.id ?? null;
     // Mark as pushed before the request lands, not after: a discard tapped
     // while this PUT is in flight must still DELETE, whether the PUT
     // eventually succeeds, fails, or its response is simply lost.
@@ -215,12 +219,16 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
         unsynced.value = false;
         return;
       }
-      if (statusOf(e) === 422 && session.teaware) {
-        // The vessel was retired or removed elsewhere: carry on without it rather
-        // than retrying a push that can never land.
-        notice.value = `${session.teaware.name} can't be brewed in any more — carrying on without a vessel.`;
-        session.teaware = null;
-        await push();
+      if (statusOf(e) === 422) {
+        if (sentVesselId !== null && session.teaware?.id === sentVesselId) {
+          // The vessel was retired or removed elsewhere: carry on without it
+          // rather than retrying a push that can never land.
+          notice.value = `${session.teaware.name} can't be brewed in any more — carrying on without a vessel.`;
+          session.teaware = null;
+          await push();
+        }
+        // Else: a stale 422 for a vessel a newer push already replaced —
+        // let that push decide the outcome instead of overwriting it.
         return;
       }
       unsynced.value = true;
@@ -315,6 +323,7 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
     const tea = session?.tea;
     if (!session || !tea) return null;
     const teaId = tea.id;
+    const sentVesselId = session.teaware?.id ?? null;
     loading.value = true;
     try {
       await api.put<TeaSession>(`/tea/sessions/${session.sessionId}`, {
@@ -336,7 +345,7 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
         error.value = null;
         return null;
       }
-      if (statusOf(e) === 422 && session.teaware) {
+      if (statusOf(e) === 422 && sentVesselId !== null && session.teaware?.id === sentVesselId) {
         // Don't lose the finish over a vessel that became unusable: drop it and let
         // the person save again.
         notice.value = `${session.teaware.name} can't be brewed in any more — saved without a vessel if you finish again.`;

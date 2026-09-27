@@ -282,6 +282,32 @@ describe("sync failures", () => {
       expect.objectContaining({ teaware_id: null }),
     );
   });
+
+  it("keeps a newly picked vessel when an older push's 422 catches up for the vessel it replaced", async () => {
+    mockCurve(ALMANAC);
+    const store = useTeaTimerStore();
+    await store.attachTea(tea());
+
+    let rejectFirstPut!: (reason: unknown) => void;
+    putMock.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectFirstPut = reject;
+        }),
+    );
+    const settingA = store.setVessel(POT);
+    await store.setVessel({ ...POT, id: "w-2", name: "Gaiwan" });
+    rejectFirstPut(httpError(422));
+    await settingA;
+
+    expect(store.live?.teaware?.id).toBe("w-2");
+    expect(store.notice ?? "").not.toContain("Zhuni");
+    expect(store.notice ?? "").not.toContain("Gaiwan");
+    expect(putMock).toHaveBeenLastCalledWith(
+      expect.any(String),
+      expect.objectContaining({ teaware_id: "w-2" }),
+    );
+  });
 });
 
 describe("finishing", () => {
