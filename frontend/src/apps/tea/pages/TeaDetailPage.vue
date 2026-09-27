@@ -179,7 +179,7 @@
         <p class="sheet__title">
           Remove {{ tea.name }} from the cabinet? Its notes go with it.
           <template v-if="household.shared && othersSessions > 0">
-            Also deletes {{ teaSessions.length }} sessions ({{ othersSessions }} by others).
+            Also deletes {{ teaSessions.length }} {{ sessionsWord }} ({{ othersSessions }} by others).
           </template>
         </p>
         <button class="sheet__save" data-testid="remove-yes" @click="remove">Remove</button>
@@ -235,6 +235,7 @@ const teaSessions = computed(() => sessions.byTea[teaId.value] ?? []);
 const othersSessions = computed(
   () => teaSessions.value.filter((s) => s.brewed_by !== auth.username).length,
 );
+const sessionsWord = computed(() => (teaSessions.value.length === 1 ? "session" : "sessions"));
 
 const editing = ref(false);
 const editMode = ref(false);

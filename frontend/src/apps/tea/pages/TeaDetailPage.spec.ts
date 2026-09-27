@@ -496,6 +496,41 @@ describe("TeaDetailPage", () => {
     );
   });
 
+  it("pluralizes the delete count for a single shared session", async () => {
+    useAuthStore().username = "jakub";
+    const finished = {
+      id: "s-1",
+      brewed_by: "mia",
+      tea_id: "t-1",
+      status: "finalised",
+      started_at: "2026-09-25T19:40:00Z",
+      updated_at: "2026-09-25T20:10:00Z",
+      finished_at: "2026-09-25T20:10:00Z",
+      leaf_grams: 6,
+      water_temp_c: 95,
+      rating: 5,
+      curve_source: "almanac",
+      curve_source_label: "almanac: Tieguanyin",
+      infusions: [{ number: 1, target_seconds: 20, actual_seconds: 21 }],
+    };
+    getMock.mockImplementation((path: string) => {
+      if (path === "/tea/teas") return Promise.resolve([tea()]);
+      if (path === "/tea/catalogue") return Promise.resolve([OOLONG, WUYI]);
+      if (path === "/tea/cabinet")
+        return Promise.resolve({ id: "c_1", owner: "jakub", members: ["jakub", "mia"], is_owner: true });
+      if (path === "/tea/teas/t-1/sessions") return Promise.resolve([finished]);
+      return Promise.resolve([]);
+    });
+    const wrapper = mount(TeaDetailPage, { global: { stubs: STUBS } });
+    await flushPromises();
+
+    await wrapper.get('[data-testid="tea-edit"]').trigger("click");
+    await wrapper.get('[data-testid="tea-remove"]').trigger("click");
+    expect(wrapper.get('[data-testid="remove-confirm"]').text()).toContain(
+      "Also deletes 1 session (1 by others).",
+    );
+  });
+
   // A member who left leaves her old sessions behind; the cabinet is solo
   // again, so it must look exactly as it always did — no delete count.
   it("says nothing extra about sessions in a solo cabinet, even one holding a former member's", async () => {
