@@ -49,6 +49,7 @@ describe("tea back navigation", () => {
     const router = makeRouter();
     await router.push("/tea");
     expect(router.currentRoute.value.name).toBe("tea-home");
+    expect(router.currentRoute.value.meta.backTo).toBe("/");
 
     await router.push("/tea/cabinet");
     expect(router.currentRoute.value.name).toBe("tea-cabinet");

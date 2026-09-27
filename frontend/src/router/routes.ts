@@ -230,7 +230,7 @@ const routes: RouteRecordRaw[] = [
         path: "tea",
         name: "tea-home",
         component: () => import("@/apps/tea/pages/TeaHomePage.vue"),
-        meta: { title: "Tea", requiresAuth: true },
+        meta: { title: "Tea", requiresAuth: true, backTo: "/" },
       },
       {
         path: "tea/cabinet",
