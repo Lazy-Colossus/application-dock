@@ -128,4 +128,11 @@ def delete_node(username: str, node_id: str) -> None:
             plural = "tea is" if in_use == 1 else "teas are"
             raise NodeInUseError(f"{in_use} {plural} classified here. Reclassify them first.")
 
+        dedicated = sum(1 for item in doc.teaware if item.dedicated_node_id == node_id)
+        if dedicated:
+            plural = "piece of teaware is" if dedicated == 1 else "pieces of teaware are"
+            raise NodeInUseError(
+                f"{dedicated} {plural} dedicated here. Change the dedication first."
+            )
+
         doc.catalogue_nodes = [node for node in doc.catalogue_nodes if node.id != node_id]

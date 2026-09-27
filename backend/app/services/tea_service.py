@@ -17,13 +17,23 @@ from app.schemas.tea import CatalogueNode, Tea, TeaView, TeaWriteRequest
 from app.services import tea_cabinet_service as cabinets
 from app.services import tea_catalogue_service as catalogue
 
-_MAX_IMAGE_BYTES = 5 * 1024 * 1024
-_IMAGE_EXTENSIONS = {
+MAX_IMAGE_BYTES = 5 * 1024 * 1024
+IMAGE_EXTENSIONS = {
     "image/jpeg": "jpg",
     "image/png": "png",
     "image/webp": "webp",
     "image/gif": "gif",
 }
+
+
+def image_extension(content: bytes, content_type: str) -> str:
+    """The stored extension for an uploaded photo; `ValueError` when it can't be kept."""
+    extension = IMAGE_EXTENSIONS.get(content_type)
+    if extension is None:
+        raise ValueError("Only JPEG, PNG, WebP, or GIF images are supported")
+    if len(content) > MAX_IMAGE_BYTES:
+        raise ValueError("Images must be 5MB or smaller")
+    return extension
 
 
 def _now_iso() -> str:
@@ -141,11 +151,7 @@ def delete_tea(username: str, tea_id: str) -> None:
 
 def save_image(username: str, tea_id: str, content: bytes, content_type: str) -> TeaView:
     """Store an uploaded photo for `tea_id` and point `image_url` at its served route."""
-    extension = _IMAGE_EXTENSIONS.get(content_type)
-    if extension is None:
-        raise ValueError("Only JPEG, PNG, WebP, or GIF images are supported")
-    if len(content) > _MAX_IMAGE_BYTES:
-        raise ValueError("Images must be 5MB or smaller")
+    extension = image_extension(content, content_type)
 
     index = catalogue.node_index(catalogue.merged_nodes(username))
     cabinet_id = cabinets.ensure(username)
