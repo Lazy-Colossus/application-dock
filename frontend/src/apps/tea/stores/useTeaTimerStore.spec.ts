@@ -12,7 +12,7 @@ vi.mock("@/composables/useApi", () => ({
 }));
 
 import { useTeaTimerStore } from "./useTeaTimerStore";
-import type { BrewingCurve, Tea, TeaSession } from "../types";
+import type { BrewingCurve, Tea, TeaSession, Teaware } from "../types";
 
 function tea(overrides: Partial<Tea> = {}): Tea {
   return {
@@ -51,6 +51,31 @@ const ALMANAC: BrewingCurve = {
 
 function httpError(status: number): Error {
   return Object.assign(new Error(`${status}`), { status, detail: `HTTP ${status}` });
+}
+
+const POT: Teaware = {
+  id: "w-1",
+  name: "Zhuni",
+  type: "pot",
+  material: "clay",
+  volume_ml: 110,
+  porous: false,
+  dedicated_node_id: null,
+  maker: "",
+  origin: "",
+  acquired_date: null,
+  price_paid: null,
+  notes: "",
+  image_url: null,
+  retired_at: null,
+  created_at: "2026-09-27T10:00:00Z",
+  updated_at: "2026-09-27T10:00:00Z",
+};
+
+function mockCurve(curve: unknown): void {
+  getMock.mockImplementation((path: string) =>
+    Promise.resolve(path.startsWith("/tea/teaware/last-used") ? null : curve),
+  );
 }
 
 beforeEach(() => {
@@ -112,7 +137,7 @@ describe("plain timer", () => {
 
 describe("attaching a tea", () => {
   it("re-targets unbrewed steeps only, prefills grams and pushes", async () => {
-    getMock.mockResolvedValue(ALMANAC);
+    mockCurve(ALMANAC);
     const store = useTeaTimerStore();
     await steep(store, 11);
     await store.attachTea(tea());
@@ -131,7 +156,7 @@ describe("attaching a tea", () => {
   });
 
   it("keeps a running steep running while it re-targets", async () => {
-    getMock.mockResolvedValue(ALMANAC);
+    mockCurve(ALMANAC);
     const store = useTeaTimerStore();
     store.start();
     await store.attachTea(tea());
@@ -148,11 +173,34 @@ describe("attaching a tea", () => {
   });
 
   it("pushes after every steep once a tea is attached", async () => {
-    getMock.mockResolvedValue(ALMANAC);
+    mockCurve(ALMANAC);
     const store = useTeaTimerStore();
     await store.attachTea(tea());
     await steep(store, 21);
     expect(putMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("prefills the vessel you last used for this tea and sends it", async () => {
+    getMock.mockImplementation((path: string) =>
+      Promise.resolve(path === "/tea/teaware/last-used?tea_id=t-1" ? POT : ALMANAC),
+    );
+    const store = useTeaTimerStore();
+    await store.attachTea(tea());
+    expect(store.live?.teaware).toEqual({ id: "w-1", name: "Zhuni", volume_ml: 110 });
+    expect(putMock).toHaveBeenLastCalledWith(
+      expect.stringMatching(/^\/tea\/sessions\//),
+      expect.objectContaining({ teaware_id: "w-1" }),
+    );
+  });
+
+  it("keeps a vessel you picked yourself over the prefill", async () => {
+    getMock.mockImplementation((path: string) =>
+      Promise.resolve(path.startsWith("/tea/teaware/last-used") ? POT : ALMANAC),
+    );
+    const store = useTeaTimerStore();
+    await store.setVessel({ ...POT, id: "w-2", name: "Gaiwan" });
+    await store.attachTea(tea());
+    expect(store.live?.teaware?.id).toBe("w-2");
   });
 });
 
@@ -178,7 +226,7 @@ describe("water temp", () => {
 
 describe("sync failures", () => {
   it("marks unsynced on a failed push and clears it on the next success", async () => {
-    getMock.mockResolvedValue(ALMANAC);
+    mockCurve(ALMANAC);
     const store = useTeaTimerStore();
     putMock.mockRejectedValueOnce(httpError(0));
     await store.attachTea(tea());
@@ -188,7 +236,7 @@ describe("sync failures", () => {
   });
 
   it("detaches the tea when the server says it is gone", async () => {
-    getMock.mockResolvedValue(ALMANAC);
+    mockCurve(ALMANAC);
     const store = useTeaTimerStore();
     await store.attachTea(tea());
     putMock.mockRejectedValueOnce(httpError(404));
@@ -200,7 +248,7 @@ describe("sync failures", () => {
   });
 
   it("ignores a stale push result after the session has already ended", async () => {
-    getMock.mockResolvedValue(ALMANAC);
+    mockCurve(ALMANAC);
     const store = useTeaTimerStore();
     await store.attachTea(tea());
 
@@ -219,11 +267,26 @@ describe("sync failures", () => {
     expect(store.unsynced).toBe(false);
     expect(store.notice).toBeNull();
   });
+
+  it("drops a vessel the server refuses and keeps syncing", async () => {
+    mockCurve(ALMANAC);
+    const store = useTeaTimerStore();
+    await store.attachTea(tea());
+    putMock.mockRejectedValueOnce(Object.assign(httpError(422), { detail: "Zhuni is retired" }));
+    await store.setVessel(POT);
+    expect(store.live?.teaware).toBeNull();
+    expect(store.notice).toContain("Zhuni");
+    expect(store.unsynced).toBe(false);
+    expect(putMock).toHaveBeenLastCalledWith(
+      expect.any(String),
+      expect.objectContaining({ teaware_id: null }),
+    );
+  });
 });
 
 describe("finishing", () => {
   it("finalises with the rating, clears, and returns the tea id", async () => {
-    getMock.mockResolvedValue(ALMANAC);
+    mockCurve(ALMANAC);
     const store = useTeaTimerStore();
     await store.attachTea(tea());
     await steep(store, 21);
@@ -238,7 +301,7 @@ describe("finishing", () => {
   });
 
   it("treats a 409 as already finished", async () => {
-    getMock.mockResolvedValue(ALMANAC);
+    mockCurve(ALMANAC);
     const store = useTeaTimerStore();
     await store.attachTea(tea());
     putMock.mockRejectedValueOnce(httpError(409));
@@ -247,7 +310,7 @@ describe("finishing", () => {
   });
 
   it("detaches the tea on a 404 and carries on as a plain timer", async () => {
-    getMock.mockResolvedValue(ALMANAC);
+    mockCurve(ALMANAC);
     const store = useTeaTimerStore();
     await store.attachTea(tea());
     putMock.mockRejectedValueOnce(httpError(404));
@@ -259,7 +322,7 @@ describe("finishing", () => {
   });
 
   it("keeps the session and reports the error when finishing fails", async () => {
-    getMock.mockResolvedValue(ALMANAC);
+    mockCurve(ALMANAC);
     const store = useTeaTimerStore();
     await store.attachTea(tea());
     putMock.mockRejectedValueOnce(httpError(500));
@@ -268,11 +331,23 @@ describe("finishing", () => {
     expect(store.error).toBe("HTTP 500");
     expect(store.loading).toBe(false);
   });
+
+  it("finishing with a refused vessel drops it and keeps the sheet open", async () => {
+    mockCurve(ALMANAC);
+    const store = useTeaTimerStore();
+    await store.attachTea(tea());
+    await store.setVessel(POT);
+    putMock.mockRejectedValueOnce(httpError(422));
+    expect(await store.finish(4)).toBeNull();
+    expect(store.live?.teaware).toBeNull();
+    expect(store.live?.tea).not.toBeNull();
+    expect(store.error).toBeNull();
+  });
 });
 
 describe("discard", () => {
   it("deletes a pushed session on the server", async () => {
-    getMock.mockResolvedValue(ALMANAC);
+    mockCurve(ALMANAC);
     const store = useTeaTimerStore();
     await store.attachTea(tea());
     const id = store.live!.sessionId;
@@ -289,7 +364,7 @@ describe("discard", () => {
   });
 
   it("deletes on the server even while the first push is still pending", async () => {
-    getMock.mockResolvedValue(ALMANAC);
+    mockCurve(ALMANAC);
     let resolvePut!: (value: unknown) => void;
     putMock.mockImplementationOnce(
       () =>
@@ -299,9 +374,9 @@ describe("discard", () => {
     );
     const store = useTeaTimerStore();
     const attaching = store.attachTea(tea());
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
+    // attachTea now awaits the curve fetch and the vessel prefill fetch before
+    // pushing: enough microtask ticks to get past both, short of the pending put.
+    for (let i = 0; i < 8; i += 1) await Promise.resolve();
     const id = store.live?.sessionId;
 
     expect(await store.discard()).toBe(true);
@@ -340,6 +415,28 @@ describe("persistence", () => {
     store.toggleChime();
     setActivePinia(createPinia());
     expect(useTeaTimerStore().chimeOn).toBe(false);
+  });
+
+  it("hydrates a saved session that has no vessel", () => {
+    localStorage.setItem(
+      "tea-timer:live",
+      JSON.stringify({
+        version: 1,
+        sessionId: "s-old",
+        startedAt: "2026-09-26T17:00:00Z",
+        tea: null,
+        curve: ALMANAC,
+        leafGrams: null,
+        waterTempC: null,
+        infusions: [{ number: 1, target_seconds: 20, actual_seconds: null }],
+        steepStartedAt: null,
+        pushed: false,
+      }),
+    );
+    setActivePinia(createPinia());
+    const store = useTeaTimerStore();
+    expect(store.live?.sessionId).toBe("s-old");
+    expect(store.live?.teaware ?? null).toBeNull();
   });
 });
 

@@ -1,16 +1,29 @@
 <template>
   <q-page class="timer">
     <header class="timer__bar">
-      <button class="timer__tea" data-testid="timer-tea" @click="picking = true">
-        <template v-if="timer.live?.tea">
-          {{ timer.live.tea.name }}
-          <small>change tea</small>
-        </template>
-        <template v-else>
-          + pick a tea
-          <small>just a timer</small>
-        </template>
-      </button>
+      <div class="timer__what">
+        <button class="timer__tea" data-testid="timer-tea" @click="picking = true">
+          <template v-if="timer.live?.tea">
+            {{ timer.live.tea.name }}
+            <small>change tea</small>
+          </template>
+          <template v-else>
+            + pick a tea
+            <small>just a timer</small>
+          </template>
+        </button>
+        <button class="timer__tea timer__vessel" data-testid="timer-vessel" @click="pickingVessel = true">
+          <template v-if="timer.live?.teaware">
+            in {{ timer.live.teaware.name
+            }}<template v-if="timer.live.teaware.volume_ml"> · {{ timer.live.teaware.volume_ml }} ml</template>
+            <small>change vessel</small>
+          </template>
+          <template v-else>
+            + vessel
+            <small>what you're brewing in</small>
+          </template>
+        </button>
+      </div>
       <span
         v-if="timer.unsynced"
         class="timer__unsynced"
@@ -112,6 +125,14 @@
       @close="picking = false"
     />
 
+    <PickVesselSheet
+      v-if="pickingVessel"
+      :items="teaware.items"
+      :current-id="timer.live?.teaware?.id ?? null"
+      @pick="onPickVessel"
+      @close="pickingVessel = false"
+    />
+
     <FinishSheet
       v-if="finishing && timer.live?.tea"
       :tea-name="timer.live.tea.name"
@@ -130,24 +151,28 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import TeaCup from "../components/TeaCup.vue";
 import PickTeaSheet from "../components/PickTeaSheet.vue";
+import PickVesselSheet from "../components/PickVesselSheet.vue";
 import FinishSheet from "../components/FinishSheet.vue";
 import RecoveryCard from "../components/RecoveryCard.vue";
 import { useTeaTimerStore } from "../stores/useTeaTimerStore";
 import { useTeaSessionsStore } from "../stores/useTeaSessionsStore";
 import { useTeaCabinetStore } from "../stores/useTeaCabinetStore";
+import { useTeawareStore } from "../stores/useTeawareStore";
 import { useSteepClock } from "../composables/useSteepClock";
 import { useWakeLock } from "../composables/useWakeLock";
 import { useTargetChime } from "../composables/useTargetChime";
 import { STEP_SECONDS, formatElapsed, targetFor } from "../timer";
-import type { Tea, TeaSession } from "../types";
+import type { Tea, TeaSession, Teaware } from "../types";
 
 const route = useRoute();
 const router = useRouter();
 const timer = useTeaTimerStore();
 const sessions = useTeaSessionsStore();
 const cabinet = useTeaCabinetStore();
+const teaware = useTeawareStore();
 
 const picking = ref(false);
+const pickingVessel = ref(false);
 const finishing = ref(false);
 const menu = ref(false);
 
@@ -178,10 +203,15 @@ async function onPick(tea: Tea): Promise<void> {
   await timer.attachTea(tea);
 }
 
+async function onPickVessel(item: Teaware | null): Promise<void> {
+  pickingVessel.value = false;
+  await timer.setVessel(item);
+}
+
 function onResume(session: TeaSession): void {
   const tea = cabinet.teas.find((t) => t.id === session.tea_id);
   if (!tea) return;
-  timer.resume(session, tea);
+  timer.resume(session, tea, teaware.items.find((w) => w.id === session.teaware_id) ?? null);
   sessions.forget(session.id);
 }
 
@@ -216,6 +246,7 @@ async function onDiscard(): Promise<void> {
 }
 
 onMounted(async () => {
+  if (teaware.items.length === 0) await teaware.fetchItems();
   if (cabinet.teas.length === 0) await cabinet.fetchTeas();
   const wanted = typeof route.query.tea === "string" ? route.query.tea : null;
   const tea = wanted ? cabinet.teas.find((t) => t.id === wanted) : undefined;
@@ -262,6 +293,11 @@ onMounted(async () => {
   padding: 16px 18px 6px;
   position: relative;
 }
+.timer__what {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 .timer__tea {
   background: transparent;
   border: 0;
@@ -277,6 +313,9 @@ onMounted(async () => {
     color: #8b7a63;
     font-size: 11px;
   }
+}
+.timer__vessel {
+  font-size: 14px;
 }
 .timer__unsynced {
   width: 8px;

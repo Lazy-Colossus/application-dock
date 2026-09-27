@@ -75,6 +75,7 @@ const CURVE_2: BrewingCurve = {
 
 function routes(inProgress: TeaSession[] = []) {
   getMock.mockImplementation((path: string) => {
+    if (path.startsWith("/tea/teaware/last-used")) return Promise.resolve(null);
     if (path === "/tea/teas") return Promise.resolve([tea(), tea2()]);
     if (path === "/tea/sessions?status=in_progress") return Promise.resolve(inProgress);
     if (path === "/tea/teas/t-1/curve") return Promise.resolve(CURVE);
@@ -233,6 +234,7 @@ describe("TimerPage", () => {
 
   it("shows a failed recovery fetch", async () => {
     getMock.mockImplementation((path: string) => {
+      if (path.startsWith("/tea/teaware/last-used")) return Promise.resolve(null);
       if (path === "/tea/teas") return Promise.resolve([tea(), tea2()]);
       if (path === "/tea/sessions?status=in_progress") return Promise.reject(httpError(500));
       return Promise.resolve([]);
@@ -270,5 +272,33 @@ describe("TimerPage", () => {
     await flushPromises();
     expect(wrapper.find("[data-testid=finish-save]").exists()).toBe(false);
     expect(useTeaTimerStore().notice).toContain("Tieguanyin");
+  });
+
+  it("shows the vessel, and picks another from the sheet", async () => {
+    getMock.mockImplementation((path: string) => {
+      if (path.startsWith("/tea/teaware/last-used")) return Promise.resolve(null);
+      if (path === "/tea/teaware")
+        return Promise.resolve([
+          {
+            id: "w-1", name: "Zhuni", type: "pot", material: "clay", volume_ml: 110, porous: false,
+            dedicated_node_id: null, maker: "", origin: "", acquired_date: null, price_paid: null,
+            notes: "", image_url: null, retired_at: null,
+            created_at: "2026-09-27T10:00:00Z", updated_at: "2026-09-27T10:00:00Z",
+          },
+        ]);
+      if (path === "/tea/teas") return Promise.resolve([tea(), tea2()]);
+      if (path === "/tea/sessions?status=in_progress") return Promise.resolve([]);
+      if (path === "/tea/teas/t-1/curve") return Promise.resolve(CURVE);
+      return Promise.resolve([]);
+    });
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    expect(wrapper.get("[data-testid=timer-vessel]").text()).toContain("+ vessel");
+
+    await wrapper.get("[data-testid=timer-vessel]").trigger("click");
+    await wrapper.get("[data-testid=vessel-w-1]").trigger("click");
+    await flushPromises();
+    expect(wrapper.get("[data-testid=timer-vessel]").text()).toContain("in Zhuni · 110 ml");
+    expect(wrapper.find("[data-testid=vessel-sheet]").exists()).toBe(false);
   });
 });

@@ -9,7 +9,9 @@ import type {
   TeaClass,
   TeaSession,
   TeaSessionWrite,
+  Teaware,
 } from "@/apps/tea/types";
+import { useTeawareStore } from "./useTeawareStore";
 
 export interface LiveTea {
   id: string;
@@ -18,11 +20,19 @@ export interface LiveTea {
   grams_remaining: number;
 }
 
+export interface LiveVessel {
+  id: string;
+  name: string;
+  volume_ml: number | null;
+}
+
 export interface LiveSession {
   version: 1;
   sessionId: string;
   startedAt: string;
   tea: LiveTea | null;
+  // Optional: sessions saved before vessels existed still hydrate.
+  teaware?: LiveVessel | null;
   curve: BrewingCurve;
   leafGrams: number | null;
   waterTempC: number | null;
@@ -105,6 +115,10 @@ function liveTea(tea: Tea): LiveTea {
   };
 }
 
+function liveVessel(item: Teaware): LiveVessel {
+  return { id: item.id, name: item.name, volume_ml: item.volume_ml };
+}
+
 export const useTeaTimerStore = defineStore("tea-timer", () => {
   const live = ref<LiveSession | null>(hydrate());
   const unsynced = ref(false);
@@ -164,7 +178,7 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
       curve_source: session.curve.source,
       curve_source_label: session.curve.source_label,
       infusions: session.infusions,
-      teaware_id: null,
+      teaware_id: session.teaware?.id ?? null,
     };
   }
 
@@ -199,6 +213,14 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
         notice.value = `${tea.name} is no longer in your cabinet — carrying on as a plain timer.`;
         session.tea = null;
         unsynced.value = false;
+        return;
+      }
+      if (statusOf(e) === 422 && session.teaware) {
+        // The vessel was retired or removed elsewhere: carry on without it rather
+        // than retrying a push that can never land.
+        notice.value = `${session.teaware.name} can't be brewed in any more — carrying on without a vessel.`;
+        session.teaware = null;
+        await push();
         return;
       }
       unsynced.value = true;
@@ -262,6 +284,12 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
         ? { ...i, target_seconds: targetFor(curve.steep_seconds, i.number) }
         : i,
     );
+    // Prefill only an empty slot, so a vessel picked by hand always wins.
+    if (!session.teaware) {
+      const vessel = await useTeawareStore().lastUsed(tea.id);
+      if (live.value !== session) return;
+      if (vessel && !session.teaware) session.teaware = liveVessel(vessel);
+    }
     notice.value = null;
     await push();
   }
@@ -274,6 +302,12 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
     if (!live.value) return;
     const valid = celsius !== null && Number.isInteger(celsius) && celsius >= 1 && celsius <= 100;
     live.value.waterTempC = valid ? celsius : null;
+  }
+
+  async function setVessel(item: Teaware | null): Promise<void> {
+    const session = ensureSession();
+    session.teaware = item ? liveVessel(item) : null;
+    await push();
   }
 
   async function finish(rating: number | null): Promise<string | null> {
@@ -299,6 +333,14 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
         // finish sheet stuck on an error that can never be retried away.
         session.tea = null;
         notice.value = `${tea.name} is no longer in your cabinet — carrying on as a plain timer.`;
+        error.value = null;
+        return null;
+      }
+      if (statusOf(e) === 422 && session.teaware) {
+        // Don't lose the finish over a vessel that became unusable: drop it and let
+        // the person save again.
+        notice.value = `${session.teaware.name} can't be brewed in any more — saved without a vessel if you finish again.`;
+        session.teaware = null;
         error.value = null;
         return null;
       }
@@ -334,7 +376,7 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
     return true;
   }
 
-  function resume(session: TeaSession, tea: Tea): void {
+  function resume(session: TeaSession, tea: Tea, vessel: Teaware | null = null): void {
     const infusions = session.infusions.map((i) => ({ ...i }));
     const curve: BrewingCurve = {
       leaf_grams: session.leaf_grams,
@@ -357,6 +399,7 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
       sessionId: session.id,
       startedAt: session.started_at,
       tea: liveTea(tea),
+      teaware: vessel ? liveVessel(vessel) : null,
       curve,
       leafGrams: session.leaf_grams,
       waterTempC: session.water_temp_c,
@@ -396,6 +439,7 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
     attachTea,
     setLeafGrams,
     setWaterTemp,
+    setVessel,
     push,
     finish,
     end,
