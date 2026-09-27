@@ -20,7 +20,7 @@ export const useTeaHouseholdStore = defineStore("tea-household", () => {
   const loading = ref(false);
   const error = ref<string | null>(null);
 
-  const shared = computed(() => (cabinet.value?.members?.length ?? 0) > 1);
+  const shared = computed(() => (cabinet.value?.members.length ?? 0) > 1);
   /** Everyone in the cabinet but me — who the title and brewer labels name. */
   const others = computed(() =>
     (cabinet.value?.members ?? []).filter((u) => u !== useAuthStore().username),

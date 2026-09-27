@@ -5,7 +5,7 @@
         <button
           class="cabinet__title"
           data-testid="cabinet-household"
-          aria-label="Who shares this cabinet"
+          :aria-label="titleLabel"
           @click="householding = true"
         >
           Cabinet<small v-if="household.shared" class="cabinet__with">
@@ -147,6 +147,11 @@ const sharedWith = computed(() =>
   household.others.length === 1
     ? household.others[0]
     : `${household.others.length} others`,
+);
+const titleLabel = computed(() =>
+  household.shared
+    ? `Cabinet, shared with ${sharedWith.value} — who shares this cabinet`
+    : "Cabinet — who shares this cabinet",
 );
 
 const scrollEl = ref<HTMLElement | null>(null);

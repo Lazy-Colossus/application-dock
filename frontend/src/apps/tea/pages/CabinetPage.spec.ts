@@ -16,7 +16,7 @@ import CabinetPage from "./CabinetPage.vue";
 import { useTeaCabinetStore } from "../stores/useTeaCabinetStore";
 import { useTeaCabinetFiltersStore } from "../stores/useTeaCabinetFiltersStore";
 import { useAuthStore } from "@/stores/useAuthStore";
-import type { Tea, CatalogueNode } from "../types";
+import type { Tea, CatalogueNode, Cabinet } from "../types";
 
 const STUBS = {
   "q-page": { template: "<div><slot /></div>" },
@@ -58,11 +58,20 @@ const NODE: CatalogueNode = {
   default_origin: "",
 };
 
+/** An unshared cabinet — what the real `/tea/cabinet` returns for a lone user. */
+const SOLO: Cabinet = {
+  id: null,
+  owner: "jakub",
+  members: ["jakub"],
+  is_owner: true,
+};
+
 /** Resolves `/tea/teas` and `/tea/catalogue` from one mock, by path. */
 function mockApi(teas: Tea[], nodes: CatalogueNode[] = [NODE]) {
   getMock.mockImplementation((path: string) => {
     if (path === "/tea/teas") return Promise.resolve(teas);
     if (path === "/tea/catalogue") return Promise.resolve(nodes);
+    if (path === "/tea/cabinet") return Promise.resolve(SOLO);
     return Promise.resolve([]);
   });
 }
@@ -71,6 +80,7 @@ function mockApi(teas: Tea[], nodes: CatalogueNode[] = [NODE]) {
 function mockApiPending() {
   getMock.mockImplementation((path: string) => {
     if (path === "/tea/catalogue") return Promise.resolve([NODE]);
+    if (path === "/tea/cabinet") return Promise.resolve(SOLO);
     return new Promise(() => {});
   });
 }
@@ -78,6 +88,7 @@ function mockApiPending() {
 function mockApiError(detail: string) {
   getMock.mockImplementation((path: string) => {
     if (path === "/tea/catalogue") return Promise.resolve([NODE]);
+    if (path === "/tea/cabinet") return Promise.resolve(SOLO);
     return Promise.reject(new Error(detail));
   });
 }
@@ -248,6 +259,7 @@ describe("CabinetPage", () => {
             tea("b"),
           ]);
         if (path === "/tea/catalogue") return Promise.resolve([NODE, wuyi]);
+        if (path === "/tea/cabinet") return Promise.resolve(SOLO);
         if (path === "/tea/almanac")
           return Promise.resolve([
             { catalogue_node_id: "oolong.wuyi", country: "China" },
@@ -272,7 +284,9 @@ describe("CabinetPage", () => {
   });
 
   it("opens the timer from the Brew button", async () => {
-    getMock.mockResolvedValue([]);
+    getMock.mockImplementation((path: string) =>
+      Promise.resolve(path === "/tea/cabinet" ? SOLO : []),
+    );
     const wrapper = render();
     await flushPromises();
     await wrapper.get("[data-testid=cabinet-brew]").trigger("click");
@@ -297,6 +311,9 @@ describe("CabinetPage", () => {
     expect(wrapper.get("[data-testid=cabinet-household]").text()).toContain(
       "with mia",
     );
+    expect(
+      wrapper.get("[data-testid=cabinet-household]").attributes("aria-label"),
+    ).toContain("shared with mia");
 
     await wrapper.get("[data-testid=cabinet-household]").trigger("click");
     expect(wrapper.find("[data-testid=household-sheet]").exists()).toBe(true);
