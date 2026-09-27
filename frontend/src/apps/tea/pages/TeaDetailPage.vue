@@ -178,7 +178,7 @@
       <div v-if="confirming" class="sheet" data-testid="remove-confirm">
         <p class="sheet__title">
           Remove {{ tea.name }} from the cabinet? Its notes go with it.
-          <template v-if="othersSessions > 0">
+          <template v-if="household.shared && othersSessions > 0">
             Also deletes {{ teaSessions.length }} sessions ({{ othersSessions }} by others).
           </template>
         </p>
