@@ -1,17 +1,21 @@
 """Tea Cabinet API router.
 
-A per-user cabinet of teas, classified against a shared catalogue tree. Every
-route is scoped to the authenticated user via `get_current_user`; the username
-selects the on-disk document and is never taken from request input.
+A cabinet of teas, classified against a shared catalogue tree, that household
+members may share. Every route is scoped to the authenticated user via
+`get_current_user`; the username resolves the caller's cabinet and is never
+taken from request input.
 
 This module is the only place tea exceptions become HTTP: `FileNotFoundError`
--> 404, `ValueError` -> 422, `NodeInUseError` and `SessionFinalisedError` -> 409.
+-> 404, `ValueError` -> 422, `NodeInUseError` and `SessionFinalisedError` -> 409,
+`CabinetGoneError` -> 410 on every route, via `_TeaRoute`.
 """
 
-from typing import Annotated, Literal
+from collections.abc import Callable, Coroutine
+from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, Response, UploadFile
 from fastapi.responses import FileResponse
+from fastapi.routing import APIRoute
 
 from app.core.dependencies import get_current_user, user_from_token
 from app.schemas.almanac import AlmanacEntryView
@@ -26,12 +30,34 @@ from app.schemas.tea import (
 from app.schemas.tea_session import BrewingCurve, TeaSession, TeaSessionWrite
 from app.services import almanac_service
 from app.services import tea_autofill_service as autofill
+from app.services import tea_cabinet_service as cabinets
 from app.services import tea_catalogue_service as catalogue
 from app.services import tea_curve_service as curves
 from app.services import tea_service as service
 from app.services import tea_session_service as sessions
 
-router = APIRouter(prefix="/api/tea", tags=["tea"])
+
+class _TeaRoute(APIRoute):
+    """Turns a stale cabinet into 410 on every tea route, so no handler repeats it.
+
+    Not 409: the timer reads a 409 on finish as "already finished" and clears it.
+    """
+
+    def get_route_handler(self) -> Callable[[Request], Coroutine[Any, Any, Response]]:
+        handler = super().get_route_handler()
+
+        async def guarded(request: Request) -> Response:
+            try:
+                return await handler(request)
+            except cabinets.CabinetGoneError as exc:
+                raise HTTPException(
+                    status_code=410, detail="Your cabinet changed — reload"
+                ) from exc
+
+        return guarded
+
+
+router = APIRouter(prefix="/api/tea", tags=["tea"], route_class=_TeaRoute)
 
 _IMAGE_MEDIA_TYPES = {
     "jpg": "image/jpeg",

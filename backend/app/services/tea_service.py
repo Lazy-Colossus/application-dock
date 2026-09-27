@@ -1,9 +1,9 @@
 """Business logic for the Tea Cabinet's teas.
 
-Operates on a single user's document via `tea_repo`. Raises stdlib exceptions
-only (`ValueError` for invalid input, `FileNotFoundError` for a missing tea) —
-the router translates them. The `username` always comes from the JWT via the
-router and is never taken from request input.
+Operates on the caller's cabinet, resolved by `tea_cabinet_service`. Raises
+stdlib exceptions only (`ValueError` for invalid input, `FileNotFoundError`
+for a missing tea) — the router translates them. The `username` always comes
+from the JWT via the router and is never taken from request input.
 """
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ from pathlib import Path
 
 from app.repositories import tea_repo as repo
 from app.schemas.tea import CatalogueNode, Tea, TeaView, TeaWriteRequest
+from app.services import tea_cabinet_service as cabinets
 from app.services import tea_catalogue_service as catalogue
 
 _MAX_IMAGE_BYTES = 5 * 1024 * 1024
@@ -80,12 +81,12 @@ def _view(tea: Tea, index: dict[str, CatalogueNode]) -> TeaView:
 def list_teas(username: str) -> list[TeaView]:
     """Every tea in the cabinet, each with its root class resolved."""
     index = catalogue.node_index(catalogue.merged_nodes(username))
-    return [_view(tea, index) for tea in repo.read_doc(username).teas]
+    return [_view(tea, index) for tea in cabinets.read_doc_for(username).teas]
 
 
 def get_tea(username: str, tea_id: str) -> TeaView:
     index = catalogue.node_index(catalogue.merged_nodes(username))
-    for tea in repo.read_doc(username).teas:
+    for tea in cabinets.read_doc_for(username).teas:
         if tea.id == tea_id:
             return _view(tea, index)
     raise FileNotFoundError(f"No tea with id {tea_id!r}")
@@ -104,7 +105,7 @@ def create_tea(username: str, req: TeaWriteRequest) -> TeaView:
         created_at=stamp,
         updated_at=stamp,
     )
-    with repo.doc_transaction(username) as doc:
+    with repo.doc_transaction(cabinets.ensure(username)) as doc:
         doc.teas.append(tea)
     return _view(tea, index)
 
@@ -114,7 +115,7 @@ def replace_tea(username: str, tea_id: str, req: TeaWriteRequest) -> TeaView:
     index = catalogue.node_index(catalogue.merged_nodes(username))
     name = _validate(req, index)
 
-    with repo.doc_transaction(username) as doc:
+    with repo.doc_transaction(cabinets.ensure(username)) as doc:
         for position, existing in enumerate(doc.teas):
             if existing.id == tea_id:
                 updated = Tea(
@@ -130,7 +131,7 @@ def replace_tea(username: str, tea_id: str, req: TeaWriteRequest) -> TeaView:
 
 
 def delete_tea(username: str, tea_id: str) -> None:
-    with repo.doc_transaction(username) as doc:
+    with repo.doc_transaction(cabinets.ensure(username)) as doc:
         remaining = [tea for tea in doc.teas if tea.id != tea_id]
         if len(remaining) == len(doc.teas):
             raise FileNotFoundError(f"No tea with id {tea_id!r}")
@@ -147,10 +148,11 @@ def save_image(username: str, tea_id: str, content: bytes, content_type: str) ->
         raise ValueError("Images must be 5MB or smaller")
 
     index = catalogue.node_index(catalogue.merged_nodes(username))
-    with repo.doc_transaction(username) as doc:
+    cabinet_id = cabinets.ensure(username)
+    with repo.doc_transaction(cabinet_id) as doc:
         for position, existing in enumerate(doc.teas):
             if existing.id == tea_id:
-                repo.save_image(username, tea_id, content, extension)
+                repo.save_image(cabinet_id, tea_id, content, extension)
                 updated = existing.model_copy(
                     update={"image_url": f"/api/tea/teas/{tea_id}/image", "updated_at": _now_iso()}
                 )
@@ -162,10 +164,11 @@ def save_image(username: str, tea_id: str, content: bytes, content_type: str) ->
 def delete_image(username: str, tea_id: str) -> TeaView:
     """Remove a tea's stored photo and clear `image_url`."""
     index = catalogue.node_index(catalogue.merged_nodes(username))
-    with repo.doc_transaction(username) as doc:
+    cabinet_id = cabinets.ensure(username)
+    with repo.doc_transaction(cabinet_id) as doc:
         for position, existing in enumerate(doc.teas):
             if existing.id == tea_id:
-                repo.delete_image(username, tea_id)
+                repo.delete_image(cabinet_id, tea_id)
                 updated = existing.model_copy(update={"image_url": None, "updated_at": _now_iso()})
                 doc.teas[position] = updated
                 return _view(updated, index)
@@ -174,9 +177,10 @@ def delete_image(username: str, tea_id: str) -> TeaView:
 
 def image_path(username: str, tea_id: str) -> Path:
     """The on-disk path of `tea_id`'s stored photo. 404s cover both a missing tea and no photo."""
-    if not any(tea.id == tea_id for tea in repo.read_doc(username).teas):
+    cabinet_id = cabinets.resolve(username)
+    if cabinet_id is None or not any(t.id == tea_id for t in repo.read_doc(cabinet_id).teas):
         raise FileNotFoundError(f"No tea with id {tea_id!r}")
-    path = repo.find_image(username, tea_id)
+    path = repo.find_image(cabinet_id, tea_id)
     if path is None:
         raise FileNotFoundError(f"No image for tea {tea_id!r}")
     return path

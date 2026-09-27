@@ -16,6 +16,7 @@ from datetime import UTC, datetime
 from app.repositories import tea_repo as repo
 from app.schemas.tea import TeaDoc
 from app.schemas.tea_session import TeaSession, TeaSessionWrite
+from app.services import tea_cabinet_service as cabinets
 
 
 class SessionFinalisedError(Exception):
@@ -42,7 +43,7 @@ def _session_position(doc: TeaDoc, session_id: str) -> int | None:
 
 def upsert(username: str, session_id: str, req: TeaSessionWrite) -> TeaSession:
     """Store `req` as session `session_id`, finalising it if its status says so."""
-    with repo.doc_transaction(username) as doc:
+    with repo.doc_transaction(cabinets.ensure(username)) as doc:
         tea_position = _tea_position(doc, req.tea_id)
         existing = _session_position(doc, session_id)
         if existing is not None and doc.sessions[existing].status == "finalised":
@@ -70,6 +71,7 @@ def upsert(username: str, session_id: str, req: TeaSessionWrite) -> TeaSession:
             **req.model_dump(exclude={"infusions"}),
             infusions=infusions,
             id=session_id,
+            brewed_by=username,
             updated_at=stamp,
             finished_at=finished_at,
         )
@@ -82,7 +84,7 @@ def upsert(username: str, session_id: str, req: TeaSessionWrite) -> TeaSession:
 
 def discard(username: str, session_id: str) -> None:
     """Remove an in-progress session. Nothing it recorded touches the tea."""
-    with repo.doc_transaction(username) as doc:
+    with repo.doc_transaction(cabinets.ensure(username)) as doc:
         position = _session_position(doc, session_id)
         if position is None:
             raise FileNotFoundError(f"No session with id {session_id!r}")
@@ -92,12 +94,12 @@ def discard(username: str, session_id: str) -> None:
 
 
 def list_in_progress(username: str) -> list[TeaSession]:
-    live = [s for s in repo.read_doc(username).sessions if s.status == "in_progress"]
+    live = [s for s in cabinets.read_doc_for(username).sessions if s.status == "in_progress"]
     return sorted(live, key=lambda s: s.updated_at, reverse=True)
 
 
 def list_for_tea(username: str, tea_id: str) -> list[TeaSession]:
-    doc = repo.read_doc(username)
+    doc = cabinets.read_doc_for(username)
     _tea_position(doc, tea_id)
     done = [s for s in doc.sessions if s.tea_id == tea_id and s.status == "finalised"]
     return sorted(done, key=lambda s: s.finished_at or "", reverse=True)

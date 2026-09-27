@@ -10,6 +10,7 @@ import pytest
 from app.repositories import tea_repo as repo
 from app.schemas.tea import CatalogueNode, Tea, TeaDoc, TeaWriteRequest
 from app.services import tea_service as service
+from tests.tea_support import cabinet_of, doc_of, seed_doc
 
 
 @pytest.fixture(autouse=True)
@@ -101,7 +102,7 @@ def test_list_returns_every_tea_with_its_class() -> None:
 
 def test_list_survives_a_tea_whose_node_has_gone() -> None:
     """Review Focus 2: one unresolvable tea may not fail the whole shelf."""
-    repo.write_doc(
+    seed_doc(
         "alice",
         TeaDoc(
             teas=[
@@ -178,7 +179,7 @@ def test_a_users_teas_are_invisible_to_another_user() -> None:
 
 def test_seed_nodes_are_never_written_into_a_users_document() -> None:
     service.create_tea("alice", _req())
-    assert repo.read_doc("alice").catalogue_nodes == []
+    assert doc_of("alice").catalogue_nodes == []
     assert isinstance(repo.read_seed_catalogue()[0], CatalogueNode)
 
 
@@ -192,7 +193,7 @@ def test_save_image_sets_the_served_url_and_bumps_updated_at() -> None:
 def test_save_image_persists_the_file_via_the_repo() -> None:
     tea = service.create_tea("alice", _req())
     service.save_image("alice", tea.id, b"fake-jpeg-bytes", "image/jpeg")
-    found = repo.find_image("alice", tea.id)
+    found = repo.find_image(cabinet_of("alice"), tea.id)
     assert found is not None
     assert found.read_bytes() == b"fake-jpeg-bytes"
 
@@ -221,7 +222,7 @@ def test_delete_image_clears_the_url_and_removes_the_file() -> None:
 
     updated = service.delete_image("alice", tea.id)
     assert updated.image_url is None
-    assert repo.find_image("alice", tea.id) is None
+    assert repo.find_image(cabinet_of("alice"), tea.id) is None
 
 
 def test_delete_image_raises_not_found_for_an_unknown_tea() -> None:

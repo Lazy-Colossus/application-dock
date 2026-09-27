@@ -8,7 +8,9 @@ import pytest
 
 from app.repositories import tea_repo as repo
 from app.schemas.tea import CatalogueNode, CreateNodeRequest, Tea, TeaDoc
+from app.services import tea_cabinet_service as cabinets
 from app.services import tea_catalogue_service as service
+from tests.tea_support import seed_doc
 
 
 @pytest.fixture(autouse=True)
@@ -50,7 +52,7 @@ def test_one_users_nodes_are_invisible_to_another() -> None:
 
 def test_a_user_node_cannot_shadow_a_seed_node() -> None:
     """A user document naming a seed id must not replace the seed's node."""
-    repo.write_doc(
+    seed_doc(
         "alice",
         TeaDoc(
             catalogue_nodes=[
@@ -96,7 +98,7 @@ def test_resolve_class_of_an_unknown_node_is_other() -> None:
 
 def test_orphaned_user_nodes_are_dropped_from_the_tree() -> None:
     """Review Focus 3: a hand-edited file pointing at a parent that isn't there."""
-    repo.write_doc(
+    seed_doc(
         "alice",
         TeaDoc(
             catalogue_nodes=[
@@ -111,7 +113,7 @@ def test_orphaned_user_nodes_are_dropped_from_the_tree() -> None:
 
 def test_a_cycle_among_user_nodes_does_not_hang() -> None:
     """Two nodes each claiming the other as parent reach no root, so both go."""
-    repo.write_doc(
+    seed_doc(
         "alice",
         TeaDoc(
             catalogue_nodes=[
@@ -141,7 +143,7 @@ def test_delete_node_removes_an_unused_user_node() -> None:
 
 def test_delete_node_refuses_a_node_teas_point_at() -> None:
     node = service.create_node("alice", CreateNodeRequest(parent_id="oolong", name="Used"))
-    with repo.doc_transaction("alice") as doc:
+    with repo.doc_transaction(cabinets.ensure("alice")) as doc:
         doc.teas.append(_tea(node.id))
 
     with pytest.raises(service.NodeInUseError) as excinfo:

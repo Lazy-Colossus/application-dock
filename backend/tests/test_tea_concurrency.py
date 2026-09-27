@@ -11,6 +11,7 @@ from app.repositories import tea_repo as repo
 from app.schemas.tea import CreateNodeRequest, TeaWriteRequest
 from app.services import tea_catalogue_service as catalogue
 from app.services import tea_service as service
+from tests.tea_support import doc_of
 
 
 @pytest.fixture(autouse=True)
@@ -46,6 +47,17 @@ def test_a_tea_and_a_node_written_concurrently_both_survive() -> None:
         for future in futures:
             future.result()
 
-    doc = repo.read_doc("alice")
+    doc = doc_of("alice")
     assert len(doc.teas) == 20
     assert len(doc.catalogue_nodes) == 20
+
+
+def test_concurrent_first_writes_create_one_cabinet(tmp_path: Path) -> None:
+    def add(n: int) -> None:
+        service.create_tea("carol", TeaWriteRequest(name=f"Tea {n}", catalogue_node_id="oolong"))
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(add, range(16)))
+
+    assert len(list((tmp_path / "tea" / "cabinets").glob("c_*.json"))) == 1
+    assert len(service.list_teas("carol")) == 16

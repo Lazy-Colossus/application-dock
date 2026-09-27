@@ -14,9 +14,9 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from app.repositories import almanac_repo
-from app.repositories import tea_repo as repo
 from app.schemas.tea import TeaDoc
 from app.schemas.tea_session import BrewingCurve, CurveSource, TeaSession
+from app.services import tea_cabinet_service as cabinets
 from app.services import tea_catalogue_service as catalogue
 
 GENERIC_STEEPS: list[int] = [10, 15, 20, 25]
@@ -52,7 +52,7 @@ def _short_date(iso: str | None) -> str:
 
 
 def curve_for(username: str, tea_id: str) -> BrewingCurve:
-    doc = repo.read_doc(username)
+    doc = cabinets.read_doc_for(username)
     tea = next((t for t in doc.teas if t.id == tea_id), None)
     if tea is None:
         raise FileNotFoundError(f"No tea with id {tea_id!r}")

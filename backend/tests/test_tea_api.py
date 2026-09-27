@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.repositories import tea_repo as repo
+from tests.tea_support import cabinet_of
 
 client = TestClient(app)
 
@@ -204,3 +205,15 @@ def test_deleting_the_image_clears_image_url() -> None:
 
 def test_deleting_the_image_for_an_unknown_tea_is_404() -> None:
     assert client.delete("/api/tea/teas/t-nosuchid/image").status_code == 404
+
+
+def test_a_stale_cabinet_is_410_on_reads_and_writes() -> None:
+    created = client.post(
+        "/api/tea/teas", json={"name": "Longjing", "catalogue_node_id": "green"}
+    ).json()
+    repo.delete_cabinet(cabinet_of("test_user"))
+
+    assert client.get("/api/tea/teas").status_code == 410
+    response = client.delete(f"/api/tea/teas/{created['id']}")
+    assert response.status_code == 410
+    assert response.json()["detail"] == "Your cabinet changed — reload"

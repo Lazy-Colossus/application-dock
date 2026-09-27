@@ -12,6 +12,7 @@ from app.schemas.tea import TeaWriteRequest
 from app.schemas.tea_session import TeaSessionWrite
 from app.services import tea_service
 from app.services import tea_session_service as sessions
+from tests.tea_support import doc_of
 
 
 @pytest.fixture(autouse=True)
@@ -84,7 +85,7 @@ def test_upsert_creates_then_replaces() -> None:
     ]
     sessions.upsert("alice", "s-1", _write(tea_id=tea_id, infusions=three))
 
-    stored = repo.read_doc("alice").sessions
+    stored = doc_of("alice").sessions
     assert len(stored) == 1
     assert len(stored[0].infusions) == 3
 
@@ -138,7 +139,7 @@ def test_discard_removes_an_in_progress_session() -> None:
     tea_id = _tea()
     sessions.upsert("alice", "s-1", _write(tea_id=tea_id))
     sessions.discard("alice", "s-1")
-    assert repo.read_doc("alice").sessions == []
+    assert doc_of("alice").sessions == []
 
 
 def test_discard_refuses_a_finalised_session() -> None:
@@ -172,4 +173,4 @@ def test_deleting_a_tea_deletes_its_sessions() -> None:
     tea_id = _tea()
     sessions.upsert("alice", "s-1", _write(tea_id=tea_id))
     tea_service.delete_tea("alice", tea_id)
-    assert repo.read_doc("alice").sessions == []
+    assert doc_of("alice").sessions == []

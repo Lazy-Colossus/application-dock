@@ -14,6 +14,7 @@ import uuid
 
 from app.repositories import tea_repo as repo
 from app.schemas.tea import CatalogueNode, CreateNodeRequest
+from app.services import tea_cabinet_service as cabinets
 
 _OTHER = "other"
 
@@ -47,7 +48,9 @@ def merged_nodes(username: str) -> list[CatalogueNode]:
     seed_ids = {node.id for node in seed}
 
     # A user node claiming a seed id is ignored outright: the seed wins.
-    mine = [node for node in repo.read_doc(username).catalogue_nodes if node.id not in seed_ids]
+    mine = [
+        node for node in cabinets.read_doc_for(username).catalogue_nodes if node.id not in seed_ids
+    ]
 
     combined = seed + mine
     by_id = {node.id: node for node in combined}
@@ -106,7 +109,7 @@ def create_node(username: str, req: CreateNodeRequest) -> CatalogueNode:
         source="user",
         default_origin=req.default_origin.strip(),
     )
-    with repo.doc_transaction(username) as doc:
+    with repo.doc_transaction(cabinets.ensure(username)) as doc:
         doc.catalogue_nodes.append(node)
     return node
 
@@ -116,7 +119,7 @@ def delete_node(username: str, node_id: str) -> None:
     if any(node.id == node_id for node in repo.read_seed_catalogue()):
         raise ValueError("Catalogue entries that ship with the app cannot be removed")
 
-    with repo.doc_transaction(username) as doc:
+    with repo.doc_transaction(cabinets.ensure(username)) as doc:
         if all(node.id != node_id for node in doc.catalogue_nodes):
             raise FileNotFoundError(f"No catalogue entry with id {node_id!r}")
 
