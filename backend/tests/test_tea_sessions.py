@@ -10,9 +10,10 @@ from pydantic import ValidationError
 from app.repositories import tea_repo as repo
 from app.schemas.tea import TeaWriteRequest
 from app.schemas.tea_session import TeaSessionWrite
+from app.services import tea_cabinet_service as cabinets
 from app.services import tea_service
 from app.services import tea_session_service as sessions
-from tests.tea_support import doc_of
+from tests.tea_support import doc_of, share
 
 
 @pytest.fixture(autouse=True)
@@ -174,3 +175,56 @@ def test_deleting_a_tea_deletes_its_sessions() -> None:
     sessions.upsert("alice", "s-1", _write(tea_id=tea_id))
     tea_service.delete_tea("alice", tea_id)
     assert doc_of("alice").sessions == []
+
+
+def test_a_session_records_who_brewed_it_and_ignores_the_body() -> None:
+    tea_id = _tea()
+    body = TeaSessionWrite.model_validate(
+        {**_write(tea_id=tea_id).model_dump(), "brewed_by": "mallory"}
+    )
+    assert sessions.upsert("alice", "s-1", body).brewed_by == "alice"
+
+
+def test_a_member_cannot_touch_someone_elses_session() -> None:
+    tea_id = _tea()
+    share("alice", "bob")
+    sessions.upsert("alice", "s-1", _write(tea_id=tea_id))
+
+    with pytest.raises(PermissionError):
+        sessions.upsert("bob", "s-1", _write(tea_id=tea_id))
+    with pytest.raises(PermissionError):
+        sessions.discard("bob", "s-1")
+    assert [s.brewed_by for s in doc_of("alice").sessions] == ["alice"]
+
+
+def test_recovery_lists_only_your_own_live_sessions() -> None:
+    tea_id = _tea()
+    share("alice", "bob")
+    sessions.upsert("alice", "s-alice", _write(tea_id=tea_id))
+    sessions.upsert("bob", "s-bob", _write(tea_id=tea_id))
+    assert [s.id for s in sessions.list_in_progress("bob")] == ["s-bob"]
+
+
+def test_a_teas_history_shows_everyones_finished_sessions() -> None:
+    tea_id = _tea()
+    share("alice", "bob")
+    sessions.upsert("alice", "s-a", _write(tea_id=tea_id, status="finalised"))
+    sessions.upsert("bob", "s-b", _write(tea_id=tea_id, status="finalised"))
+    assert {s.brewed_by for s in sessions.list_for_tea("bob", tea_id)} == {"alice", "bob"}
+
+
+def test_finishing_a_shared_tea_takes_the_grams_off_for_everyone() -> None:
+    tea_id = _tea()
+    share("alice", "bob")
+    sessions.upsert("bob", "s-1", _write(tea_id=tea_id, status="finalised", leaf_grams=5))
+    grams = next(t.grams_remaining for t in tea_service.list_teas("alice") if t.id == tea_id)
+    assert grams == 35
+
+
+def test_a_leaver_pushing_an_old_session_gets_not_found() -> None:
+    tea_id = _tea()
+    share("alice", "bob")
+    sessions.upsert("bob", "s-1", _write(tea_id=tea_id))
+    cabinets.remove_member("bob", "bob")
+    with pytest.raises(FileNotFoundError):
+        sessions.upsert("bob", "s-1", _write(tea_id=tea_id))

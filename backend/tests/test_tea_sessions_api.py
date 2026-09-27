@@ -7,8 +7,10 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core.dependencies import get_current_user
 from app.main import app
 from app.repositories import tea_repo as repo
+from tests.tea_support import share
 
 client = TestClient(app)
 
@@ -104,3 +106,19 @@ def test_curve_and_its_404() -> None:
     assert curve["steep_seconds"] == [20, 25, 30, 40]
     assert client.get("/api/tea/teas/t-nosuch/curve").status_code == 404
     assert client.get("/api/tea/teas/t-nosuch/sessions").status_code == 404
+
+
+def test_another_members_session_is_403() -> None:
+    tea = _tea()
+    client.put("/api/tea/sessions/s-1", json=_snapshot(tea["id"]))
+    share("test_user", "bob")
+
+    app.dependency_overrides[get_current_user] = lambda: "bob"
+    assert client.put("/api/tea/sessions/s-1", json=_snapshot(tea["id"])).status_code == 403
+    assert client.delete("/api/tea/sessions/s-1").status_code == 403
+
+
+def test_the_response_names_the_brewer() -> None:
+    tea = _tea()
+    body = {**_snapshot(tea["id"]), "brewed_by": "mallory"}
+    assert client.put("/api/tea/sessions/s-1", json=body).json()["brewed_by"] == "test_user"

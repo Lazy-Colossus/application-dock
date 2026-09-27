@@ -13,6 +13,7 @@ from app.services import tea_catalogue_service as catalogue
 from app.services import tea_curve_service as curves
 from app.services import tea_service
 from app.services import tea_session_service as sessions
+from tests.tea_support import share
 
 TIEGUANYIN = "oolong.anxi.tieguanyin"
 
@@ -36,12 +37,13 @@ def _finish(
     rating: int | None,
     leaf_grams: float | None = None,
     water_temp_c: int | None = None,
+    username: str = "alice",
 ) -> None:
     infusions = [
         {"number": n, "target_seconds": 10, "actual_seconds": s} for n, s in enumerate(actuals, 1)
     ]
     sessions.upsert(
-        "alice",
+        username,
         session_id,
         TeaSessionWrite.model_validate(
             {
@@ -156,3 +158,25 @@ def test_ancestry_is_node_first_and_empty_for_unknown() -> None:
         "oolong",
     ]
     assert catalogue.ancestry(index, "nope") == []
+
+
+def test_your_own_best_session_beats_a_better_rated_partners() -> None:
+    tea_id = _tea()
+    share("alice", "bob")
+    _finish(tea_id, "s-mine", [30], rating=3)
+    _finish(tea_id, "s-theirs", [12], rating=5, username="bob")
+
+    curve = curves.curve_for("alice", tea_id)
+    assert curve.steep_seconds == [30]
+    assert curve.source_label.startswith("from your best session (★3")
+
+
+def test_a_partners_best_session_beats_the_tea_defaults() -> None:
+    tea_id = _tea(brewing={"steep_seconds": [40]})
+    share("alice", "bob")
+    _finish(tea_id, "s-theirs", [12], rating=5, username="bob")
+
+    curve = curves.curve_for("alice", tea_id)
+    assert curve.source == "best_session"
+    assert curve.steep_seconds == [12]
+    assert curve.source_label.startswith("from bob's best session (★5")

@@ -231,6 +231,8 @@ def upsert_session(
         return sessions.upsert(current_user, session_id, req)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Tea not found") from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     except sessions.SessionFinalisedError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
@@ -241,6 +243,8 @@ def discard_session(session_id: str, current_user: str = Depends(get_current_use
         sessions.discard(current_user, session_id)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Session not found") from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     except sessions.SessionFinalisedError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 

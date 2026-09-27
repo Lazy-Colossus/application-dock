@@ -1,11 +1,11 @@
 """The Brewing Curve: where a session's suggested steep times come from.
 
-A chain of sources, most personal first — the best-rated past session of the
-tea, the tea's own brewing parameters, the nearest Almanac entry up the
-catalogue tree, then a generic gongfu curve. Steep times come from the first
-source that has any; leaf grams and water temperature each fall through the
-chain on their own, so a tea with a steep list but no temperature still gets
-the Almanac's temperature.
+A chain of sources, most personal first — the caller's own best-rated past
+session of the tea, then any member's, the tea's own brewing parameters, the
+nearest Almanac entry up the catalogue tree, then a generic gongfu curve.
+Steep times come from the first source that has any; leaf grams and water
+temperature each fall through the chain on their own, so a tea with a steep
+list but no temperature still gets the Almanac's temperature.
 """
 
 from __future__ import annotations
@@ -31,13 +31,14 @@ class _Link:
     steep_seconds: list[int]
 
 
-def _best_session(doc: TeaDoc, tea_id: str) -> TeaSession | None:
+def _best_session(doc: TeaDoc, tea_id: str, brewed_by: str | None = None) -> TeaSession | None:
     rated = [
         s
         for s in doc.sessions
         if s.tea_id == tea_id
         and s.status == "finalised"
         and s.rating is not None
+        and (brewed_by is None or s.brewed_by == brewed_by)
         and any(i.actual_seconds is not None for i in s.infusions)
     ]
     # Most recent wins a tie: technique drifts, and the curve should follow it.
@@ -59,12 +60,14 @@ def curve_for(username: str, tea_id: str) -> BrewingCurve:
 
     links: list[_Link] = []
 
-    best = _best_session(doc, tea_id)
+    # Your own taste first; a tea only your partner has brewed still starts from theirs.
+    best = _best_session(doc, tea_id, username) or _best_session(doc, tea_id)
     if best is not None:
+        whose = "your" if best.brewed_by == username else f"{best.brewed_by}'s"
         links.append(
             _Link(
                 "best_session",
-                f"from your best session (★{best.rating}, {_short_date(best.finished_at)})",
+                f"from {whose} best session (★{best.rating}, {_short_date(best.finished_at)})",
                 best.leaf_grams,
                 best.water_temp_c,
                 # A double-tapped 0 s steep must still suggest a target the next

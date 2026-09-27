@@ -6,7 +6,8 @@ effects — it deducts the leaf used from the tea — so it happens inside the s
 `doc_transaction` that marks the session finalised, and a finalised session is
 frozen so a retried finish can never deduct twice.
 
-Raises `FileNotFoundError`, `SessionFinalisedError`; the router translates.
+Raises `FileNotFoundError`, `SessionFinalisedError`, `PermissionError` (another
+member's session); the router translates.
 """
 
 from __future__ import annotations
@@ -41,13 +42,20 @@ def _session_position(doc: TeaDoc, session_id: str) -> int | None:
     return None
 
 
+def _check_brewer(session: TeaSession, username: str) -> None:
+    if session.brewed_by != username:
+        raise PermissionError(f"That session belongs to {session.brewed_by}")
+
+
 def upsert(username: str, session_id: str, req: TeaSessionWrite) -> TeaSession:
     """Store `req` as session `session_id`, finalising it if its status says so."""
     with repo.doc_transaction(cabinets.ensure(username)) as doc:
         tea_position = _tea_position(doc, req.tea_id)
         existing = _session_position(doc, session_id)
-        if existing is not None and doc.sessions[existing].status == "finalised":
-            raise SessionFinalisedError("This session is already finished")
+        if existing is not None:
+            _check_brewer(doc.sessions[existing], username)
+            if doc.sessions[existing].status == "finalised":
+                raise SessionFinalisedError("This session is already finished")
 
         stamp = _now_iso()
         infusions = req.infusions
@@ -88,13 +96,19 @@ def discard(username: str, session_id: str) -> None:
         position = _session_position(doc, session_id)
         if position is None:
             raise FileNotFoundError(f"No session with id {session_id!r}")
+        _check_brewer(doc.sessions[position], username)
         if doc.sessions[position].status == "finalised":
             raise SessionFinalisedError("A finished session cannot be discarded")
         del doc.sessions[position]
 
 
 def list_in_progress(username: str) -> list[TeaSession]:
-    live = [s for s in cabinets.read_doc_for(username).sessions if s.status == "in_progress"]
+    """The caller's own live sessions — never another member's timer."""
+    live = [
+        s
+        for s in cabinets.read_doc_for(username).sessions
+        if s.status == "in_progress" and s.brewed_by == username
+    ]
     return sorted(live, key=lambda s: s.updated_at, reverse=True)
 
 
