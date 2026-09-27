@@ -6,9 +6,10 @@ members may share. Every route is scoped to the authenticated user via
 taken from request input.
 
 This module is the only place tea exceptions become HTTP: `FileNotFoundError`
--> 404, `ValueError` -> 422, `NodeInUseError` and `SessionFinalisedError` -> 409,
-`CabinetGoneError` -> 410 on every route, via `_TeaRoute`, `PermissionError` ->
-403 on `/cabinet` membership refusals.
+-> 404, `ValueError` -> 422 also on a session whose vessel can't be brewed in,
+`NodeInUseError` and `SessionFinalisedError` -> 409, `CabinetGoneError` -> 410
+on every route, via `_TeaRoute`, `PermissionError` -> 403 on `/cabinet`
+membership refusals.
 """
 
 from collections.abc import Callable, Coroutine
@@ -31,6 +32,7 @@ from app.schemas.tea import (
     TeaWriteRequest,
 )
 from app.schemas.tea_session import BrewingCurve, TeaSession, TeaSessionWrite
+from app.schemas.teaware import Teaware, TeawareUsage, TeawareWriteRequest
 from app.services import almanac_service
 from app.services import tea_autofill_service as autofill
 from app.services import tea_cabinet_service as cabinets
@@ -38,6 +40,7 @@ from app.services import tea_catalogue_service as catalogue
 from app.services import tea_curve_service as curves
 from app.services import tea_service as service
 from app.services import tea_session_service as sessions
+from app.services import tea_teaware_service as teaware
 
 
 class _TeaRoute(APIRoute):
@@ -231,6 +234,8 @@ def upsert_session(
         return sessions.upsert(current_user, session_id, req)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Tea not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     except sessions.SessionFinalisedError as exc:
@@ -296,3 +301,99 @@ def remove_cabinet_member(
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/teaware", response_model=list[Teaware])
+def list_teaware(current_user: str = Depends(get_current_user)) -> list[Teaware]:
+    return teaware.list_teaware(current_user)
+
+
+@router.post("/teaware", response_model=Teaware, status_code=201)
+def create_teaware(
+    req: TeawareWriteRequest, current_user: str = Depends(get_current_user)
+) -> Teaware:
+    try:
+        return teaware.create_teaware(current_user, req)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+# Declared before `/teaware/{teaware_id}`, which would otherwise read "last-used" as an id.
+@router.get("/teaware/last-used", response_model=Teaware | None)
+def last_used_teaware(
+    tea_id: str | None = None, current_user: str = Depends(get_current_user)
+) -> Teaware | None:
+    return teaware.last_used(current_user, tea_id)
+
+
+@router.get("/teaware/{teaware_id}", response_model=Teaware)
+def get_teaware(teaware_id: str, current_user: str = Depends(get_current_user)) -> Teaware:
+    try:
+        return teaware.get_teaware(current_user, teaware_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Teaware not found") from exc
+
+
+@router.put("/teaware/{teaware_id}", response_model=Teaware)
+def replace_teaware(
+    teaware_id: str,
+    req: TeawareWriteRequest,
+    current_user: str = Depends(get_current_user),
+) -> Teaware:
+    try:
+        return teaware.replace_teaware(current_user, teaware_id, req)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Teaware not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.delete("/teaware/{teaware_id}", status_code=204)
+def delete_teaware(teaware_id: str, current_user: str = Depends(get_current_user)) -> None:
+    try:
+        teaware.delete_teaware(current_user, teaware_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Teaware not found") from exc
+
+
+@router.post("/teaware/{teaware_id}/image", response_model=Teaware, status_code=201)
+async def upload_teaware_image(
+    teaware_id: str,
+    file: Annotated[UploadFile, File()],
+    current_user: str = Depends(get_current_user),
+) -> Teaware:
+    content = await file.read()
+    try:
+        return teaware.save_image(current_user, teaware_id, content, file.content_type or "")
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Teaware not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/teaware/{teaware_id}/image")
+def get_teaware_image(teaware_id: str, token: str = Query(...)) -> FileResponse:
+    """`?token=` for the same reason as tea photos: an `<img>` can't send a header."""
+    current_user = user_from_token(token)
+    try:
+        path = teaware.image_path(current_user, teaware_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Image not found") from exc
+    media_type = _IMAGE_MEDIA_TYPES.get(path.suffix.removeprefix("."), "application/octet-stream")
+    return FileResponse(path, media_type=media_type)
+
+
+@router.delete("/teaware/{teaware_id}/image", response_model=Teaware)
+def delete_teaware_image(teaware_id: str, current_user: str = Depends(get_current_user)) -> Teaware:
+    try:
+        return teaware.delete_image(current_user, teaware_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Teaware not found") from exc
+
+
+@router.get("/teaware/{teaware_id}/usage", response_model=TeawareUsage)
+def teaware_usage(teaware_id: str, current_user: str = Depends(get_current_user)) -> TeawareUsage:
+    try:
+        return teaware.usage(current_user, teaware_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Teaware not found") from exc
