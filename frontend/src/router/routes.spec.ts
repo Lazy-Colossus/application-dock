@@ -90,4 +90,19 @@ describe("tea back navigation", () => {
     expect(router.currentRoute.value.name).toBe("tea-timer");
     expect(router.currentRoute.value.meta.backTo).toBe("/tea");
   });
+
+  it("gives teaware its own pages, not a tea called 'ware'", async () => {
+    const router = makeRouter();
+    await router.push("/tea/ware");
+    expect(router.currentRoute.value.name).toBe("tea-ware");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea");
+
+    await router.push("/tea/ware/new");
+    expect(router.currentRoute.value.name).toBe("tea-ware-new");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea/ware");
+
+    await router.push("/tea/ware/w-1");
+    expect(router.currentRoute.value.name).toBe("tea-ware-detail");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea/ware");
+  });
 });

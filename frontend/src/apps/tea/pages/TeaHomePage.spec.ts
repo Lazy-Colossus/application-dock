@@ -17,16 +17,17 @@ beforeEach(() => {
 });
 
 describe("TeaHomePage", () => {
-  it("offers the cabinet, brewing and the almanac, in that order", () => {
+  it("offers the cabinet, teaware, brewing and the almanac, in that order", () => {
     const labels = render()
       .findAll('[data-testid="tea-home-section"] .tea-home__name')
       .map((n) => n.text());
 
-    expect(labels).toEqual(["Cabinet", "Brew", "Almanac"]);
+    expect(labels).toEqual(["Cabinet", "Teaware", "Brew", "Almanac"]);
   });
 
   it.each([
     ["Cabinet", "tea-cabinet"],
+    ["Teaware", "tea-ware"],
     ["Brew", "tea-timer"],
     ["Almanac", "tea-almanac"],
   ])("opens the %s section", async (label, routeName) => {

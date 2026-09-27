@@ -40,6 +40,12 @@ const SECTIONS: Section[] = [
     route: "tea-cabinet",
   },
   {
+    name: "Teaware",
+    nameZh: "茶具",
+    blurb: "Your gaiwans, pots and cups, and what's been brewed in each.",
+    route: "tea-ware",
+  },
+  {
     name: "Brew",
     nameZh: "泡茶",
     blurb: "Time a session, infusion by infusion.",

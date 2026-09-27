@@ -264,6 +264,25 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/apps/tea/pages/TimerPage.vue"),
         meta: { title: "Brew", requiresAuth: true, backTo: "/tea" },
       },
+      // Before tea/:teaId, which would otherwise read "ware" as a tea id.
+      {
+        path: "tea/ware",
+        name: "tea-ware",
+        component: () => import("@/apps/tea/pages/WareCabinetPage.vue"),
+        meta: { title: "Teaware", requiresAuth: true, backTo: "/tea" },
+      },
+      {
+        path: "tea/ware/new",
+        name: "tea-ware-new",
+        component: () => import("@/apps/tea/pages/NewWarePage.vue"),
+        meta: { title: "New teaware", requiresAuth: true, backTo: "/tea/ware" },
+      },
+      {
+        path: "tea/ware/:wareId",
+        name: "tea-ware-detail",
+        component: () => import("@/apps/tea/pages/WareDetailPage.vue"),
+        meta: { title: "Teaware", requiresAuth: true, backTo: "/tea/ware" },
+      },
       {
         path: "tea/:teaId",
         name: "tea-detail",
