@@ -35,7 +35,7 @@ Single user: the builder, a gongfu tea drinker who brews multi-infusion sessions
 
 ### 2.2 Non-Users (v1)
 
-- Anyone but the builder — no multi-user accounts, no guests, no sharing surface (contrast KDH). A session may *note* guests as free text, but they are not users.
+- Anyone outside the household — no guests, followers, or public sharing. Household members may share one cabinet (see `docs/superpowers/specs/2026-09-27-tea-shared-cabinets-design.md`). A session may *note* guests as free text, but they are not users.
 - Vendors / marketplaces — this is not for buying, selling, or discovering teas to purchase.
 - The broader tea community — no social feed, no publishing, no leaderboards.
 
@@ -294,7 +294,7 @@ The Almanac ships with a starter body of curated families and vocabulary so it i
 
 ## 5. Non-Goals (Explicit)
 
-- **Not multi-user, not social.** No accounts beyond the single dock user, no sharing, no feed, no publishing, no leaderboards. Guests are free text on a Session, not users.
+- **Not social.** Household members can share one cabinet, but there is no sharing beyond it: no feed, publishing, leaderboards, or read-only viewers. Guests are free text on a Session, not users.
 - **Not commerce.** No buying, selling, price tracking, vendor catalogs, or purchase recommendations.
 - **Not a hardware hub.** No integration with smart scales, kettles, or thermometers in v1 — temperature and grams are entered by hand.
 - **Not an AI sommelier.** No automated flavor inference, tea identification from photos, or ML-generated tasting notes; the Flavor Fingerprint is what the user taps.
@@ -360,7 +360,7 @@ Personal-project framing — the metrics are about *lived use*, not growth.
 - **NFR-2 — Glanceable timing.** A live Infusion's remaining time must be readable in under a second's glance; the active control must never require precise aim.
 - **NFR-3 — Interruptibility.** Any live activity (Infusion, Metronome, Meditation) can be paused, cancelled, or abandoned without corrupting the Session; an app backgrounded mid-Session recovers to a coherent state on return.
 - **NFR-4 — Persistence & integrity.** All persisted state uses the platform repository pattern with atomic writes (write-tmp-then-replace); no write path bypasses it. Photos are stored on disk under `DATA_DIR` and referenced by path. In-progress Sessions survive a reload.
-- **NFR-5 — Single-user privacy.** All data sits behind the existing dock JWT auth; there is no sharing surface and no third-party data egress beyond the maps/place-search the platform already uses.
+- **NFR-5 — Household privacy.** All data sits behind the existing dock JWT auth. A cabinet is visible only to its members; there is no other sharing surface and no third-party data egress beyond the maps/place-search the platform already uses.
 - **NFR-6 — Responsive fallback.** Though phone-first, the app is usable on a desktop browser (cataloguing, journaling, almanac) via responsive layout — no separate desktop build.
 - **NFR-7 — Accessibility & platform standards.** Meets the platform's accessibility and coding standards (contrast, focus states, keyboard use on desktop); audio and haptic cues are never the sole channel — a visual equivalent always accompanies them.
 - **NFR-8 — Offline resilience (soft).** Transient network loss at the table must not lose an in-progress Session's timing data. [ASSUMPTION: achieved by keeping live timing in client state and persisting on finalize/checkpoint, not by full offline-PWA in v1 — see §6.2.]
