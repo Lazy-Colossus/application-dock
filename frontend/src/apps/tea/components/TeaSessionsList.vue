@@ -11,6 +11,12 @@
     >
       <span class="sessions__date">{{ dateOf(session) }}</span>
       <span class="sessions__stars">{{ starsOf(session) }}</span>
+      <span
+        v-if="shared && session.brewed_by !== me"
+        class="sessions__brewer"
+        :data-testid="`sessions-brewer-${session.id}`"
+        >· {{ session.brewed_by }}</span
+      >
       <span class="sessions__meta">
         {{ session.infusions.length }} {{ session.infusions.length === 1 ? "infusion" : "infusions" }}
         <template v-if="session.leaf_grams !== null"> · {{ session.leaf_grams }} g</template>
@@ -22,7 +28,8 @@
 <script setup lang="ts">
 import type { TeaSession } from "../types";
 
-defineProps<{ sessions: TeaSession[] }>();
+// Brewers are named only once the cabinet is shared, so a cabinet of one looks as it always did.
+defineProps<{ sessions: TeaSession[]; shared?: boolean; me?: string | null }>();
 
 function dateOf(session: TeaSession): string {
   return new Date(session.finished_at ?? session.started_at).toLocaleDateString([], {
@@ -62,6 +69,9 @@ function starsOf(session: TeaSession): string {
 .sessions__meta {
   color: #8b7a63;
   margin-left: auto;
+}
+.sessions__brewer {
+  color: #8b7a63;
 }
 .sessions__empty {
   color: #8b7a63;

@@ -153,7 +153,7 @@
 
         <section class="tea-view__section" data-testid="tea-sessions">
           <h2 class="tea-view__heading">Sessions</h2>
-          <TeaSessionsList :sessions="sessions.byTea[teaId] ?? []" />
+          <TeaSessionsList :sessions="teaSessions" :shared="household.shared" :me="auth.username" />
         </section>
       </template>
 
@@ -176,7 +176,12 @@
       </template>
 
       <div v-if="confirming" class="sheet" data-testid="remove-confirm">
-        <p class="sheet__title">Remove {{ tea.name }} from the cabinet? Its notes go with it.</p>
+        <p class="sheet__title">
+          Remove {{ tea.name }} from the cabinet? Its notes go with it.
+          <template v-if="othersSessions > 0">
+            Also deletes {{ teaSessions.length }} sessions ({{ othersSessions }} by others).
+          </template>
+        </p>
         <button class="sheet__save" data-testid="remove-yes" @click="remove">Remove</button>
         <button class="sheet__cancel" data-testid="remove-no" @click="confirming = false">
           Keep it
@@ -207,6 +212,7 @@ import { useTeaCabinetStore } from "../stores/useTeaCabinetStore";
 import { useTeaCatalogueStore } from "../stores/useTeaCatalogueStore";
 import { useTeaAlmanacStore } from "../stores/useTeaAlmanacStore";
 import { useTeaSessionsStore } from "../stores/useTeaSessionsStore";
+import { useTeaHouseholdStore } from "../stores/useTeaHouseholdStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { proportionOf, thresholdFractionOf, isLow, imageSrc, pricePerGram } from "../shelf";
 import { nearestAlmanacEntry, pathOf } from "../catalogue";
@@ -221,9 +227,14 @@ const catalogue = useTeaCatalogueStore();
 const almanac = useTeaAlmanacStore();
 const sessions = useTeaSessionsStore();
 const auth = useAuthStore();
+const household = useTeaHouseholdStore();
 
 const teaId = computed(() => String(route.params.teaId));
 const tea = computed(() => cabinet.teas.find((t) => t.id === teaId.value) ?? null);
+const teaSessions = computed(() => sessions.byTea[teaId.value] ?? []);
+const othersSessions = computed(
+  () => teaSessions.value.filter((s) => s.brewed_by !== auth.username).length,
+);
 
 const editing = ref(false);
 const editMode = ref(false);
@@ -452,6 +463,7 @@ onMounted(() => {
   // subset in the store that would hide this tea's entry.
   void almanac.fetchEntries();
   void sessions.fetchForTea(teaId.value);
+  void household.fetchCabinet();
 });
 </script>
 

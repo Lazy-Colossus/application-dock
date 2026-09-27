@@ -37,10 +37,19 @@ vi.mock("vue-router", () => ({
 }));
 
 import TeaDetailPage from "./TeaDetailPage.vue";
-import type { Tea, CatalogueNode, AlmanacEntryView } from "../types";
+import { useAuthStore } from "@/stores/useAuthStore";
+import type { Tea, CatalogueNode, AlmanacEntryView, Cabinet } from "../types";
 
 const STUBS = {
   "q-page": { template: "<div><slot /></div>" },
+};
+
+/** An unshared cabinet — what the real `/tea/cabinet` returns for a lone user. */
+const SOLO: Cabinet = {
+  id: null,
+  owner: "jakub",
+  members: ["jakub"],
+  is_owner: true,
 };
 
 function tea(overrides: Partial<Tea> = {}): Tea {
@@ -109,6 +118,7 @@ function mockApi(teas: Tea[], nodes: CatalogueNode[], entries: AlmanacEntryView[
     if (path === "/tea/teas") return Promise.resolve(teas);
     if (path === "/tea/catalogue") return Promise.resolve(nodes);
     if (path === "/tea/almanac") return Promise.resolve(entries);
+    if (path === "/tea/cabinet") return Promise.resolve(SOLO);
     return Promise.resolve([]);
   });
 }
@@ -439,12 +449,51 @@ describe("TeaDetailPage", () => {
     getMock.mockImplementation((path: string) => {
       if (path === "/tea/teas") return Promise.resolve([tea()]);
       if (path === "/tea/catalogue") return Promise.resolve([OOLONG, WUYI]);
+      if (path === "/tea/cabinet") return Promise.resolve(SOLO);
       if (path === "/tea/teas/t-1/sessions") return Promise.resolve([finished]);
       return Promise.resolve([]);
     });
     const wrapper = mount(TeaDetailPage, { global: { stubs: STUBS } });
     await flushPromises();
     expect(wrapper.get("[data-testid=tea-sessions]").text()).toContain("★★★★★");
+  });
+
+  it("says how many sessions go with a shared tea, and how many are someone else's", async () => {
+    useAuthStore().username = "jakub";
+    const finished = (id: string, brewedBy: string) => ({
+      id,
+      brewed_by: brewedBy,
+      tea_id: "t-1",
+      status: "finalised",
+      started_at: "2026-09-25T19:40:00Z",
+      updated_at: "2026-09-25T20:10:00Z",
+      finished_at: "2026-09-25T20:10:00Z",
+      leaf_grams: 6,
+      water_temp_c: 95,
+      rating: 5,
+      curve_source: "almanac",
+      curve_source_label: "almanac: Tieguanyin",
+      infusions: [{ number: 1, target_seconds: 20, actual_seconds: 21 }],
+    });
+    getMock.mockImplementation((path: string) => {
+      if (path === "/tea/teas") return Promise.resolve([tea()]);
+      if (path === "/tea/catalogue") return Promise.resolve([OOLONG, WUYI]);
+      if (path === "/tea/cabinet")
+        return Promise.resolve({ id: "c_1", owner: "jakub", members: ["jakub", "mia"], is_owner: true });
+      if (path === "/tea/teas/t-1/sessions")
+        return Promise.resolve([finished("s-1", "jakub"), finished("s-2", "mia")]);
+      return Promise.resolve([]);
+    });
+    const wrapper = mount(TeaDetailPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    // The sessions list shows only outside edit mode.
+    expect(wrapper.get("[data-testid=sessions-brewer-s-2]").text()).toBe("· mia");
+
+    await wrapper.get('[data-testid="tea-edit"]').trigger("click");
+    await wrapper.get('[data-testid="tea-remove"]').trigger("click");
+    expect(wrapper.get('[data-testid="remove-confirm"]').text()).toContain(
+      "Also deletes 2 sessions (1 by others).",
+    );
   });
 
   it("shows the tea's own brewing parameters as a fact", async () => {

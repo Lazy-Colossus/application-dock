@@ -41,4 +41,23 @@ describe("TeaSessionsList", () => {
   it("says so when there are none", () => {
     expect(mount(TeaSessionsList, { props: { sessions: [] } }).find("[data-testid=sessions-empty]").exists()).toBe(true);
   });
+
+  it("names who brewed others' sessions once the cabinet is shared", () => {
+    const wrapper = mount(TeaSessionsList, {
+      props: {
+        sessions: [session("s-1", { brewed_by: "mia" }), session("s-2", { brewed_by: "jakub" })],
+        shared: true,
+        me: "jakub",
+      },
+    });
+    expect(wrapper.get("[data-testid=sessions-brewer-s-1]").text()).toBe("· mia");
+    expect(wrapper.find("[data-testid=sessions-brewer-s-2]").exists()).toBe(false);
+  });
+
+  it("names nobody in a cabinet of one", () => {
+    const wrapper = mount(TeaSessionsList, {
+      props: { sessions: [session("s-1", { brewed_by: "mia" })], shared: false, me: "jakub" },
+    });
+    expect(wrapper.find("[data-testid=sessions-brewer-s-1]").exists()).toBe(false);
+  });
 });
