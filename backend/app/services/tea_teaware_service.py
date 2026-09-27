@@ -14,7 +14,8 @@ from pathlib import Path
 
 from app.repositories import tea_repo as repo
 from app.schemas.tea import TeaDoc
-from app.schemas.teaware import Teaware, TeawareWriteRequest
+from app.schemas.tea_session import TeaSession
+from app.schemas.teaware import BREWING_TYPES, Teaware, TeawareUsage, TeawareWriteRequest
 from app.services import tea_cabinet_service as cabinets
 from app.services import tea_catalogue_service as catalogue
 from app.services import tea_service
@@ -174,3 +175,52 @@ def image_path(username: str, teaware_id: str) -> Path:
     if path is None:
         raise FileNotFoundError(f"No image for teaware {teaware_id!r}")
     return path
+
+
+def _off_dedication(username: str, doc: TeaDoc, item: Teaware, done: list[TeaSession]) -> int:
+    """Sessions whose tea sits outside the dedicated part of the tree. Unknown teas don't count."""
+    if item.dedicated_node_id is None:
+        return 0
+    index = catalogue.node_index(catalogue.merged_nodes(username))
+    node_of = {tea.id: tea.catalogue_node_id for tea in doc.teas}
+    off = 0
+    for session in done:
+        node_id = node_of.get(session.tea_id)
+        if node_id is None or node_id not in index:
+            continue
+        if item.dedicated_node_id not in {n.id for n in catalogue.ancestry(index, node_id)}:
+            off += 1
+    return off
+
+
+def usage(username: str, teaware_id: str) -> TeawareUsage:
+    doc = cabinets.read_doc_for(username)
+    item = doc.teaware[_position(doc, teaware_id)]
+    done = sorted(
+        (s for s in doc.sessions if s.teaware_id == teaware_id and s.status == "finalised"),
+        key=lambda s: s.finished_at or "",
+        reverse=True,
+    )
+    return TeawareUsage(
+        sessions=done,
+        total=len(done),
+        off_dedication=_off_dedication(username, doc, item, done),
+    )
+
+
+def last_used(username: str, tea_id: str | None) -> Teaware | None:
+    """The vessel to prefill: your last one for this tea, else your last one at all.
+
+    Your own sessions only — a partner's favourite gaiwan is not your default.
+    """
+    doc = cabinets.read_doc_for(username)
+    usable = {w.id: w for w in doc.teaware if w.type in BREWING_TYPES and w.retired_at is None}
+    mine = sorted(
+        (s for s in doc.sessions if s.brewed_by == username and s.teaware_id in usable),
+        key=lambda s: s.updated_at,
+        reverse=True,
+    )
+    for pool in ([s for s in mine if s.tea_id == tea_id], mine):
+        if pool and pool[0].teaware_id is not None:
+            return usable[pool[0].teaware_id]
+    return None

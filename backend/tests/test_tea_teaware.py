@@ -14,7 +14,7 @@ from app.services import tea_catalogue_service as catalogue
 from app.services import tea_service
 from app.services import tea_session_service as sessions
 from app.services import tea_teaware_service as service
-from tests.tea_support import cabinet_of, doc_of
+from tests.tea_support import cabinet_of, doc_of, share
 
 TIEGUANYIN = "oolong.anxi.tieguanyin"
 
@@ -139,7 +139,6 @@ def test_photos_round_trip_and_refuse_bad_uploads() -> None:
         service.image_path("alice", item.id)
 
 
-@pytest.mark.xfail(reason="volume copy lands in Task 3", strict=True)
 def test_delete_clears_the_vessel_from_sessions_and_keeps_them() -> None:
     tea_id = _tea()
     pot = service.create_teaware("alice", _req())
@@ -167,3 +166,81 @@ def test_a_node_with_dedicated_teaware_cannot_be_deleted() -> None:
     service.create_teaware("alice", _req(porous=True, dedicated_node_id=node.id))
     with pytest.raises(catalogue.NodeInUseError, match="dedicated here"):
         catalogue.delete_node("alice", node.id)
+
+
+def test_a_session_copies_the_vessels_volume_until_it_finishes() -> None:
+    tea_id = _tea()
+    pot = service.create_teaware("alice", _req())
+    _brew(tea_id, "s-1", pot.id, status="in_progress")
+    assert doc_of("alice").sessions[0].vessel_volume_ml == 110
+
+    service.replace_teaware("alice", pot.id, _req(volume_ml=120))
+    _brew(tea_id, "s-1", pot.id)
+    service.replace_teaware("alice", pot.id, _req(volume_ml=150))
+
+    assert doc_of("alice").sessions[0].vessel_volume_ml == 120
+
+
+def test_a_session_without_a_vessel_has_no_volume() -> None:
+    _brew(_tea(), "s-1", None)
+    assert doc_of("alice").sessions[0].vessel_volume_ml is None
+
+
+@pytest.mark.parametrize("problem", ["cup", "retired", "unknown"])
+def test_a_session_refuses_a_vessel_it_cannot_be_brewed_in(problem: str) -> None:
+    tea_id = _tea()
+    if problem == "cup":
+        teaware_id = service.create_teaware("alice", _req(type="cup")).id
+    elif problem == "retired":
+        teaware_id = service.create_teaware("alice", _req(retired=True)).id
+    else:
+        teaware_id = "w-nosuchid"
+    with pytest.raises(ValueError):
+        _brew(tea_id, "s-1", teaware_id, status="in_progress")
+    assert doc_of("alice").sessions == []
+
+
+def test_usage_counts_finished_sessions_and_strays_from_the_dedication() -> None:
+    oolong = _tea(node=TIEGUANYIN)
+    green = _tea(node="green")
+    pot = service.create_teaware("alice", _req(porous=True, dedicated_node_id="oolong"))
+    _brew(oolong, "s-1", pot.id)
+    _brew(green, "s-2", pot.id)
+    _brew(oolong, "s-3", pot.id, status="in_progress")
+
+    usage = service.usage("alice", pot.id)
+
+    assert [s.id for s in usage.sessions] == ["s-2", "s-1"]
+    assert (usage.total, usage.off_dedication) == (2, 1)
+
+
+def test_usage_without_a_dedication_counts_nothing_off() -> None:
+    pot = service.create_teaware("alice", _req())
+    _brew(_tea(node="green"), "s-1", pot.id)
+    assert service.usage("alice", pot.id).off_dedication == 0
+
+
+def test_last_used_prefers_this_teas_last_vessel_then_any() -> None:
+    tea_a, tea_b, tea_c = _tea(), _tea(), _tea()
+    pot = service.create_teaware("alice", _req())
+    gaiwan = service.create_teaware("alice", _req(name="Gaiwan", type="gaiwan"))
+    _brew(tea_a, "s-1", pot.id)
+    _brew(tea_b, "s-2", gaiwan.id)
+
+    assert service.last_used("alice", tea_a) == service.get_teaware("alice", pot.id)
+    assert service.last_used("alice", tea_b).id == gaiwan.id  # type: ignore[union-attr]
+    assert service.last_used("alice", tea_c).id == gaiwan.id  # type: ignore[union-attr]
+    assert service.last_used("alice", None).id == gaiwan.id  # type: ignore[union-attr]
+
+
+def test_last_used_is_personal_and_skips_retired() -> None:
+    tea_id = _tea()
+    share("alice", "bob")
+    gaiwan = service.create_teaware("alice", _req(name="Gaiwan", type="gaiwan"))
+    _brew(tea_id, "s-bob", gaiwan.id, username="bob")
+    assert service.last_used("alice", tea_id) is None
+
+    pot = service.create_teaware("alice", _req())
+    _brew(tea_id, "s-alice", pot.id)
+    service.replace_teaware("alice", pot.id, _req(retired=True))
+    assert service.last_used("alice", tea_id) is None

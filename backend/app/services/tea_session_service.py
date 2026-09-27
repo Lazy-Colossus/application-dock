@@ -7,7 +7,7 @@ effects — it deducts the leaf used from the tea — so it happens inside the s
 frozen so a retried finish can never deduct twice.
 
 Raises `FileNotFoundError`, `SessionFinalisedError`, `PermissionError` (another
-member's session); the router translates.
+member's session), `ValueError` (a vessel it can't be brewed in); the router translates.
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ from datetime import UTC, datetime
 from app.repositories import tea_repo as repo
 from app.schemas.tea import TeaDoc
 from app.schemas.tea_session import TeaSession, TeaSessionWrite
+from app.schemas.teaware import BREWING_TYPES
 from app.services import tea_cabinet_service as cabinets
 
 
@@ -47,6 +48,23 @@ def _check_brewer(session: TeaSession, username: str) -> None:
         raise PermissionError(f"That session belongs to {session.brewed_by}")
 
 
+def _vessel_volume(doc: TeaDoc, teaware_id: str | None) -> int | None:
+    """The volume to record for `teaware_id`, refusing a vessel nobody can brew in.
+
+    `ValueError`, not `FileNotFoundError`: the timer reads a 404 as "your tea is gone".
+    """
+    if teaware_id is None:
+        return None
+    item = next((w for w in doc.teaware if w.id == teaware_id), None)
+    if item is None:
+        raise ValueError("That vessel is no longer in the cabinet")
+    if item.type not in BREWING_TYPES:
+        raise ValueError(f"A {item.type} isn't something you brew in")
+    if item.retired_at is not None:
+        raise ValueError(f"{item.name} is retired")
+    return item.volume_ml
+
+
 def upsert(username: str, session_id: str, req: TeaSessionWrite) -> TeaSession:
     """Store `req` as session `session_id`, finalising it if its status says so."""
     with repo.doc_transaction(cabinets.ensure(username)) as doc:
@@ -56,6 +74,7 @@ def upsert(username: str, session_id: str, req: TeaSessionWrite) -> TeaSession:
             _check_brewer(doc.sessions[existing], username)
             if doc.sessions[existing].status == "finalised":
                 raise SessionFinalisedError("This session is already finished")
+        vessel_volume_ml = _vessel_volume(doc, req.teaware_id)
 
         stamp = _now_iso()
         infusions = req.infusions
@@ -80,6 +99,7 @@ def upsert(username: str, session_id: str, req: TeaSessionWrite) -> TeaSession:
             infusions=infusions,
             id=session_id,
             brewed_by=username,
+            vessel_volume_ml=vessel_volume_ml,
             updated_at=stamp,
             finished_at=finished_at,
         )
