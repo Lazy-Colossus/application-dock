@@ -62,4 +62,12 @@ describe("TeaSessionsList", () => {
     });
     expect(wrapper.find("[data-testid=sessions-brewer-s-1]").exists()).toBe(false);
   });
+
+  it("names each session's tea when given tea names", () => {
+    const wrapper = mount(TeaSessionsList, {
+      props: { sessions: [session("s-1"), session("s-2", { tea_id: "t-gone" })], teaNames: { "t-1": "Longjing" } },
+    });
+    expect(wrapper.get("[data-testid=sessions-tea-s-1]").text()).toBe("Longjing");
+    expect(wrapper.get("[data-testid=sessions-tea-s-2]").text()).toBe("a removed tea");
+  });
 });

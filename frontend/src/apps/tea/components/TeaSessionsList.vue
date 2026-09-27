@@ -9,6 +9,9 @@
       class="sessions__row"
       :data-testid="`sessions-row-${session.id}`"
     >
+      <span v-if="teaNames" class="sessions__tea" :data-testid="`sessions-tea-${session.id}`">{{
+        teaNames[session.tea_id] ?? "a removed tea"
+      }}</span>
       <span class="sessions__date">{{ dateOf(session) }}</span>
       <span class="sessions__stars">{{ starsOf(session) }}</span>
       <span
@@ -29,7 +32,12 @@
 import type { TeaSession } from "../types";
 
 // Brewers are named only once the cabinet is shared, so a cabinet of one looks as it always did.
-defineProps<{ sessions: TeaSession[]; shared?: boolean; me?: string | null }>();
+defineProps<{
+  sessions: TeaSession[];
+  shared?: boolean;
+  me?: string | null;
+  teaNames?: Record<string, string>;
+}>();
 
 function dateOf(session: TeaSession): string {
   return new Date(session.finished_at ?? session.started_at).toLocaleDateString([], {
@@ -72,6 +80,9 @@ function starsOf(session: TeaSession): string {
 }
 .sessions__brewer {
   color: #8b7a63;
+}
+.sessions__tea {
+  color: #efe7da;
 }
 .sessions__empty {
   color: #8b7a63;

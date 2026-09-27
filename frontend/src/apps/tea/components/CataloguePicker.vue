@@ -16,7 +16,7 @@
         </button>
 
         <button
-          v-if="tier.parentId"
+          v-if="tier.parentId && !bare"
           class="chip chip--add"
           :data-testid="`add-${tier.parentId}`"
           @click="emit('add-node', tier.parentId)"
@@ -26,7 +26,7 @@
       </div>
     </div>
 
-    <p v-if="prefill" class="picker__prefill" data-testid="picker-prefill">
+    <p v-if="prefill && !bare" class="picker__prefill" data-testid="picker-prefill">
       Origin will fill in as <em>{{ prefill }}</em> — you can change it.
     </p>
   </div>
@@ -38,7 +38,8 @@ import { childrenOf, pathOf, prefillOriginFor } from "../catalogue";
 import { CLASS_TOKENS } from "../tokens";
 import type { CatalogueNode, TeaClass } from "../types";
 
-const props = defineProps<{ nodes: CatalogueNode[]; modelValue: string | null }>();
+// bare: pick a node only — no "+ Add one" or origin note (the teaware dedication picker).
+const props = defineProps<{ nodes: CatalogueNode[]; modelValue: string | null; bare?: boolean }>();
 const emit = defineEmits<{
   "update:modelValue": [nodeId: string];
   prefill: [origin: string];
