@@ -1,14 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, putMock, delMock } = vi.hoisted(() => ({
+const { getMock, putMock, delMock, uploadMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
   putMock: vi.fn(),
   delMock: vi.fn(),
+  uploadMock: vi.fn(),
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
-  api: { get: getMock, put: putMock, del: delMock, post: vi.fn() },
+  api: { get: getMock, put: putMock, del: delMock, post: vi.fn(), upload: uploadMock },
 }));
 
 import { useTeaTimerStore } from "./useTeaTimerStore";
@@ -84,6 +85,7 @@ beforeEach(() => {
   getMock.mockReset();
   putMock.mockReset().mockImplementation((_path: string, body: unknown) => Promise.resolve(body));
   delMock.mockReset().mockResolvedValue(undefined);
+  uploadMock.mockReset();
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-09-26T18:00:00Z"));
 });
@@ -568,5 +570,106 @@ describe("resume", () => {
       expect.any(String),
       expect.objectContaining({ teaware_id: "w-1" }),
     );
+  });
+});
+
+describe("cha xi", () => {
+  async function brewing() {
+    mockCurve(ALMANAC);
+    const store = useTeaTimerStore();
+    await store.attachTea(tea());
+    putMock.mockClear();
+    return store;
+  }
+
+  it("sends the live cha xi with the next snapshot", async () => {
+    const store = await brewing();
+    store.setChaXi({ moods: ["calm"], guests: "Eva", notes: "" });
+    await store.push();
+    const [, body] = putMock.mock.calls.at(-1)!;
+    expect((body as { cha_xi: unknown }).cha_xi).toEqual({
+      moods: ["calm"],
+      guests: "Eva",
+      notes: "",
+    });
+  });
+
+  it("hydrates a session stored before cha xi existed", () => {
+    localStorage.setItem(
+      "tea-timer:live",
+      JSON.stringify({
+        version: 1,
+        sessionId: "s-old",
+        startedAt: "2026-09-26T18:00:00Z",
+        tea: { id: "t-1", name: "Tieguanyin", class_id: "oolong", grams_remaining: 42 },
+        curve: ALMANAC,
+        leafGrams: 6,
+        waterTempC: 95,
+        infusions: [{ number: 1, target_seconds: 20, actual_seconds: null }],
+        steepStartedAt: null,
+        pushed: true,
+      }),
+    );
+    const store = useTeaTimerStore();
+    expect(store.live?.sessionId).toBe("s-old");
+    expect(store.live?.chaXi ?? null).toBeNull();
+  });
+
+  it("syncs the session before uploading its photo", async () => {
+    const store = await brewing();
+    uploadMock.mockResolvedValue({ image_url: "/api/tea/sessions/x/image" });
+    const ok = await store.uploadPhoto(new File(["x"], "t.jpg", { type: "image/jpeg" }));
+    expect(ok).toBe(true);
+    expect(putMock).toHaveBeenCalled();
+    expect(uploadMock.mock.calls[0][0]).toBe(`/tea/sessions/${store.live!.sessionId}/image`);
+    expect(store.live?.imageUrl).toBe("/api/tea/sessions/x/image");
+  });
+
+  it("keeps the photo error for a retry when the upload fails", async () => {
+    const store = await brewing();
+    uploadMock.mockRejectedValue(Object.assign(new Error("x"), { detail: "Too big" }));
+    const ok = await store.uploadPhoto(new File(["x"], "t.jpg", { type: "image/jpeg" }));
+    expect(ok).toBe(false);
+    expect(store.photoError).toBe("Too big");
+    expect(store.photoSaving).toBe(false);
+    expect(store.live?.imageUrl ?? null).toBeNull();
+  });
+
+  it("does not upload while the session cannot sync", async () => {
+    const store = await brewing();
+    putMock.mockRejectedValue(httpError(503));
+    const ok = await store.uploadPhoto(new File(["x"], "t.jpg", { type: "image/jpeg" }));
+    expect(ok).toBe(false);
+    expect(uploadMock).not.toHaveBeenCalled();
+    expect(store.photoError).not.toBeNull();
+  });
+
+  it("resumes a server session with its cha xi and photo", () => {
+    const store = useTeaTimerStore();
+    const saved: TeaSession = {
+      id: "s-9",
+      tea_id: "t-1",
+      away_tea_name: "",
+      away_class_id: null,
+      status: "in_progress",
+      started_at: "2026-09-26T18:00:00Z",
+      leaf_grams: 6,
+      water_temp_c: 95,
+      rating: null,
+      curve_source: "almanac",
+      curve_source_label: "almanac: Tieguanyin",
+      infusions: [{ number: 1, target_seconds: 20, actual_seconds: 21 }],
+      teaware_id: null,
+      timed: true,
+      cha_xi: { moods: ["cosy"], guests: "", notes: "rain" },
+      brewed_by: "jakub",
+      vessel_volume_ml: null,
+      updated_at: "2026-09-26T18:05:00Z",
+      finished_at: null,
+      image_url: "/api/tea/sessions/s-9/image",
+    };
+    store.resume(saved, tea());
+    expect(store.live?.chaXi).toEqual({ moods: ["cosy"], guests: "", notes: "rain" });
+    expect(store.live?.imageUrl).toBe("/api/tea/sessions/s-9/image");
   });
 });

@@ -2,8 +2,10 @@ import { computed, ref, watch } from "vue";
 import { defineStore } from "pinia";
 import { api } from "@/composables/useApi";
 import { CUP_LIQUOR, genericCurve, newSessionId, targetFor } from "@/apps/tea/timer";
+import { downscaleImage } from "@/apps/tea/image";
 import type {
   BrewingCurve,
+  ChaXi,
   Infusion,
   Tea,
   TeaClass,
@@ -37,6 +39,9 @@ export interface LiveSession {
   // which reads the same as "never touched" — safe, since the prefill only
   // ever fires once, right after a tea is attached.
   vesselChosen?: boolean;
+  // Optional: sessions saved before the Journal existed still hydrate.
+  chaXi?: ChaXi | null;
+  imageUrl?: string | null;
   curve: BrewingCurve;
   leafGrams: number | null;
   waterTempC: number | null;
@@ -130,6 +135,8 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
   const error = ref<string | null>(null);
   const notice = ref<string | null>(null);
   const chimeOn = ref(read(CHIME_KEY) !== "0");
+  const photoSaving = ref(false);
+  const photoError = ref<string | null>(null);
 
   // Synchronous so a reload straight after a tap still finds the tap saved.
   watch(live, (value) => write(LIVE_KEY, value === null ? null : JSON.stringify(value)), {
@@ -186,7 +193,7 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
       away_tea_name: "",
       away_class_id: null,
       timed: true,
-      cha_xi: null,
+      cha_xi: session.chaXi ?? null,
     };
   }
 
@@ -194,6 +201,7 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
     live.value = null;
     unsynced.value = false;
     error.value = null;
+    photoError.value = null;
   }
 
   async function push(): Promise<void> {
@@ -329,6 +337,49 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
     await push();
   }
 
+  function setChaXi(value: ChaXi): void {
+    if (live.value) live.value.chaXi = value;
+  }
+
+  /** The server needs the session before its photo, so the session syncs first. */
+  async function uploadPhoto(file: File): Promise<boolean> {
+    const session = live.value;
+    if (!session?.tea) return false;
+    photoSaving.value = true;
+    photoError.value = null;
+    try {
+      await push();
+      if (live.value !== session) return false;
+      if (unsynced.value) throw new Error("Not synced yet — try again in a moment");
+      const saved = await api.upload<TeaSession>(
+        `/tea/sessions/${session.sessionId}/image`,
+        await downscaleImage(file),
+      );
+      if (live.value === session) session.imageUrl = saved.image_url;
+      return true;
+    } catch (e) {
+      photoError.value = message(e);
+      return false;
+    } finally {
+      photoSaving.value = false;
+    }
+  }
+
+  async function removePhoto(): Promise<void> {
+    const session = live.value;
+    if (!session?.imageUrl) return;
+    photoSaving.value = true;
+    try {
+      await api.del<TeaSession>(`/tea/sessions/${session.sessionId}/image`);
+      if (live.value === session) session.imageUrl = null;
+      photoError.value = null;
+    } catch (e) {
+      photoError.value = message(e);
+    } finally {
+      photoSaving.value = false;
+    }
+  }
+
   async function finish(rating: number | null): Promise<string | null> {
     const session = live.value;
     const tea = session?.tea;
@@ -433,6 +484,8 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
       infusions,
       steepStartedAt: null,
       pushed: true,
+      chaXi: session.cha_xi,
+      imageUrl: session.image_url,
     };
     unsynced.value = false;
   }
@@ -455,6 +508,8 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
     error,
     notice,
     chimeOn,
+    photoSaving,
+    photoError,
     current,
     running,
     brewed,
@@ -467,6 +522,9 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
     setLeafGrams,
     setWaterTemp,
     setVessel,
+    setChaXi,
+    uploadPhoto,
+    removePhoto,
     push,
     finish,
     end,
