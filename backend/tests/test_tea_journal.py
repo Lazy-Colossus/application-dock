@@ -351,3 +351,36 @@ def test_the_journal_resolves_each_tea_and_includes_every_member() -> None:
     )
     assert (by_id["s-2"].tea_name, by_id["s-2"].class_id) == ("Teahouse Dancong", "other")
     assert by_id["s-3"].class_id == "red"
+
+
+def test_a_back_dated_entry_sorts_by_its_sitting_on_the_tea_and_the_pot() -> None:
+    from app.schemas.teaware import TeawareWriteRequest
+    from app.services import tea_teaware_service as teaware
+
+    tea_id = _tea()
+    pot = teaware.create_teaware(
+        "alice", TeawareWriteRequest.model_validate({"name": "Gaiwan", "type": "gaiwan"})
+    )
+    sessions.upsert(
+        "alice",
+        "s-old",
+        _entry(tea_id=tea_id, started_at="2026-09-03T12:00:00+00:00", teaware_id=pot.id),
+    )
+    sessions.upsert(
+        "alice",
+        "s-new",
+        _write(tea_id=tea_id, status="finalised", started_at="2026-09-20T18:00:00+00:00"),
+    )
+    sessions.upsert(
+        "alice",
+        "s-pot",
+        _write(
+            tea_id=tea_id,
+            status="finalised",
+            started_at="2026-09-10T18:00:00+00:00",
+            teaware_id=pot.id,
+        ),
+    )
+    # The back-dated entry was typed in last, but it was drunk first.
+    assert [s.id for s in sessions.list_for_tea("alice", tea_id)] == ["s-new", "s-pot", "s-old"]
+    assert [s.id for s in teaware.usage("alice", pot.id).sessions] == ["s-pot", "s-old"]

@@ -52,7 +52,9 @@ defineProps<{
 }>();
 
 function dateOf(session: TeaSession): string {
-  return new Date(session.finished_at ?? session.started_at).toLocaleDateString([], {
+  // A journal-only sitting is dated by the day it was drunk, not the day it was typed in.
+  const at = session.timed ? (session.finished_at ?? session.started_at) : session.started_at;
+  return new Date(at).toLocaleDateString([], {
     day: "numeric",
     month: "short",
   });

@@ -13,6 +13,7 @@ can't take); the router translates.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -162,8 +163,7 @@ def list_in_progress(username: str) -> list[TeaSession]:
 def list_for_tea(username: str, tea_id: str) -> list[TeaSession]:
     doc = cabinets.read_doc_for(username)
     _tea_position(doc, tea_id)
-    done = [s for s in doc.sessions if s.tea_id == tea_id and s.status == "finalised"]
-    return sorted(done, key=lambda s: s.finished_at or "", reverse=True)
+    return newest_first(s for s in doc.sessions if s.tea_id == tea_id and s.status == "finalised")
 
 
 def _own_session(doc: TeaDoc, session_id: str, username: str) -> int:
@@ -251,15 +251,19 @@ def _moment(iso: str) -> datetime:
     return moment if moment.tzinfo else moment.replace(tzinfo=UTC)
 
 
+def newest_first(sessions: Iterable[TeaSession]) -> list[TeaSession]:
+    """By when each sitting took place — a back-dated journal-only entry by its day, not by
+    when it was typed in."""
+    return sorted(
+        sessions, key=lambda s: (_moment(s.started_at), s.finished_at or ""), reverse=True
+    )
+
+
 def list_journal(username: str) -> list[JournalEntry]:
     """Every finished session in the cabinet, any member's, newest sitting first."""
     index = catalogue.node_index(catalogue.merged_nodes(username))
     doc = cabinets.read_doc_for(username)
-    done = sorted(
-        (s for s in doc.sessions if s.status == "finalised"),
-        key=lambda s: _moment(s.started_at),
-        reverse=True,
-    )
+    done = newest_first(s for s in doc.sessions if s.status == "finalised")
     return [_entry(doc, s, index) for s in done]
 
 

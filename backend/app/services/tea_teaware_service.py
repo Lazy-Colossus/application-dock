@@ -19,6 +19,7 @@ from app.schemas.teaware import BREWING_TYPES, Teaware, TeawareUsage, TeawareWri
 from app.services import tea_cabinet_service as cabinets
 from app.services import tea_catalogue_service as catalogue
 from app.services import tea_service
+from app.services import tea_session_service as sessions
 
 
 def _now_iso() -> str:
@@ -196,10 +197,8 @@ def _off_dedication(username: str, doc: TeaDoc, item: Teaware, done: list[TeaSes
 def usage(username: str, teaware_id: str) -> TeawareUsage:
     doc = cabinets.read_doc_for(username)
     item = doc.teaware[_position(doc, teaware_id)]
-    done = sorted(
-        (s for s in doc.sessions if s.teaware_id == teaware_id and s.status == "finalised"),
-        key=lambda s: s.finished_at or "",
-        reverse=True,
+    done = sessions.newest_first(
+        s for s in doc.sessions if s.teaware_id == teaware_id and s.status == "finalised"
     )
     return TeawareUsage(
         sessions=done,

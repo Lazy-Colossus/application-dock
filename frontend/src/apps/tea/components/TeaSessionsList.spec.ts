@@ -44,6 +44,22 @@ describe("TeaSessionsList", () => {
     });
   });
 
+  it("dates a back-dated journal-only sitting by the day it was drunk", () => {
+    const back = session("s-3", {
+      timed: false,
+      infusions: [],
+      started_at: "2026-09-03T12:00:00Z",
+      finished_at: "2026-09-29T08:00:00Z",
+    });
+    const wrapper = mount(TeaSessionsList, {
+      props: { sessions: [back] },
+      global: { stubs: { RouterLink: RouterLinkStub } },
+    });
+    expect(wrapper.get(".sessions__date").text()).toBe(
+      new Date("2026-09-03T12:00:00Z").toLocaleDateString([], { day: "numeric", month: "short" }),
+    );
+  });
+
   it("names an away tea by the name it was given", () => {
     const away = session("s-2", { tea_id: null, away_tea_name: "Teahouse Dancong", timed: false });
     const wrapper = mount(TeaSessionsList, {
