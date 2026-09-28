@@ -19,5 +19,12 @@
     "reading": "",
     "summary": "A bud-only white tea from Kangaita Tea Factory on the southern slopes of Mount Kenya in Kirinyaga County, one of the smaller number of Kenyan orthodox/specialty factories (also known for processing purple tea) alongside the country's much larger CTC commodity sector. Made only from unopened buds with minimal handling — withering and slow drying, no rolling or oxidation — it produces a delicate, sweet, smooth liquor with melon and sweetcorn notes and little to no astringency, a marked contrast to the brisk, tannic strength of Kenyan CTC.",
     "brewing": { "leaf_grams": 4, "water_temp_c": 85, "steep_seconds": [150, 180] }
+  },
+  {
+    "catalogue_node_id": "red.kenyan.orthodox",
+    "country": "Kenya",
+    "reading": "",
+    "summary": "Kenya makes almost all its tea by CTC for tea bags, and orthodox leaf has long been only a few percent of output at most. Since the 2010s, however, the smallholder-owned factories of the Kenya Tea Development Agency have added dedicated orthodox lines to diversify away from falling CTC prices, and a few factories, such as Kangaita on the slopes of Mount Kenya at just over 2,000 meters, specialize in it. The leaf, from the same assamica-type bushes as Kenyan CTC, is rolled whole rather than minced, giving wiry orange pekoe grades sold to specialty buyers, mainly in Germany, Russia and the Gulf. The cup is smoother, sweeter and more fruity than Kenyan CTC, with gentle malt and less punch.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 95, "steep_seconds": [180, 240] }
   }
 ]
