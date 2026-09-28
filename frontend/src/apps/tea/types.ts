@@ -153,8 +153,22 @@ export interface Cabinet {
   is_owner: boolean;
 }
 
-export type TeawareType = "gaiwan" | "pot" | "kyusu" | "chawan" | "pitcher" | "cup" | "other";
-export type TeawareMaterial = "porcelain" | "clay" | "stoneware" | "glass" | "other";
+export type TeawareType =
+  | "gaiwan"
+  | "pot"
+  | "kyusu"
+  | "shiboridashi"
+  | "chawan"
+  | "pitcher"
+  | "cup"
+  | "other";
+export type TeawareMaterial =
+  | "porcelain"
+  | "clay"
+  | "clay_glazed"
+  | "stoneware"
+  | "glass"
+  | "other";
 
 export interface Teaware {
   id: string;

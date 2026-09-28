@@ -13,12 +13,14 @@ from pydantic import BaseModel, Field, PositiveInt
 
 from app.schemas.tea_session import TeaSession
 
-TeawareType = Literal["gaiwan", "pot", "kyusu", "chawan", "pitcher", "cup", "other"]
-TeawareMaterial = Literal["porcelain", "clay", "stoneware", "glass", "other"]
+TeawareType = Literal["gaiwan", "pot", "kyusu", "shiboridashi", "chawan", "pitcher", "cup", "other"]
+TeawareMaterial = Literal["porcelain", "clay", "clay_glazed", "stoneware", "glass", "other"]
 
 # What a session can be brewed in. Pitchers and cups join a sitting with the Cha
 # Xi Journal, not the timer.
-BREWING_TYPES: frozenset[str] = frozenset({"gaiwan", "pot", "kyusu", "chawan", "other"})
+BREWING_TYPES: frozenset[str] = frozenset(
+    {"gaiwan", "pot", "kyusu", "shiboridashi", "chawan", "other"}
+)
 
 
 class Teaware(BaseModel):

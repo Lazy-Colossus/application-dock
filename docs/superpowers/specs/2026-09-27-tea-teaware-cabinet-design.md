@@ -49,7 +49,7 @@ PRD: [`prd-tea-2026-09-06/prd.md`](../../planning-artifacts/prds/prd-tea-2026-09
 §4.2, FR-6–FR-8. **Where they disagree, this spec wins:**
 
 - **Material list** (FR-6): porcelain / yixing / glass / other becomes
-  **porcelain / clay / stoneware / glass / other**. Kyusu are usually Tokoname or Banko clay,
+  **porcelain / clay / clay (glazed) / stoneware / glass / other**. Kyusu are usually Tokoname or Banko clay,
   and chawan are often stoneware; the specific place goes in `origin`.
 - **Seasoning Log** (FR-7): not stored. The item's page derives its sessions from the
   sessions that name it, and flags those whose tea is outside the dedicated part of the
@@ -63,13 +63,13 @@ PRD: [`prd-tea-2026-09-06/prd.md`](../../planning-artifacts/prds/prd-tea-2026-09
 
 - **TW-1** The user can add, edit, retire, bring back and delete a teaware item. Only `name`
   and `type` are required.
-- **TW-2** The shelf groups non-retired items by type in the fixed order gaiwan, pot, kyusu,
+- **TW-2** The shelf groups non-retired items by type in the fixed order gaiwan, pot, kyusu, shiboridashi,
   chawan, pitcher, cup, other; empty types are hidden. Filters: type, material, volume range,
   show retired.
 - **TW-3** A porous item may be dedicated to a catalogue node. Its page shows the total
   number of finished sessions in it and how many were off-dedication (the tea's node is not
   the dedicated node or a descendant).
-- **TW-4** A session may name a brewing vessel (gaiwan, pot, kyusu, chawan, other) that is
+- **TW-4** A session may name a brewing vessel (gaiwan, pot, kyusu, shiboridashi, chawan, other) that is
   not retired. The server copies the item's volume into the session while it is in progress;
   it is frozen once finished.
 - **TW-5** The timer prefills the vessel: the caller's most recent vessel for this tea, else
@@ -97,8 +97,8 @@ PRD: [`prd-tea-2026-09-06/prd.md`](../../planning-artifacts/prds/prd-tea-2026-09
 |---|---|---|
 | `id` | str | `w-` + 8 hex, like tea ids (`t-…`) |
 | `name` | str | required, trimmed, non-empty |
-| `type` | `gaiwan \| pot \| kyusu \| chawan \| pitcher \| cup \| other` | required |
-| `material` | `porcelain \| clay \| stoneware \| glass \| other \| null` | |
+| `type` | `gaiwan \| pot \| kyusu \| shiboridashi \| chawan \| pitcher \| cup \| other` | required |
+| `material` | `porcelain \| clay \| clay_glazed \| stoneware \| glass \| other \| null` | |
 | `volume_ml` | int > 0 \| null | |
 | `porous` | bool | default `false` |
 | `dedicated_node_id` | str \| null | must exist in the merged catalogue; only when `porous` |
@@ -114,7 +114,7 @@ PRD: [`prd-tea-2026-09-06/prd.md`](../../planning-artifacts/prds/prd-tea-2026-09
 `TeawareWriteRequest` is the same minus `id`, `image_url`, `retired_at`, `created_at`,
 `updated_at`, plus `retired: bool` (the server sets or clears `retired_at` when it changes).
 
-Brewing types: `gaiwan`, `pot`, `kyusu`, `chawan`, `other`.
+Brewing types: `gaiwan`, `pot`, `kyusu`, `shiboridashi`, `chawan`, `other`.
 
 ### `TeaSessionWrite` / `TeaSession` (changed)
 

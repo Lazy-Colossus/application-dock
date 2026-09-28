@@ -181,6 +181,16 @@ def test_a_session_copies_the_vessels_volume_until_it_finishes() -> None:
     assert doc_of("alice").sessions[0].vessel_volume_ml == 120
 
 
+def test_a_glazed_clay_shiboridashi_is_a_vessel_you_brew_in() -> None:
+    tea_id = _tea()
+    shibo = service.create_teaware(
+        "alice", _req(name="Shibo", type="shiboridashi", material="clay_glazed", volume_ml=90)
+    )
+    _brew(tea_id, "s-1", shibo.id)
+    assert doc_of("alice").sessions[0].vessel_volume_ml == 90
+    assert service.last_used("alice", tea_id) == shibo
+
+
 def test_a_session_without_a_vessel_has_no_volume() -> None:
     _brew(_tea(), "s-1", None)
     assert doc_of("alice").sessions[0].vessel_volume_ml is None

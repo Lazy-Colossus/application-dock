@@ -74,8 +74,18 @@ describe("ware helpers", () => {
     expect(sections[1].items.map((i) => i.name)).toEqual(["Duanni", "Zhuni"]);
   });
 
+  it("shelves a shiboridashi between kyusu and chawan", () => {
+    const sections = groupByType([
+      ware("c", { type: "chawan" }),
+      ware("s", { type: "shiboridashi" }),
+      ware("k", { type: "kyusu" }),
+    ]);
+    expect(sections.map((s) => s.type)).toEqual(["kyusu", "shiboridashi", "chawan"]);
+  });
+
   it("knows what can be brewed in", () => {
     expect(isBrewingVessel(ware("a", { type: "gaiwan" }))).toBe(true);
+    expect(isBrewingVessel(ware("a", { type: "shiboridashi" }))).toBe(true);
     expect(isBrewingVessel(ware("a", { type: "cup" }))).toBe(false);
     expect(isBrewingVessel(ware("a", { retired_at: "2026-09-27T10:00:00Z" }))).toBe(false);
   });
@@ -95,6 +105,7 @@ describe("ware helpers", () => {
 
   it("summarises volume and material", () => {
     expect(wareSummary(ware("a"))).toBe("110 ml · clay");
+    expect(wareSummary(ware("a", { material: "clay_glazed" }))).toBe("110 ml · clay (glazed)");
     expect(wareSummary(ware("a", { volume_ml: null, material: null }))).toBe("");
   });
 

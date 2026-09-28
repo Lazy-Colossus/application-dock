@@ -12,6 +12,7 @@ export const WARE_TYPE_ORDER: TeawareType[] = [
   "gaiwan",
   "pot",
   "kyusu",
+  "shiboridashi",
   "chawan",
   "pitcher",
   "cup",
@@ -22,6 +23,7 @@ export const WARE_TYPE_LABELS: Record<TeawareType, { label: string; labelZh: str
   gaiwan: { label: "Gaiwan", labelZh: "蓋碗" },
   pot: { label: "Pot", labelZh: "壺" },
   kyusu: { label: "Kyusu", labelZh: "急須" },
+  shiboridashi: { label: "Shiboridashi", labelZh: "絞り出し" },
   chawan: { label: "Chawan", labelZh: "茶碗" },
   pitcher: { label: "Pitcher", labelZh: "公道杯" },
   cup: { label: "Cup", labelZh: "杯" },
@@ -31,6 +33,7 @@ export const WARE_TYPE_LABELS: Record<TeawareType, { label: string; labelZh: str
 export const MATERIAL_LABELS: Record<TeawareMaterial, string> = {
   porcelain: "Porcelain",
   clay: "Clay",
+  clay_glazed: "Clay (glazed)",
   stoneware: "Stoneware",
   glass: "Glass",
   other: "Other",
@@ -41,6 +44,7 @@ const BREWING_TYPES: ReadonlySet<TeawareType> = new Set([
   "gaiwan",
   "pot",
   "kyusu",
+  "shiboridashi",
   "chawan",
   "other",
 ]);
