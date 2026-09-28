@@ -231,3 +231,20 @@ def test_upstream_failures_are_logged(
         with pytest.raises(service.LabelScanUpstreamError):
             service.scan("alice", JPEG, "image/jpeg")
     assert any(record.exc_info for record in caplog.records)
+
+
+def test_asks_for_latin_script_fields_but_the_original_label_text(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    claude = stub_claude(monkeypatch, reading())
+    stub_jev(monkeypatch, None)
+
+    service.scan("alice", JPEG, "image/jpeg")
+
+    prompt = claude.calls[0]["messages"][0]["content"][1]["text"]
+    assert "Latin script" in prompt
+    assert "Pinyin" in prompt
+    assert "romaji" in prompt
+    assert "Da Hong Pao (Big Red Robe)" in prompt
+    assert "label_text" in prompt and "original script" in prompt
+    assert "keeping Chinese or Japanese characters" not in prompt

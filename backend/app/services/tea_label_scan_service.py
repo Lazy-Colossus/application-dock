@@ -30,12 +30,21 @@ _TIMEOUT_SECONDS = 20.0
 _MAX_TOKENS = 2048
 _PROMPT = (
     "This is a photo of a tea's packaging or label. Read it into the fields. "
-    "Copy text as printed, keeping Chinese or Japanese characters. Leave a field "
-    "empty (or null) when the label doesn't clearly show it; never guess. "
-    "`name` is the tea itself (for example 'Da Hong Pao 大紅袍'), not the brand, shop, "
-    "or a marketing line. `vendor` is the brand or shop. `year` is the harvest or "
-    "production year. `grams` is the net weight of the package in grams. `origin` is "
-    "the place the tea comes from, as printed. `label_text` is all legible text."
+    "Leave a field empty (or null) when the label doesn't clearly show it; never guess. "
+    "`name` is the tea itself, not the brand, shop, or a marketing line. `vendor` is "
+    "the brand or shop. `cultivar` is the tea plant variety. `origin` is the place the "
+    "tea comes from. `year` is the harvest or production year. `grams` is the net "
+    "weight of the package in grams. "
+    "Write `name`, `vendor`, `cultivar` and `origin` in Latin script, spelled the way "
+    "tea sellers write them in English: Chinese in Hanyu Pinyin without tone marks "
+    "(大紅袍 -> 'Da Hong Pao', 武夷山 -> 'Wuyi Shan'), Japanese in Hepburn romaji "
+    "(玉露 -> 'Gyokuro'), Korean in Revised Romanization, any other script in its "
+    "standard romanisation. When the pack prints the brand's own Latin spelling, use "
+    "that for `vendor`. For `name` only, when the tea has a well-known English "
+    "translation, add it in parentheses: 'Da Hong Pao (Big Red Robe)', "
+    "'Tie Guan Yin (Iron Goddess of Mercy)'; add nothing when there is no established "
+    "translation or the name is already English. "
+    "`label_text` is all legible text copied exactly as printed, in the original script."
 )
 _UPSTREAM_MESSAGE = "Couldn't read the label right now"
 

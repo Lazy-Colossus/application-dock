@@ -110,7 +110,7 @@ The model's structured-output shape (`LabelReading`) lives in the service module
 
 ```python
 class LabelReading(BaseModel):
-    name: str          # the tea's own name as printed, CJK kept; "" if unreadable
+    name: str          # the tea itself, in Latin script (+ English translation); ""
     vendor: str
     year: int | None
     cultivar: str
@@ -127,10 +127,16 @@ class LabelReading(BaseModel):
      type or >5MB (the client downscales first, see below, so this is a safety net).
   2. No key → `LabelScanNotConfiguredError`.
   3. One `messages.parse` call: a base64 `image` block, then a text prompt, with
-     `output_format=LabelReading`, `max_tokens≈1024`. The prompt says: this is a photo of
-     a tea package/label; copy text as printed; leave any field empty/null when not
-     clearly shown rather than guessing; `name` is the tea itself, not the brand or a
-     marketing line; `grams` is the net weight; `year` is the harvest/production year.
+     `output_format=LabelReading`, `max_tokens=2048`. The prompt says: this is a photo of
+     a tea package/label; leave any field empty/null when not clearly shown rather than
+     guessing; `name` is the tea itself, not the brand or a marketing line; `grams` is
+     the net weight; `year` is the harvest/production year. `name`, `vendor`, `cultivar`
+     and `origin` come back in Latin script as tea sellers spell them in English
+     (Chinese: Pinyin without tone marks; Japanese: Hepburn romaji; Korean: Revised
+     Romanization; others: standard romanisation), a vendor's own printed Latin
+     spelling wins, and `name` gets a well-known English translation in parentheses
+     ("Da Hong Pao (Big Red Robe)"). `label_text` stays verbatim in the original script
+     as evidence for Jev.
   4. Anthropic errors (connection, timeout, status, a `refusal` stop reason, or no parsed
      output) → `LabelScanUpstreamError`.
   5. Year sanity: drop a `year` outside `_MIN_YEAR..current year` and a non-positive
