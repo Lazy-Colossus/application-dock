@@ -47,6 +47,18 @@
       ></span>
       <div class="timer__tools">
         <button
+          v-if="timer.live?.tea"
+          class="timer__tool timer__chaxi"
+          data-testid="timer-chaxi"
+          @click="router.push({ name: 'tea-timer-chaxi' })"
+        >
+          Cha Xi<span
+            v-if="hasLiveChaXi"
+            class="timer__chaxi-dot"
+            data-testid="timer-chaxi-dot"
+          ></span>
+        </button>
+        <button
           class="timer__tool"
           data-testid="timer-chime"
           :aria-label="timer.chimeOn ? 'Turn chime off' : 'Turn chime on'"
@@ -187,6 +199,7 @@ import { useSteepClock } from "../composables/useSteepClock";
 import { useWakeLock } from "../composables/useWakeLock";
 import { useTargetChime } from "../composables/useTargetChime";
 import { STEP_SECONDS, formatElapsed, targetFor } from "../timer";
+import { hasChaXi } from "../journal";
 import type { Tea, TeaSession, Teaware } from "../types";
 
 const route = useRoute();
@@ -210,6 +223,12 @@ const { unlock } = useTargetChime(
   computed(() => timer.chimeOn),
 );
 useWakeLock(computed(() => timer.live !== null));
+
+const hasLiveChaXi = computed(() =>
+  timer.live
+    ? hasChaXi({ cha_xi: timer.live.chaXi ?? null, image_url: timer.live.imageUrl ?? null })
+    : false,
+);
 
 function open(name: Sheet): void {
   if (sheet.value === null) sheet.value = name;
@@ -354,6 +373,20 @@ onMounted(async () => {
 }
 .timer__vessel {
   font-size: 14px;
+}
+.timer__chaxi {
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  position: relative;
+}
+.timer__chaxi-dot {
+  position: absolute;
+  top: 2px;
+  right: -4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e4d9c6;
 }
 .timer__unsynced {
   width: 8px;

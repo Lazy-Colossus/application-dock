@@ -45,6 +45,13 @@ describe("legacy KDH paths", () => {
 // preceded it — e.g. the New Tea form right after saving a tea — rather than
 // the fixed place these pages actually lead back to.
 describe("tea back navigation", () => {
+  it("points Cha Xi's back arrow at the timer", async () => {
+    const router = makeRouter();
+    await router.push("/tea/timer/cha-xi");
+    expect(router.currentRoute.value.name).toBe("tea-timer-chaxi");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea/timer");
+  });
+
   it("opens the tea app on its home screen, with the cabinet one level down", async () => {
     const router = makeRouter();
     await router.push("/tea");

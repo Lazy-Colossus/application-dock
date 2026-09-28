@@ -116,6 +116,31 @@ afterEach(() => {
 });
 
 describe("TimerPage", () => {
+  it("offers Cha Xi only once a tea is attached", async () => {
+    routes();
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    expect(wrapper.find("[data-testid=timer-chaxi]").exists()).toBe(false);
+  });
+
+  it("opens Cha Xi, marked once the session has any", async () => {
+    routes();
+    localStorage.setItem(
+      "tea-timer:live",
+      localLiveSession([{ number: 1, target_seconds: 20, actual_seconds: null }]),
+    );
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    expect(wrapper.find("[data-testid=timer-chaxi-dot]").exists()).toBe(false);
+
+    useTeaTimerStore().setChaXi({ moods: ["calm"], guests: "", notes: "" });
+    await flushPromises();
+    expect(wrapper.find("[data-testid=timer-chaxi-dot]").exists()).toBe(true);
+
+    await wrapper.get("[data-testid=timer-chaxi]").trigger("click");
+    expect(push).toHaveBeenCalledWith({ name: "tea-timer-chaxi" });
+  });
+
   it("opens as a plain timer ready to start", async () => {
     routes();
     const wrapper = mount(TimerPage);
