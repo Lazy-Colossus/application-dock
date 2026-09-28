@@ -55,7 +55,12 @@ export const useTeaJournalStore = defineStore("tea-journal", () => {
 
   function create(id: string, body: TeaSessionWrite): Promise<boolean> {
     return write(async () => {
-      await api.put<TeaSession>(`/tea/sessions/${id}`, { ...body });
+      try {
+        await api.put<TeaSession>(`/tea/sessions/${id}`, { ...body });
+      } catch (e) {
+        // 409: an earlier attempt landed but its response was lost — the entry exists.
+        if ((e as { status?: unknown }).status !== 409) throw e;
+      }
       // The server resolves the tea's name and class; reload rather than guess them.
       await fetchJournal();
     });

@@ -144,6 +144,8 @@ const cabinet = useTeaCabinetStore();
 const teaware = useTeawareStore();
 const auth = useAuthStore();
 
+// Minted once, so a Save retried after a lost response lands on the same entry.
+const newId = newSessionId();
 // A new entry that saved but whose photo failed becomes an edit of that entry, so a retry
 // can never create it twice.
 const savedId = ref<string | null>(null);
@@ -232,6 +234,8 @@ function onPhoto(file: File): void {
   pendingPhoto.value = file;
   removed.value = false;
   photoError.value = null;
+  // The entry already exists (its photo failed before): Try again means upload now.
+  if (savedId.value) void finish(savedId.value);
 }
 
 function onRemovePhoto(): void {
@@ -240,13 +244,16 @@ function onRemovePhoto(): void {
 }
 
 async function save(): Promise<void> {
-  const id = editId.value ?? newSessionId();
+  const id = editId.value ?? newId;
   const ok = editId.value
     ? await journal.edit(id, editBody())
     : await journal.create(id, newBody());
   if (!ok) return;
   savedId.value = id;
+  await finish(id);
+}
 
+async function finish(id: string): Promise<void> {
   if (removed.value && existing.value?.image_url) await journal.removePhoto(id);
   if (pendingPhoto.value) {
     if (!(await journal.uploadPhoto(id, pendingPhoto.value))) {

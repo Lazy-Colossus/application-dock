@@ -119,6 +119,46 @@ describe("JournalFormPage — new entry", () => {
     });
   });
 
+  it("retries a save whose response was lost under the same id, without a duplicate", async () => {
+    putMock
+      .mockRejectedValueOnce(Object.assign(new Error("x"), { status: 0, detail: "Network error" }))
+      .mockRejectedValueOnce(Object.assign(new Error("x"), { status: 409, detail: "done" }));
+    const wrapper = await render();
+    await wrapper.get("[data-testid=jform-tea]").setValue("t-1");
+    await wrapper.get("[data-testid=jform-save]").trigger("click");
+    await flushPromises();
+    expect(replace).not.toHaveBeenCalled();
+    await wrapper.get("[data-testid=jform-save]").trigger("click");
+    await flushPromises();
+    expect(putMock.mock.calls[1][0]).toBe(putMock.mock.calls[0][0]);
+    expect(replace).toHaveBeenCalledWith({
+      name: "tea-journal-entry",
+      params: { id: putMock.mock.calls[0][0].split("/").at(-1) },
+    });
+  });
+
+  it("uploads the photo on Try again once the entry exists", async () => {
+    putMock.mockResolvedValue({});
+    uploadMock
+      .mockRejectedValueOnce(Object.assign(new Error("x"), { detail: "Upload failed" }))
+      .mockResolvedValueOnce({ image_url: "/api/tea/sessions/x/image" });
+    const wrapper = await render();
+    await wrapper.get("[data-testid=jform-tea]").setValue("t-1");
+    const input = wrapper.get("[data-testid=chaxi-photo-input]");
+    Object.defineProperty(input.element, "files", {
+      value: [new File(["x"], "t.jpg", { type: "image/jpeg" })],
+    });
+    await input.trigger("change");
+    await wrapper.get("[data-testid=jform-save]").trigger("click");
+    await flushPromises();
+    expect(replace).not.toHaveBeenCalled();
+    await wrapper.get("[data-testid=chaxi-photo-retry]").trigger("click");
+    await flushPromises();
+    expect(uploadMock).toHaveBeenCalledTimes(2);
+    expect(putMock).toHaveBeenCalledTimes(1);
+    expect(replace).toHaveBeenCalled();
+  });
+
   it("won't save without a tea", async () => {
     const wrapper = await render();
     expect(wrapper.get("[data-testid=jform-save]").attributes("disabled")).toBeDefined();
