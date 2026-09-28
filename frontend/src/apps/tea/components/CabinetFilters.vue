@@ -3,15 +3,6 @@
   <div class="sheet" data-testid="filters-sheet">
     <div class="sheet__grab"></div>
 
-    <input
-      v-model="filters.query"
-      class="sheet__search"
-      data-testid="filter-query"
-      type="search"
-      placeholder="Search by name"
-      aria-label="Search by name"
-    />
-
     <label class="sheet__check">
       <input v-model="filters.showEmpty" type="checkbox" data-testid="filter-show-empty" />
       Show teas with 0g left
@@ -167,17 +158,6 @@ function chipStyle(node: CatalogueNode): Record<string, string> {
   background: #3b3026;
   border-radius: 2px;
   margin: 0 auto 16px;
-}
-.sheet__search {
-  width: 100%;
-  box-sizing: border-box;
-  background: #17120e;
-  border: 1px solid #2e271f;
-  border-radius: 3px;
-  color: #efe7da;
-  font-family: inherit;
-  font-size: 15px;
-  padding: 10px 12px;
 }
 .sheet__check {
   display: flex;

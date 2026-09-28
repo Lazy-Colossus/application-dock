@@ -101,14 +101,11 @@ describe("CabinetFilters", () => {
     expect(useTeaCabinetFiltersStore().country).toBeNull();
   });
 
-  it("binds the name search and the empty-tea checkbox", async () => {
+  it("binds the empty-tea checkbox", async () => {
     const wrapper = sheet();
-    await wrapper.get('[data-testid="filter-query"]').setValue("hong");
     await wrapper.get('[data-testid="filter-show-empty"]').setValue(false);
 
-    const filters = useTeaCabinetFiltersStore();
-    expect(filters.query).toBe("hong");
-    expect(filters.showEmpty).toBe(false);
+    expect(useTeaCabinetFiltersStore().showEmpty).toBe(false);
   });
 
   it("says how many teas the shelf will show", () => {

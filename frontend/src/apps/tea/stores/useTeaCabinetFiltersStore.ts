@@ -17,18 +17,18 @@ export const useTeaCabinetFiltersStore = defineStore("tea-cabinet-filters", () =
     showEmpty: showEmpty.value,
   }));
 
+  // The name search sits in the cabinet header, in plain sight, so neither the
+  // filter count nor the sheet's Clear touches it.
   const activeCount = computed(
     () =>
       Number(nodeId.value !== null) +
       Number(country.value !== null) +
-      Number(query.value.trim() !== "") +
       Number(!showEmpty.value),
   );
 
   function clear(): void {
     nodeId.value = null;
     country.value = null;
-    query.value = "";
     showEmpty.value = true;
   }
 

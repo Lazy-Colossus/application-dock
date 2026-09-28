@@ -92,13 +92,28 @@ beforeEach(() => {
 
 describe("CabinetPage", () => {
   // The shell bar already names the page, and the tea home carries Brew,
-  // the Almanac and household sharing — the header is just the filters.
-  it("keeps only the filters in its header", async () => {
+  // the Almanac and household sharing — the header is just search and filters.
+  it("keeps only the search and the filters in its header", async () => {
     mockApi([tea("a"), tea("b")]);
     const wrapper = render();
     await flushPromises();
 
-    expect(wrapper.get("header").text()).toBe("Filters");
+    const header = wrapper.get("header");
+    expect(header.find('[data-testid="cabinet-search"]').exists()).toBe(true);
+    expect(header.text()).toBe("Filters");
+  });
+
+  it("searches the shelf by tea name, without counting it as a filter", async () => {
+    mockApi([tea("a", { name: "Da Hong Pao" }), tea("b", { name: "Longjing" })]);
+    const wrapper = render();
+    await flushPromises();
+
+    await wrapper.get('[data-testid="cabinet-search"]').setValue("  hong ");
+
+    const cards = wrapper.findAll('[data-testid="card"]');
+    expect(cards).toHaveLength(1);
+    expect(cards[0].text()).toContain("Da Hong Pao");
+    expect(wrapper.get('[data-testid="cabinet-filters"]').text()).toBe("Filters");
   });
 
   it("invites you to add the first tea when the cabinet is empty", async () => {
@@ -203,12 +218,17 @@ describe("CabinetPage", () => {
       const wrapper = render();
       await flushPromises();
 
-      useTeaCabinetFiltersStore().query = "nothing like this";
+      const filters = useTeaCabinetFiltersStore();
+      filters.query = "nothing like this";
+      filters.showEmpty = false;
       await flushPromises();
 
       expect(wrapper.find('[data-testid="cabinet-empty"]').exists()).toBe(
         false,
       );
+      expect(
+        wrapper.get('[data-testid="cabinet-clear-filters"]').text(),
+      ).toBe("Clear search and filters");
       await wrapper
         .get('[data-testid="cabinet-clear-filters"]')
         .trigger("click");

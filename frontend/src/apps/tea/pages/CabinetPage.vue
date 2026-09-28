@@ -2,6 +2,14 @@
   <q-page class="cabinet">
     <div ref="scrollEl" class="cabinet__scroll">
       <header class="cabinet__header">
+        <input
+          v-model="filters.query"
+          class="cabinet__search"
+          data-testid="cabinet-search"
+          type="search"
+          placeholder="Search teas"
+          aria-label="Search teas by name"
+        />
         <button
           :class="[
             'cabinet__filters',
@@ -39,13 +47,13 @@
         class="cabinet__empty"
         data-testid="cabinet-no-match"
       >
-        No teas match these filters.
+        No teas match {{ filters.activeCount > 0 ? "these filters" : "this search" }}.
         <button
           class="cabinet__clear"
           data-testid="cabinet-clear-filters"
-          @click="filters.clear()"
+          @click="clearAll"
         >
-          Clear filters
+          {{ clearLabel }}
         </button>
       </p>
 
@@ -131,6 +139,17 @@ const visibleTeas = computed(() =>
 );
 const sections = computed(() => groupByClass(visibleTeas.value));
 
+const searching = computed(() => filters.query.trim() !== "");
+const clearLabel = computed(() => {
+  if (!searching.value) return "Clear filters";
+  return filters.activeCount > 0 ? "Clear search and filters" : "Clear search";
+});
+
+function clearAll(): void {
+  filters.clear();
+  filters.query = "";
+}
+
 // Sections are keyed by class, so a deleted tea can remove a whole section
 // and shift every later index. Clearing before each re-collection stops a
 // stale entry from surviving under the wrong index (see useSectionInView).
@@ -181,9 +200,26 @@ onMounted(() => {
   background: linear-gradient(#17120e 76%, rgba(23, 18, 14, 0));
   padding: 20px 18px 16px;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 14px;
+}
+.cabinet__search {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  background: #1e1712;
+  border: 1px solid #2e271f;
+  border-radius: 3px;
+  color: #efe7da;
+  font-family: inherit;
+  font-size: 15px;
+  padding: 8px 12px;
+}
+.cabinet__search::placeholder {
+  color: v-bind("GROUND.inkMuted");
 }
 .cabinet__filters {
+  flex-shrink: 0;
   background: transparent;
   border: 0;
   color: v-bind("GROUND.inkMuted");
