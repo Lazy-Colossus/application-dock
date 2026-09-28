@@ -8,7 +8,14 @@ import pytest
 from pydantic import ValidationError
 
 from app.repositories import tea_repo as repo
+from app.schemas.tea import TeaWriteRequest
 from app.schemas.tea_session import ChaXi, TeaSessionWrite
+from app.services import tea_curve_service as curves
+from app.services import tea_service
+from app.services import tea_session_service as sessions
+from tests.tea_support import cabinet_of, share
+
+JPEG = b"\xff\xd8\xff-jpeg-bytes"
 
 
 @pytest.fixture(autouse=True)
@@ -101,3 +108,107 @@ def test_a_v4_cabinet_upgrades_to_v5() -> None:
         "teaware": [],
     }
     assert repo.migrate(raw)["schema_version"] == 5
+
+
+def _tea(grams: float = 40, purchased: float | None = None, name: str = "Tieguanyin") -> str:
+    req = TeaWriteRequest.model_validate(
+        {
+            "name": name,
+            "catalogue_node_id": "oolong.anxi.tieguanyin",
+            "grams_remaining": grams,
+            "grams_purchased": purchased,
+        }
+    )
+    return tea_service.create_tea("alice", req).id
+
+
+def _grams(tea_id: str) -> float:
+    return tea_service.get_tea("alice", tea_id).grams_remaining
+
+
+def test_a_journal_only_entry_for_a_cabinet_tea_takes_its_grams() -> None:
+    tea_id = _tea(40)
+    saved = sessions.upsert("alice", "s-1", _entry(tea_id=tea_id, leaf_grams=5))
+    assert saved.status == "finalised"
+    assert saved.timed is False
+    assert saved.finished_at is not None
+    assert _grams(tea_id) == 35
+
+
+def test_a_journal_only_entry_without_grams_leaves_the_tea_alone() -> None:
+    tea_id = _tea(40)
+    sessions.upsert("alice", "s-1", _entry(tea_id=tea_id))
+    assert _grams(tea_id) == 40
+
+
+def test_an_away_entry_touches_no_tea() -> None:
+    tea_id = _tea(40)
+    saved = sessions.upsert(
+        "alice", "s-1", _entry(tea_id=None, away_tea_name="Teahouse Dancong", leaf_grams=5)
+    )
+    assert saved.tea_id is None
+    assert saved.away_tea_name == "Teahouse Dancong"
+    assert _grams(tea_id) == 40
+
+
+def test_a_journal_only_entry_for_an_unknown_tea_is_not_found() -> None:
+    with pytest.raises(FileNotFoundError):
+        sessions.upsert("alice", "s-1", _entry(tea_id="t-missing"))
+
+
+def test_a_snapshot_after_a_photo_keeps_the_photo() -> None:
+    tea_id = _tea()
+    sessions.upsert("alice", "s-1", _write(tea_id=tea_id))
+    sessions.save_image("alice", "s-1", JPEG, "image/jpeg")
+    again = sessions.upsert("alice", "s-1", _write(tea_id=tea_id, cha_xi={"notes": "orchid"}))
+    assert again.image_url == "/api/tea/sessions/s-1/image"
+    assert again.cha_xi is not None and again.cha_xi.notes == "orchid"
+
+
+def test_only_the_brewer_changes_a_sessions_photo_but_members_see_it() -> None:
+    tea_id = _tea()
+    share("alice", "bob")
+    sessions.upsert("alice", "s-1", _write(tea_id=tea_id))
+    sessions.save_image("alice", "s-1", JPEG, "image/jpeg")
+    with pytest.raises(PermissionError):
+        sessions.save_image("bob", "s-1", JPEG, "image/jpeg")
+    with pytest.raises(PermissionError):
+        sessions.delete_image("bob", "s-1")
+    assert sessions.image_path("bob", "s-1").exists()
+
+
+def test_a_photo_for_an_unknown_session_is_not_found() -> None:
+    with pytest.raises(FileNotFoundError):
+        sessions.save_image("alice", "s-missing", JPEG, "image/jpeg")
+
+
+def test_deleting_a_photo_clears_it() -> None:
+    tea_id = _tea()
+    sessions.upsert("alice", "s-1", _write(tea_id=tea_id))
+    sessions.save_image("alice", "s-1", JPEG, "image/jpeg")
+    cleared = sessions.delete_image("alice", "s-1")
+    assert cleared.image_url is None
+    with pytest.raises(FileNotFoundError):
+        sessions.image_path("alice", "s-1")
+
+
+def test_discarding_a_live_session_removes_its_photo() -> None:
+    tea_id = _tea()
+    sessions.upsert("alice", "s-1", _write(tea_id=tea_id))
+    sessions.save_image("alice", "s-1", JPEG, "image/jpeg")
+    sessions.discard("alice", "s-1")
+    assert repo.find_image(cabinet_of("alice"), "s-1") is None
+
+
+def test_deleting_a_tea_removes_its_sessions_photos() -> None:
+    tea_id = _tea()
+    sessions.upsert("alice", "s-1", _write(tea_id=tea_id))
+    sessions.save_image("alice", "s-1", JPEG, "image/jpeg")
+    tea_service.delete_tea("alice", tea_id)
+    assert repo.find_image(cabinet_of("alice"), "s-1") is None
+
+
+def test_a_rated_journal_only_entry_never_becomes_the_brewing_curve() -> None:
+    tea_id = _tea()
+    sessions.upsert("alice", "s-1", _entry(tea_id=tea_id, rating=5))
+    assert curves.curve_for("alice", tea_id).source != "best_session"

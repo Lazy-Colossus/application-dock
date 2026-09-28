@@ -141,12 +141,16 @@ def replace_tea(username: str, tea_id: str, req: TeaWriteRequest) -> TeaView:
 
 
 def delete_tea(username: str, tea_id: str) -> None:
-    with repo.doc_transaction(cabinets.ensure(username)) as doc:
+    cabinet_id = cabinets.ensure(username)
+    with repo.doc_transaction(cabinet_id) as doc:
         remaining = [tea for tea in doc.teas if tea.id != tea_id]
         if len(remaining) == len(doc.teas):
             raise FileNotFoundError(f"No tea with id {tea_id!r}")
         doc.teas = remaining
+        gone = [session.id for session in doc.sessions if session.tea_id == tea_id]
         doc.sessions = [session for session in doc.sessions if session.tea_id != tea_id]
+    for session_id in gone:
+        repo.delete_image(cabinet_id, session_id)
 
 
 def save_image(username: str, tea_id: str, content: bytes, content_type: str) -> TeaView:

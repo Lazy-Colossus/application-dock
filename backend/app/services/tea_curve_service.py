@@ -36,6 +36,7 @@ def _best_session(doc: TeaDoc, tea_id: str, brewed_by: str | None = None) -> Tea
         s
         for s in doc.sessions
         if s.tea_id == tea_id
+        and s.timed
         and s.status == "finalised"
         and s.rating is not None
         and (brewed_by is None or s.brewed_by == brewed_by)
