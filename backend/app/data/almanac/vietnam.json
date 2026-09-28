@@ -40,5 +40,19 @@
     "reading": "trà Ô Long Bảo Lộc",
     "summary": "Vietnam's oolong industry took shape in Bao Loc, Lam Dong province, after Taiwanese cultivars such as Kim Tuyen (the Vietnamese name for Taiwan's Jin Xuan, TTES #12) and Tu Quy were introduced between 1988 and 1994 along with Taiwanese processing know-how. Grown at roughly 850 meters, the leaf is sun-withered, then rolled in bamboo baskets to promote partial oxidation before a low-temperature drying locks in aroma, closely following the balled, lightly oxidized style of Taiwan's high-mountain and milk oolongs. The resulting golden-green cup is refreshing with a naturally sweet, creamy finish, and is explicitly marketed and compared by producers as a Vietnamese-grown counterpart to Taiwanese oolong.",
     "brewing": { "leaf_grams": 6, "water_temp_c": 90, "steep_seconds": [25, 30, 40, 50] }
+  },
+  {
+    "catalogue_node_id": "green.vietnamese.jasmine",
+    "country": "Vietnam",
+    "reading": "trà lài / chè nhài",
+    "summary": "Jasmine-scented green tea is the most widely drunk scented tea in Vietnam, known as trà lài in the south and chè nhài in the north, and — alongside lotus tea — one of the country's traditional scented teas. The scenting practice came from China, where jasmine tea developed centuries earlier, and in the traditional method fresh jasmine blossoms are layered with green tea overnight while they open, then removed and replaced over repeated rounds until the leaf has absorbed their fragrance. Vietnamese producers prize the small, single-petalled 'lài quế' jasmine grown around Soc Son on the edge of Hanoi, and the base is usually a local green tea, though jasmine oolong and ancient-tree versions are also made. Inexpensive grades are an everyday table tea, while hand-scented grades give a sweet, heady floral cup over a brisk green base.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [30, 40, 55] }
+  },
+  {
+    "catalogue_node_id": "oolong.vietnamese.moc-chau",
+    "country": "Vietnam",
+    "reading": "trà Ô Long Mộc Châu",
+    "summary": "The Moc Chau plateau in Son La province, northwest Vietnam, is a long-established tea area best known for green tea from Shan Tuyet trees, but from around 2010 producers there — notably the Moc Suong company — began making Taiwanese-style oolong at roughly 1,000 to 1,250 meters. The gardens are planted with imported Taiwanese cultivars, sold under their Vietnamese names Thanh Tam (Qingxin), Kim Tuyen (Jin Xuan) and Thuy Ngoc (Cuiyu), and processed on Taiwanese machinery and methods, with much of the output exported to Taiwan itself. Most of it is balled and lightly oxidized in the high-mountain manner, giving a floral, buttery, sweet cup, though roasted, more heavily oxidized and bug-bitten versions are also made. It is a northern, higher-elevation counterpart to the older oolong industry of Bao Loc in the Central Highlands.",
+    "brewing": { "leaf_grams": 6, "water_temp_c": 90, "steep_seconds": [25, 30, 40, 50] }
   }
 ]
