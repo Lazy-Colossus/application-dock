@@ -13,6 +13,7 @@ can't take); the router translates.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable
 from datetime import UTC, datetime
 from pathlib import Path
@@ -24,6 +25,10 @@ from app.schemas.teaware import BREWING_TYPES
 from app.services import tea_cabinet_service as cabinets
 from app.services import tea_catalogue_service as catalogue
 from app.services import tea_service
+
+# The phone mints ids; they also name photo files, so nothing that could glob or clash with a
+# tea's `t-…` or a pot's `w-…` photo gets in.
+_SESSION_ID = re.compile(r"s-[A-Za-z0-9-]+")
 
 
 class SessionFinalisedError(Exception):
@@ -94,6 +99,8 @@ def upsert(username: str, session_id: str, req: TeaSessionWrite) -> TeaSession:
 
     A journal-only entry (`timed=False`) arrives already finalised, in one call.
     """
+    if not _SESSION_ID.fullmatch(session_id):
+        raise ValueError(f"Not a session id: {session_id!r}")
     with repo.doc_transaction(cabinets.ensure(username)) as doc:
         if req.tea_id is not None:
             _tea_position(doc, req.tea_id)

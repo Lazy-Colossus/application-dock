@@ -384,3 +384,10 @@ def test_a_back_dated_entry_sorts_by_its_sitting_on_the_tea_and_the_pot() -> Non
     # The back-dated entry was typed in last, but it was drunk first.
     assert [s.id for s in sessions.list_for_tea("alice", tea_id)] == ["s-new", "s-pot", "s-old"]
     assert [s.id for s in teaware.usage("alice", pot.id).sessions] == ["s-pot", "s-old"]
+
+
+@pytest.mark.parametrize("session_id", ["*", "s-*", "t-5bde8fe9", "s-../x", "s-"])
+def test_a_session_id_that_could_touch_another_file_is_refused(session_id: str) -> None:
+    tea_id = _tea()
+    with pytest.raises(ValueError):
+        sessions.upsert("alice", session_id, _write(tea_id=tea_id))

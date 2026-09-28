@@ -158,3 +158,8 @@ def test_a_photo_that_cannot_be_kept_is_unprocessable() -> None:
         "/api/tea/sessions/s-1/image", files={"file": ("p.txt", b"hello", "text/plain")}
     )
     assert response.status_code == 422
+
+
+def test_a_glob_session_id_is_unprocessable() -> None:
+    tea = _tea()
+    assert client.put("/api/tea/sessions/%2A", json=_snapshot(tea["id"])).status_code == 422
