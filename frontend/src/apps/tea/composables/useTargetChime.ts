@@ -1,16 +1,20 @@
-import { onScopeDispose, watch, type Ref } from "vue";
+import { watch, type Ref } from "vue";
+
+// One context for every page: mobile browsers only allow audio after a tap, so
+// a steep started on the timer must still chime on the Cha Xi page.
+let context: AudioContext | null = null;
 
 /**
- * A soft chime the moment a steep reaches its target. Mobile browsers only
- * allow audio after a user gesture, so `unlock()` is called from the Start tap.
+ * A soft chime the moment a steep reaches its target. `unlock()` is called
+ * from the Start tap, which is the user gesture the browser needs.
  */
 export function useTargetChime(
   elapsed: Readonly<Ref<number>>,
   target: Readonly<Ref<number | null>>,
   enabled: Readonly<Ref<boolean>>,
 ): { unlock: () => void } {
-  let context: AudioContext | null = null;
-  let fired = false;
+  // A page opened mid-steep, past its target, must not chime a second time for it.
+  let fired = target.value !== null && elapsed.value >= target.value;
 
   function unlock(): void {
     if (context) {
@@ -45,8 +49,6 @@ export function useTargetChime(
     fired = true;
     if (enabled.value) play();
   });
-
-  onScopeDispose(() => void context?.close?.());
 
   return { unlock };
 }

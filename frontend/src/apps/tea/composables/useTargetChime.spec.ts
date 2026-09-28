@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { effectScope, nextTick, ref } from "vue";
-import { useTargetChime } from "./useTargetChime";
+
+let useTargetChime: typeof import("./useTargetChime").useTargetChime;
 
 const started = vi.fn();
 let instances: FakeContext[] = [];
@@ -32,17 +33,20 @@ class FakeContext {
   }
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   started.mockReset();
   instances = [];
   vi.stubGlobal("AudioContext", FakeContext);
+  // The context is module state now, so every test gets a fresh module.
+  vi.resetModules();
+  ({ useTargetChime } = await import("./useTargetChime"));
 });
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function setup(enabled: boolean) {
-  const elapsed = ref(0);
+function setup(enabled: boolean, startAt = 0) {
+  const elapsed = ref(startAt);
   const target = ref<number | null>(20);
   const scope = effectScope();
   const { unlock } = scope.run(() => useTargetChime(elapsed, target, ref(enabled)))!;
@@ -77,24 +81,44 @@ describe("useTargetChime", () => {
     scope.stop();
   });
 
-  it("stays silent when disabled or never unlocked", async () => {
+  it("stays silent when disabled", async () => {
     const off = setup(false);
     off.unlock();
     off.elapsed.value = 30;
     await nextTick();
+    expect(started).not.toHaveBeenCalled();
+    off.scope.stop();
+  });
+
+  it("stays silent until some page has unlocked audio", async () => {
     const locked = setup(true);
     locked.elapsed.value = 30;
     await nextTick();
     expect(started).not.toHaveBeenCalled();
-    off.scope.stop();
     locked.scope.stop();
   });
 
-  it("closes the audio context when its scope is disposed", () => {
-    const { unlock, scope } = setup(true);
-    unlock();
+  it("keeps one unlocked context for the next page's chime", async () => {
+    const first = setup(true);
+    first.unlock();
+    first.scope.stop();
+
+    const second = setup(true);
+    second.elapsed.value = 21;
+    await nextTick();
+
+    expect(started).toHaveBeenCalledTimes(1);
     expect(instances).toHaveLength(1);
+    expect(instances[0].close).not.toHaveBeenCalled();
+    second.scope.stop();
+  });
+
+  it("does not chime again for a target already passed when a page opens", async () => {
+    const { elapsed, unlock, scope } = setup(true, 25);
+    unlock();
+    elapsed.value = 25.2;
+    await nextTick();
+    expect(started).not.toHaveBeenCalled();
     scope.stop();
-    expect(instances[0].close).toHaveBeenCalled();
   });
 });
