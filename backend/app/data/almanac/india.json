@@ -68,5 +68,40 @@
     "reading": "",
     "summary": "The other historic strand of Kangra Valley production: after the 1905 earthquake disrupted the region's black-tea factories, many growers shifted to green tea, much of it hand-rolled and orthodox-processed, and exported to Afghanistan and the Middle East — a trade link that shaped the region's tea character for decades. Made from the same Himachal Pradesh gardens as Kangra black tea but pan-fired or steamed to halt oxidation rather than fully oxidized, it produces a pale liquor with a delicate, woody aroma, markedly different from the sweeter black tea grown alongside it.",
     "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [90, 120] }
+  },
+  {
+    "catalogue_node_id": "red.indian.dooars",
+    "country": "India",
+    "reading": "",
+    "summary": "The Dooars — from the word for 'doors', after the passes leading up into Bhutan — are the plains and low foothills along the Himalayan edge in northern West Bengal, between the Teesta and Sankosh rivers and just below Darjeeling. Tea arrived in 1874, when the first garden was planted at Gazaldoba in Jalpaiguri district, and within two years there were already thirteen plantations; together with the adjoining Terai around Siliguri, the Dooars now grow roughly a quarter of India's tea. Almost all of it is CTC black tea from assamica bushes at low elevation in a hot, heavy-rainfall climate, much of it bought for Indian domestic packets and blends. The cup is bright, full-bodied and brisk, a little lighter and smoother than a typical Assam but with the strength and color to take milk and sugar.",
+    "brewing": { "leaf_grams": 2.5, "water_temp_c": 100, "steep_seconds": [180, 240] }
+  },
+  {
+    "catalogue_node_id": "red.indian.munnar",
+    "country": "India",
+    "reading": "",
+    "summary": "Munnar lies in the Kanan Devan Hills of the Western Ghats in Kerala's Idukki district, a high range of about 1,500–2,500 meters where much of the land was leased to the British planter John Daniel Munro in 1877. After experiments with coffee, cinchona and cardamom, A. H. Sharp planted the first tea on about 50 acres at Parvathy estate (now part of Sevenmallay) in 1880, and tea soon displaced the other crops; the Kanan Devan Hills Plantations company still runs most of the estates. Munnar makes both CTC and orthodox black tea: the CTC gives a bright, lively, medium-bodied liquor, while the orthodox leaf is smooth and medium-bodied with soft malt, honeyed notes and a light citrus edge. Like the neighboring Nilgiris, it picks year-round, and high-grown lots are brisker and more aromatic than the plains teas of the north.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 95, "steep_seconds": [180, 240] }
+  },
+  {
+    "catalogue_node_id": "red.indian.nilgiri-frost",
+    "country": "India",
+    "reading": "",
+    "summary": "A seasonal specialty of the highest Nilgiri estates in Tamil Nadu, such as Korakundah (around 2,400 meters) and Glendale, plucked in the coldest part of the year, roughly late December to February. Freezing nights, sunny days and dry air slow the bushes' growth, and leaf picked early in the morning after frost concentrates aroma, giving teas that are markedly more fragrant and delicate than the Nilgiri region's brisk everyday liquoring teas. The frost lots are small, made as orthodox whole-leaf tea and sold under the estate name, and the cup is typically light, bright and smooth with floral and fruity notes and little astringency. Because production depends on the weather, both quantity and style vary from year to year.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 90, "steep_seconds": [150, 210] }
+  },
+  {
+    "catalogue_node_id": "white.indian.darjeeling",
+    "country": "India",
+    "reading": "",
+    "summary": "A small specialty line of the Darjeeling and Kalimpong gardens, made under the same geographical indication as the district's black teas from Camellia sinensis var. sinensis bushes, most often in the spring first flush. Buds and the youngest one or two leaves, still covered in fine silver down, are hand-plucked and simply withered and dried, with no rolling and no deliberate oxidation, so the leaf keeps its pale, silvery look. Makaibari's Silver Tips, among the best known, has fetched some of the highest prices recorded for Indian tea at auction. The cup is pale gold and delicate, with a soft, sweet, floral and faintly fruity character that recalls Darjeeling's first flush without its astringency.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [150, 210] }
+  },
+  {
+    "catalogue_node_id": "oolong.indian.darjeeling",
+    "country": "India",
+    "reading": "",
+    "summary": "A recent addition to Darjeeling's range, made in limited batches by some gardens that have diversified beyond orthodox black tea, and sold under the same Darjeeling geographical indication. The leaf is withered and rolled like black tea but its oxidation is stopped partway, leaving large, open, often multicolored leaves; since the gardens have no oolong tradition of their own, methods and oxidation levels vary widely between estates, and some have drawn on Taiwanese and Chinese techniques. Spring and summer lots are the most common. The cup sits between a Darjeeling black and a light oolong: amber, smooth and softly floral or fruity, often with the district's muscatel note in second-flush batches.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 90, "steep_seconds": [120, 180] }
   }
 ]
