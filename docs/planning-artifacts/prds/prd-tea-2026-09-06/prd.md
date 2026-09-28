@@ -226,6 +226,11 @@ The user can view a Tea's aggregated Flavor Fingerprint across its Sessions and 
 
 **Description:** The reflective home of the practice. **Cha Xi** enriches a Session with the aesthetics of the sitting — the Teaware used, mood, guests, and a photo of the table setup — and the **Journal** is the browsable, reverse-chronological archive of all Sessions rendered as visual cards. Because a Session is unified but optional, the Journal also lets the user record a **journal-only Session** for a tea brewed elsewhere (a teahouse, a friend's table) with no timing at all.
 
+Designed in `docs/superpowers/specs/2026-09-28-tea-cha-xi-journal-design.md`, which supersedes the
+details below where they differ: mood is a fixed multi-select vocabulary; a journal-only entry may
+name an away tea not in the Cabinet; FR-20's search and filters are deferred except a "Cha xi
+only" toggle.
+
 **Functional Requirements:**
 
 #### FR-18: Enrich a session with cha xi
