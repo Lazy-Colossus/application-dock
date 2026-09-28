@@ -101,10 +101,10 @@ revisit — and filling in cha xi at the table never costs a missed pour.
     (Cabinet tea, or an away tea by name with an optional class), optional vessel, grams, water,
     rating, and cha xi.
 13. The tea home shows a **Journal** tile between Brew and Almanac.
-14. Rows in a tea's Sessions list open that session's Journal entry. The timer's saved
-    confirmation links to it.
-15. Deleting a tea's confirmation mentions that its Journal entries go with it; their photos are
-    removed.
+14. Rows in a tea's Sessions list open that session's Journal entry. (Finishing already lands on
+    the tea's detail page, so its newest row is the way into the entry just saved.)
+15. Deleting a tea removes its sessions' photos with them. (The confirmation already names the
+    sessions that go.)
 
 ### Non-functional
 
@@ -129,8 +129,10 @@ class ChaXi(BaseModel):
 ```
 
 A validator rejects duplicate moods and stores them in the vocabulary's order. The photo is not
-a body field: the server knows whether one exists from the images folder, and the session view
-exposes `photo_url` (with `?token=`, as tea images do) or `null`.
+part of `ChaXi`: like teas and teaware, the session carries a server-owned `image_url`
+(`/api/tea/sessions/{id}/image`, or null), and the client appends `?token=` with `imageSrc`.
+`TeaClass` moves to a new `app/schemas/tea_class.py` so `tea_session.py` can use it without a
+circular import; `tea.py` re-exports it.
 
 ### `TeaSessionWrite` / `TeaSession` (changed)
 
@@ -141,7 +143,7 @@ exposes `photo_url` (with `?token=`, as tea images do) or `null`.
 | `tea_id: str \| None` | write body | was required; null only for an away tea |
 | `away_tea_name: str = ""` | write body | required when `tea_id` is null |
 | `away_class_id: TeaClass \| None = None` | write body | optional card colour for an away tea |
-| `photo_url: str \| None` | view only | derived, never stored |
+| `image_url: str \| None` | `TeaSession` only | server-owned; set by photo upload, kept across snapshots |
 
 Validation: exactly one of `tea_id` / `away_tea_name` is set; an away tea requires
 `timed = False`; `timed = False` requires `status = "finalised"` and no infusions.
@@ -175,8 +177,12 @@ with `image.ts` like tea photos.
   returned to the old tea and the new one taken from the new tea (so a changed tea on a
   journal-only entry is handled by the same rule), each clamped to `[0, grams_purchased]`
   where `grams_purchased` is known, else at 0 only.
-- `discard` — now also accepts a finalised session: returns its leaf grams to its Cabinet tea
-  (same clamp) and deletes its photo. In-progress behaviour unchanged, plus photo deletion.
+- `discard` — unchanged (in-progress only; a finalised session still raises
+  `SessionFinalisedError`, which the timer relies on when a finish landed but its response was
+  lost), plus deleting the session's photo.
+- `delete_journal(username, session_id)` — finalised only (`ValueError` otherwise), brewer
+  only: returns its leaf grams to its Cabinet tea (same clamp) and deletes its photo. A separate
+  operation from `discard` so the timer's Discard can never delete a finished sitting.
 - `save_image` / `delete_image` / `image_path` for sessions, brewer-only for writes, any member
   for reads.
 - `list_journal(username)` — finalised sessions of the caller's cabinet, newest first by
@@ -187,10 +193,11 @@ with `image.ts` like tea photos.
 optional `started_at`, `tea_id`, `away_tea_name`, `away_class_id` — the last four refused
 (`ValueError`) on a timed session.
 
-Consumers of sessions skip away-tea sessions (`tea_id is None`): `tea_curve_service`,
-`list_for_tea`, and teaware usage / off-dedication. Journal-only Cabinet-tea sessions have no
-infusions and therefore never become a brewing curve; `tea_curve_service` also skips
-`timed = False` explicitly.
+Away-tea sessions (`tea_id is None`) never reach a tea's curve, its sessions list or a pot's
+off-dedication count — all three match on a tea id, so they need no change. A pot's usage list
+does include them (an away sitting can still be brewed in your own gaiwan). Journal-only
+Cabinet-tea sessions have no infusions and so never become a brewing curve;
+`tea_curve_service` also skips `timed = False` explicitly.
 
 `tea_service.delete_tea` also deletes the photos of the sessions it removes.
 
@@ -203,7 +210,8 @@ All under `/api/tea`; routers translate `FileNotFoundError` → 404, `Permission
 |---|---|---|
 | `PUT /sessions/{id}` | `TeaSessionWrite` | `TeaSession` — unchanged path, new fields |
 | `PUT /sessions/{id}/journal` | `JournalEdit` | `JournalEntry` |
-| `DELETE /sessions/{id}` | — | 204 — now also for finalised sessions |
+| `DELETE /sessions/{id}` | — | 204 — unchanged (in-progress only), now also removes the photo |
+| `DELETE /sessions/{id}/journal` | — | 204 — deletes a finished session, returning its grams |
 | `POST /sessions/{id}/image` | multipart `file` | `TeaSession` (201) |
 | `GET /sessions/{id}/image?token=` | — | the image |
 | `DELETE /sessions/{id}/image` | — | `TeaSession` |
@@ -235,8 +243,9 @@ Back arrows: Cha Xi → timer; Journal → tea home; entry → Journal; form →
 - `JournalPage.vue` — month-grouped wall, `JournalCard.vue` (photo / compact variants), Cha xi
   only toggle, + Entry.
 - `JournalEntryPage.vue` — full detail, Edit / Delete for the brewer.
-- `JournalFormPage.vue` — new journal-only entry and edit; reuses `PickTeaSheet` (plus an Away
-  tea option) and `PickVesselSheet`.
+- `JournalFormPage.vue` — new journal-only entry and edit; a Cabinet / Away switch, native
+  selects for the Cabinet tea and the vessel (the timer's sheets carry timer-only controls), a
+  day picker. A photo picked here uploads after the entry saves.
 - `journal.ts` — pure helpers: `groupByMonth`, `hasChaXi`, `gramsReturned`.
 - `useTeaJournalStore` — `entries`, `loading`, `error`, `fetchJournal`, `create`, `edit`,
   `remove`, `uploadPhoto`, `removePhoto`.
@@ -244,7 +253,7 @@ Back arrows: Cha Xi → timer; Journal → tea home; entry → Journal; form →
 - `useTargetChime` — the `AudioContext` moves to module scope so one unlock serves every page.
 - `SectionIcon.vue` — a Journal icon: stitched thread-bound notebook with a small cup seal, in
   the tiles' solid-amber style. `TeaHomePage` gains the Journal section.
-- `TeaSessionsList` rows link to `tea-journal-entry`; the timer's saved toast links there too.
+- `TeaSessionsList` rows link to `tea-journal-entry`.
 
 ## Testing
 
@@ -255,9 +264,11 @@ Backend (`backend/tests/test_tea_journal.py`, plus extended session tests):
 - Journal-only: Cabinet tea with and without grams, away tea (no deduction).
 - `edit_journal`: grams up, down, cleared, changed tea; clamps; refusal on in-progress; brewer
   only; tea fields refused on timed sessions.
-- Deleting finalised: grams returned, photo removed; in-progress discard removes the photo.
-- `list_journal`: order, resolved fields, class fallback, other members' sessions included.
-- Away-tea sessions skipped by curves, per-tea list and teaware usage.
+- `delete_journal`: grams returned, photo removed; the timer's `DELETE /sessions/{id}` still
+  refuses a finished session (409); in-progress discard removes the photo.
+- `list_journal`: order (including odd `started_at` strings), resolved fields, class fallback,
+  other members' sessions included.
+- Journal-only sessions never become a brewing curve.
 - `delete_tea` removes its sessions' photos. v4 → v5 migration.
 
 Frontend (co-located `*.spec.ts`): `ChaXiFields`, `BrewStrip`, `ChaXiPage` (store writes,
