@@ -26,13 +26,17 @@ function fakeScroll(scrollTop: number, clientHeight: number): HTMLElement {
 // have a real component instance, then hands back its exposed activeIndex
 // and measure() plus the sectionEls ref so a test can mutate it between
 // measurements (simulating sections appearing/disappearing).
-function harness(scrollEl: HTMLElement, initial: (HTMLElement | null)[]) {
+function harness(
+  scrollEl: HTMLElement,
+  initial: (HTMLElement | null)[],
+  pick?: Parameters<typeof useSectionInView>[2],
+) {
   const scroll: Ref<HTMLElement | null> = ref(scrollEl);
   const sections: Ref<(HTMLElement | null)[]> = ref(initial);
   const wrapper = mount(
     defineComponent({
       setup() {
-        return useSectionInView(scroll, sections);
+        return useSectionInView(scroll, sections, pick);
       },
       render: () => null,
     }),
@@ -94,5 +98,17 @@ describe("useSectionInView", () => {
 
     expect(wrapper.vm.activeIndex).toBe(0);
     expect(wrapper.vm.activeIndex).toBeLessThan(sections.value.length);
+  });
+
+  it("lets the page choose its own rule for which section is active", () => {
+    const scrollEl = fakeScroll(250, 1000);
+    const els = [fakeEl(0, 200), fakeEl(300, 200), fakeEl(700, 200)];
+    const { wrapper } = harness(scrollEl, els, (container, sections) =>
+      sections.findIndex((el) => el !== null && el.offsetTop > container.scrollTop),
+    );
+
+    wrapper.vm.measure();
+
+    expect(wrapper.vm.activeIndex).toBe(1);
   });
 });

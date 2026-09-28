@@ -2,6 +2,7 @@ import { ref } from "vue";
 import { defineStore } from "pinia";
 import { api } from "@/composables/useApi";
 import type { AlmanacEntryView } from "@/apps/tea/types";
+import type { AlmanacView } from "@/apps/tea/almanac";
 
 function message(e: unknown): string {
   if (e && typeof e === "object" && "detail" in e) {
@@ -23,6 +24,8 @@ export const useTeaAlmanacStore = defineStore("tea-almanac", () => {
   const entries = ref<AlmanacEntryView[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  // Held here, not on the page, so returning from an entry reopens the same view.
+  const view = ref<AlmanacView>("class");
   let requestId = 0;
 
   async function fetchEntries(country = "", q = ""): Promise<void> {
@@ -67,5 +70,5 @@ export const useTeaAlmanacStore = defineStore("tea-almanac", () => {
     }
   }
 
-  return { entries, loading, error, fetchEntries, fetchEntry };
+  return { entries, loading, error, view, fetchEntries, fetchEntry };
 });

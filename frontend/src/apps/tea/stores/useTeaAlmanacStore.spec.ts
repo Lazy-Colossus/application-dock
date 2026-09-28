@@ -122,4 +122,10 @@ describe("useTeaAlmanacStore", () => {
     expect(store.entries).toHaveLength(1);
     expect(store.entries[0].summary).toBe("Updated summary");
   });
+
+  it("opens in the class view and remembers a switch to place", () => {
+    expect(useTeaAlmanacStore().view).toBe("class");
+    useTeaAlmanacStore().view = "place";
+    expect(useTeaAlmanacStore().view).toBe("place");
+  });
 });
