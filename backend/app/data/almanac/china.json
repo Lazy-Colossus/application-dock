@@ -397,5 +397,89 @@
     "reading": "Mògān Huángyá",
     "summary": "A yellow tea from Moganshan in Deqing County, northern Zhejiang, a mountain with a tea-growing history reaching back to at least the Song dynasty; the modern style was recognised as a Zhejiang provincial famous tea in the 1980s. Small early-spring buds and first leaves are fixed and lightly rolled like a green tea, then undergo the yellow-tea \"sealed yellowing\" (mēnhuáng) step, in which the damp leaf is wrapped and kept warm so that it yellows through gentle non-enzymatic oxidation before final drying. The result is a softer, rounder tea than the green teas of the region, with a yellow-green liquor, a sweet, corn- or chestnut-like character and little grassiness.",
     "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [30, 45, 60] }
+  },
+  {
+    "catalogue_node_id": "red.bailin-gongfu",
+    "country": "China",
+    "reading": "Báilín Gōngfu",
+    "summary": "A fully oxidized black tea from the Bailin and Hulin area around Taimu Mountain in Fuding, Fujian, and one of Fujian's three historic gongfu black teas alongside Tanyang Gongfu and Zhenghe Gongfu. It took shape from the mid-19th century, when Fujian and Guangdong merchants gathered roughly made black tea from the surrounding villages and refined it in Bailin into the finely worked gongfu style. It is made from the Fuding Dabai and Fuding Dahao cultivars better known for white tea, whose downy buds give the dry leaf an abundance of golden-orange tips. The cup is lighter and more floral than its two Fujian siblings, bright and honey-sweet with a comparatively short, gentle body.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 95, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "red.zhenghe-gongfu",
+    "country": "China",
+    "reading": "Zhènghé Gōngfu",
+    "summary": "A fully oxidized black tea from Zhenghe County in northern Fujian, and one of Fujian's three historic gongfu black teas alongside Tanyang Gongfu and Bailin Gongfu. Black tea making is generally dated in Zhenghe to 1874, and the style rose to prominence in the late Qing once local merchants began making it from the newly propagated Zhenghe Dabai cultivar — the same large-leaf bush used for Zhenghe Bai Mudan white tea — largely for export to Europe. Zhenghe Gongfu is usually considered the fullest-bodied of the three: a rounded, malty cup whose sweetness leans floral and honeyed rather than cereal.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 95, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "red.jiuqu-hongmei",
+    "country": "China",
+    "reading": "Jiǔqū Hóngméi",
+    "summary": "Nine-Bend Red Plum, a fully oxidized black tea from Zhoupu in Hangzhou's Xihu District, Zhejiang, near the Qiantang River — a rare black tea in a province famous for green tea. Its origin is traditionally traced to migrants from Wuyi Shan, Fujian, who settled in the area during the Taiping Rebellion era of the mid-19th century and named the tea after the Nine-Bend Stream (Jiuqu Xi) of their home. The thin, tightly curled leaves, bent like fishhooks and dark with golden tips, give a bright red liquor with a sweet, honeyed aroma often compared to orchid. It is commonly credited with a gold medal at the 1915 Panama-Pacific Exposition.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 95, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "red.yihong",
+    "country": "China",
+    "reading": "Yíhóng",
+    "summary": "Yichang Congou, a fully oxidized gongfu black tea from the Yichang area of western Hubei, including Wufeng, Yidu and neighboring counties in the Wuling Mountains along the Yangtze. It dates from the 1820s–1830s, when Guangdong merchants brought Jiangxi technicians to teach black tea making there, and the tea was shipped down the Yangtze through Hankou as a major 19th-century export. Production nearly stopped during the war years and revived after 1950, when a factory in Yidu was set up to supply the Soviet trade. The slender, dark, gold-tipped strips give an orange-red, bright liquor with a sweet, mellow, floral-fruity character, and good Yihong is noted for turning cloudy (\"cream down\") as it cools.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 95, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "red.ninghong",
+    "country": "China",
+    "reading": "Nínghóng",
+    "summary": "A fully oxidized gongfu black tea from Xiushui County in northwestern Jiangxi, whose name comes from Yining and Fenning, historical names for the area. It is one of China's earlier gongfu black teas, with production usually dated to the early 19th century, and became a major export in the late Qing, when it made up the bulk of Jiangxi's tea exports. Ninghong is made as tight, slender, dark strips with golden tips, giving a bright red liquor with a sweet, lasting aroma and a full, mellow body.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 95, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "oolong.zhangping-shuixian",
+    "country": "China",
+    "reading": "Zhāngpíng Shuǐxiān",
+    "summary": "A Shuixian oolong from Zhangping in southwestern Fujian, and the only oolong traditionally made as a compressed tea: after withering, shaking, fixing and rolling, the leaf is pressed in a wooden mould into small square cakes about 4 cm across, wrapped in paper and dried. The method is credited to Deng Guanjin of Zhongcun village in Shuangyang, who devised it in 1914, pairing the northern Fujian Shuixian cultivar with a lighter, southern-Fujian-style oxidation. Its making was added to China's national intangible cultural heritage list in 2021. Each cake is a single brewing's worth, giving a golden to orange liquor with a pronounced orchid-like floral aroma and a smooth, sweet finish.",
+    "brewing": { "leaf_grams": 8, "water_temp_c": 100, "steep_seconds": [20, 25, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "oolong.dancong.huang-zhi-xiang",
+    "country": "China",
+    "reading": "Huáng Zhī Xiāng",
+    "summary": "Gardenia Fragrance, the most widely grown aroma type among the Phoenix Dancong oolongs of Fenghuang (Phoenix Mountain), Guangdong. Rather than a single cultivar, Huang Zhi Xiang is an aroma family covering a number of individual bushes and strains prized for the same natural floral character. Like other Dancong it is made from long, twisted, moderately to heavily oxidized leaves finished with a roast, and its cup is known for a high, long-lasting floral fragrance likened to gardenia over a sweet, sometimes honeyed body.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 100, "steep_seconds": [10, 15, 20, 30] }
+  },
+  {
+    "catalogue_node_id": "dark.tian-jian",
+    "country": "China",
+    "reading": "Tiān Jiān",
+    "summary": "Heavenly Tip, the highest grade of Anhua's basket-packed dark teas (the \"three tips\", with Gong Jian and Sheng Jian), made in Anhua, Hunan, from first-grade tender maocha. Unlike Anhua's bricks it is left loose, packed tightly into bamboo baskets lined with leaves rather than pressed into a shape. By tradition it was named and designated a tribute tea by the Daoguang Emperor in the 1820s. Anhua maocha is dried over pine-wood fires, and Tian Jian typically carries that light pine smoke over a sweet, mellow, clean cup.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 100, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "dark.hei-zhuan",
+    "country": "China",
+    "reading": "Hēi Zhuān",
+    "summary": "Black Brick, a machine-pressed dark tea brick from Anhua, Hunan, first successfully made in 1939 by Peng Xianze — the first dark tea brick produced in Anhua. It is steamed and compressed from Anhua dark maocha into a dense rectangular brick, historically made as border-sale tea for China's northwest, where it was boiled and often drunk with milk. Unlike Fu Zhuan it is pressed hard and not cultured for \"golden flowers\"; the cup is thick, earthy and mellow, often with a hint of Anhua's pine smoke.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 100, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "dark.hua-zhuan",
+    "country": "China",
+    "reading": "Huā Zhuān",
+    "summary": "Flower Brick, a dark tea brick from Anhua, Hunan, developed in 1958 when the region's hand-made \"flower roll\" (hua juan) log — the family of teas that includes Qian Liang Cha — was reworked into a machine-pressed rectangular brick using the Hei Zhuan method. Its name refers to the patterned border embossed on its surface. Made from comparatively fine Anhua maocha and pressed hard without cultivating golden flowers, it gives a smooth, sweet, woody cup that is usually considered finer than Hei Zhuan.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 100, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "dark.qing-zhuan",
+    "country": "China",
+    "reading": "Qīng Zhuān",
+    "summary": "Green Brick, a dark tea brick from southeastern Hubei centered on Yangloudong in Chibi, made from coarse \"old green\" tea (lao qing cha) that is piled to ferment and then pressed in layers — a finer \"face\" tea on the outer surfaces around a coarser inner tea. Brick tea from Yangloudong was a mainstay of the overland Tea Road to Mongolia and Russia from the Qing dynasty onward, and Russian merchants set up steam-press brick factories there in the 1860s. Bricks were traditionally stamped with the character 川 (chuan), which became the tea's hallmark. The cup is dark orange-red, mellow and woody, and like other border teas it is often boiled.",
+    "brewing": { "leaf_grams": 7, "water_temp_c": 100, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "dark.xiao-qing-gan",
+    "country": "China",
+    "reading": "Xiǎo Qīng Gān",
+    "summary": "Little green mandarin, a citrus pu-erh made in Xinhui, Guangdong, by hollowing out small unripe Chachi mandarins (the variety behind Xinhui's famous dried peel, chenpi), filling them with shu pu-erh from Yunnan and drying the whole fruit, either in the sun or with machine drying. It is a modern, small-fruit version of the older Xinhui practice of pairing mandarin peel with pu-erh, and it became a widely sold category from the mid-2010s. The peel is brewed with the tea, adding a bright, bittersweet citrus aroma to shu pu-erh's smooth, earthy body.",
+    "brewing": { "leaf_grams": 8, "water_temp_c": 100, "steep_seconds": [15, 20, 30, 45] }
   }
 ]
