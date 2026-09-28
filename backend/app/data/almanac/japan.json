@@ -138,5 +138,33 @@
     "reading": "wakōcha",
     "summary": "Japan's own black tea, fully oxidized rather than steamed like sencha, developed from the 1870s as a Meiji-era export crop meant to compete with Chinese, Indian, and Ceylon black teas — production even drew on Assam seed stock a Japanese delegation brought back from India in 1876. Made mostly from Japanese cultivars bred for green tea's low tannin and high theanine rather than from Assam-type bushes, wakoucha comes out lighter, sweeter, and less astringent than Indian or Sri Lankan black teas, usually without the malty bitterness typical of the style. Export demand collapsed after trade liberalization in 1971, and today wakoucha is a small-scale specialty made in Shizuoka, Miyazaki, and other prefectures rather than an export commodity.",
     "brewing": { "leaf_grams": 4, "water_temp_c": 90, "steep_seconds": [90, 60, 60] }
+  },
+  {
+    "catalogue_node_id": "green.japanese.tencha",
+    "country": "Japan",
+    "reading": "tencha",
+    "summary": "The unground leaf from which matcha is milled; the name means \"tea for grinding.\" Bushes are shaded for around three to four weeks before the spring harvest, then the leaf is briefly steamed and dried flat without any rolling — the step that separates tencha from sencha and gyokuro. The dried leaf is then stripped of its stems and veins, leaving only soft, flaky leaf blade, which is traditionally stored for several months to mellow before grinding. Rarely drunk as a leaf tea in its own right, it is brewed mainly by trade tasters judging matcha quality, and gives a pale, light-bodied, gently sweet and marine infusion rather than the dense umami of gyokuro.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 75, "steep_seconds": [90, 60] }
+  },
+  {
+    "catalogue_node_id": "green.japanese.kyobancha",
+    "country": "Japan",
+    "reading": "kyōbancha",
+    "summary": "Kyoto's everyday folk tea, also called iribancha (\"roasted bancha\"), made around Uji from large, coarse leaf and stem left on the bushes over winter and cut back in early spring — material many regions simply discard. The leaf is steamed at length to soften it, then dried whole without rolling and roasted at high heat in a large pan until it smokes, producing big, flat, crumpled brown leaves quite unlike needle-shaped sencha or rolled hōjicha. The cup is light-bodied and low in caffeine, with a pronounced smoky aroma over a mild, toasty sweetness; in Kyoto households it is typically boiled in a kettle by the pot and drunk hot or cold.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 100, "steep_seconds": [120, 90] }
+  },
+  {
+    "catalogue_node_id": "green.japanese.sannen-bancha",
+    "country": "Japan",
+    "reading": "sannen bancha",
+    "summary": "\"Three-year bancha,\" a stem-heavy roasted tea made by one of two routes: coarse summer or autumn bancha is steamed, dried, and stored for about three years before a light roast, or bushes are left unharvested for three years and their woody branches cut in winter, chopped, steamed, dried, and roasted. Either way the material is mostly twig and old leaf, giving the tea a wood-chip appearance. Long maturity and roasting leave it very low in caffeine and catechins, so the cup is mellow, sweet, and woody with almost no astringency. Long promoted in macrobiotic cooking, it is often simmered rather than steeped, and sometimes taken with umeboshi, ginger, and soy sauce.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 100, "steep_seconds": [180, 120] }
+  },
+  {
+    "catalogue_node_id": "green.japanese.uji-cha",
+    "country": "Japan",
+    "reading": "ujicha",
+    "summary": "The regional name for tea from Uji, south of Kyoto, the historic center of Japanese fine tea and one of the \"three great teas\" alongside Shizuoka and Sayama. Uji pioneered the ōishita method of shading bushes under reed-and-straw canopies for matcha, and in 1738 local grower Nagatani Sōen developed the steam-and-roll process that became the basis of modern sencha; gyokuro is also usually credited to Uji in the 19th century. Today \"Uji-cha\" is a regional collective trademark covering tea grown in Kyoto, Nara, Shiga, or Mie and finished in Kyoto Prefecture by Uji methods, so the name spans matcha, gyokuro, and sencha rather than one process. It is best known for shaded teas, prized for aroma and deep umami, echoing the old saying that credits Uji with the finest fragrance.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 70, "steep_seconds": [60, 30, 45] }
   }
 ]
