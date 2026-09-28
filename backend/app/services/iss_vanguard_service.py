@@ -28,7 +28,9 @@ from app.schemas.iss_vanguard import (
     ShipView,
     Tier,
     empty_grid,
+    is_empty_grid,
 )
+from app.services import auth_service
 from app.services import iss_vanguard_events as events
 
 ShipGoneError = repo.ShipGoneError
@@ -186,3 +188,79 @@ def reopen_project(username: str, project_id: str) -> ShipView:
         project.done = False
 
     return _mutate(username, change)
+
+
+def _is_empty(doc: ShipDoc) -> bool:
+    return not doc.projects and is_empty_grid(doc.stock)
+
+
+def _publish_members(ship_id: str) -> None:
+    events.publish(
+        ship_id,
+        {"type": "members.changed", "ship_id": ship_id, "members": _members_of(ship_id)},
+    )
+
+
+def _publish_closed(ship_id: str, reason: str, member: str) -> None:
+    # Everyone on the stream receives it; `member` says whose client should move.
+    events.publish(
+        ship_id,
+        {"type": "ship.closed", "ship_id": ship_id, "reason": reason, "member": member},
+    )
+
+
+def add_member(caller: str, username: str) -> ShipView:
+    """Move `username` aboard the caller's ship. Only an empty ship can be left behind."""
+    username = username.strip()
+    if username == caller:
+        raise ValueError("You're already aboard this ship")
+    if username not in auth_service.list_usernames():
+        raise ValueError(f"There's no one called {username!r} on the dock")
+
+    ship_id = ensure_ship(caller)
+    abandoned: str | None = None
+    with repo.membership_lock():
+        members = repo.read_memberships()
+        if repo.read_ship(ship_id).owner != caller:
+            raise PermissionError("Only the ship's owner can add crew")
+        theirs = members.get(username)
+        if theirs == ship_id:
+            raise ValueError(f"{username} is already aboard")
+        if theirs is None:
+            members[username] = ship_id
+            repo.write_memberships(members)
+        else:
+            if any(ship == theirs for user, ship in members.items() if user != username):
+                raise ValueError(f"{username} already shares a ship with someone else")
+            with repo.ship_lock(theirs):
+                if not _is_empty(repo.read_ship(theirs)):
+                    raise ValueError(f"{username} already has resources or projects on their ship")
+                members[username] = ship_id
+                repo.write_memberships(members)
+                # Only after the map write: a crash here leaves an unreferenced empty
+                # file, never a member pointing at a ship that is gone.
+                repo.delete_ship(theirs)
+            abandoned = theirs
+    if abandoned is not None:
+        _publish_closed(abandoned, "joined", username)
+    _publish_members(ship_id)
+    return get_ship(caller)
+
+
+def remove_member(caller: str, username: str) -> ShipView:
+    """The owner removes anyone else; a member removes themself (leaving)."""
+    ship_id = _resolve(caller)
+    with repo.membership_lock():
+        members = repo.read_memberships()
+        if ship_id is None or members.get(username) != ship_id:
+            raise FileNotFoundError(f"{username} isn't aboard this ship")
+        owner = repo.read_ship(ship_id).owner
+        if caller not in (owner, username):
+            raise PermissionError("Only the ship's owner can remove other crew")
+        if username == owner:
+            raise ValueError("The owner can't leave the ship — remove the other crew instead")
+        del members[username]
+        repo.write_memberships(members)
+    _publish_members(ship_id)
+    _publish_closed(ship_id, "removed", username)
+    return get_ship(caller)
