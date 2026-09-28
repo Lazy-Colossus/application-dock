@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import httpx
 import pytest
 
@@ -191,3 +193,34 @@ def test_suggest_raises_on_a_network_timeout(
     stub_typesafe(monkeypatch, timeout)
     with pytest.raises(service.AutofillUpstreamError):
         service.suggest("alice", "Da Hong Pao")
+
+
+def test_match_category_sends_label_text_as_state_when_given(
+    monkeypatch: pytest.MonkeyPatch, no_almanac: None
+) -> None:
+    seen = stub_typesafe(monkeypatch, choice_response("oolong.wuyi-yancha.da-hong-pao", 0.9))
+
+    result = service.match_category("alice", "Da Hong Pao", "大紅袍 Wuyi Shan 2023 100g")
+
+    assert result is not None
+    body = json.loads(seen[0].content)
+    assert body["state"] == {"tea_name": "Da Hong Pao", "label_text": "大紅袍 Wuyi Shan 2023 100g"}
+    assert "label_text" in body["questions"]["category"]["instructions"]
+
+
+def test_match_category_omits_label_text_without_context(
+    monkeypatch: pytest.MonkeyPatch, no_almanac: None
+) -> None:
+    seen = stub_typesafe(monkeypatch, choice_response("oolong.wuyi-yancha.da-hong-pao", 0.9))
+
+    service.match_category("alice", "Da Hong Pao")
+
+    body = json.loads(seen[0].content)
+    assert body["state"] == {"tea_name": "Da Hong Pao"}
+    assert "label_text" not in body["questions"]["category"]["instructions"]
+
+
+def test_match_category_raises_when_not_configured(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "typesafe_api_key", "")
+    with pytest.raises(service.AutofillNotConfiguredError):
+        service.match_category("alice", "", "some label text")

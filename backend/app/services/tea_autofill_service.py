@@ -1,8 +1,9 @@
 """Category autofill for the Tea Cabinet, via TypeSafe's Jev.
 
-Given the free-text name someone typed while adding a tea, asks a single
-Choice judgment over every catalogue node to find the best match, using the
-linked Almanac summary as extra context where one exists. This is the only
+Given the free-text name someone typed while adding a tea (and, from a label
+scan, the text read off the packet), asks a single Choice judgment over every
+catalogue node to find the best match, using the linked Almanac summary as
+extra context where one exists. This is the only
 module that talks to TypeSafe.
 
 The confidence threshold below is a starting point, not a tuned constant —
@@ -81,10 +82,26 @@ def _describe(chain: list[CatalogueNode], entry: AlmanacEntry | None) -> str:
     return " ".join(bits)
 
 
+_INSTRUCTIONS = (
+    "tea_name is free text someone typed while adding a tea to their "
+    "personal cabinet. It may be a bare tea name or a vendor product "
+    "title decorated with a harvest year, weight, or brand name around "
+    "the actual tea. Which catalogue entry does the tea itself refer to?"
+)
+_LABEL_INSTRUCTIONS = (
+    " label_text, when present, is all the text read off the tea's packaging; "
+    "use it as further evidence."
+)
+
+
 def suggest(username: str, name: str) -> AutofillSuggestion | None:
     label = name.strip()
     if not label:
         raise ValueError("a tea name is required")
+    return match_category(username, label)
+
+
+def match_category(username: str, name: str, context: str = "") -> AutofillSuggestion | None:
     if not autofill_enabled():
         raise AutofillNotConfiguredError(
             "Autofill is not configured on this server (TYPESAFE_API_KEY)"
@@ -97,18 +114,19 @@ def suggest(username: str, name: str) -> AutofillSuggestion | None:
         node.id: _describe(_path_of(index, node.id), almanac_by_node.get(node.id)) for node in nodes
     }
 
+    state = {"tea_name": name.strip()}
+    instructions = _INSTRUCTIONS
+    if context:
+        state["label_text"] = context
+        instructions += _LABEL_INSTRUCTIONS
+
     body = {
         "model": "jev-latest",
-        "state": {"tea_name": label},
+        "state": state,
         "questions": {
             "category": {
                 "type": "choice",
-                "instructions": (
-                    "tea_name is free text someone typed while adding a tea to their "
-                    "personal cabinet. It may be a bare tea name or a vendor product "
-                    "title decorated with a harvest year, weight, or brand name around "
-                    "the actual tea. Which catalogue entry does the tea itself refer to?"
-                ),
+                "instructions": instructions,
                 "criteria": criteria,
             }
         },
