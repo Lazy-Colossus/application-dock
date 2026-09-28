@@ -61,5 +61,54 @@
     "reading": "Hóngyù",
     "summary": "Hongyu, marketed internationally as Ruby 18 or Taiwan Tea #18, is a fully oxidized black tea made from a cultivar bred at the Taiwan Tea Research and Extension Station by crossing a wild Taiwanese mountain tea with a large-leaf Burmese assamica, released in 1999 after decades of work. It is grown around Sun Moon Lake in Yuchi, Nantou, where the surrounding mist and humidity suit the large-leaf hybrid. The cultivar produces a naturally sweet cup with cinnamon and mint-like notes without any added flavoring — often marketed as needing neither milk nor sugar — and it lacks the heavy astringency typical of Assam-style black teas.",
     "brewing": { "leaf_grams": 4, "water_temp_c": 95, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "oolong.taiwanese.red-oolong",
+    "country": "Taiwan",
+    "reading": "Hóng Wūlóng",
+    "summary": "A modern style created in 2008, when the Taitung Branch of Taiwan's Tea Research and Extension Station worked with farmers and tea makers in Luye Township to revive a local industry whose black-tea exports had been undercut by cheaper Southeast Asian and South Asian leaf. The leaf is heavily rolled into balls, oxidized far beyond any other oolong — close to a black tea, with figures of around 80% commonly cited — and then roasted, and it is made from several cultivars including Qingxin, Jin Xuan, Si Ji Chun and assamica. The result brews an amber to orange-red liquor that pairs a black tea's sweetness and smoothness with an oolong's rounded body, carrying ripe-fruit and honey notes, especially in lots made from leafhopper-bitten leaf.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 95, "steep_seconds": [20, 25, 35, 45] }
+  },
+  {
+    "catalogue_node_id": "oolong.taiwanese.gui-fei",
+    "country": "Taiwan",
+    "reading": "Guìfēi",
+    "summary": "Gui Fei ('Imperial Concubine') emerged in Lugu, Nantou, after the 1999 Jiji (921) earthquake, when farmers busy rebuilding left their gardens untended and tea leafhoppers (Jacobiasca formosana) fed heavily on the leaf. Rather than discard the bitten leaf, makers processed it like Oriental Beauty at first — with a stronger sun wither and more intense tossing to push oxidation — then finished it in the local Dong Ding manner, rolling it into semi-balls and giving it a moderate roast. The leafhopper bites trigger the same defensive aromatics as in Oriental Beauty, so the orange-gold cup is thick and honeyed, often with lychee or ripe-fruit notes, set on the toasty body of a roasted Nantou oolong.",
+    "brewing": { "leaf_grams": 6, "water_temp_c": 95, "steep_seconds": [20, 25, 35, 45] }
+  },
+  {
+    "catalogue_node_id": "oolong.taiwanese.da-yu-ling",
+    "country": "Taiwan",
+    "reading": "Dàyǔlǐng",
+    "summary": "Named after the Dayuling pass at the highest point of the Central Cross-Island Highway, where Taichung, Nantou and Hualien meet, and generally applied to tea from gardens above roughly the highway's 95-kilometer marker, at about 2,200 to 2,600 meters — making it among the highest-grown tea in Taiwan and the world. Lots are often sold labelled by their kilometer marker (95K, 105K and so on) as a shorthand for garden altitude. Processing is the standard high-mountain method — balled, lightly oxidized and lightly roasted — and the cold, misty conditions give a clean, cooling, intensely floral cup with a long sweet finish, generally judged even more refined than neighboring Lishan. Since 2014 the Forestry Bureau has reclaimed much of the tea land above 95K and returned it to forest, cutting output to a fraction of its former level and pushing prices higher.",
+    "brewing": { "leaf_grams": 6, "water_temp_c": 90, "steep_seconds": [30, 40, 50, 60] }
+  },
+  {
+    "catalogue_node_id": "oolong.taiwanese.si-ji-chun",
+    "country": "Taiwan",
+    "reading": "Sìjìchūn",
+    "summary": "Si Ji Chun ('Four Seasons Spring') is a cultivar rather than a place: a natural hybrid found in a farmer's garden in Muzha, Taipei, and later spread to Mingjian in Nantou, where its vigor and near year-round flushing earned it its name. Its parentage is usually given as Qingxin crossed with Wuyi or another traditional cultivar, though accounts differ. It is hardy, high-yielding and harvested as many as five or six times a year, which has made it a staple of affordable, lower-elevation Taiwanese oolong and a common cultivar for Thai and Vietnamese growers as well. Made in the balled, lightly oxidized style, it gives a bright, intensely floral cup — often compared to gardenia or lilac — with a lighter body and less depth than high-mountain Qingxin, and cooler-season harvests are preferred because summer leaf turns bitter.",
+    "brewing": { "leaf_grams": 6, "water_temp_c": 90, "steep_seconds": [30, 40, 50, 60] }
+  },
+  {
+    "catalogue_node_id": "oolong.taiwanese.gaba",
+    "country": "Taiwan",
+    "reading": "Jiāyèlóng",
+    "summary": "GABA tea was developed in 1987 by Tojiro Tsushida and colleagues at Japan's national tea research institute, who found that holding fresh leaf in an oxygen-free, nitrogen-filled chamber for several hours converts much of its glutamic acid into gamma-aminobutyric acid (GABA). Taiwan's Tea Research and Extension Station sent staff to learn the technique in 1994, and Taiwanese makers applied it to oolong processing, producing what is sold as GABA oolong or jiayelong; Taiwan's commonly cited threshold is at least 150 mg of GABA per 100 g of tea. It is made in both balled and twisted forms and at varying oxidation and roast levels, but the anaerobic step gives a recognisable profile — fruity and slightly tangy, often described with sweet-potato, dried-fruit or cinnamon notes. It is mostly marketed for claimed relaxation and blood-pressure benefits, which remain under study.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 95, "steep_seconds": [20, 30, 40, 50] }
+  },
+  {
+    "catalogue_node_id": "red.mi-xiang",
+    "country": "Taiwan",
+    "reading": "Mìxiāng Hóngchá",
+    "summary": "Honey-scent black tea, most closely associated with the Wuhe terrace in Ruisui, Hualien, in the East Rift Valley between Taiwan's Central and Coastal mountain ranges. Like Oriental Beauty, it depends on the tea leafhopper (Jacobiasca formosana): bitten leaves produce defensive aromatics that the finished tea carries as a honeyed, fruity perfume, so gardens are managed without insecticide. The style grew out of honey-scented teas developed around 1999 with the Taitung Branch of the Tea Research and Extension Station, and Wuhe's version, made largely from the local Da Ye Oolong cultivar, gained wide recognition after winning a gold medal at an international tea competition held in Taiwan in 2006. The leaf is fully oxidized and twisted, brewing a bright copper-red cup with honey, ripe-fruit and floral notes and little astringency.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 90, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "green.taiwanese.sanxia-biluochun",
+    "country": "Taiwan",
+    "reading": "Sānxiá Bìluóchūn",
+    "summary": "Taiwan's best-known green tea, made in the small hill district of Sanxia in New Taipei, one of the few areas in an oolong-dominated island that still specializes in unoxidized tea. Biluochun-style green tea was taken up there in the early 20th century to supply settlers from the mainland who wanted the green tea of their home regions, and it was long sold as Haishan green tea before adopting the Biluochun name. Unlike the Jiangsu original it is made from the local Qingxin Ganzai cultivar, picked as a downy bud and two leaves in the weeks before Qingming, then pan-fired and rolled into small, fuzzy twisted leaves. The pale yellow-green cup is fresh and grassy with a light citrus fragrance and a sweet, nutty note often likened to mung beans.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [30, 40, 55] }
   }
 ]
