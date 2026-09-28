@@ -38,6 +38,36 @@
       :value="modelValue.image_url ?? ''"
       @input="patch({ image_url: asText($event) || null })"
     />
+    <div class="form__scan">
+      <button
+        type="button"
+        class="form__autofill"
+        data-testid="scan-label"
+        :disabled="scanning"
+        @click="scanInput?.click()"
+      >
+        {{ scanning ? "Reading label…" : "Scan label" }}
+      </button>
+      <input
+        ref="scanInput"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        class="form__scan-input"
+        data-testid="scan-input"
+        @change="onScanChosen"
+      />
+    </div>
+    <div v-if="scanPreview" class="form__scan-result">
+      <img :src="scanPreview" class="form__scan-thumb" data-testid="scan-thumb" alt="Scanned label" />
+      <label class="form__scan-use">
+        <input type="checkbox" data-testid="scan-use-photo" :checked="usePhoto" @change="onUsePhoto" />
+        Use as tea photo
+      </label>
+    </div>
+    <p v-if="scanMessage" class="form__autofill-message" data-testid="scan-message">
+      {{ scanMessage }}
+    </p>
 
     <p class="form__group" data-testid="group">Where it's from</p>
     <input
@@ -186,14 +216,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 import CataloguePicker from "./CataloguePicker.vue";
 import { pricePerGram } from "../shelf";
+import { downscaleImage } from "../image";
+import { labelScanPatch } from "../labelScan";
 import { useTeaCatalogueStore } from "../stores/useTeaCatalogueStore";
 import type {
   BrewingParameters,
   CatalogueNode,
   HarvestSeason,
+  ScanChoice,
   Tea,
   TeaForm as TeaFormValue,
   TeaWrite,
@@ -203,6 +236,7 @@ const props = defineProps<{ modelValue: TeaWrite; nodes: CatalogueNode[] }>();
 const catalogueStore = useTeaCatalogueStore();
 const emit = defineEmits<{
   "update:modelValue": [value: TeaWrite];
+  "update:scan": [value: ScanChoice | null];
   "add-node": [parentId: string];
 }>();
 
@@ -301,6 +335,66 @@ async function onAutofill(): Promise<void> {
   }
 }
 
+const scanInput = ref<HTMLInputElement | null>(null);
+const scanning = ref(false);
+const scanMessage = ref("");
+const scanFile = ref<File | null>(null);
+const scanPreview = ref<string | null>(null);
+const usePhoto = ref(false);
+
+function emitScan(): void {
+  emit("update:scan", scanFile.value ? { file: scanFile.value, usePhoto: usePhoto.value } : null);
+}
+
+function setScanFile(file: File): void {
+  if (scanPreview.value) URL.revokeObjectURL(scanPreview.value);
+  scanFile.value = file;
+  scanPreview.value = URL.createObjectURL(file);
+  emitScan();
+}
+
+function onUsePhoto(event: Event): void {
+  usePhoto.value = (event.target as HTMLInputElement).checked;
+  emitScan();
+}
+
+async function onScanChosen(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement;
+  const picked = input.files?.[0];
+  input.value = ""; // so picking the same photo again still fires change
+  if (!picked) return;
+  scanMessage.value = "";
+  scanning.value = true;
+  try {
+    let file: File;
+    try {
+      file = await downscaleImage(picked);
+    } catch {
+      scanMessage.value = "Couldn't open this photo";
+      return;
+    }
+    setScanFile(file);
+    const suggestion = await catalogueStore.scanLabel(file);
+    if (!suggestion) {
+      scanMessage.value = catalogueStore.error || "Couldn't read the label right now";
+      return;
+    }
+    const { change, filled } = labelScanPatch(props.modelValue, suggestion, touchedOrigin.value);
+    if (filled.length === 0) {
+      scanMessage.value = "Couldn't read anything new from this photo";
+      return;
+    }
+    patch(change);
+    scanMessage.value = `Filled ${filled.join(", ")}`;
+  } finally {
+    scanning.value = false;
+  }
+}
+
+onBeforeUnmount(() => {
+  if (scanPreview.value) URL.revokeObjectURL(scanPreview.value);
+});
+
 const perGram = computed(() => pricePerGram({ ...props.modelValue } as Tea));
 </script>
 
@@ -366,5 +460,32 @@ const perGram = computed(() => pricePerGram({ ...props.modelValue } as Tea));
   color: #7a6d5e;
   font-size: 12.5px;
   margin: 4px 0 8px;
+}
+.form__scan {
+  display: flex;
+  margin-bottom: 8px;
+}
+.form__scan-input {
+  display: none;
+}
+.form__scan-result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.form__scan-thumb {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid #3b3026;
+}
+.form__scan-use {
+  color: #9a8b78;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 </style>

@@ -2,11 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { postMock } = vi.hoisted(() => ({ postMock: vi.fn() }));
+const { postMock, uploadMock } = vi.hoisted(() => ({ postMock: vi.fn(), uploadMock: vi.fn() }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
-  api: { get: vi.fn(), post: postMock, put: vi.fn(), del: vi.fn() },
+  api: { get: vi.fn(), post: postMock, put: vi.fn(), del: vi.fn(), upload: uploadMock },
 }));
+const { downscaleMock } = vi.hoisted(() => ({ downscaleMock: vi.fn() }));
+vi.mock("../image", () => ({ downscaleImage: downscaleMock }));
 
 import TeaForm from "./TeaForm.vue";
 import type { CatalogueNode, TeaWrite } from "../types";
@@ -58,6 +60,12 @@ const form = (value: TeaWrite = blank()) =>
 beforeEach(() => {
   setActivePinia(createPinia());
   postMock.mockReset();
+  uploadMock.mockReset();
+  downscaleMock.mockReset();
+  downscaleMock.mockImplementation(async (file: File) => file);
+  // jsdom has no object URLs.
+  URL.createObjectURL = vi.fn(() => "blob:thumb");
+  URL.revokeObjectURL = vi.fn();
 });
 
 describe("TeaForm", () => {
@@ -239,5 +247,115 @@ describe("TeaForm brewing", () => {
     await wrapper.get("[data-testid=field-brew-grams]").setValue("");
     const emitted = wrapper.emitted("update:modelValue")!.at(-1)![0] as TeaWrite;
     expect(emitted.brewing).toBeNull();
+  });
+});
+
+const SUGGESTION = {
+  name: "Da Hong Pao",
+  catalogue_node_id: "oolong.wuyi",
+  origin: "Wuyi Shan, Fujian",
+  vendor: "Wuyi Origin",
+  year: 2023,
+  cultivar: "",
+  grams: 100,
+};
+
+async function pickPhoto(wrapper: ReturnType<typeof form>, file: File) {
+  const input = wrapper.get('[data-testid="scan-input"]');
+  Object.defineProperty(input.element, "files", { value: [file], configurable: true });
+  await input.trigger("change");
+  await flushPromises();
+}
+
+describe("TeaForm label scan", () => {
+  const photo = () => new File(["x"], "label.jpg", { type: "image/jpeg" });
+
+  it("fills the empty fields from the scan in one patch and says what it filled", async () => {
+    uploadMock.mockResolvedValue(SUGGESTION);
+    const wrapper = form();
+
+    await pickPhoto(wrapper, photo());
+
+    expect(uploadMock).toHaveBeenCalledWith("/tea/scan-label", expect.any(File));
+    const emitted = wrapper.emitted("update:modelValue") ?? [];
+    expect(emitted).toHaveLength(1);
+    const last = emitted[0][0] as TeaWrite;
+    expect(last.name).toBe("Da Hong Pao");
+    expect(last.catalogue_node_id).toBe("oolong.wuyi");
+    expect(last.vendor).toBe("Wuyi Origin");
+    expect(last.year).toBe(2023);
+    expect(last.grams_purchased).toBe(100);
+    expect(last.grams_remaining).toBe(100);
+    expect(wrapper.get('[data-testid="scan-message"]').text()).toBe(
+      "Filled name, category, origin, vendor, year, grams",
+    );
+  });
+
+  it("keeps what the person already typed", async () => {
+    uploadMock.mockResolvedValue(SUGGESTION);
+    const wrapper = form({ ...blank(), name: "My Rock Tea", vendor: "Local shop" });
+
+    await pickPhoto(wrapper, photo());
+
+    const last = wrapper.emitted("update:modelValue")?.at(-1)?.[0] as TeaWrite;
+    expect(last.name).toBe("My Rock Tea");
+    expect(last.vendor).toBe("Local shop");
+  });
+
+  it("shows a thumbnail and emits the photo with 'use as tea photo' off, then on", async () => {
+    uploadMock.mockResolvedValue(SUGGESTION);
+    const wrapper = form();
+    const file = photo();
+
+    await pickPhoto(wrapper, file);
+
+    expect(wrapper.get('[data-testid="scan-thumb"]').attributes("src")).toBe("blob:thumb");
+    expect(wrapper.emitted("update:scan")?.at(-1)?.[0]).toEqual({ file, usePhoto: false });
+
+    await wrapper.get('[data-testid="scan-use-photo"]').setValue(true);
+    expect(wrapper.emitted("update:scan")?.at(-1)?.[0]).toEqual({ file, usePhoto: true });
+  });
+
+  it("says so when the photo had nothing new to fill", async () => {
+    uploadMock.mockResolvedValue({
+      name: "",
+      catalogue_node_id: null,
+      origin: "",
+      vendor: "",
+      year: null,
+      cultivar: "",
+      grams: null,
+    });
+    const wrapper = form();
+
+    await pickPhoto(wrapper, photo());
+
+    expect(wrapper.emitted("update:modelValue")).toBeUndefined();
+    expect(wrapper.get('[data-testid="scan-message"]').text()).toBe(
+      "Couldn't read anything new from this photo",
+    );
+  });
+
+  it("shows the server's error when the scan fails", async () => {
+    uploadMock.mockRejectedValue(
+      Object.assign(new Error("down"), { detail: "Label scan is not configured on this server" }),
+    );
+    const wrapper = form();
+
+    await pickPhoto(wrapper, photo());
+
+    expect(wrapper.get('[data-testid="scan-message"]').text()).toContain("not configured");
+    expect(wrapper.emitted("update:modelValue")).toBeUndefined();
+  });
+
+  it("tells the person when the photo can't be opened, without calling the server", async () => {
+    downscaleMock.mockRejectedValue(new Error("unsupported"));
+    const wrapper = form();
+
+    await pickPhoto(wrapper, photo());
+
+    expect(uploadMock).not.toHaveBeenCalled();
+    expect(wrapper.get('[data-testid="scan-message"]').text()).toBe("Couldn't open this photo");
+    expect(wrapper.find('[data-testid="scan-thumb"]').exists()).toBe(false);
   });
 });
