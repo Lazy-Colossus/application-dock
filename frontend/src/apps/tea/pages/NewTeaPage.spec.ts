@@ -4,15 +4,16 @@ import { setActivePinia, createPinia } from "pinia";
 
 // Repo pattern (see CabinetPage.spec.ts / TeaDetailPage.spec.ts): real Pinia,
 // useApi mocked, vue-router mocked.
-const { getMock, postMock, push, backMock } = vi.hoisted(() => ({
+const { getMock, postMock, uploadMock, push, backMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
   postMock: vi.fn(),
+  uploadMock: vi.fn(),
   push: vi.fn(),
   backMock: vi.fn(),
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
-  api: { get: getMock, post: postMock, put: vi.fn(), del: vi.fn() },
+  api: { get: getMock, post: postMock, put: vi.fn(), del: vi.fn(), upload: uploadMock },
 }));
 
 // Captures the guard callback so tests can invoke it directly — a plain
@@ -27,6 +28,7 @@ vi.mock("vue-router", () => ({
 }));
 
 import NewTeaPage from "./NewTeaPage.vue";
+import TeaForm from "../components/TeaForm.vue";
 import type { CatalogueNode, Tea } from "../types";
 
 const STUBS = {
@@ -205,6 +207,67 @@ describe("NewTeaPage", () => {
     expect(confirmSpy).toHaveBeenCalledWith(
       "Leave without saving? Your changes to this tea will be lost.",
     );
+    confirmSpy.mockRestore();
+  });
+
+  async function fillRequired(wrapper: Awaited<ReturnType<typeof render>>) {
+    await wrapper.get('[data-testid="field-name"]').setValue("Da Hong Pao");
+    await wrapper.get('[data-testid="chip-oolong"]').trigger("click");
+  }
+
+  const photo = () => new File(["x"], "label.jpg", { type: "image/jpeg" });
+
+  it("uploads the scanned photo after saving when 'use as tea photo' is ticked", async () => {
+    const wrapper = await render();
+    await fillRequired(wrapper);
+    const file = photo();
+    wrapper.getComponent(TeaForm).vm.$emit("update:scan", { file, usePhoto: true });
+    postMock.mockResolvedValue(tea());
+    uploadMock.mockResolvedValue(tea({ image_url: "/api/tea/teas/created-1/image" }));
+
+    await wrapper.get('[data-testid="new-save"]').trigger("click");
+    await flushPromises();
+
+    expect(uploadMock).toHaveBeenCalledWith("/tea/teas/created-1/image", file);
+    expect(push).toHaveBeenCalledWith({ name: "tea-detail", params: { teaId: "created-1" } });
+  });
+
+  it("doesn't upload the scanned photo when the box is unticked", async () => {
+    const wrapper = await render();
+    await fillRequired(wrapper);
+    wrapper.getComponent(TeaForm).vm.$emit("update:scan", { file: photo(), usePhoto: false });
+    postMock.mockResolvedValue(tea());
+
+    await wrapper.get('[data-testid="new-save"]').trigger("click");
+    await flushPromises();
+
+    expect(uploadMock).not.toHaveBeenCalled();
+    expect(push).toHaveBeenCalledWith({ name: "tea-detail", params: { teaId: "created-1" } });
+  });
+
+  it("still lands on the saved tea when the photo upload fails", async () => {
+    const wrapper = await render();
+    await fillRequired(wrapper);
+    wrapper.getComponent(TeaForm).vm.$emit("update:scan", { file: photo(), usePhoto: true });
+    postMock.mockResolvedValue(tea());
+    uploadMock.mockRejectedValue(
+      Object.assign(new Error("x"), { detail: "Images must be 5MB or smaller" }),
+    );
+
+    await wrapper.get('[data-testid="new-save"]').trigger("click");
+    await flushPromises();
+
+    expect(push).toHaveBeenCalledWith({ name: "tea-detail", params: { teaId: "created-1" } });
+  });
+
+  it("asks before leaving once a label photo has been picked", async () => {
+    const wrapper = await render();
+    wrapper.getComponent(TeaForm).vm.$emit("update:scan", { file: photo(), usePhoto: false });
+    await flushPromises();
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    expect(leaveGuard?.()).toBe(false);
+    expect(confirmSpy).toHaveBeenCalled();
     confirmSpy.mockRestore();
   });
 });
