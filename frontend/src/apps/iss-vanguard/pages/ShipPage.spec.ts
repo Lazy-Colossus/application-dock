@@ -53,7 +53,13 @@ async function page() {
   auth.username = "ana";
   auth.token = "tok";
   getMock.mockResolvedValue(ship());
-  const wrapper = mount(ShipPage);
+  const wrapper = mount(ShipPage, {
+    global: {
+      stubs: {
+        "q-card": { template: '<div class="q-card-stub"><slot /></div>' },
+      },
+    },
+  });
   await flushPromises();
   return wrapper;
 }
@@ -152,5 +158,29 @@ describe("ShipPage", () => {
     await wrapper.get("[data-testid=stepper-plus]").trigger("click");
     await flushPromises();
     expect(wrapper.get("[data-testid=ship-error]").text()).toContain("nope");
+  });
+  it("puts every dialog's content on a card, so it never floats over the page", async () => {
+    const wrapper = await page();
+    await wrapper.get("[data-testid=cell-minerals-rare]").trigger("click");
+    expect(
+      wrapper.find(".q-card-stub [data-testid=stock-stepper]").exists(),
+    ).toBe(true);
+    await wrapper.get("[data-testid=tab-needed]").trigger("click");
+    await wrapper.get("[data-testid=project-complete-p-1]").trigger("click");
+    expect(
+      wrapper.find(".q-card-stub [data-testid=confirm-complete]").exists(),
+    ).toBe(true);
+  });
+
+  it("separates a project's code from its name in the shortfall list", async () => {
+    const named = ship();
+    named.projects[0].name = "Reactor";
+    getMock.mockResolvedValue(named);
+    const wrapper = mount(ShipPage);
+    await flushPromises();
+    await wrapper.get("[data-testid=tab-diff]").trigger("click");
+    expect(wrapper.get("[data-testid=shortfall-list]").text()).toContain(
+      "VB07 · Reactor:",
+    );
   });
 });

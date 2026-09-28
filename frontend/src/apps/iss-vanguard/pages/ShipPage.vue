@@ -70,9 +70,8 @@
           data-testid="shortfall-list"
         >
           <li v-for="s in store.shortfalls" :key="s.project.id">
-            <strong>{{ s.project.code }}</strong>
-            <span v-if="s.project.name"> {{ s.project.name }}</span
-            >:
+            <strong>{{ s.project.code }}</strong
+            >{{ s.project.name ? ` · ${s.project.name}` : "" }}:
             {{ describe(s.missing) }}
           </li>
         </ul>
@@ -84,76 +83,91 @@
       :model-value="stepper !== null"
       @update:model-value="stepper = null"
     >
-      <StockStepper
-        v-if="stepper && store.ship"
-        :resource="stepper.resource"
-        :tier="stepper.tier"
-        :count="store.ship.stock[stepper.resource][stepper.tier]"
-        :busy="store.loading"
-        @step="
-          (d) => stepper && store.adjustStock(stepper.resource, stepper.tier, d)
-        "
-        @close="stepper = null"
-      />
+      <q-card class="ship__dialog">
+        <StockStepper
+          v-if="stepper && store.ship"
+          :resource="stepper.resource"
+          :tier="stepper.tier"
+          :count="store.ship.stock[stepper.resource][stepper.tier]"
+          :busy="store.loading"
+          @step="
+            (d) =>
+              stepper && store.adjustStock(stepper.resource, stepper.tier, d)
+          "
+          @close="stepper = null"
+        />
+      </q-card>
     </q-dialog>
 
     <q-dialog
       :model-value="editing !== undefined"
       @update:model-value="editing = undefined"
     >
-      <ProjectEditor
-        v-if="editing !== undefined && store.ship"
-        :project="editing"
-        :projects="store.ship.projects"
-        :busy="store.loading"
-        @save="saveProject"
-        @cancel="editing = undefined"
-      />
+      <q-card class="ship__dialog">
+        <ProjectEditor
+          v-if="editing !== undefined && store.ship"
+          :project="editing"
+          :projects="store.ship.projects"
+          :busy="store.loading"
+          @save="saveProject"
+          @cancel="editing = undefined"
+        />
+      </q-card>
     </q-dialog>
 
     <q-dialog
       :model-value="completing !== null"
       @update:model-value="completing = null"
     >
-      <div
-        v-if="completing"
-        class="ship__confirm"
-        data-testid="confirm-complete"
-      >
-        <p>Deduct the cost of {{ completing.code }} from the ship?</p>
-        <p v-if="completingShort.length > 0" data-testid="confirm-shortfall">
-          Stock is short by {{ describe(completingShort) }} — those counts will
-          stop at 0.
-        </p>
-        <button type="button" @click="completing = null">Cancel</button>
-        <button
-          type="button"
-          data-testid="confirm-complete-yes"
-          @click="complete"
+      <q-card class="ship__dialog">
+        <div
+          v-if="completing"
+          class="ship__confirm"
+          data-testid="confirm-complete"
         >
-          Complete
-        </button>
-      </div>
+          <p>Deduct the cost of {{ completing.code }} from the ship?</p>
+          <p v-if="completingShort.length > 0" data-testid="confirm-shortfall">
+            Stock is short by {{ describe(completingShort) }} — those counts
+            will stop at 0.
+          </p>
+          <button type="button" @click="completing = null">Cancel</button>
+          <button
+            type="button"
+            data-testid="confirm-complete-yes"
+            @click="complete"
+          >
+            Complete
+          </button>
+        </div>
+      </q-card>
     </q-dialog>
 
     <q-dialog
       :model-value="deleting !== null"
       @update:model-value="deleting = null"
     >
-      <div v-if="deleting" class="ship__confirm">
-        <p>
-          Delete {{ deleting.code }}? Projects that require it will lose the
-          reminder.
-        </p>
-        <button type="button" @click="deleting = null">Cancel</button>
-        <button type="button" data-testid="confirm-delete-yes" @click="remove">
-          Delete
-        </button>
-      </div>
+      <q-card class="ship__dialog">
+        <div v-if="deleting" class="ship__confirm">
+          <p>
+            Delete {{ deleting.code }}? Projects that require it will lose the
+            reminder.
+          </p>
+          <button type="button" @click="deleting = null">Cancel</button>
+          <button
+            type="button"
+            data-testid="confirm-delete-yes"
+            @click="remove"
+          >
+            Delete
+          </button>
+        </div>
+      </q-card>
     </q-dialog>
 
     <q-dialog v-model="crewOpen">
-      <CrewSheet v-if="crewOpen" @close="crewOpen = false" @left="onLeft" />
+      <q-card class="ship__dialog">
+        <CrewSheet v-if="crewOpen" @close="crewOpen = false" @left="onLeft" />
+      </q-card>
     </q-dialog>
   </q-page>
 </template>
@@ -328,5 +342,8 @@ onBeforeUnmount(() => subscription?.close());
 .ship__confirm {
   padding: 16px;
   max-width: 360px;
+}
+.ship__dialog {
+  max-width: 92vw;
 }
 </style>
