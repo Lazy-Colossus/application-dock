@@ -2,7 +2,7 @@
   <q-page class="timer">
     <header class="timer__bar">
       <div class="timer__what">
-        <button class="timer__tea" data-testid="timer-tea" @click="picking = true">
+        <button class="timer__tea" data-testid="timer-tea" @click="open('tea')">
           <template v-if="timer.live?.tea">
             {{ timer.live.tea.name }}
             <small>change tea</small>
@@ -12,7 +12,7 @@
             <small>just a timer</small>
           </template>
         </button>
-        <button class="timer__tea timer__vessel" data-testid="timer-vessel" @click="pickingVessel = true">
+        <button class="timer__tea timer__vessel" data-testid="timer-vessel" @click="open('vessel')">
           <template v-if="timer.live?.teaware">
             in {{ timer.live.teaware.name
             }}<template v-if="timer.live.teaware.volume_ml"> · {{ timer.live.teaware.volume_ml }} ml</template>
@@ -27,7 +27,7 @@
           v-if="timer.live?.tea"
           class="timer__tea timer__vessel"
           data-testid="timer-leaf"
-          @click="editingLeaf = true"
+          @click="open('leaf')"
         >
           <template v-if="timer.live.leafGrams !== null">
             {{ timer.live.leafGrams }} g leaf
@@ -73,7 +73,7 @@
     </header>
 
     <p v-if="timer.notice" class="timer__notice" data-testid="timer-notice">{{ timer.notice }}</p>
-    <p v-if="timer.error && !finishing" class="timer__notice" data-testid="timer-error">
+    <p v-if="timer.error && sheet !== 'finish'" class="timer__notice" data-testid="timer-error">
       {{ timer.error }}
     </p>
 
@@ -128,8 +128,10 @@
       {{ timer.running ? "tap to stop · pour" : "tap to start" }}
     </button>
 
+    <div v-if="sheet" class="timer__scrim" data-testid="timer-scrim" @click="sheet = null"></div>
+
     <PickTeaSheet
-      v-if="picking"
+      v-if="sheet === 'tea'"
       :teas="cabinet.teas"
       :current-tea-id="timer.live?.tea?.id ?? null"
       :leaf-grams="timer.live?.leafGrams ?? null"
@@ -137,33 +139,33 @@
       @pick="onPick"
       @update-grams="timer.setLeafGrams($event)"
       @update-temp="timer.setWaterTemp($event)"
-      @close="picking = false"
+      @close="sheet = null"
     />
 
     <PickVesselSheet
-      v-if="pickingVessel"
+      v-if="sheet === 'vessel'"
       :items="teaware.items"
       :current-id="timer.live?.teaware?.id ?? null"
       @pick="onPickVessel"
-      @close="pickingVessel = false"
+      @close="sheet = null"
     />
 
     <LeafSheet
-      v-if="editingLeaf"
+      v-if="sheet === 'leaf'"
       :leaf-grams="timer.live?.leafGrams ?? null"
       @save="onSaveLeaf"
-      @cancel="editingLeaf = false"
+      @cancel="sheet = null"
     />
 
     <FinishSheet
-      v-if="finishing && timer.live?.tea"
+      v-if="sheet === 'finish' && timer.live?.tea"
       :tea-name="timer.live.tea.name"
       :grams-remaining="timer.live.tea.grams_remaining"
       :leaf-grams="timer.live.leafGrams"
       :saving="timer.loading"
       :error="timer.error"
       @save="onSave"
-      @cancel="finishing = false"
+      @cancel="sheet = null"
     />
   </q-page>
 </template>
@@ -194,10 +196,9 @@ const sessions = useTeaSessionsStore();
 const cabinet = useTeaCabinetStore();
 const teaware = useTeawareStore();
 
-const picking = ref(false);
-const pickingVessel = ref(false);
-const editingLeaf = ref(false);
-const finishing = ref(false);
+type Sheet = "tea" | "vessel" | "leaf" | "finish";
+
+const sheet = ref<Sheet | null>(null);
 const menu = ref(false);
 
 const steepStartedAt = computed(() => timer.live?.steepStartedAt ?? null);
@@ -209,6 +210,10 @@ const { unlock } = useTargetChime(
   computed(() => timer.chimeOn),
 );
 useWakeLock(computed(() => timer.live !== null));
+
+function open(name: Sheet): void {
+  if (sheet.value === null) sheet.value = name;
+}
 
 function teaName(teaId: string): string {
   return cabinet.teas.find((t) => t.id === teaId)?.name ?? "a tea";
@@ -228,12 +233,12 @@ async function onPick(tea: Tea): Promise<void> {
 }
 
 async function onPickVessel(item: Teaware | null): Promise<void> {
-  pickingVessel.value = false;
+  sheet.value = null;
   await timer.setVessel(item);
 }
 
 async function onSaveLeaf(grams: number | null): Promise<void> {
-  editingLeaf.value = false;
+  sheet.value = null;
   timer.setLeafGrams(grams);
   await timer.push();
 }
@@ -247,7 +252,7 @@ function onResume(session: TeaSession): void {
 
 function onFinishTap(): void {
   if (timer.live?.tea) {
-    finishing.value = true;
+    open("finish");
   } else {
     timer.end();
   }
@@ -257,7 +262,7 @@ async function onSave(payload: { rating: number | null; leafGrams: number | null
   timer.setLeafGrams(payload.leafGrams);
   const teaId = await timer.finish(payload.rating);
   if (teaId === null) return;
-  finishing.value = false;
+  sheet.value = null;
   await cabinet.fetchTeas();
   // Replace, not push: a pushed timer entry would let Back re-attach the
   // tea and start an empty new session.
@@ -468,6 +473,13 @@ onMounted(async () => {
     color: #574d43;
     cursor: default;
   }
+}
+// Above the band, below the sheets: tapping anywhere off a sheet dismisses it.
+.timer__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  background: rgba(0, 0, 0, 0.4);
 }
 // The whole thumb zone is the control: at the table there is no aiming.
 .timer__band {

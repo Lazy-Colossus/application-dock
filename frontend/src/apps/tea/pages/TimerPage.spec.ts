@@ -342,4 +342,22 @@ describe("TimerPage", () => {
     await flushPromises();
     expect(wrapper.find("[data-testid=timer-leaf]").exists()).toBe(false);
   });
+  it("opens one sheet at a time, behind a backdrop that closes it like Done", async () => {
+    routes();
+    routeQuery.value = { tea: "t-1" };
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+
+    await wrapper.get("[data-testid=timer-tea]").trigger("click");
+    await wrapper.get("[data-testid=timer-vessel]").trigger("click");
+    expect(wrapper.find("[data-testid=pick-sheet]").exists()).toBe(true);
+    expect(wrapper.find("[data-testid=vessel-sheet]").exists()).toBe(false);
+
+    await wrapper.get("[data-testid=timer-scrim]").trigger("click");
+    expect(wrapper.find("[data-testid=pick-sheet]").exists()).toBe(false);
+    expect(wrapper.find("[data-testid=timer-scrim]").exists()).toBe(false);
+
+    await wrapper.get("[data-testid=timer-vessel]").trigger("click");
+    expect(wrapper.find("[data-testid=vessel-sheet]").exists()).toBe(true);
+  });
 });
