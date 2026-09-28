@@ -9,13 +9,15 @@ This module is the only place tea exceptions become HTTP: `FileNotFoundError`
 -> 404, `ValueError` -> 422 also on a session whose vessel can't be brewed in,
 `NodeInUseError` and `SessionFinalisedError` -> 409, `CabinetGoneError` -> 410
 on every route, via `_TeaRoute`, `PermissionError` -> 403 on `/cabinet`
-membership refusals.
+membership refusals. `AutofillNotConfiguredError` / `LabelScanNotConfiguredError`
+-> 503 and their upstream errors -> 502.
 """
 
 from collections.abc import Callable, Coroutine
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, Response, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 from fastapi.routing import APIRoute
 
@@ -28,6 +30,7 @@ from app.schemas.tea import (
     CabinetView,
     CatalogueNode,
     CreateNodeRequest,
+    LabelScanSuggestion,
     TeaView,
     TeaWriteRequest,
 )
@@ -38,6 +41,7 @@ from app.services import tea_autofill_service as autofill
 from app.services import tea_cabinet_service as cabinets
 from app.services import tea_catalogue_service as catalogue
 from app.services import tea_curve_service as curves
+from app.services import tea_label_scan_service as label_scan
 from app.services import tea_service as service
 from app.services import tea_session_service as sessions
 from app.services import tea_teaware_service as teaware
@@ -194,6 +198,25 @@ def autofill_tea(
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except autofill.AutofillUpstreamError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.post("/scan-label", response_model=LabelScanSuggestion)
+async def scan_tea_label(
+    file: Annotated[UploadFile, File()],
+    current_user: str = Depends(get_current_user),
+) -> LabelScanSuggestion:
+    content = await file.read()
+    try:
+        # The SDK call is blocking; keep it off the event loop.
+        return await run_in_threadpool(
+            label_scan.scan, current_user, content, file.content_type or ""
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except label_scan.LabelScanNotConfiguredError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except label_scan.LabelScanUpstreamError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
