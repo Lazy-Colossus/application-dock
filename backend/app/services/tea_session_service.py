@@ -17,10 +17,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from app.repositories import tea_repo as repo
-from app.schemas.tea import TeaDoc
-from app.schemas.tea_session import TeaSession, TeaSessionWrite
+from app.schemas.tea import CatalogueNode, TeaDoc
+from app.schemas.tea_session import JournalEdit, JournalEntry, TeaSession, TeaSessionWrite
 from app.schemas.teaware import BREWING_TYPES
 from app.services import tea_cabinet_service as cabinets
+from app.services import tea_catalogue_service as catalogue
 from app.services import tea_service
 
 
@@ -213,3 +214,101 @@ def image_path(username: str, session_id: str) -> Path:
     if path is None:
         raise FileNotFoundError(f"No image for session {session_id!r}")
     return path
+
+
+_JOURNAL_ONLY_FIELDS = {"started_at", "tea_id", "away_tea_name", "away_class_id"}
+_TEA_FIELDS = {"tea_id", "away_tea_name", "away_class_id"}
+
+
+def _finished_position(doc: TeaDoc, session_id: str, username: str) -> int:
+    position = _own_session(doc, session_id, username)
+    if doc.sessions[position].status != "finalised":
+        raise ValueError("That session is still brewing — finish it on the timer first")
+    return position
+
+
+def _entry(doc: TeaDoc, session: TeaSession, index: dict[str, CatalogueNode]) -> JournalEntry:
+    tea = next((t for t in doc.teas if t.id == session.tea_id), None) if session.tea_id else None
+    if tea is not None:
+        name = tea.name
+        class_id = catalogue.resolve_class(index, tea.catalogue_node_id)
+        image = tea.image_url
+    else:
+        name = session.away_tea_name or "a removed tea"
+        class_id = session.away_class_id or "other"
+        image = None
+    return JournalEntry(
+        **session.model_dump(), tea_name=name, class_id=class_id, tea_image_url=image
+    )
+
+
+def _moment(iso: str) -> datetime:
+    """`started_at` as an aware moment; a string the phone wrote oddly sorts last, not 500s."""
+    try:
+        moment = datetime.fromisoformat(iso)
+    except ValueError:
+        return datetime.min.replace(tzinfo=UTC)
+    return moment if moment.tzinfo else moment.replace(tzinfo=UTC)
+
+
+def list_journal(username: str) -> list[JournalEntry]:
+    """Every finished session in the cabinet, any member's, newest sitting first."""
+    index = catalogue.node_index(catalogue.merged_nodes(username))
+    doc = cabinets.read_doc_for(username)
+    done = sorted(
+        (s for s in doc.sessions if s.status == "finalised"),
+        key=lambda s: _moment(s.started_at),
+        reverse=True,
+    )
+    return [_entry(doc, s, index) for s in done]
+
+
+def edit_journal(username: str, session_id: str, req: JournalEdit) -> JournalEntry:
+    """Apply a Journal edit to a finished session, moving grams only if the leaf changed."""
+    index = catalogue.node_index(catalogue.merged_nodes(username))
+    with repo.doc_transaction(cabinets.ensure(username)) as doc:
+        position = _finished_position(doc, session_id, username)
+        old = doc.sessions[position]
+        moved = req.model_fields_set & _JOURNAL_ONLY_FIELDS
+        if old.timed and moved:
+            raise ValueError("Only a journal-only entry can change its tea or date")
+
+        stamp = _now_iso()
+        update: dict[str, object] = {
+            "cha_xi": req.cha_xi,
+            "rating": req.rating,
+            "leaf_grams": req.leaf_grams,
+            "water_temp_c": req.water_temp_c,
+            "teaware_id": req.teaware_id,
+            "updated_at": stamp,
+        }
+        # An unchanged vessel keeps its recorded volume, even if the pot has since retired.
+        if req.teaware_id != old.teaware_id:
+            update["vessel_volume_ml"] = _vessel_volume(doc, req.teaware_id)
+        if "started_at" in moved and req.started_at:
+            update["started_at"] = req.started_at
+        if moved & _TEA_FIELDS:
+            update["tea_id"] = req.tea_id
+            update["away_tea_name"] = req.away_tea_name.strip()
+            update["away_class_id"] = req.away_class_id
+        new = TeaSession.model_validate({**old.model_dump(), **update})
+        if new.tea_id is not None:
+            _tea_position(doc, new.tea_id)
+
+        # Only a real change moves grams: a give-back-then-take of the same leaf could drift
+        # against the clamps.
+        if (new.tea_id, new.leaf_grams) != (old.tea_id, old.leaf_grams):
+            _adjust_grams(doc, old, +1, stamp)
+            _adjust_grams(doc, new, -1, stamp)
+        doc.sessions[position] = new
+        return _entry(doc, new, index)
+
+
+def delete_journal(username: str, session_id: str) -> None:
+    """Delete a finished sitting, giving its leaf back to its tea. Not the timer's discard."""
+    cabinet_id = cabinets.ensure(username)
+    with repo.doc_transaction(cabinet_id) as doc:
+        position = _finished_position(doc, session_id, username)
+        _adjust_grams(doc, doc.sessions[position], +1, _now_iso())
+        del doc.sessions[position]
+    repo.delete_image(cabinet_id, session_id)

@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 from app.repositories import tea_repo as repo
 from app.schemas.tea import TeaWriteRequest
-from app.schemas.tea_session import ChaXi, TeaSessionWrite
+from app.schemas.tea_session import ChaXi, JournalEdit, TeaSessionWrite
 from app.services import tea_curve_service as curves
 from app.services import tea_service
 from app.services import tea_session_service as sessions
@@ -212,3 +212,142 @@ def test_a_rated_journal_only_entry_never_becomes_the_brewing_curve() -> None:
     tea_id = _tea()
     sessions.upsert("alice", "s-1", _entry(tea_id=tea_id, rating=5))
     assert curves.curve_for("alice", tea_id).source != "best_session"
+
+
+def _finished(tea_id: str, session_id: str = "s-1", grams: float | None = 5) -> None:
+    sessions.upsert("alice", session_id, _write(tea_id=tea_id, leaf_grams=grams))
+    sessions.upsert(
+        "alice", session_id, _write(tea_id=tea_id, leaf_grams=grams, status="finalised")
+    )
+
+
+def _edit(**fields: object) -> JournalEdit:
+    return JournalEdit.model_validate({"leaf_grams": 5, **fields})
+
+
+def test_editing_only_the_notes_leaves_the_grams_exactly() -> None:
+    tea_id = _tea(48, purchased=50)
+    _finished(tea_id)
+    assert _grams(tea_id) == 43
+    sessions.edit_journal("alice", "s-1", _edit(cha_xi={"notes": "orchid, stone"}))
+    assert _grams(tea_id) == 43
+
+
+@pytest.mark.parametrize(("grams", "remaining"), [(7, 41), (3, 45), (None, 48)])
+def test_changing_the_leaf_moves_the_grams_by_the_difference(
+    grams: float | None, remaining: float
+) -> None:
+    tea_id = _tea(48, purchased=50)
+    _finished(tea_id)
+    sessions.edit_journal("alice", "s-1", _edit(leaf_grams=grams))
+    assert _grams(tea_id) == remaining
+
+
+def test_moving_a_journal_only_entry_to_another_tea_moves_its_grams() -> None:
+    first = _tea(40, name="Tieguanyin")
+    second = _tea(30, name="Rougui")
+    sessions.upsert("alice", "s-1", _entry(tea_id=first, leaf_grams=5))
+    sessions.edit_journal("alice", "s-1", _edit(tea_id=second))
+    assert _grams(first) == 40
+    assert _grams(second) == 25
+
+
+def test_an_edit_saves_cha_xi_rating_and_date() -> None:
+    tea_id = _tea()
+    sessions.upsert("alice", "s-1", _entry(tea_id=tea_id))
+    entry = sessions.edit_journal(
+        "alice",
+        "s-1",
+        _edit(
+            leaf_grams=None,
+            rating=4,
+            started_at="2026-09-18T12:00:00+00:00",
+            tea_id=tea_id,
+            cha_xi={"moods": ["cosy"], "guests": "Eva"},
+        ),
+    )
+    assert entry.rating == 4
+    assert entry.started_at == "2026-09-18T12:00:00+00:00"
+    assert entry.cha_xi is not None and entry.cha_xi.moods == ["cosy"]
+    assert entry.tea_name == "Tieguanyin"
+
+
+def test_a_timed_session_cannot_change_its_tea_or_date() -> None:
+    tea_id = _tea()
+    _finished(tea_id)
+    with pytest.raises(ValueError):
+        sessions.edit_journal("alice", "s-1", _edit(started_at="2026-09-01T12:00:00+00:00"))
+
+
+def test_a_live_session_is_not_edited_through_the_journal() -> None:
+    tea_id = _tea()
+    sessions.upsert("alice", "s-1", _write(tea_id=tea_id))
+    with pytest.raises(ValueError):
+        sessions.edit_journal("alice", "s-1", _edit())
+
+
+def test_only_the_brewer_edits_or_deletes_a_sitting() -> None:
+    tea_id = _tea()
+    share("alice", "bob")
+    _finished(tea_id)
+    with pytest.raises(PermissionError):
+        sessions.edit_journal("bob", "s-1", _edit())
+    with pytest.raises(PermissionError):
+        sessions.delete_journal("bob", "s-1")
+
+
+def test_deleting_a_sitting_gives_its_grams_back_and_removes_its_photo() -> None:
+    tea_id = _tea(40)
+    _finished(tea_id)
+    sessions.save_image("alice", "s-1", JPEG, "image/jpeg")
+    sessions.delete_journal("alice", "s-1")
+    assert _grams(tea_id) == 40
+    assert repo.find_image(cabinet_of("alice"), "s-1") is None
+    assert sessions.list_journal("alice") == []
+
+
+def test_a_give_back_never_lifts_a_tea_above_what_was_bought() -> None:
+    tea_id = _tea(10, purchased=10)
+    sessions.upsert("alice", "s-1", _entry(tea_id=tea_id, leaf_grams=20))
+    assert _grams(tea_id) == 0
+    sessions.delete_journal("alice", "s-1")
+    assert _grams(tea_id) == 10
+
+
+def test_a_live_session_is_not_deleted_through_the_journal() -> None:
+    tea_id = _tea()
+    sessions.upsert("alice", "s-1", _write(tea_id=tea_id))
+    with pytest.raises(ValueError):
+        sessions.delete_journal("alice", "s-1")
+
+
+def test_the_journal_lists_newest_first_whatever_shape_the_dates_take() -> None:
+    tea_id = _tea()
+    for session_id, started in [
+        ("s-a", "2026-09-20"),
+        ("s-b", "2026-09-21T08:00:00Z"),
+        ("s-c", "2026-09-19T10:00:00+00:00"),
+        ("s-d", "not a date"),
+    ]:
+        sessions.upsert("alice", session_id, _entry(tea_id=tea_id, started_at=started))
+    assert [e.id for e in sessions.list_journal("alice")] == ["s-b", "s-a", "s-c", "s-d"]
+
+
+def test_the_journal_resolves_each_tea_and_includes_every_member() -> None:
+    tea_id = _tea()
+    share("alice", "bob")
+    sessions.upsert("bob", "s-1", _entry(tea_id=tea_id))
+    sessions.upsert("alice", "s-2", _entry(tea_id=None, away_tea_name="Teahouse Dancong"))
+    sessions.upsert(
+        "alice", "s-3", _entry(tea_id=None, away_tea_name="Dian Hong", away_class_id="red")
+    )
+    sessions.upsert("alice", "s-4", _write(tea_id=tea_id))
+    by_id = {e.id: e for e in sessions.list_journal("alice")}
+    assert set(by_id) == {"s-1", "s-2", "s-3"}
+    assert (by_id["s-1"].tea_name, by_id["s-1"].class_id, by_id["s-1"].brewed_by) == (
+        "Tieguanyin",
+        "oolong",
+        "bob",
+    )
+    assert (by_id["s-2"].tea_name, by_id["s-2"].class_id) == ("Teahouse Dancong", "other")
+    assert by_id["s-3"].class_id == "red"
