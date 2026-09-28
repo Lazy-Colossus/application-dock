@@ -355,5 +355,47 @@
     "reading": "Kāng Zhuān",
     "summary": "A dark tea brick from Ya'an, Sichuan, made from mature leaf and stem and compressed for the historic Tea-Horse Road trade to Kham and central Tibet, where it was traditionally boiled with yak butter and salt into butter tea. Ya'an supplied this border-sale tea (bianxiao cha) to Tibet for over two centuries, moved by porters and pack animals along the Sichuan-Tibet route through Kangding. Its name references Kangding, the route's key trading post, and its coarse, fully post-fermented leaf yields a mellow, thick liquor built to stand up to simmering.",
     "brewing": { "leaf_grams": 7, "water_temp_c": 100, "steep_seconds": [15, 20, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "green.jasmine",
+    "country": "China",
+    "reading": "Mòlìhuā chá",
+    "summary": "China's best-known scented tea: a green tea base, most often a baked green, layered with fresh Jasminum sambac blossoms picked in the day and mixed with the leaf in the evening as the buds open, so the tea absorbs their perfume overnight. The spent flowers are sifted out and the tea re-dried, and fine grades repeat the cycle several times, up to six or seven rounds, while cheaper grades may keep dried petals for show. Fuzhou in Fujian is the historic centre, and its jasmine tea culture was named a Globally Important Agricultural Heritage System by the FAO in 2014; Hengxian (now Hengzhou) in Guangxi has since become the largest producer, supplying the bulk of China's jasmine flowers and tea. Popular shapes include hand-rolled Dragon Pearls (Mòlì Lóngzhū), made from spring buds and leaves rolled into small balls before scenting. The cup is pale and sweet, carrying the flower's heady aroma over a soft green-tea body.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 85, "steep_seconds": [30, 45, 60] }
+  },
+  {
+    "catalogue_node_id": "green.duyun-maojian",
+    "country": "China",
+    "reading": "Dūyún Máojiān",
+    "summary": "A green tea from the hills around Duyun in southern Guizhou, historically a Ming and Qing tribute tea known as \"fishhook tea\" for its small, tightly curled leaves; by tradition Mao Zedong gave it its present name in 1956. Tender spring buds and first leaves are pan-fired and rolled into very fine, downy, hooked strands. It won a gold medal at the 1915 Panama-Pacific Exposition, was named among China's Ten Famous Teas in 1982, and its processing techniques were inscribed on UNESCO's intangible cultural heritage list in 2022 as part of China's traditional tea-processing element. The dry leaf and liquor carry a characteristic yellowish tint, and the cup is fresh, vegetal and lightly fruity.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [30, 45, 60] }
+  },
+  {
+    "catalogue_node_id": "green.chun-mee",
+    "country": "China",
+    "reading": "Zhēnméi",
+    "summary": "\"Precious Eyebrows\", the leading grade of China's eyebrow-tea (méichá) family of export greens, named for leaves pan-fired and rolled into long, slender, curved strands. Associated historically with the Wuyuan area of Jiangxi and the neighbouring green-tea districts of Anhui and Zhejiang, it has been a staple of China's green-tea trade since the 19th century and is sold internationally by numbered grades such as 41022 and 9371. It is a major export, especially to Africa, where it is widely used for sweetened mint and ataya-style tea. The dry leaf often looks dusty-grey, and the cup is brisk and slightly tart, often described as plum-like, with less sweetness than finer named greens.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 85, "steep_seconds": [30, 45, 60] }
+  },
+  {
+    "catalogue_node_id": "green.kaihua-longding",
+    "country": "China",
+    "reading": "Kāihuà Lóngdǐng",
+    "summary": "A green tea from mountainous, heavily forested Kaihua County in western Zhejiang, near the borders of Anhui and Jiangxi. It was first created in 1959 at Longding Pond on Dalong Mountain in Qixi, lapsed, and was revived in 1979, taking its name from the county and that local place name. Early-spring buds with one leaf are processed into tight, straight, downy strands, likened locally to \"a green dragon coiling in white clouds\". It was named a national famous tea in 1985 and one of Zhejiang's ten famous teas in 2004. The cup is bright and fresh, with a clean, lightly floral aroma.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [30, 45, 60] }
+  },
+  {
+    "catalogue_node_id": "green.laoshan",
+    "country": "China",
+    "reading": "Láoshān Lǜchá",
+    "summary": "A green tea from Laoshan, the coastal mountain district of Qingdao in Shandong, and one of China's northernmost tea regions. Tea was introduced there from the south under a 1950s programme to establish tea in northern China, with plantings around Laoshan's Taiqing Palace taking hold from 1959. The cold winters and slow growth yield thick leaves, which are pan-fired and rolled into curled strands. The cup is known for a savoury, bean- or pea-like aroma, a full, sweet body and good resistance to repeated steeping.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 85, "steep_seconds": [30, 45, 60] }
+  },
+  {
+    "catalogue_node_id": "yellow.mogan-huangya",
+    "country": "China",
+    "reading": "Mògān Huángyá",
+    "summary": "A yellow tea from Moganshan in Deqing County, northern Zhejiang, a mountain with a tea-growing history reaching back to at least the Song dynasty; the modern style was recognised as a Zhejiang provincial famous tea in the 1980s. Small early-spring buds and first leaves are fixed and lightly rolled like a green tea, then undergo the yellow-tea \"sealed yellowing\" (mēnhuáng) step, in which the damp leaf is wrapped and kept warm so that it yellows through gentle non-enzymatic oxidation before final drying. The result is a softer, rounder tea than the green teas of the region, with a yellow-green liquor, a sweet, corn- or chestnut-like character and little grassiness.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [30, 45, 60] }
   }
 ]
