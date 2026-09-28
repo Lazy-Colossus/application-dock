@@ -26,6 +26,11 @@ function session(id: string, overrides: Partial<TeaSession> = {}): TeaSession {
     rating: null,
     curve_source: "almanac",
     curve_source_label: "almanac: Tieguanyin",
+    away_tea_name: "",
+    away_class_id: null,
+    timed: true,
+    cha_xi: null,
+    image_url: null,
     infusions: [],
     ...overrides,
   };

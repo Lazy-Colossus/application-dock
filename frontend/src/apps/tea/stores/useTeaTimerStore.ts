@@ -183,6 +183,10 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
       curve_source_label: session.curve.source_label,
       infusions: session.infusions,
       teaware_id: session.teaware?.id ?? null,
+      away_tea_name: "",
+      away_class_id: null,
+      timed: true,
+      cha_xi: null,
     };
   }
 

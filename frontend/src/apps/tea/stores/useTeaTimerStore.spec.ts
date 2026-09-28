@@ -522,6 +522,11 @@ describe("resume", () => {
       rating: null,
       curve_source: "almanac",
       curve_source_label: "almanac: Tieguanyin",
+      away_tea_name: "",
+      away_class_id: null,
+      timed: true,
+      cha_xi: null,
+      image_url: null,
       infusions: [{ number: 1, target_seconds: 20, actual_seconds: 22 }],
     };
     const store = useTeaTimerStore();
@@ -548,6 +553,11 @@ describe("resume", () => {
       rating: null,
       curve_source: "almanac",
       curve_source_label: "almanac: Tieguanyin",
+      away_tea_name: "",
+      away_class_id: null,
+      timed: true,
+      cha_xi: null,
+      image_url: null,
       infusions: [{ number: 1, target_seconds: 20, actual_seconds: 22 }],
     };
     const store = useTeaTimerStore();

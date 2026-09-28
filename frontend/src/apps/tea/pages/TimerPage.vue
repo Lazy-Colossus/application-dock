@@ -215,7 +215,7 @@ function open(name: Sheet): void {
   if (sheet.value === null) sheet.value = name;
 }
 
-function teaName(teaId: string): string {
+function teaName(teaId: string | null): string {
   return cabinet.teas.find((t) => t.id === teaId)?.name ?? "a tea";
 }
 

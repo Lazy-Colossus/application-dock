@@ -116,8 +116,27 @@ export interface Infusion {
   actual_seconds: number | null;
 }
 
+export type Mood =
+  | "calm"
+  | "bright"
+  | "contemplative"
+  | "cosy"
+  | "social"
+  | "focused"
+  | "tired"
+  | "restless";
+
+export interface ChaXi {
+  moods: Mood[];
+  guests: string;
+  notes: string;
+}
+
 export interface TeaSessionWrite {
-  tea_id: string;
+  // null only for a journal-only entry of a tea not in the cabinet.
+  tea_id: string | null;
+  away_tea_name: string;
+  away_class_id: TeaClass | null;
   status: SessionStatus;
   started_at: string;
   leaf_grams: number | null;
@@ -127,6 +146,8 @@ export interface TeaSessionWrite {
   curve_source_label: string;
   infusions: Infusion[];
   teaware_id: string | null;
+  timed: boolean;
+  cha_xi: ChaXi | null;
 }
 
 export interface TeaSession extends TeaSessionWrite {
@@ -135,6 +156,27 @@ export interface TeaSession extends TeaSessionWrite {
   vessel_volume_ml: number | null;
   updated_at: string;
   finished_at: string | null;
+  image_url: string | null;
+}
+
+/** A finished session with its tea resolved, as `GET /tea/journal` returns it. */
+export interface JournalEntry extends TeaSession {
+  tea_name: string;
+  class_id: TeaClass;
+  tea_image_url: string | null;
+}
+
+/** `PUT /tea/sessions/{id}/journal`. The optional fields are for journal-only entries. */
+export interface JournalEdit {
+  cha_xi: ChaXi | null;
+  rating: number | null;
+  leaf_grams: number | null;
+  water_temp_c: number | null;
+  teaware_id: string | null;
+  started_at?: string;
+  tea_id?: string | null;
+  away_tea_name?: string;
+  away_class_id?: TeaClass | null;
 }
 
 export interface BrewingCurve {

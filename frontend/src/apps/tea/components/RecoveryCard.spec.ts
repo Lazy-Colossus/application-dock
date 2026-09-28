@@ -18,6 +18,11 @@ const SESSION: TeaSession = {
   rating: null,
   curve_source: "almanac",
   curve_source_label: "almanac: Tieguanyin",
+  away_tea_name: "",
+  away_class_id: null,
+  timed: true,
+  cha_xi: null,
+  image_url: null,
   infusions: [
     { number: 1, target_seconds: 20, actual_seconds: 21 },
     { number: 2, target_seconds: 25, actual_seconds: 26 },

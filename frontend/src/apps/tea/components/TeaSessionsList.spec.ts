@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mount } from "@vue/test-utils";
+import { mount, RouterLinkStub } from "@vue/test-utils";
 import TeaSessionsList from "./TeaSessionsList.vue";
 import type { TeaSession, Teaware } from "../types";
 
@@ -19,6 +19,11 @@ function session(id: string, overrides: Partial<TeaSession> = {}): TeaSession {
     rating: 4,
     curve_source: "almanac",
     curve_source_label: "almanac: Tieguanyin",
+    away_tea_name: "",
+    away_class_id: null,
+    timed: true,
+    cha_xi: null,
+    image_url: null,
     infusions: [
       { number: 1, target_seconds: 20, actual_seconds: 21 },
       { number: 2, target_seconds: 25, actual_seconds: 26 },
@@ -28,6 +33,26 @@ function session(id: string, overrides: Partial<TeaSession> = {}): TeaSession {
 }
 
 describe("TeaSessionsList", () => {
+  it("opens a session's Journal entry from its row", () => {
+    const wrapper = mount(TeaSessionsList, {
+      props: { sessions: [session("s-1")] },
+      global: { stubs: { RouterLink: RouterLinkStub } },
+    });
+    expect(wrapper.findComponent(RouterLinkStub).props("to")).toEqual({
+      name: "tea-journal-entry",
+      params: { id: "s-1" },
+    });
+  });
+
+  it("names an away tea by the name it was given", () => {
+    const away = session("s-2", { tea_id: null, away_tea_name: "Teahouse Dancong", timed: false });
+    const wrapper = mount(TeaSessionsList, {
+      props: { sessions: [away], teaNames: { "t-1": "Tieguanyin" } },
+      global: { stubs: { RouterLink: RouterLinkStub } },
+    });
+    expect(wrapper.get(`[data-testid=sessions-tea-${away.id}]`).text()).toBe("Teahouse Dancong");
+  });
+
   it("shows stars, infusion count and leaf per session in the given order", () => {
     const wrapper = mount(TeaSessionsList, {
       props: { sessions: [session("s-2"), session("s-1", { rating: null, leaf_grams: null })] },

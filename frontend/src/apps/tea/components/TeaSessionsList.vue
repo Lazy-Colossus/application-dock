@@ -9,26 +9,31 @@
       class="sessions__row"
       :data-testid="`sessions-row-${session.id}`"
     >
-      <span v-if="teaNames" class="sessions__tea" :data-testid="`sessions-tea-${session.id}`">{{
-        teaNames[session.tea_id] ?? "a removed tea"
-      }}</span>
-      <span class="sessions__date">{{ dateOf(session) }}</span>
-      <span class="sessions__stars">{{ starsOf(session) }}</span>
-      <span
-        v-if="shared && session.brewed_by !== me"
-        class="sessions__brewer"
-        :data-testid="`sessions-brewer-${session.id}`"
-        >· {{ session.brewed_by }}</span
+      <router-link
+        class="sessions__link"
+        :to="{ name: 'tea-journal-entry', params: { id: session.id } }"
       >
-      <span class="sessions__meta">
-        {{ session.infusions.length }} {{ session.infusions.length === 1 ? "infusion" : "infusions" }}
-        <template v-if="session.leaf_grams !== null"> · {{ session.leaf_grams }} g</template>
+        <span v-if="teaNames" class="sessions__tea" :data-testid="`sessions-tea-${session.id}`">{{
+          teaOf(session, teaNames)
+        }}</span>
+        <span class="sessions__date">{{ dateOf(session) }}</span>
+        <span class="sessions__stars">{{ starsOf(session) }}</span>
         <span
-          v-if="vessels && vesselLabel(session, vessels)"
-          :data-testid="`sessions-vessel-${session.id}`"
-          >· {{ vesselLabel(session, vessels) }}</span
+          v-if="shared && session.brewed_by !== me"
+          class="sessions__brewer"
+          :data-testid="`sessions-brewer-${session.id}`"
+          >· {{ session.brewed_by }}</span
         >
-      </span>
+        <span class="sessions__meta">
+          {{ session.infusions.length }} {{ session.infusions.length === 1 ? "infusion" : "infusions" }}
+          <template v-if="session.leaf_grams !== null"> · {{ session.leaf_grams }} g</template>
+          <span
+            v-if="vessels && vesselLabel(session, vessels)"
+            :data-testid="`sessions-vessel-${session.id}`"
+            >· {{ vesselLabel(session, vessels) }}</span
+          >
+        </span>
+      </router-link>
     </li>
   </ul>
 </template>
@@ -53,6 +58,11 @@ function dateOf(session: TeaSession): string {
   });
 }
 
+function teaOf(session: TeaSession, names: Record<string, string>): string {
+  if (session.tea_id === null) return session.away_tea_name;
+  return names[session.tea_id] ?? "a removed tea";
+}
+
 function starsOf(session: TeaSession): string {
   if (session.rating === null) return "unrated";
   return "★".repeat(session.rating) + "☆".repeat(5 - session.rating);
@@ -60,6 +70,11 @@ function starsOf(session: TeaSession): string {
 </script>
 
 <style scoped lang="scss">
+.sessions__link {
+  display: contents;
+  color: inherit;
+  text-decoration: none;
+}
 .sessions {
   list-style: none;
   margin: 0;
