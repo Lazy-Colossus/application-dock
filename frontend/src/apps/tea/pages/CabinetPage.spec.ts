@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
+import { componentAt } from "@/test-utils";
 
 const { getMock, push } = vi.hoisted(() => ({
   getMock: vi.fn(),
@@ -18,7 +19,10 @@ import { useTeaCabinetFiltersStore } from "../stores/useTeaCabinetFiltersStore";
 import type { Tea, CatalogueNode } from "../types";
 
 const STUBS = {
-  "q-page": { template: "<div><slot /></div>" },
+  "q-page": {
+    template: '<div class="q-page-stub"><slot /></div>',
+    props: ["styleFn"],
+  },
 };
 
 function tea(id: string, overrides: Partial<Tea> = {}): Tea {
@@ -104,7 +108,10 @@ describe("CabinetPage", () => {
   });
 
   it("searches the shelf by tea name, without counting it as a filter", async () => {
-    mockApi([tea("a", { name: "Da Hong Pao" }), tea("b", { name: "Longjing" })]);
+    mockApi([
+      tea("a", { name: "Da Hong Pao" }),
+      tea("b", { name: "Longjing" }),
+    ]);
     const wrapper = render();
     await flushPromises();
 
@@ -113,7 +120,23 @@ describe("CabinetPage", () => {
     const cards = wrapper.findAll('[data-testid="card"]');
     expect(cards).toHaveLength(1);
     expect(cards[0].text()).toContain("Da Hong Pao");
-    expect(wrapper.get('[data-testid="cabinet-filters"]').text()).toBe("Filters");
+    expect(wrapper.get('[data-testid="cabinet-filters"]').text()).toBe(
+      "Filters",
+    );
+  });
+
+  // The leaves follow the shelf's own scroll, which only happens when the
+  // page has a definite height; a min-height lets the document scroll instead.
+  it("gives the page a definite height so the shelf scrolls itself", async () => {
+    mockApi([tea("a")]);
+    const wrapper = render();
+    await flushPromises();
+
+    const styleFn = componentAt(wrapper, ".q-page-stub").props("styleFn") as (
+      offset: number,
+    ) => Record<string, string>;
+    expect(styleFn(50)).toEqual({ height: "calc(100vh - 50px)" });
+    expect(styleFn(0)).toEqual({ height: "100vh" });
   });
 
   it("invites you to add the first tea when the cabinet is empty", async () => {
@@ -226,9 +249,9 @@ describe("CabinetPage", () => {
       expect(wrapper.find('[data-testid="cabinet-empty"]').exists()).toBe(
         false,
       );
-      expect(
-        wrapper.get('[data-testid="cabinet-clear-filters"]').text(),
-      ).toBe("Clear search and filters");
+      expect(wrapper.get('[data-testid="cabinet-clear-filters"]').text()).toBe(
+        "Clear search and filters",
+      );
       await wrapper
         .get('[data-testid="cabinet-clear-filters"]')
         .trigger("click");
@@ -248,7 +271,7 @@ describe("CabinetPage", () => {
             tea("b"),
           ]);
         if (path === "/tea/catalogue") return Promise.resolve([NODE, wuyi]);
-            if (path === "/tea/almanac")
+        if (path === "/tea/almanac")
           return Promise.resolve([
             { catalogue_node_id: "oolong.wuyi", country: "China" },
           ]);

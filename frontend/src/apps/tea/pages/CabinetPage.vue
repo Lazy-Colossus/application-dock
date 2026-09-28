@@ -1,5 +1,5 @@
 <template>
-  <q-page class="cabinet">
+  <q-page class="cabinet" :style-fn="fillViewport">
     <div ref="scrollEl" class="cabinet__scroll">
       <header class="cabinet__header">
         <input
@@ -161,6 +161,12 @@ function setSectionEl(el: HTMLElement | null, index: number): void {
   if (el) sectionEls.value[index] = el;
 }
 
+// A definite height, not Quasar's default min-height: only then does the
+// shelf scroll inside .cabinet__scroll, which is what the leaves listen to.
+function fillViewport(offset: number): Record<string, string> {
+  return { height: offset ? `calc(100vh - ${offset}px)` : "100vh" };
+}
+
 function nameZhFor(tea: Tea): string {
   const chain = pathOf(catalogue.nodes, tea.catalogue_node_id);
   return chain.length ? chain[chain.length - 1].name_zh : "";
@@ -185,7 +191,6 @@ onMounted(() => {
 .cabinet {
   background: #17120e;
   position: relative;
-  min-height: 100%;
 }
 .cabinet__scroll {
   height: 100%;
