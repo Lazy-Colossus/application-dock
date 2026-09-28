@@ -18,10 +18,10 @@ from typing import Literal
 from pydantic import BaseModel, Field, PositiveInt
 
 from app.schemas.almanac import BrewingParameters
+from app.schemas.tea_class import TeaClass
 from app.schemas.tea_session import TeaSession
 from app.schemas.teaware import Teaware
 
-TeaClass = Literal["green", "yellow", "white", "oolong", "red", "dark", "other"]
 TeaForm = Literal["loose", "cake", "brick", "tuo", "ball", "bag", "sample", "other"]
 HarvestSeason = Literal["spring", "summer", "autumn", "winter"]
 NodeSource = Literal["seed", "user"]
@@ -97,7 +97,7 @@ class TeaView(Tea):
 
 
 class TeaDoc(BaseModel):
-    schema_version: int = 4
+    schema_version: int = 5
     # Empty only on the implicit cabinet of a user who has not written anything yet.
     id: str = ""
     owner: str = ""

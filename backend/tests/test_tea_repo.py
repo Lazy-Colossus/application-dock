@@ -58,7 +58,7 @@ def test_new_cabinet_writes_an_empty_current_doc_owned_by_the_user(tmp_path: Pat
     cabinet_id = repo.new_cabinet("alice")
     assert cabinet_id.startswith("c_")
     doc = repo.read_doc(cabinet_id)
-    assert (doc.schema_version, doc.id, doc.owner) == (4, cabinet_id, "alice")
+    assert (doc.schema_version, doc.id, doc.owner) == (5, cabinet_id, "alice")
     assert doc.teas == [] and doc.sessions == [] and doc.catalogue_nodes == []
     assert doc.teaware == []
     assert (tmp_path / "tea" / "cabinets" / f"{cabinet_id}.json").is_file()
@@ -161,7 +161,7 @@ def test_delete_cabinet_removes_the_doc_and_its_photos(tmp_path: Path) -> None:
 def test_migrate_v1_goes_all_the_way_to_v4() -> None:
     raw: dict[str, object] = {"schema_version": 1, "teas": [], "catalogue_nodes": []}
     upgraded = repo.migrate(raw, cabinet_id="c_" + "1" * 32, owner="alice")
-    assert upgraded["schema_version"] == 4
+    assert upgraded["schema_version"] == 5
     assert upgraded["sessions"] == []
     assert upgraded["teaware"] == []
     assert (upgraded["id"], upgraded["owner"]) == ("c_" + "1" * 32, "alice")
@@ -245,7 +245,7 @@ def test_adopt_legacy_recovers_from_a_crash_between_cabinet_write_and_image_move
 def test_migrate_v3_adds_an_empty_teaware_list() -> None:
     raw: dict[str, object] = {"schema_version": 3, "id": "c_" + "1" * 32, "owner": "alice"}
     upgraded = repo.migrate(raw)
-    assert upgraded["schema_version"] == 4
+    assert upgraded["schema_version"] == 5
     assert upgraded["teaware"] == []
 
 
