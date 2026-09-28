@@ -160,6 +160,8 @@
   { "id": "red.sri-lankan.dimbula", "parent_id": "red.sri-lankan", "name": "Dimbula", "name_zh": "", "source": "seed", "default_origin": "Dimbula, Central Province, Sri Lanka" },
   { "id": "red.sri-lankan.kandy", "parent_id": "red.sri-lankan", "name": "Kandy", "name_zh": "", "source": "seed", "default_origin": "Kandy district, Central Province, Sri Lanka" },
   { "id": "red.sri-lankan.ruhuna", "parent_id": "red.sri-lankan", "name": "Ruhuna", "name_zh": "", "source": "seed", "default_origin": "Ruhuna (southern lowlands), Sri Lanka" },
+  { "id": "red.sri-lankan.uda-pussellawa", "parent_id": "red.sri-lankan", "name": "Uda Pussellawa", "name_zh": "", "source": "seed", "default_origin": "Uda Pussellawa, Central and Uva Provinces, Sri Lanka" },
+  { "id": "red.sri-lankan.sabaragamuwa", "parent_id": "red.sri-lankan", "name": "Sabaragamuwa", "name_zh": "", "source": "seed", "default_origin": "Ratnapura and Kegalle districts, Sabaragamuwa Province, Sri Lanka" },
   { "id": "red.nepali", "parent_id": "red", "name": "Nepali", "name_zh": "", "source": "seed", "default_origin": "Nepal" },
   { "id": "red.nepali.ilam", "parent_id": "red.nepali", "name": "Nepal Orthodox Black", "name_zh": "", "source": "seed", "default_origin": "Ilam, Dhankuta, Panchthar and Terhathum districts, eastern Nepal" },
   { "id": "red.balhyocha", "parent_id": "red", "name": "Balhyocha", "name_zh": "醱酵茶", "source": "seed", "default_origin": "Hadong, South Korea" },

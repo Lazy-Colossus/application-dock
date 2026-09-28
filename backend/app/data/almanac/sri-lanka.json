@@ -47,5 +47,19 @@
     "reading": "",
     "summary": "Ceylon Silver Tips is Sri Lanka's white tea, hand-plucked before sunrise from high-elevation bushes around Nuwara Eliya and Adam's Peak — only the unopened silvery bud is taken, hand-rolled to a slight curve, and sun-withered and dried without the machine processing used for the island's black tea. Yields are extremely low, roughly five kilograms of fresh buds to one kilogram of finished tea, making it Sri Lanka's most expensive tea by weight. The cup is very light and pale gold, with delicate pine and honey notes, and is traditionally drunk plain, without milk or sweetener.",
     "brewing": { "leaf_grams": 2.5, "water_temp_c": 75, "steep_seconds": [120, 180] }
+  },
+  {
+    "catalogue_node_id": "red.sri-lankan.uda-pussellawa",
+    "country": "Sri Lanka",
+    "reading": "",
+    "summary": "One of the seven official agro-climatic tea regions of Sri Lanka, a small, thinly populated district devoted almost entirely to tea on the eastern slopes of the central hills, between Nuwara Eliya to the west and Uva to the east, and including Maturata, Ragala and Halgranoya. Its estates lie at about 950–1,600 meters and are classed as high-grown. Because it faces east, it gets two quality seasons: the main one in the drier weeks of the northeast monsoon (roughly November to January) and a second from the southwest monsoon's dry winds (June to September). The orthodox black tea is darker and stronger than Nuwara Eliya's, with a pinkish tint in the cup and a brisk, tangy character, with more floral notes in the cold year-end season.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 95, "steep_seconds": [180, 210] }
+  },
+  {
+    "catalogue_node_id": "red.sri-lankan.sabaragamuwa",
+    "country": "Sri Lanka",
+    "reading": "",
+    "summary": "The largest of Sri Lanka's seven official tea regions, covering the western and southwestern slopes of the central hills around Ratnapura, between the Sinharaja rainforest to the south and the Adam's Peak wilderness to the north. It is classed as low-grown, with estates from near sea level to about 600 meters, and its heat and some of the heaviest rainfall in the plantation districts make the bushes grow fast and yield long leaves. The orthodox black tea is close to neighboring Ruhuna's: black leaf and a dark yellow-brown to deep red liquor with a hint of sweet caramel, soft and mellow rather than sharp. Sabaragamuwa became much more important in the late 20th century as Middle Eastern and former Soviet markets, which favor these full, dark low-grown teas, grew.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 100, "steep_seconds": [180, 240] }
   }
 ]
