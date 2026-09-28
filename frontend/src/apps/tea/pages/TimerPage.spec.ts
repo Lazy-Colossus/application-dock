@@ -319,4 +319,27 @@ describe("TimerPage", () => {
     expect(wrapper.get("[data-testid=timer-vessel]").text()).toContain("in Zhuni · 110 ml");
     expect(wrapper.find("[data-testid=vessel-sheet]").exists()).toBe(false);
   });
+  it("edits the leaf grams for this brew and syncs them", async () => {
+    routes();
+    routeQuery.value = { tea: "t-1" };
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    expect(wrapper.get("[data-testid=timer-leaf]").text()).toContain("6 g leaf");
+
+    await wrapper.get("[data-testid=timer-leaf]").trigger("click");
+    await wrapper.get("[data-testid=leaf-grams]").setValue("7.5");
+    await wrapper.get("[data-testid=leaf-save]").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.get("[data-testid=timer-leaf]").text()).toContain("7.5 g leaf");
+    expect(wrapper.find("[data-testid=leaf-sheet]").exists()).toBe(false);
+    expect(putMock.mock.calls.at(-1)![1]).toMatchObject({ leaf_grams: 7.5 });
+  });
+
+  it("hides the leaf control until a tea is attached", async () => {
+    routes();
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    expect(wrapper.find("[data-testid=timer-leaf]").exists()).toBe(false);
+  });
 });

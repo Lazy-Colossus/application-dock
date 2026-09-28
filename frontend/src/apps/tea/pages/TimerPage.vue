@@ -23,6 +23,21 @@
             <small>what you're brewing in</small>
           </template>
         </button>
+        <button
+          v-if="timer.live?.tea"
+          class="timer__tea timer__vessel"
+          data-testid="timer-leaf"
+          @click="editingLeaf = true"
+        >
+          <template v-if="timer.live.leafGrams !== null">
+            {{ timer.live.leafGrams }} g leaf
+            <small>change grams</small>
+          </template>
+          <template v-else>
+            + leaf
+            <small>grams used in this brew</small>
+          </template>
+        </button>
       </div>
       <span
         v-if="timer.unsynced"
@@ -133,6 +148,13 @@
       @close="pickingVessel = false"
     />
 
+    <LeafSheet
+      v-if="editingLeaf"
+      :leaf-grams="timer.live?.leafGrams ?? null"
+      @save="onSaveLeaf"
+      @cancel="editingLeaf = false"
+    />
+
     <FinishSheet
       v-if="finishing && timer.live?.tea"
       :tea-name="timer.live.tea.name"
@@ -153,6 +175,7 @@ import TeaCup from "../components/TeaCup.vue";
 import PickTeaSheet from "../components/PickTeaSheet.vue";
 import PickVesselSheet from "../components/PickVesselSheet.vue";
 import FinishSheet from "../components/FinishSheet.vue";
+import LeafSheet from "../components/LeafSheet.vue";
 import RecoveryCard from "../components/RecoveryCard.vue";
 import { useTeaTimerStore } from "../stores/useTeaTimerStore";
 import { useTeaSessionsStore } from "../stores/useTeaSessionsStore";
@@ -173,6 +196,7 @@ const teaware = useTeawareStore();
 
 const picking = ref(false);
 const pickingVessel = ref(false);
+const editingLeaf = ref(false);
 const finishing = ref(false);
 const menu = ref(false);
 
@@ -206,6 +230,12 @@ async function onPick(tea: Tea): Promise<void> {
 async function onPickVessel(item: Teaware | null): Promise<void> {
   pickingVessel.value = false;
   await timer.setVessel(item);
+}
+
+async function onSaveLeaf(grams: number | null): Promise<void> {
+  editingLeaf.value = false;
+  timer.setLeafGrams(grams);
+  await timer.push();
 }
 
 function onResume(session: TeaSession): void {
