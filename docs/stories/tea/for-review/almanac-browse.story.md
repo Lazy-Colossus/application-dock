@@ -18,6 +18,7 @@ Ready for Review
 7. The view you last chose is kept for the session, so coming back from an entry reopens the same view.
 8. Search stays. It refetches with `?q=`, results stay grouped in the active view, and chapters with no match disappear. The country dropdown is removed, because the Place view replaces it.
 9. Rows show name, native script and the summary clipped to two lines. Tapping a row opens the entry, as before.
+10. The page has no title of its own; the shell bar names it. The entry count sits in the controls row, beside ⁂ At random.
 
 ## Dev Notes
 - The grouping and choice rules are pure functions in `almanac.ts`: `groupAlmanac(entries, nodes, view)`, `chapterAt(tops, line)` and `pickRandom`. A class comes from the catalogue via `rootClassOf`, so the page now also loads the catalogue store.

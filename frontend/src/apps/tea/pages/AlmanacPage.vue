@@ -1,13 +1,6 @@
 <template>
   <q-page class="almanac" :style-fn="fillViewport">
     <div ref="scrollEl" class="almanac__scroll">
-      <header class="almanac__header">
-        <span class="almanac__title">Almanac</span>
-        <span class="almanac__count" data-testid="almanac-count">{{
-          countLabel
-        }}</span>
-      </header>
-
       <div class="almanac__controls">
         <div class="almanac__views" role="group" aria-label="Browse by">
           <button
@@ -24,6 +17,9 @@
             {{ option.label }}
           </button>
         </div>
+        <span class="almanac__count" data-testid="almanac-count">{{
+          countLabel
+        }}</span>
         <button
           class="almanac__random"
           data-testid="almanac-random"
@@ -257,27 +253,16 @@ onMounted(async () => {
   height: 100%;
   overflow-y: auto;
 }
-.almanac__header {
-  padding: 20px 18px 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-.almanac__title {
-  color: #efe7da;
-  font-size: 19px;
-  font-weight: 500;
-}
-.almanac__count {
-  color: #6b5f52;
-  font-size: 13px;
-}
 .almanac__controls {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  padding: 0 18px 10px;
+  gap: 14px;
+  padding: 16px 18px 10px;
+}
+.almanac__count {
+  margin-left: auto;
+  color: #6b5f52;
+  font-size: 13px;
 }
 .almanac__views {
   display: flex;

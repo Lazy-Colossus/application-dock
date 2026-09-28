@@ -107,6 +107,14 @@ describe("AlmanacPage", () => {
     expect(wrapper.get('[data-testid="almanac-count"]').text()).toBe("3 teas");
   });
 
+  it("leaves the page title to the shell bar", async () => {
+    serve([entry()]);
+    const wrapper = render();
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain("Almanac");
+  });
+
   it("regroups as an atlas of countries when switched to place", async () => {
     serve([SENCHA, TIEGUANYIN, entry()]);
     const wrapper = render();
