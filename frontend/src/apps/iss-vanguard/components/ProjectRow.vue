@@ -1,5 +1,5 @@
 <template>
-  <div class="row">
+  <div class="row" :class="{ 'row--ready': affordable }">
     <span class="row__code">{{ project.code }}</span>
     <span v-if="project.name" class="row__name">{{ project.name }}</span>
     <span
@@ -48,7 +48,11 @@
 <script setup lang="ts">
 import type { Project } from "../types";
 
-defineProps<{ project: Project; prerequisite: Project | undefined }>();
+defineProps<{
+  project: Project;
+  prerequisite: Project | undefined;
+  affordable: boolean;
+}>();
 const emit = defineEmits<{ edit: []; complete: []; reopen: []; remove: [] }>();
 </script>
 
@@ -60,6 +64,13 @@ const emit = defineEmits<{ edit: []; complete: []; reopen: []; remove: [] }>();
   gap: 8px;
   padding: 10px 0;
   border-bottom: 1px solid rgba(127, 127, 127, 0.2);
+}
+.row--ready {
+  background: rgba(63, 166, 107, 0.14);
+  box-shadow: inset 3px 0 0 #3fa66b;
+  padding-left: 10px;
+  padding-right: 6px;
+  border-radius: 4px;
 }
 .row__code {
   font-weight: 600;

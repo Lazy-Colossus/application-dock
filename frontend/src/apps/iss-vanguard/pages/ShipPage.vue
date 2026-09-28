@@ -54,6 +54,7 @@
         </button>
         <ProjectList
           :projects="store.ship.projects"
+          :stock="store.ship.stock"
           @edit="openEditor"
           @complete="(p) => (completing = p)"
           @reopen="(p) => store.reopenProject(p.id)"

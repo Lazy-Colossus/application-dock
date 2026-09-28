@@ -10,6 +10,7 @@
         <ProjectRow
           :project="project"
           :prerequisite="prerequisiteOf(project)"
+          :affordable="affordable.has(project.id)"
           @edit="emit('edit', project)"
           @complete="emit('complete', project)"
           @reopen="emit('reopen', project)"
@@ -28,6 +29,7 @@
           <ProjectRow
             :project="project"
             :prerequisite="prerequisiteOf(project)"
+            :affordable="false"
             @edit="emit('edit', project)"
             @complete="emit('complete', project)"
             @reopen="emit('reopen', project)"
@@ -42,9 +44,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import ProjectRow from "./ProjectRow.vue";
-import type { Project } from "../types";
+import { shortfall } from "../shipMath";
+import type { Grid, Project } from "../types";
 
-const props = defineProps<{ projects: Project[] }>();
+const props = defineProps<{ projects: Project[]; stock: Grid }>();
 const emit = defineEmits<{
   edit: [project: Project];
   complete: [project: Project];
@@ -54,6 +57,15 @@ const emit = defineEmits<{
 
 const open = computed(() => props.projects.filter((p) => !p.done));
 const done = computed(() => props.projects.filter((p) => p.done));
+// Each open project against the whole stock alone, as on the Difference tab.
+const affordable = computed(
+  () =>
+    new Set(
+      open.value
+        .filter((p) => shortfall(props.stock, p.cost).length === 0)
+        .map((p) => p.id),
+    ),
+);
 const byId = computed(() => new Map(props.projects.map((p) => [p.id, p])));
 
 function prerequisiteOf(project: Project): Project | undefined {
