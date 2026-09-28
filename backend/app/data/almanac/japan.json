@@ -166,5 +166,26 @@
     "reading": "ujicha",
     "summary": "The regional name for tea from Uji, south of Kyoto, the historic center of Japanese fine tea and one of the \"three great teas\" alongside Shizuoka and Sayama. Uji pioneered the ōishita method of shading bushes under reed-and-straw canopies for matcha, and in 1738 local grower Nagatani Sōen developed the steam-and-roll process that became the basis of modern sencha; gyokuro is also usually credited to Uji in the 19th century. Today \"Uji-cha\" is a regional collective trademark covering tea grown in Kyoto, Nara, Shiga, or Mie and finished in Kyoto Prefecture by Uji methods, so the name spans matcha, gyokuro, and sencha rather than one process. It is best known for shaded teas, prized for aroma and deep umami, echoing the old saying that credits Uji with the finest fragrance.",
     "brewing": { "leaf_grams": 4, "water_temp_c": 70, "steep_seconds": [60, 30, 45] }
+  },
+  {
+    "catalogue_node_id": "oolong.japanese.koshun",
+    "country": "Japan",
+    "reading": "Kōshun ūroncha",
+    "summary": "Japanese oolong (sold as kokusan or wa-ūroncha) is a small craft category rather than an established regional style: a Meiji-era start — Fujie Katsutarō of Mori, Shizuoka, learned oolong making in Taiwan and made Shizuoka's first oolong around 1889 — did not take root, and today's production is a revival by individual green-tea farmers. Kōshun (香駿), bred at the Shizuoka Prefectural Tea Experiment Station from a Kurasawa × Kanaya-midori cross and registered in 2000, has become the cultivar most associated with it, because after a light withering it develops a pronounced floral aroma even from summer leaf. Makers sun- and indoor-wither the leaf to encourage partial oxidation before fixing, rolling, and drying it, generally keeping oxidation and roast light. The golden cup is honeyed and fruity with floral notes often likened to orchid or cherry blossom; the same cultivar is also made into sencha and wakoucha.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 85, "steep_seconds": [40, 50, 60, 80] }
+  },
+  {
+    "catalogue_node_id": "oolong.japanese.sofu",
+    "country": "Japan",
+    "reading": "Sōfū ūroncha",
+    "summary": "Sōfū (そうふう) is one of the few Japanese cultivars officially described as suited to semi-oxidized tea: selected at the national Tea Research Laboratory from a Yabukita × Shizu-In-zatsu 131 cross and registered in 2005, it is rated by the breeder as making high-quality semi-fermented tea with an especially fine aroma. It is early-budding and recommended for warm districts, and the breeders' advice is to make the first flush into green tea and the more astringent summer leaf into semi-fermented tea. Grown mainly in Shizuoka, it is made by only a handful of producers, so Sōfū oolong is a niche single-cultivar tea rather than a regional style. The cup is light and sweet with a pronounced floral, fruity fragrance that the breeders liken to a tropical orchid.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 85, "steep_seconds": [40, 50, 60, 80] }
+  },
+  {
+    "catalogue_node_id": "oolong.japanese.miyazaki",
+    "country": "Japan",
+    "reading": "Miyazaki ūroncha",
+    "summary": "In the mountains of northwestern Miyazaki — Gokase and Takachiho, with gardens at around 600–700 meters and Japan's leading kamairicha district — several pan-fired-tea makers also produce lightly oxidized oolongs, though only in small volumes. They draw on local cultivars bred for kamairicha, above all the Takachiho cultivar (registered 1953) and its descendant Minami-sayaka, prized for a gardenia-like floral aroma, with Kōshun and others also used. The leaf is withered to start partial oxidation and then typically pan-fired in the local kamairi manner before rolling and drying, so these teas sit close to Taiwan's lighter oolongs rather than roasted Chinese styles. The cup is pale gold, smooth, and low in astringency, with floral, creamy notes; some makers also offer roasted versions.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 85, "steep_seconds": [30, 40, 50, 70] }
   }
 ]
