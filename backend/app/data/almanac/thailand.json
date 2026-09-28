@@ -5,5 +5,12 @@
     "reading": "",
     "summary": "Doi Mae Salong, a mountain village in Chiang Rai province now officially named Santikhiri, was settled by remnants of the Kuomintang's 93rd Division who retreated from Yunnan through Burma after 1949, and it remains a Chinese-speaking community with strong ties to Taiwan. As Thai royal and government projects worked to replace the region's opium poppies with other crops, tea became the village's livelihood, and from the 1980s Taiwanese cultivars and expertise were brought in — chiefly Jin Xuan (known locally by its cultivar number, No. 12), Ruan Zhi (No. 17) and Si Ji Chun. The resulting teas are made the Taiwanese way: lightly oxidized, tightly rolled into balls, and often lightly roasted, grown at around 1,000–1,400 meters. They cup like a mid-elevation Taiwanese high-mountain oolong — floral, buttery (especially the Jin Xuan) and sweet — and are generally sold at a fraction of the price of comparable Taiwanese leaf.",
     "brewing": { "leaf_grams": 5, "water_temp_c": 95, "steep_seconds": [45, 30, 40, 50, 60] }
+  },
+  {
+    "catalogue_node_id": "other.miang",
+    "country": "Thailand",
+    "reading": "miang (เมี่ยง)",
+    "summary": "Miang is fermented tea leaf that is eaten rather than brewed, a food with centuries of cultural and economic importance among the Lanna people of northern Thailand and neighboring regions, where it is traditionally chewed after meals. It is made from the young leaves of forest-grown Camellia sinensis var. assamica: the leaves are bundled and steamed for about two hours until they turn yellowish-green, then packed tightly into sealed containers and left to ferment anaerobically, mainly through lactic acid bacteria, for anything from a few days to several months. Some producers first let a mold develop for several days before the anaerobic stage, a variant that yields a different flavor. The finished leaf is sour, astringent and faintly bitter, and is chewed wrapped around a pinch of salt, ginger, roasted peanut or other flavorings; consumption has declined steeply as younger Thais have moved away from the habit. It is closely related to Myanmar's laphet.",
+    "brewing": { "leaf_grams": null, "water_temp_c": null, "steep_seconds": [] }
   }
 ]

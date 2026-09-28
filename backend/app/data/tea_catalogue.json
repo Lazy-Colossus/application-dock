@@ -220,5 +220,6 @@
   { "id": "dark.qing-zhuan", "parent_id": "dark", "name": "Qing Zhuan", "name_zh": "青磚", "source": "seed", "default_origin": "Chibi, Hubei" },
   { "id": "dark.xiao-qing-gan", "parent_id": "dark", "name": "Xiao Qing Gan", "name_zh": "小青柑", "source": "seed", "default_origin": "Xinhui, Guangdong (pu-erh from Yunnan)" },
 
-  { "id": "other", "parent_id": null, "name": "Other", "name_zh": "其他", "source": "seed" }
+  { "id": "other", "parent_id": null, "name": "Other", "name_zh": "其他", "source": "seed" },
+  { "id": "other.miang", "parent_id": "other", "name": "Miang", "name_zh": "", "source": "seed", "default_origin": "Mountain forests of northern Thailand" }
 ]
