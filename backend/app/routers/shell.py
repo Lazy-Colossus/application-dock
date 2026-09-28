@@ -79,6 +79,12 @@ _APPS: list[AppDescriptor] = [
         icon="sticky_note_2",
         route="/shared-notes",
     ),
+    AppDescriptor(
+        id="iss-vanguard",
+        label="ISS Vanguard",
+        icon="rocket_launch",
+        route="/iss-vanguard",
+    ),
 ]
 
 
