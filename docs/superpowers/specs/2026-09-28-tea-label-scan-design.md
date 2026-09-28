@@ -189,7 +189,7 @@ label text; it resizes large images down anyway.)
 
 Next to the "Photo URL" field:
 
-- **"Scan label"** button → hidden `<input type="file" accept="image/*" capture="environment">`.
+- **"Scan label"** button → hidden `<input type="file" accept="image/*">` (no `capture`: it would hide the photo library on phones).
 - After a pick: downscale, show a thumbnail (`URL.createObjectURL`, revoked on replace and
   unmount), with the button showing "Reading label…" and disabled while the request runs.
 - On a result, **one merged patch** fills each field only when it is currently empty:

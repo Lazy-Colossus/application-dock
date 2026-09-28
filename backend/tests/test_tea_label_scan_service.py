@@ -196,3 +196,38 @@ def test_refusal_or_no_output_becomes_an_upstream_error(
     stub_claude(monkeypatch, parsed, stop_reason=stop)  # type: ignore[arg-type]
     with pytest.raises(service.LabelScanUpstreamError):
         service.scan("alice", JPEG, "image/jpeg")
+
+
+def test_truncated_or_invalid_json_becomes_an_upstream_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # messages.parse validates the reply itself; a reply cut off at max_tokens
+    # raises pydantic's ValidationError, which is a ValueError (→ 422) unless caught.
+    try:
+        service.LabelReading.model_validate_json('{"name": "Da Hong')
+    except ValueError as exc:
+        truncated = exc
+    stub_claude(monkeypatch, error=truncated)
+    with pytest.raises(service.LabelScanUpstreamError):
+        service.scan("alice", JPEG, "image/jpeg")
+
+
+def test_max_tokens_stop_becomes_an_upstream_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    stub_claude(monkeypatch, reading(), stop_reason="max_tokens")
+    with pytest.raises(service.LabelScanUpstreamError):
+        service.scan("alice", JPEG, "image/jpeg")
+
+
+def test_upstream_failures_are_logged(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    stub_claude(
+        monkeypatch,
+        error=anthropic.APIConnectionError(
+            request=httpx2.Request("POST", "https://api.anthropic.com/v1/messages")
+        ),
+    )
+    with caplog.at_level("WARNING", logger=service.__name__):
+        with pytest.raises(service.LabelScanUpstreamError):
+            service.scan("alice", JPEG, "image/jpeg")
+    assert any(record.exc_info for record in caplog.records)

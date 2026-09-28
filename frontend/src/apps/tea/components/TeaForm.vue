@@ -52,7 +52,6 @@
         ref="scanInput"
         type="file"
         accept="image/*"
-        capture="environment"
         class="form__scan-input"
         data-testid="scan-input"
         @change="onScanChosen"

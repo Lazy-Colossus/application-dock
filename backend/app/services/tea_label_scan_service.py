@@ -12,18 +12,22 @@ translates them.
 from __future__ import annotations
 
 import base64
+import logging
 from datetime import UTC, datetime
 
 import anthropic
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from app.core.config import settings
 from app.schemas.tea import MIN_YEAR, AutofillSuggestion, LabelScanSuggestion
 from app.services import tea_autofill_service as autofill
 from app.services.tea_service import image_extension
 
+logger = logging.getLogger(__name__)
+
 _TIMEOUT_SECONDS = 20.0
-_MAX_TOKENS = 1024
+# label_text is "all legible text", which on a dense CJK back label runs long.
+_MAX_TOKENS = 2048
 _PROMPT = (
     "This is a photo of a tea's packaging or label. Read it into the fields. "
     "Copy text as printed, keeping Chinese or Japanese characters. Leave a field "
@@ -82,9 +86,13 @@ def _read(content: bytes, content_type: str) -> LabelReading:
             messages=[{"role": "user", "content": [image, {"type": "text", "text": _PROMPT}]}],
             output_format=LabelReading,
         )
-    except anthropic.APIError as exc:
+    # parse() validates the reply itself: a reply cut off at max_tokens raises
+    # ValidationError, a ValueError the router would otherwise turn into a 422.
+    except (anthropic.APIError, ValidationError) as exc:
+        logger.warning("label scan: Claude call failed", exc_info=exc)
         raise LabelScanUpstreamError(_UPSTREAM_MESSAGE) from exc
-    if response.stop_reason == "refusal" or response.parsed_output is None:
+    if response.stop_reason in ("refusal", "max_tokens") or response.parsed_output is None:
+        logger.warning("label scan: no usable reply (stop_reason=%s)", response.stop_reason)
         raise LabelScanUpstreamError(_UPSTREAM_MESSAGE)
     return response.parsed_output
 

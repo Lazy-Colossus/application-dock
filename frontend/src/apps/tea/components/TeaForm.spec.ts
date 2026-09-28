@@ -359,3 +359,12 @@ describe("TeaForm label scan", () => {
     expect(wrapper.find('[data-testid="scan-thumb"]').exists()).toBe(false);
   });
 });
+
+describe("TeaForm label scan input", () => {
+  it("lets the person pick an existing photo, not only take a new one", () => {
+    // `capture` makes phones open the camera directly and hide the library.
+    const input = form().get('[data-testid="scan-input"]');
+    expect(input.attributes("capture")).toBeUndefined();
+    expect(input.attributes("accept")).toBe("image/*");
+  });
+});
