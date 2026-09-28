@@ -53,8 +53,15 @@ export const useShipStore = defineStore("iss-vanguard-ship", () => {
     }
   }
 
-  async function applyRemoteRev(rev: number): Promise<void> {
-    if (ship.value === null || rev > ship.value.rev) await fetchShip();
+  /** A different ship id means the stream now belongs to another ship (moved, reconnected). */
+  async function applyRemoteRev(rev: number, shipId: string): Promise<void> {
+    if (
+      ship.value === null ||
+      shipId !== ship.value.id ||
+      rev > ship.value.rev
+    ) {
+      await fetchShip();
+    }
   }
 
   /** Every write returns the whole ship; a rejected one refetches so the view reconverges. */

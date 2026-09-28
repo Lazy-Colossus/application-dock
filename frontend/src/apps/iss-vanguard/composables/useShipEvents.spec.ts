@@ -4,6 +4,7 @@ import { useShipEvents } from "./useShipEvents";
 class FakeEventSource {
   static last: FakeEventSource | null = null;
   onmessage: ((m: MessageEvent<string>) => void) | null = null;
+  onopen: (() => void) | null = null;
   closed = false;
   constructor(readonly url: string) {
     FakeEventSource.last = this;
@@ -59,5 +60,12 @@ describe("useShipEvents", () => {
   it("closes the stream", () => {
     useShipEvents("t", {}).close();
     expect(FakeEventSource.last?.closed).toBe(true);
+  });
+  it("reports every (re)connect so the caller can resync", () => {
+    const onOpen = vi.fn();
+    useShipEvents("t", { onOpen });
+    FakeEventSource.last?.onopen?.();
+    FakeEventSource.last?.onopen?.();
+    expect(onOpen).toHaveBeenCalledTimes(2);
   });
 });

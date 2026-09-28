@@ -183,4 +183,22 @@ describe("ShipPage", () => {
       "VB07 · Reactor:",
     );
   });
+  it("refetches whenever the stream (re)connects", async () => {
+    await page();
+    getMock.mockClear();
+    handlers.onOpen?.();
+    await flushPromises();
+    expect(getMock).toHaveBeenCalledWith("/iss-vanguard/ship");
+  });
+
+  it("never opens a stream once the page has gone", async () => {
+    useAuthStore().token = "tok";
+    let resolve: (s: Ship) => void = () => {};
+    getMock.mockReturnValue(new Promise<Ship>((r) => (resolve = r)));
+    const wrapper = mount(ShipPage);
+    wrapper.unmount();
+    resolve(ship());
+    await flushPromises();
+    expect(subscribe).not.toHaveBeenCalled();
+  });
 });

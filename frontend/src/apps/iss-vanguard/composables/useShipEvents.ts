@@ -30,6 +30,9 @@ export type ShipEvent =
   | ShipClosedEvent;
 
 export interface ShipEventHandlers {
+  // Fires on the first connect and every reconnect: events sent while
+  // disconnected are gone, so the caller refetches.
+  onOpen?: () => void;
   onChanged?: (event: ShipChangedEvent) => void;
   onMembersChanged?: (event: MembersChangedEvent) => void;
   onClosed?: (event: ShipClosedEvent) => void;
@@ -46,6 +49,8 @@ export function useShipEvents(
   const source = new EventSource(
     `/api/iss-vanguard/ship/events?token=${encodeURIComponent(token)}`,
   );
+
+  source.onopen = () => handlers.onOpen?.();
 
   source.onmessage = (message: MessageEvent<string>) => {
     let event: ShipEvent;

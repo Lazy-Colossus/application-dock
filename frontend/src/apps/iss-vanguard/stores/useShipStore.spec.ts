@@ -75,9 +75,9 @@ describe("useShipStore", () => {
     const store = useShipStore();
     await store.fetchShip();
     getMock.mockClear();
-    await store.applyRemoteRev(3);
+    await store.applyRemoteRev(3, "s_1");
     expect(getMock).not.toHaveBeenCalled();
-    await store.applyRemoteRev(4);
+    await store.applyRemoteRev(4, "s_1");
     expect(getMock).toHaveBeenCalledTimes(1);
   });
 
@@ -123,5 +123,15 @@ describe("useShipStore", () => {
     expect(await store.leave()).toBe(true);
     expect(delMock).toHaveBeenCalledWith("/iss-vanguard/ship/members/bo");
     expect(store.ship?.owner).toBe("bo");
+  });
+  it("refetches an event from a different ship even when its rev is lower", async () => {
+    getMock.mockResolvedValue(ship({ rev: 12 }));
+    const store = useShipStore();
+    await store.fetchShip();
+    getMock.mockClear();
+    getMock.mockResolvedValue(ship({ id: "s_2", rev: 1 }));
+    await store.applyRemoteRev(1, "s_2");
+    expect(getMock).toHaveBeenCalledTimes(1);
+    expect(store.ship?.id).toBe("s_2");
   });
 });

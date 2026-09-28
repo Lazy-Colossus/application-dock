@@ -252,14 +252,17 @@ async function remove(): Promise<void> {
 }
 
 let subscription: ShipEventsSubscription | null = null;
+// Set on unmount, so an await that finishes after leaving never opens a stream.
+let disposed = false;
 
 // The stream is bound to whichever ship the server resolves for me, so after
 // being moved (removed, joined elsewhere, or leaving) it must be reopened.
 function subscribe(): void {
   subscription?.close();
-  if (!auth.token) return;
+  if (disposed || !auth.token) return;
   subscription = useShipEvents(auth.token, {
-    onChanged: (e) => void store.applyRemoteRev(e.rev),
+    onOpen: () => void store.fetchShip(),
+    onChanged: (e) => void store.applyRemoteRev(e.rev, e.ship_id),
     onMembersChanged: () => void store.fetchShip(),
     onClosed: (e) => {
       if (e.member === auth.username) void moved();
@@ -282,7 +285,10 @@ onMounted(async () => {
   subscribe();
 });
 
-onBeforeUnmount(() => subscription?.close());
+onBeforeUnmount(() => {
+  disposed = true;
+  subscription?.close();
+});
 </script>
 
 <style scoped lang="scss">
