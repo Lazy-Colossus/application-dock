@@ -68,4 +68,11 @@ describe("app registry", () => {
   it("puts the Tea card fourth in the dock", () => {
     expect(apps[3].id).toBe("tea");
   });
+  it("registers the ISS Vanguard app", () => {
+    const app = apps.find((a) => a.id === "iss-vanguard");
+    expect(app).toBeDefined();
+    expect(app?.label).toBe("ISS Vanguard");
+    expect(app?.icon).toBe("rocket_launch");
+    expect(app?.route).toBe("/iss-vanguard");
+  });
 });

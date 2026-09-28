@@ -227,6 +227,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "Shared Notes", requiresAuth: true },
       },
       {
+        path: "iss-vanguard",
+        name: "iss-vanguard-ship",
+        component: () => import("@/apps/iss-vanguard/pages/ShipPage.vue"),
+        meta: { title: "ISS Vanguard", requiresAuth: true },
+      },
+      {
         path: "tea",
         name: "tea-home",
         component: () => import("@/apps/tea/pages/TeaHomePage.vue"),

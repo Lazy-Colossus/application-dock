@@ -72,4 +72,11 @@ export const apps: AppDescriptor[] = [
     icon: "sticky_note_2",
     route: "/shared-notes",
   },
+  {
+    id: "iss-vanguard",
+    label: "ISS Vanguard",
+    // A launch glyph for the ship the tracker keeps the books for.
+    icon: "rocket_launch",
+    route: "/iss-vanguard",
+  },
 ];
