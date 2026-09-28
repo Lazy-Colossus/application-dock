@@ -45,6 +45,25 @@ describe("legacy KDH paths", () => {
 // preceded it — e.g. the New Tea form right after saving a tea — rather than
 // the fixed place these pages actually lead back to.
 describe("tea back navigation", () => {
+  it("opens the Journal from the tea home, and its entries from the Journal", async () => {
+    const router = makeRouter();
+    await router.push("/tea/journal");
+    expect(router.currentRoute.value.name).toBe("tea-journal");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea");
+
+    await router.push("/tea/journal/new");
+    expect(router.currentRoute.value.name).toBe("tea-journal-new");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea/journal");
+
+    await router.push("/tea/journal/s-1");
+    expect(router.currentRoute.value.name).toBe("tea-journal-entry");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea/journal");
+
+    await router.push("/tea/journal/s-1/edit");
+    expect(router.currentRoute.value.name).toBe("tea-journal-edit");
+    expect(router.currentRoute.value.meta.backTo).toBeUndefined();
+  });
+
   it("points Cha Xi's back arrow at the timer", async () => {
     const router = makeRouter();
     await router.push("/tea/timer/cha-xi");

@@ -96,6 +96,28 @@
         />
       </g>
     </template>
+    <!-- A thread-bound notebook with a small cup seal. -->
+    <template v-if="name === 'journal'">
+      <path
+        :fill="INK"
+        d="M11 6 H37 Q39 6 39 8 V40 Q39 42 37 42 H11 Q9 42 9 40 V8 Q9 6 11 6 Z"
+      />
+      <path d="M15 6 V42" fill="none" :stroke="CUT" stroke-width="1" />
+      <g fill="none" :stroke="CUT" stroke-width="0.9" stroke-linecap="round">
+        <path d="M9 11 H15 M9 19.7 H15 M9 28.3 H15 M9 37 H15" />
+      </g>
+      <g :fill="CUT">
+        <circle cx="12" cy="11" r="1.1" />
+        <circle cx="12" cy="19.7" r="1.1" />
+        <circle cx="12" cy="28.3" r="1.1" />
+        <circle cx="12" cy="37" r="1.1" />
+        <rect x="21" y="16" width="12" height="12" rx="1.5" />
+      </g>
+      <g :fill="INK">
+        <path d="M23.6 20.2 H30.4 Q30.4 25.4 27 25.4 Q23.6 25.4 23.6 20.2 Z" />
+        <path d="M24.4 26.3 H29.6 V27 H24.4 Z" />
+      </g>
+    </template>
   </svg>
 </template>
 
@@ -103,7 +125,7 @@
 import { CLASS_TOKENS, GROUND } from "../tokens";
 import { LEAF_PATHS } from "../leaf";
 
-export type SectionIconName = "leaf" | "pot" | "pour" | "tome";
+export type SectionIconName = "leaf" | "pot" | "pour" | "tome" | "journal";
 
 defineProps<{ name: SectionIconName }>();
 

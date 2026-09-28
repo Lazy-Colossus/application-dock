@@ -296,6 +296,31 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "Teaware", requiresAuth: true, backTo: "/tea/ware" },
       },
       {
+        path: "tea/journal",
+        name: "tea-journal",
+        component: () => import("@/apps/tea/pages/JournalPage.vue"),
+        meta: { title: "Journal", requiresAuth: true, backTo: "/tea" },
+      },
+      {
+        path: "tea/journal/new",
+        name: "tea-journal-new",
+        component: () => import("@/apps/tea/pages/JournalFormPage.vue"),
+        meta: { title: "New entry", requiresAuth: true, backTo: "/tea/journal" },
+      },
+      {
+        path: "tea/journal/:id",
+        name: "tea-journal-entry",
+        component: () => import("@/apps/tea/pages/JournalEntryPage.vue"),
+        meta: { title: "Journal", requiresAuth: true, backTo: "/tea/journal" },
+      },
+      {
+        // No backTo: back returns to wherever the edit was opened from.
+        path: "tea/journal/:id/edit",
+        name: "tea-journal-edit",
+        component: () => import("@/apps/tea/pages/JournalFormPage.vue"),
+        meta: { title: "Edit entry", requiresAuth: true },
+      },
+      {
         path: "tea/:teaId",
         name: "tea-detail",
         component: () => import("@/apps/tea/pages/TeaDetailPage.vue"),

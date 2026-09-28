@@ -44,12 +44,12 @@ beforeEach(() => {
 });
 
 describe("TeaHomePage", () => {
-  it("offers the cabinet, teaware, brewing and the almanac, in that order", () => {
+  it("offers the cabinet, teaware, brewing, the journal and the almanac, in that order", () => {
     const labels = render()
       .findAll('[data-testid="tea-home-section"] .tea-home__name')
       .map((n) => n.text());
 
-    expect(labels).toEqual(["Cabinet", "Teaware", "Brew", "Almanac"]);
+    expect(labels).toEqual(["Cabinet", "Teaware", "Brew", "Journal", "Almanac"]);
   });
 
   it("draws each section's own icon, with just the name beside it", () => {
@@ -59,12 +59,14 @@ describe("TeaHomePage", () => {
       "leaf",
       "pot",
       "pour",
+      "journal",
       "tome",
     ]);
     expect(sections.map((s) => s.text())).toEqual([
       "Cabinet",
       "Teaware",
       "Brew",
+      "Journal",
       "Almanac",
     ]);
   });
@@ -73,6 +75,7 @@ describe("TeaHomePage", () => {
     ["Cabinet", "tea-cabinet"],
     ["Teaware", "tea-ware"],
     ["Brew", "tea-timer"],
+    ["Journal", "tea-journal"],
     ["Almanac", "tea-almanac"],
   ])("opens the %s section", async (label, routeName) => {
     const wrapper = render();

@@ -47,6 +47,7 @@ const SECTIONS: Section[] = [
   { name: "Cabinet", icon: "leaf", route: "tea-cabinet" },
   { name: "Teaware", icon: "pot", route: "tea-ware" },
   { name: "Brew", icon: "pour", route: "tea-timer" },
+  { name: "Journal", icon: "journal", route: "tea-journal" },
   { name: "Almanac", icon: "tome", route: "tea-almanac" },
 ];
 
