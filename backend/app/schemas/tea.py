@@ -39,7 +39,7 @@ CATALOGUE_CLASSES: tuple[str, ...] = (
 )
 
 # A tea recorded before 1900 is a typo, not a collector's item.
-_MIN_YEAR = 1900
+MIN_YEAR = 1900
 
 
 class BrewingWrite(BaseModel):
@@ -122,7 +122,7 @@ class TeaWriteRequest(BaseModel):
     form: TeaForm | None = None
     origin: str = ""
     vendor: str = ""
-    year: int | None = Field(default=None, ge=_MIN_YEAR)
+    year: int | None = Field(default=None, ge=MIN_YEAR)
     harvest_season: HarvestSeason | None = None
     cultivar: str = ""
     grams_purchased: float | None = Field(default=None, gt=0)
@@ -145,6 +145,18 @@ class AutofillSuggestion(BaseModel):
 
     catalogue_node_id: str
     origin: str = ""
+
+
+class LabelScanSuggestion(BaseModel):
+    """What a photo of a tea's label could fill in. Empty/None = not read."""
+
+    name: str = ""
+    catalogue_node_id: str | None = None
+    origin: str = ""
+    vendor: str = ""
+    year: int | None = None
+    cultivar: str = ""
+    grams: float | None = None
 
 
 class CabinetView(BaseModel):
