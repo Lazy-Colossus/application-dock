@@ -34,7 +34,13 @@ from app.schemas.tea import (
     TeaView,
     TeaWriteRequest,
 )
-from app.schemas.tea_session import BrewingCurve, TeaSession, TeaSessionWrite
+from app.schemas.tea_session import (
+    BrewingCurve,
+    JournalEdit,
+    JournalEntry,
+    TeaSession,
+    TeaSessionWrite,
+)
 from app.schemas.teaware import Teaware, TeawareUsage, TeawareWriteRequest
 from app.services import almanac_service
 from app.services import tea_autofill_service as autofill
@@ -275,6 +281,80 @@ def discard_session(session_id: str, current_user: str = Depends(get_current_use
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     except sessions.SessionFinalisedError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.get("/journal", response_model=list[JournalEntry])
+def list_journal(current_user: str = Depends(get_current_user)) -> list[JournalEntry]:
+    return sessions.list_journal(current_user)
+
+
+@router.put("/sessions/{session_id}/journal", response_model=JournalEntry)
+def edit_journal(
+    session_id: str,
+    req: JournalEdit,
+    current_user: str = Depends(get_current_user),
+) -> JournalEntry:
+    try:
+        return sessions.edit_journal(current_user, session_id, req)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Session or tea not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@router.delete("/sessions/{session_id}/journal", status_code=204)
+def delete_journal(session_id: str, current_user: str = Depends(get_current_user)) -> None:
+    try:
+        sessions.delete_journal(current_user, session_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Session not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@router.post("/sessions/{session_id}/image", response_model=TeaSession, status_code=201)
+async def upload_session_image(
+    session_id: str,
+    file: Annotated[UploadFile, File()],
+    current_user: str = Depends(get_current_user),
+) -> TeaSession:
+    content = await file.read()
+    try:
+        return sessions.save_image(current_user, session_id, content, file.content_type or "")
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Session not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@router.get("/sessions/{session_id}/image")
+def get_session_image(session_id: str, token: str = Query(...)) -> FileResponse:
+    """`?token=` for the same reason as tea photos: an `<img>` can't send a header."""
+    current_user = user_from_token(token)
+    try:
+        path = sessions.image_path(current_user, session_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Image not found") from exc
+    media_type = _IMAGE_MEDIA_TYPES.get(path.suffix.removeprefix("."), "application/octet-stream")
+    return FileResponse(path, media_type=media_type)
+
+
+@router.delete("/sessions/{session_id}/image", response_model=TeaSession)
+def delete_session_image(
+    session_id: str, current_user: str = Depends(get_current_user)
+) -> TeaSession:
+    try:
+        return sessions.delete_image(current_user, session_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Session not found") from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
 @router.get("/teas/{tea_id}/sessions", response_model=list[TeaSession])
