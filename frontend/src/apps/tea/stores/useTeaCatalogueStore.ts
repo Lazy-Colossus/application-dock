@@ -1,7 +1,7 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
 import { api } from "@/composables/useApi";
-import type { AutofillSuggestion, CatalogueNode } from "@/apps/tea/types";
+import type { AutofillSuggestion, CatalogueNode, LabelScanSuggestion } from "@/apps/tea/types";
 
 export interface CreateNodeBody {
   parent_id: string;
@@ -84,5 +84,19 @@ export const useTeaCatalogueStore = defineStore("tea-catalogue", () => {
     }
   }
 
-  return { nodes, loading, error, fetchNodes, addNode, removeNode, autofill };
+  async function scanLabel(file: File): Promise<LabelScanSuggestion | null> {
+    loading.value = true;
+    try {
+      const suggestion = await api.upload<LabelScanSuggestion>("/tea/scan-label", file);
+      error.value = null;
+      return suggestion;
+    } catch (e) {
+      error.value = message(e);
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  return { nodes, loading, error, fetchNodes, addNode, removeNode, autofill, scanLabel };
 });

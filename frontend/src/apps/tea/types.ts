@@ -70,6 +70,22 @@ export interface AutofillSuggestion {
   origin: string;
 }
 
+export interface LabelScanSuggestion {
+  name: string;
+  catalogue_node_id: string | null;
+  origin: string;
+  vendor: string;
+  year: number | null;
+  cultivar: string;
+  grams: number | null;
+}
+
+/** A photo picked for a label scan, and whether it should become the tea's photo. */
+export interface ScanChoice {
+  file: File;
+  usePhoto: boolean;
+}
+
 export interface BrewingParameters {
   leaf_grams: number | null;
   water_temp_c: number | null;

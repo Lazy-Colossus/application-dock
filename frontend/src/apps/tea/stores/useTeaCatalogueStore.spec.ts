@@ -1,17 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, postMock, delMock } = vi.hoisted(() => ({
+const { getMock, postMock, delMock, uploadMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
   postMock: vi.fn(),
   delMock: vi.fn(),
+  uploadMock: vi.fn(),
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {
     status = 0;
     detail = "";
   },
-  api: { get: getMock, post: postMock, del: delMock },
+  api: { get: getMock, post: postMock, del: delMock, upload: uploadMock },
 }));
 
 import { useTeaCatalogueStore } from "./useTeaCatalogueStore";
@@ -33,6 +34,7 @@ beforeEach(() => {
   getMock.mockReset();
   postMock.mockReset();
   delMock.mockReset();
+  uploadMock.mockReset();
 });
 
 describe("useTeaCatalogueStore", () => {
@@ -155,5 +157,40 @@ describe("useTeaCatalogueStore", () => {
 
     expect(result).toBeNull();
     expect(store.error).toContain("not configured");
+  });
+
+  it("scanLabel uploads the photo and returns the suggestion", async () => {
+    const suggestion = {
+      name: "Da Hong Pao",
+      catalogue_node_id: "oolong.wuyi-yancha.da-hong-pao",
+      origin: "Wuyi Shan, Fujian",
+      vendor: "",
+      year: 2023,
+      cultivar: "",
+      grams: 100,
+    };
+    uploadMock.mockResolvedValue(suggestion);
+    const store = useTeaCatalogueStore();
+    const file = new File(["x"], "label.jpg", { type: "image/jpeg" });
+
+    const result = await store.scanLabel(file);
+
+    expect(uploadMock).toHaveBeenCalledWith("/tea/scan-label", file);
+    expect(result).toEqual(suggestion);
+    expect(store.loading).toBe(false);
+    expect(store.error).toBeNull();
+  });
+
+  it("scanLabel surfaces a failure and returns null", async () => {
+    uploadMock.mockRejectedValue(
+      Object.assign(new Error("down"), { detail: "Label scan is not configured on this server" }),
+    );
+    const store = useTeaCatalogueStore();
+
+    const result = await store.scanLabel(new File(["x"], "label.jpg", { type: "image/jpeg" }));
+
+    expect(result).toBeNull();
+    expect(store.error).toContain("not configured");
+    expect(store.loading).toBe(false);
   });
 });
