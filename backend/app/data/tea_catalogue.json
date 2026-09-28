@@ -42,6 +42,7 @@
   { "id": "green.korean.sejak", "parent_id": "green.korean", "name": "Sejak", "name_zh": "細雀", "source": "seed" },
   { "id": "green.korean.jungjak", "parent_id": "green.korean", "name": "Jungjak", "name_zh": "中雀", "source": "seed" },
   { "id": "green.korean.daejak", "parent_id": "green.korean", "name": "Daejak", "name_zh": "大雀", "source": "seed" },
+  { "id": "green.korean.malcha", "parent_id": "green.korean", "name": "Malcha", "name_zh": "抹茶", "source": "seed", "default_origin": "Chiefly Jeju, South Korea" },
 
   { "id": "green.vietnamese", "parent_id": "green", "name": "Vietnamese", "name_zh": "", "source": "seed", "default_origin": "Vietnam" },
   { "id": "green.vietnamese.shan-tuyet", "parent_id": "green.vietnamese", "name": "Shan Tuyet Green", "name_zh": "", "source": "seed", "default_origin": "Ha Giang, Yen Bai and Lao Cai provinces, Vietnam" },

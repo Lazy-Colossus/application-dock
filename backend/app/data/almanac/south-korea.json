@@ -47,5 +47,12 @@
     "reading": "cheongtaejeon",
     "summary": "\"Green moss coin,\" also known as doncha (\"coin tea\") or tteokcha (\"rice-cake tea\"), is Korea's one genuinely post-fermented dark tea, made around Jangheung on the south coast since at least the Unified Silla period. Leaves are steamed, pounded in a mortar, pressed into small coin-shaped discs, strung on cord, and left to dry and age — during which resident bacteria (chiefly Pantoea and Klebsiella species) drive true microbial fermentation, unlike hwangcha or balhyocha's purely enzymatic oxidation. Long aging mellows it into an earthy, smooth cup comparable to Chinese dark tea or Japan's goishicha, though today it survives only as a small-scale specialty rather than a commercial staple.",
     "brewing": { "leaf_grams": 5, "water_temp_c": 100, "steep_seconds": [600, 300, 300] }
+  },
+  {
+    "catalogue_node_id": "green.korean.malcha",
+    "country": "South Korea",
+    "reading": "malcha",
+    "summary": "Korean powdered green tea, whisked into water rather than steeped. Powdered tea ground from pressed tea cakes was central to Goryeo-dynasty Buddhist tea culture, but the practice died out and modern malcha dates only from the late 20th century revival, with Jeju's large estates — first planted from 1979 — releasing Korea's first modern commercial powdered green tea in 1997. Like matcha it is made from steamed, dried leaf ground to a fine powder, though Korean malcha is generally described as lighter, sweeter, and less bitter than Japanese matcha, with a softer umami. It is sold in both drinking and culinary grades and widely used in lattes and confectionery.",
+    "brewing": { "leaf_grams": 2, "water_temp_c": 80, "steep_seconds": [] }
   }
 ]
