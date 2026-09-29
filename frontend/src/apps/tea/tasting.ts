@@ -300,6 +300,7 @@ export interface TastingRow {
   path: string;
   label: string;
   zh?: string;
+  hint?: string;
   value: string;
 }
 
@@ -325,7 +326,13 @@ export function describeTasting(tasting: Tasting): TastingBlock[] {
     zh: section.zh,
     rows: section.fields
       .filter((f) => isFilled(getAt(tasting, f.path)))
-      .map((f) => ({ path: f.path, label: f.label, zh: f.zh, value: describe(f, getAt(tasting, f.path)) })),
+      .map((f) => ({
+        path: f.path,
+        label: f.label,
+        zh: f.zh,
+        hint: f.hint,
+        value: describe(f, getAt(tasting, f.path)),
+      })),
   })).filter((block) => block.rows.length > 0);
 }
 
@@ -361,7 +368,8 @@ function usual(values: string[], order: string[]): string | null {
 
 function words(text: string): string[] {
   return text
-    .split(",")
+    // The notebook is Chinese, so its commas and enumeration mark split words too.
+    .split(/[,，、;；]/)
     .map((w) => w.trim().toLowerCase())
     .filter((w) => w !== "");
 }

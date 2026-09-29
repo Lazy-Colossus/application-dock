@@ -134,6 +134,15 @@ describe("JournalEntryPage", () => {
     expect(wrapper.get("[data-testid=journal-tasting-sensation]").text()).toContain("★★★★☆");
   });
 
+  it("says which stage each aroma note is, in the notebook's words too", async () => {
+    const tasted = emptyTasting();
+    tasted.aroma.base_note = "stone";
+    const wrapper = await render({ ...ENTRY, tasting: tasted });
+    const aroma = wrapper.get("[data-testid=journal-tasting-aroma]").text();
+    expect(aroma).toContain("after swallowing");
+    expect(aroma).toContain("后调");
+  });
+
   it("shows no tasting block for an untasted sitting", async () => {
     const wrapper = await render();
     expect(wrapper.find("[data-testid=journal-tasting]").exists()).toBe(false);

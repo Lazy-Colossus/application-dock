@@ -93,6 +93,11 @@ describe("describeTasting", () => {
     expect(rows).toContain("Saturation: fairly high");
     expect(rows).toContain("Hui gan — strength: ★★★★☆");
   });
+
+  it("keeps each aroma stage's wording and the notebook's Chinese", () => {
+    const [aroma] = describeTasting(tasting((x) => (x.aroma.base_note = "stone")));
+    expect(aroma.rows[0]).toMatchObject({ label: "Base note", zh: "后调", hint: "after swallowing" });
+  });
 });
 
 describe("tastingSummary", () => {
@@ -129,6 +134,14 @@ describe("tastingSummary", () => {
       { tasting: tasting((x) => (x.aroma.aroma = "stone")) },
     ])!;
     expect(summary.aromaWords).toEqual(["orchid"]);
+  });
+
+  it("splits aroma words on Chinese commas too", () => {
+    const summary = tastingSummary([
+      { tasting: tasting((x) => (x.aroma.aroma = "兰花，蜜香")) },
+      { tasting: tasting((x) => (x.aroma.aroma = "兰花、焙火")) },
+    ])!;
+    expect(summary.aromaWords).toEqual(["兰花"]);
   });
 
   it("counts structure words most-picked first", () => {

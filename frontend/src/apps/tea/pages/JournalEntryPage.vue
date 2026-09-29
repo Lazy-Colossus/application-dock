@@ -59,7 +59,10 @@
             </h2>
             <dl class="jentry__facts">
               <template v-for="row in block.rows" :key="row.path">
-                <dt>{{ row.label }}</dt>
+                <dt>
+                  {{ row.label }}<span v-if="row.zh" class="jentry__zh">{{ row.zh }}</span>
+                  <small v-if="row.hint" class="jentry__hint">{{ row.hint }}</small>
+                </dt>
                 <dd>{{ row.value }}</dd>
               </template>
             </dl>
@@ -247,6 +250,11 @@ onMounted(() => {
 .jentry__zh {
   margin-left: 6px;
   letter-spacing: 0;
+}
+.jentry__hint {
+  display: block;
+  color: #6b5f52;
+  font-size: 12px;
 }
 .jentry__actions {
   display: flex;
