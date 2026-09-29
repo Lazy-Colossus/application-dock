@@ -37,6 +37,7 @@ vi.mock("vue-router", () => ({
 }));
 
 import TeaDetailPage from "./TeaDetailPage.vue";
+import { emptyTasting } from "../tasting";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { Tea, CatalogueNode, AlmanacEntryView, Cabinet } from "../types";
 
@@ -428,6 +429,76 @@ describe("TeaDetailPage", () => {
     const wrapper = await page();
     await wrapper.get("[data-testid=tea-brew]").trigger("click");
     expect(push).toHaveBeenCalledWith({ name: "tea-timer", query: { tea: "t-1" } });
+  });
+
+  it("sums up how the tea usually tastes, across its tasted sittings", async () => {
+    const sitting = (id: string, edit: (t: ReturnType<typeof emptyTasting>) => void) => {
+      const t = emptyTasting();
+      edit(t);
+      return {
+        id,
+        brewed_by: "jakub",
+        teaware_id: null,
+        vessel_volume_ml: null,
+        tea_id: "t-1",
+        status: "finalised",
+        started_at: "2026-09-25T19:40:00Z",
+        updated_at: "2026-09-25T20:10:00Z",
+        finished_at: "2026-09-25T20:10:00Z",
+        leaf_grams: 6,
+        water_temp_c: 95,
+        rating: 5,
+        curve_source: "almanac",
+        curve_source_label: "",
+        infusions: [],
+        away_tea_name: "",
+        away_class_id: null,
+        timed: true,
+        cha_xi: null,
+        image_url: null,
+        tasting: t,
+      };
+    };
+    getMock.mockImplementation((path: string) => {
+      if (path === "/tea/teas") return Promise.resolve([tea()]);
+      if (path === "/tea/catalogue") return Promise.resolve([OOLONG, WUYI]);
+      if (path === "/tea/cabinet") return Promise.resolve(SOLO);
+      if (path === "/tea/teas/t-1/sessions")
+        return Promise.resolve([
+          sitting("s-1", (t) => {
+            t.sensation.hui_gan.strength = 4;
+            t.sensation.body = "mellow";
+            t.aroma.aroma = "orchid, honey";
+          }),
+          sitting("s-2", (t) => {
+            t.sensation.hui_gan.strength = 3;
+            t.aroma.aroma_type = "orchid";
+            t.aroma.structure = ["long"];
+          }),
+        ]);
+      return Promise.resolve([]);
+    });
+    const wrapper = mount(TeaDetailPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    const section = wrapper.get("[data-testid=tea-tasting]");
+    expect(section.get("[data-testid=tea-tasting-count]").text()).toBe("across 2 tasted sittings");
+    expect(section.text()).toContain("Hui gan — strength");
+    expect(section.text()).toContain("★ 3.5");
+    expect(section.get("[data-testid=tea-tasting-usual]").text()).toBe("Usually mellow body");
+    expect(section.get("[data-testid=tea-tasting-structure]").text()).toBe("Structure: long");
+    expect(section.get("[data-testid=tea-tasting-aroma]").text()).toBe("Aroma: orchid");
+  });
+
+  it("has no tasting summary until a sitting is tasted", async () => {
+    getMock.mockImplementation((path: string) => {
+      if (path === "/tea/teas") return Promise.resolve([tea()]);
+      if (path === "/tea/catalogue") return Promise.resolve([OOLONG, WUYI]);
+      if (path === "/tea/cabinet") return Promise.resolve(SOLO);
+      return Promise.resolve([]);
+    });
+    const wrapper = mount(TeaDetailPage, { global: { stubs: STUBS } });
+    await flushPromises();
+    expect(wrapper.find("[data-testid=tea-tasting]").exists()).toBe(false);
   });
 
   it("lists the tea's finished sessions", async () => {

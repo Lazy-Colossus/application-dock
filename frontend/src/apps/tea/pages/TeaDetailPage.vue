@@ -151,6 +151,26 @@
           </button>
         </section>
 
+        <section v-if="tasting" class="tea-view__section" data-testid="tea-tasting">
+          <h2 class="tea-view__heading">Tasting</h2>
+          <p class="tea-tasting__count" data-testid="tea-tasting-count">
+            across {{ tasting.count }} tasted {{ tasting.count === 1 ? "sitting" : "sittings" }}
+          </p>
+          <dl v-if="tasting.stars.length" class="tea-tasting__stars">
+            <template v-for="star in tasting.stars" :key="star.path">
+              <dt>{{ star.label }}</dt>
+              <dd>★ {{ star.average.toFixed(1) }}</dd>
+            </template>
+          </dl>
+          <p v-if="usual" class="tea-tasting__line" data-testid="tea-tasting-usual">{{ usual }}</p>
+          <p v-if="tasting.structure.length" class="tea-tasting__line" data-testid="tea-tasting-structure">
+            Structure: {{ tasting.structure.map((s) => s.label).join(" · ") }}
+          </p>
+          <p v-if="tasting.aromaWords.length" class="tea-tasting__line" data-testid="tea-tasting-aroma">
+            Aroma: {{ tasting.aromaWords.join(" · ") }}
+          </p>
+        </section>
+
         <section class="tea-view__section" data-testid="tea-sessions">
           <h2 class="tea-view__heading">Sessions</h2>
           <TeaSessionsList :sessions="teaSessions" :shared="household.shared" :me="auth.username" :vessels="teaware.items" />
@@ -208,6 +228,7 @@ import GramsSheet from "../components/GramsSheet.vue";
 import TeaForm from "../components/TeaForm.vue";
 import AddNodeDialog from "../components/AddNodeDialog.vue";
 import TeaSessionsList from "../components/TeaSessionsList.vue";
+import { TASTING_SECTIONS, optionLabel, tastingSummary } from "../tasting";
 import { useTeaCabinetStore } from "../stores/useTeaCabinetStore";
 import { useTeaCatalogueStore } from "../stores/useTeaCatalogueStore";
 import { useTeaAlmanacStore } from "../stores/useTeaAlmanacStore";
@@ -234,6 +255,19 @@ const household = useTeaHouseholdStore();
 const teaId = computed(() => String(route.params.teaId));
 const tea = computed(() => cabinet.teas.find((t) => t.id === teaId.value) ?? null);
 const teaSessions = computed(() => sessions.byTea[teaId.value] ?? []);
+const tasting = computed(() => tastingSummary(teaSessions.value));
+const usual = computed(() => {
+  const summary = tasting.value;
+  if (!summary) return "";
+  const fields = TASTING_SECTIONS.flatMap((s) => s.fields);
+  const label = (path: string, value: string) =>
+    optionLabel(fields.find((f) => f.path === path)!, value);
+  const parts = [
+    summary.body ? `${label("sensation.body", summary.body)} body` : "",
+    summary.saturation ? `${label("sensation.saturation", summary.saturation)} saturation` : "",
+  ].filter((p) => p !== "");
+  return parts.length ? `Usually ${parts.join(", ")}` : "";
+});
 const othersSessions = computed(
   () => teaSessions.value.filter((s) => s.brewed_by !== auth.username).length,
 );
@@ -514,6 +548,27 @@ onMounted(() => {
   font-size: 13px;
   padding: 4px 0;
   cursor: pointer;
+}
+.tea-tasting__count,
+.tea-tasting__line {
+  color: #a99781;
+  font-size: 14px;
+  margin: 6px 0 0;
+}
+.tea-tasting__stars {
+  display: grid;
+  grid-template-columns: 1fr max-content;
+  gap: 4px 16px;
+  color: #e4d9c6;
+  font-size: 14px;
+  margin: 10px 0 0;
+}
+.tea-tasting__stars dt {
+  color: #8b7a63;
+}
+.tea-tasting__stars dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
 }
 .tea-view__section {
   padding: 22px 18px 0;
