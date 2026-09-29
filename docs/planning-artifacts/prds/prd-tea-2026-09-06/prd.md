@@ -204,6 +204,8 @@ The user can start a silent Meditation of a chosen duration attached to the curr
 
 **Description:** During or after a Session the user taps through a hierarchical **Flavor Wheel** (categories → notes such as honey, petrichor, roasted, marine, camphor) to capture what the tea tastes like. The selected notes become the Session's **Flavor Fingerprint**. The wheel ships with a sensible default vocabulary and is user-extensible. Fingerprints can be compared across a Tea's Sessions and side-by-side across Teas.
 
+The user's own tasting vocabulary is designed in `docs/superpowers/specs/2026-09-29-tea-tasting-design.md`: a typed, per-session tasting sheet (leaf, liquor, aroma & qi, sensation) with a per-tea summary that delivers FR-17's aggregate. The tap-through wheel and custom notes (FR-15, FR-16) and side-by-side comparison remain open.
+
 **Functional Requirements:**
 
 #### FR-15: Capture a flavor fingerprint
