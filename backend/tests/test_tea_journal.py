@@ -97,7 +97,7 @@ def test_an_away_tea_cannot_be_timed() -> None:
         _write(tea_id=None, away_tea_name="Dancong")
 
 
-def test_a_v4_cabinet_upgrades_to_v5() -> None:
+def test_a_v4_cabinet_upgrades_to_the_current_version() -> None:
     raw: dict[str, object] = {
         "schema_version": 4,
         "id": "c-1",
@@ -107,7 +107,7 @@ def test_a_v4_cabinet_upgrades_to_v5() -> None:
         "sessions": [],
         "teaware": [],
     }
-    assert repo.migrate(raw)["schema_version"] == 5
+    assert repo.migrate(raw)["schema_version"] == 6
 
 
 def _tea(grams: float = 40, purchased: float | None = None, name: str = "Tieguanyin") -> str:

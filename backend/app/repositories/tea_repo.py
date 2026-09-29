@@ -92,7 +92,7 @@ def migrate(
 
     v2 added `sessions`. v3 made the document a cabinet with an `id` and an
     `owner`, and gave every session a `brewed_by`. v4 added `teaware`. v5 added cha xi,
-    journal-only sessions and session photos. Only a legacy per-user file is
+    journal-only sessions and session photos. v6 added the tasting sheet. Only a legacy per-user file is
     ever below v3, and its user owns and brewed everything in it.
     """
     if raw.get("schema_version", 1) == 1:
@@ -113,6 +113,9 @@ def migrate(
     if raw["schema_version"] == 4:
         # Every v5 field has a default: old sessions read as timed, cabinet-tea, no cha xi.
         raw = {**raw, "schema_version": 5}
+    if raw["schema_version"] == 5:
+        # v6 added the tasting sheet; it defaults to None.
+        raw = {**raw, "schema_version": 6}
     return raw
 
 

@@ -287,6 +287,7 @@ def edit_journal(username: str, session_id: str, req: JournalEdit) -> JournalEnt
         stamp = _now_iso()
         update: dict[str, object] = {
             "cha_xi": req.cha_xi,
+            "tasting": req.tasting,
             "rating": req.rating,
             "leaf_grams": req.leaf_grams,
             "water_temp_c": req.water_temp_c,

@@ -19,7 +19,7 @@ def _seed_nodes() -> list[CatalogueNode]:
 
 def test_empty_doc_defaults_are_usable() -> None:
     doc = TeaDoc()
-    assert doc.schema_version == 5
+    assert doc.schema_version == 6
     assert doc.teas == []
     assert doc.catalogue_nodes == []
     assert doc.sessions == []

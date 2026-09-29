@@ -8,7 +8,7 @@ replaces it.
 
 from __future__ import annotations
 
-from typing import Literal, get_args
+from typing import Annotated, Literal, get_args
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -42,6 +42,103 @@ class ChaXi(BaseModel):
         return sorted(moods, key=MOODS.index)
 
 
+Stars = Annotated[int, Field(ge=1, le=5)]
+LiquorColour = Literal[
+    "pale_jade", "yellow_green", "golden", "amber", "orange_red", "red", "deep_red", "dark_brown"
+]
+AromaStructure = Literal[
+    "single", "simple", "coarse", "short", "high", "layered", "complex", "delicate", "long", "deep"
+]
+AROMA_STRUCTURES: tuple[str, ...] = get_args(AromaStructure)
+LiquorBody = Literal["watery", "light", "mild", "mellow", "thick"]
+Saturation = Literal["low", "medium", "fairly_high", "high"]
+BodyFeel = Literal["none", "sweating", "warmth", "head_rush"]
+BODY_FEELS: tuple[str, ...] = get_args(BodyFeel)
+
+
+def _once_in_order(values: list[str], vocabulary: tuple[str, ...], what: str) -> list[str]:
+    if len(set(values)) != len(values):
+        raise ValueError(f"Pick each {what} once")
+    return sorted(values, key=vocabulary.index)
+
+
+class Leaf(BaseModel):
+    dry: str = ""
+    wet: str = ""
+    spent: str = ""
+    quality: Stars | None = None
+
+
+class Liquor(BaseModel):
+    colour: LiquorColour | None = None
+    clarity: Stars | None = None
+
+
+class Aroma(BaseModel):
+    """香&气 — what the tea smells like, stage by stage."""
+
+    aroma: str = ""
+    aroma_type: str = ""
+    richness: Stars | None = None
+    top_note: str = ""
+    middle_note: str = ""
+    base_note: str = ""
+    tail_note: str = ""
+    cup_aroma: str = ""
+    structure: list[AromaStructure] = Field(default_factory=list)
+
+    @field_validator("structure")
+    @classmethod
+    def _structure_once_in_order(cls, values: list[AromaStructure]) -> list[AromaStructure]:
+        return _once_in_order(values, AROMA_STRUCTURES, "aroma structure")
+
+
+class Mouthfeel(BaseModel):
+    thin: Stars | None = None
+    dry: Stars | None = None
+    astringent: Stars | None = None
+    rough: Stars | None = None
+    thick: Stars | None = None
+    moist: Stars | None = None
+    slick: Stars | None = None
+    cooling: Stars | None = None
+
+
+class Intensity(BaseModel):
+    strength: Stars | None = None
+    duration: Stars | None = None
+
+
+class Sensation(BaseModel):
+    """感&觉 — how the tea feels in the mouth, the throat and the body."""
+
+    body: LiquorBody | None = None
+    smoothness: Stars | None = None
+    saturation: Saturation | None = None
+    throat: Stars | None = None
+    mouthfeel: Mouthfeel = Field(default_factory=Mouthfeel)
+    hui_gan: Intensity = Field(default_factory=Intensity)
+    sheng_jin: Intensity = Field(default_factory=Intensity)
+    body_feel: list[BodyFeel] = Field(default_factory=list)
+    body_feel_other: str = ""
+
+    @field_validator("body_feel")
+    @classmethod
+    def _body_feel_consistent(cls, values: list[BodyFeel]) -> list[BodyFeel]:
+        if "none" in values and len(values) > 1:
+            raise ValueError("'None noticeable' can't go with another body feeling")
+        return _once_in_order(values, BODY_FEELS, "body feeling")
+
+
+class Tasting(BaseModel):
+    """One sitting's tasting, in the user's notebook vocabulary. Every field is optional."""
+
+    leaf: Leaf = Field(default_factory=Leaf)
+    liquor: Liquor = Field(default_factory=Liquor)
+    aroma: Aroma = Field(default_factory=Aroma)
+    sensation: Sensation = Field(default_factory=Sensation)
+
+
 class TeaSessionWrite(BaseModel):
     """The snapshot body: a session minus the fields the server owns."""
 
@@ -61,6 +158,7 @@ class TeaSessionWrite(BaseModel):
     # False = journal-only: brewed away from the timer, so it has no infusions.
     timed: bool = True
     cha_xi: ChaXi | None = None
+    tasting: Tasting | None = None
 
     @model_validator(mode="after")
     def _numbered_in_order(self) -> TeaSessionWrite:
@@ -113,6 +211,7 @@ class JournalEdit(BaseModel):
     """
 
     cha_xi: ChaXi | None = None
+    tasting: Tasting | None = None
     rating: int | None = Field(default=None, ge=1, le=5)
     leaf_grams: float | None = Field(default=None, gt=0)
     water_temp_c: int | None = Field(default=None, ge=1, le=100)

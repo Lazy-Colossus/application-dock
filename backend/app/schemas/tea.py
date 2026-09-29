@@ -97,7 +97,7 @@ class TeaView(Tea):
 
 
 class TeaDoc(BaseModel):
-    schema_version: int = 5
+    schema_version: int = 6
     # Empty only on the implicit cabinet of a user who has not written anything yet.
     id: str = ""
     owner: str = ""
