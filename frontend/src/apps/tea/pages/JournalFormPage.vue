@@ -104,6 +104,8 @@
         @remove-photo="onRemovePhoto"
       />
 
+      <TastingFields v-model="tasting" />
+
       <p v-if="journal.error" class="tea-page__error" data-testid="jform-error">
         {{ journal.error }}
       </p>
@@ -124,6 +126,7 @@
 import { computed, onMounted, ref, shallowRef } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import ChaXiFields from "../components/ChaXiFields.vue";
+import TastingFields from "../components/TastingFields.vue";
 import { useTeaJournalStore } from "../stores/useTeaJournalStore";
 import { useTeaCabinetStore } from "../stores/useTeaCabinetStore";
 import { useTeawareStore } from "../stores/useTeawareStore";
@@ -133,7 +136,7 @@ import { emptyChaXi, fromDateInput, toDateInput } from "../journal";
 import { newSessionId } from "../timer";
 import { imageSrc } from "../shelf";
 import { isBrewingVessel } from "../ware";
-import type { ChaXi, JournalEdit, TeaClass, TeaSessionWrite } from "../types";
+import type { ChaXi, JournalEdit, Tasting, TeaClass, TeaSessionWrite } from "../types";
 
 type Source = "cabinet" | "away";
 
@@ -166,6 +169,7 @@ const grams = ref("");
 const water = ref("");
 const rating = ref<number | null>(null);
 const chaXi = ref<ChaXi>(emptyChaXi());
+const tasting = ref<Tasting | null>(null);
 const pendingPhoto = shallowRef<File | null>(null);
 const removed = ref(false);
 const photoError = ref<string | null>(null);
@@ -215,14 +219,14 @@ function newBody(): TeaSessionWrite {
     teaware_id: teawareId.value,
     timed: false,
     cha_xi: chaXi.value,
-    tasting: null,
+    tasting: tasting.value,
   };
 }
 
 function editBody(): JournalEdit {
   const body: JournalEdit = {
     cha_xi: chaXi.value,
-    tasting: existing.value?.tasting ?? null,
+    tasting: tasting.value,
     rating: rating.value,
     leaf_grams: positive(grams.value),
     water_temp_c: celsius(water.value),
@@ -281,6 +285,7 @@ function fill(): void {
   water.value = e.water_temp_c !== null ? String(e.water_temp_c) : "";
   rating.value = e.rating;
   chaXi.value = e.cha_xi ?? emptyChaXi();
+  tasting.value = e.tasting;
 }
 
 onMounted(async () => {

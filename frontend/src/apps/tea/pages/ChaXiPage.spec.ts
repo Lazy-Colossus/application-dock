@@ -89,6 +89,17 @@ describe("ChaXiPage", () => {
     expect(putMock).toHaveBeenCalledTimes(1);
   });
 
+  it("writes tasting edits into the live session and syncs them the same way", async () => {
+    liveWithTea();
+    const timer = useTeaTimerStore();
+    const wrapper = mount(ChaXiPage, { global: { stubs: STUBS } });
+    await wrapper.get('[data-testid="tasting-sensation.throat-4"]').trigger("click");
+    expect(timer.live?.tasting?.sensation.throat).toBe(4);
+    vi.advanceTimersByTime(1500);
+    await flushPromises();
+    expect(putMock).toHaveBeenCalledTimes(1);
+  });
+
   it("goes back to the timer from the brew strip", async () => {
     liveWithTea();
     const wrapper = mount(ChaXiPage, { global: { stubs: STUBS } });

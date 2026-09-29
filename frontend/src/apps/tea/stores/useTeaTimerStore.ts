@@ -6,6 +6,7 @@ import { downscaleImage } from "@/apps/tea/image";
 import type {
   BrewingCurve,
   ChaXi,
+  Tasting,
   Infusion,
   Tea,
   TeaClass,
@@ -42,6 +43,7 @@ export interface LiveSession {
   // Optional: sessions saved before the Journal existed still hydrate.
   chaXi?: ChaXi | null;
   imageUrl?: string | null;
+  tasting?: Tasting | null;
   curve: BrewingCurve;
   leafGrams: number | null;
   waterTempC: number | null;
@@ -194,7 +196,7 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
       away_class_id: null,
       timed: true,
       cha_xi: session.chaXi ?? null,
-      tasting: null,
+      tasting: session.tasting ?? null,
     };
   }
 
@@ -342,6 +344,10 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
     if (live.value) live.value.chaXi = value;
   }
 
+  function setTasting(value: Tasting | null): void {
+    if (live.value) live.value.tasting = value;
+  }
+
   /** The server needs the session before its photo, so the session syncs first. */
   async function uploadPhoto(file: File): Promise<boolean> {
     const session = live.value;
@@ -487,6 +493,7 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
       pushed: true,
       chaXi: session.cha_xi,
       imageUrl: session.image_url,
+      tasting: session.tasting,
     };
     unsynced.value = false;
   }
@@ -524,6 +531,7 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
     setWaterTemp,
     setVessel,
     setChaXi,
+    setTasting,
     uploadPhoto,
     removePhoto,
     push,

@@ -226,7 +226,11 @@ useWakeLock(computed(() => timer.live !== null));
 
 const hasLiveChaXi = computed(() =>
   timer.live
-    ? hasChaXi({ cha_xi: timer.live.chaXi ?? null, image_url: timer.live.imageUrl ?? null })
+    ? hasChaXi({
+        cha_xi: timer.live.chaXi ?? null,
+        image_url: timer.live.imageUrl ?? null,
+        tasting: timer.live.tasting ?? null,
+      })
     : false,
 );
 

@@ -14,6 +14,7 @@
         @photo="timer.uploadPhoto($event)"
         @remove-photo="timer.removePhoto()"
       />
+      <TastingFields :model-value="timer.live.tasting ?? null" @update:model-value="onTasting" />
     </div>
   </q-page>
 </template>
@@ -23,11 +24,12 @@ import { computed, onMounted } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
 import BrewStrip from "../components/BrewStrip.vue";
 import ChaXiFields from "../components/ChaXiFields.vue";
+import TastingFields from "../components/TastingFields.vue";
 import { useTeaTimerStore } from "../stores/useTeaTimerStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { emptyChaXi } from "../journal";
 import { imageSrc } from "../shelf";
-import type { ChaXi } from "../types";
+import type { ChaXi, Tasting } from "../types";
 
 // Long enough to let a sentence finish, short enough that a lost phone loses little.
 const PUSH_DELAY_MS = 1500;
@@ -53,10 +55,19 @@ function flush(): void {
   void timer.push();
 }
 
-function onEdit(value: ChaXi): void {
-  timer.setChaXi(value);
+function schedule(): void {
   if (pending !== null) clearTimeout(pending);
   pending = setTimeout(flush, PUSH_DELAY_MS);
+}
+
+function onEdit(value: ChaXi): void {
+  timer.setChaXi(value);
+  schedule();
+}
+
+function onTasting(value: Tasting | null): void {
+  timer.setTasting(value);
+  schedule();
 }
 
 function toTimer(): void {

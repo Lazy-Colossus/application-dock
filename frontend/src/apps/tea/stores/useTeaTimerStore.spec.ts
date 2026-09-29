@@ -13,7 +13,8 @@ vi.mock("@/composables/useApi", () => ({
 }));
 
 import { useTeaTimerStore } from "./useTeaTimerStore";
-import type { BrewingCurve, Tea, TeaSession, Teaware } from "../types";
+import { emptyTasting } from "../tasting";
+import type { BrewingCurve, Tasting, Tea, TeaSession, Teaware } from "../types";
 
 function tea(overrides: Partial<Tea> = {}): Tea {
   return {
@@ -594,6 +595,19 @@ describe("cha xi", () => {
       guests: "Eva",
       notes: "",
     });
+  });
+
+  it("sends the live tasting with the next snapshot, and none for an old stored session", async () => {
+    const store = await brewing();
+    await store.push();
+    expect((putMock.mock.calls.at(-1)![1] as { tasting: unknown }).tasting).toBeNull();
+
+    const tasted = emptyTasting();
+    tasted.sensation.throat = 4;
+    store.setTasting(tasted);
+    await store.push();
+    const [, body] = putMock.mock.calls.at(-1)!;
+    expect((body as { tasting: Tasting }).tasting.sensation.throat).toBe(4);
   });
 
   it("hydrates a session stored before cha xi existed", () => {

@@ -20,6 +20,7 @@ vi.mock("vue-router", () => ({
 
 import JournalFormPage from "./JournalFormPage.vue";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { emptyTasting } from "../tasting";
 import type { JournalEntry, Tea } from "../types";
 
 const STUBS = { "q-page": { template: "<div><slot /></div>" } };
@@ -161,6 +162,16 @@ describe("JournalFormPage — new entry", () => {
     expect(replace).toHaveBeenCalled();
   });
 
+  it("sends the tasting with a new entry", async () => {
+    putMock.mockResolvedValue({});
+    const wrapper = await render();
+    await wrapper.get("[data-testid=jform-tea]").setValue("t-1");
+    await wrapper.get('[data-testid="tasting-sensation.body-thick"]').trigger("click");
+    await wrapper.get("[data-testid=jform-save]").trigger("click");
+    await flushPromises();
+    expect(putMock.mock.calls[0][1].tasting.sensation.body).toBe("thick");
+  });
+
   it("won't save without a tea", async () => {
     const wrapper = await render();
     expect(wrapper.get("[data-testid=jform-save]").attributes("disabled")).toBeDefined();
@@ -200,6 +211,19 @@ describe("JournalFormPage — edit", () => {
     expect(body).toMatchObject({ rating: 5, leaf_grams: 5, tea_id: "t-1" });
     expect(body.started_at).toBeDefined();
     expect(replace).toHaveBeenCalledWith({ name: "tea-journal-entry", params: { id: "s-7" } });
+  });
+
+  it("keeps the tasting recorded at the table when the notes are edited", async () => {
+    params.id = "s-7";
+    const tasted = emptyTasting();
+    tasted.aroma.top_note = "orchid";
+    const entry = { ...JOURNAL_ONLY, tasting: tasted };
+    putMock.mockResolvedValue(entry);
+    const wrapper = await render([entry]);
+    await wrapper.get("[data-testid=chaxi-notes]").setValue("third steep best");
+    await wrapper.get("[data-testid=jform-save]").trigger("click");
+    await flushPromises();
+    expect(putMock.mock.calls[0][1].tasting.aroma.top_note).toBe("orchid");
   });
 
   it("sends no tea or date for a timed session", async () => {
