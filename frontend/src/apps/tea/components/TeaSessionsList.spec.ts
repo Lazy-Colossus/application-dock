@@ -23,6 +23,7 @@ function session(id: string, overrides: Partial<TeaSession> = {}): TeaSession {
     away_class_id: null,
     timed: true,
     cha_xi: null,
+    tasting: null,
     image_url: null,
     infusions: [
       { number: 1, target_seconds: 20, actual_seconds: 21 },

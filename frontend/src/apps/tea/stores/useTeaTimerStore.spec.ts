@@ -528,6 +528,7 @@ describe("resume", () => {
       away_class_id: null,
       timed: true,
       cha_xi: null,
+      tasting: null,
       image_url: null,
       infusions: [{ number: 1, target_seconds: 20, actual_seconds: 22 }],
     };
@@ -559,6 +560,7 @@ describe("resume", () => {
       away_class_id: null,
       timed: true,
       cha_xi: null,
+      tasting: null,
       image_url: null,
       infusions: [{ number: 1, target_seconds: 20, actual_seconds: 22 }],
     };
@@ -662,6 +664,7 @@ describe("cha xi", () => {
       teaware_id: null,
       timed: true,
       cha_xi: { moods: ["cosy"], guests: "", notes: "rain" },
+      tasting: null,
       brewed_by: "jakub",
       vessel_volume_ml: null,
       updated_at: "2026-09-26T18:05:00Z",

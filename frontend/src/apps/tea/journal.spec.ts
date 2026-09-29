@@ -9,6 +9,7 @@ import {
   toDateInput,
   toggleMood,
 } from "./journal";
+import { emptyTasting } from "./tasting";
 import type { JournalEntry } from "./types";
 
 function entry(id: string, started_at: string): JournalEntry {
@@ -28,6 +29,7 @@ function entry(id: string, started_at: string): JournalEntry {
     teaware_id: null,
     timed: true,
     cha_xi: null,
+    tasting: null,
     brewed_by: "jakub",
     vessel_volume_ml: null,
     updated_at: started_at,
@@ -64,6 +66,10 @@ describe("journal helpers", () => {
     );
     expect(hasChaXi({ cha_xi: { ...emptyChaXi(), notes: "honey" }, image_url: null })).toBe(true);
     expect(hasChaXi({ cha_xi: null, image_url: "/api/tea/sessions/s-1/image" })).toBe(true);
+    const tasted = emptyTasting();
+    tasted.sensation.throat = 3;
+    expect(hasChaXi({ cha_xi: null, image_url: null, tasting: tasted })).toBe(true);
+    expect(hasChaXi({ cha_xi: null, image_url: null, tasting: emptyTasting() })).toBe(false);
   });
 
   it("groups newest-first entries by month", () => {

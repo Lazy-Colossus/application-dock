@@ -60,6 +60,7 @@ const SESSION: TeaSession = {
   away_class_id: null,
   timed: true,
   cha_xi: null,
+  tasting: null,
   image_url: null,
   infusions: [],
   teaware_id: "w-1",

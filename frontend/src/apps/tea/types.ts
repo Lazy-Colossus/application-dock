@@ -132,6 +132,92 @@ export interface ChaXi {
   notes: string;
 }
 
+/** 1–5, or null for "not rated". */
+export type Stars = number | null;
+export type LiquorColour =
+  | "pale_jade"
+  | "yellow_green"
+  | "golden"
+  | "amber"
+  | "orange_red"
+  | "red"
+  | "deep_red"
+  | "dark_brown";
+export type AromaStructure =
+  | "single"
+  | "simple"
+  | "coarse"
+  | "short"
+  | "high"
+  | "layered"
+  | "complex"
+  | "delicate"
+  | "long"
+  | "deep";
+export type LiquorBody = "watery" | "light" | "mild" | "mellow" | "thick";
+export type Saturation = "low" | "medium" | "fairly_high" | "high";
+export type BodyFeel = "none" | "sweating" | "warmth" | "head_rush";
+
+export interface Leaf {
+  dry: string;
+  wet: string;
+  spent: string;
+  quality: Stars;
+}
+
+export interface Liquor {
+  colour: LiquorColour | null;
+  clarity: Stars;
+}
+
+export interface Aroma {
+  aroma: string;
+  aroma_type: string;
+  richness: Stars;
+  top_note: string;
+  middle_note: string;
+  base_note: string;
+  tail_note: string;
+  cup_aroma: string;
+  structure: AromaStructure[];
+}
+
+export interface Mouthfeel {
+  thin: Stars;
+  dry: Stars;
+  astringent: Stars;
+  rough: Stars;
+  thick: Stars;
+  moist: Stars;
+  slick: Stars;
+  cooling: Stars;
+}
+
+export interface Intensity {
+  strength: Stars;
+  duration: Stars;
+}
+
+export interface Sensation {
+  body: LiquorBody | null;
+  smoothness: Stars;
+  saturation: Saturation | null;
+  throat: Stars;
+  mouthfeel: Mouthfeel;
+  hui_gan: Intensity;
+  sheng_jin: Intensity;
+  body_feel: BodyFeel[];
+  body_feel_other: string;
+}
+
+/** Mirrors backend `Tasting`. */
+export interface Tasting {
+  leaf: Leaf;
+  liquor: Liquor;
+  aroma: Aroma;
+  sensation: Sensation;
+}
+
 export interface TeaSessionWrite {
   // null only for a journal-only entry of a tea not in the cabinet.
   tea_id: string | null;
@@ -148,6 +234,7 @@ export interface TeaSessionWrite {
   teaware_id: string | null;
   timed: boolean;
   cha_xi: ChaXi | null;
+  tasting: Tasting | null;
 }
 
 export interface TeaSession extends TeaSessionWrite {
@@ -169,6 +256,7 @@ export interface JournalEntry extends TeaSession {
 /** `PUT /tea/sessions/{id}/journal`. The optional fields are for journal-only entries. */
 export interface JournalEdit {
   cha_xi: ChaXi | null;
+  tasting: Tasting | null;
   rating: number | null;
   leaf_grams: number | null;
   water_temp_c: number | null;

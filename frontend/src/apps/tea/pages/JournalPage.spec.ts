@@ -35,6 +35,7 @@ function entry(id: string, overrides: Partial<JournalEntry> = {}): JournalEntry 
     teaware_id: null,
     timed: true,
     cha_xi: null,
+    tasting: null,
     brewed_by: "jakub",
     vessel_volume_ml: null,
     updated_at: "2026-09-28T18:30:00Z",

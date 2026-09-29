@@ -32,6 +32,7 @@ function entry(id: string, overrides: Partial<JournalEntry> = {}): JournalEntry 
     teaware_id: null,
     timed: true,
     cha_xi: null,
+    tasting: null,
     brewed_by: "jakub",
     vessel_volume_ml: null,
     updated_at: "2026-09-28T18:30:00Z",
@@ -76,6 +77,7 @@ describe("useTeaJournalStore", () => {
     await store.fetchJournal();
     await store.edit("s-1", {
       cha_xi: null,
+      tasting: null,
       rating: 5,
       leaf_grams: 5,
       water_temp_c: null,

@@ -215,12 +215,14 @@ function newBody(): TeaSessionWrite {
     teaware_id: teawareId.value,
     timed: false,
     cha_xi: chaXi.value,
+    tasting: null,
   };
 }
 
 function editBody(): JournalEdit {
   const body: JournalEdit = {
     cha_xi: chaXi.value,
+    tasting: existing.value?.tasting ?? null,
     rating: rating.value,
     leaf_grams: positive(grams.value),
     water_temp_c: celsius(water.value),

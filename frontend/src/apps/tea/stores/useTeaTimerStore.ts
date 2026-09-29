@@ -194,6 +194,7 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
       away_class_id: null,
       timed: true,
       cha_xi: session.chaXi ?? null,
+      tasting: null,
     };
   }
 

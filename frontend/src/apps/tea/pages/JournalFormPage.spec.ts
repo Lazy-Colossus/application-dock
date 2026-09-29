@@ -42,6 +42,7 @@ const JOURNAL_ONLY: JournalEntry = {
   teaware_id: null,
   timed: false,
   cha_xi: { moods: ["cosy"], guests: "", notes: "" },
+  tasting: null,
   brewed_by: "jakub",
   vessel_volume_ml: null,
   updated_at: "2026-09-20T10:00:00.000Z",
@@ -96,6 +97,7 @@ describe("JournalFormPage — new entry", () => {
       leaf_grams: 5,
       rating: 4,
       cha_xi: { moods: ["social"], guests: "", notes: "" },
+      tasting: null,
     });
     expect(new Date(body.started_at).getDate()).toBe(20);
     expect(replace).toHaveBeenCalledWith({

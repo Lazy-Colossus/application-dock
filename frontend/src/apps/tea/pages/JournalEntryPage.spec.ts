@@ -42,6 +42,7 @@ const ENTRY: JournalEntry = {
   teaware_id: null,
   timed: true,
   cha_xi: { moods: ["calm", "social"], guests: "Eva", notes: "orchid\nstone" },
+  tasting: null,
   brewed_by: "jakub",
   vessel_volume_ml: null,
   updated_at: "2026-09-28T18:30:00Z",

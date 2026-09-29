@@ -1,6 +1,7 @@
 // Pure helpers for the Cha Xi Journal.
 
-import type { ChaXi, JournalEntry, Mood, TeaSession } from "./types";
+import { isEmptyTasting } from "./tasting";
+import type { ChaXi, JournalEntry, Mood, Tasting, TeaSession } from "./types";
 
 /** Mirrors backend `Mood`; also the order moods are shown and stored in. */
 export const MOODS: Mood[] = [
@@ -23,9 +24,14 @@ export function toggleMood(moods: Mood[], mood: Mood): Mood[] {
   return MOODS.filter((m) => next.includes(m));
 }
 
-/** Whether anything of a sitting's cha xi is recorded — the Journal's "Cha xi only" test. */
-export function hasChaXi(session: { cha_xi: ChaXi | null; image_url: string | null }): boolean {
+/** Whether anything of a sitting's cha xi or tasting is recorded — the "Cha xi only" test. */
+export function hasChaXi(session: {
+  cha_xi: ChaXi | null;
+  image_url: string | null;
+  tasting?: Tasting | null;
+}): boolean {
   if (session.image_url !== null) return true;
+  if (session.tasting && !isEmptyTasting(session.tasting)) return true;
   const chaXi = session.cha_xi;
   if (chaXi === null) return false;
   return chaXi.moods.length > 0 || chaXi.guests.trim() !== "" || chaXi.notes.trim() !== "";
