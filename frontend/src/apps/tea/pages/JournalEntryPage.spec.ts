@@ -19,6 +19,7 @@ vi.mock("vue-router", () => ({
 
 import JournalEntryPage from "./JournalEntryPage.vue";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { emptyTasting } from "../tasting";
 import type { JournalEntry } from "../types";
 
 const STUBS = { "q-page": { template: "<div><slot /></div>" }, RouterLink: RouterLinkStub };
@@ -120,6 +121,22 @@ describe("JournalEntryPage", () => {
     const wrapper = await render();
     await wrapper.get("[data-testid=journal-delete]").trigger("click");
     expect(delMock).not.toHaveBeenCalled();
+  });
+
+  it("shows the tasting's filled fields only, by section", async () => {
+    const tasted = emptyTasting();
+    tasted.aroma.top_note = "orchid";
+    tasted.sensation.hui_gan.strength = 4;
+    const wrapper = await render({ ...ENTRY, tasting: tasted });
+    expect(wrapper.find("[data-testid=journal-tasting-leaf]").exists()).toBe(false);
+    expect(wrapper.get("[data-testid=journal-tasting-aroma]").text()).toContain("Top note");
+    expect(wrapper.get("[data-testid=journal-tasting-aroma]").text()).toContain("orchid");
+    expect(wrapper.get("[data-testid=journal-tasting-sensation]").text()).toContain("★★★★☆");
+  });
+
+  it("shows no tasting block for an untasted sitting", async () => {
+    const wrapper = await render();
+    expect(wrapper.find("[data-testid=journal-tasting]").exists()).toBe(false);
   });
 
   it("says so when the sitting is gone", async () => {

@@ -18,6 +18,9 @@
       <span v-if="entry.cha_xi?.moods.length" class="jcard__moods">
         {{ entry.cha_xi.moods.join(" · ") }}
       </span>
+      <span v-if="tasting" class="jcard__tasting" data-testid="journal-card-tasting">{{
+        tasting
+      }}</span>
       <span v-if="mine && !hasChaXi(entry)" class="jcard__hint" data-testid="journal-card-hint">
         + cha xi
       </span>
@@ -30,6 +33,7 @@ import { computed } from "vue";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { CLASS_TOKENS } from "../tokens";
 import { hasChaXi } from "../journal";
+import { tastingLine } from "../tasting";
 import { imageSrc } from "../shelf";
 import type { JournalEntry } from "../types";
 
@@ -42,6 +46,7 @@ const date = computed(() =>
   new Date(props.entry.started_at).toLocaleDateString([], { day: "numeric", month: "short" }),
 );
 const stars = computed(() => (props.entry.rating === null ? "" : "★".repeat(props.entry.rating)));
+const tasting = computed(() => (props.entry.tasting ? tastingLine(props.entry.tasting) : ""));
 const meta = computed(() => {
   const e = props.entry;
   const how = e.timed
@@ -98,6 +103,10 @@ const meta = computed(() => {
   color: #a99781;
   font-size: 13px;
   font-style: italic;
+}
+.jcard__tasting {
+  color: #a99781;
+  font-size: 13px;
 }
 .jcard__hint {
   color: #6b5f52;

@@ -47,6 +47,25 @@
           </li>
         </ol>
 
+        <div v-if="tastingBlocks.length" class="jentry__tasting" data-testid="journal-tasting">
+          <section
+            v-for="block in tastingBlocks"
+            :key="block.key"
+            class="jentry__tblock"
+            :data-testid="`journal-tasting-${block.key}`"
+          >
+            <h2 class="jentry__theading">
+              {{ block.title }}<span v-if="block.zh" class="jentry__zh">{{ block.zh }}</span>
+            </h2>
+            <dl class="jentry__facts">
+              <template v-for="row in block.rows" :key="row.path">
+                <dt>{{ row.label }}</dt>
+                <dd>{{ row.value }}</dd>
+              </template>
+            </dl>
+          </section>
+        </div>
+
         <p v-if="journal.error" class="tea-page__error" data-testid="journal-entry-error">
           {{ journal.error }}
         </p>
@@ -82,6 +101,7 @@ import { useTeaCabinetStore } from "../stores/useTeaCabinetStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { CLASS_TOKENS } from "../tokens";
 import { gramsReturned } from "../journal";
+import { describeTasting } from "../tasting";
 import { imageSrc } from "../shelf";
 import { vesselLabel } from "../ware";
 
@@ -105,6 +125,10 @@ const date = computed(() =>
         year: "numeric",
       })
     : "",
+);
+
+const tastingBlocks = computed(() =>
+  entry.value?.tasting ? describeTasting(entry.value.tasting) : [],
 );
 
 const facts = computed(() => {
@@ -208,6 +232,21 @@ onMounted(() => {
 }
 .jentry__timeline small {
   color: #6b5f52;
+}
+.jentry__tasting {
+  margin-top: 8px;
+}
+.jentry__theading {
+  color: #a99781;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 18px 0 8px;
+}
+.jentry__zh {
+  margin-left: 6px;
+  letter-spacing: 0;
 }
 .jentry__actions {
   display: flex;

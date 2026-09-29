@@ -14,6 +14,7 @@ vi.mock("vue-router", () => ({
 
 import JournalPage from "./JournalPage.vue";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { emptyTasting } from "../tasting";
 import type { JournalEntry } from "../types";
 
 const STUBS = { "q-page": { template: "<div><slot /></div>" }, RouterLink: RouterLinkStub };
@@ -108,6 +109,17 @@ describe("JournalPage", () => {
     expect(wrapper.find("[data-testid=journal-empty]").exists()).toBe(true);
     await wrapper.get("[data-testid=journal-new]").trigger("click");
     expect(push).toHaveBeenCalledWith({ name: "tea-journal-new" });
+  });
+
+  it("puts a tasting line on a tasted sitting's card", async () => {
+    const tasted = emptyTasting();
+    tasted.aroma.aroma_type = "orchid";
+    tasted.sensation.body = "mellow";
+    const wrapper = await render([entry("s-1", { tasting: tasted }), entry("s-2")]);
+    const line = (id: string) =>
+      wrapper.find(`[data-testid=journal-card-${id}] [data-testid=journal-card-tasting]`);
+    expect(line("s-1").text()).toBe("orchid · mellow");
+    expect(line("s-2").exists()).toBe(false);
   });
 
   it("names an away sitting as away", async () => {
