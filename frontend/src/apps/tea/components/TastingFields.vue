@@ -32,7 +32,7 @@
         />
         <StarRating
           v-else-if="field.kind === 'stars'"
-          :model-value="getAt(current, field.path) as number | null"
+          :model-value="starsAt(field.path)"
           :label="field.label"
           :testid="`tasting-${field.path}`"
           @update:model-value="set(field.path, $event)"
@@ -87,6 +87,11 @@ function set(path: string, value: TastingValue): void {
   const next = setAt(current.value, path, value);
   // An all-empty sheet is no tasting at all, so it never counts as "tasted".
   emit("update:modelValue", isEmptyTasting(next) ? null : next);
+}
+
+function starsAt(path: string): number | null {
+  const value = getAt(current.value, path);
+  return typeof value === "number" ? value : null;
 }
 
 function isOn(field: TastingField, value: string): boolean {
