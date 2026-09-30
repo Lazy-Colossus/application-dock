@@ -17,6 +17,8 @@
   { "id": "green.chun-mee", "parent_id": "green", "name": "Chun Mee (Zhen Mei)", "name_zh": "珍眉", "source": "seed", "default_origin": "Jiangxi, Anhui and Zhejiang" },
   { "id": "green.kaihua-longding", "parent_id": "green", "name": "Kaihua Longding", "name_zh": "開化龍頂", "source": "seed", "default_origin": "Kaihua, Zhejiang" },
   { "id": "green.laoshan", "parent_id": "green", "name": "Laoshan Green", "name_zh": "嶗山綠茶", "source": "seed", "default_origin": "Laoshan, Qingdao, Shandong" },
+  { "id": "green.bhutanese", "parent_id": "green", "name": "Bhutanese", "name_zh": "", "source": "seed", "default_origin": "Bhutan" },
+  { "id": "green.bhutanese.samcholing", "parent_id": "green.bhutanese", "name": "Samcholing Green", "name_zh": "", "source": "seed", "default_origin": "Samcholing, Trongsa district, central Bhutan" },
   { "id": "green.taiwanese", "parent_id": "green", "name": "Taiwanese green", "name_zh": "台灣綠茶", "source": "seed", "default_origin": "Taiwan" },
   { "id": "green.taiwanese.sanxia-biluochun", "parent_id": "green.taiwanese", "name": "Sanxia Biluochun", "name_zh": "三峽碧螺春", "source": "seed", "default_origin": "Sanxia, New Taipei, Taiwan" },
   { "id": "green.indonesian", "parent_id": "green", "name": "Indonesian", "name_zh": "", "source": "seed", "default_origin": "Indonesia" },
@@ -189,6 +191,8 @@
   { "id": "red.yihong", "parent_id": "red", "name": "Yihong", "name_zh": "宜紅", "source": "seed", "default_origin": "Yichang, Hubei" },
   { "id": "red.ninghong", "parent_id": "red", "name": "Ninghong", "name_zh": "寧紅", "source": "seed", "default_origin": "Xiushui, Jiangxi" },
   { "id": "red.mi-xiang", "parent_id": "red", "name": "Mi Xiang Hong Cha", "name_zh": "蜜香紅茶", "source": "seed", "default_origin": "Wuhe, Ruisui, Hualien, Taiwan" },
+  { "id": "red.bhutanese", "parent_id": "red", "name": "Bhutanese", "name_zh": "", "source": "seed", "default_origin": "Bhutan" },
+  { "id": "red.bhutanese.samcholing", "parent_id": "red.bhutanese", "name": "Samcholing Black", "name_zh": "", "source": "seed", "default_origin": "Samcholing, Trongsa district, central Bhutan" },
   { "id": "red.malawian", "parent_id": "red", "name": "Malawian", "name_zh": "", "source": "seed", "default_origin": "Malawi" },
   { "id": "red.malawian.shire-highlands", "parent_id": "red.malawian", "name": "Malawi Black", "name_zh": "", "source": "seed", "default_origin": "Thyolo and Mulanje, Shire Highlands, Malawi" },
   { "id": "red.georgian", "parent_id": "red", "name": "Georgian", "name_zh": "", "source": "seed", "default_origin": "Georgia" },
@@ -223,6 +227,8 @@
   { "id": "dark.hua-zhuan", "parent_id": "dark", "name": "Hua Zhuan", "name_zh": "花磚", "source": "seed", "default_origin": "Anhua, Hunan" },
   { "id": "dark.qing-zhuan", "parent_id": "dark", "name": "Qing Zhuan", "name_zh": "青磚", "source": "seed", "default_origin": "Chibi, Hubei" },
   { "id": "dark.xiao-qing-gan", "parent_id": "dark", "name": "Xiao Qing Gan", "name_zh": "小青柑", "source": "seed", "default_origin": "Xinhui, Guangdong (pu-erh from Yunnan)" },
+  { "id": "dark.bhutanese", "parent_id": "dark", "name": "Bhutanese fermented", "name_zh": "", "source": "seed", "default_origin": "Bhutan" },
+  { "id": "dark.bhutanese.ja-aum", "parent_id": "dark.bhutanese", "name": "Ja Aum (Bhutanese fermented tea)", "name_zh": "", "source": "seed", "default_origin": "Samcholing, Trongsa district, central Bhutan" },
 
   { "id": "other", "parent_id": null, "name": "Other", "name_zh": "其他", "source": "seed" },
   { "id": "other.miang", "parent_id": "other", "name": "Miang", "name_zh": "", "source": "seed", "default_origin": "Mountain forests of northern Thailand" }
