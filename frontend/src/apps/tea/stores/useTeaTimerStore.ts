@@ -291,6 +291,14 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
     await push();
   }
 
+  /** Correct a brewed steep's time — e.g. a steep left running past the pour. */
+  async function setSteepSeconds(number: number, seconds: number): Promise<void> {
+    const infusion = live.value?.infusions.find((i) => i.number === number);
+    if (!infusion || infusion.actual_seconds === null) return;
+    infusion.actual_seconds = Math.max(0, Math.round(seconds));
+    await push();
+  }
+
   async function attachTea(tea: Tea): Promise<void> {
     const session = ensureSession();
     let curve: BrewingCurve;
@@ -526,6 +534,7 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
     stop,
     nudge,
     redoLast,
+    setSteepSeconds,
     attachTea,
     setLeafGrams,
     setWaterTemp,

@@ -129,6 +129,15 @@ describe("plain timer", () => {
     ]);
   });
 
+  it("rewrites a brewed steep's time, leaving the pending one alone", async () => {
+    const store = useTeaTimerStore();
+    await steep(store, 11);
+    await steep(store, 95);
+    await store.setSteepSeconds(2, 30);
+    await store.setSteepSeconds(3, 40);
+    expect(store.live?.infusions.map((i) => i.actual_seconds)).toEqual([11, 30, null]);
+  });
+
   it("end clears everything", async () => {
     const store = useTeaTimerStore();
     await steep(store, 11);
@@ -173,6 +182,20 @@ describe("attaching a tea", () => {
     await store.attachTea(tea());
     expect(store.live?.curve.source).toBe("generic");
     expect(store.live?.curve.source_label).toBe("generic gongfu (couldn't load tea curve)");
+  });
+
+  it("syncs a rewritten steep time", async () => {
+    mockCurve(ALMANAC);
+    const store = useTeaTimerStore();
+    await store.attachTea(tea());
+    await steep(store, 90);
+    await store.setSteepSeconds(1, 25);
+    expect(putMock.mock.calls.at(-1)![1]).toMatchObject({
+      infusions: [
+        { number: 1, actual_seconds: 25 },
+        { number: 2, actual_seconds: null },
+      ],
+    });
   });
 
   it("pushes after every steep once a tea is attached", async () => {

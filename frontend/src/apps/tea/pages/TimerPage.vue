@@ -113,14 +113,24 @@
     </div>
 
     <div class="timer__chips">
-      <span
-        v-for="infusion in timer.live?.infusions ?? []"
-        :key="infusion.number"
-        :class="['timer__chip', { 'timer__chip--now': infusion.actual_seconds === null }]"
-        :data-testid="`timer-chip-${infusion.number}`"
-      >
-        {{ infusion.actual_seconds === null ? infusion.number : `${infusion.number} · ${infusion.actual_seconds}s` }}
-      </span>
+      <template v-for="infusion in timer.live?.infusions ?? []" :key="infusion.number">
+        <span
+          v-if="infusion.actual_seconds === null"
+          class="timer__chip timer__chip--now"
+          :data-testid="`timer-chip-${infusion.number}`"
+        >
+          {{ infusion.number }}
+        </span>
+        <button
+          v-else
+          class="timer__chip"
+          :data-testid="`timer-chip-${infusion.number}`"
+          :aria-label="`Edit infusion ${infusion.number} time`"
+          @click="onEditSteep(infusion.number)"
+        >
+          {{ infusion.number }} · {{ infusion.actual_seconds }}s
+        </button>
+      </template>
     </div>
 
     <p class="timer__source" data-testid="timer-source">
@@ -169,6 +179,14 @@
       @cancel="sheet = null"
     />
 
+    <SteepSheet
+      v-if="sheet === 'steep' && editingSteep"
+      :number="editingSteep.number"
+      :seconds="editingSteep.actual_seconds ?? 0"
+      @save="onSaveSteep"
+      @cancel="sheet = null"
+    />
+
     <FinishSheet
       v-if="sheet === 'finish' && timer.live?.tea"
       :tea-name="timer.live.tea.name"
@@ -190,6 +208,7 @@ import PickTeaSheet from "../components/PickTeaSheet.vue";
 import PickVesselSheet from "../components/PickVesselSheet.vue";
 import FinishSheet from "../components/FinishSheet.vue";
 import LeafSheet from "../components/LeafSheet.vue";
+import SteepSheet from "../components/SteepSheet.vue";
 import RecoveryCard from "../components/RecoveryCard.vue";
 import { useTeaTimerStore } from "../stores/useTeaTimerStore";
 import { useTeaSessionsStore } from "../stores/useTeaSessionsStore";
@@ -209,9 +228,13 @@ const sessions = useTeaSessionsStore();
 const cabinet = useTeaCabinetStore();
 const teaware = useTeawareStore();
 
-type Sheet = "tea" | "vessel" | "leaf" | "finish";
+type Sheet = "tea" | "vessel" | "leaf" | "steep" | "finish";
 
 const sheet = ref<Sheet | null>(null);
+const editingSteepNumber = ref<number | null>(null);
+const editingSteep = computed(
+  () => timer.live?.infusions.find((i) => i.number === editingSteepNumber.value) ?? null,
+);
 const menu = ref(false);
 
 const steepStartedAt = computed(() => timer.live?.steepStartedAt ?? null);
@@ -264,6 +287,17 @@ async function onSaveLeaf(grams: number | null): Promise<void> {
   sheet.value = null;
   timer.setLeafGrams(grams);
   await timer.push();
+}
+
+function onEditSteep(number: number): void {
+  if (sheet.value !== null) return;
+  editingSteepNumber.value = number;
+  sheet.value = "steep";
+}
+
+async function onSaveSteep(seconds: number): Promise<void> {
+  sheet.value = null;
+  if (editingSteepNumber.value !== null) await timer.setSteepSeconds(editingSteepNumber.value, seconds);
 }
 
 function onResume(session: TeaSession): void {
@@ -481,9 +515,14 @@ onMounted(async () => {
 .timer__chip {
   font-size: 12px;
   padding: 3px 8px;
+  border: 0;
   border-radius: 10px;
   background: #1e1712;
   color: #e4d9c6;
+  font-family: inherit;
+}
+button.timer__chip {
+  cursor: pointer;
 }
 .timer__chip--now {
   background: #e4d9c6;

@@ -373,6 +373,33 @@ describe("TimerPage", () => {
     expect(putMock.mock.calls.at(-1)![1]).toMatchObject({ leaf_grams: 7.5 });
   });
 
+  it("rewrites a previous steep's time from its pill and syncs it", async () => {
+    routes();
+    localStorage.setItem(
+      "tea-timer:live",
+      localLiveSession([
+        { number: 1, target_seconds: 20, actual_seconds: 95 },
+        { number: 2, target_seconds: 25, actual_seconds: null },
+      ]),
+    );
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+
+    expect(wrapper.get("[data-testid=timer-chip-2]").element.tagName).toBe("SPAN");
+    await wrapper.get("[data-testid=timer-chip-1]").trigger("click");
+    const input = wrapper.get("[data-testid=steep-seconds]");
+    expect((input.element as HTMLInputElement).value).toBe("95");
+    await input.setValue("0:30");
+    await wrapper.get("[data-testid=steep-save]").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.get("[data-testid=timer-chip-1]").text()).toBe("1 · 30s");
+    expect(wrapper.find("[data-testid=steep-sheet]").exists()).toBe(false);
+    expect(putMock.mock.calls.at(-1)![1]).toMatchObject({
+      infusions: [{ number: 1, actual_seconds: 30 }, { number: 2 }],
+    });
+  });
+
   it("hides the leaf control until a tea is attached", async () => {
     routes();
     const wrapper = mount(TimerPage);
