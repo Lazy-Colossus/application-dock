@@ -190,7 +190,9 @@ def save_image(username: str, session_id: str, content: bytes, content_type: str
         repo.save_image(cabinet_id, session_id, content, extension)
         updated = doc.sessions[position].model_copy(
             update={
-                "image_url": f"/api/tea/sessions/{session_id}/image",
+                "image_url": tea_service.served_image_url(
+                    f"/api/tea/sessions/{session_id}/image", content
+                ),
                 "updated_at": _now_iso(),
             }
         )

@@ -131,7 +131,7 @@ def test_uploading_an_image_sets_image_url_and_returns_the_tea() -> None:
     )
 
     assert response.status_code == 201
-    assert response.json()["image_url"] == f"/api/tea/teas/{tea_id}/image"
+    assert response.json()["image_url"].startswith(f"/api/tea/teas/{tea_id}/image?v=")
 
 
 def test_uploading_an_unsupported_content_type_is_422() -> None:

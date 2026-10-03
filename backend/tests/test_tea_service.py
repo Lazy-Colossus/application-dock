@@ -186,8 +186,15 @@ def test_seed_nodes_are_never_written_into_a_users_document() -> None:
 def test_save_image_sets_the_served_url_and_bumps_updated_at() -> None:
     tea = service.create_tea("alice", _req())
     updated = service.save_image("alice", tea.id, b"fake-jpeg-bytes", "image/jpeg")
-    assert updated.image_url == f"/api/tea/teas/{tea.id}/image"
+    assert updated.image_url.startswith(f"/api/tea/teas/{tea.id}/image?v=")
     assert updated.updated_at >= tea.updated_at
+
+
+def test_a_replaced_photo_gets_a_new_url_so_browsers_drop_the_cached_one() -> None:
+    tea = service.create_tea("alice", _req())
+    first = service.save_image("alice", tea.id, b"first-jpeg", "image/jpeg")
+    second = service.save_image("alice", tea.id, b"second-jpeg", "image/jpeg")
+    assert first.image_url != second.image_url
 
 
 def test_save_image_persists_the_file_via_the_repo() -> None:

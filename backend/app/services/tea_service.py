@@ -8,6 +8,7 @@ from the JWT via the router and is never taken from request input.
 
 from __future__ import annotations
 
+import hashlib
 import uuid
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -34,6 +35,12 @@ def image_extension(content: bytes, content_type: str) -> str:
     if len(content) > MAX_IMAGE_BYTES:
         raise ValueError("Images must be 5MB or smaller")
     return extension
+
+
+def served_image_url(route: str, content: bytes) -> str:
+    """`route` versioned by the photo's content, so a replaced photo gets a new URL
+    and browsers stop showing the cached old one."""
+    return f"{route}?v={hashlib.sha256(content).hexdigest()[:12]}"
 
 
 def _now_iso() -> str:
@@ -164,7 +171,10 @@ def save_image(username: str, tea_id: str, content: bytes, content_type: str) ->
             if existing.id == tea_id:
                 repo.save_image(cabinet_id, tea_id, content, extension)
                 updated = existing.model_copy(
-                    update={"image_url": f"/api/tea/teas/{tea_id}/image", "updated_at": _now_iso()}
+                    update={
+                        "image_url": served_image_url(f"/api/tea/teas/{tea_id}/image", content),
+                        "updated_at": _now_iso(),
+                    }
                 )
                 doc.teas[position] = updated
                 return _view(updated, index)

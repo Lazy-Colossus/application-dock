@@ -143,7 +143,7 @@ def test_a_session_photo_round_trips_via_token() -> None:
         files={"file": ("p.jpg", b"jpeg-bytes", "image/jpeg")},
     )
     assert uploaded.status_code == 201
-    assert uploaded.json()["image_url"] == "/api/tea/sessions/s-1/image"
+    assert uploaded.json()["image_url"].startswith("/api/tea/sessions/s-1/image?v=")
     token = auth_service.create_access_token("test_user")
     fetched = client.get("/api/tea/sessions/s-1/image", params={"token": token})
     assert fetched.status_code == 200

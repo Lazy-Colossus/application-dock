@@ -161,7 +161,7 @@ def test_a_snapshot_after_a_photo_keeps_the_photo() -> None:
     sessions.upsert("alice", "s-1", _write(tea_id=tea_id))
     sessions.save_image("alice", "s-1", JPEG, "image/jpeg")
     again = sessions.upsert("alice", "s-1", _write(tea_id=tea_id, cha_xi={"notes": "orchid"}))
-    assert again.image_url == "/api/tea/sessions/s-1/image"
+    assert again.image_url.startswith("/api/tea/sessions/s-1/image?v=")
     assert again.cha_xi is not None and again.cha_xi.notes == "orchid"
 
 

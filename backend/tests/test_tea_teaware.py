@@ -110,7 +110,8 @@ def test_replace_keeps_the_id_created_at_and_photo() -> None:
     with_photo = service.save_image("alice", item.id, b"jpeg-bytes", "image/jpeg")
     replaced = service.replace_teaware("alice", item.id, _req(name="Renamed"))
     assert (replaced.id, replaced.created_at) == (item.id, item.created_at)
-    assert replaced.image_url == with_photo.image_url == f"/api/tea/teaware/{item.id}/image"
+    assert replaced.image_url == with_photo.image_url
+    assert with_photo.image_url.startswith(f"/api/tea/teaware/{item.id}/image?v=")
     assert replaced.name == "Renamed"
 
 

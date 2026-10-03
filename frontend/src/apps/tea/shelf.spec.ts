@@ -214,6 +214,12 @@ describe("imageSrc", () => {
     );
   });
 
+  it("joins the token onto a served route that already carries a version", () => {
+    expect(imageSrc("/api/tea/teas/t-1/image?v=abc", "a-token")).toBe(
+      "/api/tea/teas/t-1/image?v=abc&token=a-token",
+    );
+  });
+
   it("returns null for our own served route when there is no token to authenticate with", () => {
     expect(imageSrc("/api/tea/teas/t-1/image", null)).toBeNull();
   });

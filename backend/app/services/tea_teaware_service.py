@@ -149,7 +149,12 @@ def save_image(username: str, teaware_id: str, content: bytes, content_type: str
         position = _position(doc, teaware_id)
         repo.save_image(cabinet_id, teaware_id, content, extension)
         updated = doc.teaware[position].model_copy(
-            update={"image_url": f"/api/tea/teaware/{teaware_id}/image", "updated_at": _now_iso()}
+            update={
+                "image_url": tea_service.served_image_url(
+                    f"/api/tea/teaware/{teaware_id}/image", content
+                ),
+                "updated_at": _now_iso(),
+            }
         )
         doc.teaware[position] = updated
         return updated

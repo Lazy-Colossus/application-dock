@@ -91,7 +91,8 @@ export function groupByClass(teas: Tea[]): ShelfSectionData[] {
 export function imageSrc(imageUrl: string | null, token: string | null): string | null {
   if (!imageUrl) return null;
   if (!imageUrl.startsWith("/api/")) return imageUrl;
-  return token ? `${imageUrl}?token=${encodeURIComponent(token)}` : null;
+  const separator = imageUrl.includes("?") ? "&" : "?";
+  return token ? `${imageUrl}${separator}token=${encodeURIComponent(token)}` : null;
 }
 
 /** Which section owns its leaves: the one whose centre is nearest `mid`. */
