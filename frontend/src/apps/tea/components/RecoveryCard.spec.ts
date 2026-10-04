@@ -40,6 +40,17 @@ describe("RecoveryCard", () => {
     expect(text).toContain("2 infusions");
   });
 
+  it("names the vessel when there is one", () => {
+    const withVessel = mount(RecoveryCard, {
+      props: { session: SESSION, teaName: "Tieguanyin", vesselName: "Zhuni" },
+    });
+    expect(withVessel.get("[data-testid=recovery-text]").text()).toContain(
+      "Unfinished Tieguanyin session · in Zhuni ·",
+    );
+    const without = mount(RecoveryCard, { props: { session: SESSION, teaName: "Tieguanyin" } });
+    expect(without.get("[data-testid=recovery-text]").text()).not.toContain(" in ");
+  });
+
   it("emits resume and discard", async () => {
     const wrapper = mount(RecoveryCard, { props: { session: SESSION, teaName: "Tieguanyin" } });
     await wrapper.get("[data-testid=recovery-resume]").trigger("click");

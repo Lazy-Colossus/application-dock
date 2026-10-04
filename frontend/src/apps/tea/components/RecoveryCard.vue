@@ -1,7 +1,8 @@
 <template>
   <div class="recovery" data-testid="recovery-card">
     <p class="recovery__text" data-testid="recovery-text">
-      Unfinished {{ teaName }} session · {{ when }} · {{ brewedCount }}
+      Unfinished {{ teaName }} session<template v-if="vesselName"> · in {{ vesselName }}</template>
+      · {{ when }} · {{ brewedCount }}
       {{ brewedCount === 1 ? "infusion" : "infusions" }}
     </p>
     <div class="recovery__actions">
@@ -19,7 +20,7 @@
 import { computed } from "vue";
 import type { TeaSession } from "../types";
 
-const props = defineProps<{ session: TeaSession; teaName: string }>();
+const props = defineProps<{ session: TeaSession; teaName: string; vesselName?: string | null }>();
 const emit = defineEmits<{ resume: []; discard: [] }>();
 
 const brewedCount = computed(
