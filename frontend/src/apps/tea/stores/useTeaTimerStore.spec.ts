@@ -713,3 +713,61 @@ describe("cha xi", () => {
     expect(store.live?.imageUrl).toBe("/api/tea/sessions/s-9/image");
   });
 });
+
+describe("park", () => {
+  it("saves the session on the server, then clears it", async () => {
+    mockCurve(ALMANAC);
+    const store = useTeaTimerStore();
+    await store.attachTea(tea());
+    await steep(store, 21);
+    const sessionId = store.live!.sessionId;
+    putMock.mockClear();
+
+    expect(await store.park()).toBe(true);
+    expect(putMock).toHaveBeenCalledWith(
+      `/tea/sessions/${sessionId}`,
+      expect.objectContaining({ status: "in_progress" }),
+    );
+    expect(store.live).toBeNull();
+    expect(localStorage.getItem("tea-timer:live")).toBeNull();
+  });
+
+  it("won't park a plain timer or a running steep", async () => {
+    const store = useTeaTimerStore();
+    await steep(store, 11);
+    expect(await store.park()).toBe(false);
+
+    mockCurve(ALMANAC);
+    await store.attachTea(tea());
+    store.start();
+    putMock.mockClear();
+    expect(await store.park()).toBe(false);
+    expect(putMock).not.toHaveBeenCalled();
+    expect(store.live).not.toBeNull();
+  });
+
+  it("keeps the session and reports when the save fails", async () => {
+    mockCurve(ALMANAC);
+    const store = useTeaTimerStore();
+    await store.attachTea(tea());
+    await steep(store, 21);
+    putMock.mockRejectedValue(httpError(0));
+
+    expect(await store.park()).toBe(false);
+    expect(store.live?.tea?.id).toBe("t-1");
+    expect(store.error).toBe("Couldn't save this session — check your connection and try again.");
+  });
+
+  it("keeps a session whose tea was deleted elsewhere, as a plain timer", async () => {
+    mockCurve(ALMANAC);
+    const store = useTeaTimerStore();
+    await store.attachTea(tea());
+    await steep(store, 21);
+    putMock.mockRejectedValue(httpError(404));
+
+    expect(await store.park()).toBe(false);
+    expect(store.live).not.toBeNull();
+    expect(store.live?.tea).toBeNull();
+    expect(store.notice).toContain("no longer in your cabinet");
+  });
+});
