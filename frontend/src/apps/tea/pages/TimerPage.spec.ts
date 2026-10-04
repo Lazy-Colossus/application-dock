@@ -115,6 +115,33 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+function openSession(overrides: Partial<TeaSession> = {}): TeaSession {
+  return {
+    id: "s-9",
+    brewed_by: "jakub",
+    teaware_id: null,
+    vessel_volume_ml: null,
+    tea_id: "t-1",
+    status: "in_progress",
+    started_at: "2026-09-25T19:40:00Z",
+    updated_at: "2026-09-25T19:55:00Z",
+    finished_at: null,
+    leaf_grams: 6,
+    water_temp_c: 95,
+    rating: null,
+    curve_source: "almanac",
+    curve_source_label: "almanac: Tieguanyin",
+    away_tea_name: "",
+    away_class_id: null,
+    timed: true,
+    cha_xi: null,
+    tasting: null,
+    image_url: null,
+    infusions: [{ number: 1, target_seconds: 20, actual_seconds: 21 }],
+    ...overrides,
+  };
+}
+
 describe("TimerPage", () => {
   it("offers Cha Xi only once a tea is attached", async () => {
     routes();
@@ -238,7 +265,7 @@ describe("TimerPage", () => {
     expect(getMock).not.toHaveBeenCalledWith("/tea/teas/t-1/curve");
   });
 
-  it("blocks swapping to a different tea while the unfinished session has brewed steeps", async () => {
+  it("parks a brewed session to start a different tea", async () => {
     routes();
     localStorage.setItem(
       "tea-timer:live",
@@ -248,12 +275,55 @@ describe("TimerPage", () => {
       ]),
     );
     routeQuery.value = { tea: "t-2" };
+    mount(TimerPage);
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith(
+      "/tea/sessions/s-a",
+      expect.objectContaining({ tea_id: "t-1", status: "in_progress" }),
+    );
+    const live = useTeaTimerStore().live;
+    expect(live?.tea?.id).toBe("t-2");
+    expect(live?.sessionId).not.toBe("s-a");
+  });
+
+  it("parks a brewed session and continues the requested tea's open one", async () => {
+    routes([openSession({ id: "s-8", tea_id: "t-2" })]);
+    localStorage.setItem(
+      "tea-timer:live",
+      localLiveSession([
+        { number: 1, target_seconds: 20, actual_seconds: 21 },
+        { number: 2, target_seconds: 25, actual_seconds: null },
+      ]),
+    );
+    routeQuery.value = { tea: "t-2" };
+    mount(TimerPage);
+    await flushPromises();
+    expect(useTeaTimerStore().live?.sessionId).toBe("s-8");
+  });
+
+  it("won't switch tea mid-steep", async () => {
+    routes();
+    localStorage.setItem(
+      "tea-timer:live",
+      JSON.stringify({
+        ...JSON.parse(
+          localLiveSession([
+            { number: 1, target_seconds: 20, actual_seconds: 21 },
+            { number: 2, target_seconds: 25, actual_seconds: null },
+          ]),
+        ),
+        steepStartedAt: Date.now() - 5_000,
+      }),
+    );
+    routeQuery.value = { tea: "t-2" };
     const wrapper = mount(TimerPage);
     await flushPromises();
     expect(useTeaTimerStore().live?.tea?.id).toBe("t-1");
-    expect(wrapper.get("[data-testid=timer-notice]").text()).toContain("Tieguanyin");
-    expect(wrapper.get("[data-testid=timer-notice]").text()).toContain("Dragonwell");
-    expect(getMock).not.toHaveBeenCalledWith("/tea/teas/t-2/curve");
+    expect(putMock).not.toHaveBeenCalled();
+    expect(wrapper.get("[data-testid=timer-notice]").text()).toBe(
+      "Your Tieguanyin steep is still running — stop it before brewing Dragonwell.",
+    );
   });
 
   it("still swaps to a different tea when the unfinished session has no brewed steeps", async () => {
@@ -398,6 +468,93 @@ describe("TimerPage", () => {
     expect(putMock.mock.calls.at(-1)![1]).toMatchObject({
       infusions: [{ number: 1, actual_seconds: 30 }, { number: 2 }],
     });
+  });
+
+  it("shows a picker of open sessions instead of the timer when nothing is live", async () => {
+    routes([openSession(), openSession({ id: "s-8", tea_id: "t-2" })]);
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    expect(wrapper.findAll("[data-testid=recovery-card]")).toHaveLength(2);
+    expect(wrapper.find("[data-testid=timer-band]").exists()).toBe(false);
+
+    await wrapper.get("[data-testid=timer-new-brew]").trigger("click");
+    expect(wrapper.find("[data-testid=timer-picker]").exists()).toBe(false);
+    expect(wrapper.get("[data-testid=timer-band]").text()).toContain("tap to start");
+  });
+
+  it("falls through to the timer once the last open session is discarded", async () => {
+    routes([openSession()]);
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    await wrapper.get("[data-testid=recovery-discard]").trigger("click");
+    await flushPromises();
+    expect(wrapper.find("[data-testid=timer-picker]").exists()).toBe(false);
+    expect(wrapper.find("[data-testid=timer-band]").exists()).toBe(true);
+  });
+
+  it("switches away from a session, then lists it to continue", async () => {
+    routes();
+    localStorage.setItem(
+      "tea-timer:live",
+      localLiveSession([
+        { number: 1, target_seconds: 20, actual_seconds: 21 },
+        { number: 2, target_seconds: 25, actual_seconds: null },
+      ]),
+    );
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    routes([openSession({ id: "s-a" })]);
+
+    await wrapper.get("[data-testid=timer-menu]").trigger("click");
+    await wrapper.get("[data-testid=timer-switch]").trigger("click");
+    await flushPromises();
+
+    expect(useTeaTimerStore().live).toBeNull();
+    expect(putMock.mock.calls.at(-1)![1]).toMatchObject({ status: "in_progress" });
+    expect(wrapper.find("[data-testid=timer-picker]").exists()).toBe(true);
+    await wrapper.get("[data-testid=recovery-resume]").trigger("click");
+    expect(useTeaTimerStore().live?.sessionId).toBe("s-a");
+  });
+
+  it("keeps the session when switching fails", async () => {
+    routes();
+    localStorage.setItem(
+      "tea-timer:live",
+      localLiveSession([
+        { number: 1, target_seconds: 20, actual_seconds: 21 },
+        { number: 2, target_seconds: 25, actual_seconds: null },
+      ]),
+    );
+    putMock.mockRejectedValue(httpError(0));
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+
+    await wrapper.get("[data-testid=timer-menu]").trigger("click");
+    await wrapper.get("[data-testid=timer-switch]").trigger("click");
+    await flushPromises();
+
+    expect(useTeaTimerStore().live?.sessionId).toBe("s-a");
+    expect(wrapper.get("[data-testid=timer-error]").text()).toContain("Couldn't save");
+  });
+
+  it("offers Switch session only for a tea session, and not mid-steep", async () => {
+    routes();
+    const plain = mount(TimerPage);
+    await flushPromises();
+    await plain.get("[data-testid=timer-menu]").trigger("click");
+    expect(plain.find("[data-testid=timer-switch]").exists()).toBe(false);
+    plain.unmount();
+
+    localStorage.setItem(
+      "tea-timer:live",
+      localLiveSession([{ number: 1, target_seconds: 20, actual_seconds: null }]),
+    );
+    setActivePinia(createPinia());
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    await wrapper.get("[data-testid=timer-band]").trigger("click");
+    await wrapper.get("[data-testid=timer-menu]").trigger("click");
+    expect(wrapper.get("[data-testid=timer-switch]").attributes("disabled")).toBeDefined();
   });
 
   it("hides the leaf control until a tea is attached", async () => {
