@@ -217,7 +217,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import TeaCup from "../components/TeaCup.vue";
 import PickTeaSheet from "../components/PickTeaSheet.vue";
@@ -253,7 +253,19 @@ const editingSteep = computed(
 );
 const menu = ref(false);
 const newBrew = ref(false);
-const picking = computed(() => !timer.live && !newBrew.value && sessions.inProgress.length > 0);
+// Holds the picker between parking and the list arriving, so a stray tap
+// can't start a plain timer over the brew just parked.
+const switching = ref(false);
+const picking = computed(
+  () => !timer.live && !newBrew.value && (switching.value || sessions.inProgress.length > 0),
+);
+// "New brew" lasts until that brew is gone; then the open ones show again.
+watch(
+  () => timer.live === null,
+  (none) => {
+    if (!none) newBrew.value = false;
+  },
+);
 
 const steepStartedAt = computed(() => timer.live?.steepStartedAt ?? null);
 const { elapsed } = useSteepClock(steepStartedAt);
@@ -289,9 +301,12 @@ function vesselName(teawareId: string | null): string | null {
 
 async function onSwitch(): Promise<void> {
   menu.value = false;
-  if (!(await timer.park())) return;
-  newBrew.value = false;
-  await sessions.fetchInProgress();
+  switching.value = true;
+  try {
+    if (await timer.park()) await sessions.fetchInProgress();
+  } finally {
+    switching.value = false;
+  }
 }
 
 function onBand(): void {

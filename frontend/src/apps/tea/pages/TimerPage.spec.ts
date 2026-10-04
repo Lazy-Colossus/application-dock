@@ -516,6 +516,52 @@ describe("TimerPage", () => {
     expect(useTeaTimerStore().live?.sessionId).toBe("s-a");
   });
 
+  it("shows the picker, not a startable timer, while the list reloads after a switch", async () => {
+    routes();
+    localStorage.setItem(
+      "tea-timer:live",
+      localLiveSession([
+        { number: 1, target_seconds: 20, actual_seconds: 21 },
+        { number: 2, target_seconds: 25, actual_seconds: null },
+      ]),
+    );
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    let land!: (sessions: TeaSession[]) => void;
+    getMock.mockImplementation((path: string) =>
+      path === "/tea/sessions?status=in_progress"
+        ? new Promise((resolve) => (land = resolve))
+        : Promise.resolve([]),
+    );
+
+    await wrapper.get("[data-testid=timer-menu]").trigger("click");
+    await wrapper.get("[data-testid=timer-switch]").trigger("click");
+    await flushPromises();
+    expect(useTeaTimerStore().live).toBeNull();
+    expect(wrapper.find("[data-testid=timer-band]").exists()).toBe(false);
+
+    land([openSession({ id: "s-a" })]);
+    await flushPromises();
+    expect(wrapper.findAll("[data-testid=recovery-card]")).toHaveLength(1);
+  });
+
+  it("brings the picker back once a new brew is discarded", async () => {
+    routes([openSession()]);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    await wrapper.get("[data-testid=timer-new-brew]").trigger("click");
+    await wrapper.get("[data-testid=timer-band]").trigger("click");
+    vi.setSystemTime(Date.now() + 11_000);
+    await wrapper.get("[data-testid=timer-band]").trigger("click");
+    await flushPromises();
+
+    await wrapper.get("[data-testid=timer-menu]").trigger("click");
+    await wrapper.get("[data-testid=timer-discard]").trigger("click");
+    await flushPromises();
+    expect(wrapper.find("[data-testid=timer-picker]").exists()).toBe(true);
+  });
+
   it("keeps the session when switching fails", async () => {
     routes();
     localStorage.setItem(

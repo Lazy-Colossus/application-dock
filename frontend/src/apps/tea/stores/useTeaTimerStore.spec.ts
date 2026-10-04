@@ -758,6 +758,36 @@ describe("park", () => {
     expect(store.error).toBe("Couldn't save this session — check your connection and try again.");
   });
 
+  it("keeps the session when it changes while the save is in flight", async () => {
+    mockCurve(ALMANAC);
+    const store = useTeaTimerStore();
+    await store.attachTea(tea());
+    await steep(store, 21);
+    let land!: (body: unknown) => void;
+    putMock.mockImplementation(() => new Promise((resolve) => (land = resolve)));
+
+    const parked = store.park();
+    store.start();
+    land({});
+    expect(await parked).toBe(false);
+    expect(store.running).toBe(true);
+  });
+
+  it("still parks when the server drops a refused vessel", async () => {
+    getMock.mockImplementation((path: string) =>
+      Promise.resolve(path.startsWith("/tea/teaware/last-used") ? POT : ALMANAC),
+    );
+    const store = useTeaTimerStore();
+    await store.attachTea(tea());
+    await steep(store, 21);
+    putMock
+      .mockRejectedValueOnce(httpError(422))
+      .mockImplementation((_p: string, body: unknown) => Promise.resolve(body));
+
+    expect(await store.park()).toBe(true);
+    expect(store.live).toBeNull();
+  });
+
   it("keeps a session whose tea was deleted elsewhere, as a plain timer", async () => {
     mockCurve(ALMANAC);
     const store = useTeaTimerStore();

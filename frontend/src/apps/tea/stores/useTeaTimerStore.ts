@@ -258,10 +258,17 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
   async function park(): Promise<boolean> {
     const session = live.value;
     if (!session?.tea || session.steepStartedAt !== null) return false;
+    // push() itself may flip `pushed` and drop a refused vessel; anything
+    // else that differs afterwards was tapped during the request.
+    const fingerprint = (): string => JSON.stringify({ ...session, pushed: true, teaware: null });
+    const before = fingerprint();
     await push();
     // push() reports through state, not a return value: a 404 has detached
     // the tea (and set the notice), a failed request has left it unsynced.
     if (live.value !== session || !session.tea) return false;
+    // Such a tap (a started steep, a nudge) isn't on the server yet — clearing
+    // now would lose it.
+    if (fingerprint() !== before) return false;
     if (unsynced.value) {
       error.value = "Couldn't save this session — check your connection and try again.";
       return false;
