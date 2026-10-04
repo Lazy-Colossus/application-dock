@@ -7,7 +7,7 @@
     </p>
     <div class="recovery__actions">
       <button class="recovery__resume" data-testid="recovery-resume" @click="emit('resume')">
-        Resume
+        Continue
       </button>
       <button class="recovery__discard" data-testid="recovery-discard" @click="emit('discard')">
         Discard

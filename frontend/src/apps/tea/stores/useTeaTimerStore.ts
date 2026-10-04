@@ -228,6 +228,7 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
       // result must not resurrect state on whatever session is live now.
       if (live.value !== session) return;
       unsynced.value = false;
+      error.value = null;
     } catch (e) {
       if (live.value !== session) return;
       if (statusOf(e) === 404) {
@@ -262,6 +263,7 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
     // else that differs afterwards was tapped during the request.
     const fingerprint = (): string => JSON.stringify({ ...session, pushed: true, teaware: null });
     const before = fingerprint();
+    const noticeBefore = notice.value;
     await push();
     // push() reports through state, not a return value: a 404 has detached
     // the tea (and set the notice), a failed request has left it unsynced.
@@ -273,7 +275,11 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
       error.value = "Couldn't save this session — check your connection and try again.";
       return false;
     }
+    // A notice raised by this save (a dropped vessel) is about the parked
+    // session, so it outlives clearing it.
+    const raised = notice.value !== noticeBefore ? notice.value : null;
     end();
+    notice.value = raised;
     return true;
   }
 

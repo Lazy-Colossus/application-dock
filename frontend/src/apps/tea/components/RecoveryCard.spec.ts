@@ -53,6 +53,7 @@ describe("RecoveryCard", () => {
 
   it("emits resume and discard", async () => {
     const wrapper = mount(RecoveryCard, { props: { session: SESSION, teaName: "Tieguanyin" } });
+    expect(wrapper.get("[data-testid=recovery-resume]").text()).toBe("Continue");
     await wrapper.get("[data-testid=recovery-resume]").trigger("click");
     await wrapper.get("[data-testid=recovery-discard]").trigger("click");
     expect(wrapper.emitted("resume")).toHaveLength(1);

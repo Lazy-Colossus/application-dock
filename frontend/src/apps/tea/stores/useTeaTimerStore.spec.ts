@@ -786,6 +786,20 @@ describe("park", () => {
 
     expect(await store.park()).toBe(true);
     expect(store.live).toBeNull();
+    expect(store.notice).toBe("Zhuni can't be brewed in any more — carrying on without a vessel.");
+  });
+
+  it("clears a stale park error once the session saves", async () => {
+    mockCurve(ALMANAC);
+    const store = useTeaTimerStore();
+    await store.attachTea(tea());
+    await steep(store, 21);
+    putMock.mockRejectedValueOnce(httpError(0));
+    expect(await store.park()).toBe(false);
+    expect(store.error).not.toBeNull();
+
+    await steep(store, 25);
+    expect(store.error).toBeNull();
   });
 
   it("keeps a session whose tea was deleted elsewhere, as a plain timer", async () => {

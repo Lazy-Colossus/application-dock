@@ -303,7 +303,10 @@ async function onSwitch(): Promise<void> {
   menu.value = false;
   switching.value = true;
   try {
-    if (await timer.park()) await sessions.fetchInProgress();
+    if (!(await timer.park())) return;
+    // Else a reload would read ?tea= and resume the brew just parked.
+    if (route.query.tea) void router.replace({ name: "tea-timer" });
+    await sessions.fetchInProgress();
   } finally {
     switching.value = false;
   }

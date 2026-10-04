@@ -562,6 +562,24 @@ describe("TimerPage", () => {
     expect(wrapper.find("[data-testid=timer-picker]").exists()).toBe(true);
   });
 
+  it("drops ?tea= after a switch, so a reload shows the picker", async () => {
+    routes();
+    localStorage.setItem(
+      "tea-timer:live",
+      localLiveSession([
+        { number: 1, target_seconds: 20, actual_seconds: 21 },
+        { number: 2, target_seconds: 25, actual_seconds: null },
+      ]),
+    );
+    routeQuery.value = { tea: "t-1" };
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    await wrapper.get("[data-testid=timer-menu]").trigger("click");
+    await wrapper.get("[data-testid=timer-switch]").trigger("click");
+    await flushPromises();
+    expect(replace).toHaveBeenCalledWith({ name: "tea-timer" });
+  });
+
   it("keeps the session when switching fails", async () => {
     routes();
     localStorage.setItem(
