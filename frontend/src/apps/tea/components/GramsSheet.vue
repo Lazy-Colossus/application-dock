@@ -56,7 +56,7 @@ function step(by: number): void {
 
 <style scoped lang="scss">
 .sheet {
-  position: absolute;
+  position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
