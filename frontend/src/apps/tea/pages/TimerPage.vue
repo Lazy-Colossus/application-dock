@@ -118,7 +118,13 @@
         </div>
       </header>
 
-      <TeaCup :elapsed="elapsed" :target="target" :color="timer.liquor" :running="timer.running" />
+      <TeaCup
+        :elapsed="elapsed"
+        :target="target"
+        :color="timer.liquor"
+        :running="timer.running"
+        @edit-target="open('target')"
+      />
 
       <p class="timer__elapsed" data-testid="timer-elapsed">{{ formatElapsed(elapsed) }}</p>
 
@@ -161,7 +167,11 @@
         {{ timer.live?.tea ? "Finish" : "End" }}
       </button>
 
-      <button class="timer__band" data-testid="timer-band" @click="onBand">
+      <button
+        :class="['timer__band', { 'timer__band--running': timer.running }]"
+        data-testid="timer-band"
+        @click="onBand"
+      >
         {{ timer.running ? "tap to stop · pour" : "tap to start" }}
       </button>
     </template>
@@ -192,6 +202,15 @@
       v-if="sheet === 'leaf'"
       :leaf-grams="timer.live?.leafGrams ?? null"
       @save="onSaveLeaf"
+      @cancel="sheet = null"
+    />
+
+    <SteepSheet
+      v-if="sheet === 'target'"
+      :number="timer.current?.number ?? 1"
+      :seconds="target"
+      :title="`Target for infusion ${timer.current?.number ?? 1}`"
+      @save="onSaveTarget"
       @cancel="sheet = null"
     />
 
@@ -244,7 +263,7 @@ const sessions = useTeaSessionsStore();
 const cabinet = useTeaCabinetStore();
 const teaware = useTeawareStore();
 
-type Sheet = "tea" | "vessel" | "leaf" | "steep" | "finish";
+type Sheet = "tea" | "vessel" | "leaf" | "steep" | "target" | "finish";
 
 const sheet = ref<Sheet | null>(null);
 const editingSteepNumber = ref<number | null>(null);
@@ -345,6 +364,11 @@ function onEditSteep(number: number): void {
 async function onSaveSteep(seconds: number): Promise<void> {
   sheet.value = null;
   if (editingSteepNumber.value !== null) await timer.setSteepSeconds(editingSteepNumber.value, seconds);
+}
+
+function onSaveTarget(seconds: number): void {
+  sheet.value = null;
+  timer.setTarget(seconds);
 }
 
 function onResume(session: TeaSession): void {
@@ -655,5 +679,9 @@ button.timer__chip {
   text-transform: uppercase;
   cursor: pointer;
   z-index: 5;
+  transition: background 0.3s;
+}
+.timer__band--running {
+  background: #dcc29a;
 }
 </style>

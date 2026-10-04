@@ -6,6 +6,12 @@ const cup = (elapsed: number, target = 20, color = "#d49a3f") =>
   mount(TeaCup, { props: { elapsed, target, color, running: true } });
 
 describe("TeaCup", () => {
+  it("asks to edit the target when its label is tapped", async () => {
+    const wrapper = cup(0);
+    await wrapper.get("[data-testid=cup-target-edit]").trigger("click");
+    expect(wrapper.emitted("editTarget")).toHaveLength(1);
+  });
+
   it("is empty before a steep", () => {
     expect(cup(0).get("[data-testid=cup-liquor]").attributes("data-level")).toBe("0");
   });

@@ -28,9 +28,21 @@
       x2="202"
       :y2="targetY"
     />
-    <text class="cup__target-label" data-testid="cup-target-label" x="206" :y="targetY + 3">
-      {{ target }}s
-    </text>
+    <g
+      class="cup__target-edit"
+      data-testid="cup-target-edit"
+      role="button"
+      tabindex="0"
+      aria-label="Edit this steep's target"
+      @click="emit('editTarget')"
+      @keydown.enter="emit('editTarget')"
+    >
+      <!-- The label alone is a few pixels tall; this is the finger-sized hit area. -->
+      <rect x="198" :y="targetY - 14" width="40" height="28" fill="transparent" />
+      <text class="cup__target-label" data-testid="cup-target-label" x="206" :y="targetY + 3">
+        {{ target }}s
+      </text>
+    </g>
   </svg>
 </template>
 
@@ -39,6 +51,7 @@ import { computed, useId } from "vue";
 import { TARGET_LEVEL, darken, fillLevel, overSteep } from "../timer";
 
 const props = defineProps<{ elapsed: number; target: number; color: string; running: boolean }>();
+const emit = defineEmits<{ editTarget: [] }>();
 
 const BOTTOM = 140;
 const DEPTH = 110;
@@ -73,9 +86,14 @@ const targetY = BOTTOM - TARGET_LEVEL * DEPTH;
   stroke-width: 1.5;
   stroke-dasharray: 5 4;
 }
+.cup__target-edit {
+  cursor: pointer;
+  outline: none;
+}
 .cup__target-label {
   fill: #d9a45b;
   font-size: 10px;
   font-family: inherit;
+  text-decoration: underline dotted;
 }
 </style>

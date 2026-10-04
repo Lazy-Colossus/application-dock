@@ -1,6 +1,8 @@
 <template>
   <div class="sheet" data-testid="steep-sheet">
-    <p class="sheet__title">How long did infusion {{ number }} steep?</p>
+    <p class="sheet__title">
+      {{ title ?? `How long did infusion ${number} steep?` }}
+    </p>
     <label class="steep__label">
       Time (seconds or m:ss)
       <input
@@ -32,7 +34,11 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 
-const props = defineProps<{ number: number; seconds: number }>();
+const props = defineProps<{
+  number: number;
+  seconds: number;
+  title?: string;
+}>();
 const emit = defineEmits<{ save: [seconds: number]; cancel: [] }>();
 
 const raw = ref(String(props.seconds));

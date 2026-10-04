@@ -310,6 +310,12 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
     pending.target_seconds = Math.max(1, pending.target_seconds + deltaSeconds);
   }
 
+  function setTarget(seconds: number): void {
+    const pending = ensureSession().infusions.at(-1);
+    if (!pending) return;
+    pending.target_seconds = Math.max(1, Math.round(seconds));
+  }
+
   async function redoLast(): Promise<void> {
     const session = live.value;
     if (!session || session.steepStartedAt !== null || session.infusions.length < 2) return;
@@ -562,6 +568,7 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
     start,
     stop,
     nudge,
+    setTarget,
     redoLast,
     setSteepSeconds,
     attachTea,

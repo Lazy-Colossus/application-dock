@@ -621,6 +621,29 @@ describe("TimerPage", () => {
     expect(wrapper.get("[data-testid=timer-switch]").attributes("disabled")).toBeDefined();
   });
 
+  it("edits the next steep's target from the cup's label", async () => {
+    routes();
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    await wrapper.get("[data-testid=cup-target-edit]").trigger("click");
+    expect(wrapper.get("[data-testid=steep-sheet]").text()).toContain("Target for infusion 1");
+    await wrapper.get("[data-testid=steep-seconds]").setValue("0:45");
+    await wrapper.get("[data-testid=steep-save]").trigger("click");
+    await flushPromises();
+    expect(wrapper.get("[data-testid=cup-target-label]").text()).toBe("45s");
+    expect(wrapper.find("[data-testid=steep-sheet]").exists()).toBe(false);
+  });
+
+  it("tints the band while a steep is running", async () => {
+    routes();
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    const band = () => wrapper.get("[data-testid=timer-band]");
+    expect(band().classes()).not.toContain("timer__band--running");
+    await band().trigger("click");
+    expect(band().classes()).toContain("timer__band--running");
+  });
+
   it("hides the leaf control until a tea is attached", async () => {
     routes();
     const wrapper = mount(TimerPage);

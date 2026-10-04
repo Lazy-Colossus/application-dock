@@ -118,6 +118,14 @@ describe("plain timer", () => {
     expect(store.current?.target_seconds).toBe(1);
   });
 
+  it("sets the upcoming target outright, never below 1s", () => {
+    const store = useTeaTimerStore();
+    store.setTarget(45);
+    expect(store.current?.target_seconds).toBe(45);
+    store.setTarget(0);
+    expect(store.current?.target_seconds).toBe(1);
+  });
+
   it("redo clears the last steep and drops the pending one", async () => {
     const store = useTeaTimerStore();
     await steep(store, 11);

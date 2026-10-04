@@ -30,6 +30,13 @@ describe("SteepSheet", () => {
     }
   });
 
+  it("takes a custom title", () => {
+    const wrapper = mount(SteepSheet, {
+      props: { number: 3, seconds: 20, title: "Target for infusion 3" },
+    });
+    expect(wrapper.get(".sheet__title").text()).toBe("Target for infusion 3");
+  });
+
   it("cancels", async () => {
     const wrapper = mount(SteepSheet, { props: { number: 1, seconds: 20 } });
     await wrapper.get("[data-testid=steep-cancel]").trigger("click");
