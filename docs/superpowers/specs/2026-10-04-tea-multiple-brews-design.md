@@ -65,7 +65,9 @@ one; live session already for this tea → stay; live plain timer → adopt the 
 
 Changed: a live session for a **different** tea →
 
-- mid-steep → keep today's notice and don't switch;
+- mid-steep → a notice to stop the steep first, and don't switch;
+- no brewed steeps yet → swap the tea in place, as today (parking an empty session only clutters
+  the picker);
 - otherwise → `park()` it, then behave as if nothing were live (continue this tea's open session
   if it has one, else start a new one). If parking fails, stay on the current session with the
   error.
