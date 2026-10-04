@@ -1,7 +1,13 @@
 import { computed, ref, watch } from "vue";
 import { defineStore } from "pinia";
 import { api } from "@/composables/useApi";
-import { CUP_LIQUOR, genericCurve, newSessionId, targetFor } from "@/apps/tea/timer";
+import {
+  CUP_LIQUOR,
+  genericCurve,
+  loggedSeconds,
+  newSessionId,
+  targetFor,
+} from "@/apps/tea/timer";
 import { downscaleImage } from "@/apps/tea/image";
 import type {
   BrewingCurve,
@@ -293,7 +299,10 @@ export const useTeaTimerStore = defineStore("tea-timer", () => {
     if (!session || session.steepStartedAt === null) return;
     const pending = session.infusions.at(-1);
     if (!pending) return;
-    pending.actual_seconds = Math.max(0, Math.round((Date.now() - session.steepStartedAt) / 1000));
+    pending.actual_seconds = loggedSeconds(
+      (Date.now() - session.steepStartedAt) / 1000,
+      pending.target_seconds,
+    );
     session.steepStartedAt = null;
     const next = pending.number + 1;
     session.infusions.push({

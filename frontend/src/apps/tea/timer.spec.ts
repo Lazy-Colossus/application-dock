@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
   CUP_LIQUOR,
+  GRACE_SECONDS,
+  graceLeft,
+  loggedSeconds,
+  shownSeconds,
   TARGET_LEVEL,
   darken,
   fillLevel,
@@ -85,5 +89,28 @@ describe("newSessionId", () => {
     const a = newSessionId();
     expect(a).toMatch(/^s-[0-9a-f]{32}$/);
     expect(newSessionId()).not.toBe(a);
+  });
+});
+
+describe("grace after the target", () => {
+  it("logs the target for a stop inside the window, the real time otherwise", () => {
+    expect(GRACE_SECONDS).toBe(3);
+    expect(loggedSeconds(19.4, 20)).toBe(19);
+    expect(loggedSeconds(20, 20)).toBe(20);
+    expect(loggedSeconds(22.9, 20)).toBe(20);
+    expect(loggedSeconds(23, 20)).toBe(23);
+  });
+
+  it("holds the shown clock at the target inside the window", () => {
+    expect(shownSeconds(19.5, 20)).toBe(19.5);
+    expect(shownSeconds(21.7, 20)).toBe(20);
+    expect(shownSeconds(23.2, 20)).toBe(23.2);
+  });
+
+  it("reports the share of the window left, or null outside it", () => {
+    expect(graceLeft(19, 20)).toBeNull();
+    expect(graceLeft(20, 20)).toBe(1);
+    expect(graceLeft(21.5, 20)).toBe(0.5);
+    expect(graceLeft(23, 20)).toBeNull();
   });
 });

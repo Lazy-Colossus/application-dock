@@ -183,10 +183,10 @@ describe("TimerPage", () => {
     await flushPromises();
     await wrapper.get("[data-testid=timer-band]").trigger("click");
     expect(wrapper.get("[data-testid=timer-band]").text()).toContain("tap to stop");
-    vi.setSystemTime(Date.now() + 11_000);
+    vi.setSystemTime(Date.now() + 14_000);
     await wrapper.get("[data-testid=timer-band]").trigger("click");
     await flushPromises();
-    expect(wrapper.get("[data-testid=timer-chip-1]").text()).toBe("1 · 11s");
+    expect(wrapper.get("[data-testid=timer-chip-1]").text()).toBe("1 · 14s");
   });
 
   it("attaches the tea from ?tea= and shows its curve source", async () => {
@@ -632,6 +632,41 @@ describe("TimerPage", () => {
     await flushPromises();
     expect(wrapper.get("[data-testid=cup-target-label]").text()).toBe("45s");
     expect(wrapper.find("[data-testid=steep-sheet]").exists()).toBe(false);
+  });
+
+  it("rolls the band up with a 3s ring at the target, holding the clock", async () => {
+    routes();
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    const band = () => wrapper.get("[data-testid=timer-band]");
+    await band().trigger("click");
+    vi.advanceTimersByTime(9_000);
+    await flushPromises();
+    expect(band().classes()).not.toContain("timer__band--grace");
+
+    vi.advanceTimersByTime(2_000);
+    await flushPromises();
+    expect(band().classes()).toContain("timer__band--grace");
+    expect(wrapper.find("[data-testid=timer-grace-ring]").exists()).toBe(true);
+    expect(band().text()).toContain("log 10s");
+    expect(wrapper.get("[data-testid=timer-elapsed]").text()).toBe("0:10");
+
+    vi.advanceTimersByTime(2_400);
+    await flushPromises();
+    expect(band().classes()).not.toContain("timer__band--grace");
+    expect(wrapper.get("[data-testid=timer-elapsed]").text()).toBe("0:13");
+  });
+
+  it("logs the target when stopped during the ring", async () => {
+    routes();
+    const wrapper = mount(TimerPage);
+    await flushPromises();
+    await wrapper.get("[data-testid=timer-band]").trigger("click");
+    vi.advanceTimersByTime(11_500);
+    await flushPromises();
+    await wrapper.get("[data-testid=timer-band]").trigger("click");
+    await flushPromises();
+    expect(wrapper.get("[data-testid=timer-chip-1]").text()).toBe("1 · 10s");
   });
 
   it("tints the band while a steep is running", async () => {

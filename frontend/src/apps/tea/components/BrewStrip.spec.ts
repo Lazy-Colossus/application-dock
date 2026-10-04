@@ -29,10 +29,10 @@ describe("BrewStrip", () => {
 
     await wrapper.get("[data-testid=brew-strip-toggle]").trigger("click");
     expect(timer.running).toBe(true);
-    vi.setSystemTime(Date.now() + 12_000);
+    vi.setSystemTime(Date.now() + 14_000);
     await wrapper.get("[data-testid=brew-strip-toggle]").trigger("click");
     expect(timer.running).toBe(false);
-    expect(timer.brewed.map((i) => i.actual_seconds)).toEqual([12]);
+    expect(timer.brewed.map((i) => i.actual_seconds)).toEqual([14]);
   });
 
   it("asks to go back to the timer when tapped", async () => {

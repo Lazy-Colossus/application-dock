@@ -126,7 +126,9 @@
         @edit-target="open('target')"
       />
 
-      <p class="timer__elapsed" data-testid="timer-elapsed">{{ formatElapsed(elapsed) }}</p>
+      <p class="timer__elapsed" data-testid="timer-elapsed">
+        {{ formatElapsed(shownSeconds(elapsed, target)) }}
+      </p>
 
       <div class="timer__nudge">
         <button data-testid="timer-minus" @click="timer.nudge(-STEP_SECONDS)">−{{ STEP_SECONDS }}s</button>
@@ -168,11 +170,37 @@
       </button>
 
       <button
-        :class="['timer__band', { 'timer__band--running': timer.running }]"
+        :class="[
+          'timer__band',
+          { 'timer__band--running': timer.running, 'timer__band--grace': grace !== null },
+        ]"
         data-testid="timer-band"
         @click="onBand"
       >
-        {{ timer.running ? "tap to stop · pour" : "tap to start" }}
+        <svg
+          v-if="grace !== null"
+          class="timer__ring"
+          data-testid="timer-grace-ring"
+          viewBox="0 0 64 64"
+          aria-hidden="true"
+        >
+          <circle class="timer__ring-track" cx="32" cy="32" :r="RING_RADIUS" />
+          <circle
+            class="timer__ring-left"
+            cx="32"
+            cy="32"
+            :r="RING_RADIUS"
+            :stroke-dasharray="RING_LENGTH"
+            :stroke-dashoffset="RING_LENGTH * (1 - grace)"
+          />
+        </svg>
+        <span>{{
+          grace !== null
+            ? `tap to stop · log ${target}s`
+            : timer.running
+              ? "tap to stop · pour"
+              : "tap to start"
+        }}</span>
       </button>
     </template>
 
@@ -252,7 +280,7 @@ import { useTeawareStore } from "../stores/useTeawareStore";
 import { useSteepClock } from "../composables/useSteepClock";
 import { useWakeLock } from "../composables/useWakeLock";
 import { useTargetChime } from "../composables/useTargetChime";
-import { STEP_SECONDS, formatElapsed, targetFor } from "../timer";
+import { STEP_SECONDS, formatElapsed, graceLeft, shownSeconds, targetFor } from "../timer";
 import { hasChaXi } from "../journal";
 import type { Tea, TeaSession, Teaware } from "../types";
 
@@ -295,6 +323,10 @@ const { unlock } = useTargetChime(
   computed(() => timer.chimeOn),
 );
 useWakeLock(computed(() => timer.live !== null));
+
+const RING_RADIUS = 28;
+const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
+const grace = computed(() => (timer.running ? graceLeft(elapsed.value, target.value) : null));
 
 const hasLiveChaXi = computed(() =>
   timer.live
@@ -679,9 +711,39 @@ button.timer__chip {
   text-transform: uppercase;
   cursor: pointer;
   z-index: 5;
-  transition: background 0.3s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  transition:
+    background 0.3s,
+    height 0.3s ease-out;
 }
 .timer__band--running {
   background: #dcc29a;
+}
+// Rolls up over the bottom of the cup — fixed, so nothing else moves.
+.timer__band--grace {
+  height: 45vh;
+}
+.timer__ring {
+  width: 88px;
+  height: 88px;
+  transform: rotate(-90deg);
+}
+.timer__ring-track,
+.timer__ring-left {
+  fill: none;
+  stroke-width: 4;
+}
+.timer__ring-track {
+  stroke: rgba(23, 18, 14, 0.15);
+}
+.timer__ring-left {
+  stroke: #17120e;
+  stroke-linecap: round;
+  // Smooths the 200ms clock ticks.
+  transition: stroke-dashoffset 0.2s linear;
 }
 </style>

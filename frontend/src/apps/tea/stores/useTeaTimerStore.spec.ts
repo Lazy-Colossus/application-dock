@@ -103,11 +103,18 @@ async function steep(store: ReturnType<typeof useTeaTimerStore>, seconds: number
 describe("plain timer", () => {
   it("starts on the generic curve and never touches the server", async () => {
     const store = useTeaTimerStore();
-    await steep(store, 11);
-    expect(store.brewed.map((i) => i.actual_seconds)).toEqual([11]);
+    await steep(store, 14);
+    expect(store.brewed.map((i) => i.actual_seconds)).toEqual([14]);
     expect(store.current).toEqual({ number: 2, target_seconds: 15, actual_seconds: null });
     expect(store.live?.curve.source).toBe("generic");
     expect(putMock).not.toHaveBeenCalled();
+  });
+
+  it("logs the target for a stop just after it, the real time once the grace is over", async () => {
+    const store = useTeaTimerStore();
+    await steep(store, 12);
+    await steep(store, 19);
+    expect(store.brewed.map((i) => i.actual_seconds)).toEqual([10, 19]);
   });
 
   it("nudges only the upcoming target, never below 1s", () => {
@@ -128,22 +135,22 @@ describe("plain timer", () => {
 
   it("redo clears the last steep and drops the pending one", async () => {
     const store = useTeaTimerStore();
-    await steep(store, 11);
+    await steep(store, 14);
     await steep(store, 16);
     await store.redoLast();
     expect(store.live?.infusions).toEqual([
-      { number: 1, target_seconds: 10, actual_seconds: 11 },
+      { number: 1, target_seconds: 10, actual_seconds: 14 },
       { number: 2, target_seconds: 15, actual_seconds: null },
     ]);
   });
 
   it("rewrites a brewed steep's time, leaving the pending one alone", async () => {
     const store = useTeaTimerStore();
-    await steep(store, 11);
+    await steep(store, 14);
     await steep(store, 95);
     await store.setSteepSeconds(2, 30);
     await store.setSteepSeconds(3, 40);
-    expect(store.live?.infusions.map((i) => i.actual_seconds)).toEqual([11, 30, null]);
+    expect(store.live?.infusions.map((i) => i.actual_seconds)).toEqual([14, 30, null]);
   });
 
   it("end clears everything", async () => {
@@ -159,12 +166,12 @@ describe("attaching a tea", () => {
   it("re-targets unbrewed steeps only, prefills grams and pushes", async () => {
     mockCurve(ALMANAC);
     const store = useTeaTimerStore();
-    await steep(store, 11);
+    await steep(store, 14);
     await store.attachTea(tea());
 
     expect(getMock).toHaveBeenCalledWith("/tea/teas/t-1/curve");
     expect(store.live?.infusions).toEqual([
-      { number: 1, target_seconds: 10, actual_seconds: 11 },
+      { number: 1, target_seconds: 10, actual_seconds: 14 },
       { number: 2, target_seconds: 25, actual_seconds: null },
     ]);
     expect(store.live?.leafGrams).toBe(6);
@@ -303,9 +310,9 @@ describe("sync failures", () => {
     const store = useTeaTimerStore();
     await store.attachTea(tea());
     putMock.mockRejectedValueOnce(httpError(404));
-    await steep(store, 21);
+    await steep(store, 24);
     expect(store.live?.tea).toBeNull();
-    expect(store.brewed.map((i) => i.actual_seconds)).toEqual([21]);
+    expect(store.brewed.map((i) => i.actual_seconds)).toEqual([24]);
     expect(store.notice).toContain("Tieguanyin");
     expect(store.unsynced).toBe(false);
   });

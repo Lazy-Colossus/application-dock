@@ -10,6 +10,26 @@ export const STEP_SECONDS = 5;
 // over-steep to be visible before the liquor reaches the rim.
 export const TARGET_LEVEL = 0.85;
 
+// Hitting stop on the exact second is near impossible, so a stop this soon
+// after the target logs the target itself.
+export const GRACE_SECONDS = 3;
+
+/** The share (1 → 0) of the grace window still to run, or null outside it. */
+export function graceLeft(elapsed: number, target: number): number | null {
+  const into = elapsed - target;
+  return into >= 0 && into < GRACE_SECONDS ? 1 - into / GRACE_SECONDS : null;
+}
+
+/** The seconds a stop at `elapsed` records. */
+export function loggedSeconds(elapsed: number, target: number): number {
+  return graceLeft(elapsed, target) !== null ? target : Math.max(0, Math.round(elapsed));
+}
+
+/** The clock holds at the target through the grace window, then jumps on. */
+export function shownSeconds(elapsed: number, target: number): number {
+  return graceLeft(elapsed, target) !== null ? target : elapsed;
+}
+
 // Brighter than the shelf's `CLASS_TOKENS.liquor`: the shelf mutes liquor into a
 // palette, the cup shows it as it looks poured (chosen in the design session,
 // see the Session Timer spec).
