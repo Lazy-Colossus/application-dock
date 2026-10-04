@@ -23,7 +23,7 @@ def patch_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 def _tea() -> dict[str, object]:
     body = {
         "name": "Tieguanyin",
-        "catalogue_node_id": "oolong.anxi.tieguanyin",
+        "catalogue_node_id": "oolong.chinese.anxi.tieguanyin",
         "grams_remaining": 40,
     }
     return client.post("/api/tea/teas", json=body).json()

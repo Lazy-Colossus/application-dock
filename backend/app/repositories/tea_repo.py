@@ -85,6 +85,20 @@ def _images_dir(cabinet_id: str) -> Path:
     return _root() / "images" / _validate_cabinet_id(cabinet_id)
 
 
+# v7 filed every tea under a country node; a cabinet's references to the old
+# ids follow them. Old id -> new id, shipped beside the seed it describes.
+REFILED_NODE_IDS: dict[str, str] = json.loads(
+    (_SEED_PATH.parent / "tea_catalogue_refiled_v7.json").read_text(encoding="utf-8")
+)
+
+
+def _refiled(items: object, key: str) -> list[dict[str, object]]:
+    rows = cast(list[dict[str, object]], items or [])
+    return [
+        {**row, key: REFILED_NODE_IDS.get(cast(str, row.get(key)), row.get(key))} for row in rows
+    ]
+
+
 def migrate(
     raw: dict[str, object], *, cabinet_id: str | None = None, owner: str | None = None
 ) -> dict[str, object]:
@@ -92,7 +106,8 @@ def migrate(
 
     v2 added `sessions`. v3 made the document a cabinet with an `id` and an
     `owner`, and gave every session a `brewed_by`. v4 added `teaware`. v5 added cha xi,
-    journal-only sessions and session photos. v6 added the tasting sheet. Only a legacy per-user file is
+    journal-only sessions and session photos. v6 added the tasting sheet. v7 filed every
+    tea under its country (`REFILED_NODE_IDS`). Only a legacy per-user file is
     ever below v3, and its user owns and brewed everything in it.
     """
     if raw.get("schema_version", 1) == 1:
@@ -116,6 +131,14 @@ def migrate(
     if raw["schema_version"] == 5:
         # v6 added the tasting sheet; it defaults to None.
         raw = {**raw, "schema_version": 6}
+    if raw["schema_version"] == 6:
+        raw = {
+            **raw,
+            "schema_version": 7,
+            "teas": _refiled(raw.get("teas"), "catalogue_node_id"),
+            "catalogue_nodes": _refiled(raw.get("catalogue_nodes"), "parent_id"),
+            "teaware": _refiled(raw.get("teaware"), "dedicated_node_id"),
+        }
     return raw
 
 

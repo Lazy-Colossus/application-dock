@@ -32,12 +32,12 @@ def test_merged_nodes_include_the_seed_for_a_user_with_no_file() -> None:
     nodes = service.merged_nodes("alice")
     ids = {n.id for n in nodes}
     assert "oolong" in ids
-    assert "oolong.wuyi-yancha.da-hong-pao" in ids
+    assert "oolong.chinese.wuyi-yancha.da-hong-pao" in ids
 
 
 def test_user_nodes_are_merged_over_the_seed() -> None:
     node = service.create_node(
-        "alice", CreateNodeRequest(parent_id="oolong.wuyi-yancha", name="Bai Ji Guan")
+        "alice", CreateNodeRequest(parent_id="oolong.chinese.wuyi-yancha", name="Bai Ji Guan")
     )
     ids = {n.id for n in service.merged_nodes("alice")}
     assert node.id in ids
@@ -79,9 +79,9 @@ def test_create_node_refuses_a_blank_name() -> None:
     ("node_id", "expected"),
     [
         ("oolong", "oolong"),
-        ("oolong.wuyi-yancha", "oolong"),
-        ("oolong.wuyi-yancha.da-hong-pao", "oolong"),
-        ("dark.sheng-puerh", "dark"),
+        ("oolong.chinese.wuyi-yancha", "oolong"),
+        ("oolong.chinese.wuyi-yancha.da-hong-pao", "oolong"),
+        ("dark.chinese.sheng-puerh", "dark"),
         ("green.japanese.matcha", "green"),
     ],
 )

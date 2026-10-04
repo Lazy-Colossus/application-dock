@@ -62,7 +62,7 @@ def _tea(grams: float = 40) -> str:
     req = TeaWriteRequest.model_validate(
         {
             "name": "Tieguanyin",
-            "catalogue_node_id": "oolong.anxi.tieguanyin",
+            "catalogue_node_id": "oolong.chinese.anxi.tieguanyin",
             "grams_remaining": grams,
         }
     )

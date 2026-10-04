@@ -30,7 +30,7 @@ def _pot(**overrides: object) -> dict[str, object]:
 
 
 def _tea() -> str:
-    body = {"name": "Tieguanyin", "catalogue_node_id": "oolong.anxi.tieguanyin"}
+    body = {"name": "Tieguanyin", "catalogue_node_id": "oolong.chinese.anxi.tieguanyin"}
     return client.post("/api/tea/teas", json=body).json()["id"]
 
 

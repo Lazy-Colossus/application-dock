@@ -15,7 +15,7 @@ from app.services import tea_service
 from app.services import tea_session_service as sessions
 from tests.tea_support import share
 
-TIEGUANYIN = "oolong.anxi.tieguanyin"
+TIEGUANYIN = "oolong.chinese.anxi.tieguanyin"
 
 
 @pytest.fixture(autouse=True)
@@ -154,7 +154,8 @@ def test_ancestry_is_node_first_and_empty_for_unknown() -> None:
     index = catalogue.node_index(catalogue.merged_nodes("alice"))
     assert [n.id for n in catalogue.ancestry(index, TIEGUANYIN)] == [
         TIEGUANYIN,
-        "oolong.anxi",
+        "oolong.chinese.anxi",
+        "oolong.chinese",
         "oolong",
     ]
     assert catalogue.ancestry(index, "nope") == []

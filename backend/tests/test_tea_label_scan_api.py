@@ -76,7 +76,7 @@ def read(**overrides: object) -> SimpleNamespace:
 
 def test_scan_returns_claudes_fields_and_the_jev_category(monkeypatch: pytest.MonkeyPatch) -> None:
     stub_claude(monkeypatch, read())
-    stub_typesafe(monkeypatch, "oolong.wuyi-yancha.da-hong-pao", 0.9)
+    stub_typesafe(monkeypatch, "oolong.chinese.wuyi-yancha.da-hong-pao", 0.9)
 
     response = client.post("/api/tea/scan-label", files=PHOTO)
 
@@ -86,7 +86,7 @@ def test_scan_returns_claudes_fields_and_the_jev_category(monkeypatch: pytest.Mo
     assert body["vendor"] == "Wuyi Origin"
     assert body["year"] == 2023
     assert body["grams"] == 100.0
-    assert body["catalogue_node_id"] == "oolong.wuyi-yancha.da-hong-pao"
+    assert body["catalogue_node_id"] == "oolong.chinese.wuyi-yancha.da-hong-pao"
     assert body["origin"] == "Wuyi Shan, Fujian"  # inherited from the Wuyi yancha parent
 
 

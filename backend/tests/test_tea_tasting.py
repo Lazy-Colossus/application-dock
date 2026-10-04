@@ -48,7 +48,11 @@ def patch_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
 def _tea() -> str:
     req = TeaWriteRequest.model_validate(
-        {"name": "Dan Cong", "catalogue_node_id": "oolong.anxi.tieguanyin", "grams_remaining": 40}
+        {
+            "name": "Dan Cong",
+            "catalogue_node_id": "oolong.chinese.anxi.tieguanyin",
+            "grams_remaining": 40,
+        }
     )
     return tea_service.create_tea("alice", req).id
 
@@ -127,7 +131,7 @@ def test_a_session_without_a_tasting_has_none() -> None:
     assert sessions.upsert("alice", "s-1", _write(tea_id)).tasting is None
 
 
-def test_a_v5_cabinet_upgrades_to_v6() -> None:
+def test_a_v5_cabinet_upgrades_to_the_current_version() -> None:
     raw: dict[str, object] = {
         "schema_version": 5,
         "id": "c-1",
@@ -137,4 +141,4 @@ def test_a_v5_cabinet_upgrades_to_v6() -> None:
         "sessions": [],
         "teaware": [],
     }
-    assert repo.migrate(raw)["schema_version"] == 6
+    assert repo.migrate(raw)["schema_version"] == 7

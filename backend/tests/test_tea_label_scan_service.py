@@ -80,7 +80,9 @@ def test_maps_claudes_fields_and_the_jev_category(monkeypatch: pytest.MonkeyPatc
     stub_claude(monkeypatch, reading())
     jev = stub_jev(
         monkeypatch,
-        AutofillSuggestion(catalogue_node_id="oolong.wuyi-yancha.da-hong-pao", origin="Wuyi Shan"),
+        AutofillSuggestion(
+            catalogue_node_id="oolong.chinese.wuyi-yancha.da-hong-pao", origin="Wuyi Shan"
+        ),
     )
 
     result = service.scan("alice", JPEG, "image/jpeg")
@@ -90,7 +92,7 @@ def test_maps_claudes_fields_and_the_jev_category(monkeypatch: pytest.MonkeyPatc
     assert result.year == 2023
     assert result.grams == 100.0
     assert result.cultivar == ""
-    assert result.catalogue_node_id == "oolong.wuyi-yancha.da-hong-pao"
+    assert result.catalogue_node_id == "oolong.chinese.wuyi-yancha.da-hong-pao"
     assert jev == [("alice", "Da Hong Pao 大紅袍", "大紅袍 Da Hong Pao Wuyi Origin 2023 100g")]
 
 

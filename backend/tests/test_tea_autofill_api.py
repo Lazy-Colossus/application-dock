@@ -54,16 +54,16 @@ def choice_response(node_id: str, confidence: float):
 
 
 def test_autofill_returns_the_matched_category(monkeypatch: pytest.MonkeyPatch) -> None:
-    stub_typesafe(monkeypatch, choice_response("oolong.wuyi-yancha.da-hong-pao", 0.9))
+    stub_typesafe(monkeypatch, choice_response("oolong.chinese.wuyi-yancha.da-hong-pao", 0.9))
 
     response = client.post("/api/tea/autofill", json={"name": "Da Hong Pao"})
 
     assert response.status_code == 200
-    assert response.json()["catalogue_node_id"] == "oolong.wuyi-yancha.da-hong-pao"
+    assert response.json()["catalogue_node_id"] == "oolong.chinese.wuyi-yancha.da-hong-pao"
 
 
 def test_autofill_returns_null_when_unsure(monkeypatch: pytest.MonkeyPatch) -> None:
-    stub_typesafe(monkeypatch, choice_response("oolong.wuyi-yancha.da-hong-pao", 0.1))
+    stub_typesafe(monkeypatch, choice_response("oolong.chinese.wuyi-yancha.da-hong-pao", 0.1))
 
     response = client.post("/api/tea/autofill", json={"name": "some tea"})
 

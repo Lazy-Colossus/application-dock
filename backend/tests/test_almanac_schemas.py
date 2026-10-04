@@ -13,7 +13,7 @@ def test_brewing_parameters_default_to_unknown() -> None:
 
 
 def test_almanac_entry_defaults_to_seed_source() -> None:
-    entry = AlmanacEntry(catalogue_node_id="green.longjing", country="China", summary="x")
+    entry = AlmanacEntry(catalogue_node_id="green.chinese.longjing", country="China", summary="x")
     assert entry.source == "seed"
     assert entry.reading == ""
     assert entry.brewing.steep_seconds == []
@@ -21,7 +21,7 @@ def test_almanac_entry_defaults_to_seed_source() -> None:
 
 def test_almanac_entry_view_carries_the_resolved_catalogue_fields() -> None:
     view = AlmanacEntryView(
-        catalogue_node_id="green.longjing",
+        catalogue_node_id="green.chinese.longjing",
         country="China",
         summary="x",
         name="Longjing",

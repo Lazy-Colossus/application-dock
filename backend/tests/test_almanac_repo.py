@@ -15,7 +15,7 @@ def test_read_seed_entries_merges_every_country_file() -> None:
 
 def test_read_seed_entries_includes_known_teas() -> None:
     ids = {e.catalogue_node_id for e in repo.read_seed_entries()}
-    assert "green.longjing" in ids
+    assert "green.chinese.longjing" in ids
     assert "green.japanese.matcha" in ids
 
 

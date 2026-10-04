@@ -16,15 +16,15 @@ from app.services import tea_catalogue_service as catalogue
 _NODES = [
     CatalogueNode(id="oolong", parent_id=None, name="Oolong", name_zh="烏龍", default_origin=""),
     CatalogueNode(
-        id="oolong.wuyi-yancha",
+        id="oolong.chinese.wuyi-yancha",
         parent_id="oolong",
         name="Wuyi yancha",
         name_zh="",
         default_origin="Wuyi Shan, Fujian",
     ),
     CatalogueNode(
-        id="oolong.wuyi-yancha.da-hong-pao",
-        parent_id="oolong.wuyi-yancha",
+        id="oolong.chinese.wuyi-yancha.da-hong-pao",
+        parent_id="oolong.chinese.wuyi-yancha",
         name="Da Hong Pao",
         name_zh="大紅袍",
         default_origin="",
@@ -101,23 +101,23 @@ def test_suggest_raises_on_a_blank_name() -> None:
 def test_suggest_returns_none_below_the_confidence_threshold(
     monkeypatch: pytest.MonkeyPatch, no_almanac: None
 ) -> None:
-    stub_typesafe(monkeypatch, choice_response("oolong.wuyi-yancha.da-hong-pao", 0.3))
+    stub_typesafe(monkeypatch, choice_response("oolong.chinese.wuyi-yancha.da-hong-pao", 0.3))
     assert service.suggest("alice", "some tea") is None
 
 
 def test_suggest_returns_the_matched_node(
     monkeypatch: pytest.MonkeyPatch, no_almanac: None
 ) -> None:
-    stub_typesafe(monkeypatch, choice_response("oolong.wuyi-yancha.da-hong-pao", 0.9))
+    stub_typesafe(monkeypatch, choice_response("oolong.chinese.wuyi-yancha.da-hong-pao", 0.9))
     result = service.suggest("alice", "Da Hong Pao")
     assert result is not None
-    assert result.catalogue_node_id == "oolong.wuyi-yancha.da-hong-pao"
+    assert result.catalogue_node_id == "oolong.chinese.wuyi-yancha.da-hong-pao"
 
 
 def test_suggest_fills_origin_from_an_ancestors_default_origin(
     monkeypatch: pytest.MonkeyPatch, no_almanac: None
 ) -> None:
-    stub_typesafe(monkeypatch, choice_response("oolong.wuyi-yancha.da-hong-pao", 0.9))
+    stub_typesafe(monkeypatch, choice_response("oolong.chinese.wuyi-yancha.da-hong-pao", 0.9))
     result = service.suggest("alice", "Da Hong Pao")
     assert result is not None
     assert result.origin == "Wuyi Shan, Fujian"
@@ -149,13 +149,15 @@ def test_suggest_sends_the_almanac_summary_as_candidate_context(
         "read_seed_entries",
         lambda: (
             AlmanacEntry(
-                catalogue_node_id="oolong.wuyi-yancha.da-hong-pao",
+                catalogue_node_id="oolong.chinese.wuyi-yancha.da-hong-pao",
                 country="China",
                 summary="A legendary Wuyi rock oolong.",
             ),
         ),
     )
-    seen = stub_typesafe(monkeypatch, choice_response("oolong.wuyi-yancha.da-hong-pao", 0.9))
+    seen = stub_typesafe(
+        monkeypatch, choice_response("oolong.chinese.wuyi-yancha.da-hong-pao", 0.9)
+    )
     service.suggest("alice", "Da Hong Pao")
     assert b"legendary Wuyi rock oolong" in seen[0].content
 
@@ -163,7 +165,9 @@ def test_suggest_sends_the_almanac_summary_as_candidate_context(
 def test_suggest_sends_the_jev_model_identifier(
     monkeypatch: pytest.MonkeyPatch, no_almanac: None
 ) -> None:
-    seen = stub_typesafe(monkeypatch, choice_response("oolong.wuyi-yancha.da-hong-pao", 0.9))
+    seen = stub_typesafe(
+        monkeypatch, choice_response("oolong.chinese.wuyi-yancha.da-hong-pao", 0.9)
+    )
     service.suggest("alice", "Da Hong Pao")
     assert b'"model"' in seen[0].content
     assert b"jev-latest" in seen[0].content
@@ -198,7 +202,9 @@ def test_suggest_raises_on_a_network_timeout(
 def test_match_category_sends_label_text_as_state_when_given(
     monkeypatch: pytest.MonkeyPatch, no_almanac: None
 ) -> None:
-    seen = stub_typesafe(monkeypatch, choice_response("oolong.wuyi-yancha.da-hong-pao", 0.9))
+    seen = stub_typesafe(
+        monkeypatch, choice_response("oolong.chinese.wuyi-yancha.da-hong-pao", 0.9)
+    )
 
     result = service.match_category("alice", "Da Hong Pao", "大紅袍 Wuyi Shan 2023 100g")
 
@@ -211,7 +217,9 @@ def test_match_category_sends_label_text_as_state_when_given(
 def test_match_category_omits_label_text_without_context(
     monkeypatch: pytest.MonkeyPatch, no_almanac: None
 ) -> None:
-    seen = stub_typesafe(monkeypatch, choice_response("oolong.wuyi-yancha.da-hong-pao", 0.9))
+    seen = stub_typesafe(
+        monkeypatch, choice_response("oolong.chinese.wuyi-yancha.da-hong-pao", 0.9)
+    )
 
     service.match_category("alice", "Da Hong Pao")
 

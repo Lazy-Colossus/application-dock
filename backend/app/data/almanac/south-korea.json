@@ -28,21 +28,21 @@
     "brewing": { "leaf_grams": 5, "water_temp_c": 85, "steep_seconds": [30, 30] }
   },
   {
-    "catalogue_node_id": "yellow.hwangcha",
+    "catalogue_node_id": "yellow.korean.hwangcha",
     "country": "South Korea",
     "reading": "hwangcha",
     "summary": "Korea's own \"yellow tea,\" and despite the name it does not follow Chinese yellow tea's men huang process — a kill-green step followed by a gentle, largely non-enzymatic sealed \"smothering.\" Korean hwangcha skips kill-green entirely: withered, rolled leaf is heaped while its enzymes are still active, so genuine oxidation (not simple humid yellowing) proceeds during the pile, and the final drying step doubles as kill-green. The result is a moderately oxidized, golden-amber cup closer in character to a light oolong or mild black tea than to China's gently non-oxidized Junshan Yinzhen — the lighter end of Korea's broader balhyocha (oxidized-tea) spectrum, most closely associated with Boseong.",
     "brewing": { "leaf_grams": 3, "water_temp_c": 90, "steep_seconds": [180, 120, 120] }
   },
   {
-    "catalogue_node_id": "red.balhyocha",
+    "catalogue_node_id": "red.korean.balhyocha",
     "country": "South Korea",
     "reading": "balhyocha",
     "summary": "\"Fermented tea\" is the broad Korean term for oxidized tea, also spelled paryocha and, in its Hadong homeland, also called jaeksal or jaeksul. In its fullest, most traditional form it is oxidized to roughly the level of a black tea (around 70%), made from Hadong's indigenous heirloom cultivar rather than the Yabukita clone common in Boseong. Processing follows the same order as hwangcha — withering, rolling, heaping, drying — but the pile is left considerably longer, deepening the cup toward cocoa, roasted grain, and honey notes; historically each household kept its own recipe and aged the finished leaf in onggi earthenware jars through the winter.",
     "brewing": { "leaf_grams": 4, "water_temp_c": 90, "steep_seconds": [120, 60, 90] }
   },
   {
-    "catalogue_node_id": "dark.cheongtaejeon",
+    "catalogue_node_id": "dark.korean.cheongtaejeon",
     "country": "South Korea",
     "reading": "cheongtaejeon",
     "summary": "\"Green moss coin,\" also known as doncha (\"coin tea\") or tteokcha (\"rice-cake tea\"), is Korea's one genuinely post-fermented dark tea, made around Jangheung on the south coast since at least the Unified Silla period. Leaves are steamed, pounded in a mortar, pressed into small coin-shaped discs, strung on cord, and left to dry and age — during which resident bacteria (chiefly Pantoea and Klebsiella species) drive true microbial fermentation, unlike hwangcha or balhyocha's purely enzymatic oxidation. Long aging mellows it into an earthy, smooth cup comparable to Chinese dark tea or Japan's goishicha, though today it survives only as a small-scale specialty rather than a commercial staple.",

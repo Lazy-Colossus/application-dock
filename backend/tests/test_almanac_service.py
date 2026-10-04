@@ -19,7 +19,7 @@ def patch_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_list_entries_returns_every_seeded_entry_resolved() -> None:
     views = service.list_entries("alice")
-    longjing = next(v for v in views if v.catalogue_node_id == "green.longjing")
+    longjing = next(v for v in views if v.catalogue_node_id == "green.chinese.longjing")
     assert longjing.name == "Longjing"
     assert longjing.name_zh == "龍井"
 
@@ -43,7 +43,7 @@ def test_list_entries_search_matches_summary_case_insensitively() -> None:
 def test_list_entries_search_matches_native_script() -> None:
     views = service.list_entries("alice", q="龍井")
     ids = {v.catalogue_node_id for v in views}
-    assert "green.longjing" in ids
+    assert "green.chinese.longjing" in ids
 
 
 def test_list_entries_drops_an_entry_whose_catalogue_node_no_longer_resolves(

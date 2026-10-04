@@ -22,7 +22,7 @@ def patch_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 def _payload(**overrides: object) -> dict[str, object]:
     body: dict[str, object] = {
         "name": "Da Hong Pao",
-        "catalogue_node_id": "oolong.wuyi-yancha.da-hong-pao",
+        "catalogue_node_id": "oolong.chinese.wuyi-yancha.da-hong-pao",
         "grams_purchased": 100,
         "grams_remaining": 38,
     }
@@ -35,7 +35,10 @@ def test_catalogue_returns_the_flat_seed() -> None:
     assert response.status_code == 200
     nodes = response.json()
     assert any(n["id"] == "oolong" and n["parent_id"] is None for n in nodes)
-    assert any(n["id"] == "oolong.wuyi-yancha" and n["parent_id"] == "oolong" for n in nodes)
+    assert any(
+        n["id"] == "oolong.chinese.wuyi-yancha" and n["parent_id"] == "oolong.chinese"
+        for n in nodes
+    )
 
 
 def test_empty_cabinet_lists_nothing() -> None:
@@ -86,7 +89,8 @@ def test_an_unknown_node_is_422() -> None:
 
 def test_create_node_returns_201_and_appears_in_the_catalogue() -> None:
     response = client.post(
-        "/api/tea/catalogue", json={"parent_id": "oolong.wuyi-yancha", "name": "Bai Ji Guan"}
+        "/api/tea/catalogue",
+        json={"parent_id": "oolong.chinese.wuyi-yancha", "name": "Bai Ji Guan"},
     )
     assert response.status_code == 201
     node = response.json()

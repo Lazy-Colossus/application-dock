@@ -21,7 +21,7 @@ def patch_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 def _req(**overrides: object) -> TeaWriteRequest:
     payload: dict[str, object] = {
         "name": "Da Hong Pao",
-        "catalogue_node_id": "oolong.wuyi-yancha.da-hong-pao",
+        "catalogue_node_id": "oolong.chinese.wuyi-yancha.da-hong-pao",
         "grams_purchased": 100,
         "grams_remaining": 38,
     }
@@ -95,7 +95,9 @@ def test_purchase_date_accepts_iso() -> None:
 
 def test_list_returns_every_tea_with_its_class() -> None:
     service.create_tea("alice", _req())
-    service.create_tea("alice", _req(name="Shou Mei", catalogue_node_id="white.fuding.shou-mei"))
+    service.create_tea(
+        "alice", _req(name="Shou Mei", catalogue_node_id="white.chinese.fuding.shou-mei")
+    )
     classes = sorted(t.class_id for t in service.list_teas("alice"))
     assert classes == ["oolong", "white"]
 
@@ -130,7 +132,11 @@ def test_replace_overwrites_every_field_and_bumps_updated_at() -> None:
     replaced = service.replace_tea(
         "alice",
         tea.id,
-        _req(name="Rou Gui", catalogue_node_id="oolong.wuyi-yancha.rou-gui", grams_remaining=12),
+        _req(
+            name="Rou Gui",
+            catalogue_node_id="oolong.chinese.wuyi-yancha.rou-gui",
+            grams_remaining=12,
+        ),
     )
     assert replaced.id == tea.id
     assert replaced.name == "Rou Gui"
@@ -161,7 +167,7 @@ def test_a_tea_may_be_classified_against_a_node_the_user_added() -> None:
     from app.services import tea_catalogue_service as catalogue
 
     node = catalogue.create_node(
-        "alice", CreateNodeRequest(parent_id="oolong.wuyi-yancha", name="Bai Ji Guan")
+        "alice", CreateNodeRequest(parent_id="oolong.chinese.wuyi-yancha", name="Bai Ji Guan")
     )
     assert service.create_tea("alice", _req(catalogue_node_id=node.id)).class_id == "oolong"
 

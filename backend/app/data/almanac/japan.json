@@ -133,7 +133,7 @@
     "brewing": { "leaf_grams": 10, "water_temp_c": 100, "steep_seconds": [] }
   },
   {
-    "catalogue_node_id": "red.wakoucha",
+    "catalogue_node_id": "red.japanese.wakoucha",
     "country": "Japan",
     "reading": "wakōcha",
     "summary": "Japan's own black tea, fully oxidized rather than steamed like sencha, developed from the 1870s as a Meiji-era export crop meant to compete with Chinese, Indian, and Ceylon black teas — production even drew on Assam seed stock a Japanese delegation brought back from India in 1876. Made mostly from Japanese cultivars bred for green tea's low tannin and high theanine rather than from Assam-type bushes, wakoucha comes out lighter, sweeter, and less astringent than Indian or Sri Lankan black teas, usually without the malty bitterness typical of the style. Export demand collapsed after trade liberalization in 1971, and today wakoucha is a small-scale specialty made in Shizuoka, Miyazaki, and other prefectures rather than an export commodity.",

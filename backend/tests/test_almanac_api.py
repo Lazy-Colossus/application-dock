@@ -22,7 +22,7 @@ def test_list_almanac_returns_seeded_entries() -> None:
     response = client.get("/api/tea/almanac")
     assert response.status_code == 200
     body = response.json()
-    assert any(e["catalogue_node_id"] == "green.longjing" for e in body)
+    assert any(e["catalogue_node_id"] == "green.chinese.longjing" for e in body)
 
 
 def test_list_almanac_filters_by_country() -> None:
@@ -37,11 +37,11 @@ def test_list_almanac_filters_by_search_text() -> None:
     response = client.get("/api/tea/almanac", params={"q": "West Lake"})
     assert response.status_code == 200
     ids = {e["catalogue_node_id"] for e in response.json()}
-    assert "green.longjing" in ids
+    assert "green.chinese.longjing" in ids
 
 
 def test_get_almanac_entry_returns_the_entry() -> None:
-    response = client.get("/api/tea/almanac/oolong.anxi.tieguanyin")
+    response = client.get("/api/tea/almanac/oolong.chinese.anxi.tieguanyin")
     assert response.status_code == 200
     assert response.json()["name"] == "Tieguanyin"
 

@@ -16,7 +16,7 @@ from app.services import tea_session_service as sessions
 from app.services import tea_teaware_service as service
 from tests.tea_support import cabinet_of, doc_of, share
 
-TIEGUANYIN = "oolong.anxi.tieguanyin"
+TIEGUANYIN = "oolong.chinese.anxi.tieguanyin"
 
 
 @pytest.fixture(autouse=True)

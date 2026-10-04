@@ -21,7 +21,7 @@ def patch_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 def _payload(**overrides: object) -> dict[str, object]:
     body: dict[str, object] = {
         "name": "Tieguanyin",
-        "catalogue_node_id": "oolong.anxi.tieguanyin",
+        "catalogue_node_id": "oolong.chinese.anxi.tieguanyin",
         "grams_remaining": 50,
     }
     body.update(overrides)

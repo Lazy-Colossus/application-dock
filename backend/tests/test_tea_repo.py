@@ -20,7 +20,7 @@ def _tea(tea_id: str = "t-abc12345") -> Tea:
     return Tea(
         id=tea_id,
         name="Da Hong Pao",
-        catalogue_node_id="oolong.wuyi-yancha.da-hong-pao",
+        catalogue_node_id="oolong.chinese.wuyi-yancha.da-hong-pao",
         grams_purchased=100,
         grams_remaining=38,
         created_at="2026-09-25T10:00:00+00:00",
@@ -58,7 +58,7 @@ def test_new_cabinet_writes_an_empty_current_doc_owned_by_the_user(tmp_path: Pat
     cabinet_id = repo.new_cabinet("alice")
     assert cabinet_id.startswith("c_")
     doc = repo.read_doc(cabinet_id)
-    assert (doc.schema_version, doc.id, doc.owner) == (6, cabinet_id, "alice")
+    assert (doc.schema_version, doc.id, doc.owner) == (7, cabinet_id, "alice")
     assert doc.teas == [] and doc.sessions == [] and doc.catalogue_nodes == []
     assert doc.teaware == []
     assert (tmp_path / "tea" / "cabinets" / f"{cabinet_id}.json").is_file()
@@ -158,10 +158,10 @@ def test_delete_cabinet_removes_the_doc_and_its_photos(tmp_path: Path) -> None:
     assert not (tmp_path / "tea" / "images" / cabinet_id).exists()
 
 
-def test_migrate_v1_goes_all_the_way_to_v4() -> None:
+def test_migrate_v1_goes_all_the_way_to_the_current_version() -> None:
     raw: dict[str, object] = {"schema_version": 1, "teas": [], "catalogue_nodes": []}
     upgraded = repo.migrate(raw, cabinet_id="c_" + "1" * 32, owner="alice")
-    assert upgraded["schema_version"] == 6
+    assert upgraded["schema_version"] == 7
     assert upgraded["sessions"] == []
     assert upgraded["teaware"] == []
     assert (upgraded["id"], upgraded["owner"]) == ("c_" + "1" * 32, "alice")
@@ -245,7 +245,7 @@ def test_adopt_legacy_recovers_from_a_crash_between_cabinet_write_and_image_move
 def test_migrate_v3_adds_an_empty_teaware_list() -> None:
     raw: dict[str, object] = {"schema_version": 3, "id": "c_" + "1" * 32, "owner": "alice"}
     upgraded = repo.migrate(raw)
-    assert upgraded["schema_version"] == 6
+    assert upgraded["schema_version"] == 7
     assert upgraded["teaware"] == []
 
 
@@ -253,3 +253,42 @@ def test_seed_catalogue_loads_and_is_cached() -> None:
     first = repo.read_seed_catalogue()
     assert first is repo.read_seed_catalogue()
     assert len(first) > 0
+
+
+def test_a_v6_cabinet_moves_teas_refiled_under_their_country() -> None:
+    raw: dict[str, object] = {
+        "schema_version": 6,
+        "id": "c-1",
+        "owner": "alice",
+        "teas": [
+            {"id": "t-1", "catalogue_node_id": "red.wakoucha"},
+            {"id": "t-2", "catalogue_node_id": "green.longjing"},
+        ],
+        "catalogue_nodes": [
+            {"id": "u-1", "parent_id": "other.miang"},
+            {"id": "u-2", "parent_id": "red"},
+        ],
+        "sessions": [],
+        "teaware": [
+            {"id": "w-1", "dedicated_node_id": "yellow.hwangcha"},
+            {"id": "w-2", "dedicated_node_id": None},
+        ],
+    }
+    upgraded = repo.migrate(raw)
+    assert upgraded["schema_version"] == 7
+    assert [t["catalogue_node_id"] for t in upgraded["teas"]] == [
+        "red.japanese.wakoucha",
+        "green.chinese.longjing",
+    ]
+    assert [n["parent_id"] for n in upgraded["catalogue_nodes"]] == ["other.thai.miang", "red"]
+    assert [w["dedicated_node_id"] for w in upgraded["teaware"]] == [
+        "yellow.korean.hwangcha",
+        None,
+    ]
+
+
+def test_every_refiled_id_exists_in_the_seed() -> None:
+    ids = {node.id for node in repo.read_seed_catalogue()}
+    for old, new in repo.REFILED_NODE_IDS.items():
+        assert old not in ids
+        assert new in ids

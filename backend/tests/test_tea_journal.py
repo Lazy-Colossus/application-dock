@@ -107,14 +107,14 @@ def test_a_v4_cabinet_upgrades_to_the_current_version() -> None:
         "sessions": [],
         "teaware": [],
     }
-    assert repo.migrate(raw)["schema_version"] == 6
+    assert repo.migrate(raw)["schema_version"] == 7
 
 
 def _tea(grams: float = 40, purchased: float | None = None, name: str = "Tieguanyin") -> str:
     req = TeaWriteRequest.model_validate(
         {
             "name": name,
-            "catalogue_node_id": "oolong.anxi.tieguanyin",
+            "catalogue_node_id": "oolong.chinese.anxi.tieguanyin",
             "grams_remaining": grams,
             "grams_purchased": purchased,
         }
