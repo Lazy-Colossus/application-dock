@@ -25,9 +25,9 @@ services:
       # promotes the shared account to admin.
       KALENDARIQ_GUESTS: ${KALENDARIQ_GUESTS:-players}
     volumes:
-      - /data:/data
+      - dock_data:/data
       - /var/run/docker.sock:/var/run/docker.sock
       - ${HOST_SCRIPTS_DIR:-/home/jake/scripts}:/host-scripts:ro
 
 volumes:
-  archery-data:
+  dock_data:
