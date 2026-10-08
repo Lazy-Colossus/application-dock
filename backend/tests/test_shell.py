@@ -200,4 +200,4 @@ def test_floor_planner_router_is_mounted() -> None:
     from app.routers import floor_planner
 
     assert floor_planner.router.prefix == "/api/floor-planner"
-    assert any(getattr(r, "path", "") == "/api/floor-planner/apartment" for r in app.routes)
+    assert any(getattr(r, "path", "") == "/api/floor-planner/apartments" for r in app.routes)

@@ -20,6 +20,8 @@ import type { Apartment } from "../types";
 function apartment(over: Partial<Apartment> = {}): Apartment {
   return {
     id: "a_1",
+    name: "Our flat",
+    updated_at: null,
     owner: "jake",
     members: ["dani", "jake"],
     is_owner: true,
@@ -68,28 +70,40 @@ describe("MembersDialog", () => {
     await wrapper.get("[data-testid=members-add-input]").setValue("kim");
     await wrapper.get("[data-testid=members-add]").trigger("click");
     await flushPromises();
-    expect(postMock).toHaveBeenCalledWith("/floor-planner/apartment/members", {
-      username: "kim",
-    });
+    expect(postMock).toHaveBeenCalledWith(
+      "/floor-planner/apartments/a_1/members",
+      {
+        username: "kim",
+      },
+    );
 
     delMock.mockResolvedValue(apartment({ members: ["jake"] }));
     await wrapper.get("[data-testid=members-remove-dani]").trigger("click");
     expect(delMock).toHaveBeenCalledWith(
-      "/floor-planner/apartment/members/dani",
+      "/floor-planner/apartments/a_1/members/dani",
     );
   });
 
   it("lets a member leave after confirming, then emits left", async () => {
     const wrapper = await dialog(apartment({ is_owner: false }), "dani");
     expect(wrapper.find("[data-testid=members-add]").exists()).toBe(false);
-    delMock.mockResolvedValue(apartment({ owner: "dani", members: ["dani"] }));
+    postMock.mockResolvedValue([
+      {
+        id: "a_2",
+        name: "My apartment",
+        owner: "dani",
+        members: ["dani"],
+        is_owner: true,
+        updated_at: null,
+      },
+    ]);
     await wrapper.get("[data-testid=members-leave]").trigger("click");
     await wrapper.get("[data-testid=members-leave-yes]").trigger("click");
     await flushPromises();
-    expect(delMock).toHaveBeenCalledWith(
-      "/floor-planner/apartment/members/dani",
+    expect(postMock).toHaveBeenCalledWith(
+      "/floor-planner/apartments/a_1/leave",
     );
-    expect(wrapper.emitted("left")).toHaveLength(1);
+    expect(wrapper.emitted("left")?.[0]).toEqual(["a_2"]);
   });
 
   it("shows the store's error", async () => {

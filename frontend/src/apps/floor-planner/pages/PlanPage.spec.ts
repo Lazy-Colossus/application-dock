@@ -1,13 +1,25 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, postMock, putMock, delMock, leaveGuards } = vi.hoisted(() => ({
+const {
+  getMock,
+  postMock,
+  putMock,
+  delMock,
+  leaveGuards,
+  updateGuards,
+  routerMock,
+  routeParams,
+} = vi.hoisted(() => ({
   getMock: vi.fn(),
   postMock: vi.fn(),
   putMock: vi.fn(),
   delMock: vi.fn(),
-  leaveGuards: [] as (() => boolean)[],
+  leaveGuards: [] as (() => Promise<boolean>)[],
+  updateGuards: [] as (() => Promise<boolean>)[],
+  routerMock: { push: vi.fn(), replace: vi.fn() },
+  routeParams: { apartmentId: "a_1" } as { apartmentId?: string },
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
@@ -16,18 +28,25 @@ vi.mock("@/composables/useApi", () => ({
 
 vi.mock("vue-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-router")>()),
-  onBeforeRouteLeave: (guard: () => boolean) => leaveGuards.push(guard),
+  onBeforeRouteLeave: (guard: () => Promise<boolean>) =>
+    leaveGuards.push(guard),
+  onBeforeRouteUpdate: (guard: () => Promise<boolean>) =>
+    updateGuards.push(guard),
+  useRoute: () => ({ params: routeParams }),
+  useRouter: () => routerMock,
 }));
 
 import PlanPage from "./PlanPage.vue";
 import { emptyRows } from "../grid";
 import { useFloorPlanStore } from "../stores/useFloorPlanStore";
 import { useAuthStore } from "@/stores/useAuthStore";
-import type { Apartment, Furniture } from "../types";
+import type { Apartment, ApartmentSummary, Furniture } from "../types";
 
 function apartment(over: Partial<Apartment> = {}): Apartment {
   return {
     id: "a_1",
+    name: "Our flat",
+    updated_at: null,
     owner: "jake",
     members: ["dani", "jake"],
     is_owner: true,
@@ -45,13 +64,20 @@ function apartment(over: Partial<Apartment> = {}): Apartment {
   };
 }
 
-async function page(a: Apartment = apartment()) {
+function summary(a: Apartment): ApartmentSummary {
+  const { id, name, owner, members, is_owner, updated_at } = a;
+  return { id, name, owner, members, is_owner, updated_at };
+}
+
+async function page(a: Apartment = apartment(), others: Apartment[] = []) {
   useAuthStore().username = "jake";
-  getMock.mockImplementation((path: string) =>
-    path === "/auth/users"
-      ? Promise.resolve({ usernames: [] })
-      : Promise.resolve(a),
-  );
+  getMock.mockImplementation((path: string) => {
+    if (path === "/auth/users") return Promise.resolve({ usernames: [] });
+    if (path === "/floor-planner/apartments")
+      return Promise.resolve([a, ...others].map(summary));
+    const found = [a, ...others].find((x) => path.endsWith(`/${x.id}`));
+    return Promise.resolve(found ?? a);
+  });
   const wrapper = mount(PlanPage);
   await flushPromises();
   return wrapper;
@@ -62,10 +88,18 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.restoreAllMocks();
   leaveGuards.length = 0;
+  updateGuards.length = 0;
+  routeParams.apartmentId = "a_1";
+  // Autosave timers must never fire into a later test.
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({
     left: 0,
     top: 0,
   } as DOMRect);
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 /** The middle of a square at 100 %: 32 px of ruler, then 16 px per square. */
@@ -114,9 +148,12 @@ describe("PlanPage", () => {
     );
     await wrapper.get("[data-testid=lock-toggle]").trigger("click");
     await flushPromises();
-    expect(postMock).toHaveBeenCalledWith("/floor-planner/apartment/lock", {
-      base_rev: 2,
-    });
+    expect(postMock).toHaveBeenCalledWith(
+      "/floor-planner/apartments/a_1/lock",
+      {
+        base_rev: 2,
+      },
+    );
     expect(wrapper.get("[data-testid=lock-chip]").text()).toBe("Plan locked");
     expect(wrapper.get("[data-testid=lock-toggle]").text()).toBe("Unlock");
   });
@@ -125,9 +162,12 @@ describe("PlanPage", () => {
     const wrapper = await page(apartment({ locked: true }));
     postMock.mockResolvedValue(apartment({ rev: 3, plan_rev: 3 }));
     await wrapper.get("[data-testid=lock-toggle]").trigger("click");
-    expect(postMock).toHaveBeenCalledWith("/floor-planner/apartment/unlock", {
-      base_rev: 2,
-    });
+    expect(postMock).toHaveBeenCalledWith(
+      "/floor-planner/apartments/a_1/unlock",
+      {
+        base_rev: 2,
+      },
+    );
   });
 
   it("shows the reload notice", async () => {
@@ -163,7 +203,7 @@ describe("PlanPage", () => {
     await wrapper.get("[data-testid=save]").trigger("click");
     await flushPromises();
     const [path, body] = putMock.mock.calls[0];
-    expect(path).toBe("/floor-planner/apartment/plan");
+    expect(path).toBe("/floor-planner/apartments/a_1/plan");
     expect(body.feature[0].slice(0, 8)).toBe("wlwlwlwl");
     expect(body.base_rev).toBe(2);
   });
@@ -178,9 +218,12 @@ describe("PlanPage", () => {
     await wrapper.get("[data-testid=lock-toggle]").trigger("click");
     await flushPromises();
     expect(putMock).toHaveBeenCalledTimes(1);
-    expect(postMock).toHaveBeenCalledWith("/floor-planner/apartment/lock", {
-      base_rev: 3,
-    });
+    expect(postMock).toHaveBeenCalledWith(
+      "/floor-planner/apartments/a_1/lock",
+      {
+        base_rev: 3,
+      },
+    );
   });
 
   it("can't draw on a locked plan", async () => {
@@ -206,14 +249,77 @@ describe("PlanPage", () => {
     expect(store.dirty).toBe(true);
   });
 
-  it("asks before leaving only with unsaved drawing", async () => {
+  it("saves the drawing before leaving, and asks only if that fails", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     const wrapper = await page();
-    expect(leaveGuards[0]()).toBe(true);
+    expect(await leaveGuards[0]()).toBe(true);
+    await drawWall(wrapper);
+    putMock.mockResolvedValueOnce(apartment({ rev: 3, plan_rev: 3 }));
+    expect(await updateGuards[0]()).toBe(true);
+    expect(putMock).toHaveBeenCalledTimes(1);
     expect(confirm).not.toHaveBeenCalled();
     await drawWall(wrapper);
-    expect(leaveGuards[0]()).toBe(false);
+    await wrapper.get("[data-testid=brush-eraser]").trigger("click");
+    await drawWall(wrapper);
+    putMock.mockRejectedValueOnce(new Error("offline"));
+    expect(await leaveGuards[0]()).toBe(false);
     expect(confirm).toHaveBeenCalledTimes(1);
+  });
+
+  describe("apartments", () => {
+    it("opens the most recent apartment when the URL names none", async () => {
+      routeParams.apartmentId = undefined;
+      await page();
+      expect(routerMock.replace).toHaveBeenCalledWith({
+        name: "floor-planner",
+        params: { apartmentId: "a_1" },
+      });
+    });
+
+    it("lists apartments and switches to another", async () => {
+      const wrapper = await page(apartment(), [
+        apartment({ id: "a_2", name: "Summer flat" }),
+      ]);
+      expect(wrapper.get(".apartment-menu__name").text()).toBe("Our flat");
+      await wrapper.get("[data-testid=apartment-a_2]").trigger("click");
+      expect(routerMock.push).toHaveBeenCalledWith({
+        name: "floor-planner",
+        params: { apartmentId: "a_2" },
+      });
+    });
+
+    it("creates a new apartment through the name dialog and goes there", async () => {
+      const wrapper = await page();
+      const store = useFloorPlanStore();
+      await wrapper.get("[data-testid=apartment-new]").trigger("click");
+      postMock.mockResolvedValue(apartment({ id: "a_9", name: "Second" }));
+      await wrapper.get("[data-testid=name-text]").setValue("Second");
+      await wrapper.get("form").trigger("submit");
+      await flushPromises();
+      expect(postMock).toHaveBeenCalledWith("/floor-planner/apartments", {
+        name: "Second",
+      });
+      expect(store.apartment?.id).toBe("a_9");
+      expect(routerMock.push).toHaveBeenCalledWith({
+        name: "floor-planner",
+        params: { apartmentId: "a_9" },
+      });
+    });
+
+    it("deletes after confirming and goes to the next one", async () => {
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+      const wrapper = await page();
+      delMock.mockResolvedValue([
+        summary(apartment({ id: "a_2", name: "Left" })),
+      ]);
+      await wrapper.get("[data-testid=apartment-delete]").trigger("click");
+      await flushPromises();
+      expect(delMock).toHaveBeenCalledWith("/floor-planner/apartments/a_1");
+      expect(routerMock.replace).toHaveBeenCalledWith({
+        name: "floor-planner",
+        params: { apartmentId: "a_2" },
+      });
+    });
   });
 
   it("adds a room label through the dialog", async () => {
@@ -265,7 +371,7 @@ describe("PlanPage", () => {
       await wrapper.get("[data-testid=piece-form]").trigger("submit");
       await flushPromises();
       expect(postMock).toHaveBeenCalledWith(
-        "/floor-planner/apartment/furniture",
+        "/floor-planner/apartments/a_1/furniture",
         {
           pieces: [
             expect.objectContaining({ name: "Desk", shape: "rectangle" }),
@@ -286,7 +392,7 @@ describe("PlanPage", () => {
       );
       await wrapper.get("[data-testid=piece-form]").trigger("submit");
       expect(putMock).toHaveBeenCalledWith(
-        "/floor-planner/apartment/furniture/f_1",
+        "/floor-planner/apartments/a_1/furniture/f_1",
         expect.objectContaining({ colour: "blue" }),
       );
     });
@@ -299,7 +405,7 @@ describe("PlanPage", () => {
       await wrapper.get("[data-testid=piece-delete]").trigger("click");
       await flushPromises();
       expect(delMock).toHaveBeenCalledWith(
-        "/floor-planner/apartment/furniture/f_1",
+        "/floor-planner/apartments/a_1/furniture/f_1",
       );
       expect(wrapper.find("[data-testid=piece-hint]").exists()).toBe(true);
     });
@@ -365,9 +471,12 @@ describe("PlanPage", () => {
       postMock.mockResolvedValue(arranged());
       await wrapper.get("[data-testid=tray-lock] button").trigger("click");
       await flushPromises();
-      expect(postMock).toHaveBeenCalledWith("/floor-planner/apartment/lock", {
-        base_rev: 2,
-      });
+      expect(postMock).toHaveBeenCalledWith(
+        "/floor-planner/apartments/a_1/lock",
+        {
+          base_rev: 2,
+        },
+      );
     });
 
     it("lists the tray and places a dropped piece centred under the cursor", async () => {
@@ -399,7 +508,7 @@ describe("PlanPage", () => {
         dataTransfer,
       });
       expect(putMock).toHaveBeenCalledWith(
-        "/floor-planner/apartment/layouts/l_a/placements/f_sofa",
+        "/floor-planner/apartments/a_1/layouts/l_a/placements/f_sofa",
         { x_cm: 250, y_cm: 100, rotation: 0 },
       );
       expect(wrapper.find("[data-testid=placement-inspector]").exists()).toBe(
@@ -413,13 +522,13 @@ describe("PlanPage", () => {
       putMock.mockResolvedValue(arranged());
       await wrapper.trigger("keydown", { key: "r" });
       expect(putMock).toHaveBeenCalledWith(
-        "/floor-planner/apartment/layouts/l_a/placements/f_bed",
+        "/floor-planner/apartments/a_1/layouts/l_a/placements/f_bed",
         { furniture_id: "f_bed", x_cm: 200, y_cm: 200, rotation: 90 },
       );
       delMock.mockResolvedValue(arranged());
       await wrapper.get("[data-testid=back-to-tray]").trigger("click");
       expect(delMock).toHaveBeenCalledWith(
-        "/floor-planner/apartment/layouts/l_a/placements/f_bed",
+        "/floor-planner/apartments/a_1/layouts/l_a/placements/f_bed",
       );
       expect(wrapper.find("[data-testid=arrange-hint]").exists()).toBe(true);
     });
@@ -450,7 +559,7 @@ describe("PlanPage", () => {
       await wrapper.get("[data-testid=layout-create]").trigger("click");
       await flushPromises();
       expect(postMock).toHaveBeenCalledWith(
-        "/floor-planner/apartment/layouts",
+        "/floor-planner/apartments/a_1/layouts",
         {
           name: "Layout B",
         },
@@ -469,7 +578,7 @@ describe("PlanPage", () => {
       await wrapper.get("[data-testid=layout-duplicate]").trigger("click");
       await flushPromises();
       expect(postMock).toHaveBeenLastCalledWith(
-        "/floor-planner/apartment/layouts/l_b/duplicate",
+        "/floor-planner/apartments/a_1/layouts/l_b/duplicate",
       );
       expect(
         wrapper.get("[data-testid=layout-l_c]").attributes("aria-selected"),

@@ -19,6 +19,10 @@ def setup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     auth_service.create_user("ana")
 
 
+def _apt(username: str) -> str:
+    return service.list_apartments(username)[0].id
+
+
 def _draft(**over: Any) -> PieceDraft:
     data: dict[str, Any] = {
         "name": "Sofa",
@@ -34,6 +38,7 @@ def _draft(**over: Any) -> PieceDraft:
 def test_pieces_are_added_in_order_and_cleaned() -> None:
     apt = service.add_pieces(
         "ana",
+        _apt("ana"),
         [
             _draft(name="  Sofa ", note=" IKEA Kivik "),
             _draft(name="Coffee table", shape="round", width_cm=80, depth_cm=80, colour="brown"),
@@ -46,15 +51,16 @@ def test_pieces_are_added_in_order_and_cleaned() -> None:
 
 
 def test_a_piece_write_does_not_stale_the_plan() -> None:
-    service.set_locked("ana", 0, True)
-    apt = service.add_pieces("ana", [_draft()])
+    service.set_locked("ana", _apt("ana"), 0, True)
+    apt = service.add_pieces("ana", _apt("ana"), [_draft()])
     assert (apt.rev, apt.plan_rev) == (2, 1)
-    assert service.set_locked("ana", 1, False).locked is False
+    assert service.set_locked("ana", _apt("ana"), 1, False).locked is False
 
 
 def test_a_custom_shape_is_trimmed_and_sized_from_its_mask() -> None:
     apt = service.add_pieces(
         "ana",
+        _apt("ana"),
         [
             _draft(
                 name="Corner sofa",
@@ -88,17 +94,17 @@ def test_a_custom_shape_is_trimmed_and_sized_from_its_mask() -> None:
 )
 def test_a_bad_piece_is_refused(over: dict[str, Any], message: str) -> None:
     with pytest.raises(ValueError, match=message):
-        service.add_pieces("ana", [_draft(**over)])
+        service.add_pieces("ana", _apt("ana"), [_draft(**over)])
 
 
 def test_one_bad_piece_refuses_the_whole_batch() -> None:
     with pytest.raises(ValueError, match="Bad: width"):
-        service.add_pieces("ana", [_draft(), _draft(name="Bad", width_cm=0)])
-    assert service.get_apartment("ana").furniture == []
+        service.add_pieces("ana", _apt("ana"), [_draft(), _draft(name="Bad", width_cm=0)])
+    assert service.get_apartment("ana", _apt("ana")).furniture == []
 
 
 def test_the_piece_cap_is_enforced() -> None:
-    with repo.apartment_transaction(service.ensure_apartment("ana")) as doc:
+    with repo.apartment_transaction(_apt("ana")) as doc:
         doc.furniture = [
             Furniture(
                 id=f"f_{i}",
@@ -111,24 +117,24 @@ def test_the_piece_cap_is_enforced() -> None:
             for i in range(300)
         ]
     with pytest.raises(ValueError, match="at most 300"):
-        service.add_pieces("ana", [_draft()])
+        service.add_pieces("ana", _apt("ana"), [_draft()])
 
 
 def test_updating_keeps_the_id() -> None:
-    piece = service.add_pieces("ana", [_draft()]).furniture[0]
-    apt = service.update_piece("ana", piece.id, _draft(colour="blue", width_cm=200))
+    piece = service.add_pieces("ana", _apt("ana"), [_draft()]).furniture[0]
+    apt = service.update_piece("ana", _apt("ana"), piece.id, _draft(colour="blue", width_cm=200))
     assert (apt.furniture[0].id, apt.furniture[0].colour, apt.furniture[0].width_cm) == (
         piece.id,
         "blue",
         200,
     )
     with pytest.raises(FileNotFoundError):
-        service.update_piece("ana", "f_gone", _draft())
+        service.update_piece("ana", _apt("ana"), "f_gone", _draft())
 
 
 def test_deleting_a_piece_removes_it_from_every_layout() -> None:
-    sofa, chair = service.add_pieces("ana", [_draft(), _draft(name="Chair")]).furniture
-    with repo.apartment_transaction(service.ensure_apartment("ana")) as doc:
+    sofa, chair = service.add_pieces("ana", _apt("ana"), [_draft(), _draft(name="Chair")]).furniture
+    with repo.apartment_transaction(_apt("ana")) as doc:
         here = [
             Placement(furniture_id=sofa.id, x_cm=0, y_cm=0),
             Placement(furniture_id=chair.id, x_cm=100, y_cm=0),
@@ -137,24 +143,24 @@ def test_deleting_a_piece_removes_it_from_every_layout() -> None:
             Layout(id="l_a", name="A", placements=here),
             Layout(id="l_b", name="B", placements=[here[0]]),
         ]
-    apt = service.delete_piece("ana", sofa.id)
+    apt = service.delete_piece("ana", _apt("ana"), sofa.id)
     assert [p.name for p in apt.furniture] == ["Chair"]
     assert [[p.furniture_id for p in layout.placements] for layout in apt.layouts] == [
         [chair.id],
         [],
     ]
     with pytest.raises(FileNotFoundError):
-        service.delete_piece("ana", sofa.id)
+        service.delete_piece("ana", _apt("ana"), sofa.id)
 
 
 def test_furniture_can_be_edited_on_a_locked_plan() -> None:
-    service.set_locked("ana", 0, True)
-    assert len(service.add_pieces("ana", [_draft()]).furniture) == 1
+    service.set_locked("ana", _apt("ana"), 0, True)
+    assert len(service.add_pieces("ana", _apt("ana"), [_draft()]).furniture) == 1
 
 
 def test_plan_writes_still_catch_real_plan_conflicts() -> None:
-    service.add_pieces("ana", [_draft()])
-    plan = service.get_apartment("ana")
+    service.add_pieces("ana", _apt("ana"), [_draft()])
+    plan = service.get_apartment("ana", _apt("ana"))
     req = PlanWriteRequest(
         base_rev=plan.plan_rev,
         cols=plan.cols,
@@ -163,6 +169,6 @@ def test_plan_writes_still_catch_real_plan_conflicts() -> None:
         feature=plan.feature,
         labels=[],
     )
-    service.replace_plan("ana", req)
+    service.replace_plan("ana", _apt("ana"), req)
     with pytest.raises(service.StaleRevError):
-        service.replace_plan("ana", req)
+        service.replace_plan("ana", _apt("ana"), req)

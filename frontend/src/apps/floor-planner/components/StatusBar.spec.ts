@@ -6,8 +6,7 @@ describe("StatusBar", () => {
   const base = {
     hover: null,
     readout: null,
-    dirty: false,
-    saving: false,
+    saveState: null,
     zoom: 1,
   };
 
@@ -20,12 +19,16 @@ describe("StatusBar", () => {
     );
   });
 
-  it("offers Save and Discard only when there are unsaved changes", async () => {
+  it("shows the save state, offering Save now only while unsaved", async () => {
     const wrapper = mount(StatusBar, { props: base });
-    expect(wrapper.find("[data-testid=save]").exists()).toBe(false);
-    await wrapper.setProps({ dirty: true });
+    expect(wrapper.find("[data-testid=save-state]").exists()).toBe(false);
+    await wrapper.setProps({ saveState: "unsaved" });
+    expect(wrapper.get("[data-testid=save-state]").text()).toBe("Unsaved");
     await wrapper.get("[data-testid=save]").trigger("click");
     expect(wrapper.emitted("save")).toHaveLength(1);
+    await wrapper.setProps({ saveState: "saved" });
+    expect(wrapper.get("[data-testid=save-state]").text()).toBe("Saved");
+    expect(wrapper.find("[data-testid=save]").exists()).toBe(false);
   });
 
   it("steps through zoom levels and stops at the ends", async () => {

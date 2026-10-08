@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -26,6 +27,9 @@ PIECES_MAX = 300
 BULK_MAX = 100
 LAYOUT_NAME_MAX = 40
 LAYOUTS_MAX = 20
+APARTMENT_NAME_MAX = 60
+APARTMENTS_MAX = 20  # per user, owned or shared
+DEFAULT_APARTMENT_NAME = "My apartment"
 
 Shape = Literal["rectangle", "round", "oval", "egg", "custom"]
 Colour = Literal[
@@ -78,6 +82,8 @@ class ApartmentDoc(BaseModel):
 
     id: str
     owner: str
+    name: str = DEFAULT_APARTMENT_NAME
+    updated_at: datetime | None = None
     rev: int = 0
     plan_rev: int = 0
     plan_updated_by: str | None = None
@@ -91,13 +97,20 @@ class ApartmentDoc(BaseModel):
     layouts: list[Layout] = Field(default_factory=_first_layouts)
 
 
-class ApartmentView(BaseModel):
-    """The caller's apartment. `id` is None while they own an implicit empty one."""
+class ApartmentSummary(BaseModel):
+    """One row of the apartment switcher."""
 
-    id: str | None
+    id: str
+    name: str
     owner: str
     members: list[str]
     is_owner: bool
+    updated_at: datetime | None
+
+
+class ApartmentView(ApartmentSummary):
+    """One apartment as its members see it."""
+
     rev: int
     plan_rev: int
     cols: int
@@ -108,6 +121,10 @@ class ApartmentView(BaseModel):
     locked: bool
     furniture: list[Furniture]
     layouts: list[Layout]
+
+
+class ApartmentNameRequest(BaseModel):
+    name: str
 
 
 class RevRequest(BaseModel):

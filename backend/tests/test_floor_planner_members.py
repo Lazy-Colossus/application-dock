@@ -1,4 +1,4 @@
-"""Who shares an apartment (SH-1)."""
+"""Who shares an apartment (SH-1, revised in Story 1.5)."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from app.repositories import floor_planner_repo as repo
-from app.schemas.floor_planner import Label
+from app.schemas.floor_planner import APARTMENTS_MAX
 from app.services import auth_service
 from app.services import floor_planner_service as service
 
@@ -19,91 +19,80 @@ def setup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         auth_service.create_user(name)
 
 
-def _add_label(username: str) -> None:
-    # Nothing in story 1.1 writes a label, so put one straight onto the document.
-    with repo.apartment_transaction(service.ensure_apartment(username)) as doc:
-        doc.labels.append(Label(id="x", text="Hall", col=1, row=1))
+@pytest.fixture
+def ana() -> str:
+    return service.list_apartments("ana")[0].id
 
 
-def test_the_owner_adds_a_member_who_then_shares_everything() -> None:
-    service.set_locked("ana", 0, True)
-    apt = service.add_member("ana", " bo ")
+def test_the_owner_adds_a_member_who_then_shares_everything(ana: str) -> None:
+    service.set_locked("ana", ana, 0, True)
+    apt = service.add_member("ana", ana, " bo ")
     assert apt.members == ["ana", "bo"]
-    theirs = service.get_apartment("bo")
-    assert (theirs.id, theirs.is_owner, theirs.locked) == (apt.id, False, True)
-    assert service.set_locked("bo", 1, False).locked is False
+    theirs = service.get_apartment("bo", ana)
+    assert (theirs.is_owner, theirs.locked) == (False, True)
+    assert service.set_locked("bo", ana, 1, False).locked is False
+
+
+def test_joining_keeps_the_joiners_own_apartments(ana: str) -> None:
+    own = service.list_apartments("bo")[0].id
+    service.add_member("ana", ana, "bo")
+    assert {s.id for s in service.list_apartments("bo")} == {own, ana}
 
 
 @pytest.mark.parametrize(("username", "message"), [("ana", "already"), ("zed", "no one")])
-def test_add_member_refuses_yourself_and_unknown_names(username: str, message: str) -> None:
+def test_add_member_refuses_yourself_and_unknown_names(
+    ana: str, username: str, message: str
+) -> None:
     with pytest.raises(ValueError, match=message):
-        service.add_member("ana", username)
+        service.add_member("ana", ana, username)
 
 
-def test_add_member_refuses_someone_already_sharing() -> None:
-    service.add_member("ana", "bo")
+def test_add_member_refuses_someone_already_sharing(ana: str) -> None:
+    service.add_member("ana", ana, "bo")
     with pytest.raises(ValueError, match="already"):
-        service.add_member("ana", "bo")
+        service.add_member("ana", ana, "bo")
 
 
-def test_only_the_owner_adds_people() -> None:
-    service.add_member("ana", "bo")
+def test_only_the_owner_adds_people(ana: str) -> None:
+    service.add_member("ana", ana, "bo")
     with pytest.raises(PermissionError):
-        service.add_member("bo", "cy")
+        service.add_member("bo", ana, "cy")
 
 
-def test_add_member_refuses_someone_whose_own_apartment_has_anything() -> None:
-    _add_label("bo")
-    with pytest.raises(ValueError, match="of their own"):
-        service.add_member("ana", "bo")
+def test_add_member_refuses_someone_at_the_limit(ana: str) -> None:
+    for i in range(APARTMENTS_MAX):
+        service.create_apartment("bo", f"Flat {i}")
+    with pytest.raises(ValueError, match=f"{APARTMENTS_MAX} apartments"):
+        service.add_member("ana", ana, "bo")
 
 
-def test_add_member_accepts_someone_whose_apartment_was_only_locked() -> None:
-    service.set_locked("bo", 0, True)
-    assert service.add_member("ana", "bo").members == ["ana", "bo"]
-
-
-def test_add_member_refuses_someone_who_shares_another_apartment() -> None:
-    service.add_member("cy", "bo")
-    with pytest.raises(ValueError, match="shares"):
-        service.add_member("ana", "bo")
-
-
-def test_joining_removes_the_joiners_empty_apartment() -> None:
-    old = service.ensure_apartment("bo")
-    service.add_member("ana", "bo")
-    with pytest.raises(repo.ApartmentGoneError):
-        repo.read_apartment(old)
-
-
-def test_the_owner_removes_a_member_who_then_starts_empty() -> None:
-    service.add_member("ana", "bo")
-    service.set_locked("ana", 0, True)
-    assert service.remove_member("ana", "bo").members == ["ana"]
-    fresh = service.get_apartment("bo")
-    assert (fresh.id, fresh.is_owner, fresh.locked) == (None, True, False)
-
-
-def test_a_member_leaves() -> None:
-    service.add_member("ana", "bo")
-    assert service.remove_member("bo", "bo").members == ["bo"]
-    assert service.get_apartment("ana").members == ["ana"]
-
-
-def test_a_member_cannot_remove_someone_else() -> None:
-    service.add_member("ana", "bo")
-    service.add_member("ana", "cy")
-    with pytest.raises(PermissionError):
-        service.remove_member("bo", "cy")
-
-
-def test_the_owner_cannot_leave() -> None:
-    service.add_member("ana", "bo")
-    with pytest.raises(ValueError, match="owner"):
-        service.remove_member("ana", "ana")
-
-
-def test_removing_a_non_member_is_not_found() -> None:
-    service.ensure_apartment("ana")
+def test_the_owner_removes_a_member(ana: str) -> None:
+    service.add_member("ana", ana, "bo")
+    assert service.remove_member("ana", ana, "bo").members == ["ana"]
     with pytest.raises(FileNotFoundError):
-        service.remove_member("ana", "cy")
+        service.get_apartment("bo", ana)
+
+
+def test_a_member_leaves_and_lands_on_their_own_apartment(ana: str) -> None:
+    service.add_member("ana", ana, "bo")
+    [left_with] = service.leave_apartment("bo", ana)
+    assert (left_with.name, left_with.is_owner) == ("My apartment", True)
+    assert service.get_apartment("ana", ana).members == ["ana"]
+
+
+def test_a_member_cannot_remove_someone_else(ana: str) -> None:
+    service.add_member("ana", ana, "bo")
+    service.add_member("ana", ana, "cy")
+    with pytest.raises(PermissionError):
+        service.remove_member("bo", ana, "cy")
+
+
+def test_the_owner_cannot_leave(ana: str) -> None:
+    service.add_member("ana", ana, "bo")
+    with pytest.raises(ValueError, match="owner"):
+        service.leave_apartment("ana", ana)
+
+
+def test_removing_a_non_member_is_not_found(ana: str) -> None:
+    with pytest.raises(FileNotFoundError):
+        service.remove_member("ana", ana, "cy")

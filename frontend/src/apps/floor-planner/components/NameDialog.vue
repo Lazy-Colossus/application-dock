@@ -8,7 +8,7 @@
         <input
           ref="input"
           v-model="text"
-          maxlength="40"
+          :maxlength="maxLength"
           :placeholder="placeholder"
           data-testid="name-text"
         />
@@ -44,12 +44,16 @@
 import { onMounted, ref } from "vue";
 import "../css/floor-planner.sass";
 
-const props = defineProps<{
-  title: string;
-  initial: string;
-  placeholder: string;
-  canDelete: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    title: string;
+    initial: string;
+    placeholder: string;
+    canDelete: boolean;
+    maxLength?: number;
+  }>(),
+  { maxLength: 40 },
+);
 
 const emit = defineEmits<{
   save: [text: string];

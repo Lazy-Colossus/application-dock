@@ -17,6 +17,8 @@ export type Rotation = 0 | 90 | 180 | 270;
 
 export type Mode = "draw" | "furniture" | "arrange";
 
+export type SaveState = "saving" | "unsaved" | "saved";
+
 export interface Label {
   id: string;
   text: string;
@@ -48,12 +50,18 @@ export interface Layout {
   placements: Placement[];
 }
 
-/** The caller's apartment. `id` is null until the first write creates it. */
-export interface Apartment {
-  id: string | null;
+/** One row of the apartment switcher. */
+export interface ApartmentSummary {
+  id: string;
+  name: string;
   owner: string;
   members: string[];
   is_owner: boolean;
+  /** ISO 8601; null for an apartment untouched since before Story 1.5. */
+  updated_at: string | null;
+}
+
+export interface Apartment extends ApartmentSummary {
   rev: number;
   /** Bumped only by plan writes; plan writes send it as `base_rev`. */
   plan_rev: number;

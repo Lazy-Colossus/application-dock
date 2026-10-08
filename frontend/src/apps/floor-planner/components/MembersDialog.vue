@@ -54,8 +54,7 @@
     </div>
     <div v-else-if="confirmingLeave" class="members__row">
       <p class="members__hint">
-        You'll start with an empty apartment. Everything here stays with the
-        others.
+        It leaves your list; everything here stays with the others.
       </p>
       <button
         type="button"
@@ -98,7 +97,7 @@ import { useFloorPlanStore } from "../stores/useFloorPlanStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import "../css/floor-planner.sass";
 
-const emit = defineEmits<{ close: []; left: [] }>();
+const emit = defineEmits<{ close: []; left: [nextId: string] }>();
 
 const store = useFloorPlanStore();
 const auth = useAuthStore();
@@ -123,7 +122,8 @@ async function add(): Promise<void> {
 }
 
 async function leave(): Promise<void> {
-  if (await store.leave()) emit("left");
+  const next = await store.leave();
+  if (next) emit("left", next);
 }
 </script>
 

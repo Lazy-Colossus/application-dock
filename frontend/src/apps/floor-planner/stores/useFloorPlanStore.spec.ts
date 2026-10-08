@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
 
 const { getMock, postMock, putMock, delMock, FakeApiError } = vi.hoisted(() => {
@@ -23,8 +23,8 @@ vi.mock("@/composables/useApi", () => ({
   api: { get: getMock, post: postMock, put: putMock, del: delMock },
 }));
 
-import { useFloorPlanStore } from "./useFloorPlanStore";
-import type { Apartment } from "../types";
+import { AUTOSAVE_MS, useFloorPlanStore } from "./useFloorPlanStore";
+import type { Apartment, ApartmentSummary } from "../types";
 import type { PieceDraft } from "../furniture";
 import { FLOORS, STRUCTURE, floorBrush, structureBrush } from "../codes";
 import { emptyRows } from "../grid";
@@ -32,6 +32,8 @@ import { emptyRows } from "../grid";
 function apartment(over: Partial<Apartment> = {}): Apartment {
   return {
     id: "a_1",
+    name: "Our flat",
+    updated_at: null,
     owner: "jake",
     members: ["dani", "jake"],
     is_owner: true,
@@ -52,16 +54,35 @@ function apartment(over: Partial<Apartment> = {}): Apartment {
 beforeEach(() => {
   setActivePinia(createPinia());
   vi.clearAllMocks();
+  // Autosave timers must never fire into a later test.
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
 });
 
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+function summary(over: Partial<ApartmentSummary> = {}): ApartmentSummary {
+  return {
+    id: "a_1",
+    name: "Our flat",
+    owner: "jake",
+    members: ["jake"],
+    is_owner: true,
+    updated_at: null,
+    ...over,
+  };
+}
+
 describe("useFloorPlanStore", () => {
-  it("fetches the apartment and toggles loading", async () => {
+  it("opens an apartment by id and toggles loading", async () => {
     getMock.mockResolvedValue(apartment());
     const store = useFloorPlanStore();
-    const pending = store.fetchApartment();
+    const pending = store.openApartment("a_1");
     expect(store.loading).toBe(true);
     await pending;
     expect(store.loading).toBe(false);
+    expect(getMock).toHaveBeenCalledWith("/floor-planner/apartments/a_1");
     expect(store.apartment?.id).toBe("a_1");
   });
 
@@ -72,9 +93,12 @@ describe("useFloorPlanStore", () => {
       apartment({ rev: 4, plan_rev: 4, locked: true }),
     );
     expect(await store.lock()).toBe(true);
-    expect(postMock).toHaveBeenCalledWith("/floor-planner/apartment/lock", {
-      base_rev: 3,
-    });
+    expect(postMock).toHaveBeenCalledWith(
+      "/floor-planner/apartments/a_1/lock",
+      {
+        base_rev: 3,
+      },
+    );
     expect(store.apartment?.locked).toBe(true);
   });
 
@@ -85,9 +109,12 @@ describe("useFloorPlanStore", () => {
       apartment({ rev: 10, plan_rev: 3, locked: true }),
     );
     await store.lock();
-    expect(postMock).toHaveBeenCalledWith("/floor-planner/apartment/lock", {
-      base_rev: 2,
-    });
+    expect(postMock).toHaveBeenCalledWith(
+      "/floor-planner/apartments/a_1/lock",
+      {
+        base_rev: 2,
+      },
+    );
   });
 
   it("turns a stale write into a notice and reloads", async () => {
@@ -111,7 +138,7 @@ describe("useFloorPlanStore", () => {
     expect(await store.addMember("zed")).toBe(false);
     expect(store.error).toBe("There's no one called 'zed'");
     expect(store.notice).toBeNull();
-    expect(getMock).toHaveBeenCalledWith("/floor-planner/apartment");
+    expect(getMock).toHaveBeenCalledWith("/floor-planner/apartments/a_1");
   });
 });
 
@@ -148,13 +175,13 @@ describe("the plan draft", () => {
     expect(store.canRedo).toBe(true);
   });
 
-  it("saves the present snapshot against the held rev and clears the draft", async () => {
+  it("saves the present snapshot against the held rev", async () => {
     const store = drawing();
     store.addLabel(" Hall ", { col: 2, row: 2 });
     putMock.mockResolvedValue(apartment({ rev: 4, plan_rev: 4 }));
     expect(await store.savePlan()).toBe(true);
     const [path, body] = putMock.mock.calls[0];
-    expect(path).toBe("/floor-planner/apartment/plan");
+    expect(path).toBe("/floor-planner/apartments/a_1/plan");
     expect(body.base_rev).toBe(3);
     expect(body.feature[0].slice(0, 4)).toBe("wlwl");
     expect(body.labels[0]).toMatchObject({ text: "Hall", col: 2, row: 2 });
@@ -192,9 +219,12 @@ describe("the plan draft", () => {
       apartment({ rev: 5, plan_rev: 5, locked: true }),
     );
     expect(await store.lockWithSave()).toBe(true);
-    expect(postMock).toHaveBeenCalledWith("/floor-planner/apartment/lock", {
-      base_rev: 4,
-    });
+    expect(postMock).toHaveBeenCalledWith(
+      "/floor-planner/apartments/a_1/lock",
+      {
+        base_rev: 4,
+      },
+    );
   });
 
   it("does not lock when the save fails", async () => {
@@ -212,6 +242,141 @@ describe("the plan draft", () => {
     store.resizePlan(40, 40);
     expect(store.plan?.labels).toEqual([]);
     expect(store.plan?.surface[0]).toHaveLength(80);
+  });
+});
+
+describe("autosave", () => {
+  const wall = structureBrush(STRUCTURE[0]);
+
+  function drawn() {
+    const store = useFloorPlanStore();
+    store.apartment = apartment();
+    store.applyStroke([{ col: 0, row: 0 }], wall);
+    return store;
+  }
+
+  it("saves once drawing pauses, restarting the wait on each stroke", async () => {
+    const store = drawn();
+    putMock.mockResolvedValue(apartment({ rev: 4, plan_rev: 4 }));
+    vi.advanceTimersByTime(AUTOSAVE_MS - 100);
+    store.applyStroke([{ col: 1, row: 0 }], wall);
+    vi.advanceTimersByTime(AUTOSAVE_MS - 100);
+    expect(putMock).not.toHaveBeenCalled();
+    expect(store.saveState).toBe("unsaved");
+    vi.advanceTimersByTime(100);
+    expect(putMock).toHaveBeenCalledTimes(1);
+    expect(store.saveState).toBe("saving");
+    await vi.waitFor(() => expect(store.saveState).toBe("saved"));
+    expect(putMock.mock.calls[0][1].feature[0].slice(0, 4)).toBe("wlwl");
+  });
+
+  it("keeps undo after a save, and saves the undo too", async () => {
+    const store = drawn();
+    putMock.mockResolvedValueOnce(apartment({ rev: 4, plan_rev: 4 }));
+    await store.savePlan();
+    expect(store.dirty).toBe(false);
+    expect(store.canUndo).toBe(true);
+    store.undo();
+    expect(store.plan?.feature[0].slice(0, 2)).toBe("..");
+    expect(store.dirty).toBe(true);
+    putMock.mockResolvedValueOnce(apartment({ rev: 5, plan_rev: 5 }));
+    vi.advanceTimersByTime(AUTOSAVE_MS);
+    expect(putMock).toHaveBeenCalledTimes(2);
+    expect(putMock.mock.calls[1][1].base_rev).toBe(4);
+  });
+
+  it("drops a clean history when someone else moves the plan on", async () => {
+    const store = drawn();
+    putMock.mockResolvedValue(apartment({ rev: 4, plan_rev: 4 }));
+    await store.savePlan();
+    store.apartment = apartment({ rev: 6, plan_rev: 6 });
+    expect(store.canUndo).toBe(false);
+    expect(store.saveState).toBeNull();
+  });
+
+  it("queues a save behind one in flight instead of racing it", async () => {
+    const store = drawn();
+    let finish: (a: Apartment) => void = () => {};
+    putMock.mockReturnValueOnce(new Promise((r) => (finish = r)));
+    const first = store.savePlan();
+    store.applyStroke([{ col: 5, row: 5 }], wall);
+    const second = store.savePlan();
+    expect(putMock).toHaveBeenCalledTimes(1);
+    putMock.mockResolvedValueOnce(apartment({ rev: 5, plan_rev: 5 }));
+    finish(apartment({ rev: 4, plan_rev: 4 }));
+    expect(await first).toBe(true);
+    expect(await second).toBe(true);
+    expect(putMock).toHaveBeenCalledTimes(2);
+    expect(putMock.mock.calls[1][1].base_rev).toBe(4);
+  });
+
+  it("stops autosaving after a conflict, and flush refuses to overwrite", async () => {
+    const store = drawn();
+    putMock.mockRejectedValue(new FakeApiError(409, "dani changed this"));
+    getMock.mockResolvedValue(apartment({ rev: 5, plan_rev: 5 }));
+    await store.savePlan();
+    store.applyStroke([{ col: 2, row: 0 }], wall);
+    vi.advanceTimersByTime(AUTOSAVE_MS * 2);
+    expect(putMock).toHaveBeenCalledTimes(1);
+    expect(await store.flush()).toBe(false);
+  });
+});
+
+describe("apartments", () => {
+  it("lists the caller's apartments", async () => {
+    getMock.mockResolvedValue([summary(), summary({ id: "a_2" })]);
+    const store = useFloorPlanStore();
+    expect((await store.fetchApartments()).map((a) => a.id)).toEqual([
+      "a_1",
+      "a_2",
+    ]);
+    expect(getMock).toHaveBeenCalledWith("/floor-planner/apartments");
+  });
+
+  it("saves pending drawing, then creates and opens a new apartment", async () => {
+    const store = useFloorPlanStore();
+    store.apartment = apartment();
+    store.applyStroke([{ col: 0, row: 0 }], structureBrush(STRUCTURE[0]));
+    putMock.mockResolvedValue(apartment({ rev: 4, plan_rev: 4 }));
+    postMock.mockResolvedValue(apartment({ id: "a_2", name: "Second" }));
+    getMock.mockResolvedValue([summary({ id: "a_2", name: "Second" })]);
+    expect(await store.createApartment("Second")).toBe("a_2");
+    expect(putMock).toHaveBeenCalledTimes(1);
+    expect(postMock).toHaveBeenCalledWith("/floor-planner/apartments", {
+      name: "Second",
+    });
+    expect(store.apartment?.id).toBe("a_2");
+    expect(store.canUndo).toBe(false);
+  });
+
+  it("duplicates and renames the open apartment", async () => {
+    const store = useFloorPlanStore();
+    store.apartment = apartment();
+    getMock.mockResolvedValue([]);
+    postMock.mockResolvedValue(apartment({ id: "a_3" }));
+    await store.duplicateApartment("Copy");
+    expect(postMock).toHaveBeenCalledWith(
+      "/floor-planner/apartments/a_1/duplicate",
+      { name: "Copy" },
+    );
+    putMock.mockResolvedValue(apartment({ id: "a_3", name: "B" }));
+    expect(await store.renameApartment("B")).toBe(true);
+    expect(putMock).toHaveBeenCalledWith("/floor-planner/apartments/a_3/name", {
+      name: "B",
+    });
+  });
+
+  it("deleting and leaving answer with where to go next", async () => {
+    const store = useFloorPlanStore();
+    store.apartment = apartment();
+    delMock.mockResolvedValue([summary({ id: "a_2" })]);
+    expect(await store.deleteApartment()).toBe("a_2");
+    expect(delMock).toHaveBeenCalledWith("/floor-planner/apartments/a_1");
+    postMock.mockResolvedValue([summary({ id: "a_4" })]);
+    expect(await store.leave()).toBe("a_4");
+    expect(postMock).toHaveBeenCalledWith(
+      "/floor-planner/apartments/a_1/leave",
+    );
   });
 });
 
@@ -233,7 +398,7 @@ describe("furniture", () => {
     await store.addPieces([sofa, { ...sofa, name: "Chair" }]);
     expect(postMock).toHaveBeenCalledTimes(1);
     expect(postMock).toHaveBeenCalledWith(
-      "/floor-planner/apartment/furniture",
+      "/floor-planner/apartments/a_1/furniture",
       {
         pieces: [sofa, { ...sofa, name: "Chair" }],
       },
@@ -258,7 +423,7 @@ describe("furniture", () => {
     delMock.mockResolvedValue(apartment());
     await store.deletePiece("f_1");
     expect(delMock).toHaveBeenCalledWith(
-      "/floor-planner/apartment/furniture/f_1",
+      "/floor-planner/apartments/a_1/furniture/f_1",
     );
   });
 
@@ -317,7 +482,7 @@ describe("layouts and placements", () => {
       { furniture_id: "f_sofa", ...spot },
     ]);
     expect(putMock).toHaveBeenCalledWith(
-      "/floor-planner/apartment/layouts/l_a/placements/f_sofa",
+      "/floor-planner/apartments/a_1/layouts/l_a/placements/f_sofa",
       spot,
     );
     answer(store.apartment!);
@@ -344,7 +509,7 @@ describe("layouts and placements", () => {
     expect(store.apartment?.layouts[0].placements).toEqual([]);
     await pending;
     expect(delMock).toHaveBeenCalledWith(
-      "/floor-planner/apartment/layouts/l_a/placements/f_bed",
+      "/floor-planner/apartments/a_1/layouts/l_a/placements/f_bed",
     );
   });
 
@@ -369,17 +534,17 @@ describe("layouts and placements", () => {
     await store.duplicateLayout("l_a");
     await store.deleteLayout("l_a");
     expect(postMock.mock.calls.map((c) => c[0])).toEqual([
-      "/floor-planner/apartment/layouts",
-      "/floor-planner/apartment/layouts/l_a/duplicate",
+      "/floor-planner/apartments/a_1/layouts",
+      "/floor-planner/apartments/a_1/layouts/l_a/duplicate",
     ]);
     expect(putMock).toHaveBeenCalledWith(
-      "/floor-planner/apartment/layouts/l_a",
+      "/floor-planner/apartments/a_1/layouts/l_a",
       {
         name: "Window",
       },
     );
     expect(delMock).toHaveBeenCalledWith(
-      "/floor-planner/apartment/layouts/l_a",
+      "/floor-planner/apartments/a_1/layouts/l_a",
     );
   });
 });

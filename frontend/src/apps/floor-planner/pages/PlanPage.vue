@@ -7,6 +7,16 @@
     @keydown="onKey"
   >
     <div class="fp__top">
+      <ApartmentMenu
+        :apartments="store.apartments"
+        :current="store.apartment"
+        @show="store.fetchApartments()"
+        @open="goTo"
+        @create="apartmentDialog = 'create'"
+        @duplicate="apartmentDialog = 'duplicate'"
+        @rename="apartmentDialog = 'rename'"
+        @remove="deleteApartment"
+      />
       <div class="fp__modes" role="tablist" aria-label="Mode">
         <button
           v-for="m in modes"
@@ -200,10 +210,8 @@
       v-model:zoom="zoom"
       :hover="hover"
       :readout="readout"
-      :dirty="store.dirty"
-      :saving="store.loading"
+      :save-state="store.saveState"
       @save="store.savePlan()"
-      @discard="discard"
     >
       <LayoutTabs
         v-if="mode === 'arrange' && store.apartment"
@@ -257,7 +265,23 @@
       <MembersDialog
         v-if="membersOpen"
         @close="membersOpen = false"
-        @left="membersOpen = false"
+        @left="afterLeaving"
+      />
+    </q-dialog>
+
+    <q-dialog
+      :model-value="apartmentDialog !== null"
+      @update:model-value="apartmentDialog = null"
+    >
+      <NameDialog
+        v-if="apartmentDialog"
+        :title="APARTMENT_DIALOG[apartmentDialog]"
+        :initial="apartmentDialogInitial"
+        placeholder="e.g. Flat on Elm Street"
+        :can-delete="false"
+        :max-length="60"
+        @save="saveApartmentName"
+        @cancel="apartmentDialog = null"
       />
     </q-dialog>
   </q-page>
@@ -272,7 +296,13 @@ import {
   watch,
   type ComponentPublicInstance,
 } from "vue";
-import { onBeforeRouteLeave } from "vue-router";
+import {
+  onBeforeRouteLeave,
+  onBeforeRouteUpdate,
+  useRoute,
+  useRouter,
+} from "vue-router";
+import ApartmentMenu from "../components/ApartmentMenu.vue";
 import BulkAddDialog from "../components/BulkAddDialog.vue";
 import DrawPanel from "../components/DrawPanel.vue";
 import FurnitureList from "../components/FurnitureList.vue";
@@ -305,6 +335,8 @@ const modes: { id: Mode; label: string }[] = [
 ];
 
 const store = useFloorPlanStore();
+const route = useRoute();
+const router = useRouter();
 const mode = ref<Mode>("draw");
 const membersOpen = ref(false);
 const brush = ref<Brush>(DEFAULT_BRUSH);
@@ -497,6 +529,85 @@ async function removePiece(): Promise<void> {
 async function addBulk(pieces: PieceDraft[]): Promise<void> {
   if (await store.addPieces(pieces)) bulkOpen.value = false;
 }
+type ApartmentDialog = "create" | "duplicate" | "rename";
+const APARTMENT_DIALOG: Record<ApartmentDialog, string> = {
+  create: "New apartment",
+  duplicate: "Duplicate apartment",
+  rename: "Rename apartment",
+};
+const apartmentDialog = ref<ApartmentDialog | null>(null);
+const apartmentDialogInitial = computed(() => {
+  const name = store.apartment?.name ?? "";
+  if (apartmentDialog.value === "create") return "New apartment";
+  return apartmentDialog.value === "duplicate" ? `${name} copy` : name;
+});
+
+const routeId = computed(() => {
+  const id = route.params.apartmentId;
+  return typeof id === "string" && id ? id : null;
+});
+
+function goTo(id: string, replace = false): void {
+  const to = { name: "floor-planner", params: { apartmentId: id } };
+  void (replace ? router.replace(to) : router.push(to));
+}
+
+function resetSelection(): void {
+  selectedId.value = null;
+  adding.value = false;
+  activeLayoutId.value = null;
+  selectedPlacedId.value = null;
+  labelEdit.value = null;
+}
+
+watch(routeId, (id) => {
+  if (!id || id === store.apartment?.id) return;
+  resetSelection();
+  store.openApartment(id);
+});
+
+/** No id, or one that isn't ours any more: go to the most recently changed apartment. */
+async function openFromRoute(): Promise<void> {
+  const list = await store.fetchApartments();
+  const id = routeId.value;
+  if (id && list.some((a) => a.id === id)) await store.openApartment(id);
+  else if (list[0]) goTo(list[0].id, true);
+}
+
+async function saveApartmentName(name: string): Promise<void> {
+  const kind = apartmentDialog.value;
+  apartmentDialog.value = null;
+  if (kind === "rename") {
+    await store.renameApartment(name);
+    return;
+  }
+  const id = await (kind === "create"
+    ? store.createApartment(name)
+    : store.duplicateApartment(name));
+  if (id) {
+    resetSelection();
+    goTo(id);
+  }
+}
+
+async function deleteApartment(): Promise<void> {
+  const name = store.apartment?.name ?? "this apartment";
+  if (
+    !window.confirm(
+      `Delete "${name}"? Its plan, furniture and layouts are gone for everyone who shares it.`,
+    )
+  ) {
+    return;
+  }
+  const next = await store.deleteApartment();
+  if (next) goTo(next, true);
+}
+
+function afterLeaving(nextId: string): void {
+  membersOpen.value = false;
+  goTo(nextId, true);
+}
+
 const drawing = computed(() => mode.value === "draw" && !locked.value);
 
 /** Exactly the window below the shell bar, so the status bar never scrolls out of view. */
@@ -524,12 +635,6 @@ function saveLabel(text: string): void {
 function removeLabel(): void {
   if (labelEdit.value?.id) store.deleteLabel(labelEdit.value.id);
   labelEdit.value = null;
-}
-
-function discard(): void {
-  if (window.confirm("Discard your drawing since the last save?")) {
-    store.discardDraft();
-  }
 }
 
 function onKey(e: KeyboardEvent): void {
@@ -567,16 +672,20 @@ watch(
   },
 );
 
-onBeforeRouteLeave(() => {
-  if (!store.dirty) return true;
+/** Saves the drawing before going anywhere; asks only if that fails. */
+async function saveBeforeLeaving(): Promise<boolean> {
+  if (await store.flush()) return true;
   return window.confirm(
     "Leave without saving? Your drawing since the last save will be lost.",
   );
-});
+}
+
+onBeforeRouteLeave(saveBeforeLeaving);
+onBeforeRouteUpdate(saveBeforeLeaving);
 
 onMounted(() => {
   (root.value?.$el as HTMLElement | undefined)?.focus?.();
-  store.fetchApartment();
+  void openFromRoute();
 });
 
 onBeforeUnmount(() =>

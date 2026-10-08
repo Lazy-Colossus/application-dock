@@ -233,7 +233,7 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "ISS Vanguard", requiresAuth: true },
       },
       {
-        path: "floor-planner",
+        path: "floor-planner/:apartmentId?",
         name: "floor-planner",
         component: () => import("@/apps/floor-planner/pages/PlanPage.vue"),
         meta: { title: "Floor Planner", requiresAuth: true },

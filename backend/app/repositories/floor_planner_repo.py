@@ -1,7 +1,7 @@
 """Filesystem persistence for Floor Planner: one JSON document per apartment.
 
 The ONLY code that touches the filesystem for this app. Who belongs to which
-apartment lives in `memberships.json` alone, so membership can never disagree
+apartments lives in `memberships.json` alone, so membership can never disagree
 with itself.
 
 Lock order is always membership, then apartment: never take the membership lock
@@ -30,7 +30,7 @@ __all__ = [
     "apartment_transaction",
     "delete_apartment",
     "membership_lock",
-    "new_apartment",
+    "new_apartment_id",
     "read_apartment",
     "read_memberships",
     "settings",
@@ -91,10 +91,8 @@ def apartment_transaction(apartment_id: str) -> Iterator[ApartmentDoc]:
         write_apartment(doc)
 
 
-def new_apartment(owner: str) -> str:
-    apartment_id = f"a_{uuid.uuid4().hex}"
-    write_apartment(ApartmentDoc(id=apartment_id, owner=owner))
-    return apartment_id
+def new_apartment_id() -> str:
+    return f"a_{uuid.uuid4().hex}"
 
 
 def delete_apartment(apartment_id: str) -> None:
@@ -108,15 +106,22 @@ def membership_lock() -> Iterator[None]:
         yield
 
 
-def read_memberships() -> dict[str, str]:
-    """Every member, owner included, mapped to their apartment id."""
+def read_memberships() -> dict[str, list[str]]:
+    """Every member, owner included, mapped to their apartment ids.
+
+    Before Story 1.5 a user had one apartment, stored as a bare id; it reads as a
+    one-item list and is rewritten in the list shape on the next membership write.
+    """
     try:
         raw = _memberships_path().read_text(encoding="utf-8")
     except FileNotFoundError:
         return {}
-    return {str(user): str(apartment) for user, apartment in json.loads(raw).items()}
+    return {
+        str(user): [str(apts)] if isinstance(apts, str) else [str(a) for a in apts]
+        for user, apts in json.loads(raw).items()
+    }
 
 
-def write_memberships(members: dict[str, str]) -> None:
+def write_memberships(members: dict[str, list[str]]) -> None:
     """Call under the membership lock."""
     atomic_write_json(_memberships_path(), members)

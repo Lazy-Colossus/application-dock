@@ -1,32 +1,38 @@
 """Business logic for Floor Planner.
 
-Every function works on the caller's apartment, resolved from their username: no
-request names an apartment id. A user with no apartment reads an empty one they
-own; the first write creates it.
+A user belongs to one or more apartments (Story 1.5). Every call names the
+apartment it works on and is refused with `FileNotFoundError` unless the caller
+is a member, so an id never reveals that someone else's apartment exists. A
+user with no apartment gets an empty "My apartment" when they list theirs.
 
 There is no live push, so writes come in two kinds. Coarse plan writes (the
 whole drawn plan, lock/unlock) carry the `plan_rev` they were based on and are
-refused if another plan write landed first. Per-piece writes (furniture, and
-placements later) are last-write-wins and bump only `rev`, so adding a sofa
+refused if another plan write landed first. Per-piece writes (furniture,
+placements, names) are last-write-wins and bump only `rev`, so adding a sofa
 never makes someone's unsaved plan drawing go stale.
 
-Never call `ensure_apartment` inside a `repo.apartment_transaction` block — it
-may take the membership lock, which is always taken before an apartment's.
+Never take the membership lock inside a `repo.apartment_transaction` block —
+it is always taken before an apartment's.
 
-Raises `FileNotFoundError` (no such member), `PermissionError` (not the owner),
-`ValueError` (refused), `StaleRevError` and `ApartmentGoneError` (the apartment
-vanished under a concurrent membership change); the router translates them.
+Raises `FileNotFoundError` (no such apartment, member, piece or layout),
+`PermissionError` (not the owner), `ValueError` (refused), `StaleRevError` and
+`ApartmentGoneError` (the apartment vanished under a concurrent membership
+change); the router translates them.
 """
 
 from __future__ import annotations
 
 import uuid
 from collections.abc import Callable
+from datetime import UTC, datetime
 
 from app.repositories import floor_planner_repo as repo
 from app.schemas.floor_planner import (
+    APARTMENT_NAME_MAX,
+    APARTMENTS_MAX,
     CELL_CM,
     CUSTOM_MAX,
+    DEFAULT_APARTMENT_NAME,
     FEATURE_CODES,
     LABEL_MAX,
     LAYOUT_NAME_MAX,
@@ -37,6 +43,7 @@ from app.schemas.floor_planner import (
     SIDE_CM_MAX,
     SURFACE_CODES,
     ApartmentDoc,
+    ApartmentSummary,
     ApartmentView,
     Furniture,
     Label,
@@ -50,56 +57,141 @@ from app.services import auth_service
 
 ApartmentGoneError = repo.ApartmentGoneError
 
+_NEVER = datetime.min.replace(tzinfo=UTC)
+
 
 class StaleRevError(Exception):
     """The write was based on an older `rev` than the one stored."""
 
 
-def _resolve(username: str) -> str | None:
-    return repo.read_memberships().get(username)
+def _members_of(members: dict[str, list[str]], apartment_id: str) -> list[str]:
+    return sorted(user for user, apts in members.items() if apartment_id in apts)
 
 
-def ensure_apartment(username: str) -> str:
-    """The caller's apartment id, creating an empty one they own if they have none."""
-    apartment_id = _resolve(username)
-    if apartment_id is not None:
-        return apartment_id
-    with repo.membership_lock():
-        members = repo.read_memberships()
-        apartment_id = members.get(username)
-        if apartment_id is None:
-            apartment_id = repo.new_apartment(username)
-            members[username] = apartment_id
-            repo.write_memberships(members)
-        return apartment_id
+def _require_member(username: str, apartment_id: str) -> None:
+    if apartment_id not in repo.read_memberships().get(username, []):
+        raise FileNotFoundError("No such apartment")
 
 
-def _members_of(apartment_id: str) -> list[str]:
-    return sorted(user for user, apt in repo.read_memberships().items() if apt == apartment_id)
+def _clean_apartment_name(name: str) -> str:
+    name = name.strip()
+    if not name or len(name) > APARTMENT_NAME_MAX:
+        raise ValueError(f"An apartment name needs 1–{APARTMENT_NAME_MAX} characters")
+    return name
 
 
-def _view(doc: ApartmentDoc, username: str, *, saved: bool = True) -> ApartmentView:
-    return ApartmentView(
-        **doc.model_dump(exclude={"id", "owner", "plan_updated_by"}),
-        id=doc.id if saved else None,
+def _check_room_for(members: dict[str, list[str]], username: str) -> None:
+    if len(members.get(username, [])) >= APARTMENTS_MAX:
+        raise ValueError(f"{username} already has {APARTMENTS_MAX} apartments")
+
+
+def _store_new(members: dict[str, list[str]], doc: ApartmentDoc) -> None:
+    """Call under the membership lock. The file goes first, so no member ever points at nothing."""
+    _check_room_for(members, doc.owner)
+    doc.updated_at = datetime.now(UTC)
+    repo.write_apartment(doc)
+    members.setdefault(doc.owner, []).append(doc.id)
+    repo.write_memberships(members)
+
+
+def _summary(doc: ApartmentDoc, members: list[str], username: str) -> ApartmentSummary:
+    return ApartmentSummary(
+        id=doc.id,
+        name=doc.name,
         owner=doc.owner,
-        members=_members_of(doc.id) if saved else [username],
+        members=members,
         is_owner=doc.owner == username,
+        updated_at=doc.updated_at,
     )
 
 
-def get_apartment(username: str) -> ApartmentView:
-    apartment_id = _resolve(username)
-    if apartment_id is None:
-        return _view(ApartmentDoc(id="", owner=username), username, saved=False)
+def _view(doc: ApartmentDoc, username: str) -> ApartmentView:
+    summary = _summary(doc, _members_of(repo.read_memberships(), doc.id), username)
+    return ApartmentView(
+        **summary.model_dump(),
+        **doc.model_dump(exclude={*ApartmentSummary.model_fields, "plan_updated_by"}),
+    )
+
+
+def list_apartments(username: str) -> list[ApartmentSummary]:
+    """The caller's apartments, most recently changed first; never empty (AP-1)."""
+    members = repo.read_memberships()
+    if not members.get(username):
+        with repo.membership_lock():
+            members = repo.read_memberships()
+            if not members.get(username):
+                doc = ApartmentDoc(
+                    id=repo.new_apartment_id(), owner=username, name=DEFAULT_APARTMENT_NAME
+                )
+                _store_new(members, doc)
+    docs = []
+    for apartment_id in members[username]:
+        try:
+            docs.append(repo.read_apartment(apartment_id))
+        except ApartmentGoneError:
+            continue
+    docs.sort(key=lambda d: d.updated_at or _NEVER, reverse=True)
+    return [_summary(d, _members_of(members, d.id), username) for d in docs]
+
+
+def get_apartment(username: str, apartment_id: str) -> ApartmentView:
+    _require_member(username, apartment_id)
     return _view(repo.read_apartment(apartment_id), username)
 
 
+def create_apartment(username: str, name: str) -> ApartmentView:
+    """An empty, unlocked apartment with "Layout A", owned by the caller (AP-2)."""
+    doc = ApartmentDoc(id=repo.new_apartment_id(), owner=username, name=_clean_apartment_name(name))
+    with repo.membership_lock():
+        _store_new(repo.read_memberships(), doc)
+    return _view(doc, username)
+
+
+def duplicate_apartment(username: str, apartment_id: str, name: str) -> ApartmentView:
+    """A copy of everything — plan, labels, lock, furniture, layouts — owned by the caller alone."""
+    clean = _clean_apartment_name(name)
+    _require_member(username, apartment_id)
+    with repo.membership_lock():
+        source = repo.read_apartment(apartment_id)
+        doc = source.model_copy(
+            deep=True,
+            update={
+                "id": repo.new_apartment_id(),
+                "owner": username,
+                "name": clean,
+                "rev": 0,
+                "plan_rev": 0,
+                "plan_updated_by": None,
+            },
+        )
+        _store_new(repo.read_memberships(), doc)
+    return _view(doc, username)
+
+
+def delete_apartment(username: str, apartment_id: str) -> list[ApartmentSummary]:
+    """Owner only: gone for every member (AP-5). Returns the caller's remaining apartments."""
+    with repo.membership_lock():
+        members = repo.read_memberships()
+        if apartment_id not in members.get(username, []):
+            raise FileNotFoundError("No such apartment")
+        if repo.read_apartment(apartment_id).owner != username:
+            raise PermissionError("Only the apartment's owner can delete it")
+        with repo.apartment_lock(apartment_id):
+            for apts in members.values():
+                if apartment_id in apts:
+                    apts.remove(apartment_id)
+            repo.write_memberships({u: apts for u, apts in members.items() if apts})
+            # Only after the map write: a crash here leaves an unreferenced file,
+            # never a member pointing at an apartment that is gone.
+            repo.delete_apartment(apartment_id)
+    return list_apartments(username)
+
+
 def _mutate_plan(
-    username: str, base_rev: int, change: Callable[[ApartmentDoc], None]
+    username: str, apartment_id: str, base_rev: int, change: Callable[[ApartmentDoc], None]
 ) -> ApartmentView:
     """Apply a plan write under the apartment's lock if no plan write landed since `base_rev`."""
-    apartment_id = ensure_apartment(username)
+    _require_member(username, apartment_id)
     with repo.apartment_transaction(apartment_id) as doc:
         if doc.plan_rev != base_rev:
             raise StaleRevError(f"{doc.plan_updated_by or 'Someone'} changed this")
@@ -107,25 +199,39 @@ def _mutate_plan(
         doc.plan_rev += 1
         doc.rev += 1
         doc.plan_updated_by = username
+        doc.updated_at = datetime.now(UTC)
         updated = doc.model_copy(deep=True)
     return _view(updated, username)
 
 
-def _mutate_free(username: str, change: Callable[[ApartmentDoc], None]) -> ApartmentView:
+def _mutate_free(
+    username: str, apartment_id: str, change: Callable[[ApartmentDoc], None]
+) -> ApartmentView:
     """Apply a per-piece write under the apartment's lock; last write wins."""
-    apartment_id = ensure_apartment(username)
+    _require_member(username, apartment_id)
     with repo.apartment_transaction(apartment_id) as doc:
         change(doc)
         doc.rev += 1
+        doc.updated_at = datetime.now(UTC)
         updated = doc.model_copy(deep=True)
     return _view(updated, username)
 
 
-def set_locked(username: str, base_rev: int, locked: bool) -> ApartmentView:
+def rename_apartment(username: str, apartment_id: str, name: str) -> ApartmentView:
+    """Any member may rename (AP-4)."""
+    clean = _clean_apartment_name(name)
+
+    def change(doc: ApartmentDoc) -> None:
+        doc.name = clean
+
+    return _mutate_free(username, apartment_id, change)
+
+
+def set_locked(username: str, apartment_id: str, base_rev: int, locked: bool) -> ApartmentView:
     def change(doc: ApartmentDoc) -> None:
         doc.locked = locked
 
-    return _mutate_plan(username, base_rev, change)
+    return _mutate_plan(username, apartment_id, base_rev, change)
 
 
 def _check_layer(name: str, layer: list[str], codes: frozenset[str], cols: int, rows: int) -> None:
@@ -154,7 +260,7 @@ def _clean_labels(labels: list[Label], cols: int, rows: int) -> list[Label]:
     return cleaned
 
 
-def replace_plan(username: str, req: PlanWriteRequest) -> ApartmentView:
+def replace_plan(username: str, apartment_id: str, req: PlanWriteRequest) -> ApartmentView:
     """Swap in the whole drawn plan — size, both layers and labels — in one write."""
     _check_layer("surface", req.surface, SURFACE_CODES, req.cols, req.rows)
     _check_layer("feature", req.feature, FEATURE_CODES, req.cols, req.rows)
@@ -173,7 +279,7 @@ def replace_plan(username: str, req: PlanWriteRequest) -> ApartmentView:
                 if _centre_inside(doc, _piece(doc, p.furniture_id), p.x_cm, p.y_cm)
             ]
 
-    return _mutate_plan(username, req.base_rev, change)
+    return _mutate_plan(username, apartment_id, req.base_rev, change)
 
 
 def _trim_mask(cells: list[str]) -> list[str]:
@@ -230,7 +336,7 @@ def _new_piece_id() -> str:
     return f"f_{uuid.uuid4().hex}"
 
 
-def add_pieces(username: str, drafts: list[PieceDraft]) -> ApartmentView:
+def add_pieces(username: str, apartment_id: str, drafts: list[PieceDraft]) -> ApartmentView:
     """All or nothing: one bad piece refuses the whole batch."""
     pieces = [_clean_piece(d, _new_piece_id()) for d in drafts]
 
@@ -239,7 +345,7 @@ def add_pieces(username: str, drafts: list[PieceDraft]) -> ApartmentView:
             raise ValueError(f"An apartment holds at most {PIECES_MAX} pieces")
         doc.furniture.extend(pieces)
 
-    return _mutate_free(username, change)
+    return _mutate_free(username, apartment_id, change)
 
 
 def _index_of(doc: ApartmentDoc, piece_id: str) -> int:
@@ -249,16 +355,18 @@ def _index_of(doc: ApartmentDoc, piece_id: str) -> int:
     raise FileNotFoundError("That piece is gone — someone deleted it")
 
 
-def update_piece(username: str, piece_id: str, draft: PieceDraft) -> ApartmentView:
+def update_piece(
+    username: str, apartment_id: str, piece_id: str, draft: PieceDraft
+) -> ApartmentView:
     piece = _clean_piece(draft, piece_id)
 
     def change(doc: ApartmentDoc) -> None:
         doc.furniture[_index_of(doc, piece_id)] = piece
 
-    return _mutate_free(username, change)
+    return _mutate_free(username, apartment_id, change)
 
 
-def delete_piece(username: str, piece_id: str) -> ApartmentView:
+def delete_piece(username: str, apartment_id: str, piece_id: str) -> ApartmentView:
     """Removes the piece and its placement from every layout (FU-5)."""
 
     def change(doc: ApartmentDoc) -> None:
@@ -266,7 +374,7 @@ def delete_piece(username: str, piece_id: str) -> ApartmentView:
         for layout in doc.layouts:
             layout.placements = [p for p in layout.placements if p.furniture_id != piece_id]
 
-    return _mutate_free(username, change)
+    return _mutate_free(username, apartment_id, change)
 
 
 def _clean_layout_name(name: str) -> str:
@@ -292,26 +400,26 @@ def _check_room_for_layout(doc: ApartmentDoc) -> None:
         raise ValueError(f"An apartment holds at most {LAYOUTS_MAX} layouts")
 
 
-def create_layout(username: str, name: str) -> ApartmentView:
+def create_layout(username: str, apartment_id: str, name: str) -> ApartmentView:
     clean = _clean_layout_name(name)
 
     def change(doc: ApartmentDoc) -> None:
         _check_room_for_layout(doc)
         doc.layouts.append(Layout(id=f"l_{uuid.uuid4().hex}", name=clean))
 
-    return _mutate_free(username, change)
+    return _mutate_free(username, apartment_id, change)
 
 
-def rename_layout(username: str, layout_id: str, name: str) -> ApartmentView:
+def rename_layout(username: str, apartment_id: str, layout_id: str, name: str) -> ApartmentView:
     clean = _clean_layout_name(name)
 
     def change(doc: ApartmentDoc) -> None:
         _layout(doc, layout_id).name = clean
 
-    return _mutate_free(username, change)
+    return _mutate_free(username, apartment_id, change)
 
 
-def duplicate_layout(username: str, layout_id: str) -> ApartmentView:
+def duplicate_layout(username: str, apartment_id: str, layout_id: str) -> ApartmentView:
     def change(doc: ApartmentDoc) -> None:
         source = _layout(doc, layout_id)
         _check_room_for_layout(doc)
@@ -323,17 +431,17 @@ def duplicate_layout(username: str, layout_id: str) -> ApartmentView:
             )
         )
 
-    return _mutate_free(username, change)
+    return _mutate_free(username, apartment_id, change)
 
 
-def delete_layout(username: str, layout_id: str) -> ApartmentView:
+def delete_layout(username: str, apartment_id: str, layout_id: str) -> ApartmentView:
     def change(doc: ApartmentDoc) -> None:
         layout = _layout(doc, layout_id)
         if len(doc.layouts) == 1:
             raise ValueError("Keep at least one layout")
         doc.layouts.remove(layout)
 
-    return _mutate_free(username, change)
+    return _mutate_free(username, apartment_id, change)
 
 
 def _centre_inside(doc: ApartmentDoc, piece: Furniture, x_cm: int, y_cm: int) -> bool:
@@ -349,7 +457,7 @@ def _require_locked(doc: ApartmentDoc) -> None:
 
 
 def place_piece(
-    username: str, layout_id: str, piece_id: str, req: PlacementRequest
+    username: str, apartment_id: str, layout_id: str, piece_id: str, req: PlacementRequest
 ) -> ApartmentView:
     """Places or moves a piece: a piece appears at most once per layout (LA-2)."""
 
@@ -365,10 +473,12 @@ def place_piece(
         others = [p for p in layout.placements if p.furniture_id != piece_id]
         layout.placements = [*others, placement]
 
-    return _mutate_free(username, change)
+    return _mutate_free(username, apartment_id, change)
 
 
-def remove_placement(username: str, layout_id: str, piece_id: str) -> ApartmentView:
+def remove_placement(
+    username: str, apartment_id: str, layout_id: str, piece_id: str
+) -> ApartmentView:
     """Back to the tray; a piece that's already there is not an error."""
 
     def change(doc: ApartmentDoc) -> None:
@@ -376,59 +486,60 @@ def remove_placement(username: str, layout_id: str, piece_id: str) -> ApartmentV
         layout = _layout(doc, layout_id)
         layout.placements = [p for p in layout.placements if p.furniture_id != piece_id]
 
-    return _mutate_free(username, change)
+    return _mutate_free(username, apartment_id, change)
 
 
-def _is_empty(doc: ApartmentDoc) -> bool:
-    painted = any(row.strip(".") for row in (*doc.surface, *doc.feature))
-    return not (doc.furniture or doc.labels or painted)
-
-
-def add_member(caller: str, username: str) -> ApartmentView:
-    """Move `username` into the caller's apartment. Only an empty one can be left behind."""
+def add_member(caller: str, apartment_id: str, username: str) -> ApartmentView:
+    """Give `username` this apartment too; their other apartments are untouched (SH-1)."""
     username = username.strip()
     if username == caller:
         raise ValueError("You already share this apartment")
     if username not in auth_service.list_usernames():
         raise ValueError(f"There's no one called {username!r} on the dock")
-
-    apartment_id = ensure_apartment(caller)
     with repo.membership_lock():
         members = repo.read_memberships()
+        if apartment_id not in members.get(caller, []):
+            raise FileNotFoundError("No such apartment")
         if repo.read_apartment(apartment_id).owner != caller:
             raise PermissionError("Only the apartment's owner can add people")
-        theirs = members.get(username)
-        if theirs == apartment_id:
+        if apartment_id in members.get(username, []):
             raise ValueError(f"{username} already shares this apartment")
-        if theirs is None:
-            members[username] = apartment_id
-            repo.write_memberships(members)
-        else:
-            if any(apt == theirs for user, apt in members.items() if user != username):
-                raise ValueError(f"{username} already shares an apartment with someone else")
-            with repo.apartment_lock(theirs):
-                if not _is_empty(repo.read_apartment(theirs)):
-                    raise ValueError(f"{username} has already drawn or added things of their own")
-                members[username] = apartment_id
-                repo.write_memberships(members)
-                # Only after the map write: a crash here leaves an unreferenced empty
-                # file, never a member pointing at an apartment that is gone.
-                repo.delete_apartment(theirs)
-    return get_apartment(caller)
+        _check_room_for(members, username)
+        members.setdefault(username, []).append(apartment_id)
+        repo.write_memberships(members)
+    return get_apartment(caller, apartment_id)
 
 
-def remove_member(caller: str, username: str) -> ApartmentView:
-    """The owner removes anyone else; a member removes themself (leaving)."""
-    apartment_id = _resolve(caller)
+def _drop_member(members: dict[str, list[str]], username: str, apartment_id: str) -> None:
+    """Call under the membership lock."""
+    members[username].remove(apartment_id)
+    repo.write_memberships({u: apts for u, apts in members.items() if apts})
+
+
+def remove_member(caller: str, apartment_id: str, username: str) -> ApartmentView:
+    """The owner removes someone else."""
     with repo.membership_lock():
         members = repo.read_memberships()
-        if apartment_id is None or members.get(username) != apartment_id:
+        if apartment_id not in members.get(caller, []):
+            raise FileNotFoundError("No such apartment")
+        if apartment_id not in members.get(username, []):
             raise FileNotFoundError(f"{username} doesn't share this apartment")
         owner = repo.read_apartment(apartment_id).owner
-        if caller not in (owner, username):
+        if caller != owner:
             raise PermissionError("Only the apartment's owner can remove other people")
         if username == owner:
-            raise ValueError("The owner can't leave — remove the others first")
-        del members[username]
-        repo.write_memberships(members)
-    return get_apartment(caller)
+            raise ValueError("The owner can't leave — delete the apartment instead")
+        _drop_member(members, username, apartment_id)
+    return get_apartment(caller, apartment_id)
+
+
+def leave_apartment(username: str, apartment_id: str) -> list[ApartmentSummary]:
+    """A member leaves; returns where they can go next (never empty)."""
+    with repo.membership_lock():
+        members = repo.read_memberships()
+        if apartment_id not in members.get(username, []):
+            raise FileNotFoundError("No such apartment")
+        if repo.read_apartment(apartment_id).owner == username:
+            raise ValueError("The owner can't leave — delete the apartment instead")
+        _drop_member(members, username, apartment_id)
+    return list_apartments(username)

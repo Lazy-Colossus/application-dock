@@ -15,26 +15,23 @@
       {{ readout }}
     </span>
     <span class="status-bar__spacer" />
-    <template v-if="dirty">
-      <span>Unsaved changes</span>
-      <button
-        type="button"
-        class="fp-button"
-        data-testid="discard"
-        @click="emit('discard')"
-      >
-        Discard
-      </button>
-      <button
-        type="button"
-        class="fp-button fp-button--primary"
-        :disabled="saving"
-        data-testid="save"
-        @click="emit('save')"
-      >
-        Save
-      </button>
-    </template>
+    <span
+      v-if="saveState"
+      class="status-bar__save"
+      role="status"
+      data-testid="save-state"
+    >
+      {{ SAVE_TEXT[saveState] }}
+    </span>
+    <button
+      v-if="saveState === 'unsaved'"
+      type="button"
+      class="fp-button fp-button--primary"
+      data-testid="save"
+      @click="emit('save')"
+    >
+      Save now
+    </button>
     <span class="status-bar__zoom">
       <button
         type="button"
@@ -67,20 +64,25 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { CELL_CM, ZOOM_LEVELS, type Cell } from "../grid";
+import type { SaveState } from "../types";
 
 const props = defineProps<{
   hover: Cell | null;
   readout: string | null;
-  dirty: boolean;
-  saving: boolean;
+  saveState: SaveState | null;
   zoom: number;
 }>();
 
 const emit = defineEmits<{
   save: [];
-  discard: [];
   "update:zoom": [zoom: number];
 }>();
+
+const SAVE_TEXT: Record<SaveState, string> = {
+  saving: "Saving…",
+  unsaved: "Unsaved",
+  saved: "Saved",
+};
 
 const index = computed(() => ZOOM_LEVELS.indexOf(props.zoom));
 const cursor = computed(() =>
@@ -91,6 +93,9 @@ const cursor = computed(() =>
 </script>
 
 <style scoped lang="scss">
+.status-bar__save {
+  color: var(--fp-muted);
+}
 .status-bar {
   display: flex;
   flex-wrap: wrap;
