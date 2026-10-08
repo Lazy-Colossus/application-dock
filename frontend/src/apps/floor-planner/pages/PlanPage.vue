@@ -105,6 +105,14 @@
           @undo="store.undo()"
           @redo="store.redo()"
         />
+        <FurnitureList
+          v-else-if="mode === 'furniture'"
+          :pieces="store.apartment?.furniture ?? []"
+          :selected-id="selectedId"
+          @select="selectPiece"
+          @add="startAdding"
+          @bulk="bulkOpen = true"
+        />
       </aside>
       <section class="fp__plan" data-testid="fp-plan">
         <div class="fp__sheet">
@@ -133,6 +141,20 @@
           @rename="editLabel"
           @remove="store.deleteLabel"
         />
+        <template v-else-if="mode === 'furniture'">
+          <PieceForm
+            v-if="adding || selectedPiece"
+            :key="selectedPiece?.id ?? 'new'"
+            :piece="selectedPiece"
+            :placed-in="selectedPiece ? store.placedIn(selectedPiece.id) : 0"
+            @save="savePiece"
+            @remove="removePiece"
+            @cancel="closeForm"
+          />
+          <p v-else class="fp__hint" data-testid="piece-hint">
+            Select a piece to edit it, or add one.
+          </p>
+        </template>
       </aside>
     </div>
 
@@ -160,6 +182,14 @@
       />
     </q-dialog>
 
+    <q-dialog v-model="bulkOpen">
+      <BulkAddDialog
+        v-if="bulkOpen"
+        @add="addBulk"
+        @cancel="bulkOpen = false"
+      />
+    </q-dialog>
+
     <q-dialog v-model="membersOpen">
       <MembersDialog
         v-if="membersOpen"
@@ -180,13 +210,17 @@ import {
   type ComponentPublicInstance,
 } from "vue";
 import { onBeforeRouteLeave } from "vue-router";
+import BulkAddDialog from "../components/BulkAddDialog.vue";
 import DrawPanel from "../components/DrawPanel.vue";
+import FurnitureList from "../components/FurnitureList.vue";
+import PieceForm from "../components/PieceForm.vue";
 import LabelDialog from "../components/LabelDialog.vue";
 import MembersDialog from "../components/MembersDialog.vue";
 import PlanCanvas from "../components/PlanCanvas.vue";
 import PlanInfoPanel from "../components/PlanInfoPanel.vue";
 import StatusBar from "../components/StatusBar.vue";
 import { DEFAULT_BRUSH, type Brush } from "../codes";
+import type { PieceDraft } from "../furniture";
 import type { Cell } from "../grid";
 import { useFloorPlanStore } from "../stores/useFloorPlanStore";
 import type { Mode } from "../types";
@@ -211,7 +245,53 @@ const labelEdit = ref<{ id: string | null; cell: Cell; text: string } | null>(
 );
 const root = ref<ComponentPublicInstance | null>(null);
 
+const selectedId = ref<string | null>(null);
+const adding = ref(false);
+const bulkOpen = ref(false);
+
 const locked = computed(() => store.apartment?.locked ?? false);
+const selectedPiece = computed(
+  () =>
+    store.apartment?.furniture.find((p) => p.id === selectedId.value) ?? null,
+);
+
+function selectPiece(id: string): void {
+  selectedId.value = id;
+  adding.value = false;
+}
+
+function startAdding(): void {
+  selectedId.value = null;
+  adding.value = true;
+}
+
+function closeForm(): void {
+  selectedId.value = null;
+  adding.value = false;
+}
+
+/** After an add, the newest piece is the last one in the returned list. */
+function selectNewest(): void {
+  const pieces = store.apartment?.furniture ?? [];
+  selectPiece(pieces[pieces.length - 1]?.id ?? "");
+}
+
+async function savePiece(draft: PieceDraft): Promise<void> {
+  if (selectedId.value) {
+    await store.updatePiece(selectedId.value, draft);
+  } else if (await store.addPieces([draft])) {
+    selectNewest();
+  }
+}
+
+async function removePiece(): Promise<void> {
+  if (selectedId.value && (await store.deletePiece(selectedId.value)))
+    closeForm();
+}
+
+async function addBulk(pieces: PieceDraft[]): Promise<void> {
+  if (await store.addPieces(pieces)) bulkOpen.value = false;
+}
 const drawing = computed(() => mode.value === "draw" && !locked.value);
 
 /** Exactly the window below the shell bar, so the status bar never scrolls out of view. */
@@ -297,6 +377,11 @@ onBeforeUnmount(() =>
   flex-direction: column;
   background: var(--fp-ground);
   outline: none;
+}
+.fp__hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--fp-muted);
 }
 .fp__notice-actions {
   display: flex;

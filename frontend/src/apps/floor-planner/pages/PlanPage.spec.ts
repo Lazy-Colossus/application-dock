@@ -2,15 +2,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, postMock, putMock, leaveGuards } = vi.hoisted(() => ({
+const { getMock, postMock, putMock, delMock, leaveGuards } = vi.hoisted(() => ({
   getMock: vi.fn(),
   postMock: vi.fn(),
   putMock: vi.fn(),
+  delMock: vi.fn(),
   leaveGuards: [] as (() => boolean)[],
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
-  api: { get: getMock, post: postMock, put: putMock, del: vi.fn() },
+  api: { get: getMock, post: postMock, put: putMock, del: delMock },
 }));
 
 vi.mock("vue-router", async (importOriginal) => ({
@@ -22,7 +23,7 @@ import PlanPage from "./PlanPage.vue";
 import { emptyRows } from "../grid";
 import { useFloorPlanStore } from "../stores/useFloorPlanStore";
 import { useAuthStore } from "@/stores/useAuthStore";
-import type { Apartment } from "../types";
+import type { Apartment, Furniture } from "../types";
 
 function apartment(over: Partial<Apartment> = {}): Apartment {
   return {
@@ -227,5 +228,96 @@ describe("PlanPage", () => {
       { text: "Hall", col: 5, row: 5 },
     ]);
     expect(wrapper.find("[data-testid=label-dialog]").exists()).toBe(false);
+  });
+
+  describe("furniture mode", () => {
+    const sofa: Furniture = {
+      id: "f_1",
+      name: "Sofa",
+      colour: "grey",
+      note: "",
+      shape: "rectangle",
+      width_cm: 220,
+      depth_cm: 95,
+      cells: null,
+    };
+
+    async function furniture(a: Apartment = apartment({ furniture: [sofa] })) {
+      const wrapper = await page(a);
+      await wrapper.get("[data-testid=mode-furniture]").trigger("click");
+      return wrapper;
+    }
+
+    it("shows the list and a hint until something is chosen", async () => {
+      const wrapper = await furniture();
+      expect(wrapper.find("[data-testid=furniture-list]").exists()).toBe(true);
+      expect(wrapper.find("[data-testid=piece-hint]").exists()).toBe(true);
+      expect(wrapper.find("[data-testid=draw-panel]").exists()).toBe(false);
+    });
+
+    it("adds a piece and selects it", async () => {
+      const wrapper = await furniture(apartment());
+      await wrapper.get("[data-testid=piece-add]").trigger("click");
+      await wrapper.get("[data-testid=piece-name]").setValue("Desk");
+      postMock.mockResolvedValue(
+        apartment({ furniture: [{ ...sofa, id: "f_9", name: "Desk" }] }),
+      );
+      await wrapper.get("[data-testid=piece-form]").trigger("submit");
+      await flushPromises();
+      expect(postMock).toHaveBeenCalledWith(
+        "/floor-planner/apartment/furniture",
+        {
+          pieces: [
+            expect.objectContaining({ name: "Desk", shape: "rectangle" }),
+          ],
+        },
+      );
+      expect(
+        wrapper.get("[data-testid=piece-f_9]").attributes("aria-pressed"),
+      ).toBe("true");
+    });
+
+    it("edits the selected piece", async () => {
+      const wrapper = await furniture();
+      await wrapper.get("[data-testid=piece-f_1]").trigger("click");
+      await wrapper.get("[data-testid=colour-blue]").trigger("click");
+      putMock.mockResolvedValue(
+        apartment({ furniture: [{ ...sofa, colour: "blue" }] }),
+      );
+      await wrapper.get("[data-testid=piece-form]").trigger("submit");
+      expect(putMock).toHaveBeenCalledWith(
+        "/floor-planner/apartment/furniture/f_1",
+        expect.objectContaining({ colour: "blue" }),
+      );
+    });
+
+    it("deletes after confirming and clears the selection", async () => {
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+      const wrapper = await furniture();
+      await wrapper.get("[data-testid=piece-f_1]").trigger("click");
+      delMock.mockResolvedValue(apartment());
+      await wrapper.get("[data-testid=piece-delete]").trigger("click");
+      await flushPromises();
+      expect(delMock).toHaveBeenCalledWith(
+        "/floor-planner/apartment/furniture/f_1",
+      );
+      expect(wrapper.find("[data-testid=piece-hint]").exists()).toBe(true);
+    });
+
+    it("bulk adds only the lines that parse", async () => {
+      const wrapper = await furniture(apartment());
+      await wrapper.get("[data-testid=piece-bulk]").trigger("click");
+      await wrapper
+        .get("[data-testid=bulk-text]")
+        .setValue(
+          "Sofa; rectangle; 220 x 95; grey\nRug; square; 200 x 200; grey\nLamp; round; 40; yellow",
+        );
+      postMock.mockResolvedValue(apartment());
+      await wrapper.get("[data-testid=bulk-add]").trigger("click");
+      await flushPromises();
+      const body = postMock.mock.calls[0][1] as { pieces: { name: string }[] };
+      expect(body.pieces.map((p) => p.name)).toEqual(["Sofa", "Lamp"]);
+      expect(wrapper.find("[data-testid=bulk-dialog]").exists()).toBe(false);
+    });
   });
 });
