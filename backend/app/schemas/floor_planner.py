@@ -70,7 +70,8 @@ class ApartmentDoc(BaseModel):
     id: str
     owner: str
     rev: int = 0
-    updated_by: str | None = None
+    plan_rev: int = 0
+    plan_updated_by: str | None = None
     cols: int = DEFAULT_COLS
     rows: int = DEFAULT_ROWS
     surface: list[str] = Field(default_factory=lambda: empty_rows(DEFAULT_COLS, DEFAULT_ROWS))
@@ -89,6 +90,7 @@ class ApartmentView(BaseModel):
     members: list[str]
     is_owner: bool
     rev: int
+    plan_rev: int
     cols: int
     rows: int
     surface: list[str]

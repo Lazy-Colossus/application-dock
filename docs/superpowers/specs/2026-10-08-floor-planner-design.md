@@ -129,9 +129,11 @@ Success: you sketch the apartment in a few minutes. A 220 × 95 cm sofa is visib
 
 ### Non-functional
 
-- **NFR-a** There is no live push. Every write sends the `rev` it was based on. If the stored rev
-  has moved on, the server refuses with 409, and the client reloads and shows "Dani changed this
-  — reloaded". Two people editing at the same moment is rare enough that this is enough.
+- **NFR-a** There is no live push. Coarse plan writes (the drawn plan, lock and unlock) send the
+  `plan_rev` they were based on. If the stored `plan_rev` has moved on, the server refuses with
+  409 and the client says who changed it. Per-piece writes (furniture, placements) are
+  last-write-wins and bump only `rev`, so editing furniture never makes a plan drawing go stale.
+  Two people editing at the same moment is rare enough that this is enough.
 - **NFR-b** Membership has a single source of truth (`memberships.json`), as in ISS Vanguard.
 - **NFR-c** The geometry is stored in cm, and everything on screen is derived from it. Zooming
   never changes the stored geometry.

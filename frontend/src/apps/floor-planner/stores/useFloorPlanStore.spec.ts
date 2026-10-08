@@ -34,6 +34,7 @@ function apartment(over: Partial<Apartment> = {}): Apartment {
     members: ["dani", "jake"],
     is_owner: true,
     rev: 3,
+    plan_rev: 3,
     cols: 50,
     rows: 40,
     surface: emptyRows(50, 40),
@@ -65,7 +66,9 @@ describe("useFloorPlanStore", () => {
   it("locks against the rev it holds", async () => {
     const store = useFloorPlanStore();
     store.apartment = apartment();
-    postMock.mockResolvedValue(apartment({ rev: 4, locked: true }));
+    postMock.mockResolvedValue(
+      apartment({ rev: 4, plan_rev: 4, locked: true }),
+    );
     expect(await store.lock()).toBe(true);
     expect(postMock).toHaveBeenCalledWith("/floor-planner/apartment/lock", {
       base_rev: 3,
@@ -73,11 +76,23 @@ describe("useFloorPlanStore", () => {
     expect(store.apartment?.locked).toBe(true);
   });
 
+  it("checks plan writes against plan_rev, not the document rev", async () => {
+    const store = useFloorPlanStore();
+    store.apartment = apartment({ rev: 9, plan_rev: 2 });
+    postMock.mockResolvedValue(
+      apartment({ rev: 10, plan_rev: 3, locked: true }),
+    );
+    await store.lock();
+    expect(postMock).toHaveBeenCalledWith("/floor-planner/apartment/lock", {
+      base_rev: 2,
+    });
+  });
+
   it("turns a stale write into a notice and reloads", async () => {
     const store = useFloorPlanStore();
     store.apartment = apartment();
     postMock.mockRejectedValue(new FakeApiError(409, "dani changed this"));
-    getMock.mockResolvedValue(apartment({ rev: 4, locked: true }));
+    getMock.mockResolvedValue(apartment({ rev: 4, plan_rev: 4, locked: true }));
     expect(await store.unlock()).toBe(false);
     expect(store.notice).toBe("dani changed this, reloaded");
     expect(store.error).toBeNull();
@@ -134,7 +149,7 @@ describe("the plan draft", () => {
   it("saves the present snapshot against the held rev and clears the draft", async () => {
     const store = drawing();
     store.addLabel(" Hall ", { col: 2, row: 2 });
-    putMock.mockResolvedValue(apartment({ rev: 4 }));
+    putMock.mockResolvedValue(apartment({ rev: 4, plan_rev: 4 }));
     expect(await store.savePlan()).toBe(true);
     const [path, body] = putMock.mock.calls[0];
     expect(path).toBe("/floor-planner/apartment/plan");
@@ -147,7 +162,7 @@ describe("the plan draft", () => {
   it("keeps the drawing when someone else saved first", async () => {
     const store = drawing();
     putMock.mockRejectedValue(new FakeApiError(409, "dani changed this"));
-    getMock.mockResolvedValue(apartment({ rev: 5 }));
+    getMock.mockResolvedValue(apartment({ rev: 5, plan_rev: 5 }));
     expect(await store.savePlan()).toBe(false);
     expect(store.notice).toBe(
       "dani changed the plan. Save again to replace it with yours, or Discard to see theirs.",
@@ -156,7 +171,7 @@ describe("the plan draft", () => {
     expect(store.dirty).toBe(true);
     expect(store.apartment?.rev).toBe(5);
 
-    putMock.mockResolvedValue(apartment({ rev: 6 }));
+    putMock.mockResolvedValue(apartment({ rev: 6, plan_rev: 6 }));
     await store.savePlan();
     expect(putMock.mock.calls[1][1].base_rev).toBe(5);
   });
@@ -170,8 +185,10 @@ describe("the plan draft", () => {
 
   it("saves before locking, using the saved rev", async () => {
     const store = drawing();
-    putMock.mockResolvedValue(apartment({ rev: 4 }));
-    postMock.mockResolvedValue(apartment({ rev: 5, locked: true }));
+    putMock.mockResolvedValue(apartment({ rev: 4, plan_rev: 4 }));
+    postMock.mockResolvedValue(
+      apartment({ rev: 5, plan_rev: 5, locked: true }),
+    );
     expect(await store.lockWithSave()).toBe(true);
     expect(postMock).toHaveBeenCalledWith("/floor-planner/apartment/lock", {
       base_rev: 4,

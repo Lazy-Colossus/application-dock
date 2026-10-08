@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -49,3 +50,15 @@ def test_unlock_after_lock() -> None:
     service.set_locked("ana", 0, True)
     apt = service.set_locked("ana", 1, False)
     assert (apt.rev, apt.locked) == (2, False)
+
+
+def test_documents_without_plan_rev_still_load() -> None:
+    apartment_id = service.ensure_apartment("ana")
+    path = repo.settings.data_dir / "floor-planner" / "apartments" / f"{apartment_id}.json"
+    raw = json.loads(path.read_text())
+    raw.pop("plan_rev", None)
+    raw.pop("plan_updated_by", None)
+    raw["rev"] = 7
+    path.write_text(json.dumps(raw))
+    apt = service.set_locked("ana", 0, True)
+    assert (apt.plan_rev, apt.rev, apt.locked) == (1, 8, True)

@@ -24,6 +24,7 @@ function apartment(over: Partial<Apartment> = {}): Apartment {
     members: ["dani", "jake"],
     is_owner: true,
     rev: 1,
+    plan_rev: 1,
     cols: 50,
     rows: 40,
     surface: [],

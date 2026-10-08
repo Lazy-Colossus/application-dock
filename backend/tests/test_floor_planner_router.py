@@ -29,7 +29,8 @@ def test_get_returns_the_implicit_empty_apartment() -> None:
     assert body["id"] is None
     assert body["members"] == ["test_user"]
     assert len(body["surface"]) == 40
-    assert "updated_by" not in body
+    assert "plan_updated_by" not in body
+    assert body["plan_rev"] == 0
 
 
 def test_lock_and_unlock_bump_rev() -> None:

@@ -2,9 +2,13 @@
 
 Every function works on the caller's apartment, resolved from their username: no
 request names an apartment id. A user with no apartment reads an empty one they
-own; the first write creates it. Every document write carries the `rev` it was
-based on and is refused if another write landed first — there is no live push,
-so this is how two editors find out about each other.
+own; the first write creates it.
+
+There is no live push, so writes come in two kinds. Coarse plan writes (the
+whole drawn plan, lock/unlock) carry the `plan_rev` they were based on and are
+refused if another plan write landed first. Per-piece writes (furniture, and
+placements later) are last-write-wins and bump only `rev`, so adding a sofa
+never makes someone's unsaved plan drawing go stale.
 
 Never call `ensure_apartment` inside a `repo.apartment_transaction` block — it
 may take the membership lock, which is always taken before an apartment's.
@@ -62,7 +66,7 @@ def _members_of(apartment_id: str) -> list[str]:
 
 def _view(doc: ApartmentDoc, username: str, *, saved: bool = True) -> ApartmentView:
     return ApartmentView(
-        **doc.model_dump(exclude={"id", "owner", "updated_by"}),
+        **doc.model_dump(exclude={"id", "owner", "plan_updated_by"}),
         id=doc.id if saved else None,
         owner=doc.owner,
         members=_members_of(doc.id) if saved else [username],
@@ -77,15 +81,28 @@ def get_apartment(username: str) -> ApartmentView:
     return _view(repo.read_apartment(apartment_id), username)
 
 
-def _mutate(username: str, base_rev: int, change: Callable[[ApartmentDoc], None]) -> ApartmentView:
-    """Apply `change` under the apartment's lock if nobody has written since `base_rev`."""
+def _mutate_plan(
+    username: str, base_rev: int, change: Callable[[ApartmentDoc], None]
+) -> ApartmentView:
+    """Apply a plan write under the apartment's lock if no plan write landed since `base_rev`."""
     apartment_id = ensure_apartment(username)
     with repo.apartment_transaction(apartment_id) as doc:
-        if doc.rev != base_rev:
-            raise StaleRevError(f"{doc.updated_by or 'Someone'} changed this")
+        if doc.plan_rev != base_rev:
+            raise StaleRevError(f"{doc.plan_updated_by or 'Someone'} changed this")
+        change(doc)
+        doc.plan_rev += 1
+        doc.rev += 1
+        doc.plan_updated_by = username
+        updated = doc.model_copy(deep=True)
+    return _view(updated, username)
+
+
+def _mutate_free(username: str, change: Callable[[ApartmentDoc], None]) -> ApartmentView:
+    """Apply a per-piece write under the apartment's lock; last write wins."""
+    apartment_id = ensure_apartment(username)
+    with repo.apartment_transaction(apartment_id) as doc:
         change(doc)
         doc.rev += 1
-        doc.updated_by = username
         updated = doc.model_copy(deep=True)
     return _view(updated, username)
 
@@ -94,7 +111,7 @@ def set_locked(username: str, base_rev: int, locked: bool) -> ApartmentView:
     def change(doc: ApartmentDoc) -> None:
         doc.locked = locked
 
-    return _mutate(username, base_rev, change)
+    return _mutate_plan(username, base_rev, change)
 
 
 def _check_layer(name: str, layer: list[str], codes: frozenset[str], cols: int, rows: int) -> None:
@@ -135,7 +152,7 @@ def replace_plan(username: str, req: PlanWriteRequest) -> ApartmentView:
         doc.cols, doc.rows = req.cols, req.rows
         doc.surface, doc.feature, doc.labels = req.surface, req.feature, labels
 
-    return _mutate(username, req.base_rev, change)
+    return _mutate_plan(username, req.base_rev, change)
 
 
 def _is_empty(doc: ApartmentDoc) -> bool:

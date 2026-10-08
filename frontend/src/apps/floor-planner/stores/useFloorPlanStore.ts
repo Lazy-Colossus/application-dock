@@ -93,7 +93,7 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
     }
   }
 
-  const baseRev = () => ({ base_rev: apartment.value?.rev ?? 0 });
+  const baseRev = () => ({ base_rev: apartment.value?.plan_rev ?? 0 });
 
   const lock = () =>
     write(() => api.post<Apartment>(`${BASE}/lock`, baseRev()));

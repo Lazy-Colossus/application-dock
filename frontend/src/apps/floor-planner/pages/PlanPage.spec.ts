@@ -31,6 +31,7 @@ function apartment(over: Partial<Apartment> = {}): Apartment {
     members: ["dani", "jake"],
     is_owner: true,
     rev: 2,
+    plan_rev: 2,
     cols: 50,
     rows: 40,
     surface: emptyRows(50, 40),
@@ -107,7 +108,9 @@ describe("PlanPage", () => {
   it("locks an unlocked plan against its rev", async () => {
     const wrapper = await page();
     expect(wrapper.get("[data-testid=lock-chip]").text()).toBe("Unlocked");
-    postMock.mockResolvedValue(apartment({ rev: 3, locked: true }));
+    postMock.mockResolvedValue(
+      apartment({ rev: 3, plan_rev: 3, locked: true }),
+    );
     await wrapper.get("[data-testid=lock-toggle]").trigger("click");
     await flushPromises();
     expect(postMock).toHaveBeenCalledWith("/floor-planner/apartment/lock", {
@@ -119,7 +122,7 @@ describe("PlanPage", () => {
 
   it("offers Unlock on a locked plan", async () => {
     const wrapper = await page(apartment({ locked: true }));
-    postMock.mockResolvedValue(apartment({ rev: 3 }));
+    postMock.mockResolvedValue(apartment({ rev: 3, plan_rev: 3 }));
     await wrapper.get("[data-testid=lock-toggle]").trigger("click");
     expect(postMock).toHaveBeenCalledWith("/floor-planner/apartment/unlock", {
       base_rev: 2,
@@ -155,7 +158,7 @@ describe("PlanPage", () => {
   it("saves a drawn stroke", async () => {
     const wrapper = await page();
     await drawWall(wrapper);
-    putMock.mockResolvedValue(apartment({ rev: 3 }));
+    putMock.mockResolvedValue(apartment({ rev: 3, plan_rev: 3 }));
     await wrapper.get("[data-testid=save]").trigger("click");
     await flushPromises();
     const [path, body] = putMock.mock.calls[0];
@@ -167,8 +170,10 @@ describe("PlanPage", () => {
   it("saves unsaved drawing before locking", async () => {
     const wrapper = await page();
     await drawWall(wrapper);
-    putMock.mockResolvedValue(apartment({ rev: 3 }));
-    postMock.mockResolvedValue(apartment({ rev: 4, locked: true }));
+    putMock.mockResolvedValue(apartment({ rev: 3, plan_rev: 3 }));
+    postMock.mockResolvedValue(
+      apartment({ rev: 4, plan_rev: 4, locked: true }),
+    );
     await wrapper.get("[data-testid=lock-toggle]").trigger("click");
     await flushPromises();
     expect(putMock).toHaveBeenCalledTimes(1);

@@ -55,6 +55,8 @@ export interface Apartment {
   members: string[];
   is_owner: boolean;
   rev: number;
+  /** Bumped only by plan writes; plan writes send it as `base_rev`. */
+  plan_rev: number;
   cols: number;
   rows: number;
   surface: string[];
