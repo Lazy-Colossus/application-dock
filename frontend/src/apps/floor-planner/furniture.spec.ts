@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   colourHex,
+  customEdges,
   draftProblem,
   fitScale,
   outline,
@@ -75,5 +76,15 @@ describe("fitScale", () => {
     expect(fitScale(draft({ width_cm: 570, depth_cm: 60 }), 0.8, 228)).toBe(
       0.4,
     );
+  });
+});
+
+describe("customEdges", () => {
+  it("outlines only the outside of the painted squares", () => {
+    // Two squares side by side: 6 outer edges, the shared middle edge left out.
+    const edges = customEdges(["##"], 1);
+    expect(edges.match(/M /g)).toHaveLength(6);
+    expect(edges).not.toContain("M 20 0 v 20");
+    expect(edges).toContain("M 40 0 v 20");
   });
 });

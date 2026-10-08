@@ -48,4 +48,24 @@ describe("FurnitureShape", () => {
       46,
     );
   });
+
+  it("outlines a custom shape once, around its outside", () => {
+    const wrapper = mount(FurnitureShape, {
+      props: {
+        piece: piece({
+          shape: "custom",
+          cells: ["#.", "##"],
+          width_cm: 40,
+          depth_cm: 40,
+        }),
+        scale: 1,
+      },
+    });
+    const paths = wrapper.findAll("path");
+    expect(paths).toHaveLength(2);
+    expect(paths[0].attributes("stroke")).toBeUndefined();
+    expect(
+      wrapper.get("[data-testid=custom-edges]").attributes("d")?.match(/M /g),
+    ).toHaveLength(8);
+  });
 });

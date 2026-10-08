@@ -114,3 +114,22 @@ export function fitScale(p: Sized, scale: number, maxPx: number): number {
   const longest = Math.max(p.width_cm, p.depth_cm, 1);
   return Math.min(scale, maxPx / longest);
 }
+
+/** For a custom shape, only the edges between a painted square and an unpainted one. */
+export function customEdges(cells: string[], scale: number): string {
+  const s = +(CELL_CM * scale).toFixed(2);
+  const on = (r: number, c: number) => cells[r]?.[c] === "#";
+  const parts: string[] = [];
+  cells.forEach((row, r) =>
+    [...row].forEach((_, c) => {
+      if (!on(r, c)) return;
+      const x = +(c * s).toFixed(2);
+      const y = +(r * s).toFixed(2);
+      if (!on(r - 1, c)) parts.push(`M ${x} ${y} h ${s}`);
+      if (!on(r + 1, c)) parts.push(`M ${x} ${+(y + s).toFixed(2)} h ${s}`);
+      if (!on(r, c - 1)) parts.push(`M ${x} ${y} v ${s}`);
+      if (!on(r, c + 1)) parts.push(`M ${+(x + s).toFixed(2)} ${y} v ${s}`);
+    }),
+  );
+  return parts.join(" ");
+}

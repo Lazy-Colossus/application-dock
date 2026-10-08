@@ -8,7 +8,19 @@
     :aria-label="`${piece.name}, ${sizeLabel(piece)}`"
     data-testid="furniture-shape"
   >
+    <template v-if="piece.shape === 'custom'">
+      <!-- Squares are filled without strokes; only the outer edge is drawn, so no seams show. -->
+      <path :d="outline(piece, scaleUsed)" :fill="colourHex(piece.colour)" />
+      <path
+        :d="customEdges(piece.cells ?? [], scaleUsed)"
+        fill="none"
+        stroke="rgba(0,0,0,.4)"
+        stroke-width="1"
+        data-testid="custom-edges"
+      />
+    </template>
     <path
+      v-else
       :d="outline(piece, scaleUsed)"
       :fill="colourHex(piece.colour)"
       stroke="rgba(0,0,0,.4)"
@@ -19,7 +31,13 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { colourHex, fitScale, outline, sizeLabel } from "../furniture";
+import {
+  colourHex,
+  customEdges,
+  fitScale,
+  outline,
+  sizeLabel,
+} from "../furniture";
 import type { Furniture } from "../types";
 
 const props = defineProps<{
