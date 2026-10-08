@@ -79,4 +79,11 @@ export const apps: AppDescriptor[] = [
     icon: "rocket_launch",
     route: "/iss-vanguard",
   },
+  {
+    id: "floor-planner",
+    label: "Floor Planner",
+    // A set-square glyph for a plan drawn to scale.
+    icon: "square_foot",
+    route: "/floor-planner",
+  },
 ];
