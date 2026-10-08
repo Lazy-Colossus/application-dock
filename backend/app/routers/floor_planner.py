@@ -21,7 +21,9 @@ from app.schemas.floor_planner import (
     AddMemberRequest,
     AddPiecesRequest,
     ApartmentView,
+    LayoutNameRequest,
     PieceDraft,
+    PlacementRequest,
     PlanWriteRequest,
     RevRequest,
 )
@@ -95,6 +97,49 @@ def update_piece(
 @router.delete("/apartment/furniture/{piece_id}", response_model=ApartmentView)
 def delete_piece(piece_id: str, current_user: str = Depends(get_current_user)) -> ApartmentView:
     return service.delete_piece(current_user, piece_id)
+
+
+@router.post("/apartment/layouts", response_model=ApartmentView)
+def create_layout(
+    req: LayoutNameRequest, current_user: str = Depends(get_current_user)
+) -> ApartmentView:
+    return service.create_layout(current_user, req.name)
+
+
+@router.put("/apartment/layouts/{layout_id}", response_model=ApartmentView)
+def rename_layout(
+    layout_id: str, req: LayoutNameRequest, current_user: str = Depends(get_current_user)
+) -> ApartmentView:
+    return service.rename_layout(current_user, layout_id, req.name)
+
+
+@router.post("/apartment/layouts/{layout_id}/duplicate", response_model=ApartmentView)
+def duplicate_layout(
+    layout_id: str, current_user: str = Depends(get_current_user)
+) -> ApartmentView:
+    return service.duplicate_layout(current_user, layout_id)
+
+
+@router.delete("/apartment/layouts/{layout_id}", response_model=ApartmentView)
+def delete_layout(layout_id: str, current_user: str = Depends(get_current_user)) -> ApartmentView:
+    return service.delete_layout(current_user, layout_id)
+
+
+@router.put("/apartment/layouts/{layout_id}/placements/{piece_id}", response_model=ApartmentView)
+def place_piece(
+    layout_id: str,
+    piece_id: str,
+    req: PlacementRequest,
+    current_user: str = Depends(get_current_user),
+) -> ApartmentView:
+    return service.place_piece(current_user, layout_id, piece_id, req)
+
+
+@router.delete("/apartment/layouts/{layout_id}/placements/{piece_id}", response_model=ApartmentView)
+def remove_placement(
+    layout_id: str, piece_id: str, current_user: str = Depends(get_current_user)
+) -> ApartmentView:
+    return service.remove_placement(current_user, layout_id, piece_id)
 
 
 @router.post("/apartment/members", response_model=ApartmentView)

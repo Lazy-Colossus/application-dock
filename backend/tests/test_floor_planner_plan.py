@@ -9,7 +9,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.repositories import floor_planner_repo as repo
-from app.schemas.floor_planner import Label, PlanWriteRequest
+from app.schemas.floor_planner import Label, PieceDraft, PlacementRequest, PlanWriteRequest
 from app.services import auth_service
 from app.services import floor_planner_service as service
 
@@ -103,3 +103,21 @@ def test_a_stale_plan_is_refused() -> None:
 def test_the_size_is_bounded(cols: int) -> None:
     with pytest.raises(ValidationError):
         _plan(cols=cols)
+
+
+def test_shrinking_drops_pieces_left_off_the_plan() -> None:
+    service.replace_plan("ana", _plan(cols=50, rows=40, labels=[]))
+    apt = service.add_pieces(
+        "ana",
+        [
+            PieceDraft(name="Near", colour="grey", shape="rectangle", width_cm=40, depth_cm=40),
+            PieceDraft(name="Far", colour="grey", shape="rectangle", width_cm=40, depth_cm=40),
+        ],
+    )
+    layout, near, far = apt.layouts[0].id, apt.furniture[0].id, apt.furniture[1].id
+    service.set_locked("ana", 1, True)
+    service.place_piece("ana", layout, near, PlacementRequest(x_cm=100, y_cm=100))
+    service.place_piece("ana", layout, far, PlacementRequest(x_cm=800, y_cm=100))
+    service.set_locked("ana", 2, False)
+    shrunk = service.replace_plan("ana", _plan(cols=20, rows=20, base_rev=3, labels=[]))
+    assert [p.furniture_id for p in shrunk.layouts[0].placements] == [near]

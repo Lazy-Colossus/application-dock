@@ -99,3 +99,24 @@ def test_furniture_over_http() -> None:
     edited = client.put(f"{BASE}/furniture/{piece_id}", json={**sofa, "colour": "blue"})
     assert edited.json()["furniture"][0]["colour"] == "blue"
     assert client.delete(f"{BASE}/furniture/{piece_id}").json()["furniture"] == []
+
+
+def test_layouts_and_placements_over_http() -> None:
+    sofa = {"name": "Sofa", "colour": "grey", "shape": "rectangle", "width_cm": 220, "depth_cm": 95}
+    apt = client.post(f"{BASE}/furniture", json={"pieces": [sofa]}).json()
+    layout, piece = apt["layouts"][0]["id"], apt["furniture"][0]["id"]
+    spot = {"x_cm": 100, "y_cm": 100, "rotation": 90}
+    unlocked = client.put(f"{BASE}/layouts/{layout}/placements/{piece}", json=spot)
+    assert unlocked.status_code == 422
+    client.post(f"{BASE}/lock", json={"base_rev": 0})
+    placed = client.put(f"{BASE}/layouts/{layout}/placements/{piece}", json=spot)
+    assert placed.json()["layouts"][0]["placements"][0]["rotation"] == 90
+    assert client.put(f"{BASE}/layouts/l_gone/placements/{piece}", json=spot).status_code == 404
+    copy = client.post(f"{BASE}/layouts/{layout}/duplicate").json()["layouts"][1]
+    assert copy["name"] == "Layout A copy"
+    renamed = client.put(f"{BASE}/layouts/{copy['id']}", json={"name": "B"}).json()
+    assert renamed["layouts"][1]["name"] == "B"
+    assert len(client.post(f"{BASE}/layouts", json={"name": "C"}).json()["layouts"]) == 3
+    assert len(client.delete(f"{BASE}/layouts/{copy['id']}").json()["layouts"]) == 2
+    back = client.delete(f"{BASE}/layouts/{layout}/placements/{piece}").json()
+    assert back["layouts"][0]["placements"] == []

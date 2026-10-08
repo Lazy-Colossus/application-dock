@@ -29,6 +29,8 @@ from app.schemas.floor_planner import (
     CUSTOM_MAX,
     FEATURE_CODES,
     LABEL_MAX,
+    LAYOUT_NAME_MAX,
+    LAYOUTS_MAX,
     NAME_MAX,
     NOTE_MAX,
     PIECES_MAX,
@@ -38,7 +40,10 @@ from app.schemas.floor_planner import (
     ApartmentView,
     Furniture,
     Label,
+    Layout,
     PieceDraft,
+    Placement,
+    PlacementRequest,
     PlanWriteRequest,
 )
 from app.services import auth_service
@@ -160,6 +165,13 @@ def replace_plan(username: str, req: PlanWriteRequest) -> ApartmentView:
             raise ValueError("Unlock the plan to change it")
         doc.cols, doc.rows = req.cols, req.rows
         doc.surface, doc.feature, doc.labels = req.surface, req.feature, labels
+        # A shrink must not strand a piece off the plan, in any layout.
+        for layout in doc.layouts:
+            layout.placements = [
+                p
+                for p in layout.placements
+                if _centre_inside(doc, _piece(doc, p.furniture_id), p.x_cm, p.y_cm)
+            ]
 
     return _mutate_plan(username, req.base_rev, change)
 
@@ -253,6 +265,116 @@ def delete_piece(username: str, piece_id: str) -> ApartmentView:
         del doc.furniture[_index_of(doc, piece_id)]
         for layout in doc.layouts:
             layout.placements = [p for p in layout.placements if p.furniture_id != piece_id]
+
+    return _mutate_free(username, change)
+
+
+def _clean_layout_name(name: str) -> str:
+    name = name.strip()
+    if not name or len(name) > LAYOUT_NAME_MAX:
+        raise ValueError(f"A layout name needs 1–{LAYOUT_NAME_MAX} characters")
+    return name
+
+
+def _layout(doc: ApartmentDoc, layout_id: str) -> Layout:
+    for layout in doc.layouts:
+        if layout.id == layout_id:
+            return layout
+    raise FileNotFoundError("That layout is gone — someone deleted it")
+
+
+def _piece(doc: ApartmentDoc, piece_id: str) -> Furniture:
+    return doc.furniture[_index_of(doc, piece_id)]
+
+
+def _check_room_for_layout(doc: ApartmentDoc) -> None:
+    if len(doc.layouts) >= LAYOUTS_MAX:
+        raise ValueError(f"An apartment holds at most {LAYOUTS_MAX} layouts")
+
+
+def create_layout(username: str, name: str) -> ApartmentView:
+    clean = _clean_layout_name(name)
+
+    def change(doc: ApartmentDoc) -> None:
+        _check_room_for_layout(doc)
+        doc.layouts.append(Layout(id=f"l_{uuid.uuid4().hex}", name=clean))
+
+    return _mutate_free(username, change)
+
+
+def rename_layout(username: str, layout_id: str, name: str) -> ApartmentView:
+    clean = _clean_layout_name(name)
+
+    def change(doc: ApartmentDoc) -> None:
+        _layout(doc, layout_id).name = clean
+
+    return _mutate_free(username, change)
+
+
+def duplicate_layout(username: str, layout_id: str) -> ApartmentView:
+    def change(doc: ApartmentDoc) -> None:
+        source = _layout(doc, layout_id)
+        _check_room_for_layout(doc)
+        doc.layouts.append(
+            Layout(
+                id=f"l_{uuid.uuid4().hex}",
+                name=f"{source.name} copy"[:LAYOUT_NAME_MAX],
+                placements=[p.model_copy() for p in source.placements],
+            )
+        )
+
+    return _mutate_free(username, change)
+
+
+def delete_layout(username: str, layout_id: str) -> ApartmentView:
+    def change(doc: ApartmentDoc) -> None:
+        layout = _layout(doc, layout_id)
+        if len(doc.layouts) == 1:
+            raise ValueError("Keep at least one layout")
+        doc.layouts.remove(layout)
+
+    return _mutate_free(username, change)
+
+
+def _centre_inside(doc: ApartmentDoc, piece: Furniture, x_cm: int, y_cm: int) -> bool:
+    """Rotation turns a piece about its centre, so the unrotated size finds it."""
+    cx = x_cm + piece.width_cm / 2
+    cy = y_cm + piece.depth_cm / 2
+    return 0 <= cx <= doc.cols * CELL_CM and 0 <= cy <= doc.rows * CELL_CM
+
+
+def _require_locked(doc: ApartmentDoc) -> None:
+    if not doc.locked:
+        raise ValueError("Lock the plan to arrange furniture")
+
+
+def place_piece(
+    username: str, layout_id: str, piece_id: str, req: PlacementRequest
+) -> ApartmentView:
+    """Places or moves a piece: a piece appears at most once per layout (LA-2)."""
+
+    def change(doc: ApartmentDoc) -> None:
+        _require_locked(doc)
+        layout = _layout(doc, layout_id)
+        piece = _piece(doc, piece_id)
+        if not _centre_inside(doc, piece, req.x_cm, req.y_cm):
+            raise ValueError("Keep the piece on the plan")
+        placement = Placement(
+            furniture_id=piece_id, x_cm=req.x_cm, y_cm=req.y_cm, rotation=req.rotation
+        )
+        others = [p for p in layout.placements if p.furniture_id != piece_id]
+        layout.placements = [*others, placement]
+
+    return _mutate_free(username, change)
+
+
+def remove_placement(username: str, layout_id: str, piece_id: str) -> ApartmentView:
+    """Back to the tray; a piece that's already there is not an error."""
+
+    def change(doc: ApartmentDoc) -> None:
+        _require_locked(doc)
+        layout = _layout(doc, layout_id)
+        layout.placements = [p for p in layout.placements if p.furniture_id != piece_id]
 
     return _mutate_free(username, change)
 

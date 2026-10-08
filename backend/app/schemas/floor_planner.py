@@ -24,6 +24,8 @@ SIDE_CM_MAX = 1000
 CUSTOM_MAX = 20  # squares on each side: 4 m
 PIECES_MAX = 300
 BULK_MAX = 100
+LAYOUT_NAME_MAX = 40
+LAYOUTS_MAX = 20
 
 Shape = Literal["rectangle", "round", "oval", "egg", "custom"]
 Colour = Literal[
@@ -135,6 +137,16 @@ class PieceDraft(BaseModel):
 
 class AddPiecesRequest(BaseModel):
     pieces: list[PieceDraft] = Field(min_length=1, max_length=BULK_MAX)
+
+
+class LayoutNameRequest(BaseModel):
+    name: str
+
+
+class PlacementRequest(BaseModel):
+    x_cm: int
+    y_cm: int
+    rotation: Rotation = 0
 
 
 class AddMemberRequest(BaseModel):
