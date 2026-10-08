@@ -8,6 +8,7 @@ from app.routers import (
     archery,
     auth,
     context_switch,
+    floor_planner,
     hotaru,
     iss_vanguard,
     kalendariq,
@@ -44,6 +45,7 @@ app.include_router(tea.router)
 app.include_router(archery.router)
 app.include_router(kitchencraft.router)
 app.include_router(iss_vanguard.router)
+app.include_router(floor_planner.router)
 
 
 # Serve the built Quasar SPA when present (production / post-build). In dev the

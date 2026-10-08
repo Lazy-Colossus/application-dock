@@ -85,6 +85,12 @@ _APPS: list[AppDescriptor] = [
         icon="rocket_launch",
         route="/iss-vanguard",
     ),
+    AppDescriptor(
+        id="floor-planner",
+        label="Floor Planner",
+        icon="square_foot",
+        route="/floor-planner",
+    ),
 ]
 
 
