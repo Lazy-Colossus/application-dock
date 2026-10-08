@@ -1,5 +1,26 @@
 <template>
   <div class="draw-panel" data-testid="draw-panel">
+    <div class="draw-panel__history">
+      <button
+        type="button"
+        class="fp-button"
+        :disabled="locked || !canUndo"
+        data-testid="undo"
+        @click="emit('undo')"
+      >
+        Undo
+      </button>
+      <button
+        type="button"
+        class="fp-button"
+        :disabled="locked || !canRedo"
+        data-testid="redo"
+        @click="emit('redo')"
+      >
+        Redo
+      </button>
+    </div>
+
     <p v-if="locked" class="draw-panel__hint" data-testid="draw-locked">
       Unlock the plan to draw.
     </p>
@@ -106,26 +127,27 @@
           {{ s.label }}
         </button>
       </div>
-      <div class="draw-panel__history">
+    </section>
+
+    <section>
+      <h3 class="draw-panel__heading">Brush size</h3>
+      <div class="draw-panel__segmented" role="group" aria-label="Brush size">
         <button
+          v-for="n in BRUSH_SIZES"
+          :key="n"
           type="button"
-          class="fp-button"
-          :disabled="locked || !canUndo"
-          data-testid="undo"
-          @click="emit('undo')"
+          :class="{ 'draw-panel__seg--on': size === n }"
+          :aria-pressed="size === n"
+          :disabled="locked || shape === 'rectangle'"
+          :data-testid="`size-${n}`"
+          @click="emit('update:size', n)"
         >
-          Undo
-        </button>
-        <button
-          type="button"
-          class="fp-button"
-          :disabled="locked || !canRedo"
-          data-testid="redo"
-          @click="emit('redo')"
-        >
-          Redo
+          {{ n }}×{{ n }}
         </button>
       </div>
+      <p v-if="shape === 'rectangle'" class="draw-panel__note">
+        Freehand only.
+      </p>
     </section>
   </div>
 </template>
@@ -136,18 +158,20 @@ import {
   FLOORS,
   LABEL_TOOL,
   STRUCTURE,
-  fillFor,
   floorBrush,
   structureBrush,
+  swatchBackground,
   type Brush,
   type FloorFamily,
 } from "../codes";
+import { BRUSH_SIZES, type BrushSize } from "../grid";
 
 type Shape = "freehand" | "rectangle";
 
 const props = defineProps<{
   brush: Brush;
   shape: Shape;
+  size: BrushSize;
   canUndo: boolean;
   canRedo: boolean;
   locked: boolean;
@@ -156,6 +180,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   "update:brush": [brush: Brush];
   "update:shape": [shape: Shape];
+  "update:size": [size: BrushSize];
   undo: [];
   redo: [];
 }>();
@@ -171,10 +196,7 @@ function chosen(f: FloorFamily): string {
 }
 
 function swatchOf(f: FloorFamily): string {
-  const code = chosen(f);
-  return code === "b0"
-    ? "repeating-linear-gradient(45deg, #cbd5c0 0 4px, #aebb9f 4px 6px)"
-    : fillFor(code);
+  return swatchBackground(chosen(f));
 }
 </script>
 
@@ -292,6 +314,10 @@ function swatchOf(f: FloorFamily): string {
 }
 .draw-panel__segmented button {
   flex: 1;
+  &:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
   height: 34px;
   border: 0;
   border-radius: 6px;
@@ -306,10 +332,14 @@ function swatchOf(f: FloorFamily): string {
   color: var(--fp-ink);
   font-weight: 600;
 }
+.draw-panel__note {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--fp-muted);
+}
 .draw-panel__history {
   display: flex;
   gap: 6px;
-  margin-top: 8px;
 }
 .draw-panel__history .fp-button {
   flex: 1;

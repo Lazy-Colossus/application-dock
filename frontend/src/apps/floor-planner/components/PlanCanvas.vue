@@ -54,6 +54,42 @@
         <rect width="8" height="8" fill="#cbd5c0" />
         <rect width="2" height="8" fill="#aebb9f" />
       </pattern>
+      <template v-for="t in TEXTURED" :key="t.code">
+        <pattern
+          v-if="t.texture === 'tiles'"
+          :id="`fp-${t.code}`"
+          width="40"
+          height="40"
+          patternUnits="userSpaceOnUse"
+        >
+          <rect width="40" height="40" :fill="t.colour" />
+          <path
+            d="M 40 0 L 0 0 0 40"
+            fill="none"
+            :stroke="t.seam"
+            stroke-width="1.5"
+            vector-effect="non-scaling-stroke"
+          />
+        </pattern>
+        <!-- 10 cm planks, 80 cm long, joints staggered by half a plank. -->
+        <pattern
+          v-else
+          :id="`fp-${t.code}`"
+          width="80"
+          height="20"
+          patternUnits="userSpaceOnUse"
+        >
+          <rect width="80" height="20" :fill="t.colour" />
+          <rect x="40" width="40" height="10" fill="rgba(0,0,0,.06)" />
+          <rect y="10" width="40" height="10" fill="rgba(0,0,0,.06)" />
+          <path
+            d="M 0 0 H 80 M 0 10 H 80 M 0 0 V 10 M 40 10 V 20"
+            fill="none"
+            :stroke="t.seam"
+            vector-effect="non-scaling-stroke"
+          />
+        </pattern>
+      </template>
     </defs>
 
     <g class="plan-canvas__rulers">
@@ -292,7 +328,13 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { BALCONY_PATTERN, brushName, fillFor, type Brush } from "../codes";
+import {
+  BALCONY_PATTERN,
+  TEXTURED,
+  brushName,
+  fillFor,
+  type Brush,
+} from "../codes";
 import { PIECE_DRAG_TYPE, colourHex, customEdges, outline } from "../furniture";
 import { bounds as pieceBounds, snap, type Box } from "../geometry";
 import type { Furniture, Placement } from "../types";
@@ -309,7 +351,9 @@ import {
   readout,
   rectCells,
   runs,
+  stampCells,
   uniqueCells,
+  type BrushSize,
   type Cell,
   type PlanGrid,
 } from "../grid";
@@ -327,6 +371,8 @@ const props = withDefaults(
     editable: boolean;
     brush: Brush | null;
     shape: "freehand" | "rectangle";
+    /** Freehand only: each square of the stroke paints an n×n block. */
+    brushSize?: BrushSize;
     placed?: PlacedPiece[];
     selectedId?: string | null;
     /** Placed pieces can be selected and dragged. */
@@ -334,7 +380,13 @@ const props = withDefaults(
     /** Tray cards can be dropped onto the plan. */
     droppable?: boolean;
   }>(),
-  { placed: () => [], selectedId: null, arranging: false, droppable: false },
+  {
+    brushSize: 1,
+    placed: () => [],
+    selectedId: null,
+    arranging: false,
+    droppable: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -455,6 +507,12 @@ const readoutText = computed(() =>
     : null,
 );
 
+function stamp(cells: Cell[]): Cell[] {
+  return props.shape === "freehand"
+    ? stampCells(cells, props.brushSize, props.plan.cols, props.plan.rows)
+    : cells;
+}
+
 function cellOf(e: PointerEvent): Cell | null {
   const rect = svg.value?.getBoundingClientRect() ?? { left: 0, top: 0 };
   return cellAt(
@@ -482,7 +540,7 @@ function down(e: PointerEvent): void {
     return;
   }
   start = last = cell;
-  stroke.value = [cell];
+  stroke.value = stamp([cell]);
   emit("preview", readoutText.value);
 }
 
@@ -507,7 +565,10 @@ function move(e: PointerEvent): void {
   if (props.shape === "rectangle") {
     stroke.value = rectCells(start, cell);
   } else if (cell.col !== last.col || cell.row !== last.row) {
-    stroke.value = [...stroke.value, ...lineCells(last, cell).slice(1)];
+    stroke.value = uniqueCells([
+      ...stroke.value,
+      ...stamp(lineCells(last, cell).slice(1)),
+    ]);
   }
   last = cell;
   emit("preview", readoutText.value);

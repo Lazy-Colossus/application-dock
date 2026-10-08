@@ -6,6 +6,7 @@ import {
   floorBrush,
   structureBrush,
   fillFor,
+  TEXTURED,
 } from "./codes";
 import {
   cellAt,
@@ -18,6 +19,7 @@ import {
   paint,
   readout,
   rectCells,
+  stampCells,
   resize,
   runs,
   squaresFor,
@@ -53,6 +55,27 @@ describe("lineCells", () => {
       expect(Math.abs(cells[i].col - cells[i - 1].col)).toBeLessThanOrEqual(1);
       expect(Math.abs(cells[i].row - cells[i - 1].row)).toBeLessThanOrEqual(1);
     }
+  });
+});
+
+describe("stampCells", () => {
+  it("centres a 5×5 stamp and clips it to the plan", () => {
+    const cells = stampCells([{ col: 0, row: 0 }], 5, 10, 8);
+    expect(cells).toHaveLength(9);
+    expect(cells).toContainEqual({ col: 2, row: 2 });
+  });
+
+  it("merges overlapping stamps along a stroke", () => {
+    const cells = stampCells(
+      [
+        { col: 3, row: 3 },
+        { col: 4, row: 3 },
+      ],
+      2,
+      10,
+      8,
+    );
+    expect(cells).toHaveLength(6);
   });
 });
 
@@ -186,11 +209,21 @@ describe("uniqueCells", () => {
 });
 
 describe("fillFor", () => {
-  it("maps codes to colours and the balcony to its pattern", () => {
-    expect(fillFor("w1")).toBe("#a8743f");
+  it("maps codes to colours, and tiles, wood and the balcony to patterns", () => {
+    expect(fillFor("w1")).toBe("url(#fp-w1)");
+    expect(fillFor("t3")).toBe("url(#fp-t3)");
+    expect(fillFor("c0")).toBe("#8e939b");
     expect(fillFor("wl")).toBe("#2f2f2f");
     expect(fillFor("b0")).toBe("url(#fp-balcony)");
     expect(fillFor("..")).toBe("transparent");
+  });
+});
+
+describe("TEXTURED", () => {
+  it("draws light seams on dark floors and dark seams on light ones", () => {
+    const seam = (code: string) => TEXTURED.find((t) => t.code === code)?.seam;
+    expect(seam("t3")).toBe("rgba(255,255,255,.3)");
+    expect(seam("t0")).toBe("rgba(0,0,0,.22)");
   });
 });
 

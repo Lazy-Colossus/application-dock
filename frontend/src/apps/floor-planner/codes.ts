@@ -30,9 +30,12 @@ export interface Brush {
   code: string;
 }
 
+export type FloorTexture = "tiles" | "planks";
+
 export interface FloorFamily {
   id: Extract<BrushId, "tile" | "wood" | "carpet" | "balcony">;
   label: string;
+  texture?: FloorTexture;
   swatches: Swatch[];
   defaultCode: string;
 }
@@ -50,6 +53,7 @@ export const FLOORS: FloorFamily[] = [
   {
     id: "tile",
     label: "Tile",
+    texture: "tiles",
     defaultCode: "t0",
     swatches: [
       { code: "t0", name: "White", colour: "#f4f3ee" },
@@ -61,6 +65,7 @@ export const FLOORS: FloorFamily[] = [
   {
     id: "wood",
     label: "Wood",
+    texture: "planks",
     defaultCode: "w1",
     swatches: [
       { code: "w0", name: "Light", colour: "#d6ae80" },
@@ -117,10 +122,51 @@ const FILLS = new Map<string, string>([
   ...STRUCTURE.map((s) => [s.code, s.colour] as [string, string]),
 ]);
 
-/** The SVG fill for a code; the balcony is a hatch pattern defined by the canvas. */
+export interface TexturedSwatch {
+  code: string;
+  texture: FloorTexture;
+  colour: string;
+  seam: string;
+}
+
+/** Grout and plank lines: dark on light floors, light on dark ones. */
+function seamFor(hex: string): string {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luma < 0.4 ? "rgba(255,255,255,.3)" : "rgba(0,0,0,.22)";
+}
+
+/** One SVG pattern per textured colour, defined by the canvas as `fp-<code>`. */
+export const TEXTURED: TexturedSwatch[] = FLOORS.flatMap((f) =>
+  f.texture
+    ? f.swatches.map((s) => ({
+        code: s.code,
+        texture: f.texture!,
+        colour: s.colour,
+        seam: seamFor(s.colour),
+      }))
+    : [],
+);
+const TEXTURED_BY_CODE = new Map(TEXTURED.map((t) => [t.code, t]));
+
+/** The SVG fill for a code; the balcony and textured floors are patterns defined by the canvas. */
 export function fillFor(code: string): string {
   if (code === "b0") return `url(#${BALCONY_PATTERN})`;
+  if (TEXTURED_BY_CODE.has(code)) return `url(#fp-${code})`;
   return FILLS.get(code) ?? "transparent";
+}
+
+/** The CSS background for a brush swatch, mimicking the canvas pattern at swatch size. */
+export function swatchBackground(code: string): string {
+  if (code === "b0")
+    return "repeating-linear-gradient(45deg, #cbd5c0 0 4px, #aebb9f 4px 6px)";
+  const t = TEXTURED_BY_CODE.get(code);
+  if (!t) return fillFor(code);
+  const lines = (deg: number, gap: number) =>
+    `repeating-linear-gradient(${deg}deg, ${t.seam} 0 1px, transparent 1px ${gap}px)`;
+  return t.texture === "tiles"
+    ? `${lines(0, 10)}, ${lines(90, 10)}, ${t.colour}`
+    : `${lines(0, 5)}, ${t.colour}`;
 }
 
 const NAMES = new Map<BrushId, string>([

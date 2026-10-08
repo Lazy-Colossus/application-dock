@@ -99,6 +99,7 @@
           v-if="mode === 'draw'"
           v-model:brush="brush"
           v-model:shape="shape"
+          v-model:size="brushSize"
           :can-undo="store.canUndo"
           :can-redo="store.canRedo"
           :locked="locked"
@@ -133,6 +134,7 @@
             :editable="drawing"
             :brush="drawing ? brush : null"
             :shape="shape"
+            :brush-size="brushSize"
             @stroke="(cells) => store.applyStroke(cells, brush)"
             @hover="hover = $event"
             @preview="readout = $event"
@@ -291,7 +293,7 @@ import {
   warnings,
   type Placed,
 } from "../geometry";
-import type { Cell } from "../grid";
+import type { BrushSize, Cell } from "../grid";
 import { useFloorPlanStore } from "../stores/useFloorPlanStore";
 import type { Mode, Rotation } from "../types";
 import "../css/floor-planner.sass";
@@ -307,6 +309,7 @@ const mode = ref<Mode>("draw");
 const membersOpen = ref(false);
 const brush = ref<Brush>(DEFAULT_BRUSH);
 const shape = ref<"freehand" | "rectangle">("rectangle");
+const brushSize = ref<BrushSize>(1);
 const zoom = ref(1);
 const hover = ref<Cell | null>(null);
 const readout = ref<string | null>(null);

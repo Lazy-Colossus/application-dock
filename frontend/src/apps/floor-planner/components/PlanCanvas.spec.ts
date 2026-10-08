@@ -8,7 +8,7 @@ import {
   floorBrush,
   structureBrush,
 } from "../codes";
-import { emptyRows, type PlanGrid } from "../grid";
+import { emptyRows, type Cell, type PlanGrid } from "../grid";
 import { PIECE_DRAG_TYPE } from "../furniture";
 import type { Furniture, Rotation } from "../types";
 
@@ -91,6 +91,17 @@ describe("PlanCanvas", () => {
       { col: 3, row: 0 },
     ]);
     expect(wrapper.find("[data-testid=stroke-preview]").exists()).toBe(false);
+  });
+
+  it("paints a 2×2 block per square with a bigger freehand brush", async () => {
+    const wrapper = canvas({ brushSize: 2 });
+    const svg = wrapper.get("svg");
+    await svg.trigger("pointerdown", at(0, 0));
+    await svg.trigger("pointermove", at(1, 0));
+    await svg.trigger("pointerup", at(1, 0));
+    const cells = wrapper.emitted("stroke")?.[0][0] as Cell[];
+    expect(cells).toHaveLength(6);
+    expect(cells).toContainEqual({ col: 2, row: 1 });
   });
 
   it("fills a rectangle", async () => {

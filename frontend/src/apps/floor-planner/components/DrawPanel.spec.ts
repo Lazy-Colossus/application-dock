@@ -4,12 +4,18 @@ import DrawPanel from "./DrawPanel.vue";
 import { DEFAULT_BRUSH, type Brush } from "../codes";
 
 function draw(
-  over: Partial<{ brush: Brush; locked: boolean; canUndo: boolean }> = {},
+  over: Partial<{
+    brush: Brush;
+    shape: "freehand" | "rectangle";
+    locked: boolean;
+    canUndo: boolean;
+  }> = {},
 ) {
   return mount(DrawPanel, {
     props: {
       brush: DEFAULT_BRUSH,
-      shape: "rectangle" as const,
+      shape: "rectangle" as "freehand" | "rectangle",
+      size: 1 as const,
       canUndo: true,
       canRedo: false,
       locked: false,
@@ -19,6 +25,16 @@ function draw(
 }
 
 describe("DrawPanel", () => {
+  it("picks a brush size in freehand and disables it for rectangles", async () => {
+    const wrapper = draw({ shape: "freehand" });
+    await wrapper.get("[data-testid=size-5]").trigger("click");
+    expect(wrapper.emitted("update:size")?.[0][0]).toBe(5);
+    await wrapper.setProps({ shape: "rectangle" });
+    expect(
+      wrapper.get("[data-testid=size-5]").attributes("disabled"),
+    ).toBeDefined();
+  });
+
   it("picks a floor colour from its chip", async () => {
     const wrapper = draw();
     await wrapper.get("[data-testid=chip-w2]").trigger("click");

@@ -55,6 +55,30 @@ export function lineCells(a: Cell, b: Cell): Cell[] {
   }
 }
 
+export const BRUSH_SIZES = [1, 2, 5] as const;
+export type BrushSize = (typeof BRUSH_SIZES)[number];
+
+/** An n×n square per cell, centred on odd sizes and growing right/down on even ones, clipped to the plan. */
+export function stampCells(
+  cells: Cell[],
+  size: BrushSize,
+  cols: number,
+  rows: number,
+): Cell[] {
+  if (size === 1) return cells;
+  const offset = Math.floor((size - 1) / 2);
+  const out: Cell[] = [];
+  for (const c of cells) {
+    for (let row = c.row - offset; row < c.row - offset + size; row++) {
+      for (let col = c.col - offset; col < c.col - offset + size; col++) {
+        if (col >= 0 && col < cols && row >= 0 && row < rows)
+          out.push({ col, row });
+      }
+    }
+  }
+  return uniqueCells(out);
+}
+
 export function rectCells(a: Cell, b: Cell): Cell[] {
   const cells: Cell[] = [];
   for (let row = Math.min(a.row, b.row); row <= Math.max(a.row, b.row); row++) {
