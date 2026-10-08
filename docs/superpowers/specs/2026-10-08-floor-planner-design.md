@@ -110,13 +110,15 @@ Success: you sketch the apartment in a few minutes. A 220 × 95 cm sofa is visib
 - **LA-2** A placement records the piece id, x and y in cm (the top-left corner before rotation)
   and a rotation of 0, 90, 180 or 270. Each piece is placed at most once per layout.
 - **LA-3** Pieces with no placement in the current layout appear in a side tray. You drag a piece
-  from the tray onto the plan to place it, and drag it back to the tray to remove it from the
-  layout.
+  from the tray onto the plan to place it, and **Back to tray** removes it from the layout.
+  Dragging a piece back onto the tray is out of scope: the tray uses HTML5 drag-and-drop and the
+  plan uses pointer events, and joining the two isn't worth it.
 - **LA-4** Dragging snaps to 10 cm (half a square). **R** or a button rotates the selected piece
   90° around its centre.
 - **LA-5** The selected piece shows its name and its size in cm. A piece that overlaps a wall,
   covers an empty square, or overlaps another piece's bounding box gets a warning outline, but
-  the move is still allowed.
+  the move is still allowed. Pieces that only touch, overlapping by 1 cm or less, don't warn. A
+  piece's centre must stay on the plan, and shrinking the plan removes pieces left off it.
 
 ### Sharing
 
