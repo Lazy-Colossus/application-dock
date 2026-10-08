@@ -17,7 +17,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.routing import APIRoute
 
 from app.core.dependencies import get_current_user
-from app.schemas.floor_planner import AddMemberRequest, ApartmentView, RevRequest
+from app.schemas.floor_planner import (
+    AddMemberRequest,
+    ApartmentView,
+    PlanWriteRequest,
+    RevRequest,
+)
 from app.services import floor_planner_service as service
 
 
@@ -62,6 +67,13 @@ def lock(req: RevRequest, current_user: str = Depends(get_current_user)) -> Apar
 @router.post("/apartment/unlock", response_model=ApartmentView)
 def unlock(req: RevRequest, current_user: str = Depends(get_current_user)) -> ApartmentView:
     return service.set_locked(current_user, req.base_rev, False)
+
+
+@router.put("/apartment/plan", response_model=ApartmentView)
+def replace_plan(
+    req: PlanWriteRequest, current_user: str = Depends(get_current_user)
+) -> ApartmentView:
+    return service.replace_plan(current_user, req)
 
 
 @router.post("/apartment/members", response_model=ApartmentView)

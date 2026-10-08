@@ -19,7 +19,15 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from app.repositories import floor_planner_repo as repo
-from app.schemas.floor_planner import ApartmentDoc, ApartmentView
+from app.schemas.floor_planner import (
+    FEATURE_CODES,
+    LABEL_MAX,
+    SURFACE_CODES,
+    ApartmentDoc,
+    ApartmentView,
+    Label,
+    PlanWriteRequest,
+)
 from app.services import auth_service
 
 ApartmentGoneError = repo.ApartmentGoneError
@@ -87,6 +95,47 @@ def set_locked(username: str, base_rev: int, locked: bool) -> ApartmentView:
         doc.locked = locked
 
     return _mutate(username, base_rev, change)
+
+
+def _check_layer(name: str, layer: list[str], codes: frozenset[str], cols: int, rows: int) -> None:
+    if len(layer) != rows:
+        raise ValueError(f"The {name} layer has {len(layer)} rows, expected {rows}")
+    for r, line in enumerate(layer):
+        if len(line) != 2 * cols:
+            raise ValueError(f"The {name} layer's row {r} isn't {cols} squares wide")
+        for c in range(cols):
+            token = line[2 * c : 2 * c + 2]
+            if token not in codes:
+                raise ValueError(f"unknown {name} code {token!r} at column {c}, row {r}")
+
+
+def _clean_labels(labels: list[Label], cols: int, rows: int) -> list[Label]:
+    if len({label.id for label in labels}) != len(labels):
+        raise ValueError("Two labels share an id")
+    cleaned = []
+    for label in labels:
+        text = label.text.strip()
+        if not text or len(text) > LABEL_MAX:
+            raise ValueError(f"A label needs 1–{LABEL_MAX} characters")
+        if not (0 <= label.col < cols and 0 <= label.row < rows):
+            raise ValueError(f"The label {text!r} is outside the plan")
+        cleaned.append(label.model_copy(update={"text": text}))
+    return cleaned
+
+
+def replace_plan(username: str, req: PlanWriteRequest) -> ApartmentView:
+    """Swap in the whole drawn plan — size, both layers and labels — in one write."""
+    _check_layer("surface", req.surface, SURFACE_CODES, req.cols, req.rows)
+    _check_layer("feature", req.feature, FEATURE_CODES, req.cols, req.rows)
+    labels = _clean_labels(req.labels, req.cols, req.rows)
+
+    def change(doc: ApartmentDoc) -> None:
+        if doc.locked:
+            raise ValueError("Unlock the plan to change it")
+        doc.cols, doc.rows = req.cols, req.rows
+        doc.surface, doc.feature, doc.labels = req.surface, req.feature, labels
+
+    return _mutate(username, req.base_rev, change)
 
 
 def _is_empty(doc: ApartmentDoc) -> bool:

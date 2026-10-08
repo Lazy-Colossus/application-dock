@@ -10,6 +10,13 @@ from pydantic import BaseModel, Field
 DEFAULT_COLS = 50
 DEFAULT_ROWS = 40
 EMPTY_CELL = ".."
+SURFACE_CODES = frozenset(
+    {EMPTY_CELL, "t0", "t1", "t2", "t3", "w0", "w1", "w2", "c0", "c1", "c2", "c3", "b0"}
+)
+FEATURE_CODES = frozenset({EMPTY_CELL, "wl", "wn", "dr", "fd"})
+MIN_SIDE = 5  # 1 m
+MAX_SIDE = 150  # 30 m
+LABEL_MAX = 40
 
 Shape = Literal["rectangle", "round", "oval", "egg", "custom"]
 Colour = Literal[
@@ -94,6 +101,15 @@ class ApartmentView(BaseModel):
 
 class RevRequest(BaseModel):
     base_rev: int
+
+
+class PlanWriteRequest(BaseModel):
+    base_rev: int
+    cols: int = Field(ge=MIN_SIDE, le=MAX_SIDE)
+    rows: int = Field(ge=MIN_SIDE, le=MAX_SIDE)
+    surface: list[str]
+    feature: list[str]
+    labels: list[Label]
 
 
 class AddMemberRequest(BaseModel):

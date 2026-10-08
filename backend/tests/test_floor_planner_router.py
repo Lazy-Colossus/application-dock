@@ -63,3 +63,25 @@ def test_a_member_removing_the_owner_is_403() -> None:
     service.add_member("test_user", "bo")
     app.dependency_overrides[get_current_user] = lambda: "bo"
     assert client.delete(f"{BASE}/members/test_user").status_code == 403
+
+
+def _plan_body(base_rev: int = 0, cols: int = 5) -> dict:
+    return {
+        "base_rev": base_rev,
+        "cols": cols,
+        "rows": 5,
+        "surface": ["w1" * cols] * 5,
+        "feature": [".." * cols] * 5,
+        "labels": [],
+    }
+
+
+def test_putting_the_plan() -> None:
+    r = client.put(f"{BASE}/plan", json=_plan_body())
+    assert r.status_code == 200
+    assert r.json()["surface"][0] == "w1" * 5
+    assert client.put(f"{BASE}/plan", json=_plan_body()).status_code == 409
+    assert client.put(f"{BASE}/plan", json=_plan_body(1, cols=151)).status_code == 422
+    client.post(f"{BASE}/lock", json={"base_rev": 1})
+    locked = client.put(f"{BASE}/plan", json=_plan_body(2))
+    assert (locked.status_code, locked.json()["detail"]) == (422, "Unlock the plan to change it")
