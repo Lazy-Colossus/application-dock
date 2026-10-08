@@ -180,3 +180,44 @@ export function uniqueCells(cells: Cell[]): Cell[] {
     return true;
   });
 }
+
+/** Ruler band width around the plan, in cm. */
+export const RULER_CM = 40;
+/** Screen pixels per cm at 100 % zoom: 16 px per square, as in the mockup. */
+export const PX_PER_CM = 0.8;
+/** Label text height on screen, kept constant across zoom levels. */
+export const LABEL_PX = 11;
+
+/** The square under a screen point, or null outside the plan. Zoom never touches stored cm. */
+export function cellAt(
+  clientX: number,
+  clientY: number,
+  rect: { left: number; top: number },
+  zoom: number,
+  cols: number,
+  rows: number,
+): Cell | null {
+  const scale = PX_PER_CM * zoom;
+  const col = Math.floor(((clientX - rect.left) / scale - RULER_CM) / CELL_CM);
+  const row = Math.floor(((clientY - rect.top) / scale - RULER_CM) / CELL_CM);
+  if (col < 0 || row < 0 || col >= cols || row >= rows) return null;
+  return { col, row };
+}
+
+/** The label drawn over a square, judged by its approximate on-screen text width. */
+export function labelAtCell(
+  labels: Label[],
+  cell: Cell,
+  zoom: number,
+): Label | null {
+  const charCm = (LABEL_PX * 0.62) / (PX_PER_CM * zoom);
+  return (
+    labels.find((l) => {
+      const span = Math.max(
+        1,
+        Math.ceil((l.text.length * charCm + 8) / CELL_CM),
+      );
+      return cell.row === l.row && cell.col >= l.col && cell.col < l.col + span;
+    }) ?? null
+  );
+}

@@ -8,8 +8,10 @@ import {
   fillFor,
 } from "./codes";
 import {
+  cellAt,
   codeAt,
   emptyRows,
+  labelAtCell,
   labelsOutside,
   lineCells,
   paint,
@@ -188,5 +190,44 @@ describe("fillFor", () => {
     expect(fillFor("wl")).toBe("#2f2f2f");
     expect(fillFor("b0")).toBe("url(#fp-balcony)");
     expect(fillFor("..")).toBe("transparent");
+  });
+});
+
+describe("cellAt", () => {
+  const rect = { left: 100, top: 50 };
+  it("finds the square under the pointer at 100 %", () => {
+    // Square (0,0) starts after the 40 cm ruler: 32 px in at 0.8 px/cm.
+    expect(cellAt(100 + 32, 50 + 32, rect, 1, 10, 10)).toEqual({
+      col: 0,
+      row: 0,
+    });
+    expect(
+      cellAt(100 + 32 + 16 * 3 + 1, 50 + 32 + 16, rect, 1, 10, 10),
+    ).toEqual({
+      col: 3,
+      row: 1,
+    });
+  });
+
+  it("scales with zoom without changing which square is hit", () => {
+    expect(cellAt(100 + 64 + 32 * 3 + 1, 50 + 64, rect, 2, 10, 10)).toEqual({
+      col: 3,
+      row: 0,
+    });
+  });
+
+  it("is null on the rulers and past the plan", () => {
+    expect(cellAt(100 + 10, 50 + 40, rect, 1, 10, 10)).toBeNull();
+    expect(cellAt(100 + 32 + 16 * 10, 50 + 40, rect, 1, 10, 10)).toBeNull();
+  });
+});
+
+describe("labelAtCell", () => {
+  it("hits the squares a label's text covers on its row", () => {
+    const labels = [{ id: "a", text: "Living room", col: 2, row: 3 }];
+    expect(labelAtCell(labels, { col: 2, row: 3 }, 1)?.id).toBe("a");
+    expect(labelAtCell(labels, { col: 5, row: 3 }, 1)?.id).toBe("a");
+    expect(labelAtCell(labels, { col: 2, row: 4 }, 1)).toBeNull();
+    expect(labelAtCell(labels, { col: 1, row: 3 }, 1)).toBeNull();
   });
 });
