@@ -36,4 +36,14 @@ describe("StatusBar", () => {
     await wrapper.get("[data-testid=zoom-out]").trigger("click");
     expect(wrapper.emitted("update:zoom")?.[0][0]).toBe(1.5);
   });
+
+  it("puts slot content, the layout tabs, at the start", () => {
+    const wrapper = mount(StatusBar, {
+      props: base,
+      slots: { default: '<span data-testid="tabs">Layout A</span>' },
+    });
+    expect(
+      wrapper.find("[data-testid=status-bar] > [data-testid=tabs]").exists(),
+    ).toBe(true);
+  });
 });

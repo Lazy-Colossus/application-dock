@@ -1,5 +1,6 @@
 <template>
   <div class="status-bar" data-testid="status-bar">
+    <slot />
     <span>
       Cursor
       <span class="fp-mono status-bar__value" data-testid="status-cursor">{{

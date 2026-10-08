@@ -172,10 +172,12 @@
       :model-value="labelEdit !== null"
       @update:model-value="labelEdit = null"
     >
-      <LabelDialog
+      <NameDialog
         v-if="labelEdit"
         :initial="labelEdit.text"
-        :editing="labelEdit.id !== null"
+        :title="labelEdit.id ? 'Room label' : 'New room label'"
+        placeholder="e.g. Living room"
+        :can-delete="labelEdit.id !== null"
         @save="saveLabel"
         @remove="removeLabel"
         @cancel="labelEdit = null"
@@ -214,8 +216,8 @@ import BulkAddDialog from "../components/BulkAddDialog.vue";
 import DrawPanel from "../components/DrawPanel.vue";
 import FurnitureList from "../components/FurnitureList.vue";
 import PieceForm from "../components/PieceForm.vue";
-import LabelDialog from "../components/LabelDialog.vue";
 import MembersDialog from "../components/MembersDialog.vue";
+import NameDialog from "../components/NameDialog.vue";
 import PlanCanvas from "../components/PlanCanvas.vue";
 import PlanInfoPanel from "../components/PlanInfoPanel.vue";
 import StatusBar from "../components/StatusBar.vue";

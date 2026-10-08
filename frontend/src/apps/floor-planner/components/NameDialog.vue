@@ -1,34 +1,29 @@
 <template>
-  <div
-    class="floor-planner-panel label-dialog__card"
-    data-testid="label-dialog"
-  >
+  <div class="floor-planner-panel name-dialog__card" data-testid="name-dialog">
     <!-- A div root: Quasar only gives a dialog's direct div children pointer events. -->
-    <form class="label-dialog" @submit.prevent="save">
-      <h2 class="label-dialog__title">
-        {{ editing ? "Room label" : "New room label" }}
-      </h2>
-      <label class="label-dialog__field">
+    <form class="name-dialog" @submit.prevent="save">
+      <h2 class="name-dialog__title">{{ title }}</h2>
+      <label class="name-dialog__field">
         Name
         <input
           ref="input"
           v-model="text"
           maxlength="40"
-          placeholder="e.g. Living room"
-          data-testid="label-text"
+          :placeholder="placeholder"
+          data-testid="name-text"
         />
       </label>
-      <div class="label-dialog__actions">
+      <div class="name-dialog__actions">
         <button
-          v-if="editing"
+          v-if="canDelete"
           type="button"
-          class="fp-button label-dialog__delete"
-          data-testid="label-remove"
+          class="fp-button name-dialog__delete"
+          data-testid="name-remove"
           @click="emit('remove')"
         >
           Delete
         </button>
-        <span class="label-dialog__spacer" />
+        <span class="name-dialog__spacer" />
         <button type="button" class="fp-button" @click="emit('cancel')">
           Cancel
         </button>
@@ -36,7 +31,7 @@
           type="submit"
           class="fp-button fp-button--primary"
           :disabled="text.trim() === ''"
-          data-testid="label-save"
+          data-testid="name-save"
         >
           Save
         </button>
@@ -49,7 +44,12 @@
 import { onMounted, ref } from "vue";
 import "../css/floor-planner.sass";
 
-const props = defineProps<{ initial: string; editing: boolean }>();
+const props = defineProps<{
+  title: string;
+  initial: string;
+  placeholder: string;
+  canDelete: boolean;
+}>();
 
 const emit = defineEmits<{
   save: [text: string];
@@ -69,10 +69,10 @@ function save(): void {
 </script>
 
 <style scoped lang="scss">
-.label-dialog__card {
+.name-dialog__card {
   border-radius: 8px;
 }
-.label-dialog {
+.name-dialog {
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -80,12 +80,12 @@ function save(): void {
   padding: 20px;
   border-radius: 8px;
 }
-.label-dialog__title {
+.name-dialog__title {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
 }
-.label-dialog__field {
+.name-dialog__field {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -93,7 +93,7 @@ function save(): void {
   font-weight: 500;
   color: var(--fp-muted);
 }
-.label-dialog__field input {
+.name-dialog__field input {
   height: 36px;
   padding: 0 10px;
   border: 1px solid var(--fp-control-line);
@@ -102,14 +102,14 @@ function save(): void {
   color: var(--fp-ink);
   font: 400 14px var(--fp-sans);
 }
-.label-dialog__actions {
+.name-dialog__actions {
   display: flex;
   gap: 8px;
 }
-.label-dialog__spacer {
+.name-dialog__spacer {
   flex: 1;
 }
-.label-dialog__delete {
+.name-dialog__delete {
   color: var(--fp-warn-ink);
 }
 </style>

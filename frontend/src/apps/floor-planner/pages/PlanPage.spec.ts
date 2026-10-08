@@ -222,12 +222,12 @@ describe("PlanPage", () => {
     await wrapper
       .get("[data-testid=plan-canvas]")
       .trigger("pointerdown", at(5, 5));
-    await wrapper.get("[data-testid=label-text]").setValue("Hall");
-    await wrapper.get("[data-testid=label-dialog] form").trigger("submit");
+    await wrapper.get("[data-testid=name-text]").setValue("Hall");
+    await wrapper.get("[data-testid=name-dialog] form").trigger("submit");
     expect(useFloorPlanStore().plan?.labels).toMatchObject([
       { text: "Hall", col: 5, row: 5 },
     ]);
-    expect(wrapper.find("[data-testid=label-dialog]").exists()).toBe(false);
+    expect(wrapper.find("[data-testid=name-dialog]").exists()).toBe(false);
   });
 
   describe("furniture mode", () => {
