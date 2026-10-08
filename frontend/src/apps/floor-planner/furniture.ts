@@ -108,3 +108,9 @@ export function outline(p: Sized, scale: number): string {
     }
   }
 }
+
+/** The px-per-cm that fits the piece's longer side into `maxPx`, never larger than `scale`. */
+export function fitScale(p: Sized, scale: number, maxPx: number): number {
+  const longest = Math.max(p.width_cm, p.depth_cm, 1);
+  return Math.min(scale, maxPx / longest);
+}

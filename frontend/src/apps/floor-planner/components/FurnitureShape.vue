@@ -1,0 +1,53 @@
+<template>
+  <svg
+    class="furniture-shape"
+    :width="width"
+    :height="height"
+    :viewBox="`-1 -1 ${width} ${height}`"
+    role="img"
+    :aria-label="`${piece.name}, ${sizeLabel(piece)}`"
+    data-testid="furniture-shape"
+  >
+    <path
+      :d="outline(piece, scaleUsed)"
+      :fill="colourHex(piece.colour)"
+      stroke="rgba(0,0,0,.4)"
+      stroke-width="1"
+    />
+  </svg>
+</template>
+
+<script setup lang="ts">
+import { computed } from "vue";
+import { colourHex, fitScale, outline, sizeLabel } from "../furniture";
+import type { Furniture } from "../types";
+
+const props = defineProps<{
+  piece: Pick<
+    Furniture,
+    "name" | "colour" | "shape" | "width_cm" | "depth_cm" | "cells"
+  >;
+  /** px per cm. */
+  scale: number;
+  /** Shrinks the drawing so its longer side fits this many px. */
+  maxPx?: number;
+}>();
+
+const scaleUsed = computed(() =>
+  props.maxPx ? fitScale(props.piece, props.scale, props.maxPx) : props.scale,
+);
+// One extra px on each side keeps the outline inside the svg.
+const width = computed(
+  () => +(props.piece.width_cm * scaleUsed.value + 2).toFixed(2),
+);
+const height = computed(
+  () => +(props.piece.depth_cm * scaleUsed.value + 2).toFixed(2),
+);
+</script>
+
+<style scoped lang="scss">
+.furniture-shape {
+  display: block;
+  overflow: visible;
+}
+</style>

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   colourHex,
   draftProblem,
+  fitScale,
   outline,
   sizeLabel,
   type PieceDraft,
@@ -63,5 +64,16 @@ describe("furniture", () => {
   it("accepts a good draft", () => {
     expect(draftProblem(draft())).toBeNull();
     expect(draftProblem(draft({ shape: "custom", cells: ["#"] }))).toBeNull();
+  });
+});
+
+describe("fitScale", () => {
+  it("keeps the scale when the piece fits and shrinks it when not", () => {
+    expect(fitScale(draft({ width_cm: 100, depth_cm: 60 }), 0.8, 228)).toBe(
+      0.8,
+    );
+    expect(fitScale(draft({ width_cm: 570, depth_cm: 60 }), 0.8, 228)).toBe(
+      0.4,
+    );
   });
 });
