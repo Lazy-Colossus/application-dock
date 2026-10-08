@@ -86,3 +86,16 @@ def test_putting_the_plan() -> None:
     client.post(f"{BASE}/lock", json={"base_rev": 1})
     locked = client.put(f"{BASE}/plan", json=_plan_body(2))
     assert (locked.status_code, locked.json()["detail"]) == (422, "Unlock the plan to change it")
+
+
+def test_furniture_over_http() -> None:
+    sofa = {"name": "Sofa", "colour": "grey", "shape": "rectangle", "width_cm": 220, "depth_cm": 95}
+    added = client.post(f"{BASE}/furniture", json={"pieces": [sofa]})
+    assert added.status_code == 200
+    piece_id = added.json()["furniture"][0]["id"]
+    too_many = client.post(f"{BASE}/furniture", json={"pieces": [sofa] * 101})
+    assert too_many.status_code == 422
+    assert client.put(f"{BASE}/furniture/f_gone", json=sofa).status_code == 404
+    edited = client.put(f"{BASE}/furniture/{piece_id}", json={**sofa, "colour": "blue"})
+    assert edited.json()["furniture"][0]["colour"] == "blue"
+    assert client.delete(f"{BASE}/furniture/{piece_id}").json()["furniture"] == []

@@ -20,16 +20,25 @@ vanished under a concurrent membership change); the router translates them.
 
 from __future__ import annotations
 
+import uuid
 from collections.abc import Callable
 
 from app.repositories import floor_planner_repo as repo
 from app.schemas.floor_planner import (
+    CELL_CM,
+    CUSTOM_MAX,
     FEATURE_CODES,
     LABEL_MAX,
+    NAME_MAX,
+    NOTE_MAX,
+    PIECES_MAX,
+    SIDE_CM_MAX,
     SURFACE_CODES,
     ApartmentDoc,
     ApartmentView,
+    Furniture,
     Label,
+    PieceDraft,
     PlanWriteRequest,
 )
 from app.services import auth_service
@@ -153,6 +162,99 @@ def replace_plan(username: str, req: PlanWriteRequest) -> ApartmentView:
         doc.surface, doc.feature, doc.labels = req.surface, req.feature, labels
 
     return _mutate_plan(username, req.base_rev, change)
+
+
+def _trim_mask(cells: list[str]) -> list[str]:
+    rows = [r for r in range(len(cells)) if "#" in cells[r]]
+    cols = [c for c in range(len(cells[0])) if any(row[c] == "#" for row in cells)]
+    return [row[cols[0] : cols[-1] + 1] for row in cells[rows[0] : rows[-1] + 1]]
+
+
+def _clean_piece(draft: PieceDraft, piece_id: str) -> Furniture:
+    """Check a piece against FU-1 to FU-3; custom sizes always come from the trimmed mask."""
+    name = draft.name.strip()
+    label = name or "A piece"
+    if not name or len(name) > NAME_MAX:
+        raise ValueError(f"{label}: the name needs 1–{NAME_MAX} characters")
+    note = draft.note.strip()
+    if len(note) > NOTE_MAX:
+        raise ValueError(f"{label}: the note is longer than {NOTE_MAX} characters")
+    if draft.shape == "custom":
+        cells = draft.cells or []
+        if not cells or len(cells) > CUSTOM_MAX or len({len(r) for r in cells}) != 1:
+            raise ValueError(f"{label}: a custom shape is up to {CUSTOM_MAX} equal rows")
+        if len(cells[0]) > CUSTOM_MAX or set("".join(cells)) - {"#", "."}:
+            raise ValueError(f"{label}: a custom shape is up to {CUSTOM_MAX} squares of # and .")
+        if "#" not in "".join(cells):
+            raise ValueError(f"{label}: paint at least one square")
+        mask = _trim_mask(cells)
+        return Furniture(
+            id=piece_id,
+            name=name,
+            colour=draft.colour,
+            note=note,
+            shape="custom",
+            width_cm=len(mask[0]) * CELL_CM,
+            depth_cm=len(mask) * CELL_CM,
+            cells=mask,
+        )
+    for side, value in (("width", draft.width_cm), ("depth", draft.depth_cm)):
+        if not 1 <= value <= SIDE_CM_MAX:
+            raise ValueError(f"{label}: {side} must be 1–{SIDE_CM_MAX} cm")
+    if draft.shape == "round" and draft.width_cm != draft.depth_cm:
+        raise ValueError(f"{label}: a round piece has one diameter")
+    return Furniture(
+        id=piece_id,
+        name=name,
+        colour=draft.colour,
+        note=note,
+        shape=draft.shape,
+        width_cm=draft.width_cm,
+        depth_cm=draft.depth_cm,
+    )
+
+
+def _new_piece_id() -> str:
+    return f"f_{uuid.uuid4().hex}"
+
+
+def add_pieces(username: str, drafts: list[PieceDraft]) -> ApartmentView:
+    """All or nothing: one bad piece refuses the whole batch."""
+    pieces = [_clean_piece(d, _new_piece_id()) for d in drafts]
+
+    def change(doc: ApartmentDoc) -> None:
+        if len(doc.furniture) + len(pieces) > PIECES_MAX:
+            raise ValueError(f"An apartment holds at most {PIECES_MAX} pieces")
+        doc.furniture.extend(pieces)
+
+    return _mutate_free(username, change)
+
+
+def _index_of(doc: ApartmentDoc, piece_id: str) -> int:
+    for i, piece in enumerate(doc.furniture):
+        if piece.id == piece_id:
+            return i
+    raise FileNotFoundError("That piece is gone — someone deleted it")
+
+
+def update_piece(username: str, piece_id: str, draft: PieceDraft) -> ApartmentView:
+    piece = _clean_piece(draft, piece_id)
+
+    def change(doc: ApartmentDoc) -> None:
+        doc.furniture[_index_of(doc, piece_id)] = piece
+
+    return _mutate_free(username, change)
+
+
+def delete_piece(username: str, piece_id: str) -> ApartmentView:
+    """Removes the piece and its placement from every layout (FU-5)."""
+
+    def change(doc: ApartmentDoc) -> None:
+        del doc.furniture[_index_of(doc, piece_id)]
+        for layout in doc.layouts:
+            layout.placements = [p for p in layout.placements if p.furniture_id != piece_id]
+
+    return _mutate_free(username, change)
 
 
 def _is_empty(doc: ApartmentDoc) -> bool:

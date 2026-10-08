@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 DEFAULT_COLS = 50
 DEFAULT_ROWS = 40
 EMPTY_CELL = ".."
+CELL_CM = 20
 SURFACE_CODES = frozenset(
     {EMPTY_CELL, "t0", "t1", "t2", "t3", "w0", "w1", "w2", "c0", "c1", "c2", "c3", "b0"}
 )
@@ -17,6 +18,12 @@ FEATURE_CODES = frozenset({EMPTY_CELL, "wl", "wn", "dr", "fd"})
 MIN_SIDE = 5  # 1 m
 MAX_SIDE = 150  # 30 m
 LABEL_MAX = 40
+NAME_MAX = 40
+NOTE_MAX = 200
+SIDE_CM_MAX = 1000
+CUSTOM_MAX = 20  # squares on each side: 4 m
+PIECES_MAX = 300
+BULK_MAX = 100
 
 Shape = Literal["rectangle", "round", "oval", "egg", "custom"]
 Colour = Literal[
@@ -112,6 +119,22 @@ class PlanWriteRequest(BaseModel):
     surface: list[str]
     feature: list[str]
     labels: list[Label]
+
+
+class PieceDraft(BaseModel):
+    """A piece as the client sends it; the service cleans it into a `Furniture`."""
+
+    name: str
+    colour: Colour
+    note: str = ""
+    shape: Shape
+    width_cm: int = 0
+    depth_cm: int = 0
+    cells: list[str] | None = None
+
+
+class AddPiecesRequest(BaseModel):
+    pieces: list[PieceDraft] = Field(min_length=1, max_length=BULK_MAX)
 
 
 class AddMemberRequest(BaseModel):

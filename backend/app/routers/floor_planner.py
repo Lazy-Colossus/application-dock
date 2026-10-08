@@ -19,7 +19,9 @@ from fastapi.routing import APIRoute
 from app.core.dependencies import get_current_user
 from app.schemas.floor_planner import (
     AddMemberRequest,
+    AddPiecesRequest,
     ApartmentView,
+    PieceDraft,
     PlanWriteRequest,
     RevRequest,
 )
@@ -74,6 +76,25 @@ def replace_plan(
     req: PlanWriteRequest, current_user: str = Depends(get_current_user)
 ) -> ApartmentView:
     return service.replace_plan(current_user, req)
+
+
+@router.post("/apartment/furniture", response_model=ApartmentView)
+def add_pieces(
+    req: AddPiecesRequest, current_user: str = Depends(get_current_user)
+) -> ApartmentView:
+    return service.add_pieces(current_user, req.pieces)
+
+
+@router.put("/apartment/furniture/{piece_id}", response_model=ApartmentView)
+def update_piece(
+    piece_id: str, req: PieceDraft, current_user: str = Depends(get_current_user)
+) -> ApartmentView:
+    return service.update_piece(current_user, piece_id, req)
+
+
+@router.delete("/apartment/furniture/{piece_id}", response_model=ApartmentView)
+def delete_piece(piece_id: str, current_user: str = Depends(get_current_user)) -> ApartmentView:
+    return service.delete_piece(current_user, piece_id)
 
 
 @router.post("/apartment/members", response_model=ApartmentView)
