@@ -6,7 +6,7 @@ import type { Brush } from "../codes";
 import type { PieceDraft } from "../furniture";
 import { paint, resize, type Cell, type PlanGrid } from "../grid";
 import * as hist from "../history";
-import type { Apartment, Label } from "../types";
+import type { Apartment, Label, Placement } from "../types";
 
 const BASE = "/floor-planner/apartment";
 
@@ -119,6 +119,68 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
     write(() =>
       api.del<Apartment>(`${BASE}/furniture/${encodeURIComponent(id)}`),
     );
+
+  const layoutPath = (id: string) =>
+    `${BASE}/layouts/${encodeURIComponent(id)}`;
+
+  const createLayout = (name: string) =>
+    write(() => api.post<Apartment>(`${BASE}/layouts`, { name }));
+  const renameLayout = (id: string, name: string) =>
+    write(() => api.put<Apartment>(layoutPath(id), { name }));
+  const duplicateLayout = (id: string) =>
+    write(() => api.post<Apartment>(`${layoutPath(id)}/duplicate`));
+  const deleteLayout = (id: string) =>
+    write(() => api.del<Apartment>(layoutPath(id)));
+
+  /** The first free "Layout A".."Layout Z", so a new tab never repeats a name. */
+  function nextLayoutName(): string {
+    const taken = new Set((apartment.value?.layouts ?? []).map((l) => l.name));
+    for (let i = 0; i < 26; i++) {
+      const name = `Layout ${String.fromCharCode(65 + i)}`;
+      if (!taken.has(name)) return name;
+    }
+    return `Layout ${taken.size + 1}`;
+  }
+
+  /** Applies a placement change locally before the request, so a moved piece never jumps back. */
+  function editPlacements(
+    layoutId: string,
+    change: (placements: Placement[]) => Placement[],
+  ): void {
+    const layout = apartment.value?.layouts.find((l) => l.id === layoutId);
+    if (layout) layout.placements = change(layout.placements);
+  }
+
+  function placePiece(
+    layoutId: string,
+    furnitureId: string,
+    at: Pick<Placement, "x_cm" | "y_cm" | "rotation">,
+  ): Promise<boolean> {
+    editPlacements(layoutId, (ps) => [
+      ...ps.filter((p) => p.furniture_id !== furnitureId),
+      { furniture_id: furnitureId, ...at },
+    ]);
+    return write(() =>
+      api.put<Apartment>(
+        `${layoutPath(layoutId)}/placements/${encodeURIComponent(furnitureId)}`,
+        { ...at },
+      ),
+    );
+  }
+
+  function removePlacement(
+    layoutId: string,
+    furnitureId: string,
+  ): Promise<boolean> {
+    editPlacements(layoutId, (ps) =>
+      ps.filter((p) => p.furniture_id !== furnitureId),
+    );
+    return write(() =>
+      api.del<Apartment>(
+        `${layoutPath(layoutId)}/placements/${encodeURIComponent(furnitureId)}`,
+      ),
+    );
+  }
 
   /** How many layouts place the piece, for the delete confirmation. */
   function placedIn(id: string): number {
@@ -252,6 +314,13 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
     updatePiece,
     deletePiece,
     placedIn,
+    createLayout,
+    renameLayout,
+    duplicateLayout,
+    deleteLayout,
+    nextLayoutName,
+    placePiece,
+    removePlacement,
     leave,
     fetchRoster,
     dismissNotice,

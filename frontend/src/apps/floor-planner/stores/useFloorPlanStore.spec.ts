@@ -286,3 +286,100 @@ describe("furniture", () => {
     expect(store.plan?.feature[0].slice(0, 2)).toBe("wl");
   });
 });
+
+describe("layouts and placements", () => {
+  const spot = { x_cm: 100, y_cm: 200, rotation: 90 as const };
+
+  function arranged() {
+    const store = useFloorPlanStore();
+    store.apartment = apartment({
+      locked: true,
+      layouts: [
+        {
+          id: "l_a",
+          name: "Layout A",
+          placements: [
+            { furniture_id: "f_bed", x_cm: 0, y_cm: 0, rotation: 0 },
+          ],
+        },
+      ],
+    });
+    return store;
+  }
+
+  it("moves a piece on screen before the server answers", async () => {
+    const store = arranged();
+    let answer: (a: Apartment) => void = () => {};
+    putMock.mockReturnValue(new Promise<Apartment>((r) => (answer = r)));
+    const pending = store.placePiece("l_a", "f_sofa", spot);
+    expect(store.apartment?.layouts[0].placements).toEqual([
+      { furniture_id: "f_bed", x_cm: 0, y_cm: 0, rotation: 0 },
+      { furniture_id: "f_sofa", ...spot },
+    ]);
+    expect(putMock).toHaveBeenCalledWith(
+      "/floor-planner/apartment/layouts/l_a/placements/f_sofa",
+      spot,
+    );
+    answer(store.apartment!);
+    expect(await pending).toBe(true);
+  });
+
+  it("snaps back to the server's truth when a move is refused", async () => {
+    const store = arranged();
+    putMock.mockRejectedValue(
+      new FakeApiError(422, "Keep the piece on the plan"),
+    );
+    getMock.mockResolvedValue(
+      apartment({ layouts: [{ id: "l_a", name: "Layout A", placements: [] }] }),
+    );
+    expect(await store.placePiece("l_a", "f_sofa", spot)).toBe(false);
+    expect(store.error).toBe("Keep the piece on the plan");
+    expect(store.apartment?.layouts[0].placements).toEqual([]);
+  });
+
+  it("sends a piece back to the tray at once", async () => {
+    const store = arranged();
+    delMock.mockResolvedValue(store.apartment);
+    const pending = store.removePlacement("l_a", "f_bed");
+    expect(store.apartment?.layouts[0].placements).toEqual([]);
+    await pending;
+    expect(delMock).toHaveBeenCalledWith(
+      "/floor-planner/apartment/layouts/l_a/placements/f_bed",
+    );
+  });
+
+  it("names a new layout after the first free letter", () => {
+    const store = arranged();
+    expect(store.nextLayoutName()).toBe("Layout B");
+    store.apartment!.layouts.push({
+      id: "l_c",
+      name: "Layout B",
+      placements: [],
+    });
+    expect(store.nextLayoutName()).toBe("Layout C");
+  });
+
+  it("calls the layout routes", async () => {
+    const store = arranged();
+    postMock.mockResolvedValue(store.apartment);
+    putMock.mockResolvedValue(store.apartment);
+    delMock.mockResolvedValue(store.apartment);
+    await store.createLayout("Layout B");
+    await store.renameLayout("l_a", "Window");
+    await store.duplicateLayout("l_a");
+    await store.deleteLayout("l_a");
+    expect(postMock.mock.calls.map((c) => c[0])).toEqual([
+      "/floor-planner/apartment/layouts",
+      "/floor-planner/apartment/layouts/l_a/duplicate",
+    ]);
+    expect(putMock).toHaveBeenCalledWith(
+      "/floor-planner/apartment/layouts/l_a",
+      {
+        name: "Window",
+      },
+    );
+    expect(delMock).toHaveBeenCalledWith(
+      "/floor-planner/apartment/layouts/l_a",
+    );
+  });
+});
