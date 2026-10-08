@@ -217,7 +217,7 @@ describe("PlanPage", () => {
       .get("[data-testid=plan-canvas]")
       .trigger("pointerdown", at(5, 5));
     await wrapper.get("[data-testid=label-text]").setValue("Hall");
-    await wrapper.get("[data-testid=label-dialog]").trigger("submit");
+    await wrapper.get("[data-testid=label-dialog] form").trigger("submit");
     expect(useFloorPlanStore().plan?.labels).toMatchObject([
       { text: "Hall", col: 5, row: 5 },
     ]);

@@ -2,6 +2,7 @@
   <q-page
     ref="root"
     class="fp floor-planner-app"
+    :style-fn="fitWindow"
     tabindex="-1"
     @keydown="onKey"
   >
@@ -213,6 +214,11 @@ const root = ref<ComponentPublicInstance | null>(null);
 const locked = computed(() => store.apartment?.locked ?? false);
 const drawing = computed(() => mode.value === "draw" && !locked.value);
 
+/** Exactly the window below the shell bar, so the status bar never scrolls out of view. */
+function fitWindow(offset: number, height: number): Record<string, string> {
+  return { height: `${height - offset}px` };
+}
+
 function newLabel(cell: Cell): void {
   labelEdit.value = { id: null, cell, text: "" };
 }
@@ -389,16 +395,19 @@ onBeforeUnmount(() =>
   background: var(--fp-warn-bg);
   color: var(--fp-warn-ink);
 }
+// No wrapping: the screen is laptop-first, and a wrapped row would size to its
+// content and push the panels under the status bar instead of scrolling them.
 .fp__body {
   flex: 1;
+  min-height: 0;
   display: flex;
-  flex-wrap: wrap;
 }
 .fp__panel {
   flex: 0 1 252px;
   min-width: 220px;
   padding: 16px;
   box-sizing: border-box;
+  overflow-y: auto;
   background: var(--fp-panel);
 }
 .fp__panel--left {

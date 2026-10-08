@@ -1,46 +1,48 @@
 <template>
-  <form
-    class="label-dialog floor-planner-panel"
+  <div
+    class="floor-planner-panel label-dialog__card"
     data-testid="label-dialog"
-    @submit.prevent="save"
   >
-    <h2 class="label-dialog__title">
-      {{ editing ? "Room label" : "New room label" }}
-    </h2>
-    <label class="label-dialog__field">
-      Name
-      <input
-        ref="input"
-        v-model="text"
-        maxlength="40"
-        placeholder="e.g. Living room"
-        data-testid="label-text"
-      />
-    </label>
-    <div class="label-dialog__actions">
-      <button
-        v-if="editing"
-        type="button"
-        class="fp-button label-dialog__delete"
-        data-testid="label-remove"
-        @click="emit('remove')"
-      >
-        Delete
-      </button>
-      <span class="label-dialog__spacer" />
-      <button type="button" class="fp-button" @click="emit('cancel')">
-        Cancel
-      </button>
-      <button
-        type="submit"
-        class="fp-button fp-button--primary"
-        :disabled="text.trim() === ''"
-        data-testid="label-save"
-      >
-        Save
-      </button>
-    </div>
-  </form>
+    <!-- A div root: Quasar only gives a dialog's direct div children pointer events. -->
+    <form class="label-dialog" @submit.prevent="save">
+      <h2 class="label-dialog__title">
+        {{ editing ? "Room label" : "New room label" }}
+      </h2>
+      <label class="label-dialog__field">
+        Name
+        <input
+          ref="input"
+          v-model="text"
+          maxlength="40"
+          placeholder="e.g. Living room"
+          data-testid="label-text"
+        />
+      </label>
+      <div class="label-dialog__actions">
+        <button
+          v-if="editing"
+          type="button"
+          class="fp-button label-dialog__delete"
+          data-testid="label-remove"
+          @click="emit('remove')"
+        >
+          Delete
+        </button>
+        <span class="label-dialog__spacer" />
+        <button type="button" class="fp-button" @click="emit('cancel')">
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="fp-button fp-button--primary"
+          :disabled="text.trim() === ''"
+          data-testid="label-save"
+        >
+          Save
+        </button>
+      </div>
+    </form>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -67,6 +69,9 @@ function save(): void {
 </script>
 
 <style scoped lang="scss">
+.label-dialog__card {
+  border-radius: 8px;
+}
 .label-dialog {
   display: flex;
   flex-direction: column;
