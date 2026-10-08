@@ -223,3 +223,17 @@ export function labelAtCell(
 }
 
 export const ZOOM_LEVELS = [0.5, 0.75, 1, 1.5, 2];
+
+/** The unclamped plan position under a screen point, in cm. */
+export function cmAt(
+  clientX: number,
+  clientY: number,
+  rect: { left: number; top: number },
+  zoom: number,
+): { x: number; y: number } {
+  const scale = PX_PER_CM * zoom;
+  return {
+    x: (clientX - rect.left) / scale - RULER_CM,
+    y: (clientY - rect.top) / scale - RULER_CM,
+  };
+}

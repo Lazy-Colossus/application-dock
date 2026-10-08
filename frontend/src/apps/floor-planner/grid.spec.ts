@@ -9,6 +9,7 @@ import {
 } from "./codes";
 import {
   cellAt,
+  cmAt,
   codeAt,
   emptyRows,
   labelAtCell,
@@ -229,5 +230,18 @@ describe("labelAtCell", () => {
     expect(labelAtCell(labels, { col: 5, row: 3 }, 1)?.id).toBe("a");
     expect(labelAtCell(labels, { col: 2, row: 4 }, 1)).toBeNull();
     expect(labelAtCell(labels, { col: 1, row: 3 }, 1)).toBeNull();
+  });
+});
+
+describe("cmAt", () => {
+  it("is the plan position in cm under a point, at any zoom", () => {
+    expect(cmAt(100 + 32, 50 + 32, { left: 100, top: 50 }, 1)).toEqual({
+      x: 0,
+      y: 0,
+    });
+    expect(cmAt(100 + 64 + 80, 50 + 64, { left: 100, top: 50 }, 2)).toEqual({
+      x: 50,
+      y: 0,
+    });
   });
 });
