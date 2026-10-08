@@ -364,8 +364,12 @@ let pieceDrag: {
 /** Where the piece being dragged is drawn until it's dropped. */
 const dragPos = ref<{ id: string; x: number; y: number } | null>(null);
 
+/** The selected piece is drawn last, so it's never hidden under another one. */
 const shown = computed(() =>
-  props.placed.map((p) => {
+  [
+    ...props.placed.filter((p) => p.piece.id !== props.selectedId),
+    ...props.placed.filter((p) => p.piece.id === props.selectedId),
+  ].map((p) => {
     const moved = dragPos.value?.id === p.piece.id ? dragPos.value : null;
     const placement = moved
       ? { ...p.placement, x_cm: moved.x, y_cm: moved.y }
