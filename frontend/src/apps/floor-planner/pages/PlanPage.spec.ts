@@ -320,4 +320,160 @@ describe("PlanPage", () => {
       expect(wrapper.find("[data-testid=bulk-dialog]").exists()).toBe(false);
     });
   });
+
+  describe("arrange mode", () => {
+    const sofa: Furniture = {
+      id: "f_sofa",
+      name: "Sofa",
+      colour: "grey",
+      note: "",
+      shape: "rectangle",
+      width_cm: 100,
+      depth_cm: 40,
+      cells: null,
+    };
+    const bed: Furniture = { ...sofa, id: "f_bed", name: "Bed" };
+
+    function arranged(over: Partial<Apartment> = {}) {
+      const surface = Array.from({ length: 40 }, () => "w1".repeat(50));
+      return apartment({
+        locked: true,
+        surface,
+        furniture: [sofa, bed],
+        layouts: [
+          {
+            id: "l_a",
+            name: "Layout A",
+            placements: [
+              { furniture_id: "f_bed", x_cm: 200, y_cm: 200, rotation: 0 },
+            ],
+          },
+        ],
+        ...over,
+      });
+    }
+
+    async function arrange(a: Apartment = arranged()) {
+      const wrapper = await page(a);
+      await wrapper.get("[data-testid=mode-arrange]").trigger("click");
+      return wrapper;
+    }
+
+    it("asks for a locked plan, and locks from the tray", async () => {
+      const wrapper = await arrange(arranged({ locked: false }));
+      expect(wrapper.find("[data-testid=tray-lock]").exists()).toBe(true);
+      postMock.mockResolvedValue(arranged());
+      await wrapper.get("[data-testid=tray-lock] button").trigger("click");
+      await flushPromises();
+      expect(postMock).toHaveBeenCalledWith("/floor-planner/apartment/lock", {
+        base_rev: 2,
+      });
+    });
+
+    it("lists the tray and places a dropped piece centred under the cursor", async () => {
+      const wrapper = await arrange();
+      expect(wrapper.find("[data-testid=tray-f_sofa]").exists()).toBe(true);
+      expect(wrapper.find("[data-testid=tray-f_bed]").exists()).toBe(false);
+      putMock.mockResolvedValue(
+        arranged({
+          layouts: [
+            {
+              id: "l_a",
+              name: "Layout A",
+              placements: [
+                { furniture_id: "f_bed", x_cm: 200, y_cm: 200, rotation: 0 },
+                { furniture_id: "f_sofa", x_cm: 250, y_cm: 100, rotation: 0 },
+              ],
+            },
+          ],
+        }),
+      );
+      const dataTransfer = {
+        types: ["application/x-fp-piece"],
+        getData: () => "f_sofa",
+      };
+      // Plan point (303, 122) cm at 100 %: the 40 cm ruler, then 0.8 px per cm.
+      await wrapper.get("[data-testid=plan-canvas]").trigger("drop", {
+        clientX: (40 + 303) * 0.8,
+        clientY: (40 + 122) * 0.8,
+        dataTransfer,
+      });
+      expect(putMock).toHaveBeenCalledWith(
+        "/floor-planner/apartment/layouts/l_a/placements/f_sofa",
+        { x_cm: 250, y_cm: 100, rotation: 0 },
+      );
+      expect(wrapper.find("[data-testid=placement-inspector]").exists()).toBe(
+        true,
+      );
+    });
+
+    it("rotates the selected piece with R and sends it back to the tray", async () => {
+      const wrapper = await arrange();
+      await wrapper.get("[data-testid=on-plan-f_bed]").trigger("click");
+      putMock.mockResolvedValue(arranged());
+      await wrapper.trigger("keydown", { key: "r" });
+      expect(putMock).toHaveBeenCalledWith(
+        "/floor-planner/apartment/layouts/l_a/placements/f_bed",
+        { furniture_id: "f_bed", x_cm: 200, y_cm: 200, rotation: 90 },
+      );
+      delMock.mockResolvedValue(arranged());
+      await wrapper.get("[data-testid=back-to-tray]").trigger("click");
+      expect(delMock).toHaveBeenCalledWith(
+        "/floor-planner/apartment/layouts/l_a/placements/f_bed",
+      );
+      expect(wrapper.find("[data-testid=arrange-hint]").exists()).toBe(true);
+    });
+
+    it("warns about a piece across a wall in the inspector", async () => {
+      const feature = Array.from({ length: 40 }, () => "..".repeat(50));
+      feature[11] = "wl".repeat(50);
+      const wrapper = await arrange(arranged({ feature }));
+      await wrapper.get("[data-testid=on-plan-f_bed]").trigger("click");
+      expect(wrapper.get("[data-testid=inspector-warnings]").text()).toContain(
+        "Overlaps a wall.",
+      );
+      expect(wrapper.find("[data-testid=piece-warned]").exists()).toBe(true);
+    });
+
+    it("creates, duplicates and keeps the last layout", async () => {
+      const wrapper = await arrange();
+      expect(
+        wrapper.get("[data-testid=layout-delete]").attributes("disabled"),
+      ).toBeDefined();
+      const withB = arranged({
+        layouts: [
+          { id: "l_a", name: "Layout A", placements: [] },
+          { id: "l_b", name: "Layout B", placements: [] },
+        ],
+      });
+      postMock.mockResolvedValue(withB);
+      await wrapper.get("[data-testid=layout-create]").trigger("click");
+      await flushPromises();
+      expect(postMock).toHaveBeenCalledWith(
+        "/floor-planner/apartment/layouts",
+        {
+          name: "Layout B",
+        },
+      );
+      expect(
+        wrapper.get("[data-testid=layout-l_b]").attributes("aria-selected"),
+      ).toBe("true");
+      postMock.mockResolvedValue(
+        arranged({
+          layouts: [
+            ...withB.layouts,
+            { id: "l_c", name: "Layout B copy", placements: [] },
+          ],
+        }),
+      );
+      await wrapper.get("[data-testid=layout-duplicate]").trigger("click");
+      await flushPromises();
+      expect(postMock).toHaveBeenLastCalledWith(
+        "/floor-planner/apartment/layouts/l_b/duplicate",
+      );
+      expect(
+        wrapper.get("[data-testid=layout-l_c]").attributes("aria-selected"),
+      ).toBe("true");
+    });
+  });
 });

@@ -113,6 +113,16 @@
           @add="startAdding"
           @bulk="bulkOpen = true"
         />
+        <LayoutTray
+          v-else
+          :pieces="trayPieces"
+          :placed="placedPieces"
+          :layout-name="activeLayout?.name ?? ''"
+          :selected-id="selectedPlacedId"
+          :locked="locked"
+          @select="selectedPlacedId = $event"
+          @lock="store.lockWithSave()"
+        />
       </aside>
       <section class="fp__plan" data-testid="fp-plan">
         <div class="fp__sheet">
@@ -129,6 +139,13 @@
             @label-at="newLabel"
             @label-pick="editLabel"
             @label-move="store.moveLabel"
+            :placed="mode === 'arrange' ? placed : []"
+            :selected-id="selectedPlacedId"
+            :arranging="arranging"
+            :droppable="arranging"
+            @select="selectedPlacedId = $event"
+            @move="movePiece"
+            @drop="dropPiece"
           />
         </div>
       </section>
@@ -155,6 +172,25 @@
             Select a piece to edit it, or add one.
           </p>
         </template>
+        <template v-else>
+          <PlacementInspector
+            v-if="selectedPlaced"
+            :piece="selectedPlaced.piece"
+            :placement="selectedPlaced.placement"
+            :warnings="selectedWarnings"
+            @rotate="rotateSelected"
+            @back="backToTray"
+          />
+          <template v-else>
+            <p class="fp__hint" data-testid="arrange-hint">
+              Select a piece on the plan, or drag one from the tray.
+            </p>
+            <div class="fp__scale-card">
+              <span class="fp-mono">1 square = 20 cm</span>
+              <span>Pieces snap to 10 cm.</span>
+            </div>
+          </template>
+        </template>
       </aside>
     </div>
 
@@ -166,7 +202,18 @@
       :saving="store.loading"
       @save="store.savePlan()"
       @discard="discard"
-    />
+    >
+      <LayoutTabs
+        v-if="mode === 'arrange' && store.apartment"
+        :layouts="store.apartment.layouts"
+        :active-id="activeLayout?.id ?? null"
+        @select="switchLayout"
+        @create="createLayout"
+        @duplicate="duplicateLayout"
+        @rename="layoutRenaming = true"
+        @remove="deleteLayout"
+      />
+    </StatusBar>
 
     <q-dialog
       :model-value="labelEdit !== null"
@@ -181,6 +228,18 @@
         @save="saveLabel"
         @remove="removeLabel"
         @cancel="labelEdit = null"
+      />
+    </q-dialog>
+
+    <q-dialog v-model="layoutRenaming">
+      <NameDialog
+        v-if="layoutRenaming && activeLayout"
+        title="Rename layout"
+        :initial="activeLayout.name"
+        placeholder="e.g. Sofa by the window"
+        :can-delete="false"
+        @save="renameLayout"
+        @cancel="layoutRenaming = false"
       />
     </q-dialog>
 
@@ -215,6 +274,9 @@ import { onBeforeRouteLeave } from "vue-router";
 import BulkAddDialog from "../components/BulkAddDialog.vue";
 import DrawPanel from "../components/DrawPanel.vue";
 import FurnitureList from "../components/FurnitureList.vue";
+import LayoutTabs from "../components/LayoutTabs.vue";
+import LayoutTray from "../components/LayoutTray.vue";
+import PlacementInspector from "../components/PlacementInspector.vue";
 import PieceForm from "../components/PieceForm.vue";
 import MembersDialog from "../components/MembersDialog.vue";
 import NameDialog from "../components/NameDialog.vue";
@@ -223,9 +285,15 @@ import PlanInfoPanel from "../components/PlanInfoPanel.vue";
 import StatusBar from "../components/StatusBar.vue";
 import { DEFAULT_BRUSH, type Brush } from "../codes";
 import type { PieceDraft } from "../furniture";
+import {
+  topLeftForCentre,
+  warningText,
+  warnings,
+  type Placed,
+} from "../geometry";
 import type { Cell } from "../grid";
 import { useFloorPlanStore } from "../stores/useFloorPlanStore";
-import type { Mode } from "../types";
+import type { Mode, Rotation } from "../types";
 import "../css/floor-planner.sass";
 
 const modes: { id: Mode; label: string }[] = [
@@ -256,6 +324,138 @@ const selectedPiece = computed(
   () =>
     store.apartment?.furniture.find((p) => p.id === selectedId.value) ?? null,
 );
+
+const activeLayoutId = ref<string | null>(null);
+const selectedPlacedId = ref<string | null>(null);
+const layoutRenaming = ref(false);
+
+const arranging = computed(() => mode.value === "arrange" && locked.value);
+/** Falls back to the first layout if the chosen one was deleted, here or elsewhere. */
+const activeLayout = computed(() => {
+  const layouts = store.apartment?.layouts ?? [];
+  return (
+    layouts.find((l) => l.id === activeLayoutId.value) ?? layouts[0] ?? null
+  );
+});
+const furnitureById = computed(
+  () => new Map((store.apartment?.furniture ?? []).map((p) => [p.id, p])),
+);
+const placedRaw = computed<Placed[]>(() =>
+  (activeLayout.value?.placements ?? []).flatMap((placement) => {
+    const piece = furnitureById.value.get(placement.furniture_id);
+    return piece ? [{ piece, placement }] : [];
+  }),
+);
+const placed = computed(() =>
+  placedRaw.value.map((p) => ({
+    ...p,
+    warned: store.plan
+      ? warnings(p, store.plan, placedRaw.value).length > 0
+      : false,
+  })),
+);
+const placedIds = computed(
+  () => new Set(placedRaw.value.map((p) => p.piece.id)),
+);
+const trayPieces = computed(() =>
+  (store.apartment?.furniture ?? []).filter((p) => !placedIds.value.has(p.id)),
+);
+const placedPieces = computed(() => placedRaw.value.map((p) => p.piece));
+const selectedPlaced = computed(
+  () =>
+    placedRaw.value.find((p) => p.piece.id === selectedPlacedId.value) ?? null,
+);
+const selectedWarnings = computed(() =>
+  selectedPlaced.value && store.plan
+    ? warnings(selectedPlaced.value, store.plan, placedRaw.value).map(
+        warningText,
+      )
+    : [],
+);
+
+watch([mode, () => activeLayout.value?.id], () => {
+  selectedPlacedId.value = null;
+});
+
+function dropPiece(id: string, cx: number, cy: number): void {
+  const piece = furnitureById.value.get(id);
+  if (!piece || !activeLayout.value) return;
+  const { x, y } = topLeftForCentre(piece, cx, cy);
+  store.placePiece(activeLayout.value.id, id, {
+    x_cm: x,
+    y_cm: y,
+    rotation: 0,
+  });
+  selectedPlacedId.value = id;
+}
+
+function movePiece(id: string, x: number, y: number): void {
+  const current = placedRaw.value.find((p) => p.piece.id === id);
+  if (!current || !activeLayout.value) return;
+  store.placePiece(activeLayout.value.id, id, {
+    x_cm: x,
+    y_cm: y,
+    rotation: current.placement.rotation,
+  });
+}
+
+function rotateSelected(delta: -90 | 90): void {
+  const sel = selectedPlaced.value;
+  if (!sel || !activeLayout.value) return;
+  const rotation = ((sel.placement.rotation + delta + 360) % 360) as Rotation;
+  store.placePiece(activeLayout.value.id, sel.piece.id, {
+    ...sel.placement,
+    rotation,
+  });
+}
+
+function backToTray(): void {
+  const sel = selectedPlaced.value;
+  if (!sel || !activeLayout.value) return;
+  store.removePlacement(activeLayout.value.id, sel.piece.id);
+  selectedPlacedId.value = null;
+}
+
+function switchLayout(id: string): void {
+  activeLayoutId.value = id;
+}
+
+/** A created or duplicated layout is the last one in the returned list. */
+function showNewest(): void {
+  const layouts = store.apartment?.layouts ?? [];
+  activeLayoutId.value = layouts[layouts.length - 1]?.id ?? null;
+}
+
+async function createLayout(): Promise<void> {
+  if (await store.createLayout(store.nextLayoutName())) showNewest();
+}
+
+async function duplicateLayout(): Promise<void> {
+  if (
+    activeLayout.value &&
+    (await store.duplicateLayout(activeLayout.value.id))
+  ) {
+    showNewest();
+  }
+}
+
+async function renameLayout(name: string): Promise<void> {
+  if (activeLayout.value) await store.renameLayout(activeLayout.value.id, name);
+  layoutRenaming.value = false;
+}
+
+async function deleteLayout(): Promise<void> {
+  const layout = activeLayout.value;
+  if (
+    layout &&
+    window.confirm(
+      `Delete ${layout.name}? Its arrangement is lost; the furniture stays.`,
+    ) &&
+    (await store.deleteLayout(layout.id))
+  ) {
+    activeLayoutId.value = null;
+  }
+}
 
 function selectPiece(id: string): void {
   selectedId.value = id;
@@ -332,6 +532,14 @@ function discard(): void {
 function onKey(e: KeyboardEvent): void {
   const target = e.target as HTMLElement | null;
   if (target?.closest("input, textarea")) return;
+  if (arranging.value) {
+    if (e.key === "Escape") selectedPlacedId.value = null;
+    else if (e.key.toLowerCase() === "r" && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault();
+      rotateSelected(e.shiftKey ? -90 : 90);
+    }
+    return;
+  }
   if (
     !drawing.value ||
     !(e.metaKey || e.ctrlKey) ||
@@ -379,6 +587,22 @@ onBeforeUnmount(() =>
   flex-direction: column;
   background: var(--fp-ground);
   outline: none;
+}
+.fp__scale-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid var(--fp-line);
+  border-radius: 8px;
+  background: var(--fp-chrome);
+  font-size: 12px;
+  color: var(--fp-muted);
+}
+.fp__scale-card .fp-mono {
+  font-size: 14px;
+  color: var(--fp-ink);
 }
 .fp__hint {
   margin: 0;
