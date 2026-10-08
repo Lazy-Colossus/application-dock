@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, postMock, putMock, FakeApiError } = vi.hoisted(() => {
+const { getMock, postMock, putMock, delMock, FakeApiError } = vi.hoisted(() => {
   class FakeApiError extends Error {
     constructor(
       readonly status: number,
@@ -14,16 +14,18 @@ const { getMock, postMock, putMock, FakeApiError } = vi.hoisted(() => {
     getMock: vi.fn(),
     postMock: vi.fn(),
     putMock: vi.fn(),
+    delMock: vi.fn(),
     FakeApiError,
   };
 });
 vi.mock("@/composables/useApi", () => ({
   ApiError: FakeApiError,
-  api: { get: getMock, post: postMock, put: putMock, del: vi.fn() },
+  api: { get: getMock, post: postMock, put: putMock, del: delMock },
 }));
 
 import { useFloorPlanStore } from "./useFloorPlanStore";
 import type { Apartment } from "../types";
+import type { PieceDraft } from "../furniture";
 import { FLOORS, STRUCTURE, floorBrush, structureBrush } from "../codes";
 import { emptyRows } from "../grid";
 
@@ -210,5 +212,77 @@ describe("the plan draft", () => {
     store.resizePlan(40, 40);
     expect(store.plan?.labels).toEqual([]);
     expect(store.plan?.surface[0]).toHaveLength(80);
+  });
+});
+
+describe("furniture", () => {
+  const sofa: PieceDraft = {
+    name: "Sofa",
+    colour: "grey",
+    note: "",
+    shape: "rectangle",
+    width_cm: 220,
+    depth_cm: 95,
+    cells: null,
+  };
+
+  it("adds a whole bulk list in one call", async () => {
+    const store = useFloorPlanStore();
+    store.apartment = apartment();
+    postMock.mockResolvedValue(apartment({ rev: 4 }));
+    await store.addPieces([sofa, { ...sofa, name: "Chair" }]);
+    expect(postMock).toHaveBeenCalledTimes(1);
+    expect(postMock).toHaveBeenCalledWith(
+      "/floor-planner/apartment/furniture",
+      {
+        pieces: [sofa, { ...sofa, name: "Chair" }],
+      },
+    );
+  });
+
+  it("reloads when the piece being edited is gone", async () => {
+    const store = useFloorPlanStore();
+    store.apartment = apartment();
+    putMock.mockRejectedValue(
+      new FakeApiError(404, "That piece is gone — someone deleted it"),
+    );
+    getMock.mockResolvedValue(apartment({ rev: 5 }));
+    expect(await store.updatePiece("f_1", sofa)).toBe(false);
+    expect(store.error).toBe("That piece is gone — someone deleted it");
+    expect(store.apartment?.rev).toBe(5);
+  });
+
+  it("deletes by id", async () => {
+    const store = useFloorPlanStore();
+    store.apartment = apartment();
+    delMock.mockResolvedValue(apartment());
+    await store.deletePiece("f_1");
+    expect(delMock).toHaveBeenCalledWith(
+      "/floor-planner/apartment/furniture/f_1",
+    );
+  });
+
+  it("counts the layouts a piece is placed in", () => {
+    const store = useFloorPlanStore();
+    const at = { furniture_id: "f_1", x_cm: 0, y_cm: 0, rotation: 0 as const };
+    store.apartment = apartment({
+      layouts: [
+        { id: "l_a", name: "A", placements: [at] },
+        { id: "l_b", name: "B", placements: [] },
+        { id: "l_c", name: "C", placements: [at] },
+      ],
+    });
+    expect(store.placedIn("f_1")).toBe(2);
+    expect(store.placedIn("f_2")).toBe(0);
+  });
+
+  it("leaves an open plan drawing alone", async () => {
+    const store = useFloorPlanStore();
+    store.apartment = apartment();
+    store.applyStroke([{ col: 0, row: 0 }], structureBrush(STRUCTURE[0]));
+    postMock.mockResolvedValue(apartment({ rev: 4 }));
+    await store.addPieces([sofa]);
+    expect(store.dirty).toBe(true);
+    expect(store.plan?.feature[0].slice(0, 2)).toBe("wl");
   });
 });

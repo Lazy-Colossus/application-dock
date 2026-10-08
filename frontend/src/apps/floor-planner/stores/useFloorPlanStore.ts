@@ -3,6 +3,7 @@ import { defineStore } from "pinia";
 import { api, ApiError } from "@/composables/useApi";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { Brush } from "../codes";
+import type { PieceDraft } from "../furniture";
 import { paint, resize, type Cell, type PlanGrid } from "../grid";
 import * as hist from "../history";
 import type { Apartment, Label } from "../types";
@@ -105,6 +106,26 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
     write(() =>
       api.del<Apartment>(`${BASE}/members/${encodeURIComponent(username)}`),
     );
+
+  const addPieces = (pieces: PieceDraft[]) =>
+    write(() => api.post<Apartment>(`${BASE}/furniture`, { pieces }));
+  const updatePiece = (id: string, piece: PieceDraft) =>
+    write(() =>
+      api.put<Apartment>(`${BASE}/furniture/${encodeURIComponent(id)}`, {
+        ...piece,
+      }),
+    );
+  const deletePiece = (id: string) =>
+    write(() =>
+      api.del<Apartment>(`${BASE}/furniture/${encodeURIComponent(id)}`),
+    );
+
+  /** How many layouts place the piece, for the delete confirmation. */
+  function placedIn(id: string): number {
+    return (apartment.value?.layouts ?? []).filter((l) =>
+      l.placements.some((p) => p.furniture_id === id),
+    ).length;
+  }
 
   async function leave(): Promise<boolean> {
     const me = useAuthStore().username;
@@ -227,6 +248,10 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
     lockWithSave,
     addMember,
     removeMember,
+    addPieces,
+    updatePiece,
+    deletePiece,
+    placedIn,
     leave,
     fetchRoster,
     dismissNotice,
