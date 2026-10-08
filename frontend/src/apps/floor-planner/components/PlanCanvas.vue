@@ -14,6 +14,8 @@
     @pointerup="up"
     @pointercancel="cancel"
     @pointerleave="emit('hover', null)"
+    @dragover="dragOver"
+    @drop="dropped"
   >
     <defs>
       <pattern
@@ -170,6 +172,73 @@
     </text>
 
     <g
+      v-for="p in shown"
+      :key="p.piece.id"
+      class="plan-canvas__piece"
+      :class="{ 'plan-canvas__piece--movable': arranging }"
+      :data-testid="`placed-${p.piece.id}`"
+      @pointerdown.stop="pieceDown($event, p)"
+    >
+      <g :transform="pieceTransform(p)">
+        <template v-if="p.piece.shape === 'custom'">
+          <path :d="outline(p.piece, 1)" :fill="colourHex(p.piece.colour)" />
+          <path
+            :d="customEdges(p.piece.cells ?? [], 1)"
+            fill="none"
+            stroke="rgba(0,0,0,.45)"
+            :stroke-width="cmPerPx"
+          />
+        </template>
+        <path
+          v-else
+          :d="outline(p.piece, 1)"
+          :fill="colourHex(p.piece.colour)"
+          stroke="rgba(0,0,0,.45)"
+          :stroke-width="cmPerPx"
+        />
+      </g>
+      <rect
+        v-if="p.warned"
+        :x="p.box.x - 3 * cmPerPx"
+        :y="p.box.y - 3 * cmPerPx"
+        :width="p.box.w + 6 * cmPerPx"
+        :height="p.box.h + 6 * cmPerPx"
+        fill="none"
+        stroke="#c2410c"
+        stroke-width="2"
+        stroke-dasharray="5 3"
+        vector-effect="non-scaling-stroke"
+        pointer-events="none"
+        data-testid="piece-warned"
+      />
+      <rect
+        v-if="p.piece.id === selectedId"
+        :x="p.box.x"
+        :y="p.box.y"
+        :width="p.box.w"
+        :height="p.box.h"
+        fill="none"
+        stroke="#1d4ed8"
+        stroke-width="2"
+        vector-effect="non-scaling-stroke"
+        pointer-events="none"
+        data-testid="piece-selected"
+      />
+      <text
+        class="plan-canvas__piece-name"
+        :x="p.box.x + p.box.w / 2"
+        :y="p.box.y + p.box.h / 2"
+        :font-size="LABEL_PX * cmPerPx"
+        :stroke-width="3 * cmPerPx"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        pointer-events="none"
+      >
+        {{ p.piece.name }}
+      </text>
+    </g>
+
+    <g
       v-if="stroke.length && brush"
       pointer-events="none"
       data-testid="stroke-preview"
@@ -224,6 +293,9 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { BALCONY_PATTERN, brushName, fillFor, type Brush } from "../codes";
+import { PIECE_DRAG_TYPE, colourHex, customEdges, outline } from "../furniture";
+import { bounds as pieceBounds, snap, type Box } from "../geometry";
+import type { Furniture, Placement } from "../types";
 import {
   CELL_CM,
   LABEL_PX,
@@ -231,6 +303,7 @@ import {
   RULER_CM,
   bounds,
   cellAt,
+  cmAt,
   labelAtCell,
   lineCells,
   readout,
@@ -241,13 +314,28 @@ import {
   type PlanGrid,
 } from "../grid";
 
-const props = defineProps<{
-  plan: PlanGrid;
-  zoom: number;
-  editable: boolean;
-  brush: Brush | null;
-  shape: "freehand" | "rectangle";
-}>();
+interface PlacedPiece {
+  piece: Furniture;
+  placement: Placement;
+  warned: boolean;
+}
+
+const props = withDefaults(
+  defineProps<{
+    plan: PlanGrid;
+    zoom: number;
+    editable: boolean;
+    brush: Brush | null;
+    shape: "freehand" | "rectangle";
+    placed?: PlacedPiece[];
+    selectedId?: string | null;
+    /** Placed pieces can be selected and dragged. */
+    arranging?: boolean;
+    /** Tray cards can be dropped onto the plan. */
+    droppable?: boolean;
+  }>(),
+  { placed: () => [], selectedId: null, arranging: false, droppable: false },
+);
 
 const emit = defineEmits<{
   stroke: [cells: Cell[]];
@@ -256,6 +344,10 @@ const emit = defineEmits<{
   labelAt: [cell: Cell];
   labelPick: [id: string];
   labelMove: [id: string, cell: Cell];
+  select: [id: string | null];
+  move: [id: string, x: number, y: number];
+  /** A tray card dropped with its centre at (x, y) cm. */
+  drop: [id: string, x: number, y: number];
 }>();
 
 const svg = ref<SVGSVGElement | null>(null);
@@ -263,6 +355,69 @@ const stroke = ref<Cell[]>([]);
 let start: Cell | null = null;
 let last: Cell | null = null;
 let dragged: { id: string; from: Cell; to: Cell } | null = null;
+let pieceDrag: {
+  id: string;
+  grabX: number;
+  grabY: number;
+  from: Placement;
+} | null = null;
+/** Where the piece being dragged is drawn until it's dropped. */
+const dragPos = ref<{ id: string; x: number; y: number } | null>(null);
+
+const shown = computed(() =>
+  props.placed.map((p) => {
+    const moved = dragPos.value?.id === p.piece.id ? dragPos.value : null;
+    const placement = moved
+      ? { ...p.placement, x_cm: moved.x, y_cm: moved.y }
+      : p.placement;
+    return { ...p, placement, box: pieceBounds(p.piece, placement) };
+  }),
+);
+
+function pieceTransform(p: {
+  piece: Furniture;
+  placement: Placement;
+  box: Box;
+}): string {
+  const cx = p.box.x + p.box.w / 2;
+  const cy = p.box.y + p.box.h / 2;
+  return (
+    `translate(${cx} ${cy}) rotate(${p.placement.rotation}) ` +
+    `translate(${-p.piece.width_cm / 2} ${-p.piece.depth_cm / 2})`
+  );
+}
+
+function cmOf(e: PointerEvent | DragEvent): { x: number; y: number } {
+  const rect = svg.value?.getBoundingClientRect() ?? { left: 0, top: 0 };
+  return cmAt(e.clientX, e.clientY, rect, props.zoom);
+}
+
+function pieceDown(e: PointerEvent, p: PlacedPiece): void {
+  if (!props.arranging) return;
+  emit("select", p.piece.id);
+  const at = cmOf(e);
+  pieceDrag = {
+    id: p.piece.id,
+    grabX: at.x - p.placement.x_cm,
+    grabY: at.y - p.placement.y_cm,
+    from: p.placement,
+  };
+  svg.value?.setPointerCapture?.(e.pointerId);
+}
+
+function dragOver(e: DragEvent): void {
+  if (props.droppable && e.dataTransfer?.types.includes(PIECE_DRAG_TYPE)) {
+    e.preventDefault();
+  }
+}
+
+function dropped(e: DragEvent): void {
+  const id = e.dataTransfer?.getData(PIECE_DRAG_TYPE);
+  if (!props.droppable || !id) return;
+  e.preventDefault();
+  const at = cmOf(e);
+  emit("drop", id, at.x, at.y);
+}
 
 const widthCm = computed(() => props.plan.cols * CELL_CM);
 const heightCm = computed(() => props.plan.rows * CELL_CM);
@@ -309,6 +464,10 @@ function cellOf(e: PointerEvent): Cell | null {
 }
 
 function down(e: PointerEvent): void {
+  if (props.arranging) {
+    emit("select", null);
+    return;
+  }
   const cell = cellOf(e);
   if (!props.editable || !props.brush || !cell) return;
   svg.value?.setPointerCapture?.(e.pointerId);
@@ -326,6 +485,15 @@ function down(e: PointerEvent): void {
 function move(e: PointerEvent): void {
   const cell = cellOf(e);
   emit("hover", cell);
+  if (pieceDrag) {
+    const at = cmOf(e);
+    dragPos.value = {
+      id: pieceDrag.id,
+      x: snap(at.x - pieceDrag.grabX),
+      y: snap(at.y - pieceDrag.grabY),
+    };
+    return;
+  }
   if (!cell) return;
   if (dragged) {
     dragged.to = cell;
@@ -342,6 +510,15 @@ function move(e: PointerEvent): void {
 }
 
 function up(): void {
+  if (pieceDrag) {
+    const { id, from } = pieceDrag;
+    const to = dragPos.value;
+    pieceDrag = null;
+    dragPos.value = null;
+    if (to && (to.x !== from.x_cm || to.y !== from.y_cm))
+      emit("move", id, to.x, to.y);
+    return;
+  }
   if (dragged) {
     const { id, from, to } = dragged;
     dragged = null;
@@ -356,6 +533,8 @@ function up(): void {
 function cancel(): void {
   start = last = null;
   dragged = null;
+  pieceDrag = null;
+  dragPos.value = null;
   stroke.value = [];
   emit("preview", null);
 }
@@ -373,6 +552,17 @@ function cancel(): void {
 }
 .plan-canvas--editable {
   cursor: crosshair;
+}
+.plan-canvas__piece--movable {
+  cursor: grab;
+}
+.plan-canvas__piece-name {
+  fill: #1c1c1a;
+  font-family: var(--fp-sans);
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, 0.85);
+  stroke-linejoin: round;
 }
 .plan-canvas__label {
   fill: #2b2925;

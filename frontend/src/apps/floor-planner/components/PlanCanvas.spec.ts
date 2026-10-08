@@ -7,9 +7,10 @@ import {
   STRUCTURE,
   floorBrush,
   structureBrush,
-  type Brush,
 } from "../codes";
 import { emptyRows, type PlanGrid } from "../grid";
+import { PIECE_DRAG_TYPE } from "../furniture";
+import type { Furniture, Rotation } from "../types";
 
 const wall = structureBrush(STRUCTURE[0]);
 
@@ -25,12 +26,7 @@ function plan(over: Partial<PlanGrid> = {}): PlanGrid {
 }
 
 function canvas(
-  props: Partial<{
-    plan: PlanGrid;
-    editable: boolean;
-    brush: Brush | null;
-    shape: "freehand" | "rectangle";
-  }> = {},
+  props: Partial<InstanceType<typeof PlanCanvas>["$props"]> = {},
 ) {
   return mount(PlanCanvas, {
     props: {
@@ -149,6 +145,109 @@ describe("PlanCanvas", () => {
         "lb_1",
         { col: 5, row: 4 },
       ]);
+    });
+  });
+
+  describe("furniture", () => {
+    const sofa: Furniture = {
+      id: "f_sofa",
+      name: "Sofa",
+      colour: "grey",
+      note: "",
+      shape: "rectangle",
+      width_cm: 100,
+      depth_cm: 40,
+      cells: null,
+    };
+    const at = (x: number, y: number, rotation: Rotation = 0) => ({
+      piece: sofa,
+      placement: { furniture_id: "f_sofa", x_cm: x, y_cm: y, rotation },
+      warned: false,
+    });
+    /** A screen point at plan (x, y) cm at 100 %: the 40 cm ruler, then 0.8 px per cm. */
+    const px = (x: number, y: number) => ({
+      clientX: (40 + x) * 0.8,
+      clientY: (40 + y) * 0.8,
+      pointerId: 1,
+    });
+
+    function arranging(
+      placed = [at(40, 60)],
+      selectedId: string | null = null,
+    ) {
+      return canvas({
+        brush: null,
+        editable: false,
+        placed,
+        selectedId,
+        arranging: true,
+      });
+    }
+
+    it("draws each piece rotated about its centre with its name upright", () => {
+      const wrapper = canvas({ placed: [at(40, 60, 90)] });
+      const group = wrapper.get("[data-testid=placed-f_sofa]");
+      expect(group.get("g").attributes("transform")).toBe(
+        "translate(90 80) rotate(90) translate(-50 -20)",
+      );
+      expect(group.get("text").attributes("transform")).toBeUndefined();
+      expect(group.text()).toBe("Sofa");
+    });
+
+    it("marks the selected piece and a warned one", () => {
+      const wrapper = arranging([{ ...at(40, 60), warned: true }], "f_sofa");
+      expect(wrapper.find("[data-testid=piece-selected]").exists()).toBe(true);
+      expect(wrapper.find("[data-testid=piece-warned]").exists()).toBe(true);
+    });
+
+    it("drags a piece in 10 cm steps and emits one move on release", async () => {
+      const wrapper = arranging();
+      await wrapper
+        .get("[data-testid=placed-f_sofa]")
+        .trigger("pointerdown", px(60, 70));
+      await wrapper.get("svg").trigger("pointermove", px(97, 70));
+      expect(wrapper.emitted("move")).toBeUndefined();
+      await wrapper.get("svg").trigger("pointerup", px(97, 70));
+      expect(wrapper.emitted("select")?.[0]).toEqual(["f_sofa"]);
+      expect(wrapper.emitted("move")?.[0]).toEqual(["f_sofa", 80, 60]);
+    });
+
+    it("selects without moving on a plain click", async () => {
+      const wrapper = arranging();
+      await wrapper
+        .get("[data-testid=placed-f_sofa]")
+        .trigger("pointerdown", px(60, 70));
+      await wrapper.get("svg").trigger("pointerup", px(60, 70));
+      expect(wrapper.emitted("select")?.[0]).toEqual(["f_sofa"]);
+      expect(wrapper.emitted("move")).toBeUndefined();
+    });
+
+    it("deselects on empty plan", async () => {
+      const wrapper = arranging();
+      await wrapper.get("svg").trigger("pointerdown", px(400, 400));
+      expect(wrapper.emitted("select")?.[0]).toEqual([null]);
+    });
+
+    it("won't move pieces when not arranging", async () => {
+      const wrapper = canvas({ placed: [at(40, 60)] });
+      await wrapper
+        .get("[data-testid=placed-f_sofa]")
+        .trigger("pointerdown", px(60, 70));
+      await wrapper.get("svg").trigger("pointerup", px(160, 70));
+      expect(wrapper.emitted("move")).toBeUndefined();
+      expect(wrapper.emitted("select")).toBeUndefined();
+    });
+
+    it("takes a tray card dropped onto the plan, at its centre in cm", async () => {
+      const wrapper = canvas({ droppable: true });
+      const dataTransfer = {
+        types: [PIECE_DRAG_TYPE],
+        getData: (t: string) => (t === PIECE_DRAG_TYPE ? "f_sofa" : ""),
+      };
+      await wrapper
+        .get("svg")
+        .trigger("drop", { ...px(250, 120), dataTransfer });
+      expect(wrapper.emitted("drop")?.[0]).toEqual(["f_sofa", 250, 120]);
     });
   });
 });

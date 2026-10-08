@@ -133,3 +133,6 @@ export function customEdges(cells: string[], scale: number): string {
   );
   return parts.join(" ");
 }
+
+/** The drag-and-drop data type a tray card carries onto the plan. */
+export const PIECE_DRAG_TYPE = "application/x-fp-piece";
