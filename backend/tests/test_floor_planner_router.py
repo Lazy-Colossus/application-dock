@@ -24,6 +24,17 @@ def patch_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         auth_service.create_user(name)
 
 
+def _plan_body(base_rev: int = 0, cols: int = 5) -> dict:
+    return {
+        "base_rev": base_rev,
+        "cols": cols,
+        "rows": 5,
+        "surface": ["w1" * cols] * 5,
+        "feature": [".." * cols] * 5,
+        "labels": [],
+    }
+
+
 @pytest.fixture
 def base() -> str:
     return f"{ROOT}/{client.get(ROOT).json()[0]['id']}"
@@ -59,26 +70,19 @@ def test_apartments_are_created_renamed_duplicated_and_deleted(base: str) -> Non
 def test_someone_elses_apartment_is_404(base: str) -> None:
     app.dependency_overrides[get_current_user] = lambda: "bo"
     assert client.get(base).status_code == 404
-    assert client.post(f"{base}/lock", json={"base_rev": 0}).status_code == 404
-
-
-def test_lock_and_unlock_bump_rev(base: str) -> None:
-    locked = client.post(f"{base}/lock", json={"base_rev": 0})
-    assert locked.status_code == 200
-    assert (locked.json()["rev"], locked.json()["locked"]) == (1, True)
-    unlocked = client.post(f"{base}/unlock", json={"base_rev": 1}).json()
-    assert (unlocked["rev"], unlocked["locked"]) == (2, False)
+    assert client.put(f"{base}/plan", json=_plan_body()).status_code == 404
 
 
 def test_a_stale_write_is_409_naming_the_writer(base: str) -> None:
-    client.post(f"{base}/lock", json={"base_rev": 0})
-    r = client.post(f"{base}/lock", json={"base_rev": 0})
+    client.put(f"{base}/plan", json=_plan_body())
+    r = client.put(f"{base}/plan", json=_plan_body())
     assert r.status_code == 409
     assert r.json()["detail"] == "test_user changed this"
 
 
 def test_a_write_without_base_rev_is_422(base: str) -> None:
-    assert client.post(f"{base}/lock", json={}).status_code == 422
+    body = {k: v for k, v in _plan_body().items() if k != "base_rev"}
+    assert client.put(f"{base}/plan", json=body).status_code == 422
 
 
 def test_members_over_http(base: str) -> None:
@@ -99,26 +103,37 @@ def test_a_member_removing_the_owner_is_403(base: str) -> None:
     assert client.delete(f"{base}/members/test_user").status_code == 403
 
 
-def _plan_body(base_rev: int = 0, cols: int = 5) -> dict:
-    return {
-        "base_rev": base_rev,
-        "cols": cols,
-        "rows": 5,
-        "surface": ["w1" * cols] * 5,
-        "feature": [".." * cols] * 5,
-        "labels": [],
-    }
-
-
 def test_putting_the_plan(base: str) -> None:
     r = client.put(f"{base}/plan", json=_plan_body())
     assert r.status_code == 200
-    assert r.json()["surface"][0] == "w1" * 5
+    assert (r.json()["surface"][0], r.json()["rev"], r.json()["plan_rev"]) == ("w1" * 5, 1, 1)
     assert client.put(f"{base}/plan", json=_plan_body()).status_code == 409
     assert client.put(f"{base}/plan", json=_plan_body(1, cols=151)).status_code == 422
-    client.post(f"{base}/lock", json={"base_rev": 1})
-    locked = client.put(f"{base}/plan", json=_plan_body(2))
-    assert (locked.status_code, locked.json()["detail"]) == (422, "Unlock the plan to change it")
+    again = client.put(f"{base}/plan", json=_plan_body(1, cols=6))
+    assert (again.status_code, again.json()["plan_rev"]) == (200, 2)
+
+
+def _door_body(doors: list[dict]) -> dict:
+    body = _plan_body()
+    body["feature"] = ["dr" + ".." * 4] + [".." * 5] * 4
+    body["doors"] = doors
+    return body
+
+
+def test_door_settings_over_http(base: str) -> None:
+    door = {"col": 0, "row": 0, "into": 1, "hinge": 0, "double": True}
+    r = client.put(f"{base}/plan", json=_door_body([door, {**door, "col": 3}]))
+    assert (r.status_code, r.json()["doors"]) == (200, [door])
+    assert client.get(base).json()["doors"] == [door]
+
+
+def test_bad_door_settings_are_422(base: str) -> None:
+    door = {"col": 0, "row": 0, "into": 1, "hinge": 0}
+    twins = client.put(f"{base}/plan", json=_door_body([door, {**door, "hinge": 1}]))
+    assert twins.status_code == 422
+    assert "share a square" in twins.json()["detail"]
+    bad_into = client.put(f"{base}/plan", json=_door_body([{**door, "into": 2}]))
+    assert bad_into.status_code == 422
 
 
 def test_furniture_over_http(base: str) -> None:
@@ -139,10 +154,8 @@ def test_layouts_and_placements_over_http(base: str) -> None:
     apt = client.post(f"{base}/furniture", json={"pieces": [sofa]}).json()
     layout, piece = apt["layouts"][0]["id"], apt["furniture"][0]["id"]
     spot = {"x_cm": 100, "y_cm": 100, "rotation": 90}
-    unlocked = client.put(f"{base}/layouts/{layout}/placements/{piece}", json=spot)
-    assert unlocked.status_code == 422
-    client.post(f"{base}/lock", json={"base_rev": 0})
     placed = client.put(f"{base}/layouts/{layout}/placements/{piece}", json=spot)
+    assert placed.status_code == 200
     assert placed.json()["layouts"][0]["placements"][0]["rotation"] == 90
     assert client.put(f"{base}/layouts/l_gone/placements/{piece}", json=spot).status_code == 404
     copy = client.post(f"{base}/layouts/{layout}/duplicate").json()["layouts"][1]

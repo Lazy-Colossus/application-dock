@@ -7,7 +7,6 @@ function draw(
   over: Partial<{
     brush: Brush;
     shape: "freehand" | "rectangle";
-    locked: boolean;
     canUndo: boolean;
   }> = {},
 ) {
@@ -18,7 +17,6 @@ function draw(
       size: 1 as const,
       canUndo: true,
       canRedo: false,
-      locked: false,
       ...over,
     },
   });
@@ -66,14 +64,6 @@ describe("DrawPanel", () => {
     expect(wrapper.get("[data-testid=chip-t2]").classes()).toContain(
       "draw-panel__chip--on",
     );
-  });
-
-  it("disables everything on a locked plan", () => {
-    const wrapper = draw({ locked: true });
-    expect(wrapper.find("[data-testid=draw-locked]").exists()).toBe(true);
-    for (const b of wrapper.findAll("button")) {
-      expect(b.attributes("disabled")).toBeDefined();
-    }
   });
 
   it("follows canUndo / canRedo", () => {

@@ -11,13 +11,33 @@ export type Colour =
   | "yellow"
   | "green"
   | "blue"
-  | "purple";
+  | "purple"
+  | "tan"
+  | "pink"
+  | "navy"
+  | "teal"
+  | "olive"
+  | "charcoal";
 
-export type Rotation = 0 | 90 | 180 | 270;
+/** Whole degrees clockwise, 0–359. */
+export type Rotation = number;
 
 export type Mode = "draw" | "furniture" | "arrange";
 
 export type SaveState = "saving" | "unsaved" | "saved";
+
+/**
+ * A door's saved setup, keyed by its anchor: its first square in reading order.
+ * `into` 0 opens towards the side above (a door in a horizontal wall) or to the left (in a
+ * vertical wall), 1 below or right. `hinge` 0 is the left or top end, 1 the right or bottom.
+ */
+export interface DoorSetting {
+  col: number;
+  row: number;
+  into: 0 | 1;
+  hinge: 0 | 1;
+  double: boolean;
+}
 
 export interface Label {
   id: string;
@@ -70,7 +90,7 @@ export interface Apartment extends ApartmentSummary {
   surface: string[];
   feature: string[];
   labels: Label[];
-  locked: boolean;
+  doors: DoorSetting[];
   furniture: Furniture[];
   layouts: Layout[];
 }

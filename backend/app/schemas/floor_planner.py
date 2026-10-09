@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -16,6 +16,7 @@ SURFACE_CODES = frozenset(
     {EMPTY_CELL, "t0", "t1", "t2", "t3", "w0", "w1", "w2", "c0", "c1", "c2", "c3", "b0"}
 )
 FEATURE_CODES = frozenset({EMPTY_CELL, "wl", "wn", "dr", "fd"})
+DOOR_CODES = frozenset({"dr", "fd"})
 MIN_SIDE = 5  # 1 m
 MAX_SIDE = 150  # 30 m
 LABEL_MAX = 40
@@ -34,9 +35,26 @@ DEFAULT_APARTMENT_NAME = "My apartment"
 
 Shape = Literal["rectangle", "round", "oval", "egg", "custom"]
 Colour = Literal[
-    "white", "black", "grey", "beige", "brown", "red", "orange", "yellow", "green", "blue", "purple"
+    "white",
+    "black",
+    "grey",
+    "beige",
+    "brown",
+    "red",
+    "orange",
+    "yellow",
+    "green",
+    "blue",
+    "purple",
+    "tan",
+    "pink",
+    "navy",
+    "teal",
+    "olive",
+    "charcoal",
 ]
-Rotation = Literal[0, 90, 180, 270]
+# Whole degrees clockwise (LA-4).
+Rotation = Annotated[int, Field(ge=0, lt=360)]
 
 EMPTY_SQUARE = "."
 # One character per colour in a drawn piece's `cells`; "." is an unpainted square.
@@ -52,6 +70,12 @@ COLOUR_CHARS: dict[str, str] = {
     "green": "n",
     "blue": "u",
     "purple": "p",
+    "tan": "t",
+    "pink": "i",
+    "navy": "a",
+    "teal": "l",
+    "olive": "v",
+    "charcoal": "c",
 }
 _LEGACY_SQUARE = "#"
 
@@ -78,6 +102,19 @@ class Label(BaseModel):
     text: str
     col: int
     row: int
+
+
+class DoorSetting(BaseModel):
+    """How one door opens. A door is a 4-connected group of same-code door squares;
+    (col, row) is its first square in reading order."""
+
+    col: int
+    row: int
+    # 0: towards the side above (horizontal wall) or left (vertical wall); 1: below / right.
+    into: Literal[0, 1]
+    # 0: hinged at the left (horizontal) or top (vertical) end; 1: right / bottom. Not for double.
+    hinge: Literal[0, 1]
+    double: bool = False
 
 
 class Furniture(BaseModel):
@@ -129,7 +166,7 @@ class ApartmentDoc(BaseModel):
     surface: list[str] = Field(default_factory=lambda: empty_rows(DEFAULT_COLS, DEFAULT_ROWS))
     feature: list[str] = Field(default_factory=lambda: empty_rows(DEFAULT_COLS, DEFAULT_ROWS))
     labels: list[Label] = Field(default_factory=list)
-    locked: bool = False
+    doors: list[DoorSetting] = Field(default_factory=list)
     furniture: list[Furniture] = Field(default_factory=list)
     layouts: list[Layout] = Field(default_factory=_first_layouts)
 
@@ -155,17 +192,13 @@ class ApartmentView(ApartmentSummary):
     surface: list[str]
     feature: list[str]
     labels: list[Label]
-    locked: bool
+    doors: list[DoorSetting]
     furniture: list[Furniture]
     layouts: list[Layout]
 
 
 class ApartmentNameRequest(BaseModel):
     name: str
-
-
-class RevRequest(BaseModel):
-    base_rev: int
 
 
 class PlanWriteRequest(BaseModel):
@@ -175,6 +208,7 @@ class PlanWriteRequest(BaseModel):
     surface: list[str]
     feature: list[str]
     labels: list[Label]
+    doors: list[DoorSetting] = Field(default_factory=list)
 
 
 class PieceDraft(BaseModel):

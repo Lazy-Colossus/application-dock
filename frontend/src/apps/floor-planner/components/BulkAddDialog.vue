@@ -136,7 +136,7 @@ const skipped = computed(() => parsed.value.length - good.value.length);
   font-weight: 600;
 }
 .bulk__row--ok .bulk__mark {
-  color: var(--fp-locked-ink);
+  color: var(--fp-ok-ink);
 }
 .bulk__row--bad .bulk__mark,
 .bulk__reason {

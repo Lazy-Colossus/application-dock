@@ -46,6 +46,9 @@ describe("parseFurnitureList", () => {
     expect(parseFurnitureList("Bed; rectangle; 160×200; white")[0].ok).toBe(
       true,
     );
+    expect(
+      parseFurnitureList("Armchair; round; 80; Charcoal")[0],
+    ).toMatchObject({ ok: true, piece: { colour: "charcoal" } });
   });
 
   it("skips blank lines but keeps real line numbers", () => {
@@ -78,7 +81,7 @@ describe("parseFurnitureList", () => {
     ],
     ["Wall unit; rectangle; 1200 x 40; white", "sizes must be 1–1000 cm"],
     ["Shelf; rectangle; 0 x 30; white", "sizes must be 1–1000 cm"],
-    ["Sofa; rectangle; 220 x 95; teal", "unknown colour 'teal'"],
+    ["Sofa; rectangle; 220 x 95; mauve", "unknown colour 'mauve'"],
     [
       `${"x".repeat(41)}; rectangle; 10 x 10; grey`,
       "name is longer than 40 characters",

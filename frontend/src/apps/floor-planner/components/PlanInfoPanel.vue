@@ -35,7 +35,6 @@
             min="1"
             max="30"
             step="0.2"
-            :disabled="locked"
             data-testid="resize-width"
           />
         </label>
@@ -47,7 +46,6 @@
             min="1"
             max="30"
             step="0.2"
-            :disabled="locked"
             data-testid="resize-depth"
           />
         </label>
@@ -55,7 +53,7 @@
       <button
         type="button"
         class="fp-button"
-        :disabled="locked || !valid"
+        :disabled="!valid"
         data-testid="resize"
         @click="apply"
       >
@@ -80,7 +78,6 @@
           <button
             type="button"
             class="plan-info__link"
-            :disabled="locked"
             @click="emit('rename', l.id)"
           >
             Rename
@@ -88,7 +85,6 @@
           <button
             type="button"
             class="plan-info__link"
-            :disabled="locked"
             :data-testid="`label-delete-${l.id}`"
             @click="emit('remove', l.id)"
           >
@@ -104,7 +100,7 @@
 import { computed, ref, watch } from "vue";
 import { labelsOutside, metres, squaresFor, type PlanGrid } from "../grid";
 
-const props = defineProps<{ plan: PlanGrid; locked: boolean }>();
+const props = defineProps<{ plan: PlanGrid }>();
 
 const emit = defineEmits<{
   resize: [cols: number, rows: number];

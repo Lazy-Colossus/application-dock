@@ -21,6 +21,7 @@ function plan(over: Partial<PlanGrid> = {}): PlanGrid {
     surface: emptyRows(10, 8),
     feature: emptyRows(10, 8),
     labels: [],
+    doors: [],
     ...over,
   };
 }
@@ -55,6 +56,101 @@ beforeEach(() => {
 });
 
 describe("PlanCanvas", () => {
+  describe("doors", () => {
+    const door = structureBrush(STRUCTURE[2]);
+    /** A wall along row 2 with a 4-square door in columns 3–6. */
+    function withDoor(): PlanGrid {
+      const feature = emptyRows(10, 8);
+      feature[2] = "wl".repeat(3) + "dr".repeat(4) + "wl".repeat(3);
+      return plan({ feature });
+    }
+
+    it("draws a door as a swing, not as painted squares", () => {
+      const wrapper = canvas({ plan: withDoor() });
+      expect(wrapper.find("[data-testid=door-3,2]").exists()).toBe(true);
+      expect(wrapper.findAll("[data-testid=door-leaf]")).toHaveLength(1);
+      const painted = wrapper.findAll("[data-testid=feature-runs] rect");
+      expect(painted.map((r) => r.attributes("width"))).toEqual(["60", "60"]);
+    });
+
+    it("draws two leaves for a double door, and the shut leaf along the wall", () => {
+      const p = withDoor();
+      p.doors = [{ col: 3, row: 2, into: 1, hinge: 0, double: true }];
+      const wrapper = canvas({ plan: p, closedDoors: ["3,2"] });
+      const leaves = wrapper.findAll("[data-testid=door-leaf]");
+      expect(leaves).toHaveLength(2);
+      // Shut, each leaf lies along the wall's face, below it as it opens downwards.
+      expect(leaves[0].attributes()).toMatchObject({
+        x1: "60",
+        y1: "60",
+        x2: "100",
+        y2: "60",
+      });
+    });
+
+    it("swings the door with its handle, without painting", async () => {
+      const wrapper = canvas({ plan: withDoor() });
+      const handle = wrapper.get("[data-testid=door-handle-3,2]");
+      await handle.trigger("pointerdown", at(4, 2));
+      await handle.trigger("click");
+      expect(wrapper.emitted("doorToggle")).toEqual([["3,2"]]);
+      expect(wrapper.emitted("stroke")).toBeUndefined();
+    });
+
+    it("opens the setup on a click with a door brush, but a drag still paints", async () => {
+      const wrapper = canvas({ plan: withDoor(), brush: door });
+      const svg = wrapper.get("[data-testid=plan-canvas]");
+      await svg.trigger("pointerdown", at(4, 2));
+      await svg.trigger("pointerup", at(4, 2));
+      expect(wrapper.emitted("doorPick")?.[0][0]).toBe("3,2");
+      expect(wrapper.emitted("stroke")).toBeUndefined();
+
+      await svg.trigger("pointerdown", at(4, 2));
+      await svg.trigger("pointermove", at(4, 3));
+      await svg.trigger("pointerup", at(4, 3));
+      expect(wrapper.emitted("stroke")).toHaveLength(1);
+    });
+
+    it("fills the opening with the door's colour, clickable only when it does something", () => {
+      const opening = (props = {}) =>
+        canvas({ plan: withDoor(), ...props }).get(
+          "[data-testid=door-opening]",
+        );
+      expect(opening().attributes("fill")).toBe("#e3a548");
+      expect(opening().attributes("pointer-events")).toBe("none");
+      expect(opening({ brush: door }).classes()).toContain(
+        "plan-canvas__door-hit",
+      );
+      expect(
+        opening({ editable: false, brush: null, arranging: true }).attributes(
+          "pointer-events",
+        ),
+      ).toBe("all");
+    });
+
+    it("swings a door when its opening or leaf is clicked in Arrange", async () => {
+      const wrapper = canvas({
+        plan: withDoor(),
+        editable: false,
+        brush: null,
+        arranging: true,
+      });
+      await wrapper.get("[data-testid=door-opening]").trigger("click");
+      await wrapper.get("[data-testid=door-leaf]").trigger("click");
+      expect(wrapper.emitted("doorToggle")).toEqual([["3,2"], ["3,2"]]);
+      expect(wrapper.emitted("select")).toBeUndefined();
+    });
+
+    it("paints over a door with any other brush", async () => {
+      const wrapper = canvas({ plan: withDoor() });
+      const svg = wrapper.get("[data-testid=plan-canvas]");
+      await svg.trigger("pointerdown", at(4, 2));
+      await svg.trigger("pointerup", at(4, 2));
+      expect(wrapper.emitted("stroke")).toHaveLength(1);
+      expect(wrapper.emitted("doorPick")).toBeUndefined();
+    });
+  });
+
   it("draws merged runs per layer", () => {
     const surface = emptyRows(10, 8);
     surface[0] = "t0t0t0" + "..".repeat(7);
@@ -62,6 +158,18 @@ describe("PlanCanvas", () => {
     const wrapper = canvas({ plan: plan({ surface }) });
     expect(wrapper.findAll("[data-testid=surface-runs] rect")).toHaveLength(2);
     expect(wrapper.findAll("[data-testid=feature-runs] rect")).toHaveLength(0);
+  });
+
+  it("draws the grid over the floors only while the plan can be painted", () => {
+    const gridAfterFloors = (editable: boolean) => {
+      const html = canvas({ editable }).html();
+      return (
+        html.indexOf("url(#fp-grid-minor)") >
+        html.indexOf('data-testid="surface-runs"')
+      );
+    };
+    expect(gridAfterFloors(true)).toBe(true);
+    expect(gridAfterFloors(false)).toBe(false);
   });
 
   it("sizes the svg by zoom but keeps the viewBox in cm", async () => {

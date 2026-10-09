@@ -27,7 +27,6 @@ from app.schemas.floor_planner import (
     PieceDraft,
     PlacementRequest,
     PlanWriteRequest,
-    RevRequest,
 )
 from app.services import floor_planner_service as service
 
@@ -101,20 +100,6 @@ def delete_apartment(
     apartment_id: str, current_user: str = Depends(get_current_user)
 ) -> list[ApartmentSummary]:
     return service.delete_apartment(current_user, apartment_id)
-
-
-@router.post(f"{A}/lock", response_model=ApartmentView)
-def lock(
-    apartment_id: str, req: RevRequest, current_user: str = Depends(get_current_user)
-) -> ApartmentView:
-    return service.set_locked(current_user, apartment_id, req.base_rev, True)
-
-
-@router.post(f"{A}/unlock", response_model=ApartmentView)
-def unlock(
-    apartment_id: str, req: RevRequest, current_user: str = Depends(get_current_user)
-) -> ApartmentView:
-    return service.set_locked(current_user, apartment_id, req.base_rev, False)
 
 
 @router.put(f"{A}/plan", response_model=ApartmentView)

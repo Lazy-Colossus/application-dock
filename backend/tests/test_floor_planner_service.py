@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from app.repositories import floor_planner_repo as repo
+from app.schemas.floor_planner import PlanWriteRequest, empty_rows
 from app.services import auth_service
 from app.services import floor_planner_service as service
 
@@ -23,6 +24,17 @@ def _apt(username: str) -> str:
     return service.list_apartments(username)[0].id
 
 
+def _blank_plan(base_rev: int) -> PlanWriteRequest:
+    return PlanWriteRequest(
+        base_rev=base_rev,
+        cols=50,
+        rows=40,
+        surface=empty_rows(50, 40),
+        feature=empty_rows(50, 40),
+        labels=[],
+    )
+
+
 def test_a_newcomer_gets_an_empty_apartment_called_my_apartment() -> None:
     [summary] = service.list_apartments("ana")
     assert (summary.name, summary.is_owner, summary.members) == ("My apartment", True, ["ana"])
@@ -30,30 +42,23 @@ def test_a_newcomer_gets_an_empty_apartment_called_my_apartment() -> None:
     assert (apt.cols, apt.rows, apt.rev) == (50, 40, 0)
     assert apt.surface == [".." * 50] * 40
     assert apt.feature == [".." * 50] * 40
-    assert apt.locked is False
     assert [layout.name for layout in apt.layouts] == ["Layout A"]
     assert service.list_apartments("ana") == [summary]
 
 
-def test_locking_bumps_rev() -> None:
-    apt = service.set_locked("ana", _apt("ana"), 0, True)
-    assert (apt.rev, apt.locked) == (1, True)
+def test_a_plan_write_bumps_rev() -> None:
+    apt = service.replace_plan("ana", _apt("ana"), _blank_plan(0))
+    assert (apt.rev, apt.plan_rev) == (1, 1)
     assert apt.updated_at is not None
 
 
 def test_a_stale_write_is_refused_and_names_who_changed_it() -> None:
     service.add_member("ana", _apt("ana"), "bo")
-    service.set_locked("ana", _apt("ana"), 0, True)
+    service.replace_plan("ana", _apt("ana"), _blank_plan(0))
     with pytest.raises(service.StaleRevError, match="ana changed this"):
-        service.set_locked("bo", _apt("bo"), 0, False)
+        service.replace_plan("bo", _apt("bo"), _blank_plan(0))
     apt = service.get_apartment("bo", _apt("bo"))
-    assert (apt.rev, apt.locked) == (1, True)
-
-
-def test_unlock_after_lock() -> None:
-    service.set_locked("ana", _apt("ana"), 0, True)
-    apt = service.set_locked("ana", _apt("ana"), 1, False)
-    assert (apt.rev, apt.locked) == (2, False)
+    assert (apt.rev, apt.plan_rev) == (1, 1)
 
 
 def test_documents_without_plan_rev_still_load() -> None:
@@ -63,6 +68,7 @@ def test_documents_without_plan_rev_still_load() -> None:
     raw.pop("plan_rev", None)
     raw.pop("plan_updated_by", None)
     raw["rev"] = 7
+    raw["locked"] = True
     path.write_text(json.dumps(raw))
-    apt = service.set_locked("ana", _apt("ana"), 0, True)
-    assert (apt.plan_rev, apt.rev, apt.locked) == (1, 8, True)
+    apt = service.replace_plan("ana", _apt("ana"), _blank_plan(0))
+    assert (apt.plan_rev, apt.rev) == (1, 8)

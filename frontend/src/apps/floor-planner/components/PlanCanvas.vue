@@ -55,35 +55,47 @@
         <rect width="2" height="8" fill="#aebb9f" />
       </pattern>
       <template v-for="t in TEXTURED" :key="t.code">
+        <!-- 60 cm tiles: three plan squares each. -->
         <pattern
           v-if="t.texture === 'tiles'"
           :id="`fp-${t.code}`"
-          width="40"
-          height="40"
+          width="60"
+          height="60"
           patternUnits="userSpaceOnUse"
         >
-          <rect width="40" height="40" :fill="t.colour" />
+          <rect width="60" height="60" :fill="t.colour" />
           <path
-            d="M 40 0 L 0 0 0 40"
+            d="M 60 0 L 0 0 0 60"
             fill="none"
             :stroke="t.seam"
-            stroke-width="1.5"
             vector-effect="non-scaling-stroke"
           />
         </pattern>
-        <!-- 10 cm planks, 80 cm long, joints staggered by half a plank. -->
         <pattern
-          v-else
+          v-else-if="t.boards"
           :id="`fp-${t.code}`"
-          width="80"
-          height="20"
+          :width="BOARD_REPEAT.w"
+          :height="BOARD_REPEAT.h"
           patternUnits="userSpaceOnUse"
         >
-          <rect width="80" height="20" :fill="t.colour" />
-          <rect x="40" width="40" height="10" fill="rgba(0,0,0,.06)" />
-          <rect y="10" width="40" height="10" fill="rgba(0,0,0,.06)" />
+          <rect
+            v-for="(b, i) in t.boards.boards"
+            :key="i"
+            :x="b.x"
+            :y="b.y"
+            :width="b.w"
+            height="20"
+            :fill="b.fill"
+          />
           <path
-            d="M 0 0 H 80 M 0 10 H 80 M 0 0 V 10 M 40 10 V 20"
+            :d="t.boards.rows"
+            fill="none"
+            :stroke="t.seam"
+            stroke-opacity="0.6"
+            vector-effect="non-scaling-stroke"
+          />
+          <path
+            :d="t.boards.joints"
             fill="none"
             :stroke="t.seam"
             vector-effect="non-scaling-stroke"
@@ -158,6 +170,21 @@
     </g>
 
     <rect :width="widthCm" :height="heightCm" fill="#fbfbf9" />
+    <!-- Over the floors only while painting squares; elsewhere it would compete with them. -->
+    <template v-if="!editable">
+      <rect
+        :width="widthCm"
+        :height="heightCm"
+        fill="url(#fp-grid-minor)"
+        pointer-events="none"
+      />
+      <rect
+        :width="widthCm"
+        :height="heightCm"
+        fill="url(#fp-grid-major)"
+        pointer-events="none"
+      />
+    </template>
     <g shape-rendering="crispEdges" data-testid="surface-runs">
       <rect
         v-for="r in surfaceRuns"
@@ -169,18 +196,20 @@
         :fill="fillFor(r.code)"
       />
     </g>
-    <rect
-      :width="widthCm"
-      :height="heightCm"
-      fill="url(#fp-grid-minor)"
-      pointer-events="none"
-    />
-    <rect
-      :width="widthCm"
-      :height="heightCm"
-      fill="url(#fp-grid-major)"
-      pointer-events="none"
-    />
+    <template v-if="editable">
+      <rect
+        :width="widthCm"
+        :height="heightCm"
+        fill="url(#fp-grid-minor)"
+        pointer-events="none"
+      />
+      <rect
+        :width="widthCm"
+        :height="heightCm"
+        fill="url(#fp-grid-major)"
+        pointer-events="none"
+      />
+    </template>
     <g shape-rendering="crispEdges" data-testid="feature-runs">
       <rect
         v-for="r in featureRuns"
@@ -215,6 +244,7 @@
       :data-testid="`placed-${p.piece.id}`"
       @pointerdown.stop="pieceDown($event, p)"
     >
+      <!-- The outlines sit inside the turned group so they follow the piece at any angle. -->
       <g :transform="pieceTransform(p)">
         <template v-if="p.piece.shape === 'custom'">
           <path
@@ -237,34 +267,33 @@
           stroke="rgba(0,0,0,.45)"
           :stroke-width="cmPerPx"
         />
+        <rect
+          v-if="p.warned"
+          :x="-3 * cmPerPx"
+          :y="-3 * cmPerPx"
+          :width="p.piece.width_cm + 6 * cmPerPx"
+          :height="p.piece.depth_cm + 6 * cmPerPx"
+          fill="none"
+          stroke="#c2410c"
+          stroke-width="2"
+          stroke-dasharray="5 3"
+          vector-effect="non-scaling-stroke"
+          pointer-events="none"
+          data-testid="piece-warned"
+        />
+        <rect
+          v-if="p.piece.id === selectedId"
+          :width="p.piece.width_cm"
+          :height="p.piece.depth_cm"
+          fill="none"
+          stroke="#1d4ed8"
+          stroke-width="2"
+          vector-effect="non-scaling-stroke"
+          pointer-events="none"
+          data-testid="piece-selected"
+        />
       </g>
-      <rect
-        v-if="p.warned"
-        :x="p.box.x - 3 * cmPerPx"
-        :y="p.box.y - 3 * cmPerPx"
-        :width="p.box.w + 6 * cmPerPx"
-        :height="p.box.h + 6 * cmPerPx"
-        fill="none"
-        stroke="#c2410c"
-        stroke-width="2"
-        stroke-dasharray="5 3"
-        vector-effect="non-scaling-stroke"
-        pointer-events="none"
-        data-testid="piece-warned"
-      />
-      <rect
-        v-if="p.piece.id === selectedId"
-        :x="p.box.x"
-        :y="p.box.y"
-        :width="p.box.w"
-        :height="p.box.h"
-        fill="none"
-        stroke="#1d4ed8"
-        stroke-width="2"
-        vector-effect="non-scaling-stroke"
-        pointer-events="none"
-        data-testid="piece-selected"
-      />
+
       <text
         class="plan-canvas__piece-name"
         :x="p.box.x + p.box.w / 2"
@@ -277,6 +306,86 @@
       >
         {{ p.piece.name }}
       </text>
+    </g>
+
+    <!-- Doors sit over the furniture, so a swing that would hit a piece shows. -->
+    <g
+      v-for="d in doorShapes"
+      :key="d.door.key"
+      class="plan-canvas__door"
+      :data-testid="`door-${d.door.key}`"
+    >
+      <!-- The opening keeps the door's colour, as painted. With a door brush a click on it opens
+           the door's setup (handled by the plan); in Arrange it swings the door. -->
+      <rect
+        :x="d.shape.gap.x"
+        :y="d.shape.gap.y"
+        :width="d.shape.gap.w"
+        :height="d.shape.gap.h"
+        :fill="d.tint"
+        :class="{ 'plan-canvas__door-hit': doorsPickable || arranging }"
+        :pointer-events="doorsPickable || arranging ? 'all' : 'none'"
+        data-testid="door-opening"
+        @pointerdown="arranging && $event.stopPropagation()"
+        @click="arranging && emit('doorToggle', d.door.key)"
+      />
+      <template v-for="(leaf, i) in d.shape.leaves" :key="i">
+        <path
+          :d="wedge(leaf)"
+          :fill="d.tint"
+          :opacity="d.open ? 0.16 : 0.07"
+          pointer-events="none"
+          data-testid="door-swing"
+        />
+        <path
+          :d="arc(leaf)"
+          fill="none"
+          :stroke="d.tint"
+          stroke-width="1.2"
+          :opacity="d.open ? 0.7 : 0.3"
+          vector-effect="non-scaling-stroke"
+          pointer-events="none"
+        />
+        <line
+          :x1="leaf.pivot[0]"
+          :y1="leaf.pivot[1]"
+          :x2="(d.open ? leaf.open : leaf.shut)[0]"
+          :y2="(d.open ? leaf.open : leaf.shut)[1]"
+          :stroke="d.tint"
+          stroke-width="5"
+          stroke-linecap="round"
+          :class="{ 'plan-canvas__door-hit': arranging }"
+          :pointer-events="arranging ? 'stroke' : 'none'"
+          data-testid="door-leaf"
+          @pointerdown="arranging && $event.stopPropagation()"
+          @click="arranging && emit('doorToggle', d.door.key)"
+        />
+        <!-- The handle: one click swings the door open or shut, in any mode. -->
+        <g
+          class="plan-canvas__door-handle"
+          role="button"
+          tabindex="0"
+          :aria-label="d.open ? 'Close this door' : 'Open this door'"
+          :data-testid="`door-handle-${d.door.key}`"
+          @pointerdown.stop
+          @click.stop="emit('doorToggle', d.door.key)"
+          @keydown.enter.prevent="emit('doorToggle', d.door.key)"
+          @keydown.space.prevent="emit('doorToggle', d.door.key)"
+        >
+          <circle
+            :cx="handleAt(leaf, d.open)[0]"
+            :cy="handleAt(leaf, d.open)[1]"
+            :r="12 * cmPerPx"
+            fill="transparent"
+          />
+          <circle
+            :cx="handleAt(leaf, d.open)[0]"
+            :cy="handleAt(leaf, d.open)[1]"
+            :r="4.5 * cmPerPx"
+            fill="#2b2a27"
+          />
+        </g>
+      </template>
     </g>
 
     <g
@@ -335,6 +444,7 @@
 import { computed, ref } from "vue";
 import {
   BALCONY_PATTERN,
+  BOARD_REPEAT,
   TEXTURED,
   brushName,
   fillFor,
@@ -347,6 +457,13 @@ import {
   customFills,
   outline,
 } from "../furniture";
+import {
+  DOOR_CODES,
+  doorShape,
+  findDoors,
+  type Door,
+  type Leaf,
+} from "../doors";
 import { bounds as pieceBounds, snap, type Box } from "../geometry";
 import type { Furniture, Placement } from "../types";
 import {
@@ -357,6 +474,7 @@ import {
   bounds,
   cellAt,
   cmAt,
+  codeAt,
   labelAtCell,
   lineCells,
   readout,
@@ -390,8 +508,11 @@ const props = withDefaults(
     arranging?: boolean;
     /** Tray cards can be dropped onto the plan. */
     droppable?: boolean;
+    /** Keys of the doors this viewer has swung shut. */
+    closedDoors?: string[];
   }>(),
   {
+    closedDoors: () => [],
     brushSize: 1,
     placed: () => [],
     selectedId: null,
@@ -411,6 +532,9 @@ const emit = defineEmits<{
   move: [id: string, x: number, y: number];
   /** A tray card dropped with its centre at (x, y) cm. */
   drop: [id: string, x: number, y: number];
+  doorToggle: [key: string];
+  /** A click on a door with a door brush; `at` is where its setup panel goes, in px. */
+  doorPick: [key: string, at: { left: number; top: number }];
 }>();
 
 const svg = ref<SVGSVGElement | null>(null);
@@ -418,6 +542,8 @@ const stroke = ref<Cell[]>([]);
 let start: Cell | null = null;
 let last: Cell | null = null;
 let dragged: { id: string; from: Cell; to: Cell } | null = null;
+/** A press on an existing door with a door brush: a click opens its setup, a drag paints. */
+let doorPress: Cell | null = null;
 let pieceDrag: {
   id: string;
   grabX: number;
@@ -492,7 +618,55 @@ const scale = computed(() => PX_PER_CM * props.zoom);
 /** Converts a constant on-screen pixel size into plan cm at the current zoom. */
 const cmPerPx = computed(() => 1 / scale.value);
 const surfaceRuns = computed(() => runs(props.plan.surface));
-const featureRuns = computed(() => runs(props.plan.feature));
+// Doors are drawn as symbols below rather than as painted squares.
+const featureRuns = computed(() =>
+  runs(props.plan.feature).filter((r) => !DOOR_CODES.has(r.code)),
+);
+const doors = computed(() => findDoors(props.plan));
+/** A door brush is out, so a click on a door opens its setup rather than painting. */
+const doorsPickable = computed(
+  () => props.editable && !!props.brush && DOOR_CODES.has(props.brush.code),
+);
+const doorShapes = computed(() =>
+  doors.value.map((door) => ({
+    door,
+    shape: doorShape(door),
+    tint: fillFor(door.code),
+    open: !props.closedDoors.includes(door.key),
+  })),
+);
+
+function wedge(l: Leaf): string {
+  return `M ${l.pivot.join(" ")} L ${l.open.join(" ")} A ${l.len} ${l.len} 0 0 ${l.sweep} ${l.shut.join(" ")} Z`;
+}
+
+function arc(l: Leaf): string {
+  return `M ${l.open.join(" ")} A ${l.len} ${l.len} 0 0 ${l.sweep} ${l.shut.join(" ")}`;
+}
+
+/** Near the free end of the leaf, where a real handle would be. */
+function handleAt(l: Leaf, open: boolean): [number, number] {
+  const end = open ? l.open : l.shut;
+  const t = 0.82;
+  return [
+    l.pivot[0] + (end[0] - l.pivot[0]) * t,
+    l.pivot[1] + (end[1] - l.pivot[1]) * t,
+  ];
+}
+
+const DOOR_SETUP_PX = 250;
+
+/** Where the setup panel goes: beside the door, flipped left when it would run off the plan. */
+function setupAt(door: Door): { left: number; top: number } {
+  const px = (cm: number) => (cm + RULER_CM) * scale.value;
+  const right = px((door.col + door.cols) * CELL_CM) + 12;
+  const width = px(widthCm.value);
+  const left =
+    right + DOOR_SETUP_PX <= width
+      ? right
+      : Math.max(4, px(door.col * CELL_CM) - DOOR_SETUP_PX - 12);
+  return { left, top: px(door.row * CELL_CM) };
+}
 const metresAcross = computed(() =>
   Array.from({ length: Math.floor(widthCm.value / 100) + 1 }, (_, m) => m),
 );
@@ -550,6 +724,11 @@ function down(e: PointerEvent): void {
     else emit("labelAt", cell);
     return;
   }
+  doorPress =
+    DOOR_CODES.has(props.brush.code) &&
+    DOOR_CODES.has(codeAt(props.plan.feature, cell))
+      ? cell
+      : null;
   start = last = cell;
   stroke.value = stamp([cell]);
   emit("preview", readoutText.value);
@@ -573,6 +752,8 @@ function move(e: PointerEvent): void {
     return;
   }
   if (!start || !last) return;
+  if (doorPress && (cell.col !== doorPress.col || cell.row !== doorPress.row))
+    doorPress = null;
   if (props.shape === "rectangle") {
     stroke.value = rectCells(start, cell);
   } else if (cell.col !== last.col || cell.row !== last.row) {
@@ -602,12 +783,24 @@ function up(): void {
     else emit("labelMove", id, to);
     return;
   }
-  if (stroke.value.length) emit("stroke", uniqueCells(stroke.value));
+  const pressed = doorPress;
+  const door =
+    pressed &&
+    doors.value.find(
+      (d) =>
+        pressed.col >= d.col &&
+        pressed.col < d.col + d.cols &&
+        pressed.row >= d.row &&
+        pressed.row < d.row + d.rows,
+    );
+  if (door) emit("doorPick", door.key, setupAt(door));
+  else if (stroke.value.length) emit("stroke", uniqueCells(stroke.value));
   cancel();
 }
 
 function cancel(): void {
   start = last = null;
+  doorPress = null;
   dragged = null;
   pieceDrag = null;
   dragPos.value = null;
@@ -617,6 +810,18 @@ function cancel(): void {
 </script>
 
 <style scoped lang="scss">
+.plan-canvas__door-handle,
+.plan-canvas__door-hit {
+  cursor: pointer;
+}
+.plan-canvas__door-handle:focus {
+  outline: none;
+}
+.plan-canvas__door-handle:focus-visible circle:last-child {
+  stroke: #1d4ed8;
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+}
 .plan-canvas {
   display: block;
   background: #ffffff;

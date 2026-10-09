@@ -6,7 +6,7 @@ is a member, so an id never reveals that someone else's apartment exists. A
 user with no apartment gets an empty "My apartment" when they list theirs.
 
 There is no live push, so writes come in two kinds. Coarse plan writes (the
-whole drawn plan, lock/unlock) carry the `plan_rev` they were based on and are
+whole drawn plan) carry the `plan_rev` they were based on and are
 refused if another plan write landed first. Per-piece writes (furniture,
 placements, names) are last-write-wins and bump only `rev`, so adding a sofa
 never makes someone's unsaved plan drawing go stale.
@@ -35,6 +35,7 @@ from app.schemas.floor_planner import (
     COLOUR_CHARS,
     CUSTOM_MAX,
     DEFAULT_APARTMENT_NAME,
+    DOOR_CODES,
     EMPTY_SQUARE,
     FEATURE_CODES,
     LABEL_MAX,
@@ -50,6 +51,7 @@ from app.schemas.floor_planner import (
     ApartmentSummary,
     ApartmentView,
     Colour,
+    DoorSetting,
     Furniture,
     Label,
     Layout,
@@ -146,7 +148,7 @@ def get_apartment(username: str, apartment_id: str) -> ApartmentView:
 
 
 def create_apartment(username: str, name: str) -> ApartmentView:
-    """An empty, unlocked apartment with "Layout A", owned by the caller (AP-2)."""
+    """An empty apartment with "Layout A", owned by the caller (AP-2)."""
     doc = ApartmentDoc(id=repo.new_apartment_id(), owner=username, name=_clean_apartment_name(name))
     with repo.membership_lock():
         _store_new(repo.read_memberships(), doc)
@@ -154,7 +156,7 @@ def create_apartment(username: str, name: str) -> ApartmentView:
 
 
 def duplicate_apartment(username: str, apartment_id: str, name: str) -> ApartmentView:
-    """A copy of everything — plan, labels, lock, furniture, layouts — owned by the caller alone."""
+    """A copy of everything — plan, labels, furniture, layouts — owned by the caller alone."""
     clean = _clean_apartment_name(name)
     _require_member(username, apartment_id)
     with repo.membership_lock():
@@ -233,13 +235,6 @@ def rename_apartment(username: str, apartment_id: str, name: str) -> ApartmentVi
     return _mutate_free(username, apartment_id, change)
 
 
-def set_locked(username: str, apartment_id: str, base_rev: int, locked: bool) -> ApartmentView:
-    def change(doc: ApartmentDoc) -> None:
-        doc.locked = locked
-
-    return _mutate_plan(username, apartment_id, base_rev, change)
-
-
 def _check_layer(name: str, layer: list[str], codes: frozenset[str], cols: int, rows: int) -> None:
     if len(layer) != rows:
         raise ValueError(f"The {name} layer has {len(layer)} rows, expected {rows}")
@@ -266,17 +261,32 @@ def _clean_labels(labels: list[Label], cols: int, rows: int) -> list[Label]:
     return cleaned
 
 
+def _clean_doors(
+    doors: list[DoorSetting], feature: list[str], cols: int, rows: int
+) -> list[DoorSetting]:
+    """A door painted over, moved or cut off by a shrink just loses its settings."""
+    if len({(d.col, d.row) for d in doors}) != len(doors):
+        raise ValueError("Two door settings share a square")
+    return [
+        d
+        for d in doors
+        if 0 <= d.col < cols
+        and 0 <= d.row < rows
+        and feature[d.row][2 * d.col : 2 * d.col + 2] in DOOR_CODES
+    ]
+
+
 def replace_plan(username: str, apartment_id: str, req: PlanWriteRequest) -> ApartmentView:
-    """Swap in the whole drawn plan — size, both layers and labels — in one write."""
+    """Swap in the whole drawn plan — size, both layers, labels and doors — in one write."""
     _check_layer("surface", req.surface, SURFACE_CODES, req.cols, req.rows)
     _check_layer("feature", req.feature, FEATURE_CODES, req.cols, req.rows)
     labels = _clean_labels(req.labels, req.cols, req.rows)
+    doors = _clean_doors(req.doors, req.feature, req.cols, req.rows)
 
     def change(doc: ApartmentDoc) -> None:
-        if doc.locked:
-            raise ValueError("Unlock the plan to change it")
         doc.cols, doc.rows = req.cols, req.rows
         doc.surface, doc.feature, doc.labels = req.surface, req.feature, labels
+        doc.doors = doors
         # A shrink must not strand a piece off the plan, in any layout.
         for layout in doc.layouts:
             layout.placements = [
@@ -468,18 +478,12 @@ def _centre_inside(doc: ApartmentDoc, piece: Furniture, x_cm: int, y_cm: int) ->
     return 0 <= cx <= doc.cols * CELL_CM and 0 <= cy <= doc.rows * CELL_CM
 
 
-def _require_locked(doc: ApartmentDoc) -> None:
-    if not doc.locked:
-        raise ValueError("Lock the plan to arrange furniture")
-
-
 def place_piece(
     username: str, apartment_id: str, layout_id: str, piece_id: str, req: PlacementRequest
 ) -> ApartmentView:
     """Places or moves a piece: a piece appears at most once per layout (LA-2)."""
 
     def change(doc: ApartmentDoc) -> None:
-        _require_locked(doc)
         layout = _layout(doc, layout_id)
         piece = _piece(doc, piece_id)
         if not _centre_inside(doc, piece, req.x_cm, req.y_cm):
@@ -499,7 +503,6 @@ def remove_placement(
     """Back to the tray; a piece that's already there is not an error."""
 
     def change(doc: ApartmentDoc) -> None:
-        _require_locked(doc)
         layout = _layout(doc, layout_id)
         layout.placements = [p for p in layout.placements if p.furniture_id != piece_id]
 

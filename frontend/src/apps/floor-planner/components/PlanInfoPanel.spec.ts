@@ -12,6 +12,7 @@ function plan(over: Partial<PlanGrid> = {}): PlanGrid {
     surface: emptyRows(44, 37),
     feature: emptyRows(44, 37),
     labels: [],
+    doors: [],
     ...over,
   };
 }
@@ -19,7 +20,7 @@ function plan(over: Partial<PlanGrid> = {}): PlanGrid {
 describe("PlanInfoPanel", () => {
   it("shows the size and resizes in whole squares", async () => {
     const wrapper = mount(PlanInfoPanel, {
-      props: { plan: plan(), locked: false },
+      props: { plan: plan() },
     });
     expect(wrapper.get("[data-testid=plan-size]").text()).toBe("8.80 × 7.40 m");
     await wrapper.get("[data-testid=resize-width]").setValue("10");
@@ -32,7 +33,7 @@ describe("PlanInfoPanel", () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     const labels = [{ id: "a", text: "Bath", col: 40, row: 2 }];
     const wrapper = mount(PlanInfoPanel, {
-      props: { plan: plan({ labels }), locked: false },
+      props: { plan: plan({ labels }) },
     });
     await wrapper.get("[data-testid=resize-width]").setValue("9.6");
     await wrapper.get("[data-testid=resize]").trigger("click");
@@ -47,7 +48,7 @@ describe("PlanInfoPanel", () => {
 
   it("refuses sizes outside 1–30 m", async () => {
     const wrapper = mount(PlanInfoPanel, {
-      props: { plan: plan(), locked: false },
+      props: { plan: plan() },
     });
     await wrapper.get("[data-testid=resize-width]").setValue("31");
     expect(

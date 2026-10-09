@@ -1,57 +1,45 @@
 <template>
   <div class="tray" data-testid="layout-tray">
-    <div v-if="!locked" class="tray__lock" data-testid="tray-lock">
-      <p>Lock the plan to arrange furniture.</p>
-      <button
-        type="button"
-        class="fp-button fp-button--primary"
-        @click="emit('lock')"
+    <section>
+      <h3 class="tray__heading">Tray · not in {{ layoutName }}</h3>
+      <p v-if="pieces.length + placed.length === 0" class="tray__hint">
+        Add furniture first in the Furniture tab.
+      </p>
+      <p v-else-if="pieces.length === 0" class="tray__hint">
+        Everything is on the plan.
+      </p>
+      <p v-else class="tray__hint">Drag a piece onto the plan.</p>
+      <div
+        v-for="p in pieces"
+        :key="p.id"
+        class="tray__card"
+        draggable="true"
+        :data-testid="`tray-${p.id}`"
+        @dragstart="start($event, p.id)"
       >
-        Lock plan
+        <span class="tray__thumb">
+          <FurnitureShape :piece="p" :scale="0.8" :max-px="56" />
+        </span>
+        <span class="tray__name">{{ p.name }}</span>
+        <span class="fp-mono tray__size">{{ sizeLabel(p) }}</span>
+      </div>
+    </section>
+    <section v-if="placed.length">
+      <h3 class="tray__heading">On the plan · {{ placed.length }}</h3>
+      <button
+        v-for="p in placed"
+        :key="p.id"
+        type="button"
+        class="tray__row"
+        :class="{ 'tray__row--on': p.id === selectedId }"
+        :aria-pressed="p.id === selectedId"
+        :data-testid="`on-plan-${p.id}`"
+        @click="emit('select', p.id)"
+      >
+        <span>{{ p.name }}</span>
+        <span class="fp-mono tray__size">{{ sizeLabel(p) }}</span>
       </button>
-    </div>
-    <template v-else>
-      <section>
-        <h3 class="tray__heading">Tray · not in {{ layoutName }}</h3>
-        <p v-if="pieces.length + placed.length === 0" class="tray__hint">
-          Add furniture first in the Furniture tab.
-        </p>
-        <p v-else-if="pieces.length === 0" class="tray__hint">
-          Everything is on the plan.
-        </p>
-        <p v-else class="tray__hint">Drag a piece onto the plan.</p>
-        <div
-          v-for="p in pieces"
-          :key="p.id"
-          class="tray__card"
-          draggable="true"
-          :data-testid="`tray-${p.id}`"
-          @dragstart="start($event, p.id)"
-        >
-          <span class="tray__thumb">
-            <FurnitureShape :piece="p" :scale="0.8" :max-px="56" />
-          </span>
-          <span class="tray__name">{{ p.name }}</span>
-          <span class="fp-mono tray__size">{{ sizeLabel(p) }}</span>
-        </div>
-      </section>
-      <section v-if="placed.length">
-        <h3 class="tray__heading">On the plan · {{ placed.length }}</h3>
-        <button
-          v-for="p in placed"
-          :key="p.id"
-          type="button"
-          class="tray__row"
-          :class="{ 'tray__row--on': p.id === selectedId }"
-          :aria-pressed="p.id === selectedId"
-          :data-testid="`on-plan-${p.id}`"
-          @click="emit('select', p.id)"
-        >
-          <span>{{ p.name }}</span>
-          <span class="fp-mono tray__size">{{ sizeLabel(p) }}</span>
-        </button>
-      </section>
-    </template>
+    </section>
   </div>
 </template>
 
@@ -65,10 +53,9 @@ defineProps<{
   placed: Furniture[];
   layoutName: string;
   selectedId: string | null;
-  locked: boolean;
 }>();
 
-const emit = defineEmits<{ select: [id: string]; lock: [] }>();
+const emit = defineEmits<{ select: [id: string] }>();
 
 function start(e: DragEvent, id: string): void {
   if (!e.dataTransfer) return;
@@ -100,19 +87,6 @@ function start(e: DragEvent, id: string): void {
   margin: 0;
   font-size: 12px;
   color: var(--fp-muted);
-}
-.tray__lock {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px;
-  border-radius: 8px;
-  background: var(--fp-unlocked-bg);
-  color: var(--fp-unlocked-ink);
-  font-size: 13px;
-}
-.tray__lock p {
-  margin: 0;
 }
 .tray__card {
   display: grid;

@@ -29,23 +29,12 @@ function tray(over: Partial<InstanceType<typeof LayoutTray>["$props"]> = {}) {
       placed: [bed],
       layoutName: "Layout A",
       selectedId: null,
-      locked: true,
       ...over,
     },
   });
 }
 
 describe("LayoutTray", () => {
-  it("asks for a locked plan first", async () => {
-    const wrapper = tray({ locked: false });
-    expect(wrapper.get("[data-testid=tray-lock]").text()).toContain(
-      "Lock the plan",
-    );
-    expect(wrapper.find("[data-testid=tray-f_sofa]").exists()).toBe(false);
-    await wrapper.get("[data-testid=tray-lock] button").trigger("click");
-    expect(wrapper.emitted("lock")).toHaveLength(1);
-  });
-
   it("lists the tray and what's on the plan", async () => {
     const wrapper = tray({ selectedId: "f_bed" });
     expect(wrapper.text()).toContain("Tray · not in Layout A");

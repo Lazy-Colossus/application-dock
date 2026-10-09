@@ -13,28 +13,60 @@
       <dd class="fp-mono">{{ sizeLabel(piece) }}</dd>
       <dt>Position</dt>
       <dd class="fp-mono" data-testid="inspector-position">{{ position }}</dd>
-      <dt>Rotation</dt>
-      <dd class="fp-mono" data-testid="inspector-rotation">
-        {{ placement.rotation }}°
-      </dd>
     </dl>
     <div class="inspector__turn">
       <button
         type="button"
         class="fp-button"
-        data-testid="rotate-left"
-        @click="emit('rotate', -90)"
+        title="Long side top to bottom (Shift+R)"
+        data-testid="rotate-vertical"
+        @click="emit('rotate', orient(piece, placement.rotation, 'vertical'))"
       >
-        Left
+        Vertical
       </button>
       <button
         type="button"
         class="fp-button"
-        data-testid="rotate-right"
-        @click="emit('rotate', 90)"
+        title="Long side left to right (R)"
+        data-testid="rotate-horizontal"
+        @click="emit('rotate', orient(piece, placement.rotation, 'horizontal'))"
       >
-        Right (R)
+        Horizontal (R)
       </button>
+    </div>
+    <div class="inspector__angle">
+      <label for="fp-rotation">Rotation</label>
+      <div class="inspector__stepper">
+        <button
+          type="button"
+          class="fp-button"
+          :aria-label="`Turn ${ROTATION_STEP}° anticlockwise`"
+          data-testid="rotate-minus"
+          @click="turn(-ROTATION_STEP)"
+        >
+          −
+        </button>
+        <input
+          id="fp-rotation"
+          class="fp-mono"
+          type="number"
+          step="1"
+          :value="placement.rotation"
+          data-testid="rotation-input"
+          @change="typed"
+          @keydown.enter="($event.target as HTMLInputElement).blur()"
+        />
+        <span class="inspector__unit">°</span>
+        <button
+          type="button"
+          class="fp-button"
+          :aria-label="`Turn ${ROTATION_STEP}° clockwise`"
+          data-testid="rotate-plus"
+          @click="turn(ROTATION_STEP)"
+        >
+          +
+        </button>
+      </div>
     </div>
     <div
       v-if="warnings.length"
@@ -59,7 +91,7 @@
 import { computed } from "vue";
 import FurnitureShape from "./FurnitureShape.vue";
 import { SHAPES, sizeLabel } from "../furniture";
-import { bounds } from "../geometry";
+import { ROTATION_STEP, bounds, normaliseRotation, orient } from "../geometry";
 import type { Furniture, Placement } from "../types";
 
 const props = defineProps<{
@@ -68,7 +100,19 @@ const props = defineProps<{
   warnings: string[];
 }>();
 
-const emit = defineEmits<{ rotate: [delta: -90 | 90]; back: [] }>();
+const emit = defineEmits<{ rotate: [rotation: number]; back: [] }>();
+
+function turn(delta: number): void {
+  emit("rotate", normaliseRotation(props.placement.rotation + delta));
+}
+
+/** Any whole number is accepted and wrapped into 0–359; anything else puts the value back. */
+function typed(e: Event): void {
+  const input = e.target as HTMLInputElement;
+  const deg = input.valueAsNumber;
+  if (Number.isFinite(deg)) emit("rotate", normaliseRotation(deg));
+  input.value = String(props.placement.rotation);
+}
 
 const shapeLabel = computed(
   () =>
@@ -126,6 +170,40 @@ const position = computed(() => {
 }
 .inspector__turn .fp-button {
   flex: 1;
+}
+.inspector__angle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--fp-muted);
+}
+.inspector__stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.inspector__stepper .fp-button {
+  width: 36px;
+  padding: 0;
+  font-size: 16px;
+}
+.inspector__stepper input {
+  box-sizing: border-box;
+  width: 56px;
+  height: 36px;
+  padding: 0 6px;
+  border: 1px solid var(--fp-control-line);
+  border-radius: 6px;
+  background: var(--fp-chrome);
+  color: var(--fp-ink);
+  font-size: 14px;
+  text-align: right;
+}
+.inspector__unit {
+  margin-left: -2px;
+  color: var(--fp-ink);
 }
 .inspector__warn {
   display: flex;

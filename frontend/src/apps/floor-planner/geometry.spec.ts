@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   bounds,
+  normaliseRotation,
+  orient,
   centreInside,
   snap,
   topLeftForCentre,
@@ -45,6 +47,7 @@ function plan(): PlanGrid {
     surface: Array.from({ length: 10 }, () => "w1".repeat(10)),
     feature: emptyRows(10, 10),
     labels: [],
+    doors: [],
   };
 }
 
@@ -62,6 +65,34 @@ describe("bounds", () => {
     expect(b.x + b.w / 2).toBe(210);
     expect(b.y + b.h / 2).toBe(247.5);
     expect(bounds(piece(), at(270))).toEqual(b);
+  });
+
+  it("grows to hold the piece at any angle, about the same centre", () => {
+    // A 220 × 95 piece at 45° spans (220 + 95) / √2 ≈ 222.739 each way.
+    const b = bounds(piece(), at(45));
+    expect(b.w).toBeCloseTo(222.739, 3);
+    expect(b.h).toBeCloseTo(222.739, 3);
+    expect(b.x + b.w / 2).toBeCloseTo(210, 6);
+    expect(b.y + b.h / 2).toBeCloseTo(247.5, 6);
+  });
+});
+
+describe("rotation", () => {
+  it("wraps any angle into whole degrees 0–359", () => {
+    expect(normaliseRotation(360)).toBe(0);
+    expect(normaliseRotation(-10)).toBe(350);
+    expect(normaliseRotation(725.4)).toBe(5);
+  });
+
+  it("orients by the long side, picking the nearer of the two ways", () => {
+    const wide = piece();
+    const tall = piece({ width_cm: 90, depth_cm: 200 });
+    expect(orient(wide, 30, "horizontal")).toBe(0);
+    expect(orient(wide, 150, "horizontal")).toBe(180);
+    expect(orient(wide, 350, "vertical")).toBe(270);
+    expect(orient(tall, 10, "horizontal")).toBe(90);
+    expect(orient(tall, 80, "vertical")).toBe(0);
+    expect(orient(tall, 170, "vertical")).toBe(180);
   });
 });
 
@@ -100,53 +131,32 @@ describe("warnings", () => {
   const box = piece({ id: "f_box", name: "Box", width_cm: 40, depth_cm: 40 });
 
   it("is quiet on open floor", () => {
-    expect(warnings(placed(box, 40, 40), plan(), [])).toEqual([]);
+    expect(warnings(placed(box, 40, 40), plan())).toEqual([]);
   });
 
   it("warns about a wall under the box but not one it only touches", () => {
     const p = plan();
     p.feature[3] = "wl".repeat(10);
-    expect(warnings(placed(box, 40, 50), p, [])).toEqual([{ kind: "wall" }]);
-    expect(warnings(placed(box, 40, 20), p, [])).toEqual([]);
+    expect(warnings(placed(box, 40, 50), p)).toEqual([{ kind: "wall" }]);
+    expect(warnings(placed(box, 40, 20), p)).toEqual([]);
   });
 
   it("warns outside the apartment and past the plan's edge", () => {
     const p = plan();
     p.surface[0] = "..".repeat(10);
-    expect(warnings(placed(box, 40, 0), p, [])).toEqual([{ kind: "outside" }]);
-    expect(warnings(placed(box, 180, 100), plan(), [])).toEqual([
+    expect(warnings(placed(box, 40, 0), p)).toEqual([{ kind: "outside" }]);
+    expect(warnings(placed(box, 180, 100), plan())).toEqual([
       { kind: "outside" },
     ]);
   });
 
-  it("names a piece it overlaps, but not one it only touches", () => {
-    const other = piece({
-      id: "f_bed",
-      name: "Bed",
-      width_cm: 40,
-      depth_cm: 40,
-    });
-    const near = [placed(other, 60, 40)];
-    expect(warnings(placed(box, 40, 40), plan(), near)).toEqual([
-      { kind: "overlap", name: "Bed" },
-    ]);
-    expect(warnings(placed(box, 20, 40), plan(), near)).toEqual([]);
-  });
-
-  it("can give every warning at once, and ignores the piece itself", () => {
+  it("can give both warnings at once", () => {
     const p = plan();
     p.feature[0] = "wl".repeat(10);
     p.surface[1] = "..".repeat(10);
-    const self = placed(box, 0, 0);
-    const other = placed(
-      piece({ id: "f_bed", name: "Bed", width_cm: 40, depth_cm: 40 }),
-      20,
-      0,
-    );
-    expect(warnings(self, p, [self, other]).map(warningText)).toEqual([
+    expect(warnings(placed(box, 0, 0), p).map(warningText)).toEqual([
       "Overlaps a wall",
       "Outside the apartment",
-      "Overlaps Bed",
     ]);
   });
 });

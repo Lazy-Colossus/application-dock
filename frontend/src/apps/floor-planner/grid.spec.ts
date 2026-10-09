@@ -6,7 +6,9 @@ import {
   floorBrush,
   structureBrush,
   fillFor,
+  BOARD_REPEAT,
   TEXTURED,
+  boardLayout,
 } from "./codes";
 import {
   cellAt,
@@ -37,6 +39,7 @@ function grid(cols = 5, rows = 4): PlanGrid {
     surface: emptyRows(cols, rows),
     feature: emptyRows(cols, rows),
     labels: [],
+    doors: [],
   };
 }
 
@@ -222,8 +225,54 @@ describe("fillFor", () => {
 describe("TEXTURED", () => {
   it("draws light seams on dark floors and dark seams on light ones", () => {
     const seam = (code: string) => TEXTURED.find((t) => t.code === code)?.seam;
-    expect(seam("t3")).toBe("rgba(255,255,255,.3)");
-    expect(seam("t0")).toBe("rgba(0,0,0,.22)");
+    expect(seam("t3")).toBe("rgba(255,255,255,.16)");
+    expect(seam("t0")).toBe("rgba(0,0,0,.1)");
+  });
+});
+
+describe("boardLayout", () => {
+  const { boards, joints, rows } = boardLayout("#cfa577", 7);
+
+  it("fills every row of the repeat edge to edge, with nothing overlapping", () => {
+    expect(rows.match(/M /g)).toHaveLength(BOARD_REPEAT.h / 20);
+    for (let y = 0; y < BOARD_REPEAT.h; y += 20) {
+      const row = boards.filter((b) => b.y === y).sort((a, b) => a.x - b.x);
+      expect(row[0].x).toBe(0);
+      row.slice(1).forEach((b, i) => {
+        expect(b.x).toBeCloseTo(row[i].x + row[i].w, 0);
+      });
+      const total = row.reduce((sum, b) => sum + b.w, 0);
+      expect(total).toBeCloseTo(BOARD_REPEAT.w, 0);
+    }
+  });
+
+  it("keeps every board 90–210 cm and close to the floor colour", () => {
+    const ends = [...joints.matchAll(/M ([\d.]+) (\d+) v/g)].map((m) => ({
+      x: Number(m[1]),
+      y: Number(m[2]),
+    }));
+    for (let y = 0; y < BOARD_REPEAT.h; y += 20) {
+      const xs = ends
+        .filter((e) => e.y === y)
+        .map((e) => e.x)
+        .sort((a, b) => a - b);
+      // Each row wraps, so the last board runs on into the first.
+      const lengths = xs.map((x, i) =>
+        i + 1 < xs.length ? xs[i + 1] - x : BOARD_REPEAT.w - x + xs[0],
+      );
+      for (const len of lengths) {
+        expect(len).toBeGreaterThanOrEqual(89.9);
+        expect(len).toBeLessThanOrEqual(210.1);
+      }
+    }
+    for (const b of boards) {
+      const diff = parseInt(b.fill.slice(1, 3), 16) - 0xcf;
+      expect(Math.abs(diff)).toBeLessThanOrEqual(6);
+    }
+  });
+
+  it("lays the same floor every time", () => {
+    expect(boardLayout("#cfa577", 7)).toEqual(boardLayout("#cfa577", 7));
   });
 });
 

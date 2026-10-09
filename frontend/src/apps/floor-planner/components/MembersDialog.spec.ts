@@ -32,7 +32,7 @@ function apartment(over: Partial<Apartment> = {}): Apartment {
     surface: [],
     feature: [],
     labels: [],
-    locked: false,
+    doors: [],
     furniture: [],
     layouts: [],
     ...over,

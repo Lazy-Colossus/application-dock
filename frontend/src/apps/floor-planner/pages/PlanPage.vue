@@ -34,26 +34,6 @@
       </div>
       <div class="fp__spacer" />
       <template v-if="store.apartment">
-        <span
-          class="fp__chip"
-          :class="
-            store.apartment.locked ? 'fp__chip--locked' : 'fp__chip--unlocked'
-          "
-          data-testid="lock-chip"
-        >
-          {{ store.apartment.locked ? "Plan locked" : "Unlocked" }}
-        </span>
-        <button
-          type="button"
-          class="fp-button"
-          data-testid="lock-toggle"
-          :disabled="store.loading"
-          @click="
-            store.apartment.locked ? store.unlock() : store.lockWithSave()
-          "
-        >
-          {{ store.apartment.locked ? "Unlock" : "Lock plan" }}
-        </button>
         <button
           type="button"
           class="fp__people"
@@ -112,7 +92,6 @@
           v-model:size="brushSize"
           :can-undo="store.canUndo"
           :can-redo="store.canRedo"
-          :locked="locked"
           @undo="store.undo()"
           @redo="store.redo()"
         />
@@ -130,9 +109,7 @@
           :placed="placedPieces"
           :layout-name="activeLayout?.name ?? ''"
           :selected-id="selectedPlacedId"
-          :locked="locked"
           @select="selectedPlacedId = $event"
-          @lock="store.lockWithSave()"
         />
       </aside>
       <section class="fp__plan" data-testid="fp-plan">
@@ -164,18 +141,56 @@
             @select="selectedPlacedId = $event"
             @move="movePiece"
             @drop="dropPiece"
+            :closed-doors="closedDoors"
+            @door-toggle="toggleDoor"
+            @door-pick="pickDoor"
+          />
+          <DoorSetup
+            v-if="pickedDoor && store.plan"
+            :door="pickedDoor.door"
+            :sides="sideNames(store.plan, pickedDoor.door)"
+            :open="!closedDoors.includes(pickedDoor.door.key)"
+            :style="{
+              left: `${pickedDoor.left}px`,
+              top: `${pickedDoor.top}px`,
+            }"
+            @update="store.setDoorSetting"
+            @open="(open) => showDoor(pickedDoor!.door.key, open)"
+            @close="pickedKey = null"
           />
         </div>
       </section>
-      <aside class="fp__panel fp__panel--right" data-testid="fp-right">
-        <PlanInfoPanel
-          v-if="mode === 'draw' && store.plan"
-          :plan="store.plan"
-          :locked="locked"
-          @resize="store.resizePlan"
-          @rename="editLabel"
-          @remove="store.deleteLabel"
-        />
+      <button
+        v-if="mode === 'draw' && infoHidden"
+        type="button"
+        class="fp__rail"
+        aria-label="Show plan details"
+        data-testid="info-show"
+        @click="infoHidden = false"
+      >
+        <span class="fp__rail-arrow" aria-hidden="true">‹</span>
+        <span class="fp__rail-label">Plan details</span>
+      </button>
+      <aside v-else class="fp__panel fp__panel--right" data-testid="fp-right">
+        <template v-if="mode === 'draw' && store.plan">
+          <div class="fp__panel-bar">
+            <button
+              type="button"
+              class="fp__hide"
+              aria-label="Hide plan details"
+              data-testid="info-hide"
+              @click="infoHidden = true"
+            >
+              Hide ›
+            </button>
+          </div>
+          <PlanInfoPanel
+            :plan="store.plan"
+            @resize="store.resizePlan"
+            @rename="editLabel"
+            @remove="store.deleteLabel"
+          />
+        </template>
         <template v-else-if="mode === 'furniture'">
           <PieceForm
             v-if="openDraft"
@@ -311,6 +326,7 @@ import {
 } from "vue-router";
 import ApartmentMenu from "../components/ApartmentMenu.vue";
 import BulkAddDialog from "../components/BulkAddDialog.vue";
+import DoorSetup from "../components/DoorSetup.vue";
 import DrawPanel from "../components/DrawPanel.vue";
 import FurnitureList from "../components/FurnitureList.vue";
 import LayoutTabs from "../components/LayoutTabs.vue";
@@ -324,8 +340,10 @@ import PlanInfoPanel from "../components/PlanInfoPanel.vue";
 import PieceStage from "../components/PieceStage.vue";
 import StatusBar from "../components/StatusBar.vue";
 import { DEFAULT_BRUSH, type Brush } from "../codes";
+import { findDoors, sideNames } from "../doors";
 import { BLANK_DRAFT, copyName, draftOf, type PieceDraft } from "../furniture";
 import {
+  orient,
   topLeftForCentre,
   warningText,
   warnings,
@@ -365,7 +383,6 @@ const pieceDraft = ref<PieceDraft | null>(null);
 const formKey = ref(0);
 const bulkOpen = ref(false);
 
-const locked = computed(() => store.apartment?.locked ?? false);
 const selectedPiece = computed(
   () =>
     store.apartment?.furniture.find((p) => p.id === selectedId.value) ?? null,
@@ -383,7 +400,7 @@ const activeLayoutId = ref<string | null>(null);
 const selectedPlacedId = ref<string | null>(null);
 const layoutRenaming = ref(false);
 
-const arranging = computed(() => mode.value === "arrange" && locked.value);
+const arranging = computed(() => mode.value === "arrange");
 /** Falls back to the first layout if the chosen one was deleted, here or elsewhere. */
 const activeLayout = computed(() => {
   const layouts = store.apartment?.layouts ?? [];
@@ -403,9 +420,7 @@ const placedRaw = computed<Placed[]>(() =>
 const placed = computed(() =>
   placedRaw.value.map((p) => ({
     ...p,
-    warned: store.plan
-      ? warnings(p, store.plan, placedRaw.value).length > 0
-      : false,
+    warned: store.plan ? warnings(p, store.plan).length > 0 : false,
   })),
 );
 const placedIds = computed(
@@ -421,11 +436,42 @@ const selectedPlaced = computed(
 );
 const selectedWarnings = computed(() =>
   selectedPlaced.value && store.plan
-    ? warnings(selectedPlaced.value, store.plan, placedRaw.value).map(
-        warningText,
-      )
+    ? warnings(selectedPlaced.value, store.plan).map(warningText)
     : [],
 );
+
+/** Doors this viewer has swung shut. Only a view, like zoom: never saved or shared. */
+const closedDoors = ref<string[]>([]);
+
+function showDoor(key: string, open: boolean): void {
+  closedDoors.value = open
+    ? closedDoors.value.filter((k) => k !== key)
+    : [...closedDoors.value.filter((k) => k !== key), key];
+}
+
+function toggleDoor(key: string): void {
+  showDoor(key, closedDoors.value.includes(key));
+}
+
+const pickedKey = ref<string | null>(null);
+const pickedAt = ref({ left: 0, top: 0 });
+/** The door whose setup is open; it closes by itself if the door is painted away. */
+const pickedDoor = computed(() => {
+  const door =
+    pickedKey.value && store.plan
+      ? findDoors(store.plan).find((d) => d.key === pickedKey.value)
+      : undefined;
+  return door ? { door, ...pickedAt.value } : null;
+});
+
+function pickDoor(key: string, at: { left: number; top: number }): void {
+  pickedKey.value = key;
+  pickedAt.value = at;
+}
+
+watch(mode, () => {
+  pickedKey.value = null;
+});
 
 watch([mode, () => activeLayout.value?.id], () => {
   selectedPlacedId.value = null;
@@ -453,14 +499,18 @@ function movePiece(id: string, x: number, y: number): void {
   });
 }
 
-function rotateSelected(delta: -90 | 90): void {
+function rotateSelected(rotation: Rotation): void {
   const sel = selectedPlaced.value;
   if (!sel || !activeLayout.value) return;
-  const rotation = ((sel.placement.rotation + delta + 360) % 360) as Rotation;
   store.placePiece(activeLayout.value.id, sel.piece.id, {
     ...sel.placement,
     rotation,
   });
+}
+
+function orientSelected(to: "horizontal" | "vertical"): void {
+  const sel = selectedPlaced.value;
+  if (sel) rotateSelected(orient(sel.piece, sel.placement.rotation, to));
 }
 
 function backToTray(): void {
@@ -586,6 +636,8 @@ function resetSelection(): void {
   activeLayoutId.value = null;
   selectedPlacedId.value = null;
   labelEdit.value = null;
+  pickedKey.value = null;
+  closedDoors.value = [];
 }
 
 watch(routeId, (id) => {
@@ -636,7 +688,31 @@ function afterLeaving(nextId: string): void {
   goTo(nextId, true);
 }
 
-const drawing = computed(() => mode.value === "draw" && !locked.value);
+const drawing = computed(() => mode.value === "draw");
+
+const INFO_HIDDEN_KEY = "fp-plan-info-hidden";
+/** Hidden until opened; per browser, so it stays open next time. Storage may be unavailable. */
+function readInfoHidden(): boolean {
+  try {
+    return localStorage.getItem(INFO_HIDDEN_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+const infoHidden = ref(readInfoHidden());
+watch(infoHidden, (hidden) => {
+  try {
+    localStorage.setItem(INFO_HIDDEN_KEY, hidden ? "1" : "0");
+  } catch {
+    // Not remembered, but the panel still opens or hides for this visit.
+  }
+});
+
+// The server checks placements against the saved plan's size, so a drawing still waiting for
+// its autosave is saved on leaving Draw plan.
+watch(mode, (_, from) => {
+  if (from === "draw") void store.flush();
+});
 
 /** Exactly the window below the shell bar, so the status bar never scrolls out of view. */
 function fitWindow(offset: number, height: number): Record<string, string> {
@@ -668,11 +744,15 @@ function removeLabel(): void {
 function onKey(e: KeyboardEvent): void {
   const target = e.target as HTMLElement | null;
   if (target?.closest("input, textarea")) return;
+  if (e.key === "Escape" && pickedKey.value) {
+    pickedKey.value = null;
+    return;
+  }
   if (arranging.value) {
     if (e.key === "Escape") selectedPlacedId.value = null;
     else if (e.key.toLowerCase() === "r" && !e.metaKey && !e.ctrlKey) {
       e.preventDefault();
-      rotateSelected(e.shiftKey ? -90 : 90);
+      orientSelected(e.shiftKey ? "vertical" : "horizontal");
     }
     return;
   }
@@ -789,20 +869,6 @@ onBeforeUnmount(() =>
 .fp__spacer {
   flex: 1;
 }
-.fp__chip {
-  padding: 4px 10px;
-  border-radius: 99px;
-  font-size: 12px;
-  font-weight: 600;
-}
-.fp__chip--locked {
-  background: var(--fp-locked-bg);
-  color: var(--fp-locked-ink);
-}
-.fp__chip--unlocked {
-  background: var(--fp-unlocked-bg);
-  color: var(--fp-unlocked-ink);
-}
 .fp__people {
   display: flex;
   min-height: 44px;
@@ -868,6 +934,50 @@ onBeforeUnmount(() =>
   flex-basis: 268px;
   border-left: 1px solid var(--fp-line);
 }
+.fp__panel-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin: -8px -6px 4px 0;
+}
+.fp__hide {
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fp-muted);
+  font: 500 12px/1 var(--fp-sans);
+  cursor: pointer;
+}
+.fp__hide:hover {
+  background: #f1efea;
+  color: var(--fp-ink);
+}
+.fp__rail {
+  flex: 0 0 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 0;
+  border: 0;
+  border-left: 1px solid var(--fp-line);
+  background: var(--fp-panel);
+  color: var(--fp-muted);
+  font: 500 12px/1 var(--fp-sans);
+  cursor: pointer;
+}
+.fp__rail:hover {
+  background: #f1efea;
+  color: var(--fp-ink);
+}
+.fp__rail-arrow {
+  font-size: 16px;
+}
+.fp__rail-label {
+  writing-mode: vertical-rl;
+  letter-spacing: 0.04em;
+}
 .fp__plan {
   flex: 999 1 560px;
   min-width: 0;
@@ -879,6 +989,7 @@ onBeforeUnmount(() =>
 // margin: auto centres the sheet but, unlike justify-content, never clips it
 // when the zoomed plan is wider than the column.
 .fp__sheet {
+  position: relative;
   margin: auto;
 }
 </style>

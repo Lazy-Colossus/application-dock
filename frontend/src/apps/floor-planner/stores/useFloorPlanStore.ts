@@ -2,12 +2,14 @@ import { computed, ref, watch } from "vue";
 import { defineStore } from "pinia";
 import { api, ApiError } from "@/composables/useApi";
 import type { Brush } from "../codes";
+import { liveDoorSettings, setDoor } from "../doors";
 import type { PieceDraft } from "../furniture";
 import { paint, resize, type Cell, type PlanGrid } from "../grid";
 import * as hist from "../history";
 import type {
   Apartment,
   ApartmentSummary,
+  DoorSetting,
   Label,
   Placement,
   SaveState,
@@ -29,6 +31,7 @@ function planOf(a: Apartment): PlanGrid {
     surface: a.surface,
     feature: a.feature,
     labels: a.labels,
+    doors: a.doors,
   };
 }
 
@@ -79,7 +82,7 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
           : null,
   );
 
-  // Someone else's plan write (or a lock) moved the plan on under a clean draft:
+  // Someone else's plan write moved the plan on under a clean draft:
   // its undo steps would paint over their change, so start again from theirs.
   watch(
     () => apartment.value?.plan_rev,
@@ -160,10 +163,6 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
 
   const baseRev = () => ({ base_rev: apartment.value?.plan_rev ?? 0 });
 
-  const lock = () =>
-    write(() => api.post<Apartment>(`${base()}/lock`, baseRev()));
-  const unlock = () =>
-    write(() => api.post<Apartment>(`${base()}/unlock`, baseRev()));
   const addMember = (username: string) =>
     write(() => api.post<Apartment>(`${base()}/members`, { username }));
   const removeMember = (username: string) =>
@@ -372,6 +371,9 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
     );
   const deleteLabel = (id: string) =>
     editLabels((ls) => ls.filter((l) => l.id !== id));
+  /** A door's swing side, hinge or leaves; one undo step like a stroke. */
+  const setDoorSetting = (setting: DoorSetting) =>
+    step((p) => setDoor(p, setting));
 
   function undo(): void {
     if (!draft.value) return;
@@ -409,6 +411,7 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
     if (!draft.value) return true;
     const sent = draft.value.present;
     const { cols, rows, surface, feature, labels } = sent;
+    const doors = liveDoorSettings(sent);
     saving.value = true;
     try {
       const result = await api.put<Apartment>(`${base()}/plan`, {
@@ -418,6 +421,7 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
         surface,
         feature,
         labels,
+        doors,
       });
       savedPlan.value = sent;
       draftPlanRev = result.plan_rev;
@@ -449,11 +453,6 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
     return dirty.value ? savePlan() : true;
   }
 
-  async function lockWithSave(): Promise<boolean> {
-    if (dirty.value && !(await savePlan())) return false;
-    return lock();
-  }
-
   return {
     apartments,
     apartment,
@@ -474,9 +473,6 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
     renameApartment,
     deleteApartment,
     flush,
-    lock,
-    unlock,
-    lockWithSave,
     addMember,
     removeMember,
     addPieces,
@@ -499,6 +495,7 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
     moveLabel,
     renameLabel,
     deleteLabel,
+    setDoorSetting,
     undo,
     redo,
     discardDraft,

@@ -57,7 +57,7 @@ function apartment(over: Partial<Apartment> = {}): Apartment {
     surface: emptyRows(50, 40),
     feature: emptyRows(50, 40),
     labels: [],
-    locked: false,
+    doors: [],
     furniture: [],
     layouts: [],
     ...over,
@@ -84,6 +84,7 @@ async function page(a: Apartment = apartment(), others: Apartment[] = []) {
 }
 
 beforeEach(() => {
+  localStorage.clear();
   setActivePinia(createPinia());
   vi.clearAllMocks();
   vi.restoreAllMocks();
@@ -123,7 +124,8 @@ describe("PlanPage", () => {
     expect(
       wrapper.get("[data-testid=mode-draw]").attributes("aria-selected"),
     ).toBe("true");
-    for (const id of ["fp-left", "fp-plan", "fp-right"]) {
+    // The plan details panel starts folded into its strip on the right.
+    for (const id of ["fp-left", "fp-plan", "info-show"]) {
       expect(wrapper.find(`[data-testid=${id}]`).exists()).toBe(true);
     }
     expect(wrapper.text()).toContain("1 square = 20 cm");
@@ -138,36 +140,6 @@ describe("PlanPage", () => {
     expect(
       wrapper.get("[data-testid=mode-draw]").attributes("aria-selected"),
     ).toBe("false");
-  });
-
-  it("locks an unlocked plan against its rev", async () => {
-    const wrapper = await page();
-    expect(wrapper.get("[data-testid=lock-chip]").text()).toBe("Unlocked");
-    postMock.mockResolvedValue(
-      apartment({ rev: 3, plan_rev: 3, locked: true }),
-    );
-    await wrapper.get("[data-testid=lock-toggle]").trigger("click");
-    await flushPromises();
-    expect(postMock).toHaveBeenCalledWith(
-      "/floor-planner/apartments/a_1/lock",
-      {
-        base_rev: 2,
-      },
-    );
-    expect(wrapper.get("[data-testid=lock-chip]").text()).toBe("Plan locked");
-    expect(wrapper.get("[data-testid=lock-toggle]").text()).toBe("Unlock");
-  });
-
-  it("offers Unlock on a locked plan", async () => {
-    const wrapper = await page(apartment({ locked: true }));
-    postMock.mockResolvedValue(apartment({ rev: 3, plan_rev: 3 }));
-    await wrapper.get("[data-testid=lock-toggle]").trigger("click");
-    expect(postMock).toHaveBeenCalledWith(
-      "/floor-planner/apartments/a_1/unlock",
-      {
-        base_rev: 2,
-      },
-    );
   });
 
   it("shows the reload notice", async () => {
@@ -186,6 +158,69 @@ describe("PlanPage", () => {
     await wrapper.get("[data-testid=members-open]").trigger("click");
     await flushPromises();
     expect(wrapper.find("[data-testid=members-dialog]").exists()).toBe(true);
+  });
+
+  it("starts with plan details hidden, remembers it opened, and only in Draw plan", async () => {
+    const wrapper = await page();
+    expect(wrapper.find("[data-testid=fp-right]").exists()).toBe(false);
+    await wrapper.get("[data-testid=info-show]").trigger("click");
+    expect(wrapper.find("[data-testid=plan-info]").exists()).toBe(true);
+    expect(localStorage.getItem("fp-plan-info-hidden")).toBe("0");
+
+    wrapper.unmount();
+    const again = await page();
+    expect(again.find("[data-testid=plan-info]").exists()).toBe(true);
+    await again.get("[data-testid=info-hide]").trigger("click");
+    expect(again.find("[data-testid=info-show]").exists()).toBe(true);
+    expect(localStorage.getItem("fp-plan-info-hidden")).toBe("1");
+
+    await again.get("[data-testid=mode-furniture]").trigger("click");
+    expect(again.find("[data-testid=piece-hint]").exists()).toBe(true);
+    expect(again.find("[data-testid=info-show]").exists()).toBe(false);
+  });
+
+  describe("doors", () => {
+    /** A wall along row 2 with a 4-square door in columns 3–6. */
+    function withDoor(): Apartment {
+      const feature = emptyRows(50, 40);
+      feature[2] = "wl".repeat(3) + "dr".repeat(4) + "wl".repeat(43);
+      return apartment({ feature });
+    }
+
+    it("sets a door up from a door-brush click and saves it with the plan", async () => {
+      const wrapper = await page(withDoor());
+      await wrapper.get("[data-testid=brush-door]").trigger("click");
+      const svg = wrapper.get("[data-testid=plan-canvas]");
+      await svg.trigger("pointerdown", at(4, 2));
+      await svg.trigger("pointerup", at(4, 2));
+      expect(wrapper.get("[data-testid=door-setup]").text()).toContain(
+        "Door · 80 cm",
+      );
+      await wrapper.get("[data-testid=door-double]").trigger("click");
+      expect(wrapper.findAll("[data-testid=door-leaf]")).toHaveLength(2);
+
+      putMock.mockResolvedValue(withDoor());
+      await wrapper.get("[data-testid=save]").trigger("click");
+      await flushPromises();
+      expect(putMock.mock.calls[0][1].doors).toEqual([
+        { col: 3, row: 2, into: 0, hinge: 0, double: true },
+      ]);
+
+      await wrapper.trigger("keydown", { key: "Escape" });
+      expect(wrapper.find("[data-testid=door-setup]").exists()).toBe(false);
+    });
+
+    it("swings a door shut for this viewer only, in Arrange too", async () => {
+      const wrapper = await page(withDoor());
+      await wrapper.get("[data-testid=mode-arrange]").trigger("click");
+      const leaf = () =>
+        wrapper.get("[data-testid=door-leaf]").attributes("y2");
+      const open = leaf();
+      await wrapper.get("[data-testid=door-handle-3,2]").trigger("click");
+      expect(leaf()).not.toBe(open);
+      expect(useFloorPlanStore().dirty).toBe(false);
+      expect(putMock).not.toHaveBeenCalled();
+    });
   });
 
   it("shows the brushes only while drawing", async () => {
@@ -207,31 +242,20 @@ describe("PlanPage", () => {
     expect(body.base_rev).toBe(2);
   });
 
-  it("saves unsaved drawing before locking", async () => {
+  it("saves unsaved drawing when leaving Draw plan", async () => {
     const wrapper = await page();
     await drawWall(wrapper);
     putMock.mockResolvedValue(apartment({ rev: 3, plan_rev: 3 }));
-    postMock.mockResolvedValue(
-      apartment({ rev: 4, plan_rev: 4, locked: true }),
-    );
-    await wrapper.get("[data-testid=lock-toggle]").trigger("click");
+    await wrapper.get("[data-testid=mode-arrange]").trigger("click");
     await flushPromises();
     expect(putMock).toHaveBeenCalledTimes(1);
-    expect(postMock).toHaveBeenCalledWith(
-      "/floor-planner/apartments/a_1/lock",
-      {
-        base_rev: 3,
-      },
-    );
+    expect(putMock.mock.calls[0][0]).toBe("/floor-planner/apartments/a_1/plan");
   });
 
-  it("can't draw on a locked plan", async () => {
-    const wrapper = await page(apartment({ locked: true }));
-    expect(wrapper.find("[data-testid=draw-locked]").exists()).toBe(true);
-    const svg = wrapper.get("[data-testid=plan-canvas]");
-    await svg.trigger("pointerdown", at(0, 0));
-    await svg.trigger("pointerup", at(0, 0));
-    expect(useFloorPlanStore().dirty).toBe(false);
+  it("has no plan lock", async () => {
+    const wrapper = await page();
+    expect(wrapper.find("[data-testid=lock-toggle]").exists()).toBe(false);
+    expect(wrapper.find("[data-testid=lock-chip]").exists()).toBe(false);
   });
 
   it("undoes with Cmd+Z and redoes with Shift+Cmd+Z", async () => {
@@ -509,7 +533,6 @@ describe("PlanPage", () => {
     function arranged(over: Partial<Apartment> = {}) {
       const surface = Array.from({ length: 40 }, () => "w1".repeat(50));
       return apartment({
-        locked: true,
         surface,
         furniture: [sofa, bed],
         layouts: [
@@ -530,20 +553,6 @@ describe("PlanPage", () => {
       await wrapper.get("[data-testid=mode-arrange]").trigger("click");
       return wrapper;
     }
-
-    it("asks for a locked plan, and locks from the tray", async () => {
-      const wrapper = await arrange(arranged({ locked: false }));
-      expect(wrapper.find("[data-testid=tray-lock]").exists()).toBe(true);
-      postMock.mockResolvedValue(arranged());
-      await wrapper.get("[data-testid=tray-lock] button").trigger("click");
-      await flushPromises();
-      expect(postMock).toHaveBeenCalledWith(
-        "/floor-planner/apartments/a_1/lock",
-        {
-          base_rev: 2,
-        },
-      );
-    });
 
     it("lists the tray and places a dropped piece centred under the cursor", async () => {
       const wrapper = await arrange();
@@ -582,11 +591,11 @@ describe("PlanPage", () => {
       );
     });
 
-    it("rotates the selected piece with R and sends it back to the tray", async () => {
+    it("stands the selected piece up with Shift+R and sends it back to the tray", async () => {
       const wrapper = await arrange();
       await wrapper.get("[data-testid=on-plan-f_bed]").trigger("click");
       putMock.mockResolvedValue(arranged());
-      await wrapper.trigger("keydown", { key: "r" });
+      await wrapper.trigger("keydown", { key: "R", shiftKey: true });
       expect(putMock).toHaveBeenCalledWith(
         "/floor-planner/apartments/a_1/layouts/l_a/placements/f_bed",
         { furniture_id: "f_bed", x_cm: 200, y_cm: 200, rotation: 90 },

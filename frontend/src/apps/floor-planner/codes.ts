@@ -127,23 +127,116 @@ export interface TexturedSwatch {
   texture: FloorTexture;
   colour: string;
   seam: string;
+  /** Wood only: the boards and joints of one `BOARD_REPEAT`. */
+  boards?: BoardLayout;
 }
 
-/** Grout and plank lines: dark on light floors, light on dark ones. */
+/** Grout and board joints, kept faint so walls and furniture stay the strongest marks. */
 function seamFor(hex: string): string {
   const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
   const luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luma < 0.4 ? "rgba(255,255,255,.3)" : "rgba(0,0,0,.22)";
+  return luma < 0.4 ? "rgba(255,255,255,.16)" : "rgba(0,0,0,.1)";
+}
+
+/** Wood repeats every 6 × 2 m: big enough that the repeat is hard to spot. */
+export const BOARD_REPEAT = { w: 600, h: 200 };
+const BOARD_CM = 20;
+const BOARD_MIN = 90;
+const BOARD_MAX = 210;
+/** How far each board's tone may drift from the floor colour, towards white or black. */
+const BOARD_TONE = 0.025;
+
+export interface Board {
+  x: number;
+  y: number;
+  w: number;
+  fill: string;
+}
+
+export interface BoardLayout {
+  boards: Board[];
+  /** Board ends, one short line each. */
+  joints: string;
+  /** The long edges between rows of boards. */
+  rows: string;
+}
+
+/** A small seeded generator, so a floor looks the same on every render and for everyone. */
+function seeded(seed: number): () => number {
+  let a = seed;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Mixes a hex colour towards white (amount > 0) or black (amount < 0). */
+function tint(hex: string, amount: number): string {
+  const to = amount < 0 ? 0 : 255;
+  const k = Math.abs(amount);
+  return (
+    "#" +
+    [1, 3, 5]
+      .map((i) => parseInt(hex.slice(i, i + 2), 16))
+      .map((v) =>
+        Math.round(v + (to - v) * k)
+          .toString(16)
+          .padStart(2, "0"),
+      )
+      .join("")
+  );
+}
+
+/**
+ * Rows of 20 cm boards, each 90–210 cm long with a slightly different tone. Each row wraps
+ * around the repeat's width, so the pattern tiles without a seam.
+ */
+export function boardLayout(colour: string, seed: number): BoardLayout {
+  const rand = seeded(seed);
+  const { w: width, h: height } = BOARD_REPEAT;
+  const boards: Board[] = [];
+  const joints: string[] = [];
+  const rows: string[] = [];
+  const n = (v: number) => +v.toFixed(1);
+  for (let y = 0; y < height; y += BOARD_CM) {
+    rows.push(`M 0 ${y} H ${width}`);
+    let start = rand() * width;
+    let remaining = width;
+    while (remaining > 0) {
+      // Every board, the last in the row included, stays within BOARD_MIN–BOARD_MAX.
+      const len =
+        remaining <= BOARD_MAX
+          ? remaining
+          : Math.min(
+              BOARD_MIN + rand() * (BOARD_MAX - BOARD_MIN),
+              remaining - BOARD_MIN,
+            );
+      const fill = tint(colour, (rand() - 0.5) * 2 * BOARD_TONE);
+      const x = start % width;
+      joints.push(`M ${n(x)} ${y} v ${BOARD_CM}`);
+      const first = Math.min(len, width - x);
+      boards.push({ x: n(x), y, w: n(first), fill });
+      if (first < len) boards.push({ x: 0, y, w: n(len - first), fill });
+      start += len;
+      remaining -= len;
+    }
+  }
+  return { boards, joints: joints.join(" "), rows: rows.join(" ") };
 }
 
 /** One SVG pattern per textured colour, defined by the canvas as `fp-<code>`. */
 export const TEXTURED: TexturedSwatch[] = FLOORS.flatMap((f) =>
   f.texture
-    ? f.swatches.map((s) => ({
+    ? f.swatches.map((s, i) => ({
         code: s.code,
         texture: f.texture!,
         colour: s.colour,
         seam: seamFor(s.colour),
+        ...(f.texture === "planks"
+          ? { boards: boardLayout(s.colour, 101 + i) }
+          : {}),
       }))
     : [],
 );

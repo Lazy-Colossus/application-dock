@@ -1,6 +1,6 @@
 import { EMPTY } from "./codes";
 import { CELL_CM, codeAt, type PlanGrid } from "./grid";
-import type { Furniture, Placement } from "./types";
+import type { Furniture, Placement, Rotation } from "./types";
 
 export interface Box {
   x: number;
@@ -20,10 +20,41 @@ export const snap = (v: number): number =>
 export function bounds(piece: Sized, at: Spot): Box {
   const cx = at.x_cm + piece.width_cm / 2;
   const cy = at.y_cm + piece.depth_cm / 2;
-  const turned = at.rotation === 90 || at.rotation === 270;
-  const w = turned ? piece.depth_cm : piece.width_cm;
-  const h = turned ? piece.width_cm : piece.depth_cm;
+  const rad = (at.rotation * Math.PI) / 180;
+  const cos = Math.abs(Math.cos(rad));
+  const sin = Math.abs(Math.sin(rad));
+  // Rounding drops float noise, so a quarter turn swaps the sides exactly.
+  const r = (v: number) => Math.round(v * 1000) / 1000;
+  const w = r(piece.width_cm * cos + piece.depth_cm * sin);
+  const h = r(piece.width_cm * sin + piece.depth_cm * cos);
   return { x: cx - w / 2, y: cy - h / 2, w, h };
+}
+
+/** The − / + buttons turn a piece this many degrees. */
+export const ROTATION_STEP = 10;
+
+/** Any angle as whole degrees 0–359. */
+export function normaliseRotation(deg: number): Rotation {
+  return ((Math.round(deg) % 360) + 360) % 360;
+}
+
+/**
+ * The angle that lays the piece's long side left to right (horizontal) or top to bottom
+ * (vertical). Of the two that do, the one nearer the current angle, so the piece keeps facing
+ * the same way.
+ */
+export function orient(
+  piece: Sized,
+  rotation: Rotation,
+  to: "horizontal" | "vertical",
+): Rotation {
+  const wide = piece.width_cm >= piece.depth_cm;
+  const base = (to === "horizontal") === wide ? 0 : 90;
+  const away = (a: number) => {
+    const d = Math.abs(normaliseRotation(rotation) - a) % 360;
+    return Math.min(d, 360 - d);
+  };
+  return away(base) <= away(base + 180) ? base : base + 180;
 }
 
 export function centreInside(
@@ -48,31 +79,15 @@ export function topLeftForCentre(
   return { x: snap(cx - piece.width_cm / 2), y: snap(cy - piece.depth_cm / 2) };
 }
 
-export type Warning =
-  | { kind: "wall" }
-  | { kind: "outside" }
-  | { kind: "overlap"; name: string };
+export type Warning = { kind: "wall" } | { kind: "outside" };
 
 export interface Placed {
   piece: Furniture;
   placement: Placement;
 }
 
-// Pieces that only touch, or overlap by a rounding hair, shouldn't warn.
-const TOUCH_CM = 1;
-
-function overlap(a: Box, b: Box): boolean {
-  const dx = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
-  const dy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
-  return dx > TOUCH_CM && dy > TOUCH_CM;
-}
-
-/** LA-5, judged on the rotated bounding box. Warnings never block a move. */
-export function warnings(
-  target: Placed,
-  plan: PlanGrid,
-  others: Placed[],
-): Warning[] {
+/** LA-5, judged on the rotated bounding box. Pieces may overlap each other; warnings never block a move. */
+export function warnings(target: Placed, plan: PlanGrid): Warning[] {
   const box = bounds(target.piece, target.placement);
   const out: Warning[] = [];
   const first = (v: number) => Math.floor(v / CELL_CM);
@@ -93,17 +108,9 @@ export function warnings(
   }
   if (wall) out.push({ kind: "wall" });
   if (outside) out.push({ kind: "outside" });
-  for (const other of others) {
-    if (other.piece.id === target.piece.id) continue;
-    if (overlap(box, bounds(other.piece, other.placement))) {
-      out.push({ kind: "overlap", name: other.piece.name });
-    }
-  }
   return out;
 }
 
 export function warningText(w: Warning): string {
-  if (w.kind === "wall") return "Overlaps a wall";
-  if (w.kind === "outside") return "Outside the apartment";
-  return `Overlaps ${w.name}`;
+  return w.kind === "wall" ? "Overlaps a wall" : "Outside the apartment";
 }

@@ -25,7 +25,7 @@ def _apt(username: str) -> str:
 
 @pytest.fixture
 def ids() -> tuple[str, str, str]:
-    """A locked 10 × 8 m plan with a sofa and a chair; returns (layout, sofa, chair)."""
+    """A 10 × 8 m plan with a sofa and a chair; returns (layout, sofa, chair)."""
     apt = service.add_pieces(
         "ana",
         _apt("ana"),
@@ -34,7 +34,6 @@ def ids() -> tuple[str, str, str]:
             PieceDraft(name="Chair", colour="green", shape="egg", width_cm=85, depth_cm=90),
         ],
     )
-    service.set_locked("ana", _apt("ana"), 0, True)
     return apt.layouts[0].id, apt.furniture[0].id, apt.furniture[1].id
 
 
@@ -47,15 +46,6 @@ def _placements(layout_index: int = 0) -> list[tuple[str, int, int, int]]:
     return [(p.furniture_id, p.x_cm, p.y_cm, p.rotation) for p in layout.placements]
 
 
-def test_arranging_needs_a_locked_plan(ids: tuple[str, str, str]) -> None:
-    layout, sofa, _ = ids
-    service.set_locked("ana", _apt("ana"), 1, False)
-    with pytest.raises(ValueError, match="Lock the plan"):
-        service.place_piece("ana", _apt("ana"), layout, sofa, _at(100, 100))
-    with pytest.raises(ValueError, match="Lock the plan"):
-        service.remove_placement("ana", _apt("ana"), layout, sofa)
-
-
 def test_placing_a_piece_twice_moves_it(ids: tuple[str, str, str]) -> None:
     layout, sofa, chair = ids
     service.place_piece("ana", _apt("ana"), layout, sofa, _at(100, 100))
@@ -64,9 +54,16 @@ def test_placing_a_piece_twice_moves_it(ids: tuple[str, str, str]) -> None:
     assert sorted(_placements()) == sorted([(chair, 400, 100, 0), (sofa, 200, 300, 90)])
 
 
-def test_a_rotation_must_be_a_right_angle() -> None:
+def test_a_piece_turns_to_any_whole_degree(ids: tuple[str, str, str]) -> None:
+    layout, sofa, _ = ids
+    service.place_piece("ana", _apt("ana"), layout, sofa, _at(100, 100, 135))
+    assert _placements() == [(sofa, 100, 100, 135)]
+
+
+@pytest.mark.parametrize("rotation", [-10, 360, 12.5])
+def test_a_rotation_is_whole_degrees_0_to_359(rotation: float) -> None:
     with pytest.raises(ValidationError):
-        _at(0, 0, 45)
+        PlacementRequest(x_cm=0, y_cm=0, rotation=rotation)
 
 
 @pytest.mark.parametrize(

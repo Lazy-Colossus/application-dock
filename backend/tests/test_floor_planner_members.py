@@ -25,12 +25,12 @@ def ana() -> str:
 
 
 def test_the_owner_adds_a_member_who_then_shares_everything(ana: str) -> None:
-    service.set_locked("ana", ana, 0, True)
+    service.rename_apartment("ana", ana, "Shared flat")
     apt = service.add_member("ana", ana, " bo ")
     assert apt.members == ["ana", "bo"]
     theirs = service.get_apartment("bo", ana)
-    assert (theirs.is_owner, theirs.locked) == (False, True)
-    assert service.set_locked("bo", ana, 1, False).locked is False
+    assert (theirs.is_owner, theirs.name) == (False, "Shared flat")
+    assert service.rename_apartment("bo", ana, "Our flat").name == "Our flat"
 
 
 def test_joining_keeps_the_joiners_own_apartments(ana: str) -> None:

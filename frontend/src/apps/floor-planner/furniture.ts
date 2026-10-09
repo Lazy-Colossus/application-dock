@@ -8,18 +8,25 @@ export const SIDE_CM_MAX = 1000;
 export const PIECE_CELL_CM = 10;
 export const CUSTOM_MAX = 40;
 
+/** In palette order: light to dark within each family, so the swatches read as a range. */
 export const COLOURS: { id: Colour; name: string; hex: string }[] = [
   { id: "white", name: "White", hex: "#f4f3ef" },
-  { id: "black", name: "Black", hex: "#2a2a2a" },
-  { id: "grey", name: "Grey", hex: "#868c94" },
   { id: "beige", name: "Beige", hex: "#d9c8a5" },
+  { id: "tan", name: "Tan", hex: "#c09a6b" },
   { id: "brown", name: "Brown", hex: "#6d4a2c" },
-  { id: "red", name: "Red", hex: "#b8423a" },
-  { id: "orange", name: "Orange", hex: "#d9822b" },
   { id: "yellow", name: "Yellow", hex: "#e0b84a" },
-  { id: "green", name: "Green", hex: "#5f8a55" },
-  { id: "blue", name: "Blue", hex: "#4f74a8" },
+  { id: "orange", name: "Orange", hex: "#d9822b" },
+  { id: "red", name: "Red", hex: "#b8423a" },
+  { id: "pink", name: "Pink", hex: "#d98fa3" },
   { id: "purple", name: "Purple", hex: "#7a5a9a" },
+  { id: "blue", name: "Blue", hex: "#4f74a8" },
+  { id: "navy", name: "Navy", hex: "#2e3f66" },
+  { id: "teal", name: "Teal", hex: "#3f8784" },
+  { id: "green", name: "Green", hex: "#5f8a55" },
+  { id: "olive", name: "Olive", hex: "#7c7a3f" },
+  { id: "grey", name: "Grey", hex: "#868c94" },
+  { id: "charcoal", name: "Charcoal", hex: "#4a4e55" },
+  { id: "black", name: "Black", hex: "#2a2a2a" },
 ];
 
 export const EMPTY_SQUARE = ".";
@@ -36,6 +43,12 @@ export const COLOUR_CHARS: Record<Colour, string> = {
   green: "n",
   blue: "u",
   purple: "p",
+  tan: "t",
+  pink: "i",
+  navy: "a",
+  teal: "l",
+  olive: "v",
+  charcoal: "c",
 };
 const COLOUR_OF = new Map(
   Object.entries(COLOUR_CHARS).map(([c, ch]) => [ch, c as Colour]),

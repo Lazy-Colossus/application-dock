@@ -27,12 +27,7 @@ def _names(username: str) -> list[str]:
 def test_a_new_apartment_is_empty_owned_and_listed_first() -> None:
     service.list_apartments("ana")
     apt = service.create_apartment("ana", "  Summer flat ")
-    assert (apt.name, apt.owner, apt.members, apt.locked) == (
-        "Summer flat",
-        "ana",
-        ["ana"],
-        False,
-    )
+    assert (apt.name, apt.owner, apt.members) == ("Summer flat", "ana", ["ana"])
     assert [layout.name for layout in apt.layouts] == ["Layout A"]
     assert _names("ana") == ["Summer flat", "My apartment"]
 
@@ -40,8 +35,8 @@ def test_a_new_apartment_is_empty_owned_and_listed_first() -> None:
 def test_the_list_follows_the_latest_change() -> None:
     first = service.list_apartments("ana")[0].id
     service.create_apartment("ana", "Second")
-    service.set_locked("ana", first, 0, True)
-    assert _names("ana") == ["My apartment", "Second"]
+    service.rename_apartment("ana", first, "First")
+    assert _names("ana") == ["First", "Second"]
 
 
 @pytest.mark.parametrize("bad", ["", "   ", "x" * 61])
@@ -59,7 +54,6 @@ def test_a_duplicate_copies_everything_and_belongs_to_the_caller_alone() -> None
         [PieceDraft(name="Sofa", colour="grey", shape="rectangle", width_cm=200, depth_cm=90)],
     )
     sofa, layout = apt.furniture[0].id, apt.layouts[0].id
-    service.set_locked("ana", source, 0, True)
     service.place_piece("ana", source, layout, sofa, PlacementRequest(x_cm=100, y_cm=100))
 
     copy = service.duplicate_apartment("bo", source, "Try B")
@@ -71,7 +65,6 @@ def test_a_duplicate_copies_everything_and_belongs_to_the_caller_alone() -> None
         0,
         0,
     )
-    assert copy.locked is True
     assert [p.name for p in copy.furniture] == ["Sofa"]
     assert copy.layouts[0].placements[0].x_cm == 100
 
@@ -116,7 +109,7 @@ def test_someone_elses_apartment_is_not_found() -> None:
     with pytest.raises(FileNotFoundError):
         service.get_apartment("bo", theirs)
     with pytest.raises(FileNotFoundError):
-        service.set_locked("bo", theirs, 0, True)
+        service.rename_apartment("bo", theirs, "Mine")
     with pytest.raises(FileNotFoundError):
         service.duplicate_apartment("bo", theirs, "Mine now")
 

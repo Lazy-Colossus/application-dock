@@ -8,7 +8,14 @@ from typing import Any
 import pytest
 
 from app.repositories import floor_planner_repo as repo
-from app.schemas.floor_planner import Furniture, Layout, PieceDraft, Placement, PlanWriteRequest
+from app.schemas.floor_planner import (
+    Furniture,
+    Layout,
+    PieceDraft,
+    Placement,
+    PlanWriteRequest,
+    empty_rows,
+)
 from app.services import auth_service
 from app.services import floor_planner_service as service
 
@@ -51,10 +58,13 @@ def test_pieces_are_added_in_order_and_cleaned() -> None:
 
 
 def test_a_piece_write_does_not_stale_the_plan() -> None:
-    service.set_locked("ana", _apt("ana"), 0, True)
+    blank = empty_rows(50, 40)
+    plan = PlanWriteRequest(base_rev=0, cols=50, rows=40, surface=blank, feature=blank, labels=[])
+    service.replace_plan("ana", _apt("ana"), plan)
     apt = service.add_pieces("ana", _apt("ana"), [_draft()])
     assert (apt.rev, apt.plan_rev) == (2, 1)
-    assert service.set_locked("ana", _apt("ana"), 1, False).locked is False
+    painted = service.replace_plan("ana", _apt("ana"), plan.model_copy(update={"base_rev": 1}))
+    assert (painted.rev, painted.plan_rev) == (3, 2)
 
 
 def test_a_drawn_shape_is_trimmed_sized_and_coloured_from_its_squares() -> None:
@@ -184,11 +194,6 @@ def test_deleting_a_piece_removes_it_from_every_layout() -> None:
     ]
     with pytest.raises(FileNotFoundError):
         service.delete_piece("ana", _apt("ana"), sofa.id)
-
-
-def test_furniture_can_be_edited_on_a_locked_plan() -> None:
-    service.set_locked("ana", _apt("ana"), 0, True)
-    assert len(service.add_pieces("ana", _apt("ana"), [_draft()]).furniture) == 1
 
 
 def test_plan_writes_still_catch_real_plan_conflicts() -> None:

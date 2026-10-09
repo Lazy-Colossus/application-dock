@@ -345,6 +345,8 @@ function undo(): void {
 }
 .piece-stage__palette {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 6px;
 }
 .piece-stage__swatch {
