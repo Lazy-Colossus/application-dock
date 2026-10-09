@@ -105,25 +105,6 @@
     </p>
 
     <div class="piece-form__actions">
-      <button
-        v-if="piece"
-        type="button"
-        class="fp-button piece-form__delete"
-        data-testid="piece-delete"
-        @click="remove"
-      >
-        Delete
-      </button>
-      <span class="piece-form__spacer" />
-      <button
-        v-if="piece"
-        type="button"
-        class="fp-button"
-        data-testid="piece-copy"
-        @click="emit('copy')"
-      >
-        Copy
-      </button>
       <button type="button" class="fp-button" @click="emit('cancel')">
         Cancel
       </button>
@@ -134,6 +115,24 @@
         data-testid="piece-save"
       >
         Save
+      </button>
+    </div>
+    <div v-if="piece" class="piece-form__actions">
+      <button
+        type="button"
+        class="fp-button"
+        data-testid="piece-copy"
+        @click="emit('copy')"
+      >
+        Copy
+      </button>
+      <button
+        type="button"
+        class="fp-button piece-form__delete"
+        data-testid="piece-delete"
+        @click="remove"
+      >
+        Delete
       </button>
     </div>
   </form>
@@ -334,11 +333,12 @@ function remove(): void {
   font-size: 13px;
   color: var(--fp-warn-ink);
 }
+// Two rows of two: four buttons don't fit the panel's width on one line.
 .piece-form__actions {
   display: flex;
   gap: 8px;
 }
-.piece-form__spacer {
+.piece-form__actions .fp-button {
   flex: 1;
 }
 .piece-form__delete {
