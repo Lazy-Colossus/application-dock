@@ -49,4 +49,11 @@ export const apps: AppDescriptor[] = [
     icon: "help_center",
     route: "/question-of-the-day",
   },
+  {
+    id: "shared-notes",
+    label: "Shared Notes",
+    // A sticky-note glyph — reads as a note/scratchpad.
+    icon: "sticky_note_2",
+    route: "/shared-notes",
+  },
 ];

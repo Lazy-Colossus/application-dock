@@ -49,4 +49,12 @@ describe("app registry", () => {
     expect(qotd?.icon).toBe("help_center");
     expect(qotd?.route).toBe("/question-of-the-day");
   });
+
+  it("registers the Shared Notes app (Story 1.1)", () => {
+    const notes = apps.find((a) => a.id === "shared-notes");
+    expect(notes).toBeDefined();
+    expect(notes?.label).toBe("Shared Notes");
+    expect(notes?.icon).toBe("sticky_note_2");
+    expect(notes?.route).toBe("/shared-notes");
+  });
 });

@@ -56,6 +56,12 @@ _APPS: list[AppDescriptor] = [
         icon="help_center",
         route="/question-of-the-day",
     ),
+    AppDescriptor(
+        id="shared-notes",
+        label="Shared Notes",
+        icon="sticky_note_2",
+        route="/shared-notes",
+    ),
 ]
 
 
