@@ -90,7 +90,7 @@ API contract per project convention: snake_case JSON, direct serialization
 All HTTP goes through `src/composables/useApi.ts`.
 
 - `registry.ts` — append `{ id: "pagemage", label: "PageMage",
-  icon: <material-icon>, route: "/pagemage" }`.
+  icon: "html", route: "/pagemage" }`.
 - `router/routes.ts` — two lazy-loaded routes (both `requiresAuth: true`):
   - `/pagemage` → `pages/HomePage.vue` (name `pagemage-home`).
   - `/pagemage/pages/:pageId` → `pages/ViewerPage.vue` (name `pagemage-view`).
