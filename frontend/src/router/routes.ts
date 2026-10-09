@@ -227,6 +227,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "Shared Notes", requiresAuth: true },
       },
       {
+        path: "pagemage",
+        name: "pagemage-home",
+        component: () => import("@/apps/pagemage/pages/HomePage.vue"),
+        meta: { title: "PageMage", requiresAuth: true },
+      },
+      {
+        path: "pagemage/pages/:pageId",
+        name: "pagemage-view",
+        component: () => import("@/apps/pagemage/pages/ViewerPage.vue"),
+        meta: { title: "PageMage", requiresAuth: true },
+      },
+      {
         path: "iss-vanguard",
         name: "iss-vanguard-ship",
         component: () => import("@/apps/iss-vanguard/pages/ShipPage.vue"),
