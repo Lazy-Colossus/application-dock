@@ -108,12 +108,22 @@ Success: you sketch the apartment in a few minutes. A 220 × 95 cm sofa is visib
   - `round`: a diameter in cm.
   - `oval`: an ellipse, width × depth in cm.
   - `egg`: an asymmetric oval, width × depth in cm, with the wider end at the top before rotation.
-  - `custom`: painted squares in a small grid editor, for shapes such as an L-shaped sofa. Its
-    size is the bounding box of the painted squares.
+  - `custom`: painted squares, for shapes such as an L-shaped sofa or a sofa with cushions in
+    another colour. Each square has its own palette colour. Its size is the bounding box of the
+    painted squares.
 - **FU-2** The colour palette is white, black, grey, beige, brown, red, orange, yellow, green,
   blue and purple.
 - **FU-3** Basic shapes keep their exact size in cm and do not snap to squares. Custom shapes are
-  measured in 20 cm squares, and the editor shows their size in cm as you paint.
+  painted on a 4 × 4 m drawing grid of **10 cm squares** (finer than the plan's 20 cm), with a
+  palette of the FU-2 colours plus an eraser, Freehand and Rectangle tools, 10/20/50 cm brushes
+  and Undo. The size in cm shows as you paint.
+  - A basic shape can be edited by drawing: the first stroke on it, or choosing Custom, turns it
+    into squares of its colour, rounded to the nearest 10 cm (curves become stepped). Undo, or
+    picking the basic shape again, brings it back. Pieces over 4 m can't be drawn on.
+  - A custom piece's `colour` is its most-painted colour (a tie goes to the first painted, row by
+    row). It stands for the piece wherever one colour is needed, such as bulk add.
+- **FU-6** A piece can be copied: **Copy** opens a new piece pre-filled from the form, including
+  unsaved edits, named "<name> copy" (shortened to fit the name limit).
 - **FU-4** Bulk add uses a strict format, with one piece per line:
   `name; shape; size; colour[; note]`
   - Size is `W x D` in whole cm, or a single number for `round`. Shape and colour must be values
@@ -189,7 +199,11 @@ layouts: list[Layout]            display order
 ```
 
 `Furniture` = `{id, name, colour, note, shape, width_cm, depth_cm, cells: list[str] | None}`.
-`cells` is only used by `custom` shapes and is a row mask of `#` and `.`.
+`cells` is only used by `custom` shapes: equal-length rows, at most 40 × 40, one character per
+10 cm square. `.` is unpainted and each colour has a letter: white `w`, black `k`, grey `g`,
+beige `e`, brown `b`, red `r`, orange `o`, yellow `y`, green `n`, blue `u`, purple `p`. Masks
+saved before squares had colours (20 cm squares of `#` and `.`) are upgraded when read, each `#`
+becoming 2 × 2 squares of the piece's colour, so their size is unchanged.
 
 `Layout` = `{id, name, placements: list[{furniture_id, x_cm, y_cm, rotation}]}`.
 
@@ -260,7 +274,7 @@ press **Save**, or when you lock the plan, not on every stroke.
   - `BrushPalette`
   - `FurnitureList`
   - `BulkAddDialog`
-  - `CustomShapeEditor`
+  - `PieceStage` (the Furniture-mode drawing grid)
   - `LayoutTray`
   - `MembersDialog`
 - Tests: the pure units (`grid`, `furnitureFormat`, `geometry`) and the store have spec files
@@ -277,14 +291,14 @@ https://claude.ai/artifact/1nK3cQ36cNrwLq4GeTg8BV (the B artboards).
   (`app-bar--floor-planner`) so the dark dock bar does not sit on top of it.
 - **Top bar:** the apartment switcher (AP-1), a Draw plan · Furniture · Arrange switch, a lock chip with a
   Lock/Unlock button, and member avatars.
-- **Three columns:** a left panel, the plan in the centre, and a right panel. What the side
-  panels show depends on the mode:
+- **Three columns:** a left panel, the centre, and a right panel. What each shows depends on the
+  mode:
 
-  | Mode | Left panel | Right panel |
-  |---|---|---|
-  | Draw plan | Structure brushes, floor brushes with inline colour chips, Eraser and Room label, the Freehand/Rectangle switch, Undo/Redo | A scale card ("1 square = 20 cm" with a 1 m scale bar), plan size and resize, the room label list |
-  | Furniture | The furniture list | The piece form or the custom-shape editor, with a to-scale preview. **Bulk add** opens a dialog. |
-  | Arrange | The tray of pieces not in this layout, then the pieces already on the plan | The selected piece: size, position in m, rotation buttons, warnings, Back to tray |
+  | Mode | Left panel | Centre | Right panel |
+  |---|---|---|---|
+  | Draw plan | Structure brushes, floor brushes with inline colour chips, Eraser and Room label, the Freehand/Rectangle switch, Undo/Redo | The plan | A scale card ("1 square = 20 cm" with a 1 m scale bar), plan size and resize, the room label list |
+  | Furniture | The furniture list | The open piece on the 10 cm drawing grid with its tools (FU-3); the plan is not shown | The piece form with Delete, Copy, Cancel and Save. **Bulk add** opens a dialog. |
+  | Arrange | The tray of pieces not in this layout, then the pieces already on the plan | The plan with the layout's pieces | The selected piece: size, position in m, rotation buttons, warnings, Back to tray |
 
 - **Bottom bar:**
   - In Arrange, the layouts appear as tabs, followed by "+ New layout" and "Duplicate".

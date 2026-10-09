@@ -193,7 +193,6 @@ describe("PlanPage", () => {
     expect(wrapper.find("[data-testid=draw-panel]").exists()).toBe(true);
     await wrapper.get("[data-testid=mode-furniture]").trigger("click");
     expect(wrapper.find("[data-testid=draw-panel]").exists()).toBe(false);
-    expect(wrapper.find("[data-testid=plan-canvas]").exists()).toBe(true);
   });
 
   it("saves a drawn stroke", async () => {
@@ -395,6 +394,73 @@ describe("PlanPage", () => {
         "/floor-planner/apartments/a_1/furniture/f_1",
         expect.objectContaining({ colour: "blue" }),
       );
+    });
+
+    it("shows the open piece in the centre instead of the plan", async () => {
+      const wrapper = await furniture();
+      expect(wrapper.find("[data-testid=plan-canvas]").exists()).toBe(false);
+      expect(wrapper.get("[data-testid=piece-stage]").text()).toContain(
+        "No piece selected",
+      );
+      await wrapper.get("[data-testid=piece-f_1]").trigger("click");
+      expect(wrapper.get("[data-testid=piece-preview]").text()).toContain(
+        "220 × 95 cm",
+      );
+    });
+
+    it("saves what is painted on the grid as a drawn piece", async () => {
+      const wrapper = await furniture(
+        apartment({ furniture: [{ ...sofa, width_cm: 40, depth_cm: 20 }] }),
+      );
+      await wrapper.get("[data-testid=piece-f_1]").trigger("click");
+      await wrapper.get("[data-testid=paint-blue]").trigger("click");
+      const grid = wrapper.get("[data-testid=piece-grid]");
+      // The 4 × 2 piece is centred on the 40-square grid at 14 px a square.
+      const square = { clientX: 18 * 14 + 7, clientY: 19 * 14 + 7, button: 0 };
+      await grid.trigger("pointerdown", square);
+      await grid.trigger("pointerup", square);
+      expect(wrapper.get("[data-testid=piece-drawn]").text()).toContain(
+        "40 × 20 cm",
+      );
+      putMock.mockResolvedValue(apartment({ furniture: [sofa] }));
+      await wrapper.get("[data-testid=piece-form]").trigger("submit");
+      expect(putMock).toHaveBeenCalledWith(
+        "/floor-planner/apartments/a_1/furniture/f_1",
+        expect.objectContaining({
+          shape: "custom",
+          cells: ["uggg", "gggg"],
+          colour: "grey",
+        }),
+      );
+    });
+
+    it("copies a piece into a new one named with copy", async () => {
+      const wrapper = await furniture();
+      await wrapper.get("[data-testid=piece-f_1]").trigger("click");
+      await wrapper.get("[data-testid=piece-copy]").trigger("click");
+      expect(
+        (wrapper.get("[data-testid=piece-name]").element as HTMLInputElement)
+          .value,
+      ).toBe("Sofa copy");
+      postMock.mockResolvedValue(
+        apartment({
+          furniture: [sofa, { ...sofa, id: "f_2", name: "Sofa copy" }],
+        }),
+      );
+      await wrapper.get("[data-testid=piece-form]").trigger("submit");
+      await flushPromises();
+      expect(postMock).toHaveBeenCalledWith(
+        "/floor-planner/apartments/a_1/furniture",
+        {
+          pieces: [
+            expect.objectContaining({ name: "Sofa copy", width_cm: 220 }),
+          ],
+        },
+      );
+      expect(putMock).not.toHaveBeenCalled();
+      expect(
+        wrapper.get("[data-testid=piece-f_2]").attributes("aria-pressed"),
+      ).toBe("true");
     });
 
     it("deletes after confirming and clears the selection", async () => {

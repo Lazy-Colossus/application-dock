@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mount } from "@vue/test-utils";
+import { mount, type VueWrapper } from "@vue/test-utils";
 import PieceForm from "./PieceForm.vue";
+import { BLANK_DRAFT, draftOf, type PieceDraft } from "../furniture";
 import type { Furniture } from "../types";
 
 const sofa: Furniture = {
@@ -14,11 +15,30 @@ const sofa: Furniture = {
   cells: null,
 };
 
+/** Mounted the way the page uses it: the draft goes out and comes back in. */
+function form(
+  piece: Furniture | null,
+  draft: PieceDraft = piece ? draftOf(piece) : { ...BLANK_DRAFT },
+  placedIn = 0,
+) {
+  const wrapper: VueWrapper = mount(PieceForm, {
+    props: {
+      piece,
+      placedIn,
+      draft,
+      "onUpdate:draft": (d: PieceDraft) => wrapper.setProps({ draft: d }),
+    },
+  });
+  return wrapper;
+}
+
+const draftNow = (w: VueWrapper) => (w.props() as { draft: PieceDraft }).draft;
+
 beforeEach(() => vi.restoreAllMocks());
 
 describe("PieceForm", () => {
   it("adds a rectangle", async () => {
-    const wrapper = mount(PieceForm, { props: { piece: null, placedIn: 0 } });
+    const wrapper = form(null);
     await wrapper.get("[data-testid=piece-name]").setValue(" Desk ");
     await wrapper.get("[data-testid=piece-width]").setValue("140");
     await wrapper.get("[data-testid=piece-depth]").setValue("70");
@@ -36,7 +56,7 @@ describe("PieceForm", () => {
   });
 
   it("takes one diameter for a round piece", async () => {
-    const wrapper = mount(PieceForm, { props: { piece: null, placedIn: 0 } });
+    const wrapper = form(null);
     await wrapper.get("[data-testid=piece-name]").setValue("Table");
     await wrapper.get("[data-testid=shape-round]").trigger("click");
     expect(wrapper.find("[data-testid=piece-width]").exists()).toBe(false);
@@ -50,7 +70,7 @@ describe("PieceForm", () => {
   });
 
   it("can't save without a name or with a zero size", async () => {
-    const wrapper = mount(PieceForm, { props: { piece: null, placedIn: 0 } });
+    const wrapper = form(null);
     const save = () =>
       wrapper.get("[data-testid=piece-save]").attributes("disabled");
     expect(save()).toBeDefined();
@@ -63,53 +83,76 @@ describe("PieceForm", () => {
     );
   });
 
-  it("pre-fills when editing and says when the preview is shrunk", () => {
-    const wrapper = mount(PieceForm, {
-      props: { piece: { ...sofa, width_cm: 570 }, placedIn: 0 },
-    });
+  it("shows the draft it is given", () => {
+    const wrapper = form(null, { ...draftOf(sofa), name: "Sofa copy" });
+    expect(wrapper.get("h3").text()).toBe("New piece");
     expect(
       (wrapper.get("[data-testid=piece-name]").element as HTMLInputElement)
         .value,
-    ).toBe("Sofa");
-    expect(wrapper.get("[data-testid=piece-preview]").text()).toContain(
-      "shown at 50 %",
-    );
+    ).toBe("Sofa copy");
+    expect(wrapper.find("[data-testid=piece-delete]").exists()).toBe(false);
+    expect(wrapper.find("[data-testid=piece-copy]").exists()).toBe(false);
+  });
+
+  it("offers Copy for a saved piece", async () => {
+    const wrapper = form(sofa);
+    await wrapper.get("[data-testid=piece-copy]").trigger("click");
+    expect(wrapper.emitted("copy")).toHaveLength(1);
   });
 
   it("confirms delete, naming every layout only when placed", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
-    const placed = mount(PieceForm, { props: { piece: sofa, placedIn: 2 } });
+    const placed = form(sofa, draftOf(sofa), 2);
     await placed.get("[data-testid=piece-delete]").trigger("click");
     expect(confirm).toHaveBeenLastCalledWith(
       "Delete Sofa? It's removed from every layout.",
     );
     expect(placed.emitted("remove")).toHaveLength(1);
 
-    const loose = mount(PieceForm, { props: { piece: sofa, placedIn: 0 } });
+    const loose = form(sofa);
     await loose.get("[data-testid=piece-delete]").trigger("click");
     expect(confirm).toHaveBeenLastCalledWith("Delete Sofa?");
   });
 
-  it("saves a custom shape sized from its mask", async () => {
-    const wrapper = mount(PieceForm, {
-      props: {
-        piece: {
-          ...sofa,
-          shape: "custom",
-          cells: ["#..", "###"],
-          width_cm: 60,
-          depth_cm: 40,
-        },
-        placedIn: 0,
-      },
+  it("turns a typed shape into squares when switched to Custom", async () => {
+    const wrapper = form({ ...sofa, width_cm: 40, depth_cm: 20 });
+    await wrapper.get("[data-testid=shape-custom]").trigger("click");
+    expect(draftNow(wrapper)).toMatchObject({
+      shape: "custom",
+      cells: ["gggg", "gggg"],
+      width_cm: 40,
+      depth_cm: 20,
     });
-    expect(wrapper.find("[data-testid=shape-editor]").exists()).toBe(true);
+    expect(wrapper.find("[data-testid=piece-width]").exists()).toBe(false);
+    expect(wrapper.find("[data-testid=colour-grey]").exists()).toBe(false);
+    expect(wrapper.get("[data-testid=piece-drawn]").text()).toContain(
+      "40 × 20 cm",
+    );
+
+    await wrapper.get("[data-testid=shape-rectangle]").trigger("click");
+    expect(draftNow(wrapper)).toMatchObject({
+      shape: "rectangle",
+      cells: null,
+      width_cm: 40,
+      depth_cm: 20,
+    });
+  });
+
+  it("saves a drawn shape as it is", async () => {
+    const drawn: Furniture = {
+      ...sofa,
+      shape: "custom",
+      cells: ["u..", "ggg"],
+      width_cm: 30,
+      depth_cm: 20,
+    };
+    const wrapper = form(drawn);
     await wrapper.get("form").trigger("submit");
     expect(wrapper.emitted("save")?.[0][0]).toMatchObject({
       shape: "custom",
-      cells: ["#..", "###"],
-      width_cm: 60,
-      depth_cm: 40,
+      cells: ["u..", "ggg"],
+      width_cm: 30,
+      depth_cm: 20,
     });
   });
 });

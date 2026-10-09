@@ -49,12 +49,12 @@ describe("FurnitureShape", () => {
     );
   });
 
-  it("outlines a custom shape once, around its outside", () => {
+  it("fills a drawn shape per colour and outlines it once, around its outside", () => {
     const wrapper = mount(FurnitureShape, {
       props: {
         piece: piece({
           shape: "custom",
-          cells: ["#.", "##"],
+          cells: ["gg..", "gg..", "gguu", "gguu"],
           width_cm: 40,
           depth_cm: 40,
         }),
@@ -62,10 +62,15 @@ describe("FurnitureShape", () => {
       },
     });
     const paths = wrapper.findAll("path");
-    expect(paths).toHaveLength(2);
+    expect(paths).toHaveLength(3);
+    expect(paths.map((p) => p.attributes("fill"))).toEqual([
+      "#868c94",
+      "#4f74a8",
+      "none",
+    ]);
     expect(paths[0].attributes("stroke")).toBeUndefined();
     expect(
       wrapper.get("[data-testid=custom-edges]").attributes("d")?.match(/M /g),
-    ).toHaveLength(8);
+    ).toHaveLength(16);
   });
 });

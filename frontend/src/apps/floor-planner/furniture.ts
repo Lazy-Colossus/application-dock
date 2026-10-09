@@ -1,11 +1,12 @@
-import { CELL_CM } from "./grid";
 import type { Colour, Furniture, Shape } from "./types";
 
 // Limits mirrored from backend/app/schemas/floor_planner.py.
 export const NAME_MAX = 40;
 export const NOTE_MAX = 200;
 export const SIDE_CM_MAX = 1000;
-export const CUSTOM_MAX = 20;
+/** A drawn piece is painted in squares this size, up to CUSTOM_MAX on each side (4 m). */
+export const PIECE_CELL_CM = 10;
+export const CUSTOM_MAX = 40;
 
 export const COLOURS: { id: Colour; name: string; hex: string }[] = [
   { id: "white", name: "White", hex: "#f4f3ef" },
@@ -21,6 +22,40 @@ export const COLOURS: { id: Colour; name: string; hex: string }[] = [
   { id: "purple", name: "Purple", hex: "#7a5a9a" },
 ];
 
+export const EMPTY_SQUARE = ".";
+/** One character per colour in a drawn piece's `cells`; mirrored from the backend schema. */
+export const COLOUR_CHARS: Record<Colour, string> = {
+  white: "w",
+  black: "k",
+  grey: "g",
+  beige: "e",
+  brown: "b",
+  red: "r",
+  orange: "o",
+  yellow: "y",
+  green: "n",
+  blue: "u",
+  purple: "p",
+};
+const COLOUR_OF = new Map(
+  Object.entries(COLOUR_CHARS).map(([c, ch]) => [ch, c as Colour]),
+);
+
+const painted = (ch: string | undefined): boolean =>
+  ch !== undefined && ch !== EMPTY_SQUARE;
+
+/** The most painted colour, as the server works it out; a tie goes to the first painted. */
+export function mainColour(cells: string[], fallback: Colour): Colour {
+  const counts = new Map<string, number>();
+  for (const ch of cells.join("")) {
+    if (painted(ch)) counts.set(ch, (counts.get(ch) ?? 0) + 1);
+  }
+  let best: string | null = null;
+  for (const [ch, n] of counts)
+    if (best === null || n > counts.get(best)!) best = ch;
+  return (best !== null ? COLOUR_OF.get(best) : undefined) ?? fallback;
+}
+
 export const SHAPES: { id: Shape; label: string }[] = [
   { id: "rectangle", label: "Rectangle" },
   { id: "round", label: "Round" },
@@ -28,6 +63,21 @@ export const SHAPES: { id: Shape; label: string }[] = [
   { id: "egg", label: "Egg" },
   { id: "custom", label: "Custom" },
 ];
+
+export const BLANK_DRAFT: PieceDraft = {
+  name: "",
+  colour: "grey",
+  note: "",
+  shape: "rectangle",
+  width_cm: 100,
+  depth_cm: 60,
+  cells: null,
+};
+
+export function draftOf(p: Furniture): PieceDraft {
+  const { name, colour, note, shape, width_cm, depth_cm, cells } = p;
+  return { name, colour, note, shape, width_cm, depth_cm, cells };
+}
 
 /** A piece as the client sends it; the server assigns the id. */
 export interface PieceDraft {
@@ -52,6 +102,12 @@ export function sizeLabel(p: Sized): string {
     : `${p.width_cm} × ${p.depth_cm} cm`;
 }
 
+/** "Sofa" → "Sofa copy", cut short so it stays within the name limit. */
+export function copyName(name: string): string {
+  const suffix = " copy";
+  return `${name.trim().slice(0, NAME_MAX - suffix.length)}${suffix}`;
+}
+
 /** The same rules the server applies, so the form only enables Save for pieces it will accept. */
 export function draftProblem(d: PieceDraft): string | null {
   const name = d.name.trim();
@@ -60,7 +116,7 @@ export function draftProblem(d: PieceDraft): string | null {
   if (d.note.trim().length > NOTE_MAX)
     return `Note is longer than ${NOTE_MAX} characters`;
   if (d.shape === "custom") {
-    return d.cells && d.cells.some((r) => r.includes("#"))
+    return d.cells && [...d.cells.join("")].some(painted)
       ? null
       : "Paint at least one square";
   }
@@ -95,18 +151,44 @@ export function outline(p: Sized, scale: number): string {
         `C ${n(0.28 * w)} ${n(d)} 0 ${n(0.72 * d)} 0 ${n(0.42 * d)}`,
         `C 0 ${n(0.2 * d)} ${n(0.18 * w)} 0 ${n(w / 2)} 0 Z`,
       ].join(" ");
-    case "custom": {
-      const s = n(CELL_CM * scale);
-      const parts: string[] = [];
-      (p.cells ?? []).forEach((row, r) =>
-        [...row].forEach((ch, c) => {
-          if (ch === "#")
-            parts.push(`M ${n(c * s)} ${n(r * s)} h ${s} v ${s} h ${-s} Z`);
-        }),
-      );
-      return parts.join(" ");
-    }
+    case "custom":
+      return squares(p.cells ?? [], scale, painted);
   }
+}
+
+function squares(
+  cells: string[],
+  scale: number,
+  keep: (ch: string) => boolean,
+): string {
+  const s = +(PIECE_CELL_CM * scale).toFixed(2);
+  const n = (v: number) => +v.toFixed(2);
+  const parts: string[] = [];
+  cells.forEach((row, r) =>
+    [...row].forEach((ch, c) => {
+      if (keep(ch))
+        parts.push(`M ${n(c * s)} ${n(r * s)} h ${s} v ${s} h ${-s} Z`);
+    }),
+  );
+  return parts.join(" ");
+}
+
+/** One path per colour of a drawn piece, in the order the colours are first painted. */
+export function customFills(
+  cells: string[],
+  scale: number,
+): { colour: Colour; hex: string; d: string }[] {
+  const chars = [...new Set(cells.join(""))].filter(
+    (ch) => painted(ch) && COLOUR_OF.has(ch),
+  );
+  return chars.map((ch) => {
+    const colour = COLOUR_OF.get(ch)!;
+    return {
+      colour,
+      hex: colourHex(colour),
+      d: squares(cells, scale, (x) => x === ch),
+    };
+  });
 }
 
 /** The px-per-cm that fits the piece's longer side into `maxPx`, never larger than `scale`. */
@@ -117,8 +199,8 @@ export function fitScale(p: Sized, scale: number, maxPx: number): number {
 
 /** For a custom shape, only the edges between a painted square and an unpainted one. */
 export function customEdges(cells: string[], scale: number): string {
-  const s = +(CELL_CM * scale).toFixed(2);
-  const on = (r: number, c: number) => cells[r]?.[c] === "#";
+  const s = +(PIECE_CELL_CM * scale).toFixed(2);
+  const on = (r: number, c: number) => painted(cells[r]?.[c]);
   const parts: string[] = [];
   cells.forEach((row, r) =>
     [...row].forEach((_, c) => {

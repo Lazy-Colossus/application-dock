@@ -7,7 +7,7 @@
     <label class="piece-form__field">
       Name
       <input
-        v-model="draft.name"
+        v-model="name"
         maxlength="40"
         placeholder="e.g. Sofa"
         data-testid="piece-name"
@@ -35,12 +35,11 @@
       <label class="piece-form__field">
         Diameter (cm)
         <input
-          v-model.number="draft.width_cm"
+          v-model.number="width"
           type="number"
           min="1"
           max="1000"
           data-testid="piece-diameter"
-          @input="draft.depth_cm = draft.width_cm"
         />
       </label>
     </div>
@@ -48,7 +47,7 @@
       <label class="piece-form__field">
         Width (cm)
         <input
-          v-model.number="draft.width_cm"
+          v-model.number="width"
           type="number"
           min="1"
           max="1000"
@@ -58,7 +57,7 @@
       <label class="piece-form__field">
         Depth (cm)
         <input
-          v-model.number="draft.depth_cm"
+          v-model.number="depth"
           type="number"
           min="1"
           max="1000"
@@ -66,9 +65,12 @@
         />
       </label>
     </div>
-    <CustomShapeEditor v-else v-model="mask" />
+    <p v-else class="piece-form__drawn" data-testid="piece-drawn">
+      <span class="fp-mono">{{ drawnSize }}</span>
+      Paint on the grid in the middle. Each square is 10 cm.
+    </p>
 
-    <div class="piece-form__field">
+    <div v-if="draft.shape !== 'custom'" class="piece-form__field">
       Colour
       <div class="piece-form__colours">
         <button
@@ -82,7 +84,7 @@
           :aria-pressed="draft.colour === c.id"
           :title="c.name"
           :data-testid="`colour-${c.id}`"
-          @click="draft.colour = c.id"
+          @click="set({ colour: c.id })"
         />
       </div>
     </div>
@@ -90,26 +92,13 @@
     <label class="piece-form__field">
       Note
       <textarea
-        v-model="draft.note"
+        v-model="note"
         maxlength="200"
         rows="2"
         placeholder="Optional, e.g. IKEA Kivik"
         data-testid="piece-note"
       />
     </label>
-
-    <div class="piece-form__preview" data-testid="piece-preview">
-      <FurnitureShape
-        v-if="drawable"
-        :piece="sized"
-        :scale="PLAN_SCALE"
-        :max-px="PREVIEW_PX"
-      />
-      <span class="fp-mono piece-form__size">
-        {{ sizeLabel(sized) }}
-        <template v-if="shrunk"> · shown at {{ shrunk }} %</template>
-      </span>
-    </div>
 
     <p v-if="problem" class="piece-form__problem" data-testid="piece-problem">
       {{ problem }}
@@ -126,6 +115,15 @@
         Delete
       </button>
       <span class="piece-form__spacer" />
+      <button
+        v-if="piece"
+        type="button"
+        class="fp-button"
+        data-testid="piece-copy"
+        @click="emit('copy')"
+      >
+        Copy
+      </button>
       <button type="button" class="fp-button" @click="emit('cancel')">
         Cancel
       </button>
@@ -142,98 +140,87 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from "vue";
-import CustomShapeEditor from "./CustomShapeEditor.vue";
-import FurnitureShape from "./FurnitureShape.vue";
-import { maskSize } from "../customShape";
+import { computed } from "vue";
+import { canDraw, toDrawn } from "../customShape";
 import {
   COLOURS,
   SHAPES,
   draftProblem,
-  fitScale,
   sizeLabel,
   type PieceDraft,
 } from "../furniture";
-import { PX_PER_CM } from "../grid";
 import type { Furniture, Shape } from "../types";
 
-const PLAN_SCALE = PX_PER_CM;
-const PREVIEW_PX = 228;
-
-const props = defineProps<{ piece: Furniture | null; placedIn: number }>();
+const props = defineProps<{
+  /** The saved piece being edited; null for a new one. */
+  piece: Furniture | null;
+  placedIn: number;
+  draft: PieceDraft;
+}>();
 const emit = defineEmits<{
+  "update:draft": [draft: PieceDraft];
   save: [draft: PieceDraft];
   remove: [];
   cancel: [];
+  copy: [];
 }>();
 
-const draft = reactive<PieceDraft>(
-  props.piece
-    ? {
-        name: props.piece.name,
-        colour: props.piece.colour,
-        note: props.piece.note,
-        shape: props.piece.shape,
-        width_cm: props.piece.width_cm,
-        depth_cm: props.piece.depth_cm,
-        cells: props.piece.cells,
-      }
-    : {
-        name: "",
-        colour: "grey",
-        note: "",
-        shape: "rectangle",
-        width_cm: 100,
-        depth_cm: 60,
-        cells: null,
-      },
-);
-const mask = ref<string[]>(props.piece?.cells ?? []);
-
-watch(mask, (m) => {
-  draft.cells = m;
-  const { widthCm, depthCm } = maskSize(m);
-  draft.width_cm = widthCm;
-  draft.depth_cm = depthCm;
-});
-
-function setShape(shape: Shape): void {
-  const wasCustom = draft.shape === "custom";
-  draft.shape = shape;
-  if (shape === "custom") {
-    draft.cells = mask.value;
-    const { widthCm, depthCm } = maskSize(mask.value);
-    draft.width_cm = widthCm;
-    draft.depth_cm = depthCm;
-    return;
-  }
-  draft.cells = null;
-  if (wasCustom && draft.width_cm === 0) {
-    draft.width_cm = 100;
-    draft.depth_cm = 60;
-  }
-  if (shape === "round") draft.depth_cm = draft.width_cm;
+function set(patch: Partial<PieceDraft>): void {
+  emit("update:draft", { ...props.draft, ...patch });
 }
 
-/** The draft as the preview and the size label see it. */
-const sized = computed(() => ({ ...draft }));
-const problem = computed(() => draftProblem(draft));
-/** The shape can be drawn even while the name is still blank. */
-const drawable = computed(
-  () => draftProblem({ ...draft, name: "x", note: "" }) === null,
-);
-const shrunk = computed(() => {
-  const used = fitScale(draft, PLAN_SCALE, PREVIEW_PX);
-  return used < PLAN_SCALE ? Math.round((used / PLAN_SCALE) * 100) : 0;
+const name = computed({
+  get: () => props.draft.name,
+  set: (name: string) => set({ name }),
 });
+const note = computed({
+  get: () => props.draft.note,
+  set: (note: string) => set({ note }),
+});
+const width = computed({
+  get: () => props.draft.width_cm,
+  set: (width_cm: number) =>
+    set(
+      props.draft.shape === "round"
+        ? { width_cm, depth_cm: width_cm }
+        : { width_cm },
+    ),
+});
+const depth = computed({
+  get: () => props.draft.depth_cm,
+  set: (depth_cm: number) => set({ depth_cm }),
+});
+
+const drawnSize = computed(() =>
+  props.draft.cells?.length ? sizeLabel(props.draft) : "Nothing painted yet",
+);
+
+/** Custom keeps what was typed, as squares; leaving it keeps the size the squares covered. */
+function setShape(shape: Shape): void {
+  const d = props.draft;
+  if (shape === d.shape) return;
+  if (shape === "custom") {
+    emit("update:draft", canDraw(d) ? toDrawn(d) : { ...d, shape, cells: [] });
+    return;
+  }
+  const size =
+    d.width_cm > 0
+      ? { width_cm: d.width_cm, depth_cm: d.depth_cm }
+      : { width_cm: 100, depth_cm: 60 };
+  if (shape === "round") size.depth_cm = size.width_cm;
+  set({ shape, cells: null, ...size });
+}
+
+const problem = computed(() => draftProblem(props.draft));
 
 function save(): void {
   if (problem.value) return;
+  const d = props.draft;
   emit("save", {
-    ...draft,
-    name: draft.name.trim(),
-    note: draft.note.trim(),
-    cells: draft.shape === "custom" ? draft.cells : null,
+    ...d,
+    name: d.name.trim(),
+    note: d.note.trim(),
+    cells: d.shape === "custom" ? d.cells : null,
   });
 }
 
@@ -330,22 +317,17 @@ function remove(): void {
   outline: 2px solid var(--fp-accent);
   outline-offset: 2px;
 }
-.piece-form__preview {
+.piece-form__drawn {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 8px;
-  border: 1px solid var(--fp-line);
-  border-radius: 8px;
-  background-color: #fbfbf9;
-  background-image:
-    linear-gradient(to right, rgba(0, 0, 0, 0.07) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.07) 1px, transparent 1px);
-  background-size: 16px 16px;
+  gap: 4px;
+  margin: 0;
+  font-size: 12px;
+  color: var(--fp-muted);
 }
-.piece-form__size {
-  font-size: 13px;
+.piece-form__drawn .fp-mono {
+  font-size: 14px;
+  color: var(--fp-ink);
 }
 .piece-form__problem {
   margin: 0;

@@ -1,7 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
   colourHex,
+  copyName,
   customEdges,
+  customFills,
+  mainColour,
   draftProblem,
   fitScale,
   outline,
@@ -43,9 +46,9 @@ describe("furniture", () => {
     expect(
       outline(draft({ shape: "egg", width_cm: 100, depth_cm: 100 }), 1),
     ).toMatch(/^M 50 0 C 82 0 100 20 100 42 /);
-    const custom = outline(draft({ shape: "custom", cells: ["#.", "##"] }), 1);
+    const custom = outline(draft({ shape: "custom", cells: ["g.", "gu"] }), 1);
     expect(custom.match(/M /g)).toHaveLength(3);
-    expect(custom).toContain("M 20 20 h 20 v 20 h -20 Z");
+    expect(custom).toContain("M 10 10 h 10 v 10 h -10 Z");
   });
 
   it.each([
@@ -64,7 +67,16 @@ describe("furniture", () => {
 
   it("accepts a good draft", () => {
     expect(draftProblem(draft())).toBeNull();
-    expect(draftProblem(draft({ shape: "custom", cells: ["#"] }))).toBeNull();
+    expect(draftProblem(draft({ shape: "custom", cells: ["g"] }))).toBeNull();
+  });
+});
+
+describe("copyName", () => {
+  it("adds copy, trimming a long name to fit the limit", () => {
+    expect(copyName("Sofa")).toBe("Sofa copy");
+    const long = copyName("x".repeat(40));
+    expect(long).toHaveLength(40);
+    expect(long.endsWith("x copy")).toBe(true);
   });
 });
 
@@ -82,9 +94,27 @@ describe("fitScale", () => {
 describe("customEdges", () => {
   it("outlines only the outside of the painted squares", () => {
     // Two squares side by side: 6 outer edges, the shared middle edge left out.
-    const edges = customEdges(["##"], 1);
+    // Two squares side by side, in different colours: 6 outer edges, the shared middle one left out.
+    const edges = customEdges(["gu"], 1);
     expect(edges.match(/M /g)).toHaveLength(6);
-    expect(edges).not.toContain("M 20 0 v 20");
-    expect(edges).toContain("M 40 0 v 20");
+    expect(edges).not.toContain("M 10 0 v 10");
+    expect(edges).toContain("M 20 0 v 10");
+  });
+});
+
+describe("customFills", () => {
+  it("draws one path per colour, in the order first painted", () => {
+    const fills = customFills(["ug", "g."], 1);
+    expect(fills.map((f) => f.colour)).toEqual(["blue", "grey"]);
+    expect(fills[0].d).toBe("M 0 0 h 10 v 10 h -10 Z");
+    expect(fills[1].d.match(/M /g)).toHaveLength(2);
+  });
+});
+
+describe("mainColour", () => {
+  it("picks the most painted colour, the first painted on a tie", () => {
+    expect(mainColour(["ugg"], "red")).toBe("grey");
+    expect(mainColour(["ug", "gu"], "red")).toBe("blue");
+    expect(mainColour([".."], "red")).toBe("red");
   });
 });

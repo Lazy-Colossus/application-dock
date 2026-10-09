@@ -217,7 +217,12 @@
     >
       <g :transform="pieceTransform(p)">
         <template v-if="p.piece.shape === 'custom'">
-          <path :d="outline(p.piece, 1)" :fill="colourHex(p.piece.colour)" />
+          <path
+            v-for="f in customFills(p.piece.cells ?? [], 1)"
+            :key="f.colour"
+            :d="f.d"
+            :fill="f.hex"
+          />
           <path
             :d="customEdges(p.piece.cells ?? [], 1)"
             fill="none"
@@ -335,7 +340,13 @@ import {
   fillFor,
   type Brush,
 } from "../codes";
-import { PIECE_DRAG_TYPE, colourHex, customEdges, outline } from "../furniture";
+import {
+  PIECE_DRAG_TYPE,
+  colourHex,
+  customEdges,
+  customFills,
+  outline,
+} from "../furniture";
 import { bounds as pieceBounds, snap, type Box } from "../geometry";
 import type { Furniture, Placement } from "../types";
 import {

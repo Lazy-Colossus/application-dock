@@ -137,8 +137,14 @@
       </aside>
       <section class="fp__plan" data-testid="fp-plan">
         <div class="fp__sheet">
+          <PieceStage
+            v-if="mode === 'furniture'"
+            :key="formKey"
+            v-model:draft="openDraft"
+            :zoom="zoom"
+          />
           <PlanCanvas
-            v-if="store.plan"
+            v-else-if="store.plan"
             :plan="store.plan"
             :zoom="zoom"
             :editable="drawing"
@@ -172,12 +178,13 @@
         />
         <template v-else-if="mode === 'furniture'">
           <PieceForm
-            v-if="adding || selectedPiece"
-            :key="selectedPiece?.id ?? 'new'"
+            v-if="openDraft"
+            v-model:draft="openDraft"
             :piece="selectedPiece"
             :placed-in="selectedPiece ? store.placedIn(selectedPiece.id) : 0"
             @save="savePiece"
             @remove="removePiece"
+            @copy="copyPiece"
             @cancel="closeForm"
           />
           <p v-else class="fp__hint" data-testid="piece-hint">
@@ -314,9 +321,10 @@ import MembersDialog from "../components/MembersDialog.vue";
 import NameDialog from "../components/NameDialog.vue";
 import PlanCanvas from "../components/PlanCanvas.vue";
 import PlanInfoPanel from "../components/PlanInfoPanel.vue";
+import PieceStage from "../components/PieceStage.vue";
 import StatusBar from "../components/StatusBar.vue";
 import { DEFAULT_BRUSH, type Brush } from "../codes";
-import type { PieceDraft } from "../furniture";
+import { BLANK_DRAFT, copyName, draftOf, type PieceDraft } from "../furniture";
 import {
   topLeftForCentre,
   warningText,
@@ -351,7 +359,10 @@ const labelEdit = ref<{ id: string | null; cell: Cell; text: string } | null>(
 const root = ref<ComponentPublicInstance | null>(null);
 
 const selectedId = ref<string | null>(null);
-const adding = ref(false);
+/** The piece being edited or added, shared by the form and the drawing grid. */
+const pieceDraft = ref<PieceDraft | null>(null);
+/** Bumped whenever a different piece opens, so the grid starts a fresh undo history. */
+const formKey = ref(0);
 const bulkOpen = ref(false);
 
 const locked = computed(() => store.apartment?.locked ?? false);
@@ -359,6 +370,14 @@ const selectedPiece = computed(
   () =>
     store.apartment?.furniture.find((p) => p.id === selectedId.value) ?? null,
 );
+/** Null once the piece being edited is gone, e.g. deleted by someone else. */
+const openDraft = computed({
+  get: () =>
+    selectedId.value && !selectedPiece.value ? null : pieceDraft.value,
+  set: (d: PieceDraft | null) => {
+    pieceDraft.value = d;
+  },
+});
 
 const activeLayoutId = ref<string | null>(null);
 const selectedPlacedId = ref<string | null>(null);
@@ -492,19 +511,29 @@ async function deleteLayout(): Promise<void> {
   }
 }
 
-function selectPiece(id: string): void {
+function openForm(id: string | null, draft: PieceDraft | null): void {
   selectedId.value = id;
-  adding.value = false;
+  pieceDraft.value = draft;
+  formKey.value++;
+}
+
+function selectPiece(id: string): void {
+  const piece = furnitureById.value.get(id);
+  openForm(id, piece ? draftOf(piece) : null);
 }
 
 function startAdding(): void {
-  selectedId.value = null;
-  adding.value = true;
+  openForm(null, { ...BLANK_DRAFT });
+}
+
+/** Copies what the form shows, including edits not yet saved to the original. */
+function copyPiece(): void {
+  const d = pieceDraft.value;
+  if (d) openForm(null, { ...d, name: copyName(d.name) });
 }
 
 function closeForm(): void {
-  selectedId.value = null;
-  adding.value = false;
+  openForm(null, null);
 }
 
 /** After an add, the newest piece is the last one in the returned list. */
@@ -553,8 +582,7 @@ function goTo(id: string, replace = false): void {
 }
 
 function resetSelection(): void {
-  selectedId.value = null;
-  adding.value = false;
+  closeForm();
   activeLayoutId.value = null;
   selectedPlacedId.value = null;
   labelEdit.value = null;

@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 DEFAULT_COLS = 50
 DEFAULT_ROWS = 40
@@ -22,7 +22,8 @@ LABEL_MAX = 40
 NAME_MAX = 40
 NOTE_MAX = 200
 SIDE_CM_MAX = 1000
-CUSTOM_MAX = 20  # squares on each side: 4 m
+PIECE_CELL_CM = 10
+CUSTOM_MAX = 40  # squares on each side: 4 m
 PIECES_MAX = 300
 BULK_MAX = 100
 LAYOUT_NAME_MAX = 40
@@ -36,6 +37,36 @@ Colour = Literal[
     "white", "black", "grey", "beige", "brown", "red", "orange", "yellow", "green", "blue", "purple"
 ]
 Rotation = Literal[0, 90, 180, 270]
+
+EMPTY_SQUARE = "."
+# One character per colour in a drawn piece's `cells`; "." is an unpainted square.
+COLOUR_CHARS: dict[str, str] = {
+    "white": "w",
+    "black": "k",
+    "grey": "g",
+    "beige": "e",
+    "brown": "b",
+    "red": "r",
+    "orange": "o",
+    "yellow": "y",
+    "green": "n",
+    "blue": "u",
+    "purple": "p",
+}
+_LEGACY_SQUARE = "#"
+
+
+def upgrade_legacy_cells(cells: list[str], colour: str) -> list[str]:
+    """A pre-colour mask of 20 cm `#` squares becomes 2 × 2 squares of 10 cm in the piece's colour."""
+    used = set("".join(cells))
+    if _LEGACY_SQUARE not in used or used - {_LEGACY_SQUARE, EMPTY_SQUARE}:
+        return cells
+    char = COLOUR_CHARS[colour]
+    out: list[str] = []
+    for row in cells:
+        wide = "".join(char * 2 if ch == _LEGACY_SQUARE else EMPTY_SQUARE * 2 for ch in row)
+        out += [wide, wide]
+    return out
 
 
 def empty_rows(cols: int, rows: int) -> list[str]:
@@ -58,6 +89,12 @@ class Furniture(BaseModel):
     width_cm: int
     depth_cm: int
     cells: list[str] | None = None
+
+    @model_validator(mode="after")
+    def _upgrade_cells(self) -> Furniture:
+        if self.cells:
+            self.cells = upgrade_legacy_cells(self.cells, self.colour)
+        return self
 
 
 class Placement(BaseModel):

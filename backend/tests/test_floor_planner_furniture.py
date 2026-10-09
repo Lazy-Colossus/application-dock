@@ -57,7 +57,7 @@ def test_a_piece_write_does_not_stale_the_plan() -> None:
     assert service.set_locked("ana", _apt("ana"), 1, False).locked is False
 
 
-def test_a_custom_shape_is_trimmed_and_sized_from_its_mask() -> None:
+def test_a_drawn_shape_is_trimmed_sized_and_coloured_from_its_squares() -> None:
     apt = service.add_pieces(
         "ana",
         _apt("ana"),
@@ -65,15 +65,47 @@ def test_a_custom_shape_is_trimmed_and_sized_from_its_mask() -> None:
             _draft(
                 name="Corner sofa",
                 shape="custom",
+                colour="red",
                 width_cm=999,
                 depth_cm=1,
-                cells=["....", ".#..", ".#..", ".###", "...."],
+                cells=["....", ".u..", ".g..", ".ggu", "...."],
             )
         ],
     )
     piece = apt.furniture[0]
-    assert piece.cells == ["#..", "#..", "###"]
-    assert (piece.width_cm, piece.depth_cm) == (60, 60)
+    assert piece.cells == ["u..", "g..", "ggu"]
+    assert (piece.width_cm, piece.depth_cm) == (30, 30)
+    assert piece.colour == "grey"
+
+
+def test_a_colour_tie_goes_to_the_first_painted() -> None:
+    apt = service.add_pieces("ana", _apt("ana"), [_draft(shape="custom", cells=["ug", "gu"])])
+    assert apt.furniture[0].colour == "blue"
+
+
+def test_a_twenty_cm_mask_becomes_four_coloured_squares() -> None:
+    apt = service.add_pieces(
+        "ana", _apt("ana"), [_draft(shape="custom", colour="brown", cells=["#.", "##"])]
+    )
+    piece = apt.furniture[0]
+    assert piece.cells == ["bb..", "bb..", "bbbb", "bbbb"]
+    assert (piece.width_cm, piece.depth_cm) == (40, 40)
+
+
+def test_a_stored_twenty_cm_mask_is_upgraded_on_read() -> None:
+    piece = Furniture.model_validate(
+        {
+            "id": "f_1",
+            "name": "Desk",
+            "colour": "green",
+            "shape": "custom",
+            "width_cm": 40,
+            "depth_cm": 20,
+            "cells": ["##"],
+        }
+    )
+    assert piece.cells == ["nnnn", "nnnn"]
+    assert (piece.width_cm, piece.depth_cm) == (40, 20)
 
 
 @pytest.mark.parametrize(
@@ -87,9 +119,10 @@ def test_a_custom_shape_is_trimmed_and_sized_from_its_mask() -> None:
         ({"shape": "round", "width_cm": 80, "depth_cm": 90}, "one diameter"),
         ({"shape": "custom", "cells": ["...", "..."]}, "at least one"),
         ({"shape": "custom", "cells": None}, "equal rows"),
-        ({"shape": "custom", "cells": ["##", "#"]}, "equal rows"),
-        ({"shape": "custom", "cells": ["#" * 21]}, "squares of"),
-        ({"shape": "custom", "cells": ["#x"]}, "squares of"),
+        ({"shape": "custom", "cells": ["gg", "g"]}, "equal rows"),
+        ({"shape": "custom", "cells": ["g" * 41]}, "squares of"),
+        ({"shape": "custom", "cells": ["gx"]}, "squares of"),
+        ({"shape": "custom", "cells": ["#g"]}, "squares of"),
     ],
 )
 def test_a_bad_piece_is_refused(over: dict[str, Any], message: str) -> None:

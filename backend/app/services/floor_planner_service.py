@@ -23,6 +23,7 @@ change); the router translates them.
 from __future__ import annotations
 
 import uuid
+from collections import Counter
 from collections.abc import Callable
 from datetime import UTC, datetime
 
@@ -31,20 +32,24 @@ from app.schemas.floor_planner import (
     APARTMENT_NAME_MAX,
     APARTMENTS_MAX,
     CELL_CM,
+    COLOUR_CHARS,
     CUSTOM_MAX,
     DEFAULT_APARTMENT_NAME,
+    EMPTY_SQUARE,
     FEATURE_CODES,
     LABEL_MAX,
     LAYOUT_NAME_MAX,
     LAYOUTS_MAX,
     NAME_MAX,
     NOTE_MAX,
+    PIECE_CELL_CM,
     PIECES_MAX,
     SIDE_CM_MAX,
     SURFACE_CODES,
     ApartmentDoc,
     ApartmentSummary,
     ApartmentView,
+    Colour,
     Furniture,
     Label,
     Layout,
@@ -52,6 +57,7 @@ from app.schemas.floor_planner import (
     Placement,
     PlacementRequest,
     PlanWriteRequest,
+    upgrade_legacy_cells,
 )
 from app.services import auth_service
 
@@ -282,10 +288,20 @@ def replace_plan(username: str, apartment_id: str, req: PlanWriteRequest) -> Apa
     return _mutate_plan(username, apartment_id, req.base_rev, change)
 
 
+_PAINT = set(COLOUR_CHARS.values())
+_COLOUR_OF = {char: colour for colour, char in COLOUR_CHARS.items()}
+
+
 def _trim_mask(cells: list[str]) -> list[str]:
-    rows = [r for r in range(len(cells)) if "#" in cells[r]]
-    cols = [c for c in range(len(cells[0])) if any(row[c] == "#" for row in cells)]
+    rows = [r for r in range(len(cells)) if cells[r].strip(EMPTY_SQUARE)]
+    cols = [c for c in range(len(cells[0])) if any(row[c] != EMPTY_SQUARE for row in cells)]
     return [row[cols[0] : cols[-1] + 1] for row in cells[rows[0] : rows[-1] + 1]]
+
+
+def _main_colour(cells: list[str]) -> Colour:
+    """The most painted colour; a tie goes to the one painted first, reading row by row."""
+    painted = [ch for row in cells for ch in row if ch != EMPTY_SQUARE]
+    return _COLOUR_OF[Counter(painted).most_common(1)[0][0]]
 
 
 def _clean_piece(draft: PieceDraft, piece_id: str) -> Furniture:
@@ -298,22 +314,23 @@ def _clean_piece(draft: PieceDraft, piece_id: str) -> Furniture:
     if len(note) > NOTE_MAX:
         raise ValueError(f"{label}: the note is longer than {NOTE_MAX} characters")
     if draft.shape == "custom":
-        cells = draft.cells or []
+        # A client loaded before squares had colours still sends `#` masks.
+        cells = upgrade_legacy_cells(draft.cells or [], draft.colour)
         if not cells or len(cells) > CUSTOM_MAX or len({len(r) for r in cells}) != 1:
             raise ValueError(f"{label}: a custom shape is up to {CUSTOM_MAX} equal rows")
-        if len(cells[0]) > CUSTOM_MAX or set("".join(cells)) - {"#", "."}:
-            raise ValueError(f"{label}: a custom shape is up to {CUSTOM_MAX} squares of # and .")
-        if "#" not in "".join(cells):
+        if len(cells[0]) > CUSTOM_MAX or set("".join(cells)) - _PAINT - {EMPTY_SQUARE}:
+            raise ValueError(f"{label}: a custom shape is up to {CUSTOM_MAX} squares of colour")
+        if not set("".join(cells)) & _PAINT:
             raise ValueError(f"{label}: paint at least one square")
         mask = _trim_mask(cells)
         return Furniture(
             id=piece_id,
             name=name,
-            colour=draft.colour,
+            colour=_main_colour(mask),
             note=note,
             shape="custom",
-            width_cm=len(mask[0]) * CELL_CM,
-            depth_cm=len(mask) * CELL_CM,
+            width_cm=len(mask[0]) * PIECE_CELL_CM,
+            depth_cm=len(mask) * PIECE_CELL_CM,
             cells=mask,
         )
     for side, value in (("width", draft.width_cm), ("depth", draft.depth_cm)):

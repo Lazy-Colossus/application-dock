@@ -10,7 +10,12 @@
   >
     <template v-if="piece.shape === 'custom'">
       <!-- Squares are filled without strokes; only the outer edge is drawn, so no seams show. -->
-      <path :d="outline(piece, scaleUsed)" :fill="colourHex(piece.colour)" />
+      <path
+        v-for="f in customFills(piece.cells ?? [], scaleUsed)"
+        :key="f.colour"
+        :d="f.d"
+        :fill="f.hex"
+      />
       <path
         :d="customEdges(piece.cells ?? [], scaleUsed)"
         fill="none"
@@ -34,6 +39,7 @@ import { computed } from "vue";
 import {
   colourHex,
   customEdges,
+  customFills,
   fitScale,
   outline,
   sizeLabel,
