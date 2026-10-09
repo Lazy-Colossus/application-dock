@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { apps } from "./registry";
+import { mapIcon } from "@/boot/icons";
 
 describe("app registry", () => {
   it("archery app uses a thematic monochrome target icon (Story 9.2)", () => {
@@ -42,6 +43,14 @@ describe("app registry", () => {
     expect(cs?.route).toBe("/context-switch");
   });
 
+  it("registers the Shared Notes app (Story 1.1)", () => {
+    const notes = apps.find((a) => a.id === "shared-notes");
+    expect(notes).toBeDefined();
+    expect(notes?.label).toBe("Shared Notes");
+    expect(notes?.icon).toBe("sticky_note_2");
+    expect(notes?.route).toBe("/shared-notes");
+  });
+
   it("registers the Question of the Day app (Story 1.1)", () => {
     const qotd = apps.find((a) => a.id === "question-of-the-day");
     expect(qotd).toBeDefined();
@@ -50,11 +59,20 @@ describe("app registry", () => {
     expect(qotd?.route).toBe("/question-of-the-day");
   });
 
-  it("registers the Shared Notes app (Story 1.1)", () => {
-    const notes = apps.find((a) => a.id === "shared-notes");
-    expect(notes).toBeDefined();
-    expect(notes?.label).toBe("Shared Notes");
-    expect(notes?.icon).toBe("sticky_note_2");
-    expect(notes?.route).toBe("/shared-notes");
+  it("gives the Tea app the tea-sprig drawing from its own home screen", () => {
+    const tea = apps.find((a) => a.id === "tea");
+    expect(tea?.icon).toBe("app:tea-leaf");
+    expect(mapIcon(tea!.icon)).toBeDefined();
+  });
+
+  it("puts the Tea card fourth in the dock", () => {
+    expect(apps[3].id).toBe("tea");
+  });
+  it("registers the ISS Vanguard app", () => {
+    const app = apps.find((a) => a.id === "iss-vanguard");
+    expect(app).toBeDefined();
+    expect(app?.label).toBe("ISS Vanguard");
+    expect(app?.icon).toBe("rocket_launch");
+    expect(app?.route).toBe("/iss-vanguard");
   });
 });

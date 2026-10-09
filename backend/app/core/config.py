@@ -31,6 +31,16 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_days: int = 7
 
+    # TypeSafe (Jev) — Tea Cabinet category autofill. Server-side only.
+    # With this unset, the autofill endpoint reports itself unconfigured (503)
+    # and the rest of the app is unaffected.
+    typesafe_api_key: str = ""
+
+    # Anthropic (Claude vision) — Tea Cabinet label scan. Server-side only.
+    # With this unset, the scan endpoint reports itself unconfigured (503).
+    anthropic_api_key: str = ""
+    label_scan_model: str = "claude-haiku-4-5"
+
     # Google Maps (Listies place columns). Optional: with these unset the place
     # column type and the map are simply unavailable, and nothing else changes.
     # The server key is used only server-side; the browser key is handed to the

@@ -1,6 +1,12 @@
 <template>
   <q-layout view="hHh lpR fFf">
-    <q-header class="app-bar" :class="{ 'app-bar--hotaru': inHotaru }">
+    <q-header
+      class="app-bar"
+      :class="{
+        'app-bar--hotaru': inHotaru,
+        'app-bar--kitchencraft': inKitchencraft,
+      }"
+    >
       <q-toolbar>
         <q-btn
           v-if="showBack"
@@ -74,6 +80,11 @@ const showBack = computed(() => route.path !== "/" && !hideShellNav.value);
 // Inside the Hotaru app the shell bar adopts Hotaru's dusk field so the header
 // reads as part of the app, not a foreign grey chrome strip.
 const inHotaru = computed(() => route.path.startsWith("/hotaru"));
+
+// KitchenCraft is a folder lying on a dark desk, so the bar takes the desk
+// rather than the paper: a light strip above a dark ground would be the foreign
+// chrome this variant exists to avoid. Same mechanism as the Hotaru variant.
+const inKitchencraft = computed(() => route.path.startsWith("/kitchencraft"));
 const isHome = computed(() => route.path === "/");
 
 const routeTitle = computed(() => {
@@ -96,8 +107,13 @@ watch(
   () => pageDetail.clearDetail(),
 );
 
+// A route can pin where back leads. KitchenCraft does, because stepping back
+// through history walks a saved recipe back into its own edit form.
 function goBack(): void {
-  if (window.history.length > 1) {
+  const backTo = route.meta?.backTo;
+  if (typeof backTo === "string") {
+    void router.push(backTo);
+  } else if (window.history.length > 1) {
     router.back();
   } else {
     void router.push("/");
@@ -127,4 +143,26 @@ function handleLogout(): void {
 
 .app-bar--hotaru .app-bar__title
   color: #f1f0ff
+
+// Notebook: the bar IS the desk the folder lies on, so it needs no boundary —
+// it meets the page ground directly and the shell reads as the surface the app
+// is sitting on rather than a strip above it. Manila on near-black is 8.9:1.
+//
+// `KC Elite` is declared by kitchencraft.sass, which only loads on a
+// KitchenCraft route — the same routes this class applies to. The fallback
+// stack covers the swap window.
+.app-bar--kitchencraft
+  background: #1A1613
+
+.app-bar--kitchencraft .app-bar__title
+  color: #C9B489
+  font-family: "KC Elite", "Courier New", ui-monospace, monospace
+  font-weight: 400
+  font-size: 15px
+  letter-spacing: 0.1em
+
+// Quasar's `color="grey-5"` / `color="primary"` on the shell's own buttons sets
+// a `text-*` class with `!important`, so overriding it needs the same weight.
+.app-bar--kitchencraft :deep(.q-btn)
+  color: #C9B489 !important
 </style>

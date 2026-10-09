@@ -34,6 +34,11 @@ def patch_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     from app.core.config import settings
 
     monkeypatch.setattr(settings, "data_dir", tmp_path)
+    # `get_current_user` returns a dev user when no JWT_SECRET_KEY is configured
+    # — the local-dev escape hatch — which is the default in this environment.
+    # Without a secret the 401 assertions below would answer 200 and prove
+    # nothing, and the SSE `?token=` path would not verify what it mints.
+    monkeypatch.setattr(settings, "jwt_secret_key", "test-secret-key-for-tests-only")
     for name in ("alice", "bob"):
         auth_service.create_user(name)
 
@@ -89,7 +94,7 @@ def test_overflow_marks_the_subscriber_stale_and_drops_the_event() -> None:
     async def scenario() -> tuple[bool, int]:
         q = events.subscribe("s-1")
         try:
-            for i in range(events._MAX_QUEUE):
+            for i in range(events.MAX_QUEUE):
                 q.put_nowait({"n": i})  # fill to capacity
             events.publish("s-1", {"type": "overflow"})
             # Let the scheduled delivery callback run.
@@ -101,7 +106,7 @@ def test_overflow_marks_the_subscriber_stale_and_drops_the_event() -> None:
 
     stale, size = asyncio.run(scenario())
     assert stale is True
-    assert size == events._MAX_QUEUE  # the overflow event was dropped, not queued
+    assert size == events.MAX_QUEUE  # the overflow event was dropped, not queued
 
 
 # ── emission from the service ───────────────────────────────────────────────────

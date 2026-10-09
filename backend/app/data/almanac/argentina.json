@@ -1,0 +1,9 @@
+[
+  {
+    "catalogue_node_id": "red.argentine.misiones",
+    "country": "Argentina",
+    "reading": "",
+    "summary": "Grown in the subtropical red-soil province of Misiones and the neighbouring corner of Corrientes, in the same far-northeastern region that produces most of Argentina's yerba mate. Tea planting there took off in the 1950s, and Argentina has since become one of the world's larger tea exporters, yet almost none of it is drunk at home, where mate remains the everyday infusion. Plantations are flat and large, harvested largely by machine, and most leaf is made into CTC or broken-grade black tea sold in bulk as a blending base, with the United States by far the largest buyer. The liquor is bright, clean and mild, with little astringency, and it is valued above all for iced tea because it stays clear when chilled instead of clouding ('creaming down') the way many higher-tannin black teas do — which is why it turns up, unnamed, in so many American iced-tea blends and bottled teas.",
+    "brewing": { "leaf_grams": 2.5, "water_temp_c": 100, "steep_seconds": [240] }
+  }
+]

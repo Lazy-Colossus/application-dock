@@ -1,0 +1,16 @@
+[
+  {
+    "catalogue_node_id": "white.malawian.antlers",
+    "country": "Malawi",
+    "reading": "",
+    "summary": "A specialty white tea from Satemwa Tea Estate in the Thyolo highlands of southern Malawi's Shire Highlands, made not from buds or leaves but from the tender new-growth stems of the tea plant, which dry into small forked shapes resembling antlers and give the tea its name. The stems carry a light coating of white down and, being lower in caffeine and higher in L-theanine than leaf material, yield an unusually mild, sweet cup with little bitterness. Satemwa is reported by specialty tea vendors to be the only estate producing this stem-based white tea, distinguishing it from the leaf teas typical of the wider white tea category.",
+    "brewing": { "leaf_grams": 4, "water_temp_c": 85, "steep_seconds": [180, 240] }
+  },
+  {
+    "catalogue_node_id": "red.malawian.shire-highlands",
+    "country": "Malawi",
+    "reading": "",
+    "summary": "Malawi has Africa's oldest tea industry. Scottish missionaries planted the first bushes at the Blantyre Mission in 1878 from seed sent from Edinburgh, and in 1891 the planter Henry Brown, who had lost his coffee in Ceylon, began large-scale planting at Mulanje — widely regarded as the first commercial tea cultivation in Africa. Today it is the continent's second-largest producer after Kenya, with most estates in the southern Thyolo (around 900–1,200 meters) and Mulanje (around 600–800 meters) districts and a smaller area at Nkhata Bay in the north; the main season runs from the December rains to about May. Most of the output is CTC black tea from assamica and clonal bushes, valued in the trade for its bright, reddish color, which lifts British and South African tea-bag blends. The cup is brisk and bright with light to medium body; orthodox and specialty lots, notably from Satemwa in Thyolo, are also produced.",
+    "brewing": { "leaf_grams": 2.5, "water_temp_c": 100, "steep_seconds": [180, 240] }
+  }
+]

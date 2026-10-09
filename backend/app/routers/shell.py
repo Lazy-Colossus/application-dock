@@ -23,7 +23,10 @@ _APPS: list[AppDescriptor] = [
     AppDescriptor(
         id="archery",
         label="Archery Score Counter",
-        icon="sports_score",
+        # Thematic monochrome target reticle, matching the shell registry
+        # (Story 9.2). This list must agree with frontend/src/apps/registry.ts
+        # — test_app_registry_parity.py enforces that.
+        icon="adjust",
         route="/archery",
     ),
     AppDescriptor(
@@ -39,6 +42,14 @@ _APPS: list[AppDescriptor] = [
         route="/context-switch",
     ),
     AppDescriptor(
+        id="tea",
+        # Must match frontend/src/apps/registry.ts — test_app_registry_parity.py
+        # enforces it. `app:tea-leaf` is a drawn icon the frontend resolves.
+        label="Tea",
+        icon="app:tea-leaf",
+        route="/tea",
+    ),
+    AppDescriptor(
         id="listies",
         label="Listies",
         icon="table_chart",
@@ -51,6 +62,12 @@ _APPS: list[AppDescriptor] = [
         route="/kalendariq",
     ),
     AppDescriptor(
+        id="kitchencraft",
+        label="KitchenCraft",
+        icon="menu_book",
+        route="/kitchencraft",
+    ),
+    AppDescriptor(
         id="question-of-the-day",
         label="Question of the Day",
         icon="help_center",
@@ -61,6 +78,12 @@ _APPS: list[AppDescriptor] = [
         label="Shared Notes",
         icon="sticky_note_2",
         route="/shared-notes",
+    ),
+    AppDescriptor(
+        id="iss-vanguard",
+        label="ISS Vanguard",
+        icon="rocket_launch",
+        route="/iss-vanguard",
     ),
 ]
 

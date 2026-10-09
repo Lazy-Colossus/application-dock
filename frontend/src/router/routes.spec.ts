@@ -39,3 +39,97 @@ describe("legacy KDH paths", () => {
     expect(router.currentRoute.value.name).toBe("kalendariq-home");
   });
 });
+
+// The shell's "Go back" arrow falls back to browser history when a route has
+// no `backTo` (see MainLayout.vue's goBack()), which lands on whatever page
+// preceded it — e.g. the New Tea form right after saving a tea — rather than
+// the fixed place these pages actually lead back to.
+describe("tea back navigation", () => {
+  it("opens the Journal from the tea home, and its entries from the Journal", async () => {
+    const router = makeRouter();
+    await router.push("/tea/journal");
+    expect(router.currentRoute.value.name).toBe("tea-journal");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea");
+
+    await router.push("/tea/journal/new");
+    expect(router.currentRoute.value.name).toBe("tea-journal-new");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea/journal");
+
+    await router.push("/tea/journal/s-1");
+    expect(router.currentRoute.value.name).toBe("tea-journal-entry");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea/journal");
+
+    await router.push("/tea/journal/s-1/edit");
+    expect(router.currentRoute.value.name).toBe("tea-journal-edit");
+    expect(router.currentRoute.value.meta.backTo).toBeUndefined();
+  });
+
+  it("points Cha Xi's back arrow at the timer", async () => {
+    const router = makeRouter();
+    await router.push("/tea/timer/cha-xi");
+    expect(router.currentRoute.value.name).toBe("tea-timer-chaxi");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea/timer");
+  });
+
+  it("opens the tea app on its home screen, with the cabinet one level down", async () => {
+    const router = makeRouter();
+    await router.push("/tea");
+    expect(router.currentRoute.value.name).toBe("tea-home");
+    expect(router.currentRoute.value.meta.backTo).toBe("/");
+
+    await router.push("/tea/cabinet");
+    expect(router.currentRoute.value.name).toBe("tea-cabinet");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea");
+  });
+
+  it("points New Tea's back arrow at the cabinet", async () => {
+    const router = makeRouter();
+    await router.push("/tea/new");
+
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea/cabinet");
+  });
+
+  it("points a tea's detail page back arrow at the cabinet", async () => {
+    const router = makeRouter();
+    await router.push("/tea/t-1");
+
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea/cabinet");
+  });
+
+  it("points an almanac entry's back arrow at the almanac", async () => {
+    const router = makeRouter();
+    await router.push("/tea/almanac/green.longjing");
+
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea/almanac");
+  });
+
+  it("points the almanac's back arrow at the tea home screen", async () => {
+    const router = makeRouter();
+    await router.push("/tea/almanac");
+
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea");
+  });
+
+  it("points the timer's back arrow at the tea home screen, not at a tea called 'timer'", async () => {
+    const router = makeRouter();
+    await router.push("/tea/timer");
+
+    expect(router.currentRoute.value.name).toBe("tea-timer");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea");
+  });
+
+  it("gives teaware its own pages, not a tea called 'ware'", async () => {
+    const router = makeRouter();
+    await router.push("/tea/ware");
+    expect(router.currentRoute.value.name).toBe("tea-ware");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea");
+
+    await router.push("/tea/ware/new");
+    expect(router.currentRoute.value.name).toBe("tea-ware-new");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea/ware");
+
+    await router.push("/tea/ware/w-1");
+    expect(router.currentRoute.value.name).toBe("tea-ware-detail");
+    expect(router.currentRoute.value.meta.backTo).toBe("/tea/ware");
+  });
+});

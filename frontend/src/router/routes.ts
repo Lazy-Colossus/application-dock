@@ -158,6 +158,42 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "Kalendariq", requiresAuth: true },
       },
       {
+        path: "kitchencraft",
+        name: "kitchencraft-collection",
+        component: () => import("@/apps/kitchencraft/pages/CollectionPage.vue"),
+        meta: { title: "KitchenCraft", requiresAuth: true },
+      },
+      {
+        path: "kitchencraft/new",
+        name: "kitchencraft-capture",
+        component: () => import("@/apps/kitchencraft/pages/CapturePage.vue"),
+        meta: {
+          title: "KitchenCraft",
+          requiresAuth: true,
+          backTo: "/kitchencraft",
+        },
+      },
+      {
+        path: "kitchencraft/r/:id",
+        name: "kitchencraft-recipe",
+        component: () => import("@/apps/kitchencraft/pages/RecipePage.vue"),
+        meta: {
+          title: "KitchenCraft",
+          requiresAuth: true,
+          backTo: "/kitchencraft",
+        },
+      },
+      {
+        path: "kitchencraft/r/:id/edit",
+        name: "kitchencraft-edit",
+        component: () => import("@/apps/kitchencraft/pages/EditRecipePage.vue"),
+        meta: {
+          title: "KitchenCraft",
+          requiresAuth: true,
+          backTo: "/kitchencraft",
+        },
+      },
+      {
         path: "question-of-the-day",
         name: "qotd-home",
         component: () =>
@@ -189,6 +225,106 @@ const routes: RouteRecordRaw[] = [
         name: "shared-notes-note",
         component: () => import("@/apps/shared-notes/pages/NotePage.vue"),
         meta: { title: "Shared Notes", requiresAuth: true },
+      },
+      {
+        path: "iss-vanguard",
+        name: "iss-vanguard-ship",
+        component: () => import("@/apps/iss-vanguard/pages/ShipPage.vue"),
+        meta: { title: "ISS Vanguard", requiresAuth: true },
+      },
+      {
+        path: "tea",
+        name: "tea-home",
+        component: () => import("@/apps/tea/pages/TeaHomePage.vue"),
+        meta: { title: "Tea", requiresAuth: true, backTo: "/" },
+      },
+      {
+        path: "tea/cabinet",
+        name: "tea-cabinet",
+        component: () => import("@/apps/tea/pages/CabinetPage.vue"),
+        meta: { title: "Tea Cabinet", requiresAuth: true, backTo: "/tea" },
+      },
+      {
+        path: "tea/new",
+        name: "tea-new",
+        component: () => import("@/apps/tea/pages/NewTeaPage.vue"),
+        // Without this, the shell's back arrow falls back to browser history,
+        // which after a save no longer points here — see routes.spec.ts.
+        meta: { title: "New tea", requiresAuth: true, backTo: "/tea/cabinet" },
+      },
+      {
+        path: "tea/almanac",
+        name: "tea-almanac",
+        component: () => import("@/apps/tea/pages/AlmanacPage.vue"),
+        meta: { title: "Almanac", requiresAuth: true, backTo: "/tea" },
+      },
+      {
+        path: "tea/almanac/:catalogueNodeId",
+        name: "tea-almanac-entry",
+        component: () => import("@/apps/tea/pages/AlmanacEntryDetailPage.vue"),
+        meta: { title: "Almanac", requiresAuth: true, backTo: "/tea/almanac" },
+      },
+      {
+        path: "tea/timer",
+        name: "tea-timer",
+        component: () => import("@/apps/tea/pages/TimerPage.vue"),
+        meta: { title: "Brew", requiresAuth: true, backTo: "/tea" },
+      },
+      {
+        path: "tea/timer/cha-xi",
+        name: "tea-timer-chaxi",
+        component: () => import("@/apps/tea/pages/ChaXiPage.vue"),
+        meta: { title: "Cha Xi", requiresAuth: true, backTo: "/tea/timer" },
+      },
+      // Before tea/:teaId, which would otherwise read "ware" as a tea id.
+      {
+        path: "tea/ware",
+        name: "tea-ware",
+        component: () => import("@/apps/tea/pages/WareCabinetPage.vue"),
+        meta: { title: "Teaware", requiresAuth: true, backTo: "/tea" },
+      },
+      {
+        path: "tea/ware/new",
+        name: "tea-ware-new",
+        component: () => import("@/apps/tea/pages/NewWarePage.vue"),
+        meta: { title: "New teaware", requiresAuth: true, backTo: "/tea/ware" },
+      },
+      {
+        path: "tea/ware/:wareId",
+        name: "tea-ware-detail",
+        component: () => import("@/apps/tea/pages/WareDetailPage.vue"),
+        meta: { title: "Teaware", requiresAuth: true, backTo: "/tea/ware" },
+      },
+      {
+        path: "tea/journal",
+        name: "tea-journal",
+        component: () => import("@/apps/tea/pages/JournalPage.vue"),
+        meta: { title: "Journal", requiresAuth: true, backTo: "/tea" },
+      },
+      {
+        path: "tea/journal/new",
+        name: "tea-journal-new",
+        component: () => import("@/apps/tea/pages/JournalFormPage.vue"),
+        meta: { title: "New entry", requiresAuth: true, backTo: "/tea/journal" },
+      },
+      {
+        path: "tea/journal/:id",
+        name: "tea-journal-entry",
+        component: () => import("@/apps/tea/pages/JournalEntryPage.vue"),
+        meta: { title: "Journal", requiresAuth: true, backTo: "/tea/journal" },
+      },
+      {
+        // No backTo: back returns to wherever the edit was opened from.
+        path: "tea/journal/:id/edit",
+        name: "tea-journal-edit",
+        component: () => import("@/apps/tea/pages/JournalFormPage.vue"),
+        meta: { title: "Edit entry", requiresAuth: true },
+      },
+      {
+        path: "tea/:teaId",
+        name: "tea-detail",
+        component: () => import("@/apps/tea/pages/TeaDetailPage.vue"),
+        meta: { title: "Tea", requiresAuth: true, backTo: "/tea/cabinet" },
       },
       {
         // The invitee link. Deliberately NOT `requiresAuth`: an invitee arrives

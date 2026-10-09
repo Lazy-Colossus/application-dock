@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "note": "Shipped starter list of units for the ingredient field. A starting point, not a closed set: a unit typed that is not here is accepted and joins that user's own vocabulary, which is unioned with this list on read. Ordered by how often a home cook reaches for them, not alphabetically — the field offers the first few before anything is typed.",
+  "units": [
+    "g", "kg", "ml", "l", "tbsp", "tsp", "cup", "clove", "pack", "tin",
+    "bunch", "handful", "pinch", "slice", "sprig", "stick", "jar", "punnet",
+    "sheet", "dash", "drizzle", "piece"
+  ]
+}

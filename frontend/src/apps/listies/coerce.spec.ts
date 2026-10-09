@@ -271,7 +271,13 @@ describe("countBlankedByRetype — place_group (Story 4.6)", () => {
 
   it("keeps a live group when converting to text — it keeps the name", () => {
     expect(
-      countBlankedByRetype(rowWith("g-1"), "c-1", "text", "place_group", GROUPS),
+      countBlankedByRetype(
+        rowWith("g-1"),
+        "c-1",
+        "text",
+        "place_group",
+        GROUPS,
+      ),
     ).toBe(0);
   });
 
@@ -298,12 +304,20 @@ describe("countBlankedByRetype — place_group (Story 4.6)", () => {
       ),
     ).toBe(1);
     expect(
-      countBlankedByRetype(rowWith("g-1"), "c-1", "date", "place_group", GROUPS),
+      countBlankedByRetype(
+        rowWith("g-1"),
+        "c-1",
+        "date",
+        "place_group",
+        GROUPS,
+      ),
     ).toBe(1);
   });
 
   it("loses every filled scalar when converting to a group", () => {
-    expect(countBlankedByRetype(rowWith("hello"), "c-1", "place_group")).toBe(1);
+    expect(countBlankedByRetype(rowWith("hello"), "c-1", "place_group")).toBe(
+      1,
+    );
     expect(countBlankedByRetype(rowWith(42), "c-1", "place_group")).toBe(1);
   });
 });

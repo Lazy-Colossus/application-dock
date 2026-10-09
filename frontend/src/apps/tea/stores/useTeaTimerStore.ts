@@ -1,0 +1,599 @@
+import { computed, ref, watch } from "vue";
+import { defineStore } from "pinia";
+import { api } from "@/composables/useApi";
+import {
+  CUP_LIQUOR,
+  genericCurve,
+  loggedSeconds,
+  newSessionId,
+  targetFor,
+} from "@/apps/tea/timer";
+import { downscaleImage } from "@/apps/tea/image";
+import type {
+  BrewingCurve,
+  ChaXi,
+  Tasting,
+  Infusion,
+  Tea,
+  TeaClass,
+  TeaSession,
+  TeaSessionWrite,
+  Teaware,
+} from "@/apps/tea/types";
+import { useTeawareStore } from "./useTeawareStore";
+
+export interface LiveTea {
+  id: string;
+  name: string;
+  class_id: TeaClass;
+  grams_remaining: number;
+}
+
+export interface LiveVessel {
+  id: string;
+  name: string;
+  volume_ml: number | null;
+}
+
+export interface LiveSession {
+  version: 1;
+  sessionId: string;
+  startedAt: string;
+  tea: LiveTea | null;
+  // Optional: sessions saved before vessels existed still hydrate.
+  teaware?: LiveVessel | null;
+  // Optional: sessions saved before this existed still hydrate as unset,
+  // which reads the same as "never touched" — safe, since the prefill only
+  // ever fires once, right after a tea is attached.
+  vesselChosen?: boolean;
+  // Optional: sessions saved before the Journal existed still hydrate.
+  chaXi?: ChaXi | null;
+  imageUrl?: string | null;
+  tasting?: Tasting | null;
+  curve: BrewingCurve;
+  leafGrams: number | null;
+  waterTempC: number | null;
+  infusions: Infusion[];
+  steepStartedAt: number | null;
+  pushed: boolean;
+}
+
+const LIVE_KEY = "tea-timer:live";
+const CHIME_KEY = "tea-timer:chime";
+
+function message(e: unknown): string {
+  if (e && typeof e === "object" && "detail" in e) {
+    const detail = (e as { detail: unknown }).detail;
+    if (typeof detail === "string" && detail.length > 0) return detail;
+  }
+  return e instanceof Error ? e.message : String(e);
+}
+
+function statusOf(e: unknown): number | null {
+  if (e && typeof e === "object" && "status" in e) {
+    const status = (e as { status: unknown }).status;
+    if (typeof status === "number") return status;
+  }
+  return null;
+}
+
+function read(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function write(key: string, value: string | null): void {
+  try {
+    if (value === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, value);
+  } catch {
+    // Private mode or blocked storage: the timer still works, it just won't
+    // survive a reload.
+  }
+}
+
+function isLiveSession(value: unknown): value is LiveSession {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return (
+    v.version === 1 &&
+    typeof v.sessionId === "string" &&
+    typeof v.startedAt === "string" &&
+    Array.isArray(v.infusions) &&
+    v.infusions.length > 0 &&
+    typeof v.curve === "object" &&
+    v.curve !== null &&
+    (v.steepStartedAt === null || typeof v.steepStartedAt === "number")
+  );
+}
+
+function hydrate(): LiveSession | null {
+  const raw = read(LIVE_KEY);
+  if (raw === null) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (isLiveSession(parsed)) return parsed;
+  } catch {
+    // fall through
+  }
+  write(LIVE_KEY, null);
+  return null;
+}
+
+function liveTea(tea: Tea): LiveTea {
+  return {
+    id: tea.id,
+    name: tea.name,
+    class_id: tea.class_id,
+    grams_remaining: tea.grams_remaining,
+  };
+}
+
+function liveVessel(item: Teaware): LiveVessel {
+  return { id: item.id, name: item.name, volume_ml: item.volume_ml };
+}
+
+export const useTeaTimerStore = defineStore("tea-timer", () => {
+  const live = ref<LiveSession | null>(hydrate());
+  const unsynced = ref(false);
+  const loading = ref(false);
+  const error = ref<string | null>(null);
+  const notice = ref<string | null>(null);
+  const chimeOn = ref(read(CHIME_KEY) !== "0");
+  const photoSaving = ref(false);
+  const photoError = ref<string | null>(null);
+
+  // Synchronous so a reload straight after a tap still finds the tap saved.
+  watch(live, (value) => write(LIVE_KEY, value === null ? null : JSON.stringify(value)), {
+    deep: true,
+    flush: "sync",
+  });
+
+  const current = computed(() => live.value?.infusions.at(-1) ?? null);
+  const running = computed(() => live.value?.steepStartedAt != null);
+  const brewed = computed(
+    () => live.value?.infusions.filter((i) => i.actual_seconds !== null) ?? [],
+  );
+  const liquor = computed(() => CUP_LIQUOR[live.value?.tea?.class_id ?? "other"]);
+
+  function ensureSession(): LiveSession {
+    if (live.value === null) {
+      const curve = genericCurve();
+      live.value = {
+        version: 1,
+        sessionId: newSessionId(),
+        startedAt: new Date().toISOString(),
+        tea: null,
+        curve,
+        leafGrams: null,
+        waterTempC: null,
+        infusions: [
+          { number: 1, target_seconds: targetFor(curve.steep_seconds, 1), actual_seconds: null },
+        ],
+        steepStartedAt: null,
+        pushed: false,
+      };
+    }
+    return live.value;
+  }
+
+  /** `session.tea` must be set before this is called — see `push`/`finish`. */
+  function snapshot(
+    session: LiveSession,
+    tea: LiveTea,
+    status: TeaSessionWrite["status"],
+    rating: number | null,
+  ): TeaSessionWrite {
+    return {
+      tea_id: tea.id,
+      status,
+      started_at: session.startedAt,
+      leaf_grams: session.leafGrams,
+      water_temp_c: session.waterTempC,
+      rating,
+      curve_source: session.curve.source,
+      curve_source_label: session.curve.source_label,
+      infusions: session.infusions,
+      teaware_id: session.teaware?.id ?? null,
+      away_tea_name: "",
+      away_class_id: null,
+      timed: true,
+      cha_xi: session.chaXi ?? null,
+      tasting: session.tasting ?? null,
+    };
+  }
+
+  function clear(): void {
+    live.value = null;
+    unsynced.value = false;
+    error.value = null;
+    photoError.value = null;
+  }
+
+  async function push(): Promise<void> {
+    const session = live.value;
+    const tea = session?.tea;
+    if (!session || !tea) return;
+    // Captured before the request lands: a later push (e.g. picking a
+    // different vessel) may replace session.teaware before this one's
+    // response arrives, and a 422 must only ever blame what it actually sent.
+    const sentVesselId = session.teaware?.id ?? null;
+    // Mark as pushed before the request lands, not after: a discard tapped
+    // while this PUT is in flight must still DELETE, whether the PUT
+    // eventually succeeds, fails, or its response is simply lost.
+    session.pushed = true;
+    try {
+      await api.put<TeaSession>(`/tea/sessions/${session.sessionId}`, {
+        ...snapshot(session, tea, "in_progress", null),
+      });
+      // The session may have ended, been discarded, or been replaced (finish,
+      // resume, a fresh start) while this request was in flight — a stale
+      // result must not resurrect state on whatever session is live now.
+      if (live.value !== session) return;
+      unsynced.value = false;
+      error.value = null;
+    } catch (e) {
+      if (live.value !== session) return;
+      if (statusOf(e) === 404) {
+        // The tea was removed elsewhere: keep timing as a plain timer rather
+        // than retrying a push that can never land.
+        notice.value = `${tea.name} is no longer in your cabinet — carrying on as a plain timer.`;
+        session.tea = null;
+        unsynced.value = false;
+        return;
+      }
+      if (statusOf(e) === 422 && sentVesselId !== null) {
+        if (session.teaware?.id === sentVesselId) {
+          // The vessel was retired or removed elsewhere: carry on without it
+          // rather than retrying a push that can never land.
+          notice.value = `${session.teaware.name} can't be brewed in any more — carrying on without a vessel.`;
+          session.teaware = null;
+          await push();
+        }
+        // Else: a stale 422 for a vessel a newer push already replaced —
+        // let that push decide the outcome instead of overwriting it.
+        return;
+      }
+      unsynced.value = true;
+    }
+  }
+
+  /** Step away from the live session, leaving it on the server to continue later. */
+  async function park(): Promise<boolean> {
+    const session = live.value;
+    if (!session?.tea || session.steepStartedAt !== null) return false;
+    // push() itself may flip `pushed` and drop a refused vessel; anything
+    // else that differs afterwards was tapped during the request.
+    const fingerprint = (): string => JSON.stringify({ ...session, pushed: true, teaware: null });
+    const before = fingerprint();
+    const noticeBefore = notice.value;
+    await push();
+    // push() reports through state, not a return value: a 404 has detached
+    // the tea (and set the notice), a failed request has left it unsynced.
+    if (live.value !== session || !session.tea) return false;
+    // Such a tap (a started steep, a nudge) isn't on the server yet — clearing
+    // now would lose it.
+    if (fingerprint() !== before) return false;
+    if (unsynced.value) {
+      error.value = "Couldn't save this session — check your connection and try again.";
+      return false;
+    }
+    // A notice raised by this save (a dropped vessel) is about the parked
+    // session, so it outlives clearing it.
+    const raised = notice.value !== noticeBefore ? notice.value : null;
+    end();
+    notice.value = raised;
+    return true;
+  }
+
+  function start(): void {
+    const session = ensureSession();
+    if (session.steepStartedAt === null) session.steepStartedAt = Date.now();
+  }
+
+  async function stop(): Promise<void> {
+    const session = live.value;
+    if (!session || session.steepStartedAt === null) return;
+    const pending = session.infusions.at(-1);
+    if (!pending) return;
+    pending.actual_seconds = loggedSeconds(
+      (Date.now() - session.steepStartedAt) / 1000,
+      pending.target_seconds,
+    );
+    session.steepStartedAt = null;
+    const next = pending.number + 1;
+    session.infusions.push({
+      number: next,
+      target_seconds: targetFor(session.curve.steep_seconds, next),
+      actual_seconds: null,
+    });
+    await push();
+  }
+
+  function nudge(deltaSeconds: number): void {
+    const pending = ensureSession().infusions.at(-1);
+    if (!pending) return;
+    pending.target_seconds = Math.max(1, pending.target_seconds + deltaSeconds);
+  }
+
+  function setTarget(seconds: number): void {
+    const pending = ensureSession().infusions.at(-1);
+    if (!pending) return;
+    pending.target_seconds = Math.max(1, Math.round(seconds));
+  }
+
+  async function redoLast(): Promise<void> {
+    const session = live.value;
+    if (!session || session.steepStartedAt !== null || session.infusions.length < 2) return;
+    session.infusions.pop();
+    const previous = session.infusions.at(-1);
+    if (!previous) return;
+    previous.actual_seconds = null;
+    await push();
+  }
+
+  /** Correct a brewed steep's time — e.g. a steep left running past the pour. */
+  async function setSteepSeconds(number: number, seconds: number): Promise<void> {
+    const infusion = live.value?.infusions.find((i) => i.number === number);
+    if (!infusion || infusion.actual_seconds === null) return;
+    infusion.actual_seconds = Math.max(0, Math.round(seconds));
+    await push();
+  }
+
+  async function attachTea(tea: Tea): Promise<void> {
+    const session = ensureSession();
+    let curve: BrewingCurve;
+    try {
+      curve = await api.get<BrewingCurve>(`/tea/teas/${tea.id}/curve`);
+    } catch {
+      curve = genericCurve("generic gongfu (couldn't load tea curve)");
+    }
+    // The session may have ended or been replaced while the curve fetch was
+    // in flight — don't attach the tea to a detached object.
+    if (live.value !== session) return;
+    session.tea = liveTea(tea);
+    session.curve = curve;
+    session.leafGrams = curve.leaf_grams;
+    session.waterTempC = curve.water_temp_c;
+    session.infusions = session.infusions.map((i) =>
+      i.actual_seconds === null
+        ? { ...i, target_seconds: targetFor(curve.steep_seconds, i.number) }
+        : i,
+    );
+    // Prefill only an empty, never-touched slot, so a vessel picked by hand —
+    // including explicitly choosing "No vessel" — always wins.
+    if (!session.teaware && !session.vesselChosen) {
+      const vessel = await useTeawareStore().lastUsed(tea.id);
+      if (live.value !== session) return;
+      const stillEmpty = vessel && !session.teaware && !session.vesselChosen;
+      if (stillEmpty && session.tea?.id === tea.id) session.teaware = liveVessel(vessel);
+    }
+    notice.value = null;
+    await push();
+  }
+
+  function setLeafGrams(grams: number | null): void {
+    if (live.value) live.value.leafGrams = grams !== null && grams > 0 ? grams : null;
+  }
+
+  function setWaterTemp(celsius: number | null): void {
+    if (!live.value) return;
+    const valid = celsius !== null && Number.isInteger(celsius) && celsius >= 1 && celsius <= 100;
+    live.value.waterTempC = valid ? celsius : null;
+  }
+
+  async function setVessel(item: Teaware | null): Promise<void> {
+    const session = ensureSession();
+    session.teaware = item ? liveVessel(item) : null;
+    session.vesselChosen = true;
+    await push();
+  }
+
+  function setChaXi(value: ChaXi): void {
+    if (live.value) live.value.chaXi = value;
+  }
+
+  function setTasting(value: Tasting | null): void {
+    if (live.value) live.value.tasting = value;
+  }
+
+  /** The server needs the session before its photo, so the session syncs first. */
+  async function uploadPhoto(file: File): Promise<boolean> {
+    const session = live.value;
+    if (!session?.tea) return false;
+    photoSaving.value = true;
+    photoError.value = null;
+    try {
+      await push();
+      if (live.value !== session) return false;
+      if (unsynced.value) throw new Error("Not synced yet — try again in a moment");
+      const saved = await api.upload<TeaSession>(
+        `/tea/sessions/${session.sessionId}/image`,
+        await downscaleImage(file),
+      );
+      if (live.value === session) session.imageUrl = saved.image_url;
+      return true;
+    } catch (e) {
+      photoError.value = message(e);
+      return false;
+    } finally {
+      photoSaving.value = false;
+    }
+  }
+
+  async function removePhoto(): Promise<void> {
+    const session = live.value;
+    if (!session?.imageUrl) return;
+    photoSaving.value = true;
+    try {
+      await api.del<TeaSession>(`/tea/sessions/${session.sessionId}/image`);
+      if (live.value === session) session.imageUrl = null;
+      photoError.value = null;
+    } catch (e) {
+      photoError.value = message(e);
+    } finally {
+      photoSaving.value = false;
+    }
+  }
+
+  async function finish(rating: number | null): Promise<string | null> {
+    const session = live.value;
+    const tea = session?.tea;
+    if (!session || !tea) return null;
+    const teaId = tea.id;
+    const sentVesselId = session.teaware?.id ?? null;
+    loading.value = true;
+    try {
+      await api.put<TeaSession>(`/tea/sessions/${session.sessionId}`, {
+        ...snapshot(session, tea, "finalised", rating),
+      });
+      clear();
+      return teaId;
+    } catch (e) {
+      // 409: an earlier attempt landed but its response was lost.
+      if (statusOf(e) === 409) {
+        clear();
+        return teaId;
+      }
+      if (statusOf(e) === 404) {
+        // The tea was removed elsewhere: detach it rather than leaving the
+        // finish sheet stuck on an error that can never be retried away.
+        session.tea = null;
+        notice.value = `${tea.name} is no longer in your cabinet — carrying on as a plain timer.`;
+        error.value = null;
+        return null;
+      }
+      if (statusOf(e) === 422 && sentVesselId !== null && session.teaware?.id === sentVesselId) {
+        // Don't lose the finish over a vessel that became unusable: drop it and let
+        // the person save again.
+        notice.value = `${session.teaware.name} can't be brewed in any more — tap Save again to finish without it.`;
+        session.teaware = null;
+        error.value = null;
+        return null;
+      }
+      error.value = message(e);
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  function end(): void {
+    clear();
+    notice.value = null;
+  }
+
+  async function discard(): Promise<boolean> {
+    const session = live.value;
+    if (!session) return true;
+    if (session.pushed) {
+      loading.value = true;
+      try {
+        await api.del(`/tea/sessions/${session.sessionId}`);
+      } catch (e) {
+        if (statusOf(e) !== 404) {
+          error.value = message(e);
+          return false;
+        }
+      } finally {
+        loading.value = false;
+      }
+    }
+    end();
+    return true;
+  }
+
+  function resume(session: TeaSession, tea: Tea, vessel: Teaware | null = null): void {
+    const infusions = session.infusions.map((i) => ({ ...i }));
+    const curve: BrewingCurve = {
+      leaf_grams: session.leaf_grams,
+      water_temp_c: session.water_temp_c,
+      steep_seconds: infusions.map((i) => i.target_seconds),
+      source: session.curve_source,
+      source_label: session.curve_source_label,
+    };
+    const last = infusions.at(-1);
+    if (!last || last.actual_seconds !== null) {
+      const next = (last?.number ?? 0) + 1;
+      infusions.push({
+        number: next,
+        target_seconds: targetFor(curve.steep_seconds, next),
+        actual_seconds: null,
+      });
+    }
+    // No item found in the loaded teaware list (fetch failed, or list stale)
+    // must not read as "no vessel" — that would clear teaware_id on the next
+    // push. Fall back to a stub the 422 path can still drop if refused.
+    const fallback: LiveVessel | null =
+      session.teaware_id !== null
+        ? { id: session.teaware_id, name: "your vessel", volume_ml: session.vessel_volume_ml }
+        : null;
+    live.value = {
+      version: 1,
+      sessionId: session.id,
+      startedAt: session.started_at,
+      tea: liveTea(tea),
+      teaware: vessel ? liveVessel(vessel) : fallback,
+      curve,
+      leafGrams: session.leaf_grams,
+      waterTempC: session.water_temp_c,
+      infusions,
+      steepStartedAt: null,
+      pushed: true,
+      chaXi: session.cha_xi,
+      imageUrl: session.image_url,
+      tasting: session.tasting,
+    };
+    unsynced.value = false;
+  }
+
+  function toggleChime(): void {
+    chimeOn.value = !chimeOn.value;
+    write(CHIME_KEY, chimeOn.value ? "1" : "0");
+  }
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("online", () => {
+      if (unsynced.value) void push();
+    });
+  }
+
+  return {
+    live,
+    unsynced,
+    loading,
+    error,
+    notice,
+    chimeOn,
+    photoSaving,
+    photoError,
+    current,
+    running,
+    brewed,
+    liquor,
+    start,
+    stop,
+    nudge,
+    setTarget,
+    redoLast,
+    setSteepSeconds,
+    attachTea,
+    setLeafGrams,
+    setWaterTemp,
+    setVessel,
+    setChaXi,
+    setTasting,
+    uploadPhoto,
+    removePhoto,
+    push,
+    park,
+    finish,
+    end,
+    discard,
+    resume,
+    toggleChime,
+  };
+});

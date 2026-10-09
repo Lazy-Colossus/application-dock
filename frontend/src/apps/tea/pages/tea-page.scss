@@ -1,0 +1,49 @@
+.tea-page {
+  background: #17120e;
+  min-height: 100%;
+  position: relative;
+  padding-bottom: 40px;
+}
+.tea-page__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 6px;
+}
+.tea-page__back,
+.tea-page__save {
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  cursor: pointer;
+  font-size: 15px;
+}
+.tea-page__back {
+  color: #8b7a63;
+}
+.tea-page__save {
+  color: #efe7da;
+}
+.tea-page__save:disabled {
+  color: #574d43;
+  cursor: default;
+}
+.tea-page__title {
+  color: #efe7da;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1.15;
+  padding: 5px 18px 0;
+  margin: 0;
+}
+.tea-page__body {
+  padding: 0 18px;
+}
+.tea-page__error {
+  background: #1e1712;
+  border-left: 2px solid #e4d9c6;
+  color: #efe7da;
+  margin: 12px 18px 0;
+  padding: 12px 14px;
+  font-size: 14px;
+}

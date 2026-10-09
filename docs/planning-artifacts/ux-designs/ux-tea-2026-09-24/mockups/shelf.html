@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tea Cabinet — the shelf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;400;500;600&family=Noto+Serif+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --field:#17120E; --raised:#1E1712; --hairline:#241E19; --track:#2C241D;
+    --ink-hi:#EFE7DA; --ink:#E4D9C6; --ink-lo:#6B5F52; --ink-zh:#A99781; --ink-out:#574D43;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#0B0908; color:#8B7A63; font-family:'Newsreader',serif;
+         display:flex; flex-direction:column; align-items:center; padding:36px 16px 60px; }
+  .caption { max-width:560px; text-align:center; font-size:14px; line-height:1.6; margin:0 0 26px; }
+  .caption b { color:#C7A271; font-weight:500; }
+  .phone { width:360px; max-width:100%; border-radius:8px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,.6); }
+
+  .sv { position:relative; background:var(--field); height:640px; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; }
+  .sv::-webkit-scrollbar { display:none; }
+  .grain { position:absolute; inset:0; pointer-events:none; z-index:1; opacity:.5;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E"); }
+
+  .top { position:sticky; top:0; z-index:5; background:linear-gradient(var(--field) 76%,rgba(23,18,14,0));
+         padding:20px 18px 16px; display:flex; justify-content:space-between; align-items:baseline; }
+  .top-t { color:var(--ink-hi); font-size:19px; font-weight:500; }
+  .top-c { color:var(--ink-lo); font-size:13px; }
+
+  .sec { position:relative; padding:10px 0 22px; }
+  .leafwrap { position:absolute; inset:-30px -10px; pointer-events:none; z-index:0;
+              opacity:.14; transition:opacity .85s cubic-bezier(.22,.61,.36,1); }
+  .sec.active .leafwrap { opacity:1; }
+  .leaf { position:absolute; }
+  .pad { position:relative; z-index:2; padding:0 18px; }
+
+  .sec-h { display:flex; align-items:center; gap:9px; margin-bottom:9px; }
+  .sec-n { font-size:13px; font-weight:500; letter-spacing:.04em; }
+  .sec-zh { font-family:'Noto Serif SC',serif; font-size:12.5px; font-weight:300; }
+
+  .row { display:flex; gap:14px; align-items:center; padding:8px 0; }
+  .meat { flex:1; min-width:0; }
+  .nm { color:var(--ink-hi); font-size:16.5px; font-weight:400; line-height:1.28; }
+  .nm .zh { font-family:'Noto Serif SC',serif; color:var(--ink-zh); font-size:13.5px; font-weight:300; margin-left:7px; }
+  .pth { color:var(--ink-lo); font-size:12.5px; margin-top:3px; }
+  .ring { flex:none; width:52px; text-align:center; }
+  .ring svg { display:block; margin:0 auto; }
+  .num { fill:var(--ink); font-family:'Newsreader',serif; font-size:15px; font-weight:500; }
+  .cap { color:var(--ink-lo); font-size:10.5px; margin-top:2px; display:block; }
+  .out .nm, .out .pth { color:var(--ink-out); }
+  .out .nm .zh { color:#4A4239; }
+  .out .num { fill:var(--ink-out); }
+
+  .fab { position:absolute; right:18px; bottom:18px; width:52px; height:52px; border-radius:50%;
+         background:#E4D9C6; color:#17120E; font-size:28px; line-height:52px; text-align:center;
+         z-index:6; box-shadow:0 6px 18px rgba(0,0,0,.5); }
+
+  @media (prefers-reduced-motion: reduce) { .leafwrap { transition:none; } }
+</style>
+</head>
+<body>
+
+<p class="caption">
+  <b>The shelf.</b> Six classes, 14 teas, three under their low threshold. Scroll: the leaves belong to the
+  class nearest the middle of the screen, and every other section rests at 14%. Each rim is drawn round to
+  how much leaf is left, with a notch where "low" starts.
+</p>
+
+<div class="phone">
+  <div class="sv" id="sv">
+    <div class="grain"></div>
+
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+      <path id="sin" d="M6 47 C54 9 148 1 254 43 C210 62 150 78 96 76 C56 74 24 62 6 47 Z"/>
+      <path id="ass" d="M12 62 C44 14 128 2 208 44 C198 96 128 128 66 116 C36 110 18 88 12 62 Z"/>
+    </defs></svg>
+
+    <div class="top"><span class="top-t">Cabinet</span><span class="top-c">14 teas</span></div>
+
+    <!-- Green 綠茶 -->
+    <div class="sec">
+      <div class="leafwrap">
+        <svg class="leaf" width="300" height="104" viewBox="0 0 260 90" style="left:-58px;top:6px;transform:rotate(-12deg)"><use href="#sin" fill="#6B8A63" opacity=".17"/></svg>
+        <svg class="leaf" width="240" height="83" viewBox="0 0 260 90" style="left:36px;top:46px;transform:rotate(9deg)"><use href="#sin" fill="#6B8A63" opacity=".09"/></svg>
+      </div>
+      <div class="pad">
+        <div class="sec-h"><span class="sec-n" style="color:#96AF8D">Green</span><span class="sec-zh" style="color:#5D6E58">綠茶</span></div>
+        <div class="row"><div class="meat"><div class="nm">Anji Baicha <span class="zh">安吉白茶</span></div><div class="pth">Anji, Zhejiang</div></div>
+          <div class="ring"><svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="17" fill="none" stroke="#2C241D" stroke-width="2.5"/><circle cx="22" cy="22" r="17" fill="none" stroke="#6B8A63" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="47 59.8" transform="rotate(-90 22 22)"/><text class="num" x="22" y="27" text-anchor="middle">22</text></svg><span class="cap">of 50g</span></div></div>
+        <div class="row out"><div class="meat"><div class="nm">Longjing <span class="zh">龍井</span></div><div class="pth">Xihu, Zhejiang</div></div>
+          <div class="ring"><svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="17" fill="none" stroke="#241E19" stroke-width="2.5"/><text class="num" x="22" y="27" text-anchor="middle">0</text></svg><span class="cap">of 50g</span></div></div>
+      </div>
+    </div>
+
+    <!-- Yellow 黃茶 -->
+    <div class="sec">
+      <div class="leafwrap">
+        <svg class="leaf" width="290" height="100" viewBox="0 0 260 90" style="right:-62px;top:0;transform:rotate(14deg) scaleX(-1)"><use href="#sin" fill="#A8944F" opacity=".17"/></svg>
+      </div>
+      <div class="pad">
+        <div class="sec-h"><span class="sec-n" style="color:#B5A472">Yellow</span><span class="sec-zh" style="color:#6B6144">黃茶</span></div>
+        <div class="row"><div class="meat"><div class="nm">Junshan Yinzhen <span class="zh">君山銀針</span></div><div class="pth">Junshan Island, Hunan</div></div>
+          <div class="ring"><svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="17" fill="none" stroke="#2C241D" stroke-width="2.5"/><circle cx="22" cy="22" r="17" fill="none" stroke="#A8944F" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="64.1 42.7" transform="rotate(-90 22 22)"/><text class="num" x="22" y="27" text-anchor="middle">15</text></svg><span class="cap">of 25g</span></div></div>
+      </div>
+    </div>
+
+    <!-- White 白茶 -->
+    <div class="sec">
+      <div class="leafwrap">
+        <svg class="leaf" width="310" height="107" viewBox="0 0 260 90" style="left:-54px;top:4px;transform:rotate(-8deg)"><use href="#sin" fill="#B9B2A0" opacity=".13"/></svg>
+        <svg class="leaf" width="230" height="80" viewBox="0 0 260 90" style="left:52px;top:52px;transform:rotate(12deg)"><use href="#sin" fill="#B9B2A0" opacity=".07"/></svg>
+      </div>
+      <div class="pad">
+        <div class="sec-h"><span class="sec-n" style="color:#C3BCAA">White</span><span class="sec-zh" style="color:#6E695C">白茶</span></div>
+        <div class="row"><div class="meat"><div class="nm">Bai Hao Yinzhen <span class="zh">白毫銀針</span></div><div class="pth">Fuding</div></div>
+          <div class="ring"><svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="17" fill="none" stroke="#2C241D" stroke-width="2.5"/><circle cx="22" cy="22" r="17" fill="none" stroke="#B9B2A0" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="72.6 34.2" transform="rotate(-90 22 22)"/><text class="num" x="22" y="27" text-anchor="middle">34</text></svg><span class="cap">of 50g</span></div></div>
+        <div class="row"><div class="meat"><div class="nm">2016 Shou Mei <span class="zh">壽眉</span></div><div class="pth">Fuding</div></div>
+          <div class="ring"><svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="17" fill="none" stroke="#2C241D" stroke-width="2.5"/><circle cx="22" cy="22" r="17" fill="none" stroke="#B9B2A0" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="73.2 33.6" transform="rotate(-90 22 22)"/><text class="num" x="22" y="27" text-anchor="middle">240</text></svg><span class="cap">of 350g</span></div></div>
+      </div>
+    </div>
+
+    <!-- Oolong 烏龍 -->
+    <div class="sec">
+      <div class="leafwrap">
+        <svg class="leaf" width="300" height="104" viewBox="0 0 260 90" style="left:-60px;top:2px;transform:rotate(-15deg)"><use href="#sin" fill="#B8832F" opacity=".17"/></svg>
+        <svg class="leaf" width="250" height="86" viewBox="0 0 260 90" style="left:28px;top:60px;transform:rotate(10deg)"><use href="#sin" fill="#B8832F" opacity=".10"/></svg>
+        <svg class="leaf" width="200" height="69" viewBox="0 0 260 90" style="left:-16px;top:120px;transform:rotate(-3deg)"><use href="#sin" fill="#B8832F" opacity=".06"/></svg>
+      </div>
+      <div class="pad">
+        <div class="sec-h"><span class="sec-n" style="color:#C7A271">Oolong</span><span class="sec-zh" style="color:#7A6244">烏龍</span></div>
+        <div class="row"><div class="meat"><div class="nm">Da Hong Pao <span class="zh">大紅袍</span></div><div class="pth">Wuyi yancha</div></div>
+          <div class="ring"><svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="17" fill="none" stroke="#2C241D" stroke-width="2.5"/><circle cx="22" cy="22" r="17" fill="none" stroke="#B8832F" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="40.6 66.2" transform="rotate(-90 22 22)"/><text class="num" x="22" y="27" text-anchor="middle">38</text></svg><span class="cap">of 100g</span></div></div>
+        <div class="row"><div class="meat"><div class="nm">Tieguanyin <span class="zh">鐵觀音</span></div><div class="pth">Anxi</div></div>
+          <div class="ring"><svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="17" fill="none" stroke="#2C241D" stroke-width="2.5"/><circle cx="22" cy="22" r="17" fill="none" stroke="#B8832F" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="65.5 41.3" transform="rotate(-90 22 22)"/><text class="num" x="22" y="27" text-anchor="middle">46</text></svg><span class="cap">of 75g</span></div></div>
+        <div class="row"><div class="meat"><div class="nm">Mi Lan Xiang <span class="zh">蜜蘭香</span></div><div class="pth">Phoenix Dancong</div></div>
+          <div class="ring"><svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="17" fill="none" stroke="#2C241D" stroke-width="2.5"/><circle cx="22" cy="22" r="17" fill="none" stroke="#B8832F" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4 4.4 0 98.4" transform="rotate(-90 22 22)"/><line x1="22" y1="3" x2="22" y2="8" stroke="#8B7A63" stroke-width="1.2" transform="rotate(108 22 22)"/><text class="num" x="22" y="27" text-anchor="middle">12</text></svg><span class="cap">of 50g</span></div></div>
+        <div class="row"><div class="meat"><div class="nm">Dong Ding <span class="zh">凍頂</span></div><div class="pth">Nantou, Taiwan</div></div>
+          <div class="ring"><svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="17" fill="none" stroke="#2C241D" stroke-width="2.5"/><circle cx="22" cy="22" r="17" fill="none" stroke="#B8832F" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="3 4 0 99.8" transform="rotate(-90 22 22)"/><line x1="22" y1="3" x2="22" y2="8" stroke="#8B7A63" stroke-width="1.2" transform="rotate(72 22 22)"/><text class="num" x="22" y="27" text-anchor="middle">8</text></svg><span class="cap">of 50g</span></div></div>
+      </div>
+    </div>
+
+    <!-- Red 紅茶 -->
+    <div class="sec">
+      <div class="leafwrap">
+        <svg class="leaf" width="300" height="104" viewBox="0 0 260 90" style="right:-58px;top:4px;transform:rotate(13deg) scaleX(-1)"><use href="#sin" fill="#96543A" opacity=".18"/></svg>
+        <svg class="leaf" width="230" height="80" viewBox="0 0 260 90" style="right:40px;top:54px;transform:rotate(-7deg) scaleX(-1)"><use href="#sin" fill="#96543A" opacity=".09"/></svg>
+      </div>
+      <div class="pad">
+        <div class="sec-h"><span class="sec-n" style="color:#B8846E">Red</span><span class="sec-zh" style="color:#71544A">紅茶</span></div>
+        <div class="row"><div class="meat"><div class="nm">Jin Jun Mei <span class="zh">金駿眉</span></div><div class="pth">Tongmu, Fujian</div></div>
+          <div class="ring"><svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="17" fill="none" stroke="#2C241D" stroke-width="2.5"/><circle cx="22" cy="22" r="17" fill="none" stroke="#96543A" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="76.9 29.9" transform="rotate(-90 22 22)"/><text class="num" x="22" y="27" text-anchor="middle">18</text></svg><span class="cap">of 25g</span></div></div>
+        <div class="row"><div class="meat"><div class="nm">Qimen <span class="zh">祁門</span></div><div class="pth">Qimen, Anhui</div></div>
+          <div class="ring"><svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="17" fill="none" stroke="#2C241D" stroke-width="2.5"/><circle cx="22" cy="22" r="17" fill="none" stroke="#96543A" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="64.1 42.7" transform="rotate(-90 22 22)"/><text class="num" x="22" y="27" text-anchor="middle">60</text></svg><span class="cap">of 100g</span></div></div>
+      </div>
+    </div>
+
+    <!-- Dark 黑茶 -->
+    <div class="sec">
+      <div class="leafwrap">
+        <svg class="leaf" width="250" height="148" viewBox="0 0 220 130" style="left:-66px;top:0;transform:rotate(-16deg)"><use href="#ass" fill="#8C4A3C" opacity=".18"/></svg>
+        <svg class="leaf" width="200" height="118" viewBox="0 0 220 130" style="left:66px;top:66px;transform:rotate(11deg)"><use href="#ass" fill="#8C4A3C" opacity=".10"/></svg>
+        <svg class="leaf" width="170" height="100" viewBox="0 0 220 130" style="left:-10px;top:140px;transform:rotate(-5deg)"><use href="#ass" fill="#8C4A3C" opacity=".06"/></svg>
+      </div>
+      <div class="pad">
+        <div class="sec-h"><span class="sec-n" style="color:#BC8578">Dark</span><span class="sec-zh" style="color:#75504A">黑茶</span></div>
+        <div class="row"><div class="meat"><div class="nm">2019 Bulang <span class="zh">布朗生普</span></div><div class="pth">Sheng pu-erh</div></div>
+          <div class="ring"><svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="17" fill="none" stroke="#2C241D" stroke-width="2.5"/><circle cx="22" cy="22" r="17" fill="none" stroke="#8C4A3C" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="92.9 13.9" transform="rotate(-90 22 22)"/><text class="num" x="22" y="27" text-anchor="middle">312</text></svg><span class="cap">of 357g</span></div></div>
+        <div class="row"><div class="meat"><div class="nm">2008 Shu brick <span class="zh">熟磚</span></div><div class="pth">Shu pu-erh</div></div>
+          <div class="ring"><svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="17" fill="none" stroke="#2C241D" stroke-width="2.5"/><circle cx="22" cy="22" r="17" fill="none" stroke="#8C4A3C" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="61.9 44.9" transform="rotate(-90 22 22)"/><text class="num" x="22" y="27" text-anchor="middle">145</text></svg><span class="cap">of 250g</span></div></div>
+        <div class="row"><div class="meat"><div class="nm">Liu Bao <span class="zh">六堡</span></div><div class="pth">Wuzhou, Guangxi</div></div>
+          <div class="ring"><svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="17" fill="none" stroke="#2C241D" stroke-width="2.5"/><circle cx="22" cy="22" r="17" fill="none" stroke="#8C4A3C" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="1.6 4 0 101.2" transform="rotate(-90 22 22)"/><line x1="22" y1="3" x2="22" y2="8" stroke="#8B7A63" stroke-width="1.2" transform="rotate(36 22 22)"/><text class="num" x="22" y="27" text-anchor="middle">5</text></svg><span class="cap">of 100g</span></div></div>
+      </div>
+    </div>
+
+    <div style="height:56px"></div>
+  </div>
+  <div class="fab">+</div>
+</div>
+
+<script>
+(function () {
+  var sv = document.getElementById('sv');
+  var secs = [].slice.call(sv.querySelectorAll('.sec'));
+  var ticking = false;
+  function mark() {
+    ticking = false;
+    var mid = sv.scrollTop + sv.clientHeight * 0.42;
+    var best = null, bestD = Infinity;
+    secs.forEach(function (s) {
+      var d = Math.abs((s.offsetTop + s.offsetHeight / 2) - mid);
+      if (d < bestD) { bestD = d; best = s; }
+    });
+    secs.forEach(function (s) { s.classList.toggle('active', s === best); });
+  }
+  sv.addEventListener('scroll', function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(mark); }
+  });
+  mark();
+})();
+</script>
+</body>
+</html>

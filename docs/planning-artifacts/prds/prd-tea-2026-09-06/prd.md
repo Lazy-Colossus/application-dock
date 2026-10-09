@@ -35,7 +35,7 @@ Single user: the builder, a gongfu tea drinker who brews multi-infusion sessions
 
 ### 2.2 Non-Users (v1)
 
-- Anyone but the builder — no multi-user accounts, no guests, no sharing surface (contrast KDH). A session may *note* guests as free text, but they are not users.
+- Anyone outside the household — no guests, followers, or public sharing. Household members may share one cabinet (see `docs/superpowers/specs/2026-09-27-tea-shared-cabinets-design.md`). A session may *note* guests as free text, but they are not users.
 - Vendors / marketplaces — this is not for buying, selling, or discovering teas to purchase.
 - The broader tea community — no social feed, no publishing, no leaderboards.
 
@@ -110,7 +110,7 @@ Opening a Tea shows its recommended Brewing Parameters, grams remaining, reverse
 
 ### 4.2 The Teaware Cabinet
 
-**Description:** A parallel inventory for *ware* — every gaiwan, pot, kyusu, pitcher, cup, and chawan. Each Teaware item carries a type, material, volume, optional photo, and notes. Porous pots additionally carry a **Seasoning Log**: the record of which Teas have been brewed in them, supporting the practice of dedicating one pot to one tea-type. A Session references the Teaware used, and that reference is what feeds each pot's Seasoning Log.
+**Description:** A parallel inventory for *ware* — every gaiwan, pot, kyusu, pitcher, cup, and chawan. Each Teaware item carries a type, material, volume, optional photo, and notes. Porous pots additionally carry a **Seasoning Log**: the record of which Teas have been brewed in them, supporting the practice of dedicating one pot to one tea-type. A Session references the Teaware used, and that reference is what feeds each pot's Seasoning Log. Designed in `docs/superpowers/specs/2026-09-27-tea-teaware-cabinet-design.md`, which supersedes the details below where they differ: materials are porcelain / clay / stoneware / glass / other; the Seasoning Log is derived from the sessions that name a pot rather than stored; a pot is dedicated to a catalogue node; archiving is an undoable Retire, and a hard delete exists.
 
 **Functional Requirements:**
 
@@ -204,6 +204,8 @@ The user can start a silent Meditation of a chosen duration attached to the curr
 
 **Description:** During or after a Session the user taps through a hierarchical **Flavor Wheel** (categories → notes such as honey, petrichor, roasted, marine, camphor) to capture what the tea tastes like. The selected notes become the Session's **Flavor Fingerprint**. The wheel ships with a sensible default vocabulary and is user-extensible. Fingerprints can be compared across a Tea's Sessions and side-by-side across Teas.
 
+The user's own tasting vocabulary is designed in `docs/superpowers/specs/2026-09-29-tea-tasting-design.md`: a typed, per-session tasting sheet (leaf, liquor, aroma & qi, sensation) with a per-tea summary that delivers FR-17's aggregate. The tap-through wheel and custom notes (FR-15, FR-16) and side-by-side comparison remain open.
+
 **Functional Requirements:**
 
 #### FR-15: Capture a flavor fingerprint
@@ -225,6 +227,11 @@ The user can view a Tea's aggregated Flavor Fingerprint across its Sessions and 
 ### 4.7 Cha Xi Journal
 
 **Description:** The reflective home of the practice. **Cha Xi** enriches a Session with the aesthetics of the sitting — the Teaware used, mood, guests, and a photo of the table setup — and the **Journal** is the browsable, reverse-chronological archive of all Sessions rendered as visual cards. Because a Session is unified but optional, the Journal also lets the user record a **journal-only Session** for a tea brewed elsewhere (a teahouse, a friend's table) with no timing at all.
+
+Designed in `docs/superpowers/specs/2026-09-28-tea-cha-xi-journal-design.md`, which supersedes the
+details below where they differ: mood is a fixed multi-select vocabulary; a journal-only entry may
+name an away tea not in the Cabinet; FR-20's search and filters are deferred except a "Cha xi
+only" toggle.
 
 **Functional Requirements:**
 
@@ -294,7 +301,7 @@ The Almanac ships with a starter body of curated families and vocabulary so it i
 
 ## 5. Non-Goals (Explicit)
 
-- **Not multi-user, not social.** No accounts beyond the single dock user, no sharing, no feed, no publishing, no leaderboards. Guests are free text on a Session, not users.
+- **Not social.** Household members can share one cabinet, but there is no sharing beyond it: no feed, publishing, leaderboards, or read-only viewers. Guests are free text on a Session, not users.
 - **Not commerce.** No buying, selling, price tracking, vendor catalogs, or purchase recommendations.
 - **Not a hardware hub.** No integration with smart scales, kettles, or thermometers in v1 — temperature and grams are entered by hand.
 - **Not an AI sommelier.** No automated flavor inference, tea identification from photos, or ML-generated tasting notes; the Flavor Fingerprint is what the user taps.
@@ -360,7 +367,7 @@ Personal-project framing — the metrics are about *lived use*, not growth.
 - **NFR-2 — Glanceable timing.** A live Infusion's remaining time must be readable in under a second's glance; the active control must never require precise aim.
 - **NFR-3 — Interruptibility.** Any live activity (Infusion, Metronome, Meditation) can be paused, cancelled, or abandoned without corrupting the Session; an app backgrounded mid-Session recovers to a coherent state on return.
 - **NFR-4 — Persistence & integrity.** All persisted state uses the platform repository pattern with atomic writes (write-tmp-then-replace); no write path bypasses it. Photos are stored on disk under `DATA_DIR` and referenced by path. In-progress Sessions survive a reload.
-- **NFR-5 — Single-user privacy.** All data sits behind the existing dock JWT auth; there is no sharing surface and no third-party data egress beyond the maps/place-search the platform already uses.
+- **NFR-5 — Household privacy.** All data sits behind the existing dock JWT auth. A cabinet is visible only to its members; there is no other sharing surface and no third-party data egress beyond the maps/place-search the platform already uses.
 - **NFR-6 — Responsive fallback.** Though phone-first, the app is usable on a desktop browser (cataloguing, journaling, almanac) via responsive layout — no separate desktop build.
 - **NFR-7 — Accessibility & platform standards.** Meets the platform's accessibility and coding standards (contrast, focus states, keyboard use on desktop); audio and haptic cues are never the sole channel — a visual equivalent always accompanies them.
 - **NFR-8 — Offline resilience (soft).** Transient network loss at the table must not lose an in-progress Session's timing data. [ASSUMPTION: achieved by keeping live timing in client state and persisting on finalize/checkpoint, not by full offline-PWA in v1 — see §6.2.]

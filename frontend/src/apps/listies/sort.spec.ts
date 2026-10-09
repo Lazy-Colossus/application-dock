@@ -193,21 +193,41 @@ describe("sorting a place_group column (Story 4.6)", () => {
 
   it("compares by the resolved group name, not the id", () => {
     // g-1 → "Bravo", g-2 → "Alpha": Alpha sorts before Bravo.
-    const ids = sortRowIds(groupRows(["g-1", "g-2"]), column("place_group"), "asc", groups);
+    const ids = sortRowIds(
+      groupRows(["g-1", "g-2"]),
+      column("place_group"),
+      "asc",
+      groups,
+    );
     expect(ids).toEqual(["r-1", "r-0"]);
   });
 
   it("reverses on descending", () => {
-    const ids = sortRowIds(groupRows(["g-1", "g-2"]), column("place_group"), "desc", groups);
+    const ids = sortRowIds(
+      groupRows(["g-1", "g-2"]),
+      column("place_group"),
+      "desc",
+      groups,
+    );
     expect(ids).toEqual(["r-0", "r-1"]);
   });
 
   it("keeps empty group cells last in both directions", () => {
     expect(
-      sortRowIds(groupRows(["g-1", null, "g-2"]), column("place_group"), "asc", groups),
+      sortRowIds(
+        groupRows(["g-1", null, "g-2"]),
+        column("place_group"),
+        "asc",
+        groups,
+      ),
     ).toEqual(["r-2", "r-0", "r-1"]);
     expect(
-      sortRowIds(groupRows(["g-1", null, "g-2"]), column("place_group"), "desc", groups),
+      sortRowIds(
+        groupRows(["g-1", null, "g-2"]),
+        column("place_group"),
+        "desc",
+        groups,
+      ),
     ).toEqual(["r-0", "r-2", "r-1"]);
   });
 });

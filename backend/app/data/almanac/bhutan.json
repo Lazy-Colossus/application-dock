@@ -1,0 +1,23 @@
+[
+  {
+    "catalogue_node_id": "green.bhutanese.samcholing",
+    "country": "Bhutan",
+    "reading": "",
+    "summary": "Bhutan's tea industry is tiny, amounting to essentially one producer: a women's cooperative in the village of Samcholing, Trongsa district, at around 1,800 meters. Its bushes descend from Darjeeling seed planted in the 1950s by the Second King, Jigme Wangchuck, around a royal palace there, and were largely ornamental until the 2010s, when the Samcholing Tea Cooperative (formed 2011) began commercial processing with technical help from Korean partners (KOICA and Korean tea specialists) and the Ministry of Agriculture; the garden has been certified under Bhutan's local organic scheme since 2018. Green tea was the first product and remains the best known, sold abroad in small lots from about 2016 (in the United States as 'Thunder Dragon Green'). Two leaves and a bud are hand-plucked, withered, and pan-fired Korean-style, then rolled by hand or small machine, pan-fired again, and dried with hot air. The cup is described as smooth, fruity-vegetal, and lightly floral, tolerant of hot water and several infusions; annual output of finished tea is measured in tens to low hundreds of kilograms.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 85, "steep_seconds": [120, 180] }
+  },
+  {
+    "catalogue_node_id": "red.bhutanese.samcholing",
+    "country": "Bhutan",
+    "reading": "",
+    "summary": "An orthodox black tea made by the Samcholing Tea Cooperative in Trongsa district, central Bhutan, from the same 1950s-era Darjeeling-derived bushes (planted by the Second King around a royal palace) that supply the cooperative's green tea, grown at roughly 1,800-2,000 meters. Hand-plucked leaf is withered, rolled, fully oxidized, and dried in the cooperative's micro-factory, in batches small enough that it reaches foreign specialty retailers only occasionally and in limited quantities, under names such as 'Black Thunder', a counterpart to the green's 'Thunder Dragon'. Retailers describe a smooth, full-bodied cup with honey, dried-fruit, and gentle spice notes over a somewhat rustic, straw-like base. Bhutan has no larger black-tea sector: tea gardens along the southern border near Samtse belong essentially to the Indian Dooars estate belt, and plantings in Samtse, Sarpang, and Tsirang are small and mostly for local use, so a Bhutanese-labelled black tea almost always means Samcholing.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 95, "steep_seconds": [180, 240] }
+  },
+  {
+    "catalogue_node_id": "dark.bhutanese.ja-aum",
+    "country": "Bhutan",
+    "reading": "ja aum",
+    "summary": "Ja aum is a Bhutanese term for fermented tea, the dark, heavily processed leaf traditionally boiled as the base for suja, the churned butter tea made with butter and salt. Historically Bhutan imported brick tea from Tibet and China for suja, and in remote highland areas households also made ja aum from wild non-Camellia plants, chopping and boiling the leaves, sun-drying them, then boiling them again in a solution of oak or barley ash (or baking soda) until dark brown and drying them for about a week. Since the 2020s the Samcholing women's cooperative in Trongsa has made small batches of a Camellia sinensis version from its landrace bushes, sold abroad under names such as 'Ja-Aum' and 'Zang Ja' dark tea; one batch is described as fermented in oak ash over an eight-day process. The cup is dark, mild, and velvety, with woody, forest-floor, mushroom, and incense notes that mellow further with storage. It can be brewed plainly, but its intended use is as the strong tea base for suja.",
+    "brewing": { "leaf_grams": 5, "water_temp_c": 100, "steep_seconds": [20, 30, 45, 60] }
+  }
+]

@@ -1,0 +1,9 @@
+[
+  {
+    "catalogue_node_id": "red.iranian.lahijan",
+    "country": "Iran",
+    "reading": "chai",
+    "summary": "Iran's tea grows in a narrow humid belt between the Alborz mountains and the Caspian Sea, centred on Lahijan in Gilan province. It was introduced around 1900 by Prince Mohammad Mirza, known as Kashef al-Saltaneh, who as Iran's consul in India studied tea growing there and brought back seeds and saplings to plant in Lahijan; he is remembered as the father of Iranian tea, and his tomb in the town houses a tea museum. Almost all of it is orthodox black tea, made from bushes that go dormant through the cool Caspian winter and give a spring first flush much valued at home. The cup is light, clear and reddish, with a gentle, slightly sweet and toasty flavour and less briskness than Indian or Kenyan tea — suited to the Iranian habit of brewing a strong pot kept warm on top of a kettle or samovar (dam kardan), diluted in small glasses, and drunk with a sugar cube (ghand) held between the teeth.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 95, "steep_seconds": [300] }
+  }
+]

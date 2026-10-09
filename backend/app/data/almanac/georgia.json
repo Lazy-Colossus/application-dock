@@ -1,0 +1,16 @@
+[
+  {
+    "catalogue_node_id": "red.georgian.orthodox",
+    "country": "Georgia",
+    "reading": "",
+    "summary": "Tea has grown on the humid subtropical Black Sea side of western Georgia since the mid-19th century, but the industry's founding figure is Lau Jin Jau (Liu Junzhou), a Chinese tea master recruited in 1893 to set up plantations and a factory at Chakvi near Batumi, whose leaf won a gold medal at the 1900 Paris Exposition. Under Soviet rule Georgia became the USSR's main domestic tea source, and a drive for volume — mechanical shearing of coarse, overgrown leaf across tens of thousands of hectares — turned 'Georgian tea' into a byword for cheap, poor-quality leaf. The plantations largely collapsed after 1991; the revival since the 2010s is small-scale and quality-led, with hand-picked leaf from abandoned or reclaimed bushes in Guria, Imereti, Adjara and Samegrelo made into orthodox black tea. At around 42°N it is among the northernmost commercial teas in the world, and the cool winters give a gentle, low-astringency cup with honey, dried-fruit and light malt notes rather than the brisk strength of tropical black teas.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 95, "steep_seconds": [180, 240] }
+  },
+  {
+    "catalogue_node_id": "green.georgian.orthodox",
+    "country": "Georgia",
+    "reading": "",
+    "summary": "Soviet Georgia made green tea in bulk alongside black, much of it pressed into bricks or shipped loose to Central Asia, where green tea (kok choy) rather than black is the everyday drink. Like the black tea, that trade collapsed with the Soviet Union, and today's Georgian green tea is a small craft product of the same revived western-Georgian gardens: leaf is heated to halt oxidation, rolled and dried, usually by pan-firing in small batches. The slow growth of the northern climate gives a soft, sweet, lightly toasted cup with gentle vegetal and hay notes and little bitterness.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 80, "steep_seconds": [90, 120] }
+  }
+]

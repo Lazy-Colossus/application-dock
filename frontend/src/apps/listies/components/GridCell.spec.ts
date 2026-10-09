@@ -536,9 +536,7 @@ describe("GridCell — group cells pick from a dropdown (Story 4.6)", () => {
     { id: "g-2", name: "Maybe", color: "#3e63dd" },
   ];
 
-  function groupCell(
-    props: { value?: CellValue; editing?: boolean } = {},
-  ) {
+  function groupCell(props: { value?: CellValue; editing?: boolean } = {}) {
     return mount(GridCell, {
       props: {
         value: null,
@@ -568,8 +566,12 @@ describe("GridCell — group cells pick from a dropdown (Story 4.6)", () => {
 
     expect(wrapper.find('[data-testid="group-menu"]').exists()).toBe(true);
     expect(wrapper.find("input").exists()).toBe(false);
-    expect(wrapper.find('[data-testid="group-option-g-1"]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid="group-option-g-2"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="group-option-g-1"]').exists()).toBe(
+      true,
+    );
+    expect(wrapper.find('[data-testid="group-option-g-2"]').exists()).toBe(
+      true,
+    );
     expect(wrapper.find('[data-testid="group-option-none"]').exists()).toBe(
       true,
     );

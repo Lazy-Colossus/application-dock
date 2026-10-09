@@ -1,0 +1,23 @@
+[
+  {
+    "catalogue_node_id": "red.indonesian.java",
+    "country": "Indonesia",
+    "reading": "",
+    "summary": "The Dutch brought tea to Java in the 1820s, first planting China-type bushes grown from Japanese and Chinese seed, but the industry only took hold after assamica plants from British India replaced them from the late 1870s. Most Javanese tea still comes from the volcanic Priangan highlands of West Java, south of Bandung, where estates at roughly 1,000–1,800 meters pick year-round because the equatorial climate has no real dormant season. The bulk is orthodox black tea sold at auction as a blending tea, prized for a bright, clean, coppery liquor and a light, brisk, faintly fruity character rather than depth or malt; higher-grown, carefully plucked lots can be delicate and floral. At home, most Indonesians drink tea sweetened, often as the jasmine-scented teh wangi or from bottles, and much fine leaf goes abroad.",
+    "brewing": { "leaf_grams": 2.5, "water_temp_c": 95, "steep_seconds": [180, 240] }
+  },
+  {
+    "catalogue_node_id": "red.indonesian.sumatra",
+    "country": "Indonesia",
+    "reading": "",
+    "summary": "Sumatra's tea industry grew up in the early 20th century around the large estates of North Sumatra near Pematang Siantar, alongside tobacco and rubber, and later in the Kerinci highlands of Jambi, where Kayu Aro — on the slopes of Mount Kerinci at around 1,400–1,600 meters — is often described as one of the largest single tea estates in the world. Like Java's, Sumatran tea is mostly orthodox black from assamica bushes picked year-round, destined largely for export blends. It tends to be somewhat fuller and stronger than Java tea, with more body and malty depth, which makes it a common base in breakfast-style blends.",
+    "brewing": { "leaf_grams": 2.5, "water_temp_c": 100, "steep_seconds": [180, 240] }
+  },
+  {
+    "catalogue_node_id": "green.indonesian.teh-wangi",
+    "country": "Indonesia",
+    "reading": "teh wangi melati",
+    "summary": "Teh wangi ('fragrant tea') is Java's everyday jasmine tea and a staple of Javanese tea drinking. It is green tea, usually fired or roasted, blended and scented with two jasmines: the common melati (Jasminum sambac) and melati gambir (Jasminum grandiflorum), whose flowers give off their scent at night. The trade grew up along Java's north coast, where Pekalongan and the country east of Tegal still grow the flowers; in Slawi, near Tegal, the Tatah brand is said to date to 1928, and in 1940 the Sosrodjojo family started Teh Cap Botol there — the business that later became Teh Botol Sosro. In Tegal it is brewed strong in a clay pot as teh poci and sweetened with rock sugar, and it is sold widely both loose and in bags. The cup is dark, strongly perfumed and somewhat astringent, and is usually taken sweet.",
+    "brewing": { "leaf_grams": 3, "water_temp_c": 90, "steep_seconds": [120, 180] }
+  }
+]
