@@ -79,4 +79,11 @@ export const apps: AppDescriptor[] = [
     icon: "rocket_launch",
     route: "/iss-vanguard",
   },
+  {
+    id: "pagemage",
+    label: "PageMage",
+    // An HTML glyph — the app renders uploaded HTML pages.
+    icon: "html",
+    route: "/pagemage",
+  },
 ];
