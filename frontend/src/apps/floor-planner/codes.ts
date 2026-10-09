@@ -68,9 +68,9 @@ export const FLOORS: FloorFamily[] = [
     texture: "planks",
     defaultCode: "w1",
     swatches: [
-      { code: "w0", name: "Light", colour: "#d6ae80" },
-      { code: "w1", name: "Medium", colour: "#a8743f" },
-      { code: "w2", name: "Dark", colour: "#6b4426" },
+      { code: "w0", name: "Light", colour: "#ead3b0" },
+      { code: "w1", name: "Medium", colour: "#cfa577" },
+      { code: "w2", name: "Dark", colour: "#9a6b43" },
     ],
   },
   {
