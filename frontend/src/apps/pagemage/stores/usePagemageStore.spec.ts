@@ -111,3 +111,47 @@ describe("usePagemageStore", () => {
     expect(store.error).toBe("nope");
   });
 });
+
+describe("usePagemageStore sharing", () => {
+  it("createShare posts and returns the token, updating currentPage", async () => {
+    const shared = {
+      id: "p-1",
+      name: "A",
+      html: "<p>x</p>",
+      share_token: "tok-xyz",
+      created_at: "t",
+      updated_at: "t",
+    };
+    postMock.mockResolvedValue(shared);
+    const store = usePagemageStore();
+    const token = await store.createShare("p-1");
+    expect(postMock).toHaveBeenCalledWith("/pagemage/pages/p-1/share");
+    expect(token).toBe("tok-xyz");
+    expect(store.currentPage).toEqual(shared);
+  });
+
+  it("revokeShare deletes and clears the token on currentPage", async () => {
+    const cleared = {
+      id: "p-1",
+      name: "A",
+      html: "<p>x</p>",
+      share_token: "",
+      created_at: "t",
+      updated_at: "t",
+    };
+    delMock.mockResolvedValue(cleared);
+    const store = usePagemageStore();
+    const ok = await store.revokeShare("p-1");
+    expect(delMock).toHaveBeenCalledWith("/pagemage/pages/p-1/share");
+    expect(ok).toBe(true);
+    expect(store.currentPage).toEqual(cleared);
+  });
+
+  it("createShare returns null and sets error on failure", async () => {
+    postMock.mockRejectedValue(new Error("boom"));
+    const store = usePagemageStore();
+    const token = await store.createShare("p-1");
+    expect(token).toBeNull();
+    expect(store.error).toBe("boom");
+  });
+});
