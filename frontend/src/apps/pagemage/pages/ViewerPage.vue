@@ -1,41 +1,39 @@
 <template>
   <q-page class="pagemage-viewer column no-wrap">
-    <div class="row items-center justify-between q-pa-sm bg-grey-2">
-      <div class="row items-center no-wrap">
-        <q-btn flat round dense icon="arrow_back" to="/pagemage" />
-        <div class="text-subtitle1 q-ml-sm ellipsis">
-          {{ store.currentPage?.name ?? "…" }}
-        </div>
-      </div>
-      <div class="row items-center q-gutter-sm">
-        <span
-          v-if="savedFlash"
-          class="text-positive text-caption"
-          data-testid="saved-flash"
-        >
-          Saved
-        </span>
-        <q-btn
-          flat
-          no-caps
-          icon="share"
-          label="Share"
-          :disable="!store.currentPage"
-          data-testid="share"
-          @click="shareOpen = true"
-        />
-        <q-btn
-          unelevated
-          no-caps
-          color="primary"
-          icon="save"
-          label="Save"
-          :loading="store.saving"
-          :disable="!store.currentPage"
-          data-testid="save"
-          @click="requestSave"
-        />
-      </div>
+    <!-- The page name lives in the shell bar ("PageMage - Name") via the page
+         detail store, and the shell already renders a back button, so this is
+         just a slim action strip. No hardcoded fill — it sits on the themed
+         page background. -->
+    <div
+      class="pagemage-actions row items-center justify-end q-gutter-sm q-pa-sm"
+    >
+      <span
+        v-if="savedFlash"
+        class="text-positive text-caption"
+        data-testid="saved-flash"
+      >
+        Saved
+      </span>
+      <q-btn
+        flat
+        no-caps
+        icon="share"
+        label="Share"
+        :disable="!store.currentPage"
+        data-testid="share"
+        @click="shareOpen = true"
+      />
+      <q-btn
+        unelevated
+        no-caps
+        color="primary"
+        icon="save"
+        label="Save"
+        :loading="store.saving"
+        :disable="!store.currentPage"
+        data-testid="save"
+        @click="requestSave"
+      />
     </div>
 
     <div v-if="store.error" class="text-negative q-pa-sm" data-testid="error">
@@ -88,8 +86,8 @@
             <q-btn
               unelevated
               no-caps
-              color="primary"
-              label="Copy"
+              :color="copied ? 'positive' : 'primary'"
+              :label="copied ? 'Copied' : 'Copy'"
               data-testid="copy-link"
               @click="onCopy"
             />
@@ -101,16 +99,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { usePagemageStore } from "@/apps/pagemage/stores/usePagemageStore";
+import { usePageDetailStore } from "@/stores/usePageDetailStore";
 import { buildSrcdoc } from "@/apps/pagemage/capture";
+import { copyToClipboard } from "@/apps/pagemage/clipboard";
 
 const store = usePagemageStore();
+const pageDetail = usePageDetailStore();
 const route = useRoute();
 const frame = ref<HTMLIFrameElement | null>(null);
 const savedFlash = ref(false);
 const shareOpen = ref(false);
+const copied = ref(false);
 
 const pageId = computed(() => String(route.params.pageId));
 const srcdoc = computed(() =>
@@ -133,7 +135,11 @@ async function onDisableLink(): Promise<void> {
 }
 
 async function onCopy(): Promise<void> {
-  await navigator.clipboard.writeText(shareUrl.value);
+  const ok = await copyToClipboard(shareUrl.value);
+  if (ok) {
+    copied.value = true;
+    window.setTimeout(() => (copied.value = false), 1500);
+  }
 }
 
 function onMessage(event: MessageEvent): void {
@@ -153,6 +159,14 @@ function requestSave(): void {
   win.postMessage({ type: "pm:capture" }, "*");
 }
 
+// Surface the page name in the shell bar, so it reads "PageMage - Name" with
+// no second header of our own. The shell clears this on route change.
+watch(
+  () => store.currentPage?.name,
+  (name) => pageDetail.setDetail(name ?? null),
+  { immediate: true },
+);
+
 onMounted(() => {
   window.addEventListener("message", onMessage);
   void store.fetchPage(pageId.value);
@@ -162,11 +176,18 @@ onBeforeUnmount(() => window.removeEventListener("message", onMessage));
 </script>
 
 <style scoped>
+/* 56px is the shell header height (MainLayout .app-bar). */
 .pagemage-viewer {
-  height: calc(100vh - 50px);
+  height: calc(100vh - 56px);
+}
+.pagemage-actions {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 .pagemage-frame {
   width: 100%;
+  /* White so an uploaded page with no background of its own stays readable on
+     the dark app theme. */
+  background: #ffffff;
   border: 0;
 }
 </style>

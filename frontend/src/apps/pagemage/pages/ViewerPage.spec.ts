@@ -154,4 +154,30 @@ describe("PageMage ViewerPage sharing", () => {
     await flushPromises();
     expect(delMock).toHaveBeenCalledWith("/pagemage/pages/p-1/share");
   });
+
+  it("copies the full share link", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    getMock.mockResolvedValue({ ...page(), share_token: "tok-xyz" });
+    const wrapper = render();
+    await flushPromises();
+    await wrapper.find('[data-testid="share"]').trigger("click");
+    await wrapper.find('[data-testid="copy-link"]').trigger("click");
+    await flushPromises();
+    expect(writeText).toHaveBeenCalledTimes(1);
+    expect(writeText.mock.calls[0][0]).toContain(
+      "/api/pagemage/share/tok-xyz/raw",
+    );
+    vi.unstubAllGlobals();
+  });
+});
+
+describe("PageMage ViewerPage shell title", () => {
+  it("publishes the page name to the shell page-detail store", async () => {
+    getMock.mockResolvedValue(page());
+    render();
+    await flushPromises();
+    const { usePageDetailStore } = await import("@/stores/usePageDetailStore");
+    expect(usePageDetailStore().detail).toBe("Doc");
+  });
 });
