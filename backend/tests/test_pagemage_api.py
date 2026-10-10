@@ -157,9 +157,7 @@ def test_upload_with_name_field_uses_it(as_user) -> None:
 
 def test_rename_changes_the_name(as_user) -> None:
     created = _upload("x.html")
-    response = client.put(
-        f"/api/pagemage/pages/{created['id']}/name", json={"name": "Renamed"}
-    )
+    response = client.put(f"/api/pagemage/pages/{created['id']}/name", json={"name": "Renamed"})
     assert response.status_code == 200, response.text
     assert response.json()["name"] == "Renamed"
 
