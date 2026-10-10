@@ -183,3 +183,21 @@ def test_shared_notes_router_is_mounted() -> None:
     from app.routers import shared_notes
 
     assert shared_notes.router.prefix == "/api/shared-notes"
+
+
+def test_list_apps_includes_floor_planner() -> None:
+    response = client.get("/api/apps")
+    app_entry = next(a for a in response.json() if a["id"] == "floor-planner")
+    assert app_entry == {
+        "id": "floor-planner",
+        "label": "Floor Planner",
+        "icon": "square_foot",
+        "route": "/floor-planner",
+    }
+
+
+def test_floor_planner_router_is_mounted() -> None:
+    from app.routers import floor_planner
+
+    assert floor_planner.router.prefix == "/api/floor-planner"
+    assert any(getattr(r, "path", "") == "/api/floor-planner/apartments" for r in app.routes)

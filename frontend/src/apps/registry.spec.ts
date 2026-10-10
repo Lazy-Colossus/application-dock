@@ -75,4 +75,10 @@ describe("app registry", () => {
     expect(app?.icon).toBe("rocket_launch");
     expect(app?.route).toBe("/iss-vanguard");
   });
+  it("registers the Floor Planner app", () => {
+    const app = apps.find((a) => a.id === "floor-planner");
+    expect(app?.label).toBe("Floor Planner");
+    expect(app?.icon).toBe("square_foot");
+    expect(app?.route).toBe("/floor-planner");
+  });
 });

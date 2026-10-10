@@ -1,0 +1,995 @@
+<template>
+  <q-page
+    ref="root"
+    class="fp floor-planner-app"
+    :style-fn="fitWindow"
+    tabindex="-1"
+    @keydown="onKey"
+  >
+    <div class="fp__top">
+      <ApartmentMenu
+        :apartments="store.apartments"
+        :current="store.apartment"
+        @show="store.fetchApartments()"
+        @open="goTo"
+        @create="apartmentDialog = 'create'"
+        @duplicate="apartmentDialog = 'duplicate'"
+        @rename="apartmentDialog = 'rename'"
+        @remove="deleteApartment"
+      />
+      <div class="fp__modes" role="tablist" aria-label="Mode">
+        <button
+          v-for="m in modes"
+          :key="m.id"
+          type="button"
+          role="tab"
+          class="fp__mode"
+          :class="{ 'fp__mode--active': mode === m.id }"
+          :aria-selected="mode === m.id"
+          :data-testid="`mode-${m.id}`"
+          @click="mode = m.id"
+        >
+          {{ m.label }}
+        </button>
+      </div>
+      <div class="fp__spacer" />
+      <template v-if="store.apartment">
+        <button
+          type="button"
+          class="fp__people"
+          aria-label="People sharing this apartment"
+          data-testid="members-open"
+          @click="membersOpen = true"
+        >
+          <span
+            v-for="member in store.apartment.members"
+            :key="member"
+            class="fp__avatar"
+            :title="member"
+          >
+            {{ member.charAt(0).toUpperCase() }}
+          </span>
+        </button>
+      </template>
+    </div>
+
+    <div
+      v-if="store.notice"
+      class="fp__notice"
+      role="status"
+      data-testid="fp-notice"
+    >
+      <span>{{ store.notice }}</span>
+      <span class="fp__notice-actions">
+        <button
+          v-if="store.planConflict"
+          type="button"
+          class="fp-button"
+          data-testid="conflict-discard"
+          @click="store.discardDraft()"
+        >
+          Discard
+        </button>
+        <button type="button" class="fp-button" @click="store.dismissNotice()">
+          OK
+        </button>
+      </span>
+    </div>
+    <p
+      v-if="store.error && !membersOpen"
+      class="fp__error"
+      data-testid="fp-error"
+    >
+      {{ store.error }}
+    </p>
+
+    <div class="fp__body">
+      <aside class="fp__panel fp__panel--left" data-testid="fp-left">
+        <DrawPanel
+          v-if="mode === 'draw'"
+          v-model:brush="brush"
+          v-model:shape="shape"
+          v-model:size="brushSize"
+          :can-undo="store.canUndo"
+          :can-redo="store.canRedo"
+          @undo="store.undo()"
+          @redo="store.redo()"
+        />
+        <FurnitureList
+          v-else-if="mode === 'furniture'"
+          :pieces="store.apartment?.furniture ?? []"
+          :selected-id="selectedId"
+          @select="selectPiece"
+          @add="startAdding"
+          @bulk="bulkOpen = true"
+        />
+        <LayoutTray
+          v-else
+          :pieces="trayPieces"
+          :placed="placedPieces"
+          :layout-name="activeLayout?.name ?? ''"
+          :selected-id="selectedPlacedId"
+          @select="selectedPlacedId = $event"
+        />
+      </aside>
+      <section class="fp__plan" data-testid="fp-plan">
+        <div class="fp__sheet">
+          <PieceStage
+            v-if="mode === 'furniture'"
+            :key="formKey"
+            v-model:draft="openDraft"
+            :zoom="zoom"
+          />
+          <PlanCanvas
+            v-else-if="store.plan"
+            :plan="store.plan"
+            :zoom="zoom"
+            :editable="drawing"
+            :brush="drawing ? brush : null"
+            :shape="shape"
+            :brush-size="brushSize"
+            @stroke="(cells) => store.applyStroke(cells, brush)"
+            @hover="hover = $event"
+            @preview="readout = $event"
+            @label-at="newLabel"
+            @label-pick="editLabel"
+            @label-move="store.moveLabel"
+            :placed="mode === 'arrange' ? placed : []"
+            :selected-id="selectedPlacedId"
+            :arranging="arranging"
+            :droppable="arranging"
+            @select="selectedPlacedId = $event"
+            @move="movePiece"
+            @drop="dropPiece"
+            :closed-doors="closedDoors"
+            @door-toggle="toggleDoor"
+            @door-pick="pickDoor"
+          />
+          <DoorSetup
+            v-if="pickedDoor && store.plan"
+            :door="pickedDoor.door"
+            :sides="sideNames(store.plan, pickedDoor.door)"
+            :open="!closedDoors.includes(pickedDoor.door.key)"
+            :style="{
+              left: `${pickedDoor.left}px`,
+              top: `${pickedDoor.top}px`,
+            }"
+            @update="store.setDoorSetting"
+            @open="(open) => showDoor(pickedDoor!.door.key, open)"
+            @close="pickedKey = null"
+          />
+        </div>
+      </section>
+      <button
+        v-if="mode === 'draw' && infoHidden"
+        type="button"
+        class="fp__rail"
+        aria-label="Show plan details"
+        data-testid="info-show"
+        @click="infoHidden = false"
+      >
+        <span class="fp__rail-arrow" aria-hidden="true">‹</span>
+        <span class="fp__rail-label">Plan details</span>
+      </button>
+      <aside v-else class="fp__panel fp__panel--right" data-testid="fp-right">
+        <template v-if="mode === 'draw' && store.plan">
+          <div class="fp__panel-bar">
+            <button
+              type="button"
+              class="fp__hide"
+              aria-label="Hide plan details"
+              data-testid="info-hide"
+              @click="infoHidden = true"
+            >
+              Hide ›
+            </button>
+          </div>
+          <PlanInfoPanel
+            :plan="store.plan"
+            @resize="store.resizePlan"
+            @rename="editLabel"
+            @remove="store.deleteLabel"
+          />
+        </template>
+        <template v-else-if="mode === 'furniture'">
+          <PieceForm
+            v-if="openDraft"
+            v-model:draft="openDraft"
+            :piece="selectedPiece"
+            :placed-in="selectedPiece ? store.placedIn(selectedPiece.id) : 0"
+            @save="savePiece"
+            @remove="removePiece"
+            @copy="copyPiece"
+            @cancel="closeForm"
+          />
+          <p v-else class="fp__hint" data-testid="piece-hint">
+            Select a piece to edit it, or add one.
+          </p>
+        </template>
+        <template v-else>
+          <PlacementInspector
+            v-if="selectedPlaced"
+            :piece="selectedPlaced.piece"
+            :placement="selectedPlaced.placement"
+            :warnings="selectedWarnings"
+            @rotate="rotateSelected"
+            @back="backToTray"
+          />
+          <template v-else>
+            <p class="fp__hint" data-testid="arrange-hint">
+              Select a piece on the plan, or drag one from the tray.
+            </p>
+            <div class="fp__scale-card">
+              <span class="fp-mono">1 square = 20 cm</span>
+              <span>Pieces snap to 10 cm.</span>
+            </div>
+          </template>
+        </template>
+      </aside>
+    </div>
+
+    <StatusBar
+      v-model:zoom="zoom"
+      :hover="hover"
+      :readout="readout"
+      :save-state="store.saveState"
+      @save="store.savePlan()"
+    >
+      <LayoutTabs
+        v-if="mode === 'arrange' && store.apartment"
+        :layouts="store.apartment.layouts"
+        :active-id="activeLayout?.id ?? null"
+        @select="switchLayout"
+        @create="createLayout"
+        @duplicate="duplicateLayout"
+        @rename="layoutRenaming = true"
+        @remove="deleteLayout"
+      />
+    </StatusBar>
+
+    <q-dialog
+      :model-value="labelEdit !== null"
+      @update:model-value="labelEdit = null"
+    >
+      <NameDialog
+        v-if="labelEdit"
+        :initial="labelEdit.text"
+        :title="labelEdit.id ? 'Room label' : 'New room label'"
+        placeholder="e.g. Living room"
+        :can-delete="labelEdit.id !== null"
+        @save="saveLabel"
+        @remove="removeLabel"
+        @cancel="labelEdit = null"
+      />
+    </q-dialog>
+
+    <q-dialog v-model="layoutRenaming">
+      <NameDialog
+        v-if="layoutRenaming && activeLayout"
+        title="Rename layout"
+        :initial="activeLayout.name"
+        placeholder="e.g. Sofa by the window"
+        :can-delete="false"
+        @save="renameLayout"
+        @cancel="layoutRenaming = false"
+      />
+    </q-dialog>
+
+    <q-dialog v-model="bulkOpen">
+      <BulkAddDialog
+        v-if="bulkOpen"
+        @add="addBulk"
+        @cancel="bulkOpen = false"
+      />
+    </q-dialog>
+
+    <q-dialog v-model="membersOpen">
+      <MembersDialog
+        v-if="membersOpen"
+        @close="membersOpen = false"
+        @left="afterLeaving"
+      />
+    </q-dialog>
+
+    <q-dialog
+      :model-value="apartmentDialog !== null"
+      @update:model-value="apartmentDialog = null"
+    >
+      <NameDialog
+        v-if="apartmentDialog"
+        :title="APARTMENT_DIALOG[apartmentDialog]"
+        :initial="apartmentDialogInitial"
+        placeholder="e.g. Flat on Elm Street"
+        :can-delete="false"
+        :max-length="60"
+        @save="saveApartmentName"
+        @cancel="apartmentDialog = null"
+      />
+    </q-dialog>
+  </q-page>
+</template>
+
+<script setup lang="ts">
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+  type ComponentPublicInstance,
+} from "vue";
+import {
+  onBeforeRouteLeave,
+  onBeforeRouteUpdate,
+  useRoute,
+  useRouter,
+} from "vue-router";
+import ApartmentMenu from "../components/ApartmentMenu.vue";
+import BulkAddDialog from "../components/BulkAddDialog.vue";
+import DoorSetup from "../components/DoorSetup.vue";
+import DrawPanel from "../components/DrawPanel.vue";
+import FurnitureList from "../components/FurnitureList.vue";
+import LayoutTabs from "../components/LayoutTabs.vue";
+import LayoutTray from "../components/LayoutTray.vue";
+import PlacementInspector from "../components/PlacementInspector.vue";
+import PieceForm from "../components/PieceForm.vue";
+import MembersDialog from "../components/MembersDialog.vue";
+import NameDialog from "../components/NameDialog.vue";
+import PlanCanvas from "../components/PlanCanvas.vue";
+import PlanInfoPanel from "../components/PlanInfoPanel.vue";
+import PieceStage from "../components/PieceStage.vue";
+import StatusBar from "../components/StatusBar.vue";
+import { DEFAULT_BRUSH, type Brush } from "../codes";
+import { findDoors, sideNames } from "../doors";
+import { BLANK_DRAFT, copyName, draftOf, type PieceDraft } from "../furniture";
+import {
+  orient,
+  topLeftForCentre,
+  warningText,
+  warnings,
+  type Placed,
+} from "../geometry";
+import type { BrushSize, Cell } from "../grid";
+import { useFloorPlanStore } from "../stores/useFloorPlanStore";
+import type { Mode, Rotation } from "../types";
+import "../css/floor-planner.sass";
+
+const modes: { id: Mode; label: string }[] = [
+  { id: "draw", label: "Draw plan" },
+  { id: "furniture", label: "Furniture" },
+  { id: "arrange", label: "Arrange" },
+];
+
+const store = useFloorPlanStore();
+const route = useRoute();
+const router = useRouter();
+const mode = ref<Mode>("draw");
+const membersOpen = ref(false);
+const brush = ref<Brush>(DEFAULT_BRUSH);
+const shape = ref<"freehand" | "rectangle">("rectangle");
+const brushSize = ref<BrushSize>(1);
+const zoom = ref(1);
+const hover = ref<Cell | null>(null);
+const readout = ref<string | null>(null);
+const labelEdit = ref<{ id: string | null; cell: Cell; text: string } | null>(
+  null,
+);
+const root = ref<ComponentPublicInstance | null>(null);
+
+const selectedId = ref<string | null>(null);
+/** The piece being edited or added, shared by the form and the drawing grid. */
+const pieceDraft = ref<PieceDraft | null>(null);
+/** Bumped whenever a different piece opens, so the grid starts a fresh undo history. */
+const formKey = ref(0);
+const bulkOpen = ref(false);
+
+const selectedPiece = computed(
+  () =>
+    store.apartment?.furniture.find((p) => p.id === selectedId.value) ?? null,
+);
+/** Null once the piece being edited is gone, e.g. deleted by someone else. */
+const openDraft = computed({
+  get: () =>
+    selectedId.value && !selectedPiece.value ? null : pieceDraft.value,
+  set: (d: PieceDraft | null) => {
+    pieceDraft.value = d;
+  },
+});
+
+const activeLayoutId = ref<string | null>(null);
+const selectedPlacedId = ref<string | null>(null);
+const layoutRenaming = ref(false);
+
+const arranging = computed(() => mode.value === "arrange");
+/** Falls back to the first layout if the chosen one was deleted, here or elsewhere. */
+const activeLayout = computed(() => {
+  const layouts = store.apartment?.layouts ?? [];
+  return (
+    layouts.find((l) => l.id === activeLayoutId.value) ?? layouts[0] ?? null
+  );
+});
+const furnitureById = computed(
+  () => new Map((store.apartment?.furniture ?? []).map((p) => [p.id, p])),
+);
+const placedRaw = computed<Placed[]>(() =>
+  (activeLayout.value?.placements ?? []).flatMap((placement) => {
+    const piece = furnitureById.value.get(placement.furniture_id);
+    return piece ? [{ piece, placement }] : [];
+  }),
+);
+const placed = computed(() =>
+  placedRaw.value.map((p) => ({
+    ...p,
+    warned: store.plan ? warnings(p, store.plan).length > 0 : false,
+  })),
+);
+const placedIds = computed(
+  () => new Set(placedRaw.value.map((p) => p.piece.id)),
+);
+const trayPieces = computed(() =>
+  (store.apartment?.furniture ?? []).filter((p) => !placedIds.value.has(p.id)),
+);
+const placedPieces = computed(() => placedRaw.value.map((p) => p.piece));
+const selectedPlaced = computed(
+  () =>
+    placedRaw.value.find((p) => p.piece.id === selectedPlacedId.value) ?? null,
+);
+const selectedWarnings = computed(() =>
+  selectedPlaced.value && store.plan
+    ? warnings(selectedPlaced.value, store.plan).map(warningText)
+    : [],
+);
+
+/** Doors this viewer has swung shut. Only a view, like zoom: never saved or shared. */
+const closedDoors = ref<string[]>([]);
+
+function showDoor(key: string, open: boolean): void {
+  closedDoors.value = open
+    ? closedDoors.value.filter((k) => k !== key)
+    : [...closedDoors.value.filter((k) => k !== key), key];
+}
+
+function toggleDoor(key: string): void {
+  showDoor(key, closedDoors.value.includes(key));
+}
+
+const pickedKey = ref<string | null>(null);
+const pickedAt = ref({ left: 0, top: 0 });
+/** The door whose setup is open; it closes by itself if the door is painted away. */
+const pickedDoor = computed(() => {
+  const door =
+    pickedKey.value && store.plan
+      ? findDoors(store.plan).find((d) => d.key === pickedKey.value)
+      : undefined;
+  return door ? { door, ...pickedAt.value } : null;
+});
+
+function pickDoor(key: string, at: { left: number; top: number }): void {
+  pickedKey.value = key;
+  pickedAt.value = at;
+}
+
+watch(mode, () => {
+  pickedKey.value = null;
+});
+
+watch([mode, () => activeLayout.value?.id], () => {
+  selectedPlacedId.value = null;
+});
+
+function dropPiece(id: string, cx: number, cy: number): void {
+  const piece = furnitureById.value.get(id);
+  if (!piece || !activeLayout.value) return;
+  const { x, y } = topLeftForCentre(piece, cx, cy);
+  store.placePiece(activeLayout.value.id, id, {
+    x_cm: x,
+    y_cm: y,
+    rotation: 0,
+  });
+  selectedPlacedId.value = id;
+}
+
+function movePiece(id: string, x: number, y: number): void {
+  const current = placedRaw.value.find((p) => p.piece.id === id);
+  if (!current || !activeLayout.value) return;
+  store.placePiece(activeLayout.value.id, id, {
+    x_cm: x,
+    y_cm: y,
+    rotation: current.placement.rotation,
+  });
+}
+
+function rotateSelected(rotation: Rotation): void {
+  const sel = selectedPlaced.value;
+  if (!sel || !activeLayout.value) return;
+  store.placePiece(activeLayout.value.id, sel.piece.id, {
+    ...sel.placement,
+    rotation,
+  });
+}
+
+function orientSelected(to: "horizontal" | "vertical"): void {
+  const sel = selectedPlaced.value;
+  if (sel) rotateSelected(orient(sel.piece, sel.placement.rotation, to));
+}
+
+function backToTray(): void {
+  const sel = selectedPlaced.value;
+  if (!sel || !activeLayout.value) return;
+  store.removePlacement(activeLayout.value.id, sel.piece.id);
+  selectedPlacedId.value = null;
+}
+
+function switchLayout(id: string): void {
+  activeLayoutId.value = id;
+}
+
+/** A created or duplicated layout is the last one in the returned list. */
+function showNewest(): void {
+  const layouts = store.apartment?.layouts ?? [];
+  activeLayoutId.value = layouts[layouts.length - 1]?.id ?? null;
+}
+
+async function createLayout(): Promise<void> {
+  if (await store.createLayout(store.nextLayoutName())) showNewest();
+}
+
+async function duplicateLayout(): Promise<void> {
+  if (
+    activeLayout.value &&
+    (await store.duplicateLayout(activeLayout.value.id))
+  ) {
+    showNewest();
+  }
+}
+
+async function renameLayout(name: string): Promise<void> {
+  if (activeLayout.value) await store.renameLayout(activeLayout.value.id, name);
+  layoutRenaming.value = false;
+}
+
+async function deleteLayout(): Promise<void> {
+  const layout = activeLayout.value;
+  if (
+    layout &&
+    window.confirm(
+      `Delete ${layout.name}? Its arrangement is lost; the furniture stays.`,
+    ) &&
+    (await store.deleteLayout(layout.id))
+  ) {
+    activeLayoutId.value = null;
+  }
+}
+
+function openForm(id: string | null, draft: PieceDraft | null): void {
+  selectedId.value = id;
+  pieceDraft.value = draft;
+  formKey.value++;
+}
+
+function selectPiece(id: string): void {
+  const piece = furnitureById.value.get(id);
+  openForm(id, piece ? draftOf(piece) : null);
+}
+
+function startAdding(): void {
+  openForm(null, { ...BLANK_DRAFT });
+}
+
+/** Copies what the form shows, including edits not yet saved to the original. */
+function copyPiece(): void {
+  const d = pieceDraft.value;
+  if (d) openForm(null, { ...d, name: copyName(d.name) });
+}
+
+function closeForm(): void {
+  openForm(null, null);
+}
+
+/** After an add, the newest piece is the last one in the returned list. */
+function selectNewest(): void {
+  const pieces = store.apartment?.furniture ?? [];
+  selectPiece(pieces[pieces.length - 1]?.id ?? "");
+}
+
+async function savePiece(draft: PieceDraft): Promise<void> {
+  if (selectedId.value) {
+    await store.updatePiece(selectedId.value, draft);
+  } else if (await store.addPieces([draft])) {
+    selectNewest();
+  }
+}
+
+async function removePiece(): Promise<void> {
+  if (selectedId.value && (await store.deletePiece(selectedId.value)))
+    closeForm();
+}
+
+async function addBulk(pieces: PieceDraft[]): Promise<void> {
+  if (await store.addPieces(pieces)) bulkOpen.value = false;
+}
+type ApartmentDialog = "create" | "duplicate" | "rename";
+const APARTMENT_DIALOG: Record<ApartmentDialog, string> = {
+  create: "New apartment",
+  duplicate: "Duplicate apartment",
+  rename: "Rename apartment",
+};
+const apartmentDialog = ref<ApartmentDialog | null>(null);
+const apartmentDialogInitial = computed(() => {
+  const name = store.apartment?.name ?? "";
+  if (apartmentDialog.value === "create") return "New apartment";
+  return apartmentDialog.value === "duplicate" ? `${name} copy` : name;
+});
+
+const routeId = computed(() => {
+  const id = route.params.apartmentId;
+  return typeof id === "string" && id ? id : null;
+});
+
+function goTo(id: string, replace = false): void {
+  const to = { name: "floor-planner", params: { apartmentId: id } };
+  void (replace ? router.replace(to) : router.push(to));
+}
+
+function resetSelection(): void {
+  closeForm();
+  activeLayoutId.value = null;
+  selectedPlacedId.value = null;
+  labelEdit.value = null;
+  pickedKey.value = null;
+  closedDoors.value = [];
+}
+
+watch(routeId, (id) => {
+  if (!id || id === store.apartment?.id) return;
+  resetSelection();
+  store.openApartment(id);
+});
+
+/** No id, or one that isn't ours any more: go to the most recently changed apartment. */
+async function openFromRoute(): Promise<void> {
+  const list = await store.fetchApartments();
+  const id = routeId.value;
+  if (id && list.some((a) => a.id === id)) await store.openApartment(id);
+  else if (list[0]) goTo(list[0].id, true);
+}
+
+async function saveApartmentName(name: string): Promise<void> {
+  const kind = apartmentDialog.value;
+  apartmentDialog.value = null;
+  if (kind === "rename") {
+    await store.renameApartment(name);
+    return;
+  }
+  const id = await (kind === "create"
+    ? store.createApartment(name)
+    : store.duplicateApartment(name));
+  if (id) {
+    resetSelection();
+    goTo(id);
+  }
+}
+
+async function deleteApartment(): Promise<void> {
+  const name = store.apartment?.name ?? "this apartment";
+  if (
+    !window.confirm(
+      `Delete "${name}"? Its plan, furniture and layouts are gone for everyone who shares it.`,
+    )
+  ) {
+    return;
+  }
+  const next = await store.deleteApartment();
+  if (next) goTo(next, true);
+}
+
+function afterLeaving(nextId: string): void {
+  membersOpen.value = false;
+  goTo(nextId, true);
+}
+
+const drawing = computed(() => mode.value === "draw");
+
+const INFO_HIDDEN_KEY = "fp-plan-info-hidden";
+/** Hidden until opened; per browser, so it stays open next time. Storage may be unavailable. */
+function readInfoHidden(): boolean {
+  try {
+    return localStorage.getItem(INFO_HIDDEN_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+const infoHidden = ref(readInfoHidden());
+watch(infoHidden, (hidden) => {
+  try {
+    localStorage.setItem(INFO_HIDDEN_KEY, hidden ? "1" : "0");
+  } catch {
+    // Not remembered, but the panel still opens or hides for this visit.
+  }
+});
+
+// The server checks placements against the saved plan's size, so a drawing still waiting for
+// its autosave is saved on leaving Draw plan.
+watch(mode, (_, from) => {
+  if (from === "draw") void store.flush();
+});
+
+/** Exactly the window below the shell bar, so the status bar never scrolls out of view. */
+function fitWindow(offset: number, height: number): Record<string, string> {
+  return { height: `${height - offset}px` };
+}
+
+function newLabel(cell: Cell): void {
+  labelEdit.value = { id: null, cell, text: "" };
+}
+
+function editLabel(id: string): void {
+  const label = store.plan?.labels.find((l) => l.id === id);
+  if (label) labelEdit.value = { id, cell: label, text: label.text };
+}
+
+function saveLabel(text: string): void {
+  const edit = labelEdit.value;
+  if (!edit) return;
+  if (edit.id) store.renameLabel(edit.id, text);
+  else store.addLabel(text, { col: edit.cell.col, row: edit.cell.row });
+  labelEdit.value = null;
+}
+
+function removeLabel(): void {
+  if (labelEdit.value?.id) store.deleteLabel(labelEdit.value.id);
+  labelEdit.value = null;
+}
+
+function onKey(e: KeyboardEvent): void {
+  const target = e.target as HTMLElement | null;
+  if (target?.closest("input, textarea")) return;
+  if (e.key === "Escape" && pickedKey.value) {
+    pickedKey.value = null;
+    return;
+  }
+  if (arranging.value) {
+    if (e.key === "Escape") selectedPlacedId.value = null;
+    else if (e.key.toLowerCase() === "r" && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault();
+      orientSelected(e.shiftKey ? "vertical" : "horizontal");
+    }
+    return;
+  }
+  if (
+    !drawing.value ||
+    !(e.metaKey || e.ctrlKey) ||
+    e.key.toLowerCase() !== "z"
+  ) {
+    return;
+  }
+  e.preventDefault();
+  if (e.shiftKey) store.redo();
+  else store.undo();
+}
+
+function warnBeforeUnload(e: BeforeUnloadEvent): void {
+  e.preventDefault();
+}
+
+watch(
+  () => store.dirty,
+  (dirty) => {
+    if (dirty) window.addEventListener("beforeunload", warnBeforeUnload);
+    else window.removeEventListener("beforeunload", warnBeforeUnload);
+  },
+);
+
+/** Saves the drawing before going anywhere; asks only if that fails. */
+async function saveBeforeLeaving(): Promise<boolean> {
+  if (await store.flush()) return true;
+  return window.confirm(
+    "Leave without saving? Your drawing since the last save will be lost.",
+  );
+}
+
+onBeforeRouteLeave(saveBeforeLeaving);
+onBeforeRouteUpdate(saveBeforeLeaving);
+
+onMounted(() => {
+  (root.value?.$el as HTMLElement | undefined)?.focus?.();
+  void openFromRoute();
+});
+
+onBeforeUnmount(() =>
+  window.removeEventListener("beforeunload", warnBeforeUnload),
+);
+</script>
+
+<style scoped lang="scss">
+.fp {
+  display: flex;
+  flex-direction: column;
+  background: var(--fp-ground);
+  outline: none;
+}
+.fp__scale-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid var(--fp-line);
+  border-radius: 8px;
+  background: var(--fp-chrome);
+  font-size: 12px;
+  color: var(--fp-muted);
+}
+.fp__scale-card .fp-mono {
+  font-size: 14px;
+  color: var(--fp-ink);
+}
+.fp__hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--fp-muted);
+}
+.fp__notice-actions {
+  display: flex;
+  gap: 8px;
+}
+.fp__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 16px;
+  box-sizing: border-box;
+  background: var(--fp-chrome);
+  border-bottom: 1px solid var(--fp-line);
+}
+.fp__modes {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 8px;
+  background: #f1efea;
+}
+.fp__mode {
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #3d3b36;
+  font: 500 13px/1 var(--fp-sans);
+  cursor: pointer;
+}
+.fp__mode--active {
+  background: var(--fp-accent);
+  color: #ffffff;
+  font-weight: 600;
+}
+.fp__spacer {
+  flex: 1;
+}
+.fp__people {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.fp__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 2px solid var(--fp-chrome);
+  border-radius: 50%;
+  background: var(--fp-accent);
+  color: #ffffff;
+  font: 600 13px/1 var(--fp-sans);
+}
+.fp__avatar + .fp__avatar {
+  margin-left: -6px;
+  background: #0f766e;
+}
+.fp__notice,
+.fp__error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 8px 16px;
+  font-size: 13px;
+}
+.fp__notice {
+  background: #e8eefc;
+  color: #1e3a8a;
+}
+.fp__error {
+  background: var(--fp-warn-bg);
+  color: var(--fp-warn-ink);
+}
+// No wrapping: the screen is laptop-first, and a wrapped row would size to its
+// content and push the panels under the status bar instead of scrolling them.
+.fp__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.fp__panel {
+  flex: 0 1 252px;
+  min-width: 220px;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  background: var(--fp-panel);
+}
+.fp__panel--left {
+  border-right: 1px solid var(--fp-line);
+}
+.fp__panel--right {
+  flex-basis: 268px;
+  border-left: 1px solid var(--fp-line);
+}
+.fp__panel-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin: -8px -6px 4px 0;
+}
+.fp__hide {
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fp-muted);
+  font: 500 12px/1 var(--fp-sans);
+  cursor: pointer;
+}
+.fp__hide:hover {
+  background: #f1efea;
+  color: var(--fp-ink);
+}
+.fp__rail {
+  flex: 0 0 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 0;
+  border: 0;
+  border-left: 1px solid var(--fp-line);
+  background: var(--fp-panel);
+  color: var(--fp-muted);
+  font: 500 12px/1 var(--fp-sans);
+  cursor: pointer;
+}
+.fp__rail:hover {
+  background: #f1efea;
+  color: var(--fp-ink);
+}
+.fp__rail-arrow {
+  font-size: 16px;
+}
+.fp__rail-label {
+  writing-mode: vertical-rl;
+  letter-spacing: 0.04em;
+}
+.fp__plan {
+  flex: 999 1 560px;
+  min-width: 0;
+  display: flex;
+  overflow: auto;
+  padding: 32px;
+  box-sizing: border-box;
+}
+// margin: auto centres the sheet but, unlike justify-content, never clips it
+// when the zoomed plan is wider than the column.
+.fp__sheet {
+  position: relative;
+  margin: auto;
+}
+</style>
