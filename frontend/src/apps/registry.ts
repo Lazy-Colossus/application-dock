@@ -86,4 +86,11 @@ export const apps: AppDescriptor[] = [
     icon: "square_foot",
     route: "/floor-planner",
   },
+  {
+    id: "pagemage",
+    label: "PageMage",
+    // An HTML glyph — the app renders uploaded HTML pages.
+    icon: "html",
+    route: "/pagemage",
+  },
 ];

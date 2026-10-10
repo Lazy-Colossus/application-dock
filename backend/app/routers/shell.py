@@ -91,6 +91,12 @@ _APPS: list[AppDescriptor] = [
         icon="square_foot",
         route="/floor-planner",
     ),
+    AppDescriptor(
+        id="pagemage",
+        label="PageMage",
+        icon="html",
+        route="/pagemage",
+    ),
 ]
 
 
