@@ -16,6 +16,15 @@
           Saved
         </span>
         <q-btn
+          flat
+          no-caps
+          icon="share"
+          label="Share"
+          :disable="!store.currentPage"
+          data-testid="share"
+          @click="shareOpen = true"
+        />
+        <q-btn
           unelevated
           no-caps
           color="primary"
@@ -41,6 +50,53 @@
       :srcdoc="srcdoc"
       data-testid="frame"
     />
+
+    <q-dialog v-model="shareOpen">
+      <q-card style="min-width: 340px">
+        <q-card-section class="text-subtitle1">Share this page</q-card-section>
+        <q-card-section v-if="!shareToken" class="text-grey-7">
+          Create a public link anyone can open without logging in.
+        </q-card-section>
+        <q-card-section v-else>
+          <q-input
+            :model-value="shareUrl"
+            readonly
+            outlined
+            dense
+            data-testid="share-url"
+          />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn
+            v-if="!shareToken"
+            unelevated
+            no-caps
+            color="primary"
+            label="Create link"
+            data-testid="create-link"
+            @click="onCreateLink"
+          />
+          <template v-else>
+            <q-btn
+              flat
+              no-caps
+              color="negative"
+              label="Disable link"
+              data-testid="disable-link"
+              @click="onDisableLink"
+            />
+            <q-btn
+              unelevated
+              no-caps
+              color="primary"
+              label="Copy"
+              data-testid="copy-link"
+              @click="onCopy"
+            />
+          </template>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -54,11 +110,31 @@ const store = usePagemageStore();
 const route = useRoute();
 const frame = ref<HTMLIFrameElement | null>(null);
 const savedFlash = ref(false);
+const shareOpen = ref(false);
 
 const pageId = computed(() => String(route.params.pageId));
 const srcdoc = computed(() =>
   store.currentPage ? buildSrcdoc(store.currentPage.html) : "",
 );
+
+const shareToken = computed(() => store.currentPage?.share_token ?? "");
+const shareUrl = computed(() =>
+  shareToken.value
+    ? `${window.location.origin}/api/pagemage/share/${shareToken.value}/raw`
+    : "",
+);
+
+async function onCreateLink(): Promise<void> {
+  await store.createShare(pageId.value);
+}
+
+async function onDisableLink(): Promise<void> {
+  await store.revokeShare(pageId.value);
+}
+
+async function onCopy(): Promise<void> {
+  await navigator.clipboard.writeText(shareUrl.value);
+}
 
 function onMessage(event: MessageEvent): void {
   const data = event.data as { type?: string; html?: string } | null;

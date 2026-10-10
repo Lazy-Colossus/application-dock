@@ -2,17 +2,19 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, putMock } = vi.hoisted(() => ({
+const { getMock, putMock, postMock, delMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
   putMock: vi.fn(),
+  postMock: vi.fn(),
+  delMock: vi.fn(),
 }));
 vi.mock("@/composables/useApi", () => ({
   ApiError: class extends Error {},
   api: {
     get: getMock,
-    post: vi.fn(),
+    post: postMock,
     put: putMock,
-    del: vi.fn(),
+    del: delMock,
     upload: vi.fn(),
   },
 }));
@@ -26,6 +28,7 @@ const page = () => ({
   id: "p-1",
   name: "Doc",
   html: "<p>body</p>",
+  share_token: "",
   created_at: "t",
   updated_at: "t",
 });
@@ -51,6 +54,18 @@ const STUBS = {
     emits: ["click"],
   },
   "q-icon": { template: "<i />", props: ["name", "size"] },
+  "q-dialog": {
+    template: '<div v-if="modelValue"><slot /></div>',
+    props: ["modelValue"],
+  },
+  "q-card": { template: "<div><slot /></div>" },
+  "q-card-section": { template: "<div><slot /></div>" },
+  "q-card-actions": { template: "<div><slot /></div>" },
+  "q-input": {
+    template:
+      '<input :data-testid="$attrs[\'data-testid\']" :value="modelValue" readonly />',
+    props: ["modelValue"],
+  },
 };
 
 function render() {
@@ -61,6 +76,8 @@ beforeEach(() => {
   setActivePinia(createPinia());
   getMock.mockReset();
   putMock.mockReset();
+  postMock.mockReset();
+  delMock.mockReset();
 });
 
 describe("PageMage ViewerPage", () => {
@@ -110,5 +127,31 @@ describe("PageMage ViewerPage", () => {
     expect(putMock).toHaveBeenCalledWith("/pagemage/pages/p-1", {
       html: "<p>edited</p>",
     });
+  });
+});
+
+describe("PageMage ViewerPage sharing", () => {
+  it("creates a link and shows the share URL", async () => {
+    getMock.mockResolvedValue(page());
+    postMock.mockResolvedValue({ ...page(), share_token: "tok-xyz" });
+    const wrapper = render();
+    await flushPromises();
+    await wrapper.find('[data-testid="share"]').trigger("click");
+    await wrapper.find('[data-testid="create-link"]').trigger("click");
+    await flushPromises();
+    const url = wrapper.find('[data-testid="share-url"]')
+      .element as HTMLInputElement;
+    expect(url.value).toContain("/api/pagemage/share/tok-xyz/raw");
+  });
+
+  it("disable calls revoke", async () => {
+    getMock.mockResolvedValue({ ...page(), share_token: "tok-xyz" });
+    delMock.mockResolvedValue({ ...page(), share_token: "" });
+    const wrapper = render();
+    await flushPromises();
+    await wrapper.find('[data-testid="share"]').trigger("click");
+    await wrapper.find('[data-testid="disable-link"]').trigger("click");
+    await flushPromises();
+    expect(delMock).toHaveBeenCalledWith("/pagemage/pages/p-1/share");
   });
 });
