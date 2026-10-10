@@ -17,6 +17,7 @@ class Page(BaseModel):
     id: str
     name: str
     html: str
+    share_token: str = ""
     created_at: str
     updated_at: str
 
@@ -26,6 +27,7 @@ class PageSummary(BaseModel):
 
     id: str
     name: str
+    shared: bool = False
     created_at: str
     updated_at: str
 
