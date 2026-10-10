@@ -57,7 +57,7 @@ describe("usePagemageStore", () => {
     const store = usePagemageStore();
     const file = new File(["<p>x</p>"], "new.html", { type: "text/html" });
     const result = await store.upload(file);
-    expect(uploadMock).toHaveBeenCalledWith("/pagemage/pages", file);
+    expect(uploadMock).toHaveBeenCalledWith("/pagemage/pages", file, undefined);
     expect(result).toEqual(summary);
     expect(store.pages[0]).toEqual(summary);
   });
