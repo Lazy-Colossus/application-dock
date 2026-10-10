@@ -13,6 +13,7 @@ from app.routers import (
     kalendariq,
     kitchencraft,
     listies,
+    pagemage,
     qotd,
     shared_notes,
     shell,
@@ -44,6 +45,7 @@ app.include_router(tea.router)
 app.include_router(archery.router)
 app.include_router(kitchencraft.router)
 app.include_router(iss_vanguard.router)
+app.include_router(pagemage.router)
 
 
 # Serve the built Quasar SPA when present (production / post-build). In dev the

@@ -85,6 +85,12 @@ _APPS: list[AppDescriptor] = [
         icon="rocket_launch",
         route="/iss-vanguard",
     ),
+    AppDescriptor(
+        id="pagemage",
+        label="PageMage",
+        icon="html",
+        route="/pagemage",
+    ),
 ]
 
 
