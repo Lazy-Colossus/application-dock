@@ -34,3 +34,7 @@ class PageSummary(BaseModel):
 
 class UpdateHtmlRequest(BaseModel):
     html: str
+
+
+class RenameRequest(BaseModel):
+    name: str
