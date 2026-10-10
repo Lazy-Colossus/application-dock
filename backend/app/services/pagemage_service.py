@@ -5,6 +5,7 @@ Raises stdlib exceptions only — the router translates them into HTTP responses
 
 from __future__ import annotations
 
+import secrets
 import uuid
 from datetime import UTC, datetime
 from pathlib import PurePosixPath, PureWindowsPath
@@ -75,7 +76,13 @@ def list_pages(user: str) -> list[PageSummary]:
     pages = repo.list_pages_for(user)
     pages.sort(key=lambda p: p.created_at, reverse=True)
     return [
-        PageSummary(id=p.id, name=p.name, created_at=p.created_at, updated_at=p.updated_at)
+        PageSummary(
+            id=p.id,
+            name=p.name,
+            shared=bool(p.share_token),
+            created_at=p.created_at,
+            updated_at=p.updated_at,
+        )
         for p in pages
     ]
 
@@ -94,4 +101,42 @@ def update_html(user: str, page_id: str, html: str) -> Page:
     page.html = html
     page.updated_at = now_iso()
     repo.write_page(user, page)
+    return page
+
+
+def new_share_token() -> str:
+    """The secret in a share link — 192 bits, not guessable, URL-safe."""
+    return secrets.token_urlsafe(24)
+
+
+def create_share(user: str, page_id: str) -> Page:
+    """Mint a share token for the page if it has none; return the page.
+
+    Idempotent: an already-shared page keeps its token, so the link is stable.
+    """
+    page = get_page(user, page_id)
+    if not page.share_token:
+        page.share_token = new_share_token()
+        repo.write_page(user, page)
+    return page
+
+
+def revoke_share(user: str, page_id: str) -> Page:
+    """Clear the page's share token so the old link stops resolving."""
+    page = get_page(user, page_id)
+    page.share_token = ""
+    repo.write_page(user, page)
+    return page
+
+
+def get_shared_page(token: str) -> Page:
+    """The page behind a share token, or raise `FileNotFoundError`.
+
+    The token IS the authorisation — there is no user on this path. An empty or
+    unknown token is the same `FileNotFoundError`, so nothing reveals whether a
+    page exists.
+    """
+    page = repo.find_by_share_token(token)
+    if page is None:
+        raise FileNotFoundError("shared page not found")
     return page
