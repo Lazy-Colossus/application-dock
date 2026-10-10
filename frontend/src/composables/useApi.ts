@@ -106,9 +106,16 @@ async function request<T>(
   );
 }
 
-async function upload<T>(path: string, file: File): Promise<T> {
+async function upload<T>(
+  path: string,
+  file: File,
+  fields?: Record<string, string>,
+): Promise<T> {
   const form = new FormData();
   form.append("file", file);
+  if (fields) {
+    for (const [key, value] of Object.entries(fields)) form.append(key, value);
+  }
   return send<T>("POST", path, form, false);
 }
 
@@ -118,7 +125,8 @@ export const api = {
   put: <T>(path: string, body?: JsonBody) => request<T>("PUT", path, body),
   patch: <T>(path: string, body?: JsonBody) => request<T>("PATCH", path, body),
   del: <T = void>(path: string) => request<T>("DELETE", path),
-  upload: <T>(path: string, file: File) => upload<T>(path, file),
+  upload: <T>(path: string, file: File, fields?: Record<string, string>) =>
+    upload<T>(path, file, fields),
 };
 
 export default api;
