@@ -8,10 +8,10 @@ mapping lives here and nowhere below: `FileNotFoundError → 404`,
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile
 
 from app.core.dependencies import get_current_user
-from app.schemas.pagemage import Page, PageSummary, UpdateHtmlRequest
+from app.schemas.pagemage import Page, PageSummary, RenameRequest, UpdateHtmlRequest
 from app.services import pagemage_service as service
 
 router = APIRouter(prefix="/api/pagemage", tags=["pagemage"])
@@ -25,11 +25,12 @@ def list_pages(current_user: str = Depends(get_current_user)) -> list[PageSummar
 @router.post("/pages", response_model=PageSummary)
 async def upload_page(
     file: Annotated[UploadFile, File()],
+    name: Annotated[str | None, Form()] = None,
     current_user: str = Depends(get_current_user),
 ) -> PageSummary:
     raw = await file.read()
     try:
-        page = service.create_page(current_user, file.filename or "", raw)
+        page = service.create_page(current_user, file.filename or "", raw, name=name)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return PageSummary(
@@ -59,6 +60,28 @@ def update_page(
         raise HTTPException(status_code=404, detail="Page not found") from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.put("/pages/{page_id}/name", response_model=Page)
+def rename_page(
+    page_id: str,
+    req: RenameRequest,
+    current_user: str = Depends(get_current_user),
+) -> Page:
+    try:
+        return service.rename_page(current_user, page_id, req.name)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Page not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.delete("/pages/{page_id}", status_code=204)
+def delete_page(page_id: str, current_user: str = Depends(get_current_user)) -> None:
+    try:
+        service.delete_page(current_user, page_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Page not found") from exc
 
 
 @router.post("/pages/{page_id}/share", response_model=Page)

@@ -57,7 +57,7 @@ describe("usePagemageStore", () => {
     const store = usePagemageStore();
     const file = new File(["<p>x</p>"], "new.html", { type: "text/html" });
     const result = await store.upload(file);
-    expect(uploadMock).toHaveBeenCalledWith("/pagemage/pages", file);
+    expect(uploadMock).toHaveBeenCalledWith("/pagemage/pages", file, undefined);
     expect(result).toEqual(summary);
     expect(store.pages[0]).toEqual(summary);
   });
@@ -153,5 +153,71 @@ describe("usePagemageStore sharing", () => {
     const token = await store.createShare("p-1");
     expect(token).toBeNull();
     expect(store.error).toBe("boom");
+  });
+});
+
+describe("usePagemageStore manage", () => {
+  it("upload forwards the name as a field", async () => {
+    const summary = {
+      id: "p-1",
+      name: "Title",
+      shared: false,
+      created_at: "t",
+      updated_at: "t",
+    };
+    uploadMock.mockResolvedValue(summary);
+    const store = usePagemageStore();
+    const file = new File(["<p>x</p>"], "a.html", { type: "text/html" });
+    await store.upload(file, "Title");
+    expect(uploadMock).toHaveBeenCalledWith("/pagemage/pages", file, {
+      name: "Title",
+    });
+  });
+
+  it("upload without a name sends no fields", async () => {
+    uploadMock.mockResolvedValue({
+      id: "p-1",
+      name: "a",
+      shared: false,
+      created_at: "t",
+      updated_at: "t",
+    });
+    const store = usePagemageStore();
+    const file = new File(["<p>x</p>"], "a.html", { type: "text/html" });
+    await store.upload(file);
+    expect(uploadMock).toHaveBeenCalledWith("/pagemage/pages", file, undefined);
+  });
+
+  it("renamePage updates the matching summary", async () => {
+    putMock.mockResolvedValue({
+      id: "p-1",
+      name: "New",
+      html: "<p>x</p>",
+      share_token: "",
+      created_at: "t",
+      updated_at: "t2",
+    });
+    const store = usePagemageStore();
+    store.pages = [
+      { id: "p-1", name: "Old", shared: false, created_at: "t", updated_at: "t" },
+    ];
+    const ok = await store.renamePage("p-1", "New");
+    expect(putMock).toHaveBeenCalledWith("/pagemage/pages/p-1/name", {
+      name: "New",
+    });
+    expect(ok).toBe(true);
+    expect(store.pages[0].name).toBe("New");
+  });
+
+  it("deletePage removes it from the list", async () => {
+    delMock.mockResolvedValue(undefined);
+    const store = usePagemageStore();
+    store.pages = [
+      { id: "p-1", name: "A", shared: false, created_at: "t", updated_at: "t" },
+    ];
+    const ok = await store.deletePage("p-1");
+    expect(delMock).toHaveBeenCalledWith("/pagemage/pages/p-1");
+    expect(ok).toBe(true);
+    expect(store.pages).toEqual([]);
   });
 });

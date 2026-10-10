@@ -143,3 +143,43 @@ def test_list_reports_shared_after_share(as_user) -> None:
     client.post(f"/api/pagemage/pages/{created['id']}/share")
     summary = next(p for p in client.get("/api/pagemage/pages").json() if p["id"] == created["id"])
     assert summary["shared"] is True
+
+
+def test_upload_with_name_field_uses_it(as_user) -> None:
+    response = client.post(
+        "/api/pagemage/pages",
+        files={"file": ("report.html", b"<p>x</p>", "text/html")},
+        data={"name": "Custom Title"},
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["name"] == "Custom Title"
+
+
+def test_rename_changes_the_name(as_user) -> None:
+    created = _upload("x.html")
+    response = client.put(f"/api/pagemage/pages/{created['id']}/name", json={"name": "Renamed"})
+    assert response.status_code == 200, response.text
+    assert response.json()["name"] == "Renamed"
+
+
+def test_rename_blank_is_422(as_user) -> None:
+    created = _upload("x.html")
+    response = client.put(f"/api/pagemage/pages/{created['id']}/name", json={"name": "  "})
+    assert response.status_code == 422
+
+
+def test_rename_missing_is_404(as_user) -> None:
+    response = client.put("/api/pagemage/pages/p-missing1/name", json={"name": "x"})
+    assert response.status_code == 404
+
+
+def test_delete_removes_the_page(as_user) -> None:
+    created = _upload("x.html")
+    response = client.delete(f"/api/pagemage/pages/{created['id']}")
+    assert response.status_code == 204
+    assert client.get(f"/api/pagemage/pages/{created['id']}").status_code == 404
+
+
+def test_delete_missing_is_404(as_user) -> None:
+    response = client.delete("/api/pagemage/pages/p-missing1")
+    assert response.status_code == 404

@@ -122,3 +122,43 @@ def test_list_pages_reports_shared_flag() -> None:
 def test_create_share_missing_page_raises() -> None:
     with pytest.raises(FileNotFoundError):
         service.create_share("ana", "p-missing1")
+
+
+def test_create_page_uses_explicit_name_when_given() -> None:
+    page = service.create_page("ana", "report.html", b"<p>x</p>", name="My Title")
+    assert page.name == "My Title"
+
+
+def test_create_page_falls_back_to_filename_when_name_blank() -> None:
+    page = service.create_page("ana", "report.html", b"<p>x</p>", name="   ")
+    assert page.name == "report"
+
+
+def test_rename_page_changes_the_name() -> None:
+    page = service.create_page("ana", "p.html", b"<p>x</p>")
+    renamed = service.rename_page("ana", page.id, "Renamed")
+    assert renamed.name == "Renamed"
+    assert service.get_page("ana", page.id).name == "Renamed"
+
+
+def test_rename_page_rejects_blank() -> None:
+    page = service.create_page("ana", "p.html", b"<p>x</p>")
+    with pytest.raises(ValueError):
+        service.rename_page("ana", page.id, "  ")
+
+
+def test_rename_missing_page_raises() -> None:
+    with pytest.raises(FileNotFoundError):
+        service.rename_page("ana", "p-missing1", "x")
+
+
+def test_delete_page_removes_it() -> None:
+    page = service.create_page("ana", "p.html", b"<p>x</p>")
+    service.delete_page("ana", page.id)
+    with pytest.raises(FileNotFoundError):
+        service.get_page("ana", page.id)
+
+
+def test_delete_missing_page_raises() -> None:
+    with pytest.raises(FileNotFoundError):
+        service.delete_page("ana", "p-missing1")
