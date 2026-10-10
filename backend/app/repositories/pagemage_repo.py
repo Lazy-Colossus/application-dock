@@ -70,3 +70,30 @@ def list_pages_for(user: str) -> list[Page]:
         Page.model_validate(json.loads(path.read_text(encoding="utf-8")))
         for path in sorted(directory.glob("*.json"))
     ]
+
+
+def _users_dir() -> Path:
+    return settings.data_dir / _APP_DIR / "users"
+
+
+def find_by_share_token(token: str) -> Page | None:
+    """The page carrying `token`, scanning every user's pages. `None` if none.
+
+    No user context exists on the public share path, so this walks
+    `pagemage/users/*/pages/*.json`. An empty `token` never matches (pages that
+    were never shared also carry an empty token).
+    """
+    if not token:
+        return None
+    users = _users_dir()
+    if not users.is_dir():
+        return None
+    for user_dir in sorted(users.iterdir()):
+        pages = user_dir / "pages"
+        if not pages.is_dir():
+            continue
+        for path in sorted(pages.glob("*.json")):
+            page = Page.model_validate(json.loads(path.read_text(encoding="utf-8")))
+            if page.share_token == token:
+                return page
+    return None

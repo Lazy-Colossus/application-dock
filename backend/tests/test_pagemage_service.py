@@ -72,3 +72,53 @@ def test_update_html_replaces_and_bumps_timestamp() -> None:
     updated = service.update_html("ana", page.id, "<p>new</p>")
     assert updated.html == "<p>new</p>"
     assert updated.updated_at > "2026-01-01T00:00:00.000Z"
+
+
+def test_create_share_mints_a_token_and_is_idempotent() -> None:
+    page = service.create_page("ana", "p.html", b"<p>x</p>")
+    shared = service.create_share("ana", page.id)
+    assert shared.share_token
+    again = service.create_share("ana", page.id)
+    assert again.share_token == shared.share_token  # stable link
+
+
+def test_revoke_share_clears_the_token() -> None:
+    page = service.create_page("ana", "p.html", b"<p>x</p>")
+    service.create_share("ana", page.id)
+    revoked = service.revoke_share("ana", page.id)
+    assert revoked.share_token == ""
+
+
+def test_get_shared_page_returns_by_token() -> None:
+    page = service.create_page("ana", "p.html", b"<h1>Hi</h1>")
+    shared = service.create_share("ana", page.id)
+    got = service.get_shared_page(shared.share_token)
+    assert got.html == "<h1>Hi</h1>"
+
+
+def test_get_shared_page_rejects_empty_and_unknown() -> None:
+    with pytest.raises(FileNotFoundError):
+        service.get_shared_page("")
+    with pytest.raises(FileNotFoundError):
+        service.get_shared_page("nope")
+
+
+def test_get_shared_page_404s_after_revoke() -> None:
+    page = service.create_page("ana", "p.html", b"<p>x</p>")
+    shared = service.create_share("ana", page.id)
+    token = shared.share_token
+    service.revoke_share("ana", page.id)
+    with pytest.raises(FileNotFoundError):
+        service.get_shared_page(token)
+
+
+def test_list_pages_reports_shared_flag() -> None:
+    page = service.create_page("ana", "p.html", b"<p>x</p>")
+    assert service.list_pages("ana")[0].shared is False
+    service.create_share("ana", page.id)
+    assert service.list_pages("ana")[0].shared is True
+
+
+def test_create_share_missing_page_raises() -> None:
+    with pytest.raises(FileNotFoundError):
+        service.create_share("ana", "p-missing1")

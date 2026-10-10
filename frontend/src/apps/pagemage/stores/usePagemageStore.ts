@@ -70,6 +70,29 @@ export const usePagemageStore = defineStore("pagemage", () => {
     }
   }
 
+  async function createShare(pageId: string): Promise<string | null> {
+    error.value = null;
+    try {
+      const shared = await api.post<Page>(`/pagemage/pages/${pageId}/share`);
+      currentPage.value = shared;
+      return shared.share_token;
+    } catch (e) {
+      error.value = message(e);
+      return null;
+    }
+  }
+
+  async function revokeShare(pageId: string): Promise<boolean> {
+    error.value = null;
+    try {
+      currentPage.value = await api.del<Page>(`/pagemage/pages/${pageId}/share`);
+      return true;
+    } catch (e) {
+      error.value = message(e);
+      return false;
+    }
+  }
+
   return {
     pages,
     currentPage,
@@ -80,5 +103,7 @@ export const usePagemageStore = defineStore("pagemage", () => {
     upload,
     fetchPage,
     savePage,
+    createShare,
+    revokeShare,
   };
 });
