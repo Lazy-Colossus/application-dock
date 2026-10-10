@@ -53,6 +53,13 @@
             <div class="text-caption text-grey-6 q-mt-xs">
               {{ formatDate(page.updated_at) }}
             </div>
+            <q-badge
+              v-if="page.shared"
+              color="primary"
+              class="q-mt-xs"
+              label="shared"
+              :data-testid="`shared-${page.id}`"
+            />
           </q-card-section>
         </q-card>
       </div>

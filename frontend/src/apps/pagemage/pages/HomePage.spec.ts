@@ -37,6 +37,10 @@ const STUBS = {
   },
   "q-card-section": { template: "<div><slot /></div>" },
   "q-icon": { template: "<i />", props: ["name", "size"] },
+  "q-badge": {
+    template: '<span :data-testid="$attrs[\'data-testid\']">{{ label }}</span>',
+    props: ["label", "color"],
+  },
 };
 
 function render() {
@@ -94,5 +98,16 @@ describe("PageMage HomePage", () => {
     await flushPromises();
     expect(uploadMock).toHaveBeenCalledWith("/pagemage/pages", file);
     expect(push).toHaveBeenCalledWith("/pagemage/pages/p-new");
+  });
+
+  it("shows a shared badge only on shared pages", async () => {
+    getMock.mockResolvedValue([
+      { id: "p-1", name: "Public", shared: true, created_at: "t", updated_at: "t" },
+      { id: "p-2", name: "Private", shared: false, created_at: "t", updated_at: "t" },
+    ]);
+    const wrapper = render();
+    await flushPromises();
+    expect(wrapper.find('[data-testid="shared-p-1"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="shared-p-2"]').exists()).toBe(false);
   });
 });
