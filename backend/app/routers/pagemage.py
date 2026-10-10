@@ -8,7 +8,7 @@ mapping lives here and nowhere below: `FileNotFoundError → 404`,
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 
 from app.core.dependencies import get_current_user
 from app.schemas.pagemage import Page, PageSummary, UpdateHtmlRequest
@@ -59,3 +59,40 @@ def update_page(
         raise HTTPException(status_code=404, detail="Page not found") from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/pages/{page_id}/share", response_model=Page)
+def create_share(page_id: str, current_user: str = Depends(get_current_user)) -> Page:
+    try:
+        return service.create_share(current_user, page_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Page not found") from exc
+
+
+@router.delete("/pages/{page_id}/share", response_model=Page)
+def revoke_share(page_id: str, current_user: str = Depends(get_current_user)) -> Page:
+    try:
+        return service.revoke_share(current_user, page_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Page not found") from exc
+
+
+# Unauthenticated by design — the share link. The token in the path IS the
+# authorisation; an unknown, empty, or revoked token is a 404 with no detail,
+# so nothing reveals whether a page exists. Mirrors kalendariq.share_router.
+share_router = APIRouter(prefix="/api/pagemage/share", tags=["pagemage-share"])
+
+
+@share_router.get("/{token}/raw")
+def view_shared_raw(token: str) -> Response:
+    try:
+        page = service.get_shared_page(token)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Not found") from exc
+    # CSP `sandbox` forces an opaque origin: scripts/forms run, but the served
+    # HTML cannot reach this origin's cookies, localStorage, or the app's JWT.
+    return Response(
+        content=page.html,
+        media_type="text/html; charset=utf-8",
+        headers={"Content-Security-Policy": "sandbox allow-scripts allow-forms"},
+    )
