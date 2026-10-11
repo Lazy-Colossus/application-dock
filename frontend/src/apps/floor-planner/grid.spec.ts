@@ -98,6 +98,18 @@ describe("rectCells", () => {
 });
 
 describe("paint", () => {
+  it("erases sockets on the erased squares only; other brushes keep them", () => {
+    const sockets = [
+      { col: 1, row: 1 },
+      { col: 3, row: 1 },
+    ];
+    const g = { ...grid(), sockets };
+    expect(paint(g, [{ col: 1, row: 1 }], ERASER).sockets).toEqual([
+      { col: 3, row: 1 },
+    ]);
+    expect(paint(g, [{ col: 1, row: 1 }], wall).sockets).toEqual(sockets);
+  });
+
   it("lays a wall over the floor without erasing the floor", () => {
     const tiled = paint(grid(), [{ col: 1, row: 1 }], whiteTile);
     const walled = paint(tiled, [{ col: 1, row: 1 }], wall);

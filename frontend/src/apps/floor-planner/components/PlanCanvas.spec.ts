@@ -3,6 +3,7 @@ import { mount } from "@vue/test-utils";
 import PlanCanvas from "./PlanCanvas.vue";
 import {
   FLOORS,
+  ERASER,
   LABEL_TOOL,
   SOCKET_TOOL,
   STRUCTURE,
@@ -289,6 +290,18 @@ describe("PlanCanvas", () => {
         [{ col: 2, row: 2 }],
       ]);
       expect(wrapper.emitted("stroke")).toBeUndefined();
+    });
+
+    it("lets the eraser take a socket off without erasing under it", async () => {
+      const wrapper = canvas({ brush: ERASER, plan: plan({ sockets }) });
+      const svg = wrapper.get("svg");
+      await svg.trigger("pointerdown", at(3, 2));
+      await svg.trigger("pointerup", at(3, 2));
+      expect(wrapper.emitted("socketToggle")).toEqual([[{ col: 2, row: 2 }]]);
+      expect(wrapper.emitted("stroke")).toBeUndefined();
+      await svg.trigger("pointerdown", at(8, 6));
+      await svg.trigger("pointerup", at(8, 6));
+      expect(wrapper.emitted("stroke")).toHaveLength(1);
     });
   });
 

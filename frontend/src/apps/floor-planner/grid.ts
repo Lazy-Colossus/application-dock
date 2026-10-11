@@ -105,7 +105,7 @@ function setCells(rows: string[], cells: Cell[], code: string): string[] {
   return grid.map((tokens) => tokens.join(""));
 }
 
-/** A floor brush writes the surface, a structure brush the feature layer, the eraser both. */
+/** A floor brush writes the surface, a structure brush the feature layer, the eraser both and sockets. */
 export function paint(grid: PlanGrid, cells: Cell[], brush: Brush): PlanGrid {
   const inside = cells.filter(
     (c) => c.col >= 0 && c.col < grid.cols && c.row >= 0 && c.row < grid.rows,
@@ -129,7 +129,14 @@ export function paint(grid: PlanGrid, cells: Cell[], brush: Brush): PlanGrid {
             inside,
             brush.layer === "both" ? EMPTY : brush.code,
           ),
+    sockets:
+      brush.layer === "both" ? outside(grid.sockets, inside) : grid.sockets,
   };
+}
+
+function outside(sockets: Socket[], cells: Cell[]): Socket[] {
+  const erased = new Set(cells.map((c) => `${c.col},${c.row}`));
+  return sockets.filter((s) => !erased.has(`${s.col},${s.row}`));
 }
 
 function resizeRows(rows: string[], cols: number, count: number): string[] {

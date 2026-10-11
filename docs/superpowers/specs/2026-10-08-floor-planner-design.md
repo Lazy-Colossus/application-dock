@@ -66,7 +66,7 @@ Success: you sketch the apartment in a few minutes. A 220 × 95 cm sofa is visib
   - A feature is drawn on top of the surface, and a wall hides the surface completely.
 - **FP-4** The brushes are: wall, window, door, front door, tile, wood, carpet, balcony and eraser.
   - Each surface brush has a colour or shade picker that starts on that brush's default.
-  - The eraser clears both layers.
+  - The eraser clears both layers and any sockets on the erased squares.
   - Every brush works in two modes: **freehand** (click or drag across squares) and
     **rectangle** (drag a box to fill it). Rectangle mode makes floors quick to fill and walls
     quick to draw as straight runs. A freehand brush is 5, 10, 20 or 50 cm wide.
@@ -103,7 +103,8 @@ Success: you sketch the apartment in a few minutes. A 220 × 95 cm sofa is visib
     shared. Doors start open.
 - **FP-11** Electricity sockets (2026-10-11) are markers on single squares. With the **Socket**
   tool, a click adds one and a click on an existing one removes it; the symbol is wider than a
-  square, so a click anywhere on it counts. Each is drawn as a socket face (a circle with two
+  square, so a click anywhere on it counts. A click on a socket with the Eraser also removes
+  just the socket, leaving the wall under it. Each is drawn as a socket face (a circle with two
   pins) at a fixed screen size, over furniture, and shows in every mode. Sockets are saved with
   the plan, are undo steps like labels, and a shrink drops the ones left outside.
 

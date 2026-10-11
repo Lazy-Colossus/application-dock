@@ -751,9 +751,14 @@ function down(e: PointerEvent): void {
     else emit("labelAt", cell);
     return;
   }
+  const socket = socketAt(props.plan.sockets, cmOf(e), cmPerPx.value);
   if (props.brush.id === "socket") {
-    const hit = socketAt(props.plan.sockets, cmOf(e), cmPerPx.value);
-    emit("socketToggle", hit ?? cell);
+    emit("socketToggle", socket ?? cell);
+    return;
+  }
+  // The eraser on a socket takes just the socket, not the wall it sits on.
+  if (props.brush.id === "eraser" && socket) {
+    emit("socketToggle", socket);
     return;
   }
   doorPress =
