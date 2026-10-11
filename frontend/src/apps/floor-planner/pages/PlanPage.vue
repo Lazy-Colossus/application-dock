@@ -90,6 +90,7 @@
           v-model:brush="brush"
           v-model:shape="shape"
           v-model:size="brushSize"
+          v-model:straight="straight"
           :can-undo="store.canUndo"
           :can-redo="store.canRedo"
           @undo="store.undo()"
@@ -128,6 +129,7 @@
             :brush="drawing ? brush : null"
             :shape="shape"
             :brush-size="brushSize"
+            :straight="straight"
             @stroke="(cells) => store.applyStroke(cells, brush)"
             @hover="hover = $event"
             @preview="readout = $event"
@@ -369,6 +371,7 @@ const membersOpen = ref(false);
 const brush = ref<Brush>(DEFAULT_BRUSH);
 const shape = ref<"freehand" | "rectangle">("rectangle");
 const brushSize = ref<PlanBrushSize>(1);
+const straight = ref(false);
 const zoom = ref(1);
 const hover = ref<Cell | null>(null);
 const readout = ref<string | null>(null);

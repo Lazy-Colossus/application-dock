@@ -7,6 +7,7 @@ function draw(
   over: Partial<{
     brush: Brush;
     shape: "freehand" | "rectangle";
+    straight: boolean;
     canUndo: boolean;
   }> = {},
 ) {
@@ -15,6 +16,7 @@ function draw(
       brush: DEFAULT_BRUSH,
       shape: "rectangle" as "freehand" | "rectangle",
       size: 1 as const,
+      straight: false,
       canUndo: true,
       canRedo: false,
       ...over,
@@ -37,6 +39,18 @@ describe("DrawPanel", () => {
     expect(
       wrapper.get("[data-testid=size-10]").attributes("disabled"),
     ).toBeDefined();
+  });
+
+  it("toggles the straight lock, which takes over from the shape and frees the brush size", async () => {
+    const wrapper = draw({ straight: true });
+    await wrapper.get("[data-testid=straight-lock]").trigger("click");
+    expect(wrapper.emitted("update:straight")?.[0][0]).toBe(false);
+    expect(
+      wrapper.get("[data-testid=shape-freehand]").attributes("disabled"),
+    ).toBeDefined();
+    expect(
+      wrapper.get("[data-testid=size-10]").attributes("disabled"),
+    ).toBeUndefined();
   });
 
   it("picks a floor colour from its chip", async () => {

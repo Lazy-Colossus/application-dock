@@ -25,6 +25,7 @@ import {
   readout,
   rectCells,
   stampCells,
+  straightEnd,
   resize,
   runs,
   squaresFor,
@@ -62,6 +63,29 @@ describe("lineCells", () => {
       expect(Math.abs(cells[i].col - cells[i - 1].col)).toBeLessThanOrEqual(1);
       expect(Math.abs(cells[i].row - cells[i - 1].row)).toBeLessThanOrEqual(1);
     }
+  });
+});
+
+describe("straightEnd", () => {
+  it.each([
+    [
+      { col: 7, row: 6 },
+      { col: 7, row: 5 },
+    ],
+    [
+      { col: 4, row: 9 },
+      { col: 3, row: 9 },
+    ],
+    [
+      { col: 1, row: 1 },
+      { col: 3, row: 1 },
+    ],
+    [
+      { col: 6, row: 8 },
+      { col: 6, row: 5 },
+    ],
+  ])("pulls %o onto the nearer axis through (3, 5)", (b, end) => {
+    expect(straightEnd({ col: 3, row: 5 }, b)).toEqual(end);
   });
 });
 

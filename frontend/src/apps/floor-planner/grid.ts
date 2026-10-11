@@ -57,6 +57,13 @@ export function lineCells(a: Cell, b: Cell): Cell[] {
   }
 }
 
+/** b pulled onto the row or column through a, whichever it strays from least; ties stay horizontal. */
+export function straightEnd(a: Cell, b: Cell): Cell {
+  return Math.abs(b.row - a.row) > Math.abs(b.col - a.col)
+    ? { col: a.col, row: b.row }
+    : { col: b.col, row: a.row };
+}
+
 export const BRUSH_SIZES = [1, 2, 5] as const;
 export type BrushSize = (typeof BRUSH_SIZES)[number];
 

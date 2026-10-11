@@ -215,6 +215,42 @@ describe("PlanCanvas", () => {
     expect(cells).toContainEqual({ col: 2, row: 1 });
   });
 
+  it("locks a wobbly drag to one straight line at the brush width", async () => {
+    const wrapper = canvas({
+      shape: "rectangle",
+      straight: true,
+      brushSize: 2,
+    });
+    const svg = wrapper.get("svg");
+    await svg.trigger("pointerdown", at(1, 1));
+    await svg.trigger("pointermove", at(3, 2));
+    await svg.trigger("pointermove", at(5, 0));
+    await svg.trigger("pointermove", at(6, 2));
+    expect(wrapper.get("[data-testid=stroke-readout]").text()).toBe(
+      "Wall · 0.35 × 0.10 m",
+    );
+    await svg.trigger("pointerup", at(6, 2));
+    const cells = wrapper.emitted("stroke")?.[0][0] as Cell[];
+    expect(cells).toHaveLength(14);
+    expect(new Set(cells.map((c) => c.row))).toEqual(new Set([1, 2]));
+  });
+
+  it("draws one straight line while Shift is held, without the lock", async () => {
+    const wrapper = canvas({ shape: "rectangle" });
+    const svg = wrapper.get("svg");
+    const shift = (col: number, row: number) => ({
+      ...at(col, row),
+      shiftKey: true,
+    });
+    await svg.trigger("pointerdown", shift(2, 1));
+    await svg.trigger("pointermove", shift(3, 4));
+    await svg.trigger("pointermove", shift(1, 6));
+    await svg.trigger("pointerup", shift(1, 6));
+    expect(wrapper.emitted("stroke")?.[0][0]).toEqual(
+      [1, 2, 3, 4, 5, 6].map((row) => ({ col: 2, row })),
+    );
+  });
+
   it("fills a rectangle", async () => {
     const wrapper = canvas({
       shape: "rectangle",

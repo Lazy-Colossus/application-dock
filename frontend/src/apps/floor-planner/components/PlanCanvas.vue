@@ -506,6 +506,7 @@ import {
   rectCells,
   runs,
   stampCells,
+  straightEnd,
   uniqueCells,
   type PlanBrushSize,
   type Cell,
@@ -525,8 +526,10 @@ const props = withDefaults(
     editable: boolean;
     brush: Brush | null;
     shape: "freehand" | "rectangle";
-    /** Freehand only: each square of the stroke paints an n×n block. */
+    /** Freehand and straight: each square of the stroke paints an n×n block. */
     brushSize?: PlanBrushSize;
+    /** Strokes become one horizontal or vertical line at the brush width, whatever the shape. */
+    straight?: boolean;
     placed?: PlacedPiece[];
     selectedId?: string | null;
     /** Placed pieces can be selected and dragged. */
@@ -539,6 +542,7 @@ const props = withDefaults(
   {
     closedDoors: () => [],
     brushSize: 1,
+    straight: false,
     placed: () => [],
     selectedId: null,
     arranging: false,
@@ -719,8 +723,13 @@ const readoutText = computed(() =>
     : null,
 );
 
-function stamp(cells: Cell[]): Cell[] {
-  return props.shape === "freehand"
+/** The lock, or Shift held for just this stroke. */
+function straightFor(e: PointerEvent): boolean {
+  return props.straight || e.shiftKey;
+}
+
+function stamp(cells: Cell[], straight: boolean): Cell[] {
+  return straight || props.shape === "freehand"
     ? stampCells(cells, props.brushSize, props.plan.cols, props.plan.rows)
     : cells;
 }
@@ -767,7 +776,7 @@ function down(e: PointerEvent): void {
       ? cell
       : null;
   start = last = cell;
-  stroke.value = stamp([cell]);
+  stroke.value = stamp([cell], straightFor(e));
   emit("preview", readoutText.value);
 }
 
@@ -791,12 +800,15 @@ function move(e: PointerEvent): void {
   if (!start || !last) return;
   if (doorPress && (cell.col !== doorPress.col || cell.row !== doorPress.row))
     doorPress = null;
-  if (props.shape === "rectangle") {
+  const straight = straightFor(e);
+  if (straight) {
+    stroke.value = stamp(lineCells(start, straightEnd(start, cell)), straight);
+  } else if (props.shape === "rectangle") {
     stroke.value = rectCells(start, cell);
   } else if (cell.col !== last.col || cell.row !== last.row) {
     stroke.value = uniqueCells([
       ...stroke.value,
-      ...stamp(lineCells(last, cell).slice(1)),
+      ...stamp(lineCells(last, cell).slice(1), straight),
     ]);
   }
   last = cell;

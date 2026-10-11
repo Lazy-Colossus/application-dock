@@ -147,6 +147,8 @@
           type="button"
           :class="{ 'draw-panel__seg--on': shape === s.id }"
           :aria-pressed="shape === s.id"
+          :disabled="straight"
+          :title="straight ? 'Straight lines are locked on' : undefined"
           :data-testid="`shape-${s.id}`"
           @click="emit('update:shape', s.id)"
         >
@@ -161,10 +163,10 @@
           class="fp-mono"
           :class="{ 'draw-panel__seg--on': size === n }"
           :aria-pressed="size === n"
-          :disabled="shape === 'rectangle'"
+          :disabled="shape === 'rectangle' && !straight"
           :title="
-            shape === 'rectangle'
-              ? 'Brush size is for Freehand only'
+            shape === 'rectangle' && !straight
+              ? 'Brush size is for Freehand and Straight lines'
               : `${n * CELL_CM} cm brush`
           "
           :data-testid="`size-${n}`"
@@ -173,6 +175,34 @@
           {{ n * CELL_CM }}
         </button>
       </div>
+      <button
+        type="button"
+        class="draw-panel__row"
+        :class="{ 'draw-panel__row--active': straight }"
+        :aria-pressed="straight"
+        title="Lock to straight lines at the brush width, for walls of even thickness. Or hold Shift while drawing."
+        data-testid="straight-lock"
+        @click="emit('update:straight', !straight)"
+      >
+        <svg
+          class="draw-panel__swatch draw-panel__swatch--lock"
+          viewBox="-7 -7 14 14"
+          aria-hidden="true"
+        >
+          <path
+            :d="
+              straight
+                ? 'M -3 -1 V -3 A 3 3 0 0 1 3 -3 V -1'
+                : 'M -3 -1 V -3 A 3 3 0 0 1 3 -3 V -4'
+            "
+            fill="none"
+            stroke="#2b2a27"
+            stroke-width="1.3"
+          />
+          <rect x="-4.5" y="-1" width="9" height="7" rx="1" fill="#2b2a27" />
+        </svg>
+        <span class="draw-panel__name">Straight lines</span>
+      </button>
     </section>
   </div>
 </template>
@@ -198,6 +228,7 @@ const props = defineProps<{
   brush: Brush;
   shape: Shape;
   size: PlanBrushSize;
+  straight: boolean;
   canUndo: boolean;
   canRedo: boolean;
 }>();
@@ -206,6 +237,7 @@ const emit = defineEmits<{
   "update:brush": [brush: Brush];
   "update:shape": [shape: Shape];
   "update:size": [size: PlanBrushSize];
+  "update:straight": [straight: boolean];
   undo: [];
   redo: [];
 }>();
@@ -328,6 +360,9 @@ function swatchOf(f: FloorFamily): string {
 }
 .draw-panel__swatch--label {
   font-size: 9px;
+}
+.draw-panel__swatch--lock {
+  border: none;
 }
 .draw-panel__swatch--socket {
   border: none;
