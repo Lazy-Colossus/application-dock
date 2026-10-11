@@ -27,10 +27,10 @@ def _apt(username: str) -> str:
 def _blank_plan(base_rev: int) -> PlanWriteRequest:
     return PlanWriteRequest(
         base_rev=base_rev,
-        cols=50,
-        rows=40,
-        surface=empty_rows(50, 40),
-        feature=empty_rows(50, 40),
+        cols=200,
+        rows=160,
+        surface=empty_rows(200, 160),
+        feature=empty_rows(200, 160),
         labels=[],
     )
 
@@ -39,9 +39,9 @@ def test_a_newcomer_gets_an_empty_apartment_called_my_apartment() -> None:
     [summary] = service.list_apartments("ana")
     assert (summary.name, summary.is_owner, summary.members) == ("My apartment", True, ["ana"])
     apt = service.get_apartment("ana", summary.id)
-    assert (apt.cols, apt.rows, apt.rev) == (50, 40, 0)
-    assert apt.surface == [".." * 50] * 40
-    assert apt.feature == [".." * 50] * 40
+    assert (apt.cols, apt.rows, apt.rev) == (200, 160, 0)
+    assert apt.surface == [".." * 200] * 160
+    assert apt.feature == [".." * 200] * 160
     assert [layout.name for layout in apt.layouts] == ["Layout A"]
     assert service.list_apartments("ana") == [summary]
 

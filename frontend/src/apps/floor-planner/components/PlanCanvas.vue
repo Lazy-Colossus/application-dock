@@ -13,19 +13,19 @@
     @pointermove="move"
     @pointerup="up"
     @pointercancel="cancel"
-    @pointerleave="emit('hover', null)"
+    @pointerleave="leave"
     @dragover="dragOver"
     @drop="dropped"
   >
     <defs>
       <pattern
         id="fp-grid-minor"
-        :width="CELL_CM"
-        :height="CELL_CM"
+        :width="minorCm"
+        :height="minorCm"
         patternUnits="userSpaceOnUse"
       >
         <path
-          :d="`M ${CELL_CM} 0 L 0 0 0 ${CELL_CM}`"
+          :d="`M ${minorCm} 0 L 0 0 0 ${minorCm}`"
           fill="none"
           stroke="rgba(0,0,0,.09)"
           vector-effect="non-scaling-stroke"
@@ -55,7 +55,7 @@
         <rect width="2" height="8" fill="#aebb9f" />
       </pattern>
       <template v-for="t in TEXTURED" :key="t.code">
-        <!-- 60 cm tiles: three plan squares each. -->
+        <!-- 60 cm tiles. -->
         <pattern
           v-if="t.texture === 'tiles'"
           :id="`fp-${t.code}`"
@@ -388,17 +388,79 @@
       </template>
     </g>
 
+    <!-- Drawn in screen px, over furniture, so a socket a piece would block still shows. -->
+    <g pointer-events="none" data-testid="sockets">
+      <g
+        v-for="s in plan.sockets"
+        :key="`${s.col},${s.row}`"
+        :transform="`translate(${(s.col + 0.5) * CELL_CM} ${(s.row + 0.5) * CELL_CM}) scale(${cmPerPx})`"
+        :data-testid="`socket-${s.col},${s.row}`"
+      >
+        <circle
+          :r="SOCKET_PX / 2"
+          fill="#ffffff"
+          stroke="#2b2a27"
+          stroke-width="1.5"
+        />
+        <path
+          d="M -2 -2.5 V 2.5 M 2 -2.5 V 2.5"
+          stroke="#2b2a27"
+          stroke-width="1.5"
+        />
+      </g>
+    </g>
+
+    <g v-if="measured" pointer-events="none" data-testid="hover-measure">
+      <template v-if="measured.m.kind === 'feature'">
+        <rect
+          v-bind="spanBox(measured.m.span, measured.m.dir)"
+          fill="#1d4ed8"
+          opacity="0.35"
+        />
+      </template>
+      <template v-else>
+        <line
+          v-for="(l, i) in floorLines(measured.m.h, measured.m.v)"
+          :key="i"
+          v-bind="l"
+          stroke="#1d4ed8"
+          stroke-width="1.5"
+          stroke-dasharray="4 3"
+          vector-effect="non-scaling-stroke"
+        />
+      </template>
+      <rect
+        :x="measured.x"
+        :y="measured.y"
+        :width="(measured.text.length * 7 + 16) * cmPerPx"
+        :height="22 * cmPerPx"
+        :rx="4 * cmPerPx"
+        fill="#1c1c1a"
+      />
+      <text
+        :x="measured.x + 8 * cmPerPx"
+        :y="measured.y + 11 * cmPerPx"
+        :font-size="12 * cmPerPx"
+        dominant-baseline="middle"
+        fill="#ffffff"
+        font-weight="600"
+        data-testid="hover-measure-text"
+      >
+        {{ measured.text }}
+      </text>
+    </g>
+
     <g
       v-if="stroke.length && brush"
       pointer-events="none"
       data-testid="stroke-preview"
     >
       <rect
-        v-for="c in stroke"
-        :key="`p${c.col}-${c.row}`"
-        :x="c.col * CELL_CM"
-        :y="c.row * CELL_CM"
-        :width="CELL_CM"
+        v-for="r in strokeRuns"
+        :key="`p${r.row}-${r.col}`"
+        :x="r.col * CELL_CM"
+        :y="r.row * CELL_CM"
+        :width="r.len * CELL_CM"
         :height="CELL_CM"
         :fill="brush.layer === 'both' ? '#ffffff' : fillFor(brush.code)"
         opacity="0.6"
@@ -465,6 +527,8 @@ import {
   type Leaf,
 } from "../doors";
 import { bounds as pieceBounds, snap, type Box } from "../geometry";
+import { SOCKET_PX, socketAt } from "../sockets";
+import { buildRunIndex, measureAt, measureText, type Span } from "../measure";
 import type { Furniture, Placement } from "../types";
 import {
   CELL_CM,
@@ -473,16 +537,19 @@ import {
   RULER_CM,
   bounds,
   cellAt,
+  cellRuns,
   cmAt,
   codeAt,
   labelAtCell,
   lineCells,
+  minorGridCm,
   readout,
   rectCells,
   runs,
   stampCells,
+  straightEnd,
   uniqueCells,
-  type BrushSize,
+  type PlanBrushSize,
   type Cell,
   type PlanGrid,
 } from "../grid";
@@ -500,8 +567,10 @@ const props = withDefaults(
     editable: boolean;
     brush: Brush | null;
     shape: "freehand" | "rectangle";
-    /** Freehand only: each square of the stroke paints an n×n block. */
-    brushSize?: BrushSize;
+    /** Freehand and straight: each square of the stroke paints an n×n block. */
+    brushSize?: PlanBrushSize;
+    /** Strokes become one horizontal or vertical line at the brush width, whatever the shape. */
+    straight?: boolean;
     placed?: PlacedPiece[];
     selectedId?: string | null;
     /** Placed pieces can be selected and dragged. */
@@ -514,6 +583,7 @@ const props = withDefaults(
   {
     closedDoors: () => [],
     brushSize: 1,
+    straight: false,
     placed: () => [],
     selectedId: null,
     arranging: false,
@@ -526,6 +596,8 @@ const emit = defineEmits<{
   hover: [cell: Cell | null];
   preview: [readout: string | null];
   labelAt: [cell: Cell];
+  /** A Socket tool click: the socket under the pointer, or the square for a new one. */
+  socketToggle: [cell: Cell];
   labelPick: [id: string];
   labelMove: [id: string, cell: Cell];
   select: [id: string | null];
@@ -623,6 +695,53 @@ const featureRuns = computed(() =>
   runs(props.plan.feature).filter((r) => !DOOR_CODES.has(r.code)),
 );
 const doors = computed(() => findDoors(props.plan));
+
+/** The square under the pointer; only changes when the pointer crosses into another square. */
+const hovered = ref<Cell | null>(null);
+// Lazy: built on the first hover after a plan change, never per pointer move.
+const runIndex = computed(() => buildRunIndex(props.plan));
+const measured = computed(() => {
+  const cell = hovered.value;
+  if (!cell || stroke.value.length || dragPos.value) return null;
+  const m = measureAt(runIndex.value, cell);
+  if (!m) return null;
+  return {
+    m,
+    text: measureText(m),
+    x: (cell.col + 1) * CELL_CM + 10 * cmPerPx.value,
+    y: cell.row * CELL_CM - 26 * cmPerPx.value,
+  };
+});
+
+function spanBox(s: Span, dir: "h" | "v") {
+  return {
+    x: s.col * CELL_CM,
+    y: s.row * CELL_CM,
+    width: (dir === "h" ? s.len : 1) * CELL_CM,
+    height: (dir === "v" ? s.len : 1) * CELL_CM,
+  };
+}
+
+/** Lines through the middle of the hovered square, wall to wall each way. */
+function floorLines(h: Span, v: Span) {
+  const cx = (v.col + 0.5) * CELL_CM;
+  const cy = (h.row + 0.5) * CELL_CM;
+  return [
+    { x1: h.col * CELL_CM, y1: cy, x2: (h.col + h.len) * CELL_CM, y2: cy },
+    { x1: cx, y1: v.row * CELL_CM, x2: cx, y2: (v.row + v.len) * CELL_CM },
+  ];
+}
+
+function setHovered(cell: Cell | null): void {
+  const was = hovered.value;
+  if (was?.col === cell?.col && was?.row === cell?.row) return;
+  hovered.value = cell;
+}
+
+function leave(): void {
+  setHovered(null);
+  emit("hover", null);
+}
 /** A door brush is out, so a click on a door opens its setup rather than painting. */
 const doorsPickable = computed(
   () => props.editable && !!props.brush && DOOR_CODES.has(props.brush.code),
@@ -674,14 +793,14 @@ const metresDown = computed(() =>
   Array.from({ length: Math.floor(heightCm.value / 100) + 1 }, (_, m) => m),
 );
 
+const minorCm = computed(() => minorGridCm(props.zoom));
+const strokeRuns = computed(() => cellRuns(stroke.value));
 const box = computed(() => {
   if (stroke.value.length === 0) return null;
-  const minCol = Math.min(...stroke.value.map((c) => c.col));
-  const minRow = Math.min(...stroke.value.map((c) => c.row));
-  const { cols, rows } = bounds(stroke.value);
+  const { col, row, cols, rows } = bounds(stroke.value);
   return {
-    x: minCol * CELL_CM,
-    y: minRow * CELL_CM,
+    x: col * CELL_CM,
+    y: row * CELL_CM,
     w: cols * CELL_CM,
     h: rows * CELL_CM,
   };
@@ -692,8 +811,13 @@ const readoutText = computed(() =>
     : null,
 );
 
-function stamp(cells: Cell[]): Cell[] {
-  return props.shape === "freehand"
+/** The lock, or Shift held for just this stroke. */
+function straightFor(e: PointerEvent): boolean {
+  return props.straight || e.shiftKey;
+}
+
+function stamp(cells: Cell[], straight: boolean): Cell[] {
+  return straight || props.shape === "freehand"
     ? stampCells(cells, props.brushSize, props.plan.cols, props.plan.rows)
     : cells;
 }
@@ -724,18 +848,29 @@ function down(e: PointerEvent): void {
     else emit("labelAt", cell);
     return;
   }
+  const socket = socketAt(props.plan.sockets, cmOf(e), cmPerPx.value);
+  if (props.brush.id === "socket") {
+    emit("socketToggle", socket ?? cell);
+    return;
+  }
+  // The eraser on a socket takes just the socket, not the wall it sits on.
+  if (props.brush.id === "eraser" && socket) {
+    emit("socketToggle", socket);
+    return;
+  }
   doorPress =
     DOOR_CODES.has(props.brush.code) &&
     DOOR_CODES.has(codeAt(props.plan.feature, cell))
       ? cell
       : null;
   start = last = cell;
-  stroke.value = stamp([cell]);
+  stroke.value = stamp([cell], straightFor(e));
   emit("preview", readoutText.value);
 }
 
 function move(e: PointerEvent): void {
   const cell = cellOf(e);
+  setHovered(cell);
   emit("hover", cell);
   if (pieceDrag) {
     const at = cmOf(e);
@@ -754,12 +889,15 @@ function move(e: PointerEvent): void {
   if (!start || !last) return;
   if (doorPress && (cell.col !== doorPress.col || cell.row !== doorPress.row))
     doorPress = null;
-  if (props.shape === "rectangle") {
+  const straight = straightFor(e);
+  if (straight) {
+    stroke.value = stamp(lineCells(start, straightEnd(start, cell)), straight);
+  } else if (props.shape === "rectangle") {
     stroke.value = rectCells(start, cell);
   } else if (cell.col !== last.col || cell.row !== last.row) {
     stroke.value = uniqueCells([
       ...stroke.value,
-      ...stamp(lineCells(last, cell).slice(1)),
+      ...stamp(lineCells(last, cell).slice(1), straight),
     ]);
   }
   last = cell;

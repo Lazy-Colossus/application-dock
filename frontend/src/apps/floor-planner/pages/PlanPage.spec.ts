@@ -52,12 +52,13 @@ function apartment(over: Partial<Apartment> = {}): Apartment {
     is_owner: true,
     rev: 2,
     plan_rev: 2,
-    cols: 50,
-    rows: 40,
-    surface: emptyRows(50, 40),
-    feature: emptyRows(50, 40),
+    cols: 200,
+    rows: 160,
+    surface: emptyRows(200, 160),
+    feature: emptyRows(200, 160),
     labels: [],
     doors: [],
+    sockets: [],
     furniture: [],
     layouts: [],
     ...over,
@@ -103,10 +104,10 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-/** The middle of a square at 100 %: 32 px of ruler, then 16 px per square. */
+/** The middle of a square at 100 %: 32 px of ruler, then 4 px per square. */
 const at = (col: number, row: number) => ({
-  clientX: 32 + col * 16 + 8,
-  clientY: 32 + row * 16 + 8,
+  clientX: 32 + col * 4 + 2,
+  clientY: 32 + row * 4 + 2,
   pointerId: 1,
 });
 
@@ -128,7 +129,7 @@ describe("PlanPage", () => {
     for (const id of ["fp-left", "fp-plan", "info-show"]) {
       expect(wrapper.find(`[data-testid=${id}]`).exists()).toBe(true);
     }
-    expect(wrapper.text()).toContain("1 square = 20 cm");
+    expect(wrapper.text()).toContain("Grid 20 cm · 5 cm steps");
   });
 
   it("switches mode", async () => {
@@ -180,10 +181,10 @@ describe("PlanPage", () => {
   });
 
   describe("doors", () => {
-    /** A wall along row 2 with a 4-square door in columns 3–6. */
+    /** A wall along row 2 with an 80 cm door in columns 3–18. */
     function withDoor(): Apartment {
-      const feature = emptyRows(50, 40);
-      feature[2] = "wl".repeat(3) + "dr".repeat(4) + "wl".repeat(43);
+      const feature = emptyRows(200, 160);
+      feature[2] = "wl".repeat(3) + "dr".repeat(16) + "wl".repeat(181);
       return apartment({ feature });
     }
 
@@ -240,6 +241,19 @@ describe("PlanPage", () => {
     expect(path).toBe("/floor-planner/apartments/a_1/plan");
     expect(body.feature[0].slice(0, 8)).toBe("wlwlwlwl");
     expect(body.base_rev).toBe(2);
+  });
+
+  it("marks a socket and saves it with the plan", async () => {
+    const wrapper = await page();
+    await wrapper.get("[data-testid=brush-socket]").trigger("click");
+    const svg = wrapper.get("[data-testid=plan-canvas]");
+    await svg.trigger("pointerdown", at(10, 3));
+    await svg.trigger("pointerup", at(10, 3));
+    expect(wrapper.find("[data-testid='socket-10,3']").exists()).toBe(true);
+    putMock.mockResolvedValue(apartment({ rev: 3, plan_rev: 3 }));
+    await wrapper.get("[data-testid=save]").trigger("click");
+    await flushPromises();
+    expect(putMock.mock.calls[0][1].sockets).toEqual([{ col: 10, row: 3 }]);
   });
 
   it("saves unsaved drawing when leaving Draw plan", async () => {
@@ -576,9 +590,9 @@ describe("PlanPage", () => {
         types: ["application/x-fp-piece"],
         getData: () => "f_sofa",
       };
-      // Plan point (303, 122) cm at 100 %: the 40 cm ruler, then 0.8 px per cm.
+      // Plan point (300, 122) cm at 100 %: the 40 cm ruler, then 0.8 px per cm.
       await wrapper.get("[data-testid=plan-canvas]").trigger("drop", {
-        clientX: (40 + 303) * 0.8,
+        clientX: (40 + 300) * 0.8,
         clientY: (40 + 122) * 0.8,
         dataTransfer,
       });
@@ -609,8 +623,8 @@ describe("PlanPage", () => {
     });
 
     it("warns about a piece across a wall in the inspector", async () => {
-      const feature = Array.from({ length: 40 }, () => "..".repeat(50));
-      feature[11] = "wl".repeat(50);
+      const feature = emptyRows(200, 160);
+      feature[45] = "wl".repeat(200);
       const wrapper = await arrange(arranged({ feature }));
       await wrapper.get("[data-testid=on-plan-f_bed]").trigger("click");
       expect(wrapper.get("[data-testid=inspector-warnings]").text()).toContain(

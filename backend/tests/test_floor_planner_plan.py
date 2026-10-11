@@ -16,6 +16,7 @@ from app.schemas.floor_planner import (
     PieceDraft,
     PlacementRequest,
     PlanWriteRequest,
+    Socket,
 )
 from app.services import auth_service
 from app.services import floor_planner_service as service
@@ -31,7 +32,7 @@ def _apt(username: str) -> str:
     return service.list_apartments(username)[0].id
 
 
-def _plan(cols: int = 10, rows: int = 8, **over: Any) -> PlanWriteRequest:
+def _plan(cols: int = 20, rows: int = 24, **over: Any) -> PlanWriteRequest:
     surface = [".." * cols for _ in range(rows)]
     feature = [".." * cols for _ in range(rows)]
     surface[1] = "t0" * 3 + ".." * (cols - 3)
@@ -52,7 +53,7 @@ def test_a_drawn_plan_round_trips() -> None:
     sent = _plan()
     apt = service.replace_plan("ana", _apt("ana"), sent)
     assert apt.rev == 1
-    assert (apt.cols, apt.rows) == (10, 8)
+    assert (apt.cols, apt.rows) == (20, 24)
     assert apt.surface == sent.surface
     assert apt.feature == sent.feature
     assert [(label.text, label.col, label.row) for label in apt.labels] == [("Hall", 2, 3)]
@@ -73,12 +74,12 @@ def _swap(layer: str, row: int, text: str) -> dict[str, list[str]]:
 @pytest.mark.parametrize(
     ("over", "message"),
     [
-        (_swap("surface", 2, ".." * 9), "isn't 10 squares"),
-        ({"feature": [".." * 10] * 9}, "9 rows"),
-        (_swap("surface", 2, "zz" + ".." * 9), "unknown surface code 'zz' at column 0, row 2"),
-        (_swap("feature", 2, "t0" + ".." * 9), "unknown feature code 't0'"),
-        (_swap("surface", 2, "wl" + ".." * 9), "unknown surface code 'wl'"),
-        ({"labels": [Label(id="a", text="Hall", col=10, row=0)]}, "outside the plan"),
+        (_swap("surface", 2, ".." * 19), "isn't 20 squares"),
+        ({"feature": [".." * 20] * 23}, "23 rows"),
+        (_swap("surface", 2, "zz" + ".." * 19), "unknown surface code 'zz' at column 0, row 2"),
+        (_swap("feature", 2, "t0" + ".." * 19), "unknown feature code 't0'"),
+        (_swap("surface", 2, "wl" + ".." * 19), "unknown surface code 'wl'"),
+        ({"labels": [Label(id="a", text="Hall", col=20, row=0)]}, "outside the plan"),
         ({"labels": [Label(id="a", text="   ", col=0, row=0)]}, "characters"),
         ({"labels": [Label(id="a", text="x" * 41, col=0, row=0)]}, "characters"),
         (
@@ -104,14 +105,14 @@ def test_a_stale_plan_is_refused() -> None:
         service.replace_plan("ana", _apt("ana"), _plan())
 
 
-@pytest.mark.parametrize("cols", [4, 151])
+@pytest.mark.parametrize("cols", [19, 301])
 def test_the_size_is_bounded(cols: int) -> None:
     with pytest.raises(ValidationError):
         _plan(cols=cols)
 
 
 def test_shrinking_drops_pieces_left_off_the_plan() -> None:
-    service.replace_plan("ana", _apt("ana"), _plan(cols=50, rows=40, labels=[]))
+    service.replace_plan("ana", _apt("ana"), _plan(cols=200, rows=160, labels=[]))
     apt = service.add_pieces(
         "ana",
         _apt("ana"),
@@ -124,21 +125,21 @@ def test_shrinking_drops_pieces_left_off_the_plan() -> None:
     service.place_piece("ana", _apt("ana"), layout, near, PlacementRequest(x_cm=100, y_cm=100))
     service.place_piece("ana", _apt("ana"), layout, far, PlacementRequest(x_cm=800, y_cm=100))
     shrunk = service.replace_plan(
-        "ana", _apt("ana"), _plan(cols=20, rows=20, base_rev=1, labels=[])
+        "ana", _apt("ana"), _plan(cols=40, rows=40, base_rev=1, labels=[])
     )
     assert [p.furniture_id for p in shrunk.layouts[0].placements] == [near]
 
 
 def _door_plan(**over: Any) -> PlanWriteRequest:
-    """A 10 × 8 plan with a two-square door at (3, 0)-(4, 0) and a front door at (0, 5)."""
+    """A 20 × 24 plan with a two-square door at (3, 0)-(4, 0) and a front door at (0, 22)."""
     feature = list(_plan().feature)
-    feature[0] = "wl" * 3 + "dr" * 2 + "wl" * 5
-    feature[5] = "fd" + ".." * 9
+    feature[0] = "wl" * 3 + "dr" * 2 + "wl" * 15
+    feature[22] = "fd" + ".." * 19
     return _plan(feature=feature, **over)
 
 
 _HALL = DoorSetting(col=3, row=0, into=1, hinge=0)
-_FRONT = DoorSetting(col=0, row=5, into=0, hinge=1, double=True)
+_FRONT = DoorSetting(col=0, row=22, into=0, hinge=1, double=True)
 
 
 def test_door_settings_round_trip() -> None:
@@ -156,8 +157,8 @@ def test_a_plan_without_doors_stores_none() -> None:
     [
         DoorSetting(col=5, row=0, into=0, hinge=0),  # a wall square
         DoorSetting(col=2, row=3, into=0, hinge=0),  # an empty square
-        DoorSetting(col=10, row=0, into=0, hinge=0),  # past the right edge
-        DoorSetting(col=0, row=8, into=0, hinge=0),  # past the bottom edge
+        DoorSetting(col=20, row=0, into=0, hinge=0),  # past the right edge
+        DoorSetting(col=0, row=24, into=0, hinge=0),  # past the bottom edge
         DoorSetting(col=-1, row=0, into=0, hinge=0),
     ],
 )
@@ -168,15 +169,15 @@ def test_a_setting_off_a_door_square_is_dropped(lost: DoorSetting) -> None:
 
 def test_shrinking_drops_door_settings_left_off_the_plan() -> None:
     service.replace_plan("ana", _apt("ana"), _door_plan(doors=[_HALL, _FRONT]))
-    feature = [".." * 10 for _ in range(5)]
-    feature[0] = "wl" * 3 + "dr" * 2 + "wl" * 5
+    feature = [".." * 20 for _ in range(20)]
+    feature[0] = "wl" * 3 + "dr" * 2 + "wl" * 15
     shrunk = service.replace_plan(
         "ana",
         _apt("ana"),
         _plan(
-            rows=5,
+            rows=20,
             base_rev=1,
-            surface=[".." * 10] * 5,
+            surface=[".." * 20] * 20,
             feature=feature,
             labels=[],
             doors=[_HALL, _FRONT],
@@ -212,3 +213,28 @@ def test_a_duplicate_apartment_keeps_its_doors() -> None:
     copy = service.duplicate_apartment("ana", _apt("ana"), "Copy")
     assert copy.doors == [_HALL, _FRONT]
     assert service.get_apartment("ana", copy.id).doors == [_HALL, _FRONT]
+
+
+def test_sockets_round_trip() -> None:
+    sockets = [Socket(col=0, row=0), Socket(col=19, row=23)]
+    apt = service.replace_plan("ana", _apt("ana"), _plan(sockets=sockets))
+    assert apt.sockets == sockets
+    assert service.get_apartment("ana", _apt("ana")).sockets == sockets
+
+
+def test_a_new_apartment_has_no_sockets() -> None:
+    assert service.get_apartment("ana", _apt("ana")).sockets == []
+
+
+@pytest.mark.parametrize(
+    ("sockets", "message"),
+    [
+        ([Socket(col=2, row=2), Socket(col=2, row=2)], "share a square"),
+        ([Socket(col=20, row=0)], "outside the plan"),
+        ([Socket(col=0, row=-1)], "outside the plan"),
+    ],
+)
+def test_bad_sockets_are_refused(sockets: list[Socket], message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        service.replace_plan("ana", _apt("ana"), _plan(sockets=sockets))
+    assert service.get_apartment("ana", _apt("ana")).rev == 0

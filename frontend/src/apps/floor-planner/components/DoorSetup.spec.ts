@@ -8,8 +8,8 @@ const door: Door = {
   code: "dr",
   col: 3,
   row: 2,
-  cols: 4,
-  rows: 1,
+  cols: 16,
+  rows: 2,
   dir: "h",
   setting: { col: 3, row: 2, into: 0, hinge: 0, double: false },
 };

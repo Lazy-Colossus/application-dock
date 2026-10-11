@@ -8,17 +8,17 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-DEFAULT_COLS = 50
-DEFAULT_ROWS = 40
+DEFAULT_COLS = 200  # 10 m
+DEFAULT_ROWS = 160  # 8 m
 EMPTY_CELL = ".."
-CELL_CM = 20
+CELL_CM = 5
 SURFACE_CODES = frozenset(
     {EMPTY_CELL, "t0", "t1", "t2", "t3", "w0", "w1", "w2", "c0", "c1", "c2", "c3", "b0"}
 )
 FEATURE_CODES = frozenset({EMPTY_CELL, "wl", "wn", "dr", "fd"})
 DOOR_CODES = frozenset({"dr", "fd"})
-MIN_SIDE = 5  # 1 m
-MAX_SIDE = 150  # 30 m
+MIN_SIDE = 20  # 1 m
+MAX_SIDE = 300  # 15 m
 LABEL_MAX = 40
 NAME_MAX = 40
 NOTE_MAX = 200
@@ -104,6 +104,13 @@ class Label(BaseModel):
     row: int
 
 
+class Socket(BaseModel):
+    """An electricity socket marked on one plan square."""
+
+    col: int
+    row: int
+
+
 class DoorSetting(BaseModel):
     """How one door opens. A door is a 4-connected group of same-code door squares;
     (col, row) is its first square in reading order."""
@@ -167,6 +174,7 @@ class ApartmentDoc(BaseModel):
     feature: list[str] = Field(default_factory=lambda: empty_rows(DEFAULT_COLS, DEFAULT_ROWS))
     labels: list[Label] = Field(default_factory=list)
     doors: list[DoorSetting] = Field(default_factory=list)
+    sockets: list[Socket] = Field(default_factory=list)
     furniture: list[Furniture] = Field(default_factory=list)
     layouts: list[Layout] = Field(default_factory=_first_layouts)
 
@@ -193,6 +201,7 @@ class ApartmentView(ApartmentSummary):
     feature: list[str]
     labels: list[Label]
     doors: list[DoorSetting]
+    sockets: list[Socket]
     furniture: list[Furniture]
     layouts: list[Layout]
 
@@ -209,6 +218,7 @@ class PlanWriteRequest(BaseModel):
     feature: list[str]
     labels: list[Label]
     doors: list[DoorSetting] = Field(default_factory=list)
+    sockets: list[Socket] = Field(default_factory=list)
 
 
 class PieceDraft(BaseModel):

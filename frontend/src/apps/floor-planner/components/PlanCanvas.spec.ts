@@ -3,7 +3,9 @@ import { mount } from "@vue/test-utils";
 import PlanCanvas from "./PlanCanvas.vue";
 import {
   FLOORS,
+  ERASER,
   LABEL_TOOL,
+  SOCKET_TOOL,
   STRUCTURE,
   floorBrush,
   structureBrush,
@@ -22,6 +24,7 @@ function plan(over: Partial<PlanGrid> = {}): PlanGrid {
     feature: emptyRows(10, 8),
     labels: [],
     doors: [],
+    sockets: [],
     ...over,
   };
 }
@@ -41,10 +44,10 @@ function canvas(
   });
 }
 
-/** The screen point at the middle of a square at 100 %: 32 px of ruler, 16 px per square. */
+/** The screen point at the middle of a square at 100 %: 32 px of ruler, 4 px per square. */
 const at = (col: number, row: number) => ({
-  clientX: 32 + col * 16 + 8,
-  clientY: 32 + row * 16 + 8,
+  clientX: 32 + col * 4 + 2,
+  clientY: 32 + row * 4 + 2,
   pointerId: 1,
 });
 
@@ -70,7 +73,7 @@ describe("PlanCanvas", () => {
       expect(wrapper.find("[data-testid=door-3,2]").exists()).toBe(true);
       expect(wrapper.findAll("[data-testid=door-leaf]")).toHaveLength(1);
       const painted = wrapper.findAll("[data-testid=feature-runs] rect");
-      expect(painted.map((r) => r.attributes("width"))).toEqual(["60", "60"]);
+      expect(painted.map((r) => r.attributes("width"))).toEqual(["15", "15"]);
     });
 
     it("draws two leaves for a double door, and the shut leaf along the wall", () => {
@@ -81,10 +84,10 @@ describe("PlanCanvas", () => {
       expect(leaves).toHaveLength(2);
       // Shut, each leaf lies along the wall's face, below it as it opens downwards.
       expect(leaves[0].attributes()).toMatchObject({
-        x1: "60",
-        y1: "60",
-        x2: "100",
-        y2: "60",
+        x1: "15",
+        y1: "15",
+        x2: "25",
+        y2: "15",
       });
     });
 
@@ -175,11 +178,11 @@ describe("PlanCanvas", () => {
   it("sizes the svg by zoom but keeps the viewBox in cm", async () => {
     const wrapper = canvas();
     const svg = wrapper.get("svg");
-    expect(svg.attributes("viewBox")).toBe("-40 -40 240 200");
-    expect(svg.attributes("width")).toBe(String(240 * 0.8));
+    expect(svg.attributes("viewBox")).toBe("-40 -40 90 80");
+    expect(svg.attributes("width")).toBe(String(90 * 0.8));
     await wrapper.setProps({ zoom: 2 });
-    expect(svg.attributes("viewBox")).toBe("-40 -40 240 200");
-    expect(svg.attributes("width")).toBe(String(240 * 1.6));
+    expect(svg.attributes("viewBox")).toBe("-40 -40 90 80");
+    expect(svg.attributes("width")).toBe(String(90 * 1.6));
   });
 
   it("emits one stroke on release, with no gaps on a fast freehand drag", async () => {
@@ -189,7 +192,7 @@ describe("PlanCanvas", () => {
     await svg.trigger("pointermove", at(3, 0));
     expect(wrapper.emitted("stroke")).toBeUndefined();
     expect(wrapper.get("[data-testid=stroke-readout]").text()).toBe(
-      "Wall · 0.80 m",
+      "Wall · 0.20 m",
     );
     await svg.trigger("pointerup", at(3, 0));
     expect(wrapper.emitted("stroke")?.[0][0]).toEqual([
@@ -212,6 +215,42 @@ describe("PlanCanvas", () => {
     expect(cells).toContainEqual({ col: 2, row: 1 });
   });
 
+  it("locks a wobbly drag to one straight line at the brush width", async () => {
+    const wrapper = canvas({
+      shape: "rectangle",
+      straight: true,
+      brushSize: 2,
+    });
+    const svg = wrapper.get("svg");
+    await svg.trigger("pointerdown", at(1, 1));
+    await svg.trigger("pointermove", at(3, 2));
+    await svg.trigger("pointermove", at(5, 0));
+    await svg.trigger("pointermove", at(6, 2));
+    expect(wrapper.get("[data-testid=stroke-readout]").text()).toBe(
+      "Wall · 0.35 × 0.10 m",
+    );
+    await svg.trigger("pointerup", at(6, 2));
+    const cells = wrapper.emitted("stroke")?.[0][0] as Cell[];
+    expect(cells).toHaveLength(14);
+    expect(new Set(cells.map((c) => c.row))).toEqual(new Set([1, 2]));
+  });
+
+  it("draws one straight line while Shift is held, without the lock", async () => {
+    const wrapper = canvas({ shape: "rectangle" });
+    const svg = wrapper.get("svg");
+    const shift = (col: number, row: number) => ({
+      ...at(col, row),
+      shiftKey: true,
+    });
+    await svg.trigger("pointerdown", shift(2, 1));
+    await svg.trigger("pointermove", shift(3, 4));
+    await svg.trigger("pointermove", shift(1, 6));
+    await svg.trigger("pointerup", shift(1, 6));
+    expect(wrapper.emitted("stroke")?.[0][0]).toEqual(
+      [1, 2, 3, 4, 5, 6].map((row) => ({ col: 2, row })),
+    );
+  });
+
   it("fills a rectangle", async () => {
     const wrapper = canvas({
       shape: "rectangle",
@@ -221,7 +260,7 @@ describe("PlanCanvas", () => {
     await svg.trigger("pointerdown", at(1, 1));
     await svg.trigger("pointermove", at(2, 3));
     expect(wrapper.get("[data-testid=stroke-readout]").text()).toBe(
-      "Tile · 0.40 × 0.60 m",
+      "Tile · 0.10 × 0.15 m",
     );
     await svg.trigger("pointerup", at(2, 3));
     expect(wrapper.emitted("stroke")?.[0][0]).toHaveLength(6);
@@ -264,6 +303,65 @@ describe("PlanCanvas", () => {
         "lb_1",
         { col: 5, row: 4 },
       ]);
+    });
+  });
+
+  describe("hover measuring", () => {
+    // A wall along row 0, cut by a door at columns 4–5.
+    const walled = () =>
+      plan({ feature: ["wlwlwlwldrdrwlwlwlwl", ...emptyRows(10, 7)] });
+
+    it("shows the wall run under the pointer, split at the door", async () => {
+      const wrapper = canvas({ plan: walled(), editable: false, brush: null });
+      await wrapper.get("svg").trigger("pointermove", at(1, 0));
+      expect(wrapper.get("[data-testid=hover-measure-text]").text()).toBe(
+        "Wall · 0.20 m",
+      );
+      await wrapper.get("svg").trigger("pointerleave");
+      expect(wrapper.find("[data-testid=hover-measure]").exists()).toBe(false);
+    });
+
+    it("stays out of the way while a stroke is drawn", async () => {
+      const wrapper = canvas({ plan: walled() });
+      const svg = wrapper.get("svg");
+      await svg.trigger("pointerdown", at(1, 3));
+      await svg.trigger("pointermove", at(1, 0));
+      expect(wrapper.find("[data-testid=hover-measure]").exists()).toBe(false);
+    });
+  });
+
+  describe("with the Socket tool", () => {
+    const sockets = [{ col: 2, row: 2 }];
+
+    it("draws each socket", () => {
+      const wrapper = canvas({ plan: plan({ sockets }), editable: false });
+      expect(wrapper.find("[data-testid='socket-2,2']").exists()).toBe(true);
+    });
+
+    it("toggles the square clicked, or the socket under the pointer", async () => {
+      const wrapper = canvas({ brush: SOCKET_TOOL, plan: plan({ sockets }) });
+      const svg = wrapper.get("svg");
+      await svg.trigger("pointerdown", at(6, 6));
+      await svg.trigger("pointerup", at(6, 6));
+      // One square off, but still on the 12 px symbol: that socket, not a new one.
+      await svg.trigger("pointerdown", at(3, 2));
+      expect(wrapper.emitted("socketToggle")).toEqual([
+        [{ col: 6, row: 6 }],
+        [{ col: 2, row: 2 }],
+      ]);
+      expect(wrapper.emitted("stroke")).toBeUndefined();
+    });
+
+    it("lets the eraser take a socket off without erasing under it", async () => {
+      const wrapper = canvas({ brush: ERASER, plan: plan({ sockets }) });
+      const svg = wrapper.get("svg");
+      await svg.trigger("pointerdown", at(3, 2));
+      await svg.trigger("pointerup", at(3, 2));
+      expect(wrapper.emitted("socketToggle")).toEqual([[{ col: 2, row: 2 }]]);
+      expect(wrapper.emitted("stroke")).toBeUndefined();
+      await svg.trigger("pointerdown", at(8, 6));
+      await svg.trigger("pointerup", at(8, 6));
+      expect(wrapper.emitted("stroke")).toHaveLength(1);
     });
   });
 
@@ -339,7 +437,7 @@ describe("PlanCanvas", () => {
       expect(wrapper.find("[data-testid=piece-warned]").exists()).toBe(true);
     });
 
-    it("drags a piece in 10 cm steps and emits one move on release", async () => {
+    it("drags a piece in 5 cm steps and emits one move on release", async () => {
       const wrapper = arranging();
       await wrapper
         .get("[data-testid=placed-f_sofa]")
@@ -348,7 +446,7 @@ describe("PlanCanvas", () => {
       expect(wrapper.emitted("move")).toBeUndefined();
       await wrapper.get("svg").trigger("pointerup", px(97, 70));
       expect(wrapper.emitted("select")?.[0]).toEqual(["f_sofa"]);
-      expect(wrapper.emitted("move")?.[0]).toEqual(["f_sofa", 80, 60]);
+      expect(wrapper.emitted("move")?.[0]).toEqual(["f_sofa", 75, 60]);
     });
 
     it("selects without moving on a plain click", async () => {

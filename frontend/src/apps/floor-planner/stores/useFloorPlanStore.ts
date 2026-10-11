@@ -3,6 +3,7 @@ import { defineStore } from "pinia";
 import { api, ApiError } from "@/composables/useApi";
 import type { Brush } from "../codes";
 import { liveDoorSettings, setDoor } from "../doors";
+import { toggleSocket as toggled } from "../sockets";
 import type { PieceDraft } from "../furniture";
 import { paint, resize, type Cell, type PlanGrid } from "../grid";
 import * as hist from "../history";
@@ -32,6 +33,7 @@ function planOf(a: Apartment): PlanGrid {
     feature: a.feature,
     labels: a.labels,
     doors: a.doors,
+    sockets: a.sockets,
   };
 }
 
@@ -374,6 +376,8 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
   /** A door's swing side, hinge or leaves; one undo step like a stroke. */
   const setDoorSetting = (setting: DoorSetting) =>
     step((p) => setDoor(p, setting));
+  const toggleSocket = (cell: Cell) =>
+    step((p) => ({ ...p, sockets: toggled(p.sockets, cell) }));
 
   function undo(): void {
     if (!draft.value) return;
@@ -410,7 +414,7 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
   async function sendPlan(): Promise<boolean> {
     if (!draft.value) return true;
     const sent = draft.value.present;
-    const { cols, rows, surface, feature, labels } = sent;
+    const { cols, rows, surface, feature, labels, sockets } = sent;
     const doors = liveDoorSettings(sent);
     saving.value = true;
     try {
@@ -422,6 +426,7 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
         feature,
         labels,
         doors,
+        sockets,
       });
       savedPlan.value = sent;
       draftPlanRev = result.plan_rev;
@@ -496,6 +501,7 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
     renameLabel,
     deleteLabel,
     setDoorSetting,
+    toggleSocket,
     undo,
     redo,
     discardDraft,

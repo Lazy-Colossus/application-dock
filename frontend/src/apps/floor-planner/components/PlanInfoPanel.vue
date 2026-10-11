@@ -2,7 +2,9 @@
   <div class="plan-info" data-testid="plan-info">
     <section class="plan-info__card">
       <h3 class="plan-info__heading">Scale</h3>
-      <div class="fp-mono plan-info__scale">1 square = 20 cm</div>
+      <div class="fp-mono plan-info__scale" data-testid="info-legend">
+        {{ gridLegend(zoom) }}
+      </div>
       <div class="plan-info__bar" aria-hidden="true">
         <span
           v-for="i in 5"
@@ -14,7 +16,13 @@
         <span>0</span><span>1 m</span>
       </div>
       <p class="plan-info__note">
-        Every 5 squares is 1 m, marked with a darker grid line.
+        <template v-if="minorGridCm(zoom) === CELL_CM">
+          Every 20 squares is 1 m, marked with a darker grid line.
+        </template>
+        <template v-else>
+          Faint lines every 20 cm, darker ones every 1 m. You draw in 5 cm
+          squares; zoom to 200 % to see them.
+        </template>
       </p>
     </section>
 
@@ -33,8 +41,8 @@
             v-model.number="width"
             type="number"
             min="1"
-            max="30"
-            step="0.2"
+            max="15"
+            step="0.05"
             data-testid="resize-width"
           />
         </label>
@@ -44,8 +52,8 @@
             v-model.number="depth"
             type="number"
             min="1"
-            max="30"
-            step="0.2"
+            max="15"
+            step="0.05"
             data-testid="resize-depth"
           />
         </label>
@@ -59,7 +67,7 @@
       >
         Resize
       </button>
-      <p v-if="!valid" class="plan-info__muted">Each side can be 1–30 m.</p>
+      <p v-if="!valid" class="plan-info__muted">Each side can be 1–15 m.</p>
     </section>
 
     <section>
@@ -98,9 +106,17 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { labelsOutside, metres, squaresFor, type PlanGrid } from "../grid";
+import {
+  CELL_CM,
+  gridLegend,
+  labelsOutside,
+  metres,
+  minorGridCm,
+  squaresFor,
+  type PlanGrid,
+} from "../grid";
 
-const props = defineProps<{ plan: PlanGrid }>();
+const props = defineProps<{ plan: PlanGrid; zoom: number }>();
 
 const emit = defineEmits<{
   resize: [cols: number, rows: number];
@@ -120,7 +136,7 @@ watch(
   { immediate: true },
 );
 
-const inRange = (m: number) => Number.isFinite(m) && m >= 1 && m <= 30;
+const inRange = (m: number) => Number.isFinite(m) && m >= 1 && m <= 15;
 const valid = computed(() => inRange(width.value) && inRange(depth.value));
 
 function apply(): void {

@@ -58,8 +58,8 @@ def test_pieces_are_added_in_order_and_cleaned() -> None:
 
 
 def test_a_piece_write_does_not_stale_the_plan() -> None:
-    blank = empty_rows(50, 40)
-    plan = PlanWriteRequest(base_rev=0, cols=50, rows=40, surface=blank, feature=blank, labels=[])
+    blank = empty_rows(200, 160)
+    plan = PlanWriteRequest(base_rev=0, cols=200, rows=160, surface=blank, feature=blank, labels=[])
     service.replace_plan("ana", _apt("ana"), plan)
     apt = service.add_pieces("ana", _apt("ana"), [_draft()])
     assert (apt.rev, apt.plan_rev) == (2, 1)

@@ -90,6 +90,7 @@
           v-model:brush="brush"
           v-model:shape="shape"
           v-model:size="brushSize"
+          v-model:straight="straight"
           :can-undo="store.canUndo"
           :can-redo="store.canRedo"
           @undo="store.undo()"
@@ -128,12 +129,14 @@
             :brush="drawing ? brush : null"
             :shape="shape"
             :brush-size="brushSize"
+            :straight="straight"
             @stroke="(cells) => store.applyStroke(cells, brush)"
             @hover="hover = $event"
             @preview="readout = $event"
             @label-at="newLabel"
             @label-pick="editLabel"
             @label-move="store.moveLabel"
+            @socket-toggle="store.toggleSocket"
             :placed="mode === 'arrange' ? placed : []"
             :selected-id="selectedPlacedId"
             :arranging="arranging"
@@ -186,6 +189,7 @@
           </div>
           <PlanInfoPanel
             :plan="store.plan"
+            :zoom="zoom"
             @resize="store.resizePlan"
             @rename="editLabel"
             @remove="store.deleteLabel"
@@ -220,8 +224,8 @@
               Select a piece on the plan, or drag one from the tray.
             </p>
             <div class="fp__scale-card">
-              <span class="fp-mono">1 square = 20 cm</span>
-              <span>Pieces snap to 10 cm.</span>
+              <span class="fp-mono">{{ gridLegend(zoom) }}</span>
+              <span>Pieces snap to 5 cm.</span>
             </div>
           </template>
         </template>
@@ -349,7 +353,7 @@ import {
   warnings,
   type Placed,
 } from "../geometry";
-import type { BrushSize, Cell } from "../grid";
+import { gridLegend, type Cell, type PlanBrushSize } from "../grid";
 import { useFloorPlanStore } from "../stores/useFloorPlanStore";
 import type { Mode, Rotation } from "../types";
 import "../css/floor-planner.sass";
@@ -367,7 +371,8 @@ const mode = ref<Mode>("draw");
 const membersOpen = ref(false);
 const brush = ref<Brush>(DEFAULT_BRUSH);
 const shape = ref<"freehand" | "rectangle">("rectangle");
-const brushSize = ref<BrushSize>(1);
+const brushSize = ref<PlanBrushSize>(1);
+const straight = ref(false);
 const zoom = ref(1);
 const hover = ref<Cell | null>(null);
 const readout = ref<string | null>(null);
