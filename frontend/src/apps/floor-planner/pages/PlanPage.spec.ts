@@ -129,7 +129,7 @@ describe("PlanPage", () => {
     for (const id of ["fp-left", "fp-plan", "info-show"]) {
       expect(wrapper.find(`[data-testid=${id}]`).exists()).toBe(true);
     }
-    expect(wrapper.text()).toContain("1 square = 5 cm");
+    expect(wrapper.text()).toContain("Grid 20 cm · 5 cm steps");
   });
 
   it("switches mode", async () => {

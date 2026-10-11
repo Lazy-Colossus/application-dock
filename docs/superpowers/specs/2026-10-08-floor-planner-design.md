@@ -107,6 +107,13 @@ Success: you sketch the apartment in a few minutes. A 220 × 95 cm sofa is visib
   just the socket, leaving the wall under it. Each is drawn as a socket face (a circle with two
   pins) at a fixed screen size, over furniture, and shows in every mode. Sockets are saved with
   the plan, are undo steps like labels, and a shrink drops the ones left outside.
+- **FP-12** Hover measuring (2026-10-11), in every mode. Over a wall, window or door, the
+  straight run of that same thing through the square lights up with its length ("Wall ·
+  3.40 m"), taken along the longer way; a door or window ends a wall run. Over open floor,
+  dashed lines run to the walls (or the apartment's edge) both ways with the clear span
+  ("Clear 2.85 × 3.60 m"). It hides while a stroke or a piece is being dragged. For speed, the
+  runs are indexed once per plan change (a lazy `computed`), and the pointer only triggers a
+  lookup when it crosses into another square.
 
 ### Apartments (Story 1.5)
 
@@ -292,8 +299,8 @@ press **Save**, or when you leave Draw plan, not on every stroke.
 
 - **Rendering:** one SVG whose `viewBox` is measured in cm. Scale is preserved automatically, and
   zoom and pan are a transform on top. Surface squares are drawn as merged horizontal runs so
-  that a 90,000-square plan stays light; the stroke preview is drawn as runs too. Rulers are marked every metre, and the legend reads
-  "1 square = 5 cm".
+  that a 90,000-square plan stays light; the stroke preview is drawn as runs too. Rulers are marked every metre, and the legend follows
+  what the grid shows: "1 square = 5 cm" from 200 % zoom, "Grid 20 cm · 5 cm steps" below it.
 - **Units:**
   - `codes.ts`: brush, colour and shape vocabularies.
   - `grid.ts`: pure helpers to encode and decode, paint, fill rectangles and resize.

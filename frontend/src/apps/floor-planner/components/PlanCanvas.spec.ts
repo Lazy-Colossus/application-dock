@@ -306,6 +306,30 @@ describe("PlanCanvas", () => {
     });
   });
 
+  describe("hover measuring", () => {
+    // A wall along row 0, cut by a door at columns 4–5.
+    const walled = () =>
+      plan({ feature: ["wlwlwlwldrdrwlwlwlwl", ...emptyRows(10, 7)] });
+
+    it("shows the wall run under the pointer, split at the door", async () => {
+      const wrapper = canvas({ plan: walled(), editable: false, brush: null });
+      await wrapper.get("svg").trigger("pointermove", at(1, 0));
+      expect(wrapper.get("[data-testid=hover-measure-text]").text()).toBe(
+        "Wall · 0.20 m",
+      );
+      await wrapper.get("svg").trigger("pointerleave");
+      expect(wrapper.find("[data-testid=hover-measure]").exists()).toBe(false);
+    });
+
+    it("stays out of the way while a stroke is drawn", async () => {
+      const wrapper = canvas({ plan: walled() });
+      const svg = wrapper.get("svg");
+      await svg.trigger("pointerdown", at(1, 3));
+      await svg.trigger("pointermove", at(1, 0));
+      expect(wrapper.find("[data-testid=hover-measure]").exists()).toBe(false);
+    });
+  });
+
   describe("with the Socket tool", () => {
     const sockets = [{ col: 2, row: 2 }];
 

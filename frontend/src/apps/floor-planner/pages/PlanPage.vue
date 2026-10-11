@@ -189,6 +189,7 @@
           </div>
           <PlanInfoPanel
             :plan="store.plan"
+            :zoom="zoom"
             @resize="store.resizePlan"
             @rename="editLabel"
             @remove="store.deleteLabel"
@@ -223,7 +224,7 @@
               Select a piece on the plan, or drag one from the tray.
             </p>
             <div class="fp__scale-card">
-              <span class="fp-mono">1 square = 5 cm</span>
+              <span class="fp-mono">{{ gridLegend(zoom) }}</span>
               <span>Pieces snap to 5 cm.</span>
             </div>
           </template>
@@ -352,7 +353,7 @@ import {
   warnings,
   type Placed,
 } from "../geometry";
-import type { Cell, PlanBrushSize } from "../grid";
+import { gridLegend, type Cell, type PlanBrushSize } from "../grid";
 import { useFloorPlanStore } from "../stores/useFloorPlanStore";
 import type { Mode, Rotation } from "../types";
 import "../css/floor-planner.sass";

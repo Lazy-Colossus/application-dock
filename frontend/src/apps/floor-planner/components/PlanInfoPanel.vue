@@ -2,7 +2,9 @@
   <div class="plan-info" data-testid="plan-info">
     <section class="plan-info__card">
       <h3 class="plan-info__heading">Scale</h3>
-      <div class="fp-mono plan-info__scale">1 square = 5 cm</div>
+      <div class="fp-mono plan-info__scale" data-testid="info-legend">
+        {{ gridLegend(zoom) }}
+      </div>
       <div class="plan-info__bar" aria-hidden="true">
         <span
           v-for="i in 5"
@@ -14,7 +16,13 @@
         <span>0</span><span>1 m</span>
       </div>
       <p class="plan-info__note">
-        Every 20 squares is 1 m, marked with a darker grid line.
+        <template v-if="minorGridCm(zoom) === CELL_CM">
+          Every 20 squares is 1 m, marked with a darker grid line.
+        </template>
+        <template v-else>
+          Faint lines every 20 cm, darker ones every 1 m. You draw in 5 cm
+          squares; zoom to 200 % to see them.
+        </template>
       </p>
     </section>
 
@@ -98,9 +106,17 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { labelsOutside, metres, squaresFor, type PlanGrid } from "../grid";
+import {
+  CELL_CM,
+  gridLegend,
+  labelsOutside,
+  metres,
+  minorGridCm,
+  squaresFor,
+  type PlanGrid,
+} from "../grid";
 
-const props = defineProps<{ plan: PlanGrid }>();
+const props = defineProps<{ plan: PlanGrid; zoom: number }>();
 
 const emit = defineEmits<{
   resize: [cols: number, rows: number];

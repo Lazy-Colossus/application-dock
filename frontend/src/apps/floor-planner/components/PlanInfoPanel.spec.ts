@@ -21,7 +21,7 @@ function plan(over: Partial<PlanGrid> = {}): PlanGrid {
 describe("PlanInfoPanel", () => {
   it("shows the size and resizes in whole squares", async () => {
     const wrapper = mount(PlanInfoPanel, {
-      props: { plan: plan() },
+      props: { plan: plan(), zoom: 1 },
     });
     expect(wrapper.get("[data-testid=plan-size]").text()).toBe("8.80 × 7.40 m");
     await wrapper.get("[data-testid=resize-width]").setValue("10");
@@ -34,7 +34,7 @@ describe("PlanInfoPanel", () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     const labels = [{ id: "a", text: "Bath", col: 160, row: 2 }];
     const wrapper = mount(PlanInfoPanel, {
-      props: { plan: plan({ labels }) },
+      props: { plan: plan({ labels }), zoom: 1 },
     });
     await wrapper.get("[data-testid=resize-width]").setValue("9.6");
     await wrapper.get("[data-testid=resize]").trigger("click");
@@ -47,9 +47,21 @@ describe("PlanInfoPanel", () => {
     expect(wrapper.emitted("resize")).toHaveLength(1);
   });
 
+  it("explains the grid for the zoom level", async () => {
+    const wrapper = mount(PlanInfoPanel, { props: { plan: plan(), zoom: 1 } });
+    expect(wrapper.get("[data-testid=info-legend]").text()).toBe(
+      "Grid 20 cm · 5 cm steps",
+    );
+    expect(wrapper.text()).toContain("zoom to 200 % to see them");
+    await wrapper.setProps({ zoom: 2 });
+    expect(wrapper.get("[data-testid=info-legend]").text()).toBe(
+      "1 square = 5 cm",
+    );
+  });
+
   it("refuses sizes outside 1–15 m", async () => {
     const wrapper = mount(PlanInfoPanel, {
-      props: { plan: plan() },
+      props: { plan: plan(), zoom: 1 },
     });
     await wrapper.get("[data-testid=resize-width]").setValue("15.05");
     expect(

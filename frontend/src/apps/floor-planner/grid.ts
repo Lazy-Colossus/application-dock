@@ -300,6 +300,13 @@ export function minorGridCm(zoom: number): number {
   return CELL_CM * PX_PER_CM * zoom >= GRID_MIN_PX ? CELL_CM : 20;
 }
 
+/** The scale legend for what the grid actually shows at this zoom. */
+export function gridLegend(zoom: number): string {
+  return minorGridCm(zoom) === CELL_CM
+    ? `1 square = ${CELL_CM} cm`
+    : `Grid ${minorGridCm(zoom)} cm · ${CELL_CM} cm steps`;
+}
+
 /** The unclamped plan position under a screen point, in cm. */
 export function cmAt(
   clientX: number,

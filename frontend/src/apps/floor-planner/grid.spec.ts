@@ -20,6 +20,7 @@ import {
   labelAtCell,
   labelsOutside,
   lineCells,
+  gridLegend,
   minorGridCm,
   paint,
   readout,
@@ -258,6 +259,13 @@ describe("cellRuns", () => {
       { row: 1, col: 2, len: 2 },
       { row: 1, col: 5, len: 1 },
     ]);
+  });
+});
+
+describe("gridLegend", () => {
+  it("names the squares only when they are the ones on screen", () => {
+    expect(gridLegend(1)).toBe("Grid 20 cm · 5 cm steps");
+    expect(gridLegend(2)).toBe("1 square = 5 cm");
   });
 });
 

@@ -13,7 +13,7 @@
     @pointermove="move"
     @pointerup="up"
     @pointercancel="cancel"
-    @pointerleave="emit('hover', null)"
+    @pointerleave="leave"
     @dragover="dragOver"
     @drop="dropped"
   >
@@ -410,6 +410,46 @@
       </g>
     </g>
 
+    <g v-if="measured" pointer-events="none" data-testid="hover-measure">
+      <template v-if="measured.m.kind === 'feature'">
+        <rect
+          v-bind="spanBox(measured.m.span, measured.m.dir)"
+          fill="#1d4ed8"
+          opacity="0.35"
+        />
+      </template>
+      <template v-else>
+        <line
+          v-for="(l, i) in floorLines(measured.m.h, measured.m.v)"
+          :key="i"
+          v-bind="l"
+          stroke="#1d4ed8"
+          stroke-width="1.5"
+          stroke-dasharray="4 3"
+          vector-effect="non-scaling-stroke"
+        />
+      </template>
+      <rect
+        :x="measured.x"
+        :y="measured.y"
+        :width="(measured.text.length * 7 + 16) * cmPerPx"
+        :height="22 * cmPerPx"
+        :rx="4 * cmPerPx"
+        fill="#1c1c1a"
+      />
+      <text
+        :x="measured.x + 8 * cmPerPx"
+        :y="measured.y + 11 * cmPerPx"
+        :font-size="12 * cmPerPx"
+        dominant-baseline="middle"
+        fill="#ffffff"
+        font-weight="600"
+        data-testid="hover-measure-text"
+      >
+        {{ measured.text }}
+      </text>
+    </g>
+
     <g
       v-if="stroke.length && brush"
       pointer-events="none"
@@ -488,6 +528,7 @@ import {
 } from "../doors";
 import { bounds as pieceBounds, snap, type Box } from "../geometry";
 import { SOCKET_PX, socketAt } from "../sockets";
+import { buildRunIndex, measureAt, measureText, type Span } from "../measure";
 import type { Furniture, Placement } from "../types";
 import {
   CELL_CM,
@@ -654,6 +695,53 @@ const featureRuns = computed(() =>
   runs(props.plan.feature).filter((r) => !DOOR_CODES.has(r.code)),
 );
 const doors = computed(() => findDoors(props.plan));
+
+/** The square under the pointer; only changes when the pointer crosses into another square. */
+const hovered = ref<Cell | null>(null);
+// Lazy: built on the first hover after a plan change, never per pointer move.
+const runIndex = computed(() => buildRunIndex(props.plan));
+const measured = computed(() => {
+  const cell = hovered.value;
+  if (!cell || stroke.value.length || dragPos.value) return null;
+  const m = measureAt(runIndex.value, cell);
+  if (!m) return null;
+  return {
+    m,
+    text: measureText(m),
+    x: (cell.col + 1) * CELL_CM + 10 * cmPerPx.value,
+    y: cell.row * CELL_CM - 26 * cmPerPx.value,
+  };
+});
+
+function spanBox(s: Span, dir: "h" | "v") {
+  return {
+    x: s.col * CELL_CM,
+    y: s.row * CELL_CM,
+    width: (dir === "h" ? s.len : 1) * CELL_CM,
+    height: (dir === "v" ? s.len : 1) * CELL_CM,
+  };
+}
+
+/** Lines through the middle of the hovered square, wall to wall each way. */
+function floorLines(h: Span, v: Span) {
+  const cx = (v.col + 0.5) * CELL_CM;
+  const cy = (h.row + 0.5) * CELL_CM;
+  return [
+    { x1: h.col * CELL_CM, y1: cy, x2: (h.col + h.len) * CELL_CM, y2: cy },
+    { x1: cx, y1: v.row * CELL_CM, x2: cx, y2: (v.row + v.len) * CELL_CM },
+  ];
+}
+
+function setHovered(cell: Cell | null): void {
+  const was = hovered.value;
+  if (was?.col === cell?.col && was?.row === cell?.row) return;
+  hovered.value = cell;
+}
+
+function leave(): void {
+  setHovered(null);
+  emit("hover", null);
+}
 /** A door brush is out, so a click on a door opens its setup rather than painting. */
 const doorsPickable = computed(
   () => props.editable && !!props.brush && DOOR_CODES.has(props.brush.code),
@@ -782,6 +870,7 @@ function down(e: PointerEvent): void {
 
 function move(e: PointerEvent): void {
   const cell = cellOf(e);
+  setHovered(cell);
   emit("hover", cell);
   if (pieceDrag) {
     const at = cmOf(e);
