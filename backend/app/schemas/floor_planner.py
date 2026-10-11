@@ -104,6 +104,13 @@ class Label(BaseModel):
     row: int
 
 
+class Socket(BaseModel):
+    """An electricity socket marked on one plan square."""
+
+    col: int
+    row: int
+
+
 class DoorSetting(BaseModel):
     """How one door opens. A door is a 4-connected group of same-code door squares;
     (col, row) is its first square in reading order."""
@@ -167,6 +174,7 @@ class ApartmentDoc(BaseModel):
     feature: list[str] = Field(default_factory=lambda: empty_rows(DEFAULT_COLS, DEFAULT_ROWS))
     labels: list[Label] = Field(default_factory=list)
     doors: list[DoorSetting] = Field(default_factory=list)
+    sockets: list[Socket] = Field(default_factory=list)
     furniture: list[Furniture] = Field(default_factory=list)
     layouts: list[Layout] = Field(default_factory=_first_layouts)
 
@@ -193,6 +201,7 @@ class ApartmentView(ApartmentSummary):
     feature: list[str]
     labels: list[Label]
     doors: list[DoorSetting]
+    sockets: list[Socket]
     furniture: list[Furniture]
     layouts: list[Layout]
 
@@ -209,6 +218,7 @@ class PlanWriteRequest(BaseModel):
     feature: list[str]
     labels: list[Label]
     doors: list[DoorSetting] = Field(default_factory=list)
+    sockets: list[Socket] = Field(default_factory=list)
 
 
 class PieceDraft(BaseModel):

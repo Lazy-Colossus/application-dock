@@ -49,6 +49,7 @@ function plan(): PlanGrid {
     feature: emptyRows(40, 40),
     labels: [],
     doors: [],
+    sockets: [],
   };
 }
 

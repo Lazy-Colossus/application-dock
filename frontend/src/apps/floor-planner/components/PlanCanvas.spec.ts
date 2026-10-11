@@ -4,6 +4,7 @@ import PlanCanvas from "./PlanCanvas.vue";
 import {
   FLOORS,
   LABEL_TOOL,
+  SOCKET_TOOL,
   STRUCTURE,
   floorBrush,
   structureBrush,
@@ -22,6 +23,7 @@ function plan(over: Partial<PlanGrid> = {}): PlanGrid {
     feature: emptyRows(10, 8),
     labels: [],
     doors: [],
+    sockets: [],
     ...over,
   };
 }
@@ -264,6 +266,29 @@ describe("PlanCanvas", () => {
         "lb_1",
         { col: 5, row: 4 },
       ]);
+    });
+  });
+
+  describe("with the Socket tool", () => {
+    const sockets = [{ col: 2, row: 2 }];
+
+    it("draws each socket", () => {
+      const wrapper = canvas({ plan: plan({ sockets }), editable: false });
+      expect(wrapper.find("[data-testid='socket-2,2']").exists()).toBe(true);
+    });
+
+    it("toggles the square clicked, or the socket under the pointer", async () => {
+      const wrapper = canvas({ brush: SOCKET_TOOL, plan: plan({ sockets }) });
+      const svg = wrapper.get("svg");
+      await svg.trigger("pointerdown", at(6, 6));
+      await svg.trigger("pointerup", at(6, 6));
+      // One square off, but still on the 12 px symbol: that socket, not a new one.
+      await svg.trigger("pointerdown", at(3, 2));
+      expect(wrapper.emitted("socketToggle")).toEqual([
+        [{ col: 6, row: 6 }],
+        [{ col: 2, row: 2 }],
+      ]);
+      expect(wrapper.emitted("stroke")).toBeUndefined();
     });
   });
 

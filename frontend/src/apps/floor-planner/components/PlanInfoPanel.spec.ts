@@ -13,6 +13,7 @@ function plan(over: Partial<PlanGrid> = {}): PlanGrid {
     feature: emptyRows(176, 148),
     labels: [],
     doors: [],
+    sockets: [],
     ...over,
   };
 }

@@ -127,6 +127,14 @@ def test_door_settings_over_http(base: str) -> None:
     assert client.get(base).json()["doors"] == [door]
 
 
+def test_sockets_over_http(base: str) -> None:
+    body = {**_plan_body(), "sockets": [{"col": 1, "row": 2}]}
+    r = client.put(f"{base}/plan", json=body)
+    assert (r.status_code, r.json()["sockets"]) == (200, [{"col": 1, "row": 2}])
+    off = {**_plan_body(1), "sockets": [{"col": 20, "row": 0}]}
+    assert client.put(f"{base}/plan", json=off).status_code == 422
+
+
 def test_bad_door_settings_are_422(base: str) -> None:
     door = {"col": 0, "row": 0, "into": 1, "hinge": 0}
     twins = client.put(f"{base}/plan", json=_door_body([door, {**door, "hinge": 1}]))

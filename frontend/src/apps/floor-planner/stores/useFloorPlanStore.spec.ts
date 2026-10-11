@@ -45,6 +45,7 @@ function apartment(over: Partial<Apartment> = {}): Apartment {
     feature: emptyRows(50, 40),
     labels: [],
     doors: [],
+    sockets: [],
     furniture: [],
     layouts: [{ id: "l_1", name: "Layout A", placements: [] }],
     ...over,
@@ -188,6 +189,22 @@ describe("the plan draft", () => {
     store.discardDraft();
     expect(store.dirty).toBe(false);
     expect(store.plan?.feature[0].slice(0, 4)).toBe("....");
+  });
+
+  it("toggles sockets as undoable steps and saves them with the plan", async () => {
+    const store = drawing();
+    store.toggleSocket({ col: 4, row: 2 });
+    store.toggleSocket({ col: 9, row: 2 });
+    store.toggleSocket({ col: 4, row: 2 });
+    expect(store.plan?.sockets).toEqual([{ col: 9, row: 2 }]);
+    store.undo();
+    expect(store.plan?.sockets).toHaveLength(2);
+    putMock.mockResolvedValue(apartment({ rev: 4, plan_rev: 4 }));
+    await store.savePlan();
+    expect(putMock.mock.calls[0][1].sockets).toEqual([
+      { col: 4, row: 2 },
+      { col: 9, row: 2 },
+    ]);
   });
 
   it("drops labels when a resize shrinks past them", () => {

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import DrawPanel from "./DrawPanel.vue";
-import { DEFAULT_BRUSH, type Brush } from "../codes";
+import { DEFAULT_BRUSH, SOCKET_TOOL, type Brush } from "../codes";
 
 function draw(
   over: Partial<{
@@ -23,6 +23,12 @@ function draw(
 }
 
 describe("DrawPanel", () => {
+  it("picks the Socket tool", async () => {
+    const wrapper = draw();
+    await wrapper.get("[data-testid=brush-socket]").trigger("click");
+    expect(wrapper.emitted("update:brush")?.[0][0]).toEqual(SOCKET_TOOL);
+  });
+
   it("picks a brush size in freehand and disables it for rectangles", async () => {
     const wrapper = draw({ shape: "freehand" });
     await wrapper.get("[data-testid=size-10]").trigger("click");

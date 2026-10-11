@@ -134,6 +134,7 @@
             @label-at="newLabel"
             @label-pick="editLabel"
             @label-move="store.moveLabel"
+            @socket-toggle="store.toggleSocket"
             :placed="mode === 'arrange' ? placed : []"
             :selected-id="selectedPlacedId"
             :arranging="arranging"

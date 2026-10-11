@@ -43,6 +43,7 @@ function grid(cols = 5, rows = 4): PlanGrid {
     feature: emptyRows(cols, rows),
     labels: [],
     doors: [],
+    sockets: [],
   };
 }
 
@@ -162,6 +163,17 @@ describe("resize", () => {
     const out = resize(g, 3, 4);
     expect(out.surface[0]).toBe("......");
     expect(out.labels.map((l) => l.id)).toEqual(["b"]);
+  });
+
+  it("drops sockets left outside", () => {
+    const g = {
+      ...grid(),
+      sockets: [
+        { col: 4, row: 0 },
+        { col: 2, row: 3 },
+      ],
+    };
+    expect(resize(g, 3, 4).sockets).toEqual([{ col: 2, row: 3 }]);
   });
 });
 

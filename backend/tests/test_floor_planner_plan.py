@@ -16,6 +16,7 @@ from app.schemas.floor_planner import (
     PieceDraft,
     PlacementRequest,
     PlanWriteRequest,
+    Socket,
 )
 from app.services import auth_service
 from app.services import floor_planner_service as service
@@ -212,3 +213,28 @@ def test_a_duplicate_apartment_keeps_its_doors() -> None:
     copy = service.duplicate_apartment("ana", _apt("ana"), "Copy")
     assert copy.doors == [_HALL, _FRONT]
     assert service.get_apartment("ana", copy.id).doors == [_HALL, _FRONT]
+
+
+def test_sockets_round_trip() -> None:
+    sockets = [Socket(col=0, row=0), Socket(col=19, row=23)]
+    apt = service.replace_plan("ana", _apt("ana"), _plan(sockets=sockets))
+    assert apt.sockets == sockets
+    assert service.get_apartment("ana", _apt("ana")).sockets == sockets
+
+
+def test_a_new_apartment_has_no_sockets() -> None:
+    assert service.get_apartment("ana", _apt("ana")).sockets == []
+
+
+@pytest.mark.parametrize(
+    ("sockets", "message"),
+    [
+        ([Socket(col=2, row=2), Socket(col=2, row=2)], "share a square"),
+        ([Socket(col=20, row=0)], "outside the plan"),
+        ([Socket(col=0, row=-1)], "outside the plan"),
+    ],
+)
+def test_bad_sockets_are_refused(sockets: list[Socket], message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        service.replace_plan("ana", _apt("ana"), _plan(sockets=sockets))
+    assert service.get_apartment("ana", _apt("ana")).rev == 0

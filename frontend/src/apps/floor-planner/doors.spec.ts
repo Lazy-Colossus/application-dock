@@ -46,6 +46,7 @@ function flat(labels: Label[] = [], doors: DoorSetting[] = []): PlanGrid {
     ),
     labels,
     doors,
+    sockets: [],
   };
 }
 

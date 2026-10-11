@@ -101,6 +101,11 @@ Success: you sketch the apartment in a few minutes. A 220 × 95 cm sofa is visib
     a click on the opening or the leaf, and so does the setup's **Show it**. The pointer shows
     wherever a click on a door does something. Open or closed is only that viewer's view, like zoom: never saved or
     shared. Doors start open.
+- **FP-11** Electricity sockets (2026-10-11) are markers on single squares. With the **Socket**
+  tool, a click adds one and a click on an existing one removes it; the symbol is wider than a
+  square, so a click anywhere on it counts. Each is drawn as a socket face (a circle with two
+  pins) at a fixed screen size, over furniture, and shows in every mode. Sockets are saved with
+  the plan, are undo steps like labels, and a shrink drops the ones left outside.
 
 ### Apartments (Story 1.5)
 
@@ -216,6 +221,7 @@ surface: list[str]               rows strings, one token per square (see Encodin
 feature: list[str]
 labels: list[{id, text, col, row}]
 doors: list[{col, row, into, hinge, double}]   door setups (FP-10), keyed by anchor
+sockets: list[{col, row}]        FP-11; at most one per square
 furniture: list[Furniture]
 layouts: list[Layout]            display order
 ```
@@ -267,7 +273,7 @@ below). A caller who isn't a member gets 404, the same as for a missing apartmen
 | `PUT …/name` | AP-4 |
 | `POST …/duplicate` | AP-3 |
 | `DELETE …` | AP-5; returns the caller's remaining list |
-| `PUT …/plan` | Replaces the grid, labels, door setups and size (FP-2 to FP-6, FP-10). Sent on save. |
+| `PUT …/plan` | Replaces the grid, labels, door setups, sockets and size (FP-2 to FP-6, FP-10, FP-11). Sent on save. |
 | `POST …/furniture` | Adds one or more pieces (FU-1, FU-4) |
 | `PUT` / `DELETE …/furniture/{id}` | FU-5 |
 | `POST …/layouts`, `PUT` / `DELETE …/layouts/{id}` | LA-1 |
@@ -320,7 +326,7 @@ https://claude.ai/artifact/1nK3cQ36cNrwLq4GeTg8BV (the B artboards).
 
   | Mode | Left panel | Centre | Right panel |
   |---|---|---|---|
-  | Draw plan | Structure brushes, floor brushes with inline colour chips, Eraser and Room label, the Freehand/Rectangle switch, Undo/Redo | The plan | Plan details, folded by default into a "Plan details" strip on the right edge (a click opens it; **Hide** folds it, and the browser remembers): a scale card ("1 square = 5 cm" with a 1 m scale bar), plan size and resize, the room label list |
+  | Draw plan | Structure brushes, floor brushes with inline colour chips, Eraser, Room label and Socket, the Freehand/Rectangle switch, Undo/Redo | The plan | Plan details, folded by default into a "Plan details" strip on the right edge (a click opens it; **Hide** folds it, and the browser remembers): a scale card ("1 square = 5 cm" with a 1 m scale bar), plan size and resize, the room label list |
   | Furniture | The furniture list | The open piece on the 10 cm drawing grid with its tools (FU-3); the plan is not shown | The piece form with Delete, Copy, Cancel and Save. **Bulk add** opens a dialog. |
   | Arrange | The tray of pieces not in this layout, then the pieces already on the plan | The plan with the layout's pieces | The selected piece: size, position in m, Vertical / Horizontal, the rotation in degrees with − / +, warnings, Back to tray |
 

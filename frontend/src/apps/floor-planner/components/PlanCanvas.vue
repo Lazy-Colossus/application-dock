@@ -388,6 +388,28 @@
       </template>
     </g>
 
+    <!-- Drawn in screen px, over furniture, so a socket a piece would block still shows. -->
+    <g pointer-events="none" data-testid="sockets">
+      <g
+        v-for="s in plan.sockets"
+        :key="`${s.col},${s.row}`"
+        :transform="`translate(${(s.col + 0.5) * CELL_CM} ${(s.row + 0.5) * CELL_CM}) scale(${cmPerPx})`"
+        :data-testid="`socket-${s.col},${s.row}`"
+      >
+        <circle
+          :r="SOCKET_PX / 2"
+          fill="#ffffff"
+          stroke="#2b2a27"
+          stroke-width="1.5"
+        />
+        <path
+          d="M -2 -2.5 V 2.5 M 2 -2.5 V 2.5"
+          stroke="#2b2a27"
+          stroke-width="1.5"
+        />
+      </g>
+    </g>
+
     <g
       v-if="stroke.length && brush"
       pointer-events="none"
@@ -465,6 +487,7 @@ import {
   type Leaf,
 } from "../doors";
 import { bounds as pieceBounds, snap, type Box } from "../geometry";
+import { SOCKET_PX, socketAt } from "../sockets";
 import type { Furniture, Placement } from "../types";
 import {
   CELL_CM,
@@ -528,6 +551,8 @@ const emit = defineEmits<{
   hover: [cell: Cell | null];
   preview: [readout: string | null];
   labelAt: [cell: Cell];
+  /** A Socket tool click: the socket under the pointer, or the square for a new one. */
+  socketToggle: [cell: Cell];
   labelPick: [id: string];
   labelMove: [id: string, cell: Cell];
   select: [id: string | null];
@@ -724,6 +749,11 @@ function down(e: PointerEvent): void {
     const hit = labelAtCell(props.plan.labels, cell, props.zoom);
     if (hit) dragged = { id: hit.id, from: cell, to: cell };
     else emit("labelAt", cell);
+    return;
+  }
+  if (props.brush.id === "socket") {
+    const hit = socketAt(props.plan.sockets, cmOf(e), cmPerPx.value);
+    emit("socketToggle", hit ?? cell);
     return;
   }
   doorPress =

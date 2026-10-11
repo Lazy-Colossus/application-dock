@@ -39,6 +39,11 @@ export interface DoorSetting {
   double: boolean;
 }
 
+export interface Socket {
+  col: number;
+  row: number;
+}
+
 export interface Label {
   id: string;
   text: string;
@@ -91,6 +96,7 @@ export interface Apartment extends ApartmentSummary {
   feature: string[];
   labels: Label[];
   doors: DoorSetting[];
+  sockets: Socket[];
   furniture: Furniture[];
   layouts: Layout[];
 }

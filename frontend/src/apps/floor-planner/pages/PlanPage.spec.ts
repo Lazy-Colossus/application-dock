@@ -58,6 +58,7 @@ function apartment(over: Partial<Apartment> = {}): Apartment {
     feature: emptyRows(200, 160),
     labels: [],
     doors: [],
+    sockets: [],
     furniture: [],
     layouts: [],
     ...over,
@@ -240,6 +241,19 @@ describe("PlanPage", () => {
     expect(path).toBe("/floor-planner/apartments/a_1/plan");
     expect(body.feature[0].slice(0, 8)).toBe("wlwlwlwl");
     expect(body.base_rev).toBe(2);
+  });
+
+  it("marks a socket and saves it with the plan", async () => {
+    const wrapper = await page();
+    await wrapper.get("[data-testid=brush-socket]").trigger("click");
+    const svg = wrapper.get("[data-testid=plan-canvas]");
+    await svg.trigger("pointerdown", at(10, 3));
+    await svg.trigger("pointerup", at(10, 3));
+    expect(wrapper.find("[data-testid='socket-10,3']").exists()).toBe(true);
+    putMock.mockResolvedValue(apartment({ rev: 3, plan_rev: 3 }));
+    await wrapper.get("[data-testid=save]").trigger("click");
+    await flushPromises();
+    expect(putMock.mock.calls[0][1].sockets).toEqual([{ col: 10, row: 3 }]);
   });
 
   it("saves unsaved drawing when leaving Draw plan", async () => {

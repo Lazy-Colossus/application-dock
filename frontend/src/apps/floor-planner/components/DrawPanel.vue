@@ -112,6 +112,29 @@
           <span class="draw-panel__swatch draw-panel__swatch--label">Aa</span>
           <span class="draw-panel__name">Label</span>
         </button>
+        <button
+          type="button"
+          class="draw-panel__row"
+          :class="{ 'draw-panel__row--active': brush.id === 'socket' }"
+          :aria-pressed="brush.id === 'socket'"
+          title="Electricity socket: click to add, click one to remove"
+          data-testid="brush-socket"
+          @click="emit('update:brush', SOCKET_TOOL)"
+        >
+          <svg
+            class="draw-panel__swatch draw-panel__swatch--socket"
+            viewBox="-7 -7 14 14"
+            aria-hidden="true"
+          >
+            <circle r="5" fill="#ffffff" stroke="#2b2a27" stroke-width="1.3" />
+            <path
+              d="M -1.8 -2.2 V 2.2 M 1.8 -2.2 V 2.2"
+              stroke="#2b2a27"
+              stroke-width="1.3"
+            />
+          </svg>
+          <span class="draw-panel__name">Socket</span>
+        </button>
       </div>
     </section>
 
@@ -159,6 +182,7 @@ import {
   ERASER,
   FLOORS,
   LABEL_TOOL,
+  SOCKET_TOOL,
   STRUCTURE,
   floorBrush,
   structureBrush,
@@ -304,6 +328,9 @@ function swatchOf(f: FloorFamily): string {
 }
 .draw-panel__swatch--label {
   font-size: 9px;
+}
+.draw-panel__swatch--socket {
+  border: none;
 }
 .draw-panel__chips {
   display: flex;
