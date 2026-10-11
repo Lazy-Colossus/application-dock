@@ -245,6 +245,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "ISS Vanguard", requiresAuth: true },
       },
       {
+        path: "floor-planner/:apartmentId?",
+        name: "floor-planner",
+        component: () => import("@/apps/floor-planner/pages/PlanPage.vue"),
+        meta: { title: "Floor Planner", requiresAuth: true },
+      },
+      {
         path: "tea",
         name: "tea-home",
         component: () => import("@/apps/tea/pages/TeaHomePage.vue"),
@@ -317,7 +323,11 @@ const routes: RouteRecordRaw[] = [
         path: "tea/journal/new",
         name: "tea-journal-new",
         component: () => import("@/apps/tea/pages/JournalFormPage.vue"),
-        meta: { title: "New entry", requiresAuth: true, backTo: "/tea/journal" },
+        meta: {
+          title: "New entry",
+          requiresAuth: true,
+          backTo: "/tea/journal",
+        },
       },
       {
         path: "tea/journal/:id",

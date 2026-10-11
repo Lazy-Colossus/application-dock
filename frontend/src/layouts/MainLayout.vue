@@ -5,6 +5,7 @@
       :class="{
         'app-bar--hotaru': inHotaru,
         'app-bar--kitchencraft': inKitchencraft,
+        'app-bar--floor-planner': inFloorPlanner,
       }"
     >
       <q-toolbar>
@@ -85,6 +86,10 @@ const inHotaru = computed(() => route.path.startsWith("/hotaru"));
 // rather than the paper: a light strip above a dark ground would be the foreign
 // chrome this variant exists to avoid. Same mechanism as the Hotaru variant.
 const inKitchencraft = computed(() => route.path.startsWith("/kitchencraft"));
+
+// Floor Planner is a light drafting table; the dark dock bar would sit on it as
+// foreign chrome, so the bar becomes the table's white top edge.
+const inFloorPlanner = computed(() => route.path.startsWith("/floor-planner"));
 const isHome = computed(() => route.path === "/");
 
 const routeTitle = computed(() => {
@@ -165,4 +170,15 @@ function handleLogout(): void {
 // a `text-*` class with `!important`, so overriding it needs the same weight.
 .app-bar--kitchencraft :deep(.q-btn)
   color: #C9B489 !important
+
+.app-bar--floor-planner
+  background: #FFFFFF
+  border-bottom: 1px solid #DDDBD4
+
+.app-bar--floor-planner .app-bar__title
+  color: #1C1C1A
+
+// Same Quasar `text-*` `!important` reason as the KitchenCraft rule above.
+.app-bar--floor-planner :deep(.q-btn)
+  color: #3D3B36 !important
 </style>

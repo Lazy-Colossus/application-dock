@@ -1,0 +1,70 @@
+// Floor Planner "Drafting table" theme — SCOPED to the Floor Planner app.
+//
+// A light drafting table: warm grey ground, white chrome, one blueprint accent,
+// and every measurement in Plex Mono so numbers line up and read as numbers.
+// Fonts are self-hosted (the dock must render type without the network) and
+// load only when a Floor Planner screen imports this file. Plex Sans is one
+// variable file covering 400–600.
+//
+// Tokens sit on TWO roots: `.floor-planner-app` for the page and
+// `.floor-planner-panel` for dialog cards, which Quasar teleports outside the
+// page and would otherwise take the shell's dark theme.
+
+@font-face
+  font-family: "FP Plex Sans"
+  font-style: normal
+  font-weight: 400 600
+  font-display: swap
+  src: url("./fonts/ibm-plex-sans-400-600-latin.woff2") format("woff2")
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD
+
+@font-face
+  font-family: "FP Plex Mono"
+  font-style: normal
+  font-weight: 500
+  font-display: swap
+  src: url("./fonts/ibm-plex-mono-500-latin.woff2") format("woff2")
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD
+
+.floor-planner-app,
+.floor-planner-panel
+  --fp-ground: #eceae4
+  --fp-chrome: #ffffff
+  --fp-panel: #fafaf8
+  --fp-line: #dddbd4
+  --fp-control-line: #c9c6bf
+  --fp-ink: #1c1c1a
+  --fp-muted: #5c5a54
+  --fp-accent: #1d4ed8
+  --fp-warn-ink: #8a2d0c
+  --fp-warn-bg: #fff0e6
+  --fp-ok-ink: #14532d
+  --fp-sans: "FP Plex Sans", system-ui, sans-serif
+  --fp-mono: "FP Plex Mono", ui-monospace, monospace
+  font-family: var(--fp-sans)
+  color: var(--fp-ink)
+
+.floor-planner-panel
+  background: var(--fp-chrome)
+
+.fp-mono
+  font-family: var(--fp-mono)
+
+.fp-button
+  height: 36px
+  padding: 0 14px
+  border: 1px solid var(--fp-control-line)
+  border-radius: 6px
+  background: var(--fp-chrome)
+  color: var(--fp-ink)
+  font: 500 13px/1 var(--fp-sans)
+  cursor: pointer
+  &:disabled
+    opacity: 0.5
+    cursor: default
+
+.fp-button--primary
+  border-color: var(--fp-accent)
+  background: var(--fp-accent)
+  color: #ffffff
+  font-weight: 600

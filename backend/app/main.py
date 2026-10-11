@@ -8,6 +8,7 @@ from app.routers import (
     archery,
     auth,
     context_switch,
+    floor_planner,
     hotaru,
     iss_vanguard,
     kalendariq,
@@ -45,6 +46,7 @@ app.include_router(tea.router)
 app.include_router(archery.router)
 app.include_router(kitchencraft.router)
 app.include_router(iss_vanguard.router)
+app.include_router(floor_planner.router)
 app.include_router(pagemage.router)
 # Unauthenticated by design — the share link. See routers/pagemage.py.
 app.include_router(pagemage.share_router)

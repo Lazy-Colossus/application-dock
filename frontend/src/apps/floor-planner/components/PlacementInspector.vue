@@ -1,0 +1,220 @@
+<template>
+  <div class="inspector" data-testid="placement-inspector">
+    <h3 class="inspector__heading">Selected</h3>
+    <div class="inspector__who">
+      <FurnitureShape :piece="piece" :scale="0.8" :max-px="48" />
+      <div>
+        <div class="inspector__name">{{ piece.name }}</div>
+        <div class="inspector__kind">{{ shapeLabel }} · {{ piece.colour }}</div>
+      </div>
+    </div>
+    <dl class="inspector__facts">
+      <dt>Size</dt>
+      <dd class="fp-mono">{{ sizeLabel(piece) }}</dd>
+      <dt>Position</dt>
+      <dd class="fp-mono" data-testid="inspector-position">{{ position }}</dd>
+    </dl>
+    <div class="inspector__turn">
+      <button
+        type="button"
+        class="fp-button"
+        title="Long side top to bottom (Shift+R)"
+        data-testid="rotate-vertical"
+        @click="emit('rotate', orient(piece, placement.rotation, 'vertical'))"
+      >
+        Vertical
+      </button>
+      <button
+        type="button"
+        class="fp-button"
+        title="Long side left to right (R)"
+        data-testid="rotate-horizontal"
+        @click="emit('rotate', orient(piece, placement.rotation, 'horizontal'))"
+      >
+        Horizontal (R)
+      </button>
+    </div>
+    <div class="inspector__angle">
+      <label for="fp-rotation">Rotation</label>
+      <div class="inspector__stepper">
+        <button
+          type="button"
+          class="fp-button"
+          :aria-label="`Turn ${ROTATION_STEP}° anticlockwise`"
+          data-testid="rotate-minus"
+          @click="turn(-ROTATION_STEP)"
+        >
+          −
+        </button>
+        <input
+          id="fp-rotation"
+          class="fp-mono"
+          type="number"
+          step="1"
+          :value="placement.rotation"
+          data-testid="rotation-input"
+          @change="typed"
+          @keydown.enter="($event.target as HTMLInputElement).blur()"
+        />
+        <span class="inspector__unit">°</span>
+        <button
+          type="button"
+          class="fp-button"
+          :aria-label="`Turn ${ROTATION_STEP}° clockwise`"
+          data-testid="rotate-plus"
+          @click="turn(ROTATION_STEP)"
+        >
+          +
+        </button>
+      </div>
+    </div>
+    <div
+      v-if="warnings.length"
+      class="inspector__warn"
+      data-testid="inspector-warnings"
+    >
+      <strong v-for="w in warnings" :key="w">{{ w }}.</strong>
+      You can leave it there, it's only a warning.
+    </div>
+    <button
+      type="button"
+      class="fp-button"
+      data-testid="back-to-tray"
+      @click="emit('back')"
+    >
+      Back to tray
+    </button>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed } from "vue";
+import FurnitureShape from "./FurnitureShape.vue";
+import { SHAPES, sizeLabel } from "../furniture";
+import { ROTATION_STEP, bounds, normaliseRotation, orient } from "../geometry";
+import type { Furniture, Placement } from "../types";
+
+const props = defineProps<{
+  piece: Furniture;
+  placement: Placement;
+  warnings: string[];
+}>();
+
+const emit = defineEmits<{ rotate: [rotation: number]; back: [] }>();
+
+function turn(delta: number): void {
+  emit("rotate", normaliseRotation(props.placement.rotation + delta));
+}
+
+/** Any whole number is accepted and wrapped into 0–359; anything else puts the value back. */
+function typed(e: Event): void {
+  const input = e.target as HTMLInputElement;
+  const deg = input.valueAsNumber;
+  if (Number.isFinite(deg)) emit("rotate", normaliseRotation(deg));
+  input.value = String(props.placement.rotation);
+}
+
+const shapeLabel = computed(
+  () =>
+    SHAPES.find((s) => s.id === props.piece.shape)?.label ?? props.piece.shape,
+);
+/** The rotated box's top-left, as the plan's rulers would read it. */
+const position = computed(() => {
+  const b = bounds(props.piece, props.placement);
+  return `${(b.x / 100).toFixed(2)} m, ${(b.y / 100).toFixed(2)} m`;
+});
+</script>
+
+<style scoped lang="scss">
+.inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.inspector__heading {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fp-muted);
+}
+.inspector__who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.inspector__name {
+  font: 600 18px var(--fp-sans);
+}
+.inspector__kind {
+  font-size: 13px;
+  color: #4a4843;
+}
+.inspector__facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  margin: 0;
+  font-size: 13px;
+}
+.inspector__facts dt {
+  color: var(--fp-muted);
+}
+.inspector__facts dd {
+  margin: 0;
+}
+.inspector__turn {
+  display: flex;
+  gap: 6px;
+}
+.inspector__turn .fp-button {
+  flex: 1;
+}
+.inspector__angle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--fp-muted);
+}
+.inspector__stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.inspector__stepper .fp-button {
+  width: 36px;
+  padding: 0;
+  font-size: 16px;
+}
+.inspector__stepper input {
+  box-sizing: border-box;
+  width: 56px;
+  height: 36px;
+  padding: 0 6px;
+  border: 1px solid var(--fp-control-line);
+  border-radius: 6px;
+  background: var(--fp-chrome);
+  color: var(--fp-ink);
+  font-size: 14px;
+  text-align: right;
+}
+.inspector__unit {
+  margin-left: -2px;
+  color: var(--fp-ink);
+}
+.inspector__warn {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid #f4c3a3;
+  border-radius: 6px;
+  background: var(--fp-warn-bg);
+  color: var(--fp-warn-ink);
+  font-size: 13px;
+  line-height: 1.4;
+}
+</style>
