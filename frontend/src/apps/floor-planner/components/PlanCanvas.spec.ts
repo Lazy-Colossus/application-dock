@@ -339,7 +339,7 @@ describe("PlanCanvas", () => {
       expect(wrapper.find("[data-testid=piece-warned]").exists()).toBe(true);
     });
 
-    it("drags a piece in 10 cm steps and emits one move on release", async () => {
+    it("drags a piece in 5 cm steps and emits one move on release", async () => {
       const wrapper = arranging();
       await wrapper
         .get("[data-testid=placed-f_sofa]")
@@ -348,7 +348,7 @@ describe("PlanCanvas", () => {
       expect(wrapper.emitted("move")).toBeUndefined();
       await wrapper.get("svg").trigger("pointerup", px(97, 70));
       expect(wrapper.emitted("select")?.[0]).toEqual(["f_sofa"]);
-      expect(wrapper.emitted("move")?.[0]).toEqual(["f_sofa", 80, 60]);
+      expect(wrapper.emitted("move")?.[0]).toEqual(["f_sofa", 75, 60]);
     });
 
     it("selects without moving on a plain click", async () => {

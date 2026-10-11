@@ -12,7 +12,7 @@ export interface Box {
 type Sized = Pick<Furniture, "width_cm" | "depth_cm">;
 type Spot = Pick<Placement, "x_cm" | "y_cm" | "rotation">;
 
-export const SNAP_CM = 10;
+export const SNAP_CM = 5;
 export const snap = (v: number): number =>
   Math.round(v / SNAP_CM) * SNAP_CM || 0;
 

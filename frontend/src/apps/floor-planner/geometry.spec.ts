@@ -105,10 +105,10 @@ describe("rotation", () => {
 
 describe("snap", () => {
   it.each([
-    [14, 10],
-    [15, 20],
-    [-6, -10],
-    [-4, 0],
+    [12, 10],
+    [13, 15],
+    [-6, -5],
+    [-2, 0],
     [0, 0],
   ])("%s → %s", (v, out) => {
     expect(snap(v)).toBe(out);
@@ -118,9 +118,9 @@ describe("snap", () => {
 describe("topLeftForCentre", () => {
   it("centres the piece on the point, snapped", () => {
     const tl = topLeftForCentre(piece(), 300, 300);
-    expect(tl).toEqual({ x: 190, y: 250 });
+    expect(tl).toEqual({ x: 190, y: 255 });
     const b = bounds(piece(), { x_cm: tl.x, y_cm: tl.y, rotation: 0 });
-    expect(Math.abs(b.x + b.w / 2 - 300)).toBeLessThanOrEqual(5);
+    expect(Math.abs(b.x + b.w / 2 - 300)).toBeLessThanOrEqual(2.5);
   });
 });
 

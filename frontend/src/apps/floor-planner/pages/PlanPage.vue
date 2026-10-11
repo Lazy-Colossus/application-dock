@@ -221,7 +221,7 @@
             </p>
             <div class="fp__scale-card">
               <span class="fp-mono">1 square = 5 cm</span>
-              <span>Pieces snap to 10 cm.</span>
+              <span>Pieces snap to 5 cm.</span>
             </div>
           </template>
         </template>

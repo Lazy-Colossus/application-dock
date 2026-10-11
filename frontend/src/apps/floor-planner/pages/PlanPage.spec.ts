@@ -576,9 +576,9 @@ describe("PlanPage", () => {
         types: ["application/x-fp-piece"],
         getData: () => "f_sofa",
       };
-      // Plan point (303, 122) cm at 100 %: the 40 cm ruler, then 0.8 px per cm.
+      // Plan point (300, 122) cm at 100 %: the 40 cm ruler, then 0.8 px per cm.
       await wrapper.get("[data-testid=plan-canvas]").trigger("drop", {
-        clientX: (40 + 303) * 0.8,
+        clientX: (40 + 300) * 0.8,
         clientY: (40 + 122) * 0.8,
         dataTransfer,
       });
