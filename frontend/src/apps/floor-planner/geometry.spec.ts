@@ -10,7 +10,7 @@ import {
   warnings,
   type Placed,
 } from "./geometry";
-import { emptyRows, type PlanGrid } from "./grid";
+import { CELL_CM, emptyRows, type PlanGrid } from "./grid";
 import type { Furniture, Rotation } from "./types";
 
 function piece(over: Partial<Furniture> = {}): Furniture {
@@ -40,15 +40,22 @@ function placed(
 }
 
 /** A 10 × 10 square plan of medium wood with no walls. */
+/** 2 × 2 m of wood floor. */
 function plan(): PlanGrid {
   return {
-    cols: 10,
-    rows: 10,
-    surface: Array.from({ length: 10 }, () => "w1".repeat(10)),
-    feature: emptyRows(10, 10),
+    cols: 40,
+    rows: 40,
+    surface: Array.from({ length: 40 }, () => "w1".repeat(40)),
+    feature: emptyRows(40, 40),
     labels: [],
     doors: [],
   };
+}
+
+/** Fills the 20 cm band of rows starting at `cm` with one code. */
+function band(rows: string[], cm: number, code: string): void {
+  for (let r = cm / CELL_CM; r < (cm + 20) / CELL_CM; r++)
+    rows[r] = code.repeat(40);
 }
 
 describe("bounds", () => {
@@ -136,14 +143,14 @@ describe("warnings", () => {
 
   it("warns about a wall under the box but not one it only touches", () => {
     const p = plan();
-    p.feature[3] = "wl".repeat(10);
+    band(p.feature, 60, "wl");
     expect(warnings(placed(box, 40, 50), p)).toEqual([{ kind: "wall" }]);
     expect(warnings(placed(box, 40, 20), p)).toEqual([]);
   });
 
   it("warns outside the apartment and past the plan's edge", () => {
     const p = plan();
-    p.surface[0] = "..".repeat(10);
+    band(p.surface, 0, "..");
     expect(warnings(placed(box, 40, 0), p)).toEqual([{ kind: "outside" }]);
     expect(warnings(placed(box, 180, 100), plan())).toEqual([
       { kind: "outside" },
@@ -152,8 +159,8 @@ describe("warnings", () => {
 
   it("can give both warnings at once", () => {
     const p = plan();
-    p.feature[0] = "wl".repeat(10);
-    p.surface[1] = "..".repeat(10);
+    band(p.feature, 0, "wl");
+    band(p.surface, 20, "..");
     expect(warnings(placed(box, 0, 0), p).map(warningText)).toEqual([
       "Overlaps a wall",
       "Outside the apartment",

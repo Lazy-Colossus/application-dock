@@ -41,10 +41,10 @@ function canvas(
   });
 }
 
-/** The screen point at the middle of a square at 100 %: 32 px of ruler, 16 px per square. */
+/** The screen point at the middle of a square at 100 %: 32 px of ruler, 4 px per square. */
 const at = (col: number, row: number) => ({
-  clientX: 32 + col * 16 + 8,
-  clientY: 32 + row * 16 + 8,
+  clientX: 32 + col * 4 + 2,
+  clientY: 32 + row * 4 + 2,
   pointerId: 1,
 });
 
@@ -70,7 +70,7 @@ describe("PlanCanvas", () => {
       expect(wrapper.find("[data-testid=door-3,2]").exists()).toBe(true);
       expect(wrapper.findAll("[data-testid=door-leaf]")).toHaveLength(1);
       const painted = wrapper.findAll("[data-testid=feature-runs] rect");
-      expect(painted.map((r) => r.attributes("width"))).toEqual(["60", "60"]);
+      expect(painted.map((r) => r.attributes("width"))).toEqual(["15", "15"]);
     });
 
     it("draws two leaves for a double door, and the shut leaf along the wall", () => {
@@ -81,10 +81,10 @@ describe("PlanCanvas", () => {
       expect(leaves).toHaveLength(2);
       // Shut, each leaf lies along the wall's face, below it as it opens downwards.
       expect(leaves[0].attributes()).toMatchObject({
-        x1: "60",
-        y1: "60",
-        x2: "100",
-        y2: "60",
+        x1: "15",
+        y1: "15",
+        x2: "25",
+        y2: "15",
       });
     });
 
@@ -175,11 +175,11 @@ describe("PlanCanvas", () => {
   it("sizes the svg by zoom but keeps the viewBox in cm", async () => {
     const wrapper = canvas();
     const svg = wrapper.get("svg");
-    expect(svg.attributes("viewBox")).toBe("-40 -40 240 200");
-    expect(svg.attributes("width")).toBe(String(240 * 0.8));
+    expect(svg.attributes("viewBox")).toBe("-40 -40 90 80");
+    expect(svg.attributes("width")).toBe(String(90 * 0.8));
     await wrapper.setProps({ zoom: 2 });
-    expect(svg.attributes("viewBox")).toBe("-40 -40 240 200");
-    expect(svg.attributes("width")).toBe(String(240 * 1.6));
+    expect(svg.attributes("viewBox")).toBe("-40 -40 90 80");
+    expect(svg.attributes("width")).toBe(String(90 * 1.6));
   });
 
   it("emits one stroke on release, with no gaps on a fast freehand drag", async () => {
@@ -189,7 +189,7 @@ describe("PlanCanvas", () => {
     await svg.trigger("pointermove", at(3, 0));
     expect(wrapper.emitted("stroke")).toBeUndefined();
     expect(wrapper.get("[data-testid=stroke-readout]").text()).toBe(
-      "Wall · 0.80 m",
+      "Wall · 0.20 m",
     );
     await svg.trigger("pointerup", at(3, 0));
     expect(wrapper.emitted("stroke")?.[0][0]).toEqual([
@@ -221,7 +221,7 @@ describe("PlanCanvas", () => {
     await svg.trigger("pointerdown", at(1, 1));
     await svg.trigger("pointermove", at(2, 3));
     expect(wrapper.get("[data-testid=stroke-readout]").text()).toBe(
-      "Tile · 0.40 × 0.60 m",
+      "Tile · 0.10 × 0.15 m",
     );
     await svg.trigger("pointerup", at(2, 3));
     expect(wrapper.emitted("stroke")?.[0][0]).toHaveLength(6);

@@ -220,7 +220,7 @@
               Select a piece on the plan, or drag one from the tray.
             </p>
             <div class="fp__scale-card">
-              <span class="fp-mono">1 square = 20 cm</span>
+              <span class="fp-mono">1 square = 5 cm</span>
               <span>Pieces snap to 10 cm.</span>
             </div>
           </template>
@@ -349,7 +349,7 @@ import {
   warnings,
   type Placed,
 } from "../geometry";
-import type { BrushSize, Cell } from "../grid";
+import type { Cell, PlanBrushSize } from "../grid";
 import { useFloorPlanStore } from "../stores/useFloorPlanStore";
 import type { Mode, Rotation } from "../types";
 import "../css/floor-planner.sass";
@@ -367,7 +367,7 @@ const mode = ref<Mode>("draw");
 const membersOpen = ref(false);
 const brush = ref<Brush>(DEFAULT_BRUSH);
 const shape = ref<"freehand" | "rectangle">("rectangle");
-const brushSize = ref<BrushSize>(1);
+const brushSize = ref<PlanBrushSize>(1);
 const zoom = ref(1);
 const hover = ref<Cell | null>(null);
 const readout = ref<string | null>(null);

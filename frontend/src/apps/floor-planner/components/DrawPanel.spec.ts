@@ -25,11 +25,11 @@ function draw(
 describe("DrawPanel", () => {
   it("picks a brush size in freehand and disables it for rectangles", async () => {
     const wrapper = draw({ shape: "freehand" });
-    await wrapper.get("[data-testid=size-5]").trigger("click");
-    expect(wrapper.emitted("update:size")?.[0][0]).toBe(5);
+    await wrapper.get("[data-testid=size-10]").trigger("click");
+    expect(wrapper.emitted("update:size")?.[0][0]).toBe(10);
     await wrapper.setProps({ shape: "rectangle" });
     expect(
-      wrapper.get("[data-testid=size-5]").attributes("disabled"),
+      wrapper.get("[data-testid=size-10]").attributes("disabled"),
     ).toBeDefined();
   });
 

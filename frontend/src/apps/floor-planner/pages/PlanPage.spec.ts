@@ -52,10 +52,10 @@ function apartment(over: Partial<Apartment> = {}): Apartment {
     is_owner: true,
     rev: 2,
     plan_rev: 2,
-    cols: 50,
-    rows: 40,
-    surface: emptyRows(50, 40),
-    feature: emptyRows(50, 40),
+    cols: 200,
+    rows: 160,
+    surface: emptyRows(200, 160),
+    feature: emptyRows(200, 160),
     labels: [],
     doors: [],
     furniture: [],
@@ -103,10 +103,10 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-/** The middle of a square at 100 %: 32 px of ruler, then 16 px per square. */
+/** The middle of a square at 100 %: 32 px of ruler, then 4 px per square. */
 const at = (col: number, row: number) => ({
-  clientX: 32 + col * 16 + 8,
-  clientY: 32 + row * 16 + 8,
+  clientX: 32 + col * 4 + 2,
+  clientY: 32 + row * 4 + 2,
   pointerId: 1,
 });
 
@@ -128,7 +128,7 @@ describe("PlanPage", () => {
     for (const id of ["fp-left", "fp-plan", "info-show"]) {
       expect(wrapper.find(`[data-testid=${id}]`).exists()).toBe(true);
     }
-    expect(wrapper.text()).toContain("1 square = 20 cm");
+    expect(wrapper.text()).toContain("1 square = 5 cm");
   });
 
   it("switches mode", async () => {
@@ -180,10 +180,10 @@ describe("PlanPage", () => {
   });
 
   describe("doors", () => {
-    /** A wall along row 2 with a 4-square door in columns 3–6. */
+    /** A wall along row 2 with an 80 cm door in columns 3–18. */
     function withDoor(): Apartment {
-      const feature = emptyRows(50, 40);
-      feature[2] = "wl".repeat(3) + "dr".repeat(4) + "wl".repeat(43);
+      const feature = emptyRows(200, 160);
+      feature[2] = "wl".repeat(3) + "dr".repeat(16) + "wl".repeat(181);
       return apartment({ feature });
     }
 
@@ -609,8 +609,8 @@ describe("PlanPage", () => {
     });
 
     it("warns about a piece across a wall in the inspector", async () => {
-      const feature = Array.from({ length: 40 }, () => "..".repeat(50));
-      feature[11] = "wl".repeat(50);
+      const feature = emptyRows(200, 160);
+      feature[45] = "wl".repeat(200);
       const wrapper = await arrange(arranged({ feature }));
       await wrapper.get("[data-testid=on-plan-f_bed]").trigger("click");
       expect(wrapper.get("[data-testid=inspector-warnings]").text()).toContain(

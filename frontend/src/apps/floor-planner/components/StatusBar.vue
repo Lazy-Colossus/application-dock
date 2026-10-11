@@ -57,7 +57,7 @@
         +
       </button>
     </span>
-    <span class="fp-mono">1 square = 20 cm</span>
+    <span class="fp-mono">1 square = 5 cm</span>
   </div>
 </template>
 

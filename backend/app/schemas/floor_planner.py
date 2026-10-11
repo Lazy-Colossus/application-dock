@@ -8,17 +8,17 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-DEFAULT_COLS = 50
-DEFAULT_ROWS = 40
+DEFAULT_COLS = 200  # 10 m
+DEFAULT_ROWS = 160  # 8 m
 EMPTY_CELL = ".."
-CELL_CM = 20
+CELL_CM = 5
 SURFACE_CODES = frozenset(
     {EMPTY_CELL, "t0", "t1", "t2", "t3", "w0", "w1", "w2", "c0", "c1", "c2", "c3", "b0"}
 )
 FEATURE_CODES = frozenset({EMPTY_CELL, "wl", "wn", "dr", "fd"})
 DOOR_CODES = frozenset({"dr", "fd"})
-MIN_SIDE = 5  # 1 m
-MAX_SIDE = 150  # 30 m
+MIN_SIDE = 20  # 1 m
+MAX_SIDE = 300  # 15 m
 LABEL_MAX = 40
 NAME_MAX = 40
 NOTE_MAX = 200

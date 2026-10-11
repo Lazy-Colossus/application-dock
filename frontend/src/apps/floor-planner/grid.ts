@@ -1,7 +1,7 @@
 import { EMPTY, type Brush } from "./codes";
 import type { DoorSetting, Label } from "./types";
 
-export const CELL_CM = 20;
+export const CELL_CM = 5;
 
 export interface Cell {
   col: number;
@@ -59,10 +59,14 @@ export function lineCells(a: Cell, b: Cell): Cell[] {
 export const BRUSH_SIZES = [1, 2, 5] as const;
 export type BrushSize = (typeof BRUSH_SIZES)[number];
 
+/** Plan brushes in squares: 5, 10, 20 and 50 cm. */
+export const PLAN_BRUSH_SIZES = [1, 2, 4, 10] as const;
+export type PlanBrushSize = (typeof PLAN_BRUSH_SIZES)[number];
+
 /** An n×n square per cell, centred on odd sizes and growing right/down on even ones, clipped to the plan. */
 export function stampCells(
   cells: Cell[],
-  size: BrushSize,
+  size: number,
   cols: number,
   rows: number,
 ): Cell[] {
@@ -173,21 +177,42 @@ export function runs(rows: string[]): Run[] {
   return out;
 }
 
-export function bounds(cells: Cell[]): { cols: number; rows: number } {
-  if (cells.length === 0) return { cols: 0, rows: 0 };
-  const cs = cells.map((c) => c.col);
-  const rs = cells.map((c) => c.row);
-  return {
-    cols: Math.max(...cs) - Math.min(...cs) + 1,
-    rows: Math.max(...rs) - Math.min(...rs) + 1,
-  };
+/** A loop, not Math.min(...): a 15 m rectangle is 90,000 squares, too many to spread as arguments. */
+export function bounds(cells: Cell[]): {
+  col: number;
+  row: number;
+  cols: number;
+  rows: number;
+} {
+  if (cells.length === 0) return { col: 0, row: 0, cols: 0, rows: 0 };
+  let [c0, c1, r0, r1] = [Infinity, -Infinity, Infinity, -Infinity];
+  for (const { col, row } of cells) {
+    c0 = Math.min(c0, col);
+    c1 = Math.max(c1, col);
+    r0 = Math.min(r0, row);
+    r1 = Math.max(r1, row);
+  }
+  return { col: c0, row: r0, cols: c1 - c0 + 1, rows: r1 - r0 + 1 };
 }
 
-export const metres = (squares: number): string => (squares * 0.2).toFixed(2);
+/** Horizontal runs of the given squares, so a stroke preview draws one rect per run, not per square. */
+export function cellRuns(cells: Cell[]): Omit<Run, "code">[] {
+  const sorted = [...cells].sort((a, b) => a.row - b.row || a.col - b.col);
+  const out: Omit<Run, "code">[] = [];
+  for (const { col, row } of sorted) {
+    const prev = out[out.length - 1];
+    if (prev && prev.row === row && prev.col + prev.len === col) prev.len++;
+    else out.push({ row, col, len: 1 });
+  }
+  return out;
+}
 
-/** Metres → whole squares, rounding up. The inner round cancels float noise (8.8 m is 44, not 45). */
+export const metres = (squares: number): string =>
+  ((squares * CELL_CM) / 100).toFixed(2);
+
+/** Metres → whole squares, rounding up. The inner round cancels float noise (8.8 m is 176, not 177). */
 export const squaresFor = (m: number): number =>
-  Math.ceil(Math.round(m * 500) / 100);
+  Math.ceil(Math.round((m * 10000) / CELL_CM) / 100);
 
 /** "Wall · 3.40 m" for a one-square-wide stroke, otherwise "Tile · 1.60 × 2.60 m". */
 export function readout(cells: Cell[], brushLabel: string): string {
@@ -211,7 +236,7 @@ export function uniqueCells(cells: Cell[]): Cell[] {
 
 /** Ruler band width around the plan, in cm. */
 export const RULER_CM = 40;
-/** Screen pixels per cm at 100 % zoom: 16 px per square, as in the mockup. */
+/** Screen pixels per cm at 100 % zoom: 80 px per metre, as in the mockup. */
 export const PX_PER_CM = 0.8;
 /** Label text height on screen, kept constant across zoom levels. */
 export const LABEL_PX = 11;
@@ -250,7 +275,14 @@ export function labelAtCell(
   );
 }
 
-export const ZOOM_LEVELS = [0.5, 0.75, 1, 1.5, 2];
+// The top levels exist so single 5 cm squares are big enough to hit.
+export const ZOOM_LEVELS = [0.5, 0.75, 1, 1.5, 2, 3, 4];
+
+/** The finest grid spacing, in cm, whose lines stay at least this far apart on screen. */
+const GRID_MIN_PX = 8;
+export function minorGridCm(zoom: number): number {
+  return CELL_CM * PX_PER_CM * zoom >= GRID_MIN_PX ? CELL_CM : 20;
+}
 
 /** The unclamped plan position under a screen point, in cm. */
 export function cmAt(

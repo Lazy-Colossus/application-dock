@@ -2,7 +2,7 @@
   <div class="plan-info" data-testid="plan-info">
     <section class="plan-info__card">
       <h3 class="plan-info__heading">Scale</h3>
-      <div class="fp-mono plan-info__scale">1 square = 20 cm</div>
+      <div class="fp-mono plan-info__scale">1 square = 5 cm</div>
       <div class="plan-info__bar" aria-hidden="true">
         <span
           v-for="i in 5"
@@ -14,7 +14,7 @@
         <span>0</span><span>1 m</span>
       </div>
       <p class="plan-info__note">
-        Every 5 squares is 1 m, marked with a darker grid line.
+        Every 20 squares is 1 m, marked with a darker grid line.
       </p>
     </section>
 
@@ -33,8 +33,8 @@
             v-model.number="width"
             type="number"
             min="1"
-            max="30"
-            step="0.2"
+            max="15"
+            step="0.05"
             data-testid="resize-width"
           />
         </label>
@@ -44,8 +44,8 @@
             v-model.number="depth"
             type="number"
             min="1"
-            max="30"
-            step="0.2"
+            max="15"
+            step="0.05"
             data-testid="resize-depth"
           />
         </label>
@@ -59,7 +59,7 @@
       >
         Resize
       </button>
-      <p v-if="!valid" class="plan-info__muted">Each side can be 1–30 m.</p>
+      <p v-if="!valid" class="plan-info__muted">Each side can be 1–15 m.</p>
     </section>
 
     <section>
@@ -120,7 +120,7 @@ watch(
   { immediate: true },
 );
 
-const inRange = (m: number) => Number.isFinite(m) && m >= 1 && m <= 30;
+const inRange = (m: number) => Number.isFinite(m) && m >= 1 && m <= 15;
 const valid = computed(() => inRange(width.value) && inRange(depth.value));
 
 function apply(): void {

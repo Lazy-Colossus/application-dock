@@ -130,22 +130,22 @@ describe("doorShape", () => {
   };
 
   it("swings one leaf from its hinge into the chosen side", () => {
-    // The door is squares (3,2)–(3,3): x 60–80 cm, y 40–80 cm.
+    // The door is squares (3,2)–(3,3): x 15–20 cm, y 10–20 cm.
     const shape = inner({ into: 1, hinge: 0 });
-    expect(shape.gap).toEqual({ x: 60, y: 40, w: 20, h: 40 });
-    expect(shape.widthCm).toBe(40);
+    expect(shape.gap).toEqual({ x: 15, y: 10, w: 5, h: 10 });
+    expect(shape.widthCm).toBe(10);
     expect(shape.leaves).toEqual([
-      { pivot: [80, 40], open: [120, 40], shut: [80, 80], len: 40, sweep: 1 },
+      { pivot: [20, 10], open: [30, 10], shut: [20, 20], len: 10, sweep: 1 },
     ]);
     const other = inner({ into: 0, hinge: 1 }).leaves[0];
-    expect(other).toMatchObject({ pivot: [60, 80], open: [20, 80] });
+    expect(other).toMatchObject({ pivot: [15, 20], open: [5, 20] });
   });
 
   it("splits a double door into two half leaves meeting in the middle", () => {
     const leaves = inner({ into: 1, double: true }).leaves;
     expect(leaves.map((l) => [l.pivot, l.shut, l.len])).toEqual([
-      [[80, 40], [80, 60], 20],
-      [[80, 80], [80, 60], 20],
+      [[20, 10], [20, 15], 5],
+      [[20, 20], [20, 15], 5],
     ]);
   });
 });

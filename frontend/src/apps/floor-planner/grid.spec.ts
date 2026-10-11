@@ -11,13 +11,16 @@ import {
   boardLayout,
 } from "./codes";
 import {
+  bounds,
   cellAt,
+  cellRuns,
   cmAt,
   codeAt,
   emptyRows,
   labelAtCell,
   labelsOutside,
   lineCells,
+  minorGridCm,
   paint,
   readout,
   rectCells,
@@ -174,23 +177,55 @@ describe("runs", () => {
 describe("readout", () => {
   it("gives one length for a one-square-wide stroke", () => {
     expect(
-      readout(lineCells({ col: 0, row: 0 }, { col: 16, row: 0 }), "Wall"),
+      readout(lineCells({ col: 0, row: 0 }, { col: 67, row: 0 }), "Wall"),
     ).toBe("Wall · 3.40 m");
   });
 
   it("gives both sides for a box", () => {
     expect(
-      readout(rectCells({ col: 0, row: 0 }, { col: 7, row: 12 }), "Tile"),
+      readout(rectCells({ col: 0, row: 0 }, { col: 31, row: 51 }), "Tile"),
     ).toBe("Tile · 1.60 × 2.60 m");
+  });
+});
+
+describe("bounds", () => {
+  it("handles more squares than can be spread as arguments", () => {
+    const cells = rectCells({ col: 2, row: 1 }, { col: 301, row: 300 });
+    expect(bounds(cells)).toEqual({ col: 2, row: 1, cols: 300, rows: 300 });
+  });
+});
+
+describe("cellRuns", () => {
+  it("merges neighbouring squares in a row, in any order", () => {
+    expect(
+      cellRuns([
+        { col: 3, row: 1 },
+        { col: 0, row: 0 },
+        { col: 2, row: 1 },
+        { col: 1, row: 0 },
+        { col: 5, row: 1 },
+      ]),
+    ).toEqual([
+      { row: 0, col: 0, len: 2 },
+      { row: 1, col: 2, len: 2 },
+      { row: 1, col: 5, len: 1 },
+    ]);
+  });
+});
+
+describe("minorGridCm", () => {
+  it("shows single squares only once they are 8 px apart", () => {
+    expect(minorGridCm(1)).toBe(20);
+    expect(minorGridCm(2)).toBe(5);
   });
 });
 
 describe("squaresFor", () => {
   it.each([
-    [8.8, 44],
-    [8.81, 45],
-    [1, 5],
-    [7.4, 37],
+    [8.8, 176],
+    [8.81, 177],
+    [1, 20],
+    [7.4, 148],
   ])("%s m is %s squares", (m, squares) => {
     expect(squaresFor(m)).toBe(squares);
   });
@@ -284,16 +319,14 @@ describe("cellAt", () => {
       col: 0,
       row: 0,
     });
-    expect(
-      cellAt(100 + 32 + 16 * 3 + 1, 50 + 32 + 16, rect, 1, 10, 10),
-    ).toEqual({
+    expect(cellAt(100 + 32 + 4 * 3 + 1, 50 + 32 + 4, rect, 1, 10, 10)).toEqual({
       col: 3,
       row: 1,
     });
   });
 
   it("scales with zoom without changing which square is hit", () => {
-    expect(cellAt(100 + 64 + 32 * 3 + 1, 50 + 64, rect, 2, 10, 10)).toEqual({
+    expect(cellAt(100 + 64 + 8 * 3 + 1, 50 + 64, rect, 2, 10, 10)).toEqual({
       col: 3,
       row: 0,
     });
@@ -301,7 +334,7 @@ describe("cellAt", () => {
 
   it("is null on the rulers and past the plan", () => {
     expect(cellAt(100 + 10, 50 + 40, rect, 1, 10, 10)).toBeNull();
-    expect(cellAt(100 + 32 + 16 * 10, 50 + 40, rect, 1, 10, 10)).toBeNull();
+    expect(cellAt(100 + 32 + 4 * 10, 50 + 40, rect, 1, 10, 10)).toBeNull();
   });
 });
 

@@ -132,7 +132,7 @@
       </div>
       <div class="draw-panel__segmented" role="group" aria-label="Brush size">
         <button
-          v-for="n in BRUSH_SIZES"
+          v-for="n in PLAN_BRUSH_SIZES"
           :key="n"
           type="button"
           class="fp-mono"
@@ -142,12 +142,12 @@
           :title="
             shape === 'rectangle'
               ? 'Brush size is for Freehand only'
-              : `${n * 20} cm brush`
+              : `${n * CELL_CM} cm brush`
           "
           :data-testid="`size-${n}`"
           @click="emit('update:size', n)"
         >
-          {{ n }}×{{ n }}
+          {{ n * CELL_CM }}
         </button>
       </div>
     </section>
@@ -166,14 +166,14 @@ import {
   type Brush,
   type FloorFamily,
 } from "../codes";
-import { BRUSH_SIZES, type BrushSize } from "../grid";
+import { CELL_CM, PLAN_BRUSH_SIZES, type PlanBrushSize } from "../grid";
 
 type Shape = "freehand" | "rectangle";
 
 const props = defineProps<{
   brush: Brush;
   shape: Shape;
-  size: BrushSize;
+  size: PlanBrushSize;
   canUndo: boolean;
   canRedo: boolean;
 }>();
@@ -181,7 +181,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   "update:brush": [brush: Brush];
   "update:shape": [shape: Shape];
-  "update:size": [size: BrushSize];
+  "update:size": [size: PlanBrushSize];
   undo: [];
   redo: [];
 }>();

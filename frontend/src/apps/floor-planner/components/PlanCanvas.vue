@@ -20,12 +20,12 @@
     <defs>
       <pattern
         id="fp-grid-minor"
-        :width="CELL_CM"
-        :height="CELL_CM"
+        :width="minorCm"
+        :height="minorCm"
         patternUnits="userSpaceOnUse"
       >
         <path
-          :d="`M ${CELL_CM} 0 L 0 0 0 ${CELL_CM}`"
+          :d="`M ${minorCm} 0 L 0 0 0 ${minorCm}`"
           fill="none"
           stroke="rgba(0,0,0,.09)"
           vector-effect="non-scaling-stroke"
@@ -55,7 +55,7 @@
         <rect width="2" height="8" fill="#aebb9f" />
       </pattern>
       <template v-for="t in TEXTURED" :key="t.code">
-        <!-- 60 cm tiles: three plan squares each. -->
+        <!-- 60 cm tiles. -->
         <pattern
           v-if="t.texture === 'tiles'"
           :id="`fp-${t.code}`"
@@ -394,11 +394,11 @@
       data-testid="stroke-preview"
     >
       <rect
-        v-for="c in stroke"
-        :key="`p${c.col}-${c.row}`"
-        :x="c.col * CELL_CM"
-        :y="c.row * CELL_CM"
-        :width="CELL_CM"
+        v-for="r in strokeRuns"
+        :key="`p${r.row}-${r.col}`"
+        :x="r.col * CELL_CM"
+        :y="r.row * CELL_CM"
+        :width="r.len * CELL_CM"
         :height="CELL_CM"
         :fill="brush.layer === 'both' ? '#ffffff' : fillFor(brush.code)"
         opacity="0.6"
@@ -473,16 +473,18 @@ import {
   RULER_CM,
   bounds,
   cellAt,
+  cellRuns,
   cmAt,
   codeAt,
   labelAtCell,
   lineCells,
+  minorGridCm,
   readout,
   rectCells,
   runs,
   stampCells,
   uniqueCells,
-  type BrushSize,
+  type PlanBrushSize,
   type Cell,
   type PlanGrid,
 } from "../grid";
@@ -501,7 +503,7 @@ const props = withDefaults(
     brush: Brush | null;
     shape: "freehand" | "rectangle";
     /** Freehand only: each square of the stroke paints an n×n block. */
-    brushSize?: BrushSize;
+    brushSize?: PlanBrushSize;
     placed?: PlacedPiece[];
     selectedId?: string | null;
     /** Placed pieces can be selected and dragged. */
@@ -674,14 +676,14 @@ const metresDown = computed(() =>
   Array.from({ length: Math.floor(heightCm.value / 100) + 1 }, (_, m) => m),
 );
 
+const minorCm = computed(() => minorGridCm(props.zoom));
+const strokeRuns = computed(() => cellRuns(stroke.value));
 const box = computed(() => {
   if (stroke.value.length === 0) return null;
-  const minCol = Math.min(...stroke.value.map((c) => c.col));
-  const minRow = Math.min(...stroke.value.map((c) => c.row));
-  const { cols, rows } = bounds(stroke.value);
+  const { col, row, cols, rows } = bounds(stroke.value);
   return {
-    x: minCol * CELL_CM,
-    y: minRow * CELL_CM,
+    x: col * CELL_CM,
+    y: row * CELL_CM,
     w: cols * CELL_CM,
     h: rows * CELL_CM,
   };

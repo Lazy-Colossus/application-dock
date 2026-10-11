@@ -24,13 +24,13 @@ def patch_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         auth_service.create_user(name)
 
 
-def _plan_body(base_rev: int = 0, cols: int = 5) -> dict:
+def _plan_body(base_rev: int = 0, cols: int = 20) -> dict:
     return {
         "base_rev": base_rev,
         "cols": cols,
-        "rows": 5,
-        "surface": ["w1" * cols] * 5,
-        "feature": [".." * cols] * 5,
+        "rows": 20,
+        "surface": ["w1" * cols] * 20,
+        "feature": [".." * cols] * 20,
         "labels": [],
     }
 
@@ -51,7 +51,7 @@ def test_listing_creates_my_apartment_once() -> None:
 def test_get_one_apartment(base: str) -> None:
     body = client.get(base).json()
     assert (body["name"], body["members"], body["plan_rev"]) == ("My apartment", ["test_user"], 0)
-    assert len(body["surface"]) == 40
+    assert len(body["surface"]) == 160
     assert "plan_updated_by" not in body
 
 
@@ -106,16 +106,16 @@ def test_a_member_removing_the_owner_is_403(base: str) -> None:
 def test_putting_the_plan(base: str) -> None:
     r = client.put(f"{base}/plan", json=_plan_body())
     assert r.status_code == 200
-    assert (r.json()["surface"][0], r.json()["rev"], r.json()["plan_rev"]) == ("w1" * 5, 1, 1)
+    assert (r.json()["surface"][0], r.json()["rev"], r.json()["plan_rev"]) == ("w1" * 20, 1, 1)
     assert client.put(f"{base}/plan", json=_plan_body()).status_code == 409
-    assert client.put(f"{base}/plan", json=_plan_body(1, cols=151)).status_code == 422
-    again = client.put(f"{base}/plan", json=_plan_body(1, cols=6))
+    assert client.put(f"{base}/plan", json=_plan_body(1, cols=301)).status_code == 422
+    again = client.put(f"{base}/plan", json=_plan_body(1, cols=21))
     assert (again.status_code, again.json()["plan_rev"]) == (200, 2)
 
 
 def _door_body(doors: list[dict]) -> dict:
     body = _plan_body()
-    body["feature"] = ["dr" + ".." * 4] + [".." * 5] * 4
+    body["feature"] = ["dr" + ".." * 19] + [".." * 20] * 19
     body["doors"] = doors
     return body
 

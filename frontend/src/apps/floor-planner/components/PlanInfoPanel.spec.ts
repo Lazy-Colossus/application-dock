@@ -7,10 +7,10 @@ afterEach(() => vi.restoreAllMocks());
 
 function plan(over: Partial<PlanGrid> = {}): PlanGrid {
   return {
-    cols: 44,
-    rows: 37,
-    surface: emptyRows(44, 37),
-    feature: emptyRows(44, 37),
+    cols: 176,
+    rows: 148,
+    surface: emptyRows(176, 148),
+    feature: emptyRows(176, 148),
     labels: [],
     doors: [],
     ...over,
@@ -26,12 +26,12 @@ describe("PlanInfoPanel", () => {
     await wrapper.get("[data-testid=resize-width]").setValue("10");
     await wrapper.get("[data-testid=resize-depth]").setValue("8.81");
     await wrapper.get("[data-testid=resize]").trigger("click");
-    expect(wrapper.emitted("resize")?.[0]).toEqual([50, 45]);
+    expect(wrapper.emitted("resize")?.[0]).toEqual([200, 177]);
   });
 
   it("confirms only when shrinking would drop labels", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
-    const labels = [{ id: "a", text: "Bath", col: 40, row: 2 }];
+    const labels = [{ id: "a", text: "Bath", col: 160, row: 2 }];
     const wrapper = mount(PlanInfoPanel, {
       props: { plan: plan({ labels }) },
     });
@@ -46,11 +46,11 @@ describe("PlanInfoPanel", () => {
     expect(wrapper.emitted("resize")).toHaveLength(1);
   });
 
-  it("refuses sizes outside 1–30 m", async () => {
+  it("refuses sizes outside 1–15 m", async () => {
     const wrapper = mount(PlanInfoPanel, {
       props: { plan: plan() },
     });
-    await wrapper.get("[data-testid=resize-width]").setValue("31");
+    await wrapper.get("[data-testid=resize-width]").setValue("15.05");
     expect(
       wrapper.get("[data-testid=resize]").attributes("disabled"),
     ).toBeDefined();
