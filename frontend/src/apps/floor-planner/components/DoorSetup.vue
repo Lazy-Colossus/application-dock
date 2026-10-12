@@ -42,26 +42,22 @@
       <span class="door-setup__label">Leaves</span>
       <div class="door-setup__seg" role="group" aria-label="Leaves">
         <button
+          v-for="opt in LEAVES"
+          :key="opt.id"
           type="button"
-          :aria-pressed="!door.setting.double"
-          data-testid="door-single"
-          @click="set({ double: false })"
+          :aria-pressed="leaves === opt.id"
+          :data-testid="`door-${opt.id}`"
+          @click="set(opt.patch)"
         >
-          Single
-        </button>
-        <button
-          type="button"
-          :aria-pressed="door.setting.double"
-          data-testid="door-double"
-          @click="set({ double: true })"
-        >
-          Double
+          {{ opt.label }}
         </button>
       </div>
     </div>
 
-    <div v-if="!door.setting.double" class="door-setup__row">
-      <span class="door-setup__label">Hinge</span>
+    <div v-if="leaves !== 'double'" class="door-setup__row">
+      <span class="door-setup__label">
+        {{ leaves === "sliding" ? "Slides to" : "Hinge" }}
+      </span>
       <div class="door-setup__seg" role="group" aria-label="Hinge">
         <button
           v-for="(name, i) in hingeNames"
@@ -121,6 +117,19 @@ const emit = defineEmits<{
 const title = computed(
   () =>
     `${props.door.code === "fd" ? "Front door" : "Door"} · ${doorShape(props.door).widthCm} cm`,
+);
+const LEAVES = [
+  { id: "single", label: "Single", patch: { double: false, sliding: false } },
+  { id: "double", label: "Double", patch: { double: true, sliding: false } },
+  { id: "sliding", label: "Sliding", patch: { double: false, sliding: true } },
+] as const;
+
+const leaves = computed(() =>
+  props.door.setting.sliding
+    ? "sliding"
+    : props.door.setting.double
+      ? "double"
+      : "single",
 );
 const hingeNames = computed(() =>
   props.door.dir === "h" ? ["Left", "Right"] : ["Top", "Bottom"],

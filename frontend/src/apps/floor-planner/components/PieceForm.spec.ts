@@ -69,6 +69,25 @@ describe("PieceForm", () => {
     });
   });
 
+  it("turns a round piece into a real oval, not a circle", async () => {
+    const wrapper = form(null);
+    await wrapper.get("[data-testid=piece-name]").setValue("Table");
+    await wrapper.get("[data-testid=shape-round]").trigger("click");
+    await wrapper.get("[data-testid=piece-diameter]").setValue("110");
+    await wrapper.get("[data-testid=shape-oval]").trigger("click");
+    expect(
+      (wrapper.get("[data-testid=piece-depth]").element as HTMLInputElement)
+        .value,
+    ).toBe("66");
+    await wrapper.get("[data-testid=piece-depth]").setValue("80");
+    await wrapper.get("form").trigger("submit");
+    expect(wrapper.emitted("save")?.[0][0]).toMatchObject({
+      shape: "oval",
+      width_cm: 110,
+      depth_cm: 80,
+    });
+  });
+
   it("can't save without a name or with a zero size", async () => {
     const wrapper = form(null);
     const save = () =>

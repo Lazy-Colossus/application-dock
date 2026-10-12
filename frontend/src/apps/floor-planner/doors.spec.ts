@@ -47,6 +47,7 @@ function flat(labels: Label[] = [], doors: DoorSetting[] = []): PlanGrid {
     labels,
     doors,
     sockets: [],
+    notes: [],
   };
 }
 
@@ -78,6 +79,7 @@ describe("findDoors", () => {
       into: 0,
       hinge: 0,
       double: false,
+      sliding: false,
     });
     const saved = { col: 1, row: 5, into: 1, hinge: 1, double: true } as const;
     expect(findDoors(flat([], [saved]))[1].setting).toEqual(saved);
@@ -148,6 +150,27 @@ describe("doorShape", () => {
       [[20, 10], [20, 15], 5],
       [[20, 20], [20, 15], 5],
     ]);
+  });
+
+  it("slides a sliding door along the wall face on the side it opens into", () => {
+    // Into the right, sliding to the top: flush against x 20, slid past the opening's top.
+    const shape = inner({ into: 1, hinge: 0, sliding: true });
+    expect(shape.leaves).toEqual([]);
+    expect(shape.slide).toEqual({
+      shut: { tail: [22.5, 10], lead: [22.5, 20] },
+      open: { tail: [22.5, 0], lead: [22.5, 10] },
+    });
+    // Into the left, sliding to the bottom.
+    expect(inner({ into: 0, hinge: 1, sliding: true }).slide).toEqual({
+      shut: { tail: [12.5, 20], lead: [12.5, 10] },
+      open: { tail: [12.5, 30], lead: [12.5, 20] },
+    });
+  });
+
+  it("slides rather than swings even if also set double", () => {
+    const shape = inner({ double: true, sliding: true });
+    expect(shape.leaves).toEqual([]);
+    expect(shape.slide).not.toBeNull();
   });
 });
 

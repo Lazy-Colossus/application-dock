@@ -54,6 +54,23 @@ describe("PlacementInspector", () => {
     expect(upright.emitted("rotate")).toEqual([[0], [90]]);
   });
 
+  it("pictures the piece turned each way, and marks the way it lies now", () => {
+    const wrapper = mount(PlacementInspector, {
+      props: { piece: sofa, placement: spot, warnings: [] },
+    });
+    const vertical = wrapper.get("[data-testid=rotate-vertical]");
+    const horizontal = wrapper.get("[data-testid=rotate-horizontal]");
+    // 220 cm long side fitted into 24 px: the sofa drawn 24 × ~10 px, about its centre.
+    expect(
+      vertical.get("[data-testid=orient-icon] g").attributes("transform"),
+    ).toBe("rotate(90) translate(-12 -5.181818181818182)");
+    expect(
+      horizontal.get("[data-testid=orient-icon] g").attributes("transform"),
+    ).toMatch(/^rotate\(0\) /);
+    expect(vertical.attributes("aria-pressed")).toBe("true");
+    expect(horizontal.attributes("aria-pressed")).toBe("false");
+  });
+
   it("steps by 10° and takes a typed angle, wrapping into 0–359", async () => {
     const wrapper = mount(PlacementInspector, {
       props: {

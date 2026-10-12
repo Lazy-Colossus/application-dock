@@ -207,6 +207,9 @@ function setShape(shape: Shape): void {
       ? { width_cm: d.width_cm, depth_cm: d.depth_cm }
       : { width_cm: 100, depth_cm: 60 };
   if (shape === "round") size.depth_cm = size.width_cm;
+  // Equal sides, say coming from Round, would draw the oval as a circle.
+  if (shape === "oval" && size.depth_cm === size.width_cm)
+    size.depth_cm = Math.max(1, Math.round(size.width_cm * 0.6));
   set({ shape, cells: null, ...size });
 }
 

@@ -46,6 +46,7 @@ function apartment(over: Partial<Apartment> = {}): Apartment {
     labels: [],
     doors: [],
     sockets: [],
+    notes: [],
     furniture: [],
     layouts: [{ id: "l_1", name: "Layout A", placements: [] }],
     ...over,
@@ -165,6 +166,27 @@ describe("the plan draft", () => {
     expect(body.feature[0].slice(0, 4)).toBe("wlwl");
     expect(body.labels[0]).toMatchObject({ text: "Hall", col: 2, row: 2 });
     expect(store.dirty).toBe(false);
+  });
+
+  it("adds, edits, moves and deletes notes, each one undo step, and saves them", async () => {
+    const store = drawing();
+    store.addNote(" Pipe ", { col: 2, row: 2 }, false);
+    const id = store.plan!.notes[0].id;
+    store.updateNote(id, "Pipe riser", true);
+    store.moveNote(id, { col: 4, row: 1 });
+    expect(store.plan!.notes).toEqual([
+      { id, text: "Pipe riser", col: 4, row: 1, vertical: true },
+    ]);
+    store.undo();
+    expect(store.plan!.notes[0]).toMatchObject({ col: 2, row: 2 });
+
+    putMock.mockResolvedValue(apartment({ rev: 4, plan_rev: 4 }));
+    await store.savePlan();
+    expect(putMock.mock.calls[0][1].notes).toEqual([
+      { id, text: "Pipe riser", col: 2, row: 2, vertical: true },
+    ]);
+    store.deleteNote(id);
+    expect(store.plan!.notes).toEqual([]);
   });
 
   it("keeps the drawing when someone else saved first", async () => {

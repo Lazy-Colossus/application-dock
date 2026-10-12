@@ -37,6 +37,7 @@ vi.mock("vue-router", async (importOriginal) => ({
 }));
 
 import PlanPage from "./PlanPage.vue";
+import PlanCanvas from "../components/PlanCanvas.vue";
 import { emptyRows } from "../grid";
 import { useFloorPlanStore } from "../stores/useFloorPlanStore";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -59,6 +60,7 @@ function apartment(over: Partial<Apartment> = {}): Apartment {
     labels: [],
     doors: [],
     sockets: [],
+    notes: [],
     furniture: [],
     layouts: [],
     ...over,
@@ -204,7 +206,7 @@ describe("PlanPage", () => {
       await wrapper.get("[data-testid=save]").trigger("click");
       await flushPromises();
       expect(putMock.mock.calls[0][1].doors).toEqual([
-        { col: 3, row: 2, into: 0, hinge: 0, double: true },
+        { col: 3, row: 2, into: 0, hinge: 0, double: true, sliding: false },
       ]);
 
       await wrapper.trigger("keydown", { key: "Escape" });
@@ -620,6 +622,21 @@ describe("PlanPage", () => {
         "/floor-planner/apartments/a_1/layouts/l_a/placements/f_bed",
       );
       expect(wrapper.find("[data-testid=arrange-hint]").exists()).toBe(true);
+    });
+
+    it("measures in Arrange with its own toggle, instead of selecting", async () => {
+      const wrapper = await arrange();
+      const toggle = wrapper.get("[data-testid=arrange-measure]");
+      await toggle.trigger("click");
+      expect(toggle.attributes("aria-pressed")).toBe("true");
+      expect(wrapper.find("[data-testid=measure-hint]").exists()).toBe(true);
+      expect(wrapper.getComponent(PlanCanvas).props("measuring")).toBe(true);
+      expect(wrapper.getComponent(PlanCanvas).props("arranging")).toBe(false);
+      await wrapper.get("[data-testid=mode-draw]").trigger("click");
+      await wrapper.get("[data-testid=mode-arrange]").trigger("click");
+      expect(
+        wrapper.get("[data-testid=arrange-measure]").attributes("aria-pressed"),
+      ).toBe("false");
     });
 
     it("warns about a piece across a wall in the inspector", async () => {

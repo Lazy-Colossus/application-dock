@@ -16,7 +16,9 @@ export type BrushId =
   | "balcony"
   | "eraser"
   | "label"
-  | "socket";
+  | "note"
+  | "socket"
+  | "measure";
 
 export interface Swatch {
   code: string;
@@ -26,7 +28,7 @@ export interface Swatch {
 
 export interface Brush {
   id: BrushId;
-  /** Which layer a stroke writes; the eraser clears both; the label tool paints nothing. */
+  /** Which layer a stroke writes; the eraser clears both; the other tools paint nothing. */
   layer: Layer | "both" | null;
   code: string;
 }
@@ -102,7 +104,9 @@ export const STRUCTURE: StructureBrush[] = [
 
 export const ERASER: Brush = { id: "eraser", layer: "both", code: EMPTY };
 export const LABEL_TOOL: Brush = { id: "label", layer: null, code: EMPTY };
+export const NOTE_TOOL: Brush = { id: "note", layer: null, code: EMPTY };
 export const SOCKET_TOOL: Brush = { id: "socket", layer: null, code: EMPTY };
+export const MEASURE_TOOL: Brush = { id: "measure", layer: null, code: EMPTY };
 
 export function floorBrush(
   family: FloorFamily,
@@ -269,7 +273,9 @@ const NAMES = new Map<BrushId, string>([
   ...STRUCTURE.map((s) => [s.id, s.label] as [BrushId, string]),
   ["eraser", "Eraser"],
   ["label", "Label"],
+  ["note", "Note"],
   ["socket", "Socket"],
+  ["measure", "Measure"],
 ]);
 
 export function brushName(id: BrushId): string {

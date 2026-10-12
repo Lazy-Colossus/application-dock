@@ -121,7 +121,7 @@ def _door_body(doors: list[dict]) -> dict:
 
 
 def test_door_settings_over_http(base: str) -> None:
-    door = {"col": 0, "row": 0, "into": 1, "hinge": 0, "double": True}
+    door = {"col": 0, "row": 0, "into": 1, "hinge": 0, "double": False, "sliding": True}
     r = client.put(f"{base}/plan", json=_door_body([door, {**door, "col": 3}]))
     assert (r.status_code, r.json()["doors"]) == (200, [door])
     assert client.get(base).json()["doors"] == [door]

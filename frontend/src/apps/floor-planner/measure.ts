@@ -1,5 +1,5 @@
 import { EMPTY, STRUCTURE } from "./codes";
-import { codeAt, metres, type Cell, type PlanGrid } from "./grid";
+import { CELL_CM, codeAt, metres, type Cell, type PlanGrid } from "./grid";
 
 /** Open floor: no feature on it, and inside the apartment. */
 const FLOOR = "fl";
@@ -94,4 +94,33 @@ export function measureText(m: Measure): string {
     return `Clear ${metres(m.h.len)} × ${metres(m.v.len)} m`;
   const name = STRUCTURE.find((s) => s.code === m.code)?.label ?? m.code;
   return `${name} · ${metres(m.span.len)} m`;
+}
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+/** The nearest grid corner, kept on the plan, so a ruler reads in whole 5 cm steps. */
+export function snapPoint(at: Point, cols: number, rows: number): Point {
+  const to = (v: number, squares: number) =>
+    Math.min(Math.max(Math.round(v / CELL_CM), 0), squares) * CELL_CM;
+  return { x: to(at.x, cols), y: to(at.y, rows) };
+}
+
+/** b pulled level with or plumb under a, whichever it strays from least; ties stay level. */
+export function straightPoint(a: Point, b: Point): Point {
+  return Math.abs(b.y - a.y) > Math.abs(b.x - a.x)
+    ? { x: a.x, y: b.y }
+    : { x: b.x, y: a.y };
+}
+
+const m = (cm: number) => (cm / 100).toFixed(2);
+
+/** "2.40 m", or "1.50 m · 1.20 × 0.90" on a slant, so both sides of the triangle show too. */
+export function rulerText(a: Point, b: Point): string {
+  const dx = Math.abs(b.x - a.x);
+  const dy = Math.abs(b.y - a.y);
+  const length = `${m(Math.hypot(dx, dy))} m`;
+  return dx && dy ? `${length} · ${m(dx)} × ${m(dy)}` : length;
 }

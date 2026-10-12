@@ -29,12 +29,28 @@ export interface Leaf {
   sweep: 0 | 1;
 }
 
+/** A sliding panel's span along the wall face; `lead` is the edge that meets the jamb when shut. */
+export interface Panel {
+  tail: Point;
+  lead: Point;
+}
+
+export interface Slide {
+  shut: Panel;
+  open: Panel;
+}
+
 export interface DoorShape {
   /** The opening in the wall, in cm. */
   gap: { x: number; y: number; w: number; h: number };
   widthCm: number;
+  /** Empty for a sliding door. */
   leaves: Leaf[];
+  slide: Slide | null;
 }
+
+/** Half the drawn leaf thickness, so a sliding panel sits flush against the wall face. */
+const PANEL_HALF_CM = 2.5;
 
 export const keyOf = (c: Cell): string => `${c.col},${c.row}`;
 
@@ -180,7 +196,7 @@ function defaultSetting(
     const [a, b] = doorSides(plan, door);
     if (a.kind === "outside" && b.kind !== "outside") into = 1;
   }
-  return { ...anchor, into, hinge: 0, double: false };
+  return { ...anchor, into, hinge: 0, double: false, sliding: false };
 }
 
 /** The names the setup panel offers for side 0 and side 1. */
@@ -203,9 +219,9 @@ export function sideNames(plan: PlanGrid, door: Door): [string, string] {
   return named[0] === named[1] ? fallback : [named[0], named[1]];
 }
 
-/** The opening, and each leaf swung open and shut, in plan cm. */
+/** The opening, and each leaf swung (or the panel slid) open and shut, in plan cm. */
 export function doorShape(door: Door): DoorShape {
-  const { into, hinge, double } = door.setting;
+  const { into, hinge, double, sliding } = door.setting;
   const sign = into === 0 ? -1 : 1;
   const x0 = door.col * CELL_CM;
   const y0 = door.row * CELL_CM;
@@ -231,11 +247,29 @@ export function doorShape(door: Door): DoorShape {
       sweep,
     };
   };
+  if (sliding) {
+    const out = face + sign * PANEL_HALF_CM;
+    const at = (along: number): Point =>
+      horizontal ? [along, out] : [out, along];
+    // Shut it covers the opening; open it lies along the wall past the end it slides towards.
+    const shift = hinge === 0 ? a - b : b - a;
+    const [tail, lead] = hinge === 0 ? [a, b] : [b, a];
+    return {
+      gap,
+      widthCm: b - a,
+      leaves: [],
+      slide: {
+        shut: { tail: at(tail), lead: at(lead) },
+        open: { tail: at(tail + shift), lead: at(lead + shift) },
+      },
+    };
+  }
+
   const mid = (a + b) / 2;
   const leaves = double
     ? [leaf(a, mid), leaf(b, mid)]
     : [hinge === 0 ? leaf(a, b) : leaf(b, a)];
-  return { gap, widthCm: b - a, leaves };
+  return { gap, widthCm: b - a, leaves, slide: null };
 }
 
 /** Settings only for doors that still exist, so painting a door away drops its setup. */

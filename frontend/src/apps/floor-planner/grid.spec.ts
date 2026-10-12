@@ -46,6 +46,7 @@ function grid(cols = 5, rows = 4): PlanGrid {
     labels: [],
     doors: [],
     sockets: [],
+    notes: [],
   };
 }
 

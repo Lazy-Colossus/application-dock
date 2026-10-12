@@ -1,5 +1,5 @@
 import { EMPTY, type Brush } from "./codes";
-import type { DoorSetting, Label, Socket } from "./types";
+import type { DoorSetting, Label, PlanNote, Socket } from "./types";
 
 export const CELL_CM = 5;
 
@@ -14,6 +14,7 @@ export interface PlanGrid {
   surface: string[];
   feature: string[];
   labels: Label[];
+  notes: PlanNote[];
   doors: DoorSetting[];
   sockets: Socket[];
 }
@@ -152,7 +153,7 @@ function resizeRows(rows: string[], cols: number, count: number): string[] {
   );
 }
 
-/** Grows with empty squares on the right and bottom; shrinking crops, dropping labels, door setups and sockets outside. */
+/** Grows with empty squares on the right and bottom; shrinking crops, dropping labels, notes, door setups and sockets outside. */
 export function resize(grid: PlanGrid, cols: number, rows: number): PlanGrid {
   const inside = (c: { col: number; row: number }) =>
     c.col < cols && c.row < rows;
@@ -162,6 +163,7 @@ export function resize(grid: PlanGrid, cols: number, rows: number): PlanGrid {
     surface: resizeRows(grid.surface, cols, rows),
     feature: resizeRows(grid.feature, cols, rows),
     labels: grid.labels.filter(inside),
+    notes: grid.notes.filter(inside),
     doors: grid.doors.filter(inside),
     sockets: grid.sockets.filter(inside),
   };

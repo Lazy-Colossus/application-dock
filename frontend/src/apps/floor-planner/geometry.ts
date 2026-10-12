@@ -79,6 +79,81 @@ export function topLeftForCentre(
   return { x: snap(cx - piece.width_cm / 2), y: snap(cy - piece.depth_cm / 2) };
 }
 
+/** How far a side may be from a wall face, either way, and still be pulled flush against it. */
+export const WALL_SNAP_CM = 15;
+
+/** Walls and the windows set in them; a door is an opening, so nothing snaps into it. */
+const SOLID = new Set(["wl", "wn"]);
+
+/**
+ * The shift along one axis that puts the box's low or high side flush with the nearest wall face
+ * within reach, or 0. `solid(along, across)` reads a square with the axes swapped as needed. A face
+ * only counts if it runs beside at least half of the box, so the end of a wall the piece pokes
+ * into (beside a door, say) doesn't pull it sideways.
+ */
+function wallShift(
+  lo: number,
+  hi: number,
+  across: number[],
+  solid: (along: number, across: number) => boolean,
+): number {
+  const beside = (wall: number, room: number) => {
+    // Solid both sides is a wall running the other way, say at a corner: it doesn't vote.
+    const open = across.filter((a) => !(solid(wall, a) && solid(room, a)));
+    const faced = open.filter((a) => solid(wall, a)).length;
+    return faced > 0 && faced * 2 >= open.length;
+  };
+  let best: number | null = null;
+  const consider = (shift: number) => {
+    if (best === null || Math.abs(shift) < Math.abs(best)) best = shift;
+  };
+  const faces = (edge: number) => {
+    const out: number[] = [];
+    const first = Math.ceil((edge - WALL_SNAP_CM) / CELL_CM);
+    const last = Math.floor((edge + WALL_SNAP_CM) / CELL_CM);
+    for (let i = first; i <= last; i++) out.push(i);
+    return out;
+  };
+  // Face i is the line between squares i - 1 and i. Whole cm, rounded away from the wall, so a
+  // box on a half centimetre never ends up touching it.
+  for (const i of faces(lo))
+    if (beside(i - 1, i)) consider(Math.ceil(i * CELL_CM - lo));
+  for (const i of faces(hi))
+    if (beside(i, i - 1)) consider(Math.floor(i * CELL_CM - hi));
+  return best ?? 0;
+}
+
+/**
+ * The top-left that sits a piece flush against any wall face within WALL_SNAP_CM of its sides,
+ * each axis on its own so a piece pushed into a corner meets both walls. Exact for quarter turns;
+ * at other angles the rotated bounding box is what touches the wall.
+ */
+export function snapToWalls(
+  piece: Sized,
+  at: Spot,
+  plan: PlanGrid,
+): { x_cm: number; y_cm: number } {
+  const solid = (col: number, row: number) =>
+    SOLID.has(codeAt(plan.feature, { col, row }));
+  const span = (from: number, to: number) => {
+    const out: number[] = [];
+    for (let i = Math.floor(from / CELL_CM); i < Math.ceil(to / CELL_CM); i++)
+      out.push(i);
+    return out;
+  };
+  const box = bounds(piece, at);
+  const dy = wallShift(
+    box.y,
+    box.y + box.h,
+    span(box.x, box.x + box.w),
+    (r, c) => solid(c, r),
+  );
+  // Across, judged where the piece will sit once up or down is settled.
+  const y = box.y + dy;
+  const dx = wallShift(box.x, box.x + box.w, span(y, y + box.h), solid);
+  return { x_cm: at.x_cm + dx, y_cm: at.y_cm + dy };
+}
+
 export type Warning = { kind: "wall" } | { kind: "outside" };
 
 export interface Placed {

@@ -29,7 +29,8 @@ export type SaveState = "saving" | "unsaved" | "saved";
 /**
  * A door's saved setup, keyed by its anchor: its first square in reading order.
  * `into` 0 opens towards the side above (a door in a horizontal wall) or to the left (in a
- * vertical wall), 1 below or right. `hinge` 0 is the left or top end, 1 the right or bottom.
+ * vertical wall), 1 below or right. `hinge` 0 is the left or top end, 1 the right or bottom;
+ * a sliding door slides towards its hinge end, along the wall face on its `into` side.
  */
 export interface DoorSetting {
   col: number;
@@ -37,6 +38,8 @@ export interface DoorSetting {
   into: 0 | 1;
   hinge: 0 | 1;
   double: boolean;
+  /** Absent in plans saved before sliding doors. */
+  sliding?: boolean;
 }
 
 export interface Socket {
@@ -49,6 +52,16 @@ export interface Label {
   text: string;
   col: number;
   row: number;
+}
+
+/** A short free-text note on the plan; unlike a label it names no room. */
+export interface PlanNote {
+  id: string;
+  text: string;
+  col: number;
+  row: number;
+  /** Reads bottom to top, up from its square. */
+  vertical: boolean;
 }
 
 export interface Furniture {
@@ -95,6 +108,7 @@ export interface Apartment extends ApartmentSummary {
   surface: string[];
   feature: string[];
   labels: Label[];
+  notes: PlanNote[];
   doors: DoorSetting[];
   sockets: Socket[];
   furniture: Furniture[];
