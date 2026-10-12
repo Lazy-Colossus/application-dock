@@ -22,6 +22,7 @@ MAX_SIDE = 300  # 15 m
 LABEL_MAX = 40
 NAME_MAX = 40
 NOTE_MAX = 200
+PLAN_NOTE_MAX = 80
 SIDE_CM_MAX = 1000
 PIECE_CELL_CM = 10
 CUSTOM_MAX = 40  # squares on each side: 4 m
@@ -104,6 +105,16 @@ class Label(BaseModel):
     row: int
 
 
+class PlanNote(BaseModel):
+    """A short free-text note on the plan. Unlike a label it names no room."""
+
+    id: str
+    text: str
+    col: int
+    row: int
+    vertical: bool = False
+
+
 class Socket(BaseModel):
     """An electricity socket marked on one plan square."""
 
@@ -120,8 +131,11 @@ class DoorSetting(BaseModel):
     # 0: towards the side above (horizontal wall) or left (vertical wall); 1: below / right.
     into: Literal[0, 1]
     # 0: hinged at the left (horizontal) or top (vertical) end; 1: right / bottom. Not for double.
+    # A sliding door slides open towards its hinge end.
     hinge: Literal[0, 1]
     double: bool = False
+    # Slides along the wall face on the `into` side instead of swinging; takes precedence.
+    sliding: bool = False
 
 
 class Furniture(BaseModel):
@@ -173,6 +187,7 @@ class ApartmentDoc(BaseModel):
     surface: list[str] = Field(default_factory=lambda: empty_rows(DEFAULT_COLS, DEFAULT_ROWS))
     feature: list[str] = Field(default_factory=lambda: empty_rows(DEFAULT_COLS, DEFAULT_ROWS))
     labels: list[Label] = Field(default_factory=list)
+    notes: list[PlanNote] = Field(default_factory=list)
     doors: list[DoorSetting] = Field(default_factory=list)
     sockets: list[Socket] = Field(default_factory=list)
     furniture: list[Furniture] = Field(default_factory=list)
@@ -200,6 +215,7 @@ class ApartmentView(ApartmentSummary):
     surface: list[str]
     feature: list[str]
     labels: list[Label]
+    notes: list[PlanNote]
     doors: list[DoorSetting]
     sockets: list[Socket]
     furniture: list[Furniture]
@@ -217,6 +233,7 @@ class PlanWriteRequest(BaseModel):
     surface: list[str]
     feature: list[str]
     labels: list[Label]
+    notes: list[PlanNote] = Field(default_factory=list)
     doors: list[DoorSetting] = Field(default_factory=list)
     sockets: list[Socket] = Field(default_factory=list)
 

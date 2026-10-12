@@ -15,6 +15,7 @@ from app.schemas.floor_planner import (
     Label,
     PieceDraft,
     PlacementRequest,
+    PlanNote,
     PlanWriteRequest,
     Socket,
 )
@@ -47,6 +48,19 @@ def _plan(cols: int = 20, rows: int = 24, **over: Any) -> PlanWriteRequest:
     }
     data.update(over)
     return PlanWriteRequest(**data)
+
+
+def test_notes_round_trip_trimmed_with_their_direction() -> None:
+    notes = [
+        PlanNote(id="n1", text="  Radiator under window ", col=4, row=5),
+        PlanNote(id="n2", text="Pipe", col=1, row=2, vertical=True),
+    ]
+    service.replace_plan("ana", _apt("ana"), _plan(notes=notes))
+    saved = service.get_apartment("ana", _apt("ana")).notes
+    assert [(n.text, n.col, n.row, n.vertical) for n in saved] == [
+        ("Radiator under window", 4, 5, False),
+        ("Pipe", 1, 2, True),
+    ]
 
 
 def test_a_drawn_plan_round_trips() -> None:
@@ -87,6 +101,18 @@ def _swap(layer: str, row: int, text: str) -> dict[str, list[str]]:
                 "labels": [
                     Label(id="a", text="A", col=0, row=0),
                     Label(id="a", text="B", col=1, row=0),
+                ]
+            },
+            "share an id",
+        ),
+        ({"notes": [PlanNote(id="n", text="Pipe", col=0, row=24)]}, "outside the plan"),
+        ({"notes": [PlanNote(id="n", text=" ", col=0, row=0)]}, "characters"),
+        ({"notes": [PlanNote(id="n", text="x" * 81, col=0, row=0)]}, "characters"),
+        (
+            {
+                "notes": [
+                    PlanNote(id="n", text="A", col=0, row=0),
+                    PlanNote(id="n", text="B", col=1, row=0),
                 ]
             },
             "share an id",

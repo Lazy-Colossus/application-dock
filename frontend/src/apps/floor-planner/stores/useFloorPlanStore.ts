@@ -13,6 +13,7 @@ import type {
   DoorSetting,
   Label,
   Placement,
+  PlanNote,
   SaveState,
 } from "../types";
 
@@ -32,6 +33,7 @@ function planOf(a: Apartment): PlanGrid {
     surface: a.surface,
     feature: a.feature,
     labels: a.labels,
+    notes: a.notes,
     doors: a.doors,
     sockets: a.sockets,
   };
@@ -373,6 +375,29 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
     );
   const deleteLabel = (id: string) =>
     editLabels((ls) => ls.filter((l) => l.id !== id));
+  const addNote = (text: string, cell: Cell, vertical: boolean) =>
+    step((p) => ({
+      ...p,
+      notes: [
+        ...p.notes,
+        {
+          id: `nt_${crypto.randomUUID()}`,
+          text: text.trim(),
+          vertical,
+          ...cell,
+        },
+      ],
+    }));
+  const editNotes = (fn: (notes: PlanNote[]) => PlanNote[]) =>
+    step((p) => ({ ...p, notes: fn(p.notes) }));
+  const moveNote = (id: string, cell: Cell) =>
+    editNotes((ns) => ns.map((n) => (n.id === id ? { ...n, ...cell } : n)));
+  const updateNote = (id: string, text: string, vertical: boolean) =>
+    editNotes((ns) =>
+      ns.map((n) => (n.id === id ? { ...n, text: text.trim(), vertical } : n)),
+    );
+  const deleteNote = (id: string) =>
+    editNotes((ns) => ns.filter((n) => n.id !== id));
   /** A door's swing side, hinge or leaves; one undo step like a stroke. */
   const setDoorSetting = (setting: DoorSetting) =>
     step((p) => setDoor(p, setting));
@@ -414,7 +439,7 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
   async function sendPlan(): Promise<boolean> {
     if (!draft.value) return true;
     const sent = draft.value.present;
-    const { cols, rows, surface, feature, labels, sockets } = sent;
+    const { cols, rows, surface, feature, labels, notes, sockets } = sent;
     const doors = liveDoorSettings(sent);
     saving.value = true;
     try {
@@ -425,6 +450,7 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
         surface,
         feature,
         labels,
+        notes,
         doors,
         sockets,
       });
@@ -500,6 +526,10 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
     moveLabel,
     renameLabel,
     deleteLabel,
+    addNote,
+    moveNote,
+    updateNote,
+    deleteNote,
     setDoorSetting,
     toggleSocket,
     undo,

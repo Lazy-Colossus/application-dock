@@ -15,23 +15,45 @@
       <dd class="fp-mono" data-testid="inspector-position">{{ position }}</dd>
     </dl>
     <div class="inspector__turn">
+      <!-- Each button shows the piece already turned that way: the words alone read ambiguously. -->
       <button
+        v-for="o in orientations"
+        :key="o.to"
         type="button"
-        class="fp-button"
-        title="Long side top to bottom (Shift+R)"
-        data-testid="rotate-vertical"
-        @click="emit('rotate', orient(piece, placement.rotation, 'vertical'))"
+        class="fp-button inspector__orient"
+        :class="{ 'inspector__orient--on': o.current }"
+        :aria-pressed="o.current"
+        :title="o.title"
+        :data-testid="`rotate-${o.to}`"
+        @click="emit('rotate', o.rotation)"
       >
-        Vertical
-      </button>
-      <button
-        type="button"
-        class="fp-button"
-        title="Long side left to right (R)"
-        data-testid="rotate-horizontal"
-        @click="emit('rotate', orient(piece, placement.rotation, 'horizontal'))"
-      >
-        Horizontal (R)
+        <svg
+          class="inspector__orient-icon"
+          :viewBox="`${-ICON_PX / 2} ${-ICON_PX / 2} ${ICON_PX} ${ICON_PX}`"
+          :width="ICON_PX"
+          :height="ICON_PX"
+          aria-hidden="true"
+          data-testid="orient-icon"
+        >
+          <g :transform="o.transform">
+            <template v-if="piece.shape === 'custom'">
+              <path
+                v-for="f in customFills(piece.cells ?? [], iconScale)"
+                :key="f.colour"
+                :d="f.d"
+                :fill="f.hex"
+              />
+            </template>
+            <path
+              v-else
+              :d="outline(piece, iconScale)"
+              :fill="colourHex(piece.colour)"
+              stroke="rgba(0,0,0,.45)"
+              stroke-width="1"
+            />
+          </g>
+        </svg>
+        {{ o.label }}
       </button>
     </div>
     <div class="inspector__angle">
@@ -90,7 +112,14 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import FurnitureShape from "./FurnitureShape.vue";
-import { SHAPES, sizeLabel } from "../furniture";
+import {
+  SHAPES,
+  colourHex,
+  customFills,
+  fitScale,
+  outline,
+  sizeLabel,
+} from "../furniture";
 import { ROTATION_STEP, bounds, normaliseRotation, orient } from "../geometry";
 import type { Furniture, Placement } from "../types";
 
@@ -113,6 +142,38 @@ function typed(e: Event): void {
   if (Number.isFinite(deg)) emit("rotate", normaliseRotation(deg));
   input.value = String(props.placement.rotation);
 }
+
+const ICON_PX = 28;
+/** The piece's longer side fills the icon, whichever way it's turned. */
+const iconScale = computed(() => fitScale(props.piece, 1, ICON_PX - 4));
+
+const orientations = computed(() =>
+  (
+    [
+      {
+        to: "vertical",
+        label: "Vertical",
+        title: "Long side top to bottom (Shift+R)",
+      },
+      {
+        to: "horizontal",
+        label: "Horizontal (R)",
+        title: "Long side left to right (R)",
+      },
+    ] as const
+  ).map((o) => {
+    const rotation = orient(props.piece, props.placement.rotation, o.to);
+    const { width_cm, depth_cm } = props.piece;
+    const s = iconScale.value;
+    return {
+      ...o,
+      rotation,
+      current: rotation === normaliseRotation(props.placement.rotation),
+      // Turned about its centre, which sits in the middle of the icon.
+      transform: `rotate(${rotation}) translate(${(-width_cm * s) / 2} ${(-depth_cm * s) / 2})`,
+    };
+  }),
+);
 
 const shapeLabel = computed(
   () =>
@@ -170,6 +231,22 @@ const position = computed(() => {
 }
 .inspector__turn .fp-button {
   flex: 1;
+}
+.inspector__orient {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: auto;
+  padding: 8px 6px;
+}
+.inspector__orient--on {
+  border-color: var(--fp-accent);
+  box-shadow: inset 0 0 0 1px var(--fp-accent);
+}
+.inspector__orient-icon {
+  display: block;
+  overflow: visible;
 }
 .inspector__angle {
   display: flex;

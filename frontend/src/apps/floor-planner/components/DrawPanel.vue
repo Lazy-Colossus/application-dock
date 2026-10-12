@@ -44,7 +44,8 @@
         class="draw-panel__tip"
         data-testid="door-tip"
       >
-        Click a door to choose which way it opens, its hinge, or make it double.
+        Click a door to choose which way it opens, its hinge, or make it double
+        or sliding.
       </p>
     </section>
 
@@ -135,6 +136,41 @@
           </svg>
           <span class="draw-panel__name">Socket</span>
         </button>
+        <button
+          type="button"
+          class="draw-panel__row"
+          :class="{ 'draw-panel__row--active': brush.id === 'note' }"
+          :aria-pressed="brush.id === 'note'"
+          title="Note: click to add, click one to edit, drag to move"
+          data-testid="brush-note"
+          @click="emit('update:brush', NOTE_TOOL)"
+        >
+          <span class="draw-panel__swatch draw-panel__swatch--note">…</span>
+          <span class="draw-panel__name">Note</span>
+        </button>
+        <button
+          type="button"
+          class="draw-panel__row"
+          :class="{ 'draw-panel__row--active': brush.id === 'measure' }"
+          :aria-pressed="brush.id === 'measure'"
+          title="Measure: drag, or click two points; Shift keeps it straight"
+          data-testid="brush-measure"
+          @click="emit('update:brush', MEASURE_TOOL)"
+        >
+          <svg
+            class="draw-panel__swatch draw-panel__swatch--measure"
+            viewBox="-7 -7 14 14"
+            aria-hidden="true"
+          >
+            <path
+              d="M -5.5 3 L 3 -5.5 M -4 1.5 l 1.5 1.5 M -1.5 -1 l 1.5 1.5 M 1 -3.5 l 1.5 1.5"
+              stroke="#2b2a27"
+              stroke-width="1.3"
+              stroke-linecap="round"
+            />
+          </svg>
+          <span class="draw-panel__name">Measure</span>
+        </button>
       </div>
     </section>
 
@@ -212,6 +248,8 @@ import {
   ERASER,
   FLOORS,
   LABEL_TOOL,
+  MEASURE_TOOL,
+  NOTE_TOOL,
   SOCKET_TOOL,
   STRUCTURE,
   floorBrush,
@@ -364,8 +402,13 @@ function swatchOf(f: FloorFamily): string {
 .draw-panel__swatch--lock {
   border: none;
 }
-.draw-panel__swatch--socket {
+.draw-panel__swatch--socket,
+.draw-panel__swatch--measure {
   border: none;
+}
+.draw-panel__swatch--note {
+  border-radius: 6px;
+  font-size: 10px;
 }
 .draw-panel__chips {
   display: flex;

@@ -2,7 +2,7 @@
   <svg
     ref="svg"
     class="plan-canvas"
-    :class="{ 'plan-canvas--editable': editable }"
+    :class="{ 'plan-canvas--editable': editable || measuring }"
     :viewBox="`${-RULER_CM} ${-RULER_CM} ${widthCm + RULER_CM} ${heightCm + RULER_CM}`"
     :width="(widthCm + RULER_CM) * scale"
     :height="(heightCm + RULER_CM) * scale"
@@ -242,7 +242,7 @@
       class="plan-canvas__piece"
       :class="{ 'plan-canvas__piece--movable': arranging }"
       :data-testid="`placed-${p.piece.id}`"
-      @pointerdown.stop="pieceDown($event, p)"
+      @pointerdown="pieceDown($event, p)"
     >
       <!-- The outlines sit inside the turned group so they follow the piece at any angle. -->
       <g :transform="pieceTransform(p)">
@@ -360,32 +360,53 @@
           @pointerdown="arranging && $event.stopPropagation()"
           @click="arranging && emit('doorToggle', d.door.key)"
         />
-        <!-- The handle: one click swings the door open or shut, in any mode. -->
-        <g
-          class="plan-canvas__door-handle"
-          role="button"
-          tabindex="0"
-          :aria-label="d.open ? 'Close this door' : 'Open this door'"
-          :data-testid="`door-handle-${d.door.key}`"
-          @pointerdown.stop
-          @click.stop="emit('doorToggle', d.door.key)"
-          @keydown.enter.prevent="emit('doorToggle', d.door.key)"
-          @keydown.space.prevent="emit('doorToggle', d.door.key)"
-        >
-          <circle
-            :cx="handleAt(leaf, d.open)[0]"
-            :cy="handleAt(leaf, d.open)[1]"
-            :r="12 * cmPerPx"
-            fill="transparent"
-          />
-          <circle
-            :cx="handleAt(leaf, d.open)[0]"
-            :cy="handleAt(leaf, d.open)[1]"
-            :r="4.5 * cmPerPx"
-            fill="#2b2a27"
-          />
-        </g>
       </template>
+      <template v-if="d.shape.slide">
+        <!-- The track: everywhere the panel travels, on the side it slides along. -->
+        <line
+          :x1="d.shape.slide.open.tail[0]"
+          :y1="d.shape.slide.open.tail[1]"
+          :x2="d.shape.slide.shut.lead[0]"
+          :y2="d.shape.slide.shut.lead[1]"
+          :stroke="d.tint"
+          stroke-width="1.2"
+          stroke-dasharray="4 3"
+          :opacity="d.open ? 0.7 : 0.3"
+          vector-effect="non-scaling-stroke"
+          pointer-events="none"
+          data-testid="door-track"
+        />
+        <line
+          :x1="(d.open ? d.shape.slide.open : d.shape.slide.shut).tail[0]"
+          :y1="(d.open ? d.shape.slide.open : d.shape.slide.shut).tail[1]"
+          :x2="(d.open ? d.shape.slide.open : d.shape.slide.shut).lead[0]"
+          :y2="(d.open ? d.shape.slide.open : d.shape.slide.shut).lead[1]"
+          :stroke="d.tint"
+          stroke-width="5"
+          :class="{ 'plan-canvas__door-hit': arranging }"
+          :pointer-events="arranging ? 'stroke' : 'none'"
+          data-testid="door-panel"
+          @pointerdown="arranging && $event.stopPropagation()"
+          @click="arranging && emit('doorToggle', d.door.key)"
+        />
+      </template>
+      <!-- The handle: one click swings or slides the door open or shut, in any mode. -->
+      <g
+        v-for="(h, i) in d.handles"
+        :key="`handle-${i}`"
+        class="plan-canvas__door-handle"
+        role="button"
+        tabindex="0"
+        :aria-label="d.open ? 'Close this door' : 'Open this door'"
+        :data-testid="`door-handle-${d.door.key}`"
+        @pointerdown.stop
+        @click.stop="emit('doorToggle', d.door.key)"
+        @keydown.enter.prevent="emit('doorToggle', d.door.key)"
+        @keydown.space.prevent="emit('doorToggle', d.door.key)"
+      >
+        <circle :cx="h[0]" :cy="h[1]" :r="12 * cmPerPx" fill="transparent" />
+        <circle :cx="h[0]" :cy="h[1]" :r="4.5 * cmPerPx" fill="#2b2a27" />
+      </g>
     </g>
 
     <!-- Drawn in screen px, over furniture, so a socket a piece would block still shows. -->
@@ -407,6 +428,22 @@
           stroke="#2b2a27"
           stroke-width="1.5"
         />
+      </g>
+    </g>
+
+    <!-- Over furniture and doors, so a note stays readable wherever it sits. -->
+    <g pointer-events="none" data-testid="notes">
+      <g
+        v-for="n in plan.notes"
+        :key="n.id"
+        class="plan-canvas__note"
+        :transform="noteTransform(n)"
+        :data-testid="`plan-note-${n.id}`"
+      >
+        <rect v-bind="noteRect(n.text)" rx="6" />
+        <text :font-size="NOTE_PX" dominant-baseline="central">
+          {{ n.text }}
+        </text>
       </g>
     </g>
 
@@ -448,6 +485,50 @@
       >
         {{ measured.text }}
       </text>
+    </g>
+
+    <g v-if="ruler" pointer-events="none" data-testid="ruler">
+      <line
+        :x1="ruler.a.x"
+        :y1="ruler.a.y"
+        :x2="ruler.b.x"
+        :y2="ruler.b.y"
+        stroke="#1d4ed8"
+        stroke-width="2"
+        vector-effect="non-scaling-stroke"
+        data-testid="ruler-line"
+      />
+      <circle
+        v-for="(pt, i) in [ruler.a, ruler.b]"
+        :key="i"
+        :cx="pt.x"
+        :cy="pt.y"
+        :r="3.5 * cmPerPx"
+        fill="#1d4ed8"
+      />
+      <g
+        v-if="rulerLabel"
+        :transform="`translate(${rulerLabel.x} ${rulerLabel.y}) scale(${cmPerPx})`"
+      >
+        <rect
+          :x="-rulerLabel.w / 2"
+          y="-11"
+          :width="rulerLabel.w"
+          height="22"
+          rx="4"
+          fill="#1c1c1a"
+        />
+        <text
+          font-size="12"
+          text-anchor="middle"
+          dominant-baseline="central"
+          fill="#ffffff"
+          font-weight="600"
+          data-testid="ruler-text"
+        >
+          {{ rulerLabel.text }}
+        </text>
+      </g>
     </g>
 
     <g
@@ -503,7 +584,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import {
   BALCONY_PATTERN,
   BOARD_REPEAT,
@@ -525,11 +606,27 @@ import {
   findDoors,
   type Door,
   type Leaf,
+  type Panel,
 } from "../doors";
-import { bounds as pieceBounds, snap, type Box } from "../geometry";
+import {
+  bounds as pieceBounds,
+  snap,
+  snapToWalls,
+  type Box,
+} from "../geometry";
 import { SOCKET_PX, socketAt } from "../sockets";
-import { buildRunIndex, measureAt, measureText, type Span } from "../measure";
-import type { Furniture, Placement } from "../types";
+import {
+  buildRunIndex,
+  measureAt,
+  measureText,
+  rulerText,
+  snapPoint,
+  straightPoint,
+  type Point,
+  type Span,
+} from "../measure";
+import { NOTE_PX, noteAnchor, noteAt, noteBox } from "../notes";
+import type { Furniture, Placement, PlanNote } from "../types";
 import {
   CELL_CM,
   LABEL_PX,
@@ -579,8 +676,11 @@ const props = withDefaults(
     droppable?: boolean;
     /** Keys of the doors this viewer has swung shut. */
     closedDoors?: string[];
+    /** Clicks and drags lay a ruler instead of painting or arranging. */
+    measuring?: boolean;
   }>(),
   {
+    measuring: false,
     closedDoors: () => [],
     brushSize: 1,
     straight: false,
@@ -600,6 +700,10 @@ const emit = defineEmits<{
   socketToggle: [cell: Cell];
   labelPick: [id: string];
   labelMove: [id: string, cell: Cell];
+  /** A Note tool click on an empty spot. */
+  noteAt: [cell: Cell];
+  notePick: [id: string];
+  noteMove: [id: string, cell: Cell];
   select: [id: string | null];
   move: [id: string, x: number, y: number];
   /** A tray card dropped with its centre at (x, y) cm. */
@@ -613,7 +717,17 @@ const svg = ref<SVGSVGElement | null>(null);
 const stroke = ref<Cell[]>([]);
 let start: Cell | null = null;
 let last: Cell | null = null;
-let dragged: { id: string; from: Cell; to: Cell } | null = null;
+/** A label or note pressed with its tool: a click edits it, a drag moves it. */
+let dragged: {
+  kind: "label" | "note";
+  id: string;
+  from: Cell;
+  to: Cell;
+} | null = null;
+/** The ruler: `done` once both ends are down, until then `b` follows the pointer. */
+const ruler = ref<{ a: Point; b: Point; done: boolean } | null>(null);
+/** The button is still down on the ruler's first end; releasing elsewhere finishes a drag. */
+let rulerPress = false;
 /** A press on an existing door with a door brush: a click opens its setup, a drag paints. */
 let doorPress: Cell | null = null;
 let pieceDrag: {
@@ -658,7 +772,9 @@ function cmOf(e: PointerEvent | DragEvent): { x: number; y: number } {
 }
 
 function pieceDown(e: PointerEvent, p: PlacedPiece): void {
+  // Not arranging (say, measuring), the press falls through to the plan.
   if (!props.arranging) return;
+  e.stopPropagation();
   emit("select", p.piece.id);
   const at = cmOf(e);
   pieceDrag = {
@@ -702,7 +818,8 @@ const hovered = ref<Cell | null>(null);
 const runIndex = computed(() => buildRunIndex(props.plan));
 const measured = computed(() => {
   const cell = hovered.value;
-  if (!cell || stroke.value.length || dragPos.value) return null;
+  if (!cell || props.measuring || stroke.value.length || dragPos.value)
+    return null;
   const m = measureAt(runIndex.value, cell);
   if (!m) return null;
   return {
@@ -732,6 +849,70 @@ function floorLines(h: Span, v: Span) {
   ];
 }
 
+function noteTransform(n: PlanNote): string {
+  const { x, y } = noteAnchor(n);
+  return `translate(${x} ${y}) rotate(${n.vertical ? -90 : 0}) scale(${cmPerPx.value})`;
+}
+
+function noteRect(text: string) {
+  const b = noteBox(text);
+  return { x: b.x, y: b.y, width: b.w, height: b.h };
+}
+
+/** The length, in a pill by the ruler's middle: above a level ruler, beside any other. */
+const rulerLabel = computed(() => {
+  const r = ruler.value;
+  if (!r || (r.a.x === r.b.x && r.a.y === r.b.y)) return null;
+  const text = rulerText(r.a, r.b);
+  const w = text.length * 7 + 16;
+  const [dx, dy] = r.a.y === r.b.y ? [0, -18] : [w / 2 + 10, 0];
+  return {
+    text,
+    w,
+    x: (r.a.x + r.b.x) / 2 + dx * cmPerPx.value,
+    y: (r.a.y + r.b.y) / 2 + dy * cmPerPx.value,
+  };
+});
+
+function rulerPoint(e: PointerEvent, from?: Point): Point {
+  const p = snapPoint(cmOf(e), props.plan.cols, props.plan.rows);
+  return from && e.shiftKey ? straightPoint(from, p) : p;
+}
+
+function rulerDown(e: PointerEvent): void {
+  const r = ruler.value;
+  if (r && !r.done) {
+    ruler.value = { ...r, b: rulerPoint(e, r.a), done: true };
+    return;
+  }
+  const at = rulerPoint(e);
+  ruler.value = { a: at, b: at, done: false };
+  rulerPress = true;
+  svg.value?.setPointerCapture?.(e.pointerId);
+}
+
+function rulerUp(): void {
+  rulerPress = false;
+  const r = ruler.value;
+  // A plain click leaves the ruler following the pointer, for a second click to finish.
+  if (r && (r.a.x !== r.b.x || r.a.y !== r.b.y))
+    ruler.value = { ...r, done: true };
+}
+
+watch(
+  () => props.measuring,
+  () => {
+    ruler.value = null;
+    rulerPress = false;
+  },
+);
+
+function clearRuler(e: KeyboardEvent): void {
+  if (e.key === "Escape") ruler.value = null;
+}
+onMounted(() => window.addEventListener("keydown", clearRuler));
+onBeforeUnmount(() => window.removeEventListener("keydown", clearRuler));
+
 function setHovered(cell: Cell | null): void {
   const was = hovered.value;
   if (was?.col === cell?.col && was?.row === cell?.row) return;
@@ -747,12 +928,19 @@ const doorsPickable = computed(
   () => props.editable && !!props.brush && DOOR_CODES.has(props.brush.code),
 );
 const doorShapes = computed(() =>
-  doors.value.map((door) => ({
-    door,
-    shape: doorShape(door),
-    tint: fillFor(door.code),
-    open: !props.closedDoors.includes(door.key),
-  })),
+  doors.value.map((door) => {
+    const shape = doorShape(door);
+    const open = !props.closedDoors.includes(door.key);
+    return {
+      door,
+      shape,
+      tint: fillFor(door.code),
+      open,
+      handles: shape.slide
+        ? [panelHandle(open ? shape.slide.open : shape.slide.shut)]
+        : shape.leaves.map((l) => handleAt(l, open)),
+    };
+  }),
 );
 
 function wedge(l: Leaf): string {
@@ -761,6 +949,15 @@ function wedge(l: Leaf): string {
 
 function arc(l: Leaf): string {
   return `M ${l.open.join(" ")} A ${l.len} ${l.len} 0 0 ${l.sweep} ${l.shut.join(" ")}`;
+}
+
+/** Just in from the panel's leading edge, where you'd pull it. */
+function panelHandle(p: Panel): [number, number] {
+  const t = 0.88;
+  return [
+    p.tail[0] + (p.lead[0] - p.tail[0]) * t,
+    p.tail[1] + (p.lead[1] - p.tail[1]) * t,
+  ];
 }
 
 /** Near the free end of the leaf, where a real handle would be. */
@@ -835,6 +1032,10 @@ function cellOf(e: PointerEvent): Cell | null {
 }
 
 function down(e: PointerEvent): void {
+  if (props.measuring) {
+    rulerDown(e);
+    return;
+  }
   if (props.arranging) {
     emit("select", null);
     return;
@@ -844,8 +1045,14 @@ function down(e: PointerEvent): void {
   svg.value?.setPointerCapture?.(e.pointerId);
   if (props.brush.id === "label") {
     const hit = labelAtCell(props.plan.labels, cell, props.zoom);
-    if (hit) dragged = { id: hit.id, from: cell, to: cell };
+    if (hit) dragged = { kind: "label", id: hit.id, from: cell, to: cell };
     else emit("labelAt", cell);
+    return;
+  }
+  if (props.brush.id === "note") {
+    const hit = noteAt(props.plan.notes, cmOf(e), cmPerPx.value);
+    if (hit) dragged = { kind: "note", id: hit.id, from: cell, to: cell };
+    else emit("noteAt", cell);
     return;
   }
   const socket = socketAt(props.plan.sockets, cmOf(e), cmPerPx.value);
@@ -872,13 +1079,24 @@ function move(e: PointerEvent): void {
   const cell = cellOf(e);
   setHovered(cell);
   emit("hover", cell);
+  const r = ruler.value;
+  if (props.measuring && r && !r.done) {
+    ruler.value = { ...r, b: rulerPoint(e, r.a) };
+    return;
+  }
   if (pieceDrag) {
     const at = cmOf(e);
-    dragPos.value = {
-      id: pieceDrag.id,
-      x: snap(at.x - pieceDrag.grabX),
-      y: snap(at.y - pieceDrag.grabY),
+    const { id, from } = pieceDrag;
+    const spot = {
+      x_cm: snap(at.x - pieceDrag.grabX),
+      y_cm: snap(at.y - pieceDrag.grabY),
+      rotation: from.rotation,
     };
+    const piece = props.placed.find((p) => p.piece.id === id)?.piece;
+    // Alt places it freely, off any wall.
+    const { x_cm, y_cm } =
+      piece && !e.altKey ? snapToWalls(piece, spot, props.plan) : spot;
+    dragPos.value = { id, x: x_cm, y: y_cm };
     return;
   }
   if (!cell) return;
@@ -905,6 +1123,10 @@ function move(e: PointerEvent): void {
 }
 
 function up(): void {
+  if (rulerPress) {
+    rulerUp();
+    return;
+  }
   if (pieceDrag) {
     const { id, from } = pieceDrag;
     const to = dragPos.value;
@@ -915,9 +1137,13 @@ function up(): void {
     return;
   }
   if (dragged) {
-    const { id, from, to } = dragged;
+    const { kind, id, from, to } = dragged;
     dragged = null;
-    if (from.col === to.col && from.row === to.row) emit("labelPick", id);
+    const clicked = from.col === to.col && from.row === to.row;
+    if (kind === "note") {
+      if (clicked) emit("notePick", id);
+      else emit("noteMove", id, to);
+    } else if (clicked) emit("labelPick", id);
     else emit("labelMove", id, to);
     return;
   }
@@ -937,6 +1163,7 @@ function up(): void {
 }
 
 function cancel(): void {
+  rulerPress = false;
   start = last = null;
   doorPress = null;
   dragged = null;
@@ -982,6 +1209,16 @@ function cancel(): void {
   paint-order: stroke;
   stroke: rgba(255, 255, 255, 0.85);
   stroke-linejoin: round;
+}
+.plan-canvas__note rect {
+  fill: #fff8dc;
+  stroke: #c9b16a;
+  stroke-width: 1px;
+}
+.plan-canvas__note text {
+  fill: #3d3626;
+  font-family: var(--fp-sans);
+  font-weight: 500;
 }
 .plan-canvas__label {
   fill: #2b2925;

@@ -5,6 +5,7 @@ import {
   FLOORS,
   ERASER,
   LABEL_TOOL,
+  NOTE_TOOL,
   SOCKET_TOOL,
   STRUCTURE,
   floorBrush,
@@ -25,6 +26,7 @@ function plan(over: Partial<PlanGrid> = {}): PlanGrid {
     labels: [],
     doors: [],
     sockets: [],
+    notes: [],
     ...over,
   };
 }
@@ -88,6 +90,32 @@ describe("PlanCanvas", () => {
         y1: "15",
         x2: "25",
         y2: "15",
+      });
+    });
+
+    it("draws a sliding door slid open along the wall on the side it opens into", () => {
+      const p = withDoor();
+      p.doors = [
+        { col: 3, row: 2, into: 1, hinge: 1, double: false, sliding: true },
+      ];
+      const open = canvas({ plan: p });
+      expect(open.findAll("[data-testid=door-leaf]")).toHaveLength(0);
+      // Below the wall (y 15), slid right past the opening (x 15–35).
+      expect(open.get("[data-testid=door-panel]").attributes()).toMatchObject({
+        x1: "55",
+        y1: "17.5",
+        x2: "35",
+        y2: "17.5",
+      });
+      expect(open.findAll("[data-testid=door-handle-3,2]")).toHaveLength(1);
+
+      p.doors = [{ ...p.doors[0], into: 0 }];
+      const shut = canvas({ plan: p, closedDoors: ["3,2"] });
+      expect(shut.get("[data-testid=door-panel]").attributes()).toMatchObject({
+        x1: "35",
+        y1: "7.5",
+        x2: "15",
+        y2: "7.5",
       });
     });
 
@@ -306,6 +334,117 @@ describe("PlanCanvas", () => {
     });
   });
 
+  describe("notes", () => {
+    const notes = [
+      { id: "nt_1", text: "Pipe", col: 2, row: 2, vertical: false },
+    ];
+
+    it("draws a note across, or turned to read up the plan", () => {
+      const across = canvas({ plan: plan({ notes }) });
+      const note = across.get("[data-testid=plan-note-nt_1]");
+      expect(note.text()).toBe("Pipe");
+      expect(note.attributes("transform")).toBe(
+        "translate(12.5 12.5) rotate(0) scale(1.25)",
+      );
+      const up = canvas({
+        plan: plan({ notes: [{ ...notes[0], vertical: true }] }),
+      });
+      expect(
+        up.get("[data-testid=plan-note-nt_1]").attributes("transform"),
+      ).toContain("rotate(-90)");
+    });
+
+    it("asks for a new note on an empty spot", async () => {
+      const wrapper = canvas({ brush: NOTE_TOOL, plan: plan({ notes }) });
+      await wrapper.get("svg").trigger("pointerdown", at(6, 6));
+      expect(wrapper.emitted("noteAt")?.[0][0]).toEqual({ col: 6, row: 6 });
+    });
+
+    it("edits a note on click and moves it on drag", async () => {
+      const wrapper = canvas({ brush: NOTE_TOOL, plan: plan({ notes }) });
+      const svg = wrapper.get("svg");
+      // Along the note's text, a few squares right of where it is anchored.
+      await svg.trigger("pointerdown", at(4, 2));
+      await svg.trigger("pointerup", at(4, 2));
+      expect(wrapper.emitted("notePick")?.[0][0]).toBe("nt_1");
+
+      await svg.trigger("pointerdown", at(2, 2));
+      await svg.trigger("pointermove", at(5, 5));
+      await svg.trigger("pointerup", at(5, 5));
+      expect(wrapper.emitted("noteMove")?.[0]).toEqual([
+        "nt_1",
+        { col: 5, row: 5 },
+      ]);
+      expect(wrapper.emitted("stroke")).toBeUndefined();
+    });
+  });
+
+  describe("measuring", () => {
+    /** A grid corner on screen at 100 %: its square's top-left. */
+    const corner = (col: number, row: number, shiftKey = false) => ({
+      clientX: 32 + col * 4,
+      clientY: 32 + row * 4,
+      pointerId: 1,
+      shiftKey,
+    });
+
+    it("measures a drag between two points, without painting", async () => {
+      const wrapper = canvas({ measuring: true });
+      const svg = wrapper.get("svg");
+      await svg.trigger("pointerdown", corner(1, 1));
+      await svg.trigger("pointermove", corner(9, 1));
+      await svg.trigger("pointerup", corner(9, 1));
+      expect(wrapper.get("[data-testid=ruler-text]").text()).toBe("0.40 m");
+      expect(
+        wrapper.get("[data-testid=ruler-line]").attributes(),
+      ).toMatchObject({ x1: "5", y1: "5", x2: "45", y2: "5" });
+      expect(wrapper.emitted("stroke")).toBeUndefined();
+      // Done: moving on leaves it where it was.
+      await svg.trigger("pointermove", corner(9, 7));
+      expect(wrapper.get("[data-testid=ruler-text]").text()).toBe("0.40 m");
+    });
+
+    it("measures from one click to the next, following the pointer between", async () => {
+      const wrapper = canvas({ measuring: true });
+      const svg = wrapper.get("svg");
+      await svg.trigger("pointerdown", corner(0, 0));
+      await svg.trigger("pointerup", corner(0, 0));
+      await svg.trigger("pointermove", corner(6, 8));
+      expect(wrapper.get("[data-testid=ruler-text]").text()).toBe(
+        "0.50 m · 0.30 × 0.40",
+      );
+      await svg.trigger("pointerdown", corner(6, 8));
+      await svg.trigger("pointermove", corner(2, 2));
+      expect(wrapper.get("[data-testid=ruler-text]").text()).toBe(
+        "0.50 m · 0.30 × 0.40",
+      );
+    });
+
+    it("keeps the ruler straight with Shift", async () => {
+      const wrapper = canvas({ measuring: true });
+      const svg = wrapper.get("svg");
+      await svg.trigger("pointerdown", corner(0, 0));
+      await svg.trigger("pointermove", corner(2, 6, true));
+      await svg.trigger("pointerup", corner(2, 6, true));
+      expect(wrapper.get("[data-testid=ruler-text]").text()).toBe("0.30 m");
+    });
+
+    it("clears on Escape and when measuring stops", async () => {
+      const wrapper = canvas({ measuring: true });
+      const svg = wrapper.get("svg");
+      await svg.trigger("pointerdown", corner(0, 0));
+      await svg.trigger("pointerup", corner(4, 0));
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      await wrapper.vm.$nextTick();
+      expect(wrapper.find("[data-testid=ruler]").exists()).toBe(false);
+
+      await svg.trigger("pointerdown", corner(0, 0));
+      await svg.trigger("pointerup", corner(4, 0));
+      await wrapper.setProps({ measuring: false });
+      expect(wrapper.find("[data-testid=ruler]").exists()).toBe(false);
+    });
+  });
+
   describe("hover measuring", () => {
     // A wall along row 0, cut by a door at columns 4–5.
     const walled = () =>
@@ -473,6 +612,63 @@ describe("PlanCanvas", () => {
       await wrapper.get("svg").trigger("pointerup", px(160, 70));
       expect(wrapper.emitted("move")).toBeUndefined();
       expect(wrapper.emitted("select")).toBeUndefined();
+    });
+
+    it("snaps a dragged piece flush to a wall, unless Alt is held", async () => {
+      // 2 × 1.5 m with a 10 cm wall along the top: its face is at y 10.
+      const feature = emptyRows(40, 30);
+      feature[0] = feature[1] = "wl".repeat(40);
+      const walled = plan({
+        cols: 40,
+        rows: 30,
+        surface: emptyRows(40, 30),
+        feature,
+      });
+      const drag = async (altKey: boolean) => {
+        const wrapper = canvas({
+          plan: walled,
+          brush: null,
+          editable: false,
+          placed: [at(40, 60)],
+          arranging: true,
+        });
+        await wrapper
+          .get("[data-testid=placed-f_sofa]")
+          .trigger("pointerdown", px(60, 70));
+        // Up 55 cm: the sofa's top would land at y 5, inside the wall.
+        await wrapper
+          .get("svg")
+          .trigger("pointermove", { ...px(60, 15), altKey });
+        await wrapper.get("svg").trigger("pointerup", px(60, 15));
+        return wrapper.emitted("move")?.[0];
+      };
+      expect(await drag(false)).toEqual(["f_sofa", 40, 10]);
+      expect(await drag(true)).toEqual(["f_sofa", 40, 5]);
+    });
+
+    it("measures across a piece instead of grabbing it", async () => {
+      // 2 × 1.5 m, so the ruler can run the sofa's whole width.
+      const room = plan({
+        cols: 40,
+        rows: 30,
+        surface: emptyRows(40, 30),
+        feature: emptyRows(40, 30),
+      });
+      const wrapper = canvas({
+        plan: room,
+        brush: null,
+        editable: false,
+        placed: [at(40, 60)],
+        measuring: true,
+      });
+      await wrapper
+        .get("[data-testid=placed-f_sofa]")
+        .trigger("pointerdown", px(40, 70));
+      await wrapper.get("svg").trigger("pointermove", px(140, 70));
+      await wrapper.get("svg").trigger("pointerup", px(140, 70));
+      expect(wrapper.emitted("select")).toBeUndefined();
+      expect(wrapper.emitted("move")).toBeUndefined();
+      expect(wrapper.get("[data-testid=ruler-text]").text()).toBe("1.00 m");
     });
 
     it("takes a tray card dropped onto the plan, at its centre in cm", async () => {

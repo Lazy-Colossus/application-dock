@@ -14,6 +14,7 @@ function plan(over: Partial<PlanGrid> = {}): PlanGrid {
     labels: [],
     doors: [],
     sockets: [],
+    notes: [],
     ...over,
   };
 }
