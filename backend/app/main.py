@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.routers import (
+    amp,
     archery,
     auth,
     context_switch,
@@ -34,6 +35,7 @@ def health() -> dict[str, str]:
 app.include_router(api_router)
 app.include_router(auth.router)
 app.include_router(shell.router)
+app.include_router(amp.router)
 app.include_router(hotaru.router)
 app.include_router(context_switch.router)
 app.include_router(listies.router)
