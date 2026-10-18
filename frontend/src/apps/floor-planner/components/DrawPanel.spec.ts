@@ -1,12 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import DrawPanel from "./DrawPanel.vue";
-import { DEFAULT_BRUSH, type Brush } from "../codes";
+import { DEFAULT_BRUSH, SOCKET_TOOL, type Brush } from "../codes";
 
 function draw(
   over: Partial<{
     brush: Brush;
     shape: "freehand" | "rectangle";
+    straight: boolean;
     canUndo: boolean;
   }> = {},
 ) {
@@ -15,6 +16,7 @@ function draw(
       brush: DEFAULT_BRUSH,
       shape: "rectangle" as "freehand" | "rectangle",
       size: 1 as const,
+      straight: false,
       canUndo: true,
       canRedo: false,
       ...over,
@@ -23,14 +25,32 @@ function draw(
 }
 
 describe("DrawPanel", () => {
+  it("picks the Socket tool", async () => {
+    const wrapper = draw();
+    await wrapper.get("[data-testid=brush-socket]").trigger("click");
+    expect(wrapper.emitted("update:brush")?.[0][0]).toEqual(SOCKET_TOOL);
+  });
+
   it("picks a brush size in freehand and disables it for rectangles", async () => {
     const wrapper = draw({ shape: "freehand" });
-    await wrapper.get("[data-testid=size-5]").trigger("click");
-    expect(wrapper.emitted("update:size")?.[0][0]).toBe(5);
+    await wrapper.get("[data-testid=size-10]").trigger("click");
+    expect(wrapper.emitted("update:size")?.[0][0]).toBe(10);
     await wrapper.setProps({ shape: "rectangle" });
     expect(
-      wrapper.get("[data-testid=size-5]").attributes("disabled"),
+      wrapper.get("[data-testid=size-10]").attributes("disabled"),
     ).toBeDefined();
+  });
+
+  it("toggles the straight lock, which takes over from the shape and frees the brush size", async () => {
+    const wrapper = draw({ straight: true });
+    await wrapper.get("[data-testid=straight-lock]").trigger("click");
+    expect(wrapper.emitted("update:straight")?.[0][0]).toBe(false);
+    expect(
+      wrapper.get("[data-testid=shape-freehand]").attributes("disabled"),
+    ).toBeDefined();
+    expect(
+      wrapper.get("[data-testid=size-10]").attributes("disabled"),
+    ).toBeUndefined();
   });
 
   it("picks a floor colour from its chip", async () => {

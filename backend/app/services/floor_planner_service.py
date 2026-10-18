@@ -45,6 +45,7 @@ from app.schemas.floor_planner import (
     NOTE_MAX,
     PIECE_CELL_CM,
     PIECES_MAX,
+    PLAN_NOTE_MAX,
     SIDE_CM_MAX,
     SURFACE_CODES,
     ApartmentDoc,
@@ -58,7 +59,9 @@ from app.schemas.floor_planner import (
     PieceDraft,
     Placement,
     PlacementRequest,
+    PlanNote,
     PlanWriteRequest,
+    Socket,
     upgrade_legacy_cells,
 )
 from app.services import auth_service
@@ -261,6 +264,20 @@ def _clean_labels(labels: list[Label], cols: int, rows: int) -> list[Label]:
     return cleaned
 
 
+def _clean_notes(notes: list[PlanNote], cols: int, rows: int) -> list[PlanNote]:
+    if len({note.id for note in notes}) != len(notes):
+        raise ValueError("Two notes share an id")
+    cleaned = []
+    for note in notes:
+        text = note.text.strip()
+        if not text or len(text) > PLAN_NOTE_MAX:
+            raise ValueError(f"A note needs 1–{PLAN_NOTE_MAX} characters")
+        if not (0 <= note.col < cols and 0 <= note.row < rows):
+            raise ValueError(f"The note {text!r} is outside the plan")
+        cleaned.append(note.model_copy(update={"text": text}))
+    return cleaned
+
+
 def _clean_doors(
     doors: list[DoorSetting], feature: list[str], cols: int, rows: int
 ) -> list[DoorSetting]:
@@ -276,17 +293,27 @@ def _clean_doors(
     ]
 
 
+def _check_sockets(sockets: list[Socket], cols: int, rows: int) -> None:
+    if len({(s.col, s.row) for s in sockets}) != len(sockets):
+        raise ValueError("Two sockets share a square")
+    if any(not (0 <= s.col < cols and 0 <= s.row < rows) for s in sockets):
+        raise ValueError("A socket is outside the plan")
+
+
 def replace_plan(username: str, apartment_id: str, req: PlanWriteRequest) -> ApartmentView:
-    """Swap in the whole drawn plan — size, both layers, labels and doors — in one write."""
+    """Swap in the whole drawn plan — size, layers, labels, notes, doors and sockets — in one
+    write."""
     _check_layer("surface", req.surface, SURFACE_CODES, req.cols, req.rows)
     _check_layer("feature", req.feature, FEATURE_CODES, req.cols, req.rows)
     labels = _clean_labels(req.labels, req.cols, req.rows)
+    notes = _clean_notes(req.notes, req.cols, req.rows)
     doors = _clean_doors(req.doors, req.feature, req.cols, req.rows)
+    _check_sockets(req.sockets, req.cols, req.rows)
 
     def change(doc: ApartmentDoc) -> None:
         doc.cols, doc.rows = req.cols, req.rows
         doc.surface, doc.feature, doc.labels = req.surface, req.feature, labels
-        doc.doors = doors
+        doc.notes, doc.doors, doc.sockets = notes, doors, req.sockets
         # A shrink must not strand a piece off the plan, in any layout.
         for layout in doc.layouts:
             layout.placements = [

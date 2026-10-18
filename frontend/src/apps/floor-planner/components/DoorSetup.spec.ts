@@ -8,8 +8,8 @@ const door: Door = {
   code: "dr",
   col: 3,
   row: 2,
-  cols: 4,
-  rows: 1,
+  cols: 16,
+  rows: 2,
   dir: "h",
   setting: { col: 3, row: 2, into: 0, hinge: 0, double: false },
 };
@@ -42,8 +42,22 @@ describe("DoorSetup", () => {
     expect(wrapper.emitted("update")).toEqual([
       [{ ...door.setting, into: 1 }],
       [{ ...door.setting, hinge: 1 }],
-      [{ ...door.setting, double: true }],
+      [{ ...door.setting, double: true, sliding: false }],
     ]);
+  });
+
+  it("makes a door sliding, and asks which way it slides", async () => {
+    const wrapper = setup();
+    await wrapper.get("[data-testid=door-sliding]").trigger("click");
+    expect(wrapper.emitted("update")).toEqual([
+      [{ ...door.setting, double: false, sliding: true }],
+    ]);
+    const sliding = setup({ setting: { ...door.setting, sliding: true } });
+    expect(
+      sliding.get("[data-testid=door-sliding]").attributes("aria-pressed"),
+    ).toBe("true");
+    expect(sliding.text()).toContain("Slides to");
+    expect(sliding.get("[data-testid=door-hinge-1]").text()).toBe("Right");
   });
 
   it("drops the hinge choice for a double door", () => {

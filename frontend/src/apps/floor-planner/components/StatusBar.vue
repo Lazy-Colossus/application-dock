@@ -57,13 +57,15 @@
         +
       </button>
     </span>
-    <span class="fp-mono">1 square = 20 cm</span>
+    <span class="fp-mono" data-testid="grid-legend">{{
+      gridLegend(zoom)
+    }}</span>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { CELL_CM, ZOOM_LEVELS, type Cell } from "../grid";
+import { CELL_CM, ZOOM_LEVELS, gridLegend, type Cell } from "../grid";
 import type { SaveState } from "../types";
 
 const props = defineProps<{

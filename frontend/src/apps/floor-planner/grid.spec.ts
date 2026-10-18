@@ -11,17 +11,22 @@ import {
   boardLayout,
 } from "./codes";
 import {
+  bounds,
   cellAt,
+  cellRuns,
   cmAt,
   codeAt,
   emptyRows,
   labelAtCell,
   labelsOutside,
   lineCells,
+  gridLegend,
+  minorGridCm,
   paint,
   readout,
   rectCells,
   stampCells,
+  straightEnd,
   resize,
   runs,
   squaresFor,
@@ -40,6 +45,8 @@ function grid(cols = 5, rows = 4): PlanGrid {
     feature: emptyRows(cols, rows),
     labels: [],
     doors: [],
+    sockets: [],
+    notes: [],
   };
 }
 
@@ -58,6 +65,29 @@ describe("lineCells", () => {
       expect(Math.abs(cells[i].col - cells[i - 1].col)).toBeLessThanOrEqual(1);
       expect(Math.abs(cells[i].row - cells[i - 1].row)).toBeLessThanOrEqual(1);
     }
+  });
+});
+
+describe("straightEnd", () => {
+  it.each([
+    [
+      { col: 7, row: 6 },
+      { col: 7, row: 5 },
+    ],
+    [
+      { col: 4, row: 9 },
+      { col: 3, row: 9 },
+    ],
+    [
+      { col: 1, row: 1 },
+      { col: 3, row: 1 },
+    ],
+    [
+      { col: 6, row: 8 },
+      { col: 6, row: 5 },
+    ],
+  ])("pulls %o onto the nearer axis through (3, 5)", (b, end) => {
+    expect(straightEnd({ col: 3, row: 5 }, b)).toEqual(end);
   });
 });
 
@@ -94,6 +124,18 @@ describe("rectCells", () => {
 });
 
 describe("paint", () => {
+  it("erases sockets on the erased squares only; other brushes keep them", () => {
+    const sockets = [
+      { col: 1, row: 1 },
+      { col: 3, row: 1 },
+    ];
+    const g = { ...grid(), sockets };
+    expect(paint(g, [{ col: 1, row: 1 }], ERASER).sockets).toEqual([
+      { col: 3, row: 1 },
+    ]);
+    expect(paint(g, [{ col: 1, row: 1 }], wall).sockets).toEqual(sockets);
+  });
+
   it("lays a wall over the floor without erasing the floor", () => {
     const tiled = paint(grid(), [{ col: 1, row: 1 }], whiteTile);
     const walled = paint(tiled, [{ col: 1, row: 1 }], wall);
@@ -160,6 +202,17 @@ describe("resize", () => {
     expect(out.surface[0]).toBe("......");
     expect(out.labels.map((l) => l.id)).toEqual(["b"]);
   });
+
+  it("drops sockets left outside", () => {
+    const g = {
+      ...grid(),
+      sockets: [
+        { col: 4, row: 0 },
+        { col: 2, row: 3 },
+      ],
+    };
+    expect(resize(g, 3, 4).sockets).toEqual([{ col: 2, row: 3 }]);
+  });
 });
 
 describe("runs", () => {
@@ -174,23 +227,62 @@ describe("runs", () => {
 describe("readout", () => {
   it("gives one length for a one-square-wide stroke", () => {
     expect(
-      readout(lineCells({ col: 0, row: 0 }, { col: 16, row: 0 }), "Wall"),
+      readout(lineCells({ col: 0, row: 0 }, { col: 67, row: 0 }), "Wall"),
     ).toBe("Wall · 3.40 m");
   });
 
   it("gives both sides for a box", () => {
     expect(
-      readout(rectCells({ col: 0, row: 0 }, { col: 7, row: 12 }), "Tile"),
+      readout(rectCells({ col: 0, row: 0 }, { col: 31, row: 51 }), "Tile"),
     ).toBe("Tile · 1.60 × 2.60 m");
+  });
+});
+
+describe("bounds", () => {
+  it("handles more squares than can be spread as arguments", () => {
+    const cells = rectCells({ col: 2, row: 1 }, { col: 301, row: 300 });
+    expect(bounds(cells)).toEqual({ col: 2, row: 1, cols: 300, rows: 300 });
+  });
+});
+
+describe("cellRuns", () => {
+  it("merges neighbouring squares in a row, in any order", () => {
+    expect(
+      cellRuns([
+        { col: 3, row: 1 },
+        { col: 0, row: 0 },
+        { col: 2, row: 1 },
+        { col: 1, row: 0 },
+        { col: 5, row: 1 },
+      ]),
+    ).toEqual([
+      { row: 0, col: 0, len: 2 },
+      { row: 1, col: 2, len: 2 },
+      { row: 1, col: 5, len: 1 },
+    ]);
+  });
+});
+
+describe("gridLegend", () => {
+  it("names the squares only when they are the ones on screen", () => {
+    expect(gridLegend(1)).toBe("Grid 20 cm · 5 cm steps");
+    expect(gridLegend(2)).toBe("1 square = 5 cm");
+  });
+});
+
+describe("minorGridCm", () => {
+  it("shows single squares only once they are 8 px apart", () => {
+    expect(minorGridCm(1)).toBe(20);
+    expect(minorGridCm(2)).toBe(5);
   });
 });
 
 describe("squaresFor", () => {
   it.each([
-    [8.8, 44],
-    [8.81, 45],
-    [1, 5],
-    [7.4, 37],
+    [8.8, 176],
+    [8.81, 177],
+    [1, 20],
+    [7.4, 148],
   ])("%s m is %s squares", (m, squares) => {
     expect(squaresFor(m)).toBe(squares);
   });
@@ -284,16 +376,14 @@ describe("cellAt", () => {
       col: 0,
       row: 0,
     });
-    expect(
-      cellAt(100 + 32 + 16 * 3 + 1, 50 + 32 + 16, rect, 1, 10, 10),
-    ).toEqual({
+    expect(cellAt(100 + 32 + 4 * 3 + 1, 50 + 32 + 4, rect, 1, 10, 10)).toEqual({
       col: 3,
       row: 1,
     });
   });
 
   it("scales with zoom without changing which square is hit", () => {
-    expect(cellAt(100 + 64 + 32 * 3 + 1, 50 + 64, rect, 2, 10, 10)).toEqual({
+    expect(cellAt(100 + 64 + 8 * 3 + 1, 50 + 64, rect, 2, 10, 10)).toEqual({
       col: 3,
       row: 0,
     });
@@ -301,7 +391,7 @@ describe("cellAt", () => {
 
   it("is null on the rulers and past the plan", () => {
     expect(cellAt(100 + 10, 50 + 40, rect, 1, 10, 10)).toBeNull();
-    expect(cellAt(100 + 32 + 16 * 10, 50 + 40, rect, 1, 10, 10)).toBeNull();
+    expect(cellAt(100 + 32 + 4 * 10, 50 + 40, rect, 1, 10, 10)).toBeNull();
   });
 });
 

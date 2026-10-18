@@ -12,7 +12,7 @@ describe("StatusBar", () => {
 
   it("shows the cursor in metres", () => {
     const wrapper = mount(StatusBar, {
-      props: { ...base, hover: { col: 34, row: 17 } },
+      props: { ...base, hover: { col: 136, row: 68 } },
     });
     expect(wrapper.get("[data-testid=status-cursor]").text()).toBe(
       "6.80 m, 3.40 m",
@@ -32,12 +32,12 @@ describe("StatusBar", () => {
   });
 
   it("steps through zoom levels and stops at the ends", async () => {
-    const wrapper = mount(StatusBar, { props: { ...base, zoom: 2 } });
+    const wrapper = mount(StatusBar, { props: { ...base, zoom: 4 } });
     expect(
       wrapper.get("[data-testid=zoom-in]").attributes("disabled"),
     ).toBeDefined();
     await wrapper.get("[data-testid=zoom-out]").trigger("click");
-    expect(wrapper.emitted("update:zoom")?.[0][0]).toBe(1.5);
+    expect(wrapper.emitted("update:zoom")?.[0][0]).toBe(3);
   });
 
   it("puts slot content, the layout tabs, at the start", () => {

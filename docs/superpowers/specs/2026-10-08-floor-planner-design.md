@@ -12,7 +12,7 @@ it in. Paper sketches lose scale, and real floor-plan tools are heavier than the
 ## Intent
 
 The app draws the apartment roughly on a square grid, the way a D&D battle map is drawn. Each
-square is 20 cm. Furniture becomes true-to-scale pieces that you drag onto the plan, and
+square is 5 cm (20 cm until 2026-10-11). Furniture becomes true-to-scale pieces that you drag onto the plan, and
 you compare a few arrangements. Jake and Dani share one apartment.
 
 Success: you sketch the apartment in a few minutes. A 220 × 95 cm sofa is visibly too long for a
@@ -26,13 +26,13 @@ Success: you sketch the apartment in a few minutes. A 220 × 95 cm sofa is visib
   folder.
 - **Desktop/laptop screen first.** Unlike most dock apps, it is not designed for phones. On a
   phone it renders but is not tuned.
-- Several apartments per user (Story 1.5), each with a 20 cm grid painted with brushes. A
+- Several apartments per user (Story 1.5), each with a 5 cm grid painted with brushes. A
   switcher in the top bar opens, creates, duplicates, renames and
   deletes them.
 - One shared furniture list. Each piece is either a basic shape or a painted shape, and pieces
   can be added one at a time or in bulk from a strict line format.
 - Several named layouts per apartment. Each layout places the same furniture list differently.
-- Scale is always visible: a "1 square = 20 cm" legend, metre rulers, a live size readout while
+- Scale is always visible: a "1 square = 5 cm" legend, metre rulers, a live size readout while
   drawing, and the dimensions of the selected piece.
 - Sharing: an apartment's owner adds members, who see and edit everything in it. Each member
   keeps their other apartments.
@@ -40,7 +40,7 @@ Success: you sketch the apartment in a few minutes. A 220 × 95 cm sofa is visib
 **Out of scope:**
 
 - Live push between clients. Changes appear on reload (see NFR-a).
-- Sliding doors, wall thickness finer than one square, diagonal walls, and multiple floors.
+- Sliding doors, wall thickness finer than one square (5 cm), diagonal walls, and multiple floors.
 - Free-text or AI parsing of furniture lists. Only the strict format is supported.
 - 3D, export, printing and image import (for example, tracing over a photo of the plan).
 
@@ -52,7 +52,7 @@ Success: you sketch the apartment in a few minutes. A 220 × 95 cm sofa is visib
   when they first list their apartments (Story 1.5; before that it was created on the first
   write).
 - **FP-2** An apartment has a grid size in squares, set as width × depth in metres and rounded up
-  to whole squares (default 10 m × 8 m, so 50 × 40 squares, with a 30 m limit on each side). The
+  to whole squares (default 10 m × 8 m, so 200 × 160 squares, with a 1–15 m limit on each side). The
   plan can be resized later: growing adds empty squares on the right and bottom edges, and
   shrinking crops them.
 - **FP-3** Each square has a **surface** layer and a **feature** layer.
@@ -66,10 +66,10 @@ Success: you sketch the apartment in a few minutes. A 220 × 95 cm sofa is visib
   - A feature is drawn on top of the surface, and a wall hides the surface completely.
 - **FP-4** The brushes are: wall, window, door, front door, tile, wood, carpet, balcony and eraser.
   - Each surface brush has a colour or shade picker that starts on that brush's default.
-  - The eraser clears both layers.
+  - The eraser clears both layers and any sockets on the erased squares.
   - Every brush works in two modes: **freehand** (click or drag across squares) and
     **rectangle** (drag a box to fill it). Rectangle mode makes floors quick to fill and walls
-    quick to draw as straight runs.
+    quick to draw as straight runs. A freehand brush is 5, 10, 20 or 50 cm wide.
 - **FP-5** While a stroke or rectangle is being drawn, a readout shows its size in metres, for
   example "3.40 m" or "3.40 × 2.80 m".
 - **FP-6** Room labels are free text placed at a grid position. You can move, rename and delete
@@ -101,6 +101,19 @@ Success: you sketch the apartment in a few minutes. A 220 × 95 cm sofa is visib
     a click on the opening or the leaf, and so does the setup's **Show it**. The pointer shows
     wherever a click on a door does something. Open or closed is only that viewer's view, like zoom: never saved or
     shared. Doors start open.
+- **FP-11** Electricity sockets (2026-10-11) are markers on single squares. With the **Socket**
+  tool, a click adds one and a click on an existing one removes it; the symbol is wider than a
+  square, so a click anywhere on it counts. A click on a socket with the Eraser also removes
+  just the socket, leaving the wall under it. Each is drawn as a socket face (a circle with two
+  pins) at a fixed screen size, over furniture, and shows in every mode. Sockets are saved with
+  the plan, are undo steps like labels, and a shrink drops the ones left outside.
+- **FP-12** Hover measuring (2026-10-11), in every mode. Over a wall, window or door, the
+  straight run of that same thing through the square lights up with its length ("Wall ·
+  3.40 m"), taken along the longer way; a door or window ends a wall run. Over open floor,
+  dashed lines run to the walls (or the apartment's edge) both ways with the clear span
+  ("Clear 2.85 × 3.60 m"). It hides while a stroke or a piece is being dragged. For speed, the
+  runs are indexed once per plan change (a lazy `computed`), and the pointer only triggers a
+  lookup when it crosses into another square.
 
 ### Apartments (Story 1.5)
 
@@ -131,7 +144,7 @@ Success: you sketch the apartment in a few minutes. A 220 × 95 cm sofa is visib
   blue, purple, tan, pink, navy, teal, olive and charcoal. The palette shows them light to dark
   within each family.
 - **FU-3** Basic shapes keep their exact size in cm and do not snap to squares. Custom shapes are
-  painted on a 4 × 4 m drawing grid of **10 cm squares** (finer than the plan's 20 cm), with a
+  painted on a 4 × 4 m drawing grid of **10 cm squares** (coarser than the plan's 5 cm), with a
   palette of the FU-2 colours plus an eraser, Freehand and Rectangle tools, 10/20/50 cm brushes
   and Undo. The size in cm shows as you paint.
   - A basic shape can be edited by drawing: the first stroke on it, or choosing Custom, turns it
@@ -162,7 +175,7 @@ Success: you sketch the apartment in a few minutes. A 220 × 95 cm sofa is visib
   from the tray onto the plan to place it, and **Back to tray** removes it from the layout.
   Dragging a piece back onto the tray is out of scope: the tray uses HTML5 drag-and-drop and the
   plan uses pointer events, and joining the two isn't worth it.
-- **LA-4** Dragging snaps to 10 cm (half a square). A piece turns about its centre to any whole
+- **LA-4** Dragging snaps to 5 cm (one square). A piece turns about its centre to any whole
   angle, 0–359° clockwise: typed into the inspector, or stepped 10° at a time with − / +.
   **Horizontal** (**R**) lays the piece's long side left to right and **Vertical** (**Shift+R**)
   top to bottom; each picks whichever of its two angles is nearer the current one, so the piece
@@ -211,11 +224,12 @@ list, and is rewritten on the next membership change.
 
 ```
 id, owner, name, updated_at, rev, plan_rev
-cols: int, rows: int             grid size in 20 cm squares
+cols: int, rows: int             grid size in 5 cm squares
 surface: list[str]               rows strings, one token per square (see Encoding)
 feature: list[str]
 labels: list[{id, text, col, row}]
 doors: list[{col, row, into, hinge, double}]   door setups (FP-10), keyed by anchor
+sockets: list[{col, row}]        FP-11; at most one per square
 furniture: list[Furniture]
 layouts: list[Layout]            display order
 ```
@@ -238,7 +252,7 @@ write drops setups whose anchor is not a door square, and refuses two on the sam
 
 Each grid row is a string of fixed-width two-character codes. For example, `..` is empty, `t0`
 is white tile and `w1` is medium wood. One `codes.ts` / `Literal` table on each side maps codes
-to brush values. A 50 × 40 plan is then about 8 KB, and a diff of the JSON file stays readable.
+to brush values. A default 200 × 160 plan is then about 130 KB, and the 300 × 300 maximum about 360 KB, and a diff of the JSON file stays readable.
 
 ## Backend
 
@@ -267,7 +281,7 @@ below). A caller who isn't a member gets 404, the same as for a missing apartmen
 | `PUT …/name` | AP-4 |
 | `POST …/duplicate` | AP-3 |
 | `DELETE …` | AP-5; returns the caller's remaining list |
-| `PUT …/plan` | Replaces the grid, labels, door setups and size (FP-2 to FP-6, FP-10). Sent on save. |
+| `PUT …/plan` | Replaces the grid, labels, door setups, sockets and size (FP-2 to FP-6, FP-10, FP-11). Sent on save. |
 | `POST …/furniture` | Adds one or more pieces (FU-1, FU-4) |
 | `PUT` / `DELETE …/furniture/{id}` | FU-5 |
 | `POST …/layouts`, `PUT` / `DELETE …/layouts/{id}` | LA-1 |
@@ -285,8 +299,8 @@ press **Save**, or when you leave Draw plan, not on every stroke.
 
 - **Rendering:** one SVG whose `viewBox` is measured in cm. Scale is preserved automatically, and
   zoom and pan are a transform on top. Surface squares are drawn as merged horizontal runs so
-  that a 2,000-square plan stays light. Rulers are marked every metre, and the legend reads
-  "1 square = 20 cm".
+  that a 90,000-square plan stays light; the stroke preview is drawn as runs too. Rulers are marked every metre, and the legend follows
+  what the grid shows: "1 square = 5 cm" from 200 % zoom, "Grid 20 cm · 5 cm steps" below it.
 - **Units:**
   - `codes.ts`: brush, colour and shape vocabularies.
   - `grid.ts`: pure helpers to encode and decode, paint, fill rectangles and resize.
@@ -320,7 +334,7 @@ https://claude.ai/artifact/1nK3cQ36cNrwLq4GeTg8BV (the B artboards).
 
   | Mode | Left panel | Centre | Right panel |
   |---|---|---|---|
-  | Draw plan | Structure brushes, floor brushes with inline colour chips, Eraser and Room label, the Freehand/Rectangle switch, Undo/Redo | The plan | Plan details, folded by default into a "Plan details" strip on the right edge (a click opens it; **Hide** folds it, and the browser remembers): a scale card ("1 square = 20 cm" with a 1 m scale bar), plan size and resize, the room label list |
+  | Draw plan | Structure brushes, floor brushes with inline colour chips, Eraser, Room label and Socket, the Freehand/Rectangle switch, Undo/Redo | The plan | Plan details, folded by default into a "Plan details" strip on the right edge (a click opens it; **Hide** folds it, and the browser remembers): a scale card ("1 square = 5 cm" with a 1 m scale bar), plan size and resize, the room label list |
   | Furniture | The furniture list | The open piece on the 10 cm drawing grid with its tools (FU-3); the plan is not shown | The piece form with Delete, Copy, Cancel and Save. **Bulk add** opens a dialog. |
   | Arrange | The tray of pieces not in this layout, then the pieces already on the plan | The plan with the layout's pieces | The selected piece: size, position in m, Vertical / Horizontal, the rotation in degrees with − / +, warnings, Back to tray |
 
@@ -329,7 +343,7 @@ https://claude.ai/artifact/1nK3cQ36cNrwLq4GeTg8BV (the B artboards).
   - In every mode it ends with a status readout: the cursor position in metres, the size of the
     shape being drawn, and the zoom level. While drawing it also shows Saving… / Saved / Unsaved,
     with **Save now** while unsaved (FP-9).
-- **Plan view:** rulers in metres on the top and left edges, thin lines every square and darker
+- **Plan view:** rulers in metres on the top and left edges, thin lines every square once squares are 8 px apart (200 % zoom and up; every 20 cm below that) and darker
   lines every metre (as on Roll20), room labels in small capitals, and a dark readout chip next to
   the shape being drawn. The grid lines cross the floors only while the plan is being painted;
   otherwise they show in empty space only, so a finished plan reads as rooms rather than squares.

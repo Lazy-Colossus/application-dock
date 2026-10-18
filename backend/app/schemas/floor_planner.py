@@ -8,20 +8,21 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-DEFAULT_COLS = 50
-DEFAULT_ROWS = 40
+DEFAULT_COLS = 200  # 10 m
+DEFAULT_ROWS = 160  # 8 m
 EMPTY_CELL = ".."
-CELL_CM = 20
+CELL_CM = 5
 SURFACE_CODES = frozenset(
     {EMPTY_CELL, "t0", "t1", "t2", "t3", "w0", "w1", "w2", "c0", "c1", "c2", "c3", "b0"}
 )
 FEATURE_CODES = frozenset({EMPTY_CELL, "wl", "wn", "dr", "fd"})
 DOOR_CODES = frozenset({"dr", "fd"})
-MIN_SIDE = 5  # 1 m
-MAX_SIDE = 150  # 30 m
+MIN_SIDE = 20  # 1 m
+MAX_SIDE = 300  # 15 m
 LABEL_MAX = 40
 NAME_MAX = 40
 NOTE_MAX = 200
+PLAN_NOTE_MAX = 80
 SIDE_CM_MAX = 1000
 PIECE_CELL_CM = 10
 CUSTOM_MAX = 40  # squares on each side: 4 m
@@ -104,6 +105,23 @@ class Label(BaseModel):
     row: int
 
 
+class PlanNote(BaseModel):
+    """A short free-text note on the plan. Unlike a label it names no room."""
+
+    id: str
+    text: str
+    col: int
+    row: int
+    vertical: bool = False
+
+
+class Socket(BaseModel):
+    """An electricity socket marked on one plan square."""
+
+    col: int
+    row: int
+
+
 class DoorSetting(BaseModel):
     """How one door opens. A door is a 4-connected group of same-code door squares;
     (col, row) is its first square in reading order."""
@@ -113,8 +131,11 @@ class DoorSetting(BaseModel):
     # 0: towards the side above (horizontal wall) or left (vertical wall); 1: below / right.
     into: Literal[0, 1]
     # 0: hinged at the left (horizontal) or top (vertical) end; 1: right / bottom. Not for double.
+    # A sliding door slides open towards its hinge end.
     hinge: Literal[0, 1]
     double: bool = False
+    # Slides along the wall face on the `into` side instead of swinging; takes precedence.
+    sliding: bool = False
 
 
 class Furniture(BaseModel):
@@ -166,7 +187,9 @@ class ApartmentDoc(BaseModel):
     surface: list[str] = Field(default_factory=lambda: empty_rows(DEFAULT_COLS, DEFAULT_ROWS))
     feature: list[str] = Field(default_factory=lambda: empty_rows(DEFAULT_COLS, DEFAULT_ROWS))
     labels: list[Label] = Field(default_factory=list)
+    notes: list[PlanNote] = Field(default_factory=list)
     doors: list[DoorSetting] = Field(default_factory=list)
+    sockets: list[Socket] = Field(default_factory=list)
     furniture: list[Furniture] = Field(default_factory=list)
     layouts: list[Layout] = Field(default_factory=_first_layouts)
 
@@ -192,7 +215,9 @@ class ApartmentView(ApartmentSummary):
     surface: list[str]
     feature: list[str]
     labels: list[Label]
+    notes: list[PlanNote]
     doors: list[DoorSetting]
+    sockets: list[Socket]
     furniture: list[Furniture]
     layouts: list[Layout]
 
@@ -208,7 +233,9 @@ class PlanWriteRequest(BaseModel):
     surface: list[str]
     feature: list[str]
     labels: list[Label]
+    notes: list[PlanNote] = Field(default_factory=list)
     doors: list[DoorSetting] = Field(default_factory=list)
+    sockets: list[Socket] = Field(default_factory=list)
 
 
 class PieceDraft(BaseModel):

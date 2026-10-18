@@ -44,7 +44,8 @@
         class="draw-panel__tip"
         data-testid="door-tip"
       >
-        Click a door to choose which way it opens, its hinge, or make it double.
+        Click a door to choose which way it opens, its hinge, or make it double
+        or sliding.
       </p>
     </section>
 
@@ -112,6 +113,64 @@
           <span class="draw-panel__swatch draw-panel__swatch--label">Aa</span>
           <span class="draw-panel__name">Label</span>
         </button>
+        <button
+          type="button"
+          class="draw-panel__row"
+          :class="{ 'draw-panel__row--active': brush.id === 'socket' }"
+          :aria-pressed="brush.id === 'socket'"
+          title="Electricity socket: click to add, click one to remove"
+          data-testid="brush-socket"
+          @click="emit('update:brush', SOCKET_TOOL)"
+        >
+          <svg
+            class="draw-panel__swatch draw-panel__swatch--socket"
+            viewBox="-7 -7 14 14"
+            aria-hidden="true"
+          >
+            <circle r="5" fill="#ffffff" stroke="#2b2a27" stroke-width="1.3" />
+            <path
+              d="M -1.8 -2.2 V 2.2 M 1.8 -2.2 V 2.2"
+              stroke="#2b2a27"
+              stroke-width="1.3"
+            />
+          </svg>
+          <span class="draw-panel__name">Socket</span>
+        </button>
+        <button
+          type="button"
+          class="draw-panel__row"
+          :class="{ 'draw-panel__row--active': brush.id === 'note' }"
+          :aria-pressed="brush.id === 'note'"
+          title="Note: click to add, click one to edit, drag to move"
+          data-testid="brush-note"
+          @click="emit('update:brush', NOTE_TOOL)"
+        >
+          <span class="draw-panel__swatch draw-panel__swatch--note">…</span>
+          <span class="draw-panel__name">Note</span>
+        </button>
+        <button
+          type="button"
+          class="draw-panel__row"
+          :class="{ 'draw-panel__row--active': brush.id === 'measure' }"
+          :aria-pressed="brush.id === 'measure'"
+          title="Measure: drag, or click two points; Shift keeps it straight"
+          data-testid="brush-measure"
+          @click="emit('update:brush', MEASURE_TOOL)"
+        >
+          <svg
+            class="draw-panel__swatch draw-panel__swatch--measure"
+            viewBox="-7 -7 14 14"
+            aria-hidden="true"
+          >
+            <path
+              d="M -5.5 3 L 3 -5.5 M -4 1.5 l 1.5 1.5 M -1.5 -1 l 1.5 1.5 M 1 -3.5 l 1.5 1.5"
+              stroke="#2b2a27"
+              stroke-width="1.3"
+              stroke-linecap="round"
+            />
+          </svg>
+          <span class="draw-panel__name">Measure</span>
+        </button>
       </div>
     </section>
 
@@ -124,6 +183,8 @@
           type="button"
           :class="{ 'draw-panel__seg--on': shape === s.id }"
           :aria-pressed="shape === s.id"
+          :disabled="straight"
+          :title="straight ? 'Straight lines are locked on' : undefined"
           :data-testid="`shape-${s.id}`"
           @click="emit('update:shape', s.id)"
         >
@@ -132,24 +193,52 @@
       </div>
       <div class="draw-panel__segmented" role="group" aria-label="Brush size">
         <button
-          v-for="n in BRUSH_SIZES"
+          v-for="n in PLAN_BRUSH_SIZES"
           :key="n"
           type="button"
           class="fp-mono"
           :class="{ 'draw-panel__seg--on': size === n }"
           :aria-pressed="size === n"
-          :disabled="shape === 'rectangle'"
+          :disabled="shape === 'rectangle' && !straight"
           :title="
-            shape === 'rectangle'
-              ? 'Brush size is for Freehand only'
-              : `${n * 20} cm brush`
+            shape === 'rectangle' && !straight
+              ? 'Brush size is for Freehand and Straight lines'
+              : `${n * CELL_CM} cm brush`
           "
           :data-testid="`size-${n}`"
           @click="emit('update:size', n)"
         >
-          {{ n }}×{{ n }}
+          {{ n * CELL_CM }}
         </button>
       </div>
+      <button
+        type="button"
+        class="draw-panel__row"
+        :class="{ 'draw-panel__row--active': straight }"
+        :aria-pressed="straight"
+        title="Lock to straight lines at the brush width, for walls of even thickness. Or hold Shift while drawing."
+        data-testid="straight-lock"
+        @click="emit('update:straight', !straight)"
+      >
+        <svg
+          class="draw-panel__swatch draw-panel__swatch--lock"
+          viewBox="-7 -7 14 14"
+          aria-hidden="true"
+        >
+          <path
+            :d="
+              straight
+                ? 'M -3 -1 V -3 A 3 3 0 0 1 3 -3 V -1'
+                : 'M -3 -1 V -3 A 3 3 0 0 1 3 -3 V -4'
+            "
+            fill="none"
+            stroke="#2b2a27"
+            stroke-width="1.3"
+          />
+          <rect x="-4.5" y="-1" width="9" height="7" rx="1" fill="#2b2a27" />
+        </svg>
+        <span class="draw-panel__name">Straight lines</span>
+      </button>
     </section>
   </div>
 </template>
@@ -159,6 +248,9 @@ import {
   ERASER,
   FLOORS,
   LABEL_TOOL,
+  MEASURE_TOOL,
+  NOTE_TOOL,
+  SOCKET_TOOL,
   STRUCTURE,
   floorBrush,
   structureBrush,
@@ -166,14 +258,15 @@ import {
   type Brush,
   type FloorFamily,
 } from "../codes";
-import { BRUSH_SIZES, type BrushSize } from "../grid";
+import { CELL_CM, PLAN_BRUSH_SIZES, type PlanBrushSize } from "../grid";
 
 type Shape = "freehand" | "rectangle";
 
 const props = defineProps<{
   brush: Brush;
   shape: Shape;
-  size: BrushSize;
+  size: PlanBrushSize;
+  straight: boolean;
   canUndo: boolean;
   canRedo: boolean;
 }>();
@@ -181,7 +274,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   "update:brush": [brush: Brush];
   "update:shape": [shape: Shape];
-  "update:size": [size: BrushSize];
+  "update:size": [size: PlanBrushSize];
+  "update:straight": [straight: boolean];
   undo: [];
   redo: [];
 }>();
@@ -304,6 +398,17 @@ function swatchOf(f: FloorFamily): string {
 }
 .draw-panel__swatch--label {
   font-size: 9px;
+}
+.draw-panel__swatch--lock {
+  border: none;
+}
+.draw-panel__swatch--socket,
+.draw-panel__swatch--measure {
+  border: none;
+}
+.draw-panel__swatch--note {
+  border-radius: 6px;
+  font-size: 10px;
 }
 .draw-panel__chips {
   display: flex;

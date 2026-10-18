@@ -5,12 +5,13 @@ import {
   orient,
   centreInside,
   snap,
+  snapToWalls,
   topLeftForCentre,
   warningText,
   warnings,
   type Placed,
 } from "./geometry";
-import { emptyRows, type PlanGrid } from "./grid";
+import { CELL_CM, emptyRows, type PlanGrid } from "./grid";
 import type { Furniture, Rotation } from "./types";
 
 function piece(over: Partial<Furniture> = {}): Furniture {
@@ -40,15 +41,24 @@ function placed(
 }
 
 /** A 10 × 10 square plan of medium wood with no walls. */
+/** 2 × 2 m of wood floor. */
 function plan(): PlanGrid {
   return {
-    cols: 10,
-    rows: 10,
-    surface: Array.from({ length: 10 }, () => "w1".repeat(10)),
-    feature: emptyRows(10, 10),
+    cols: 40,
+    rows: 40,
+    surface: Array.from({ length: 40 }, () => "w1".repeat(40)),
+    feature: emptyRows(40, 40),
     labels: [],
     doors: [],
+    sockets: [],
+    notes: [],
   };
+}
+
+/** Fills the 20 cm band of rows starting at `cm` with one code. */
+function band(rows: string[], cm: number, code: string): void {
+  for (let r = cm / CELL_CM; r < (cm + 20) / CELL_CM; r++)
+    rows[r] = code.repeat(40);
 }
 
 describe("bounds", () => {
@@ -98,10 +108,10 @@ describe("rotation", () => {
 
 describe("snap", () => {
   it.each([
-    [14, 10],
-    [15, 20],
-    [-6, -10],
-    [-4, 0],
+    [12, 10],
+    [13, 15],
+    [-6, -5],
+    [-2, 0],
     [0, 0],
   ])("%s → %s", (v, out) => {
     expect(snap(v)).toBe(out);
@@ -111,9 +121,9 @@ describe("snap", () => {
 describe("topLeftForCentre", () => {
   it("centres the piece on the point, snapped", () => {
     const tl = topLeftForCentre(piece(), 300, 300);
-    expect(tl).toEqual({ x: 190, y: 250 });
+    expect(tl).toEqual({ x: 190, y: 255 });
     const b = bounds(piece(), { x_cm: tl.x, y_cm: tl.y, rotation: 0 });
-    expect(Math.abs(b.x + b.w / 2 - 300)).toBeLessThanOrEqual(5);
+    expect(Math.abs(b.x + b.w / 2 - 300)).toBeLessThanOrEqual(2.5);
   });
 });
 
@@ -136,14 +146,14 @@ describe("warnings", () => {
 
   it("warns about a wall under the box but not one it only touches", () => {
     const p = plan();
-    p.feature[3] = "wl".repeat(10);
+    band(p.feature, 60, "wl");
     expect(warnings(placed(box, 40, 50), p)).toEqual([{ kind: "wall" }]);
     expect(warnings(placed(box, 40, 20), p)).toEqual([]);
   });
 
   it("warns outside the apartment and past the plan's edge", () => {
     const p = plan();
-    p.surface[0] = "..".repeat(10);
+    band(p.surface, 0, "..");
     expect(warnings(placed(box, 40, 0), p)).toEqual([{ kind: "outside" }]);
     expect(warnings(placed(box, 180, 100), plan())).toEqual([
       { kind: "outside" },
@@ -152,11 +162,84 @@ describe("warnings", () => {
 
   it("can give both warnings at once", () => {
     const p = plan();
-    p.feature[0] = "wl".repeat(10);
-    p.surface[1] = "..".repeat(10);
+    band(p.feature, 0, "wl");
+    band(p.surface, 20, "..");
     expect(warnings(placed(box, 0, 0), p).map(warningText)).toEqual([
       "Overlaps a wall",
       "Outside the apartment",
     ]);
+  });
+});
+
+describe("snapToWalls", () => {
+  /**
+   * 2 × 2 m with 10 cm walls along the top and left, so their inner faces are at y 10 and
+   * x 10, and a door in the top wall from x 50 to 90.
+   */
+  function room(): PlanGrid {
+    const p = plan();
+    p.feature = p.feature.map((row, r) =>
+      r < 2 ? "wl".repeat(40) : "wlwl" + row.slice(4),
+    );
+    for (const r of [0, 1])
+      p.feature[r] = "wl".repeat(10) + "dr".repeat(8) + "wl".repeat(22);
+    return p;
+  }
+  const desk = piece({ width_cm: 80, depth_cm: 40 });
+  const at = (x: number, y: number, rotation: Rotation = 0) => ({
+    x_cm: x,
+    y_cm: y,
+    rotation,
+  });
+
+  it("pushes a piece out of a wall it pokes into, flush with the face", () => {
+    expect(snapToWalls(desk, at(120, 5), room())).toEqual({
+      x_cm: 120,
+      y_cm: 10,
+    });
+  });
+
+  it("pulls a piece that stops just short of a wall up against it", () => {
+    expect(snapToWalls(desk, at(22, 100), room())).toEqual({
+      x_cm: 10,
+      y_cm: 100,
+    });
+  });
+
+  it("sits a piece pushed into a corner against both walls", () => {
+    expect(snapToWalls(desk, at(3, 6), room())).toEqual({ x_cm: 10, y_cm: 10 });
+  });
+
+  it("leaves a piece alone away from the walls", () => {
+    expect(snapToWalls(desk, at(60, 60), room())).toEqual({
+      x_cm: 60,
+      y_cm: 60,
+    });
+  });
+
+  it("won't be pulled sideways by the end of a wall beside a door", () => {
+    // Its left side is 7 cm past the door's far jamb, at x 90, as it pokes into the top wall.
+    expect(snapToWalls(desk, at(97, 5), room())).toEqual({
+      x_cm: 97,
+      y_cm: 10,
+    });
+  });
+
+  it("snaps to a window like a wall", () => {
+    const p = room();
+    // A window down the right edge: its face is at x 190.
+    p.feature = p.feature.map((row) => row.slice(0, 76) + "wnwn");
+    expect(snapToWalls(desk, at(100, 100), p).x_cm).toBe(110);
+  });
+
+  it("rounds away from the wall, so a turned piece never ends up touching it", () => {
+    const p = room();
+    // Turned a quarter, a 95 × 60 piece's box starts 17.5 cm right of x_cm.
+    const shelf = piece({ width_cm: 95, depth_cm: 60 });
+    const snapped = snapToWalls(shelf, at(-5, 100, 90), p);
+    expect(snapped).toEqual({ x_cm: -7, y_cm: 100 });
+    expect(warnings(placed(shelf, snapped.x_cm, snapped.y_cm, 90), p)).toEqual(
+      [],
+    );
   });
 });

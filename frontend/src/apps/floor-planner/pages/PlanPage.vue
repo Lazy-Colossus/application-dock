@@ -90,6 +90,7 @@
           v-model:brush="brush"
           v-model:shape="shape"
           v-model:size="brushSize"
+          v-model:straight="straight"
           :can-undo="store.canUndo"
           :can-redo="store.canRedo"
           @undo="store.undo()"
@@ -128,15 +129,21 @@
             :brush="drawing ? brush : null"
             :shape="shape"
             :brush-size="brushSize"
+            :straight="straight"
             @stroke="(cells) => store.applyStroke(cells, brush)"
             @hover="hover = $event"
             @preview="readout = $event"
             @label-at="newLabel"
             @label-pick="editLabel"
             @label-move="store.moveLabel"
+            @note-at="newNote"
+            @note-pick="editNote"
+            @note-move="store.moveNote"
+            @socket-toggle="store.toggleSocket"
+            :measuring="measuring"
             :placed="mode === 'arrange' ? placed : []"
             :selected-id="selectedPlacedId"
-            :arranging="arranging"
+            :arranging="arranging && !measuring"
             :droppable="arranging"
             @select="selectedPlacedId = $event"
             @move="movePiece"
@@ -186,6 +193,7 @@
           </div>
           <PlanInfoPanel
             :plan="store.plan"
+            :zoom="zoom"
             @resize="store.resizePlan"
             @rename="editLabel"
             @remove="store.deleteLabel"
@@ -207,6 +215,24 @@
           </p>
         </template>
         <template v-else>
+          <button
+            type="button"
+            class="fp-button fp__measure"
+            :class="{ 'fp-button--primary': arrangeMeasuring }"
+            :aria-pressed="arrangeMeasuring"
+            data-testid="arrange-measure"
+            @click="arrangeMeasuring = !arrangeMeasuring"
+          >
+            {{ arrangeMeasuring ? "Done measuring" : "Measure" }}
+          </button>
+          <p
+            v-if="arrangeMeasuring"
+            class="fp__hint"
+            data-testid="measure-hint"
+          >
+            Drag, or click two points, to measure. Shift keeps it straight; Esc
+            clears it.
+          </p>
           <PlacementInspector
             v-if="selectedPlaced"
             :piece="selectedPlaced.piece"
@@ -220,8 +246,11 @@
               Select a piece on the plan, or drag one from the tray.
             </p>
             <div class="fp__scale-card">
-              <span class="fp-mono">1 square = 20 cm</span>
-              <span>Pieces snap to 10 cm.</span>
+              <span class="fp-mono">{{ gridLegend(zoom) }}</span>
+              <span
+                >Pieces snap to 5 cm and to walls; hold Alt to place
+                freely.</span
+              >
             </div>
           </template>
         </template>
@@ -260,6 +289,20 @@
         @save="saveLabel"
         @remove="removeLabel"
         @cancel="labelEdit = null"
+      />
+    </q-dialog>
+
+    <q-dialog
+      :model-value="noteEdit !== null"
+      @update:model-value="noteEdit = null"
+    >
+      <NoteDialog
+        v-if="noteEdit"
+        :initial="noteEdit"
+        :is-new="noteEdit.id === null"
+        @save="saveNote"
+        @remove="removeNote"
+        @cancel="noteEdit = null"
       />
     </q-dialog>
 
@@ -335,6 +378,7 @@ import PlacementInspector from "../components/PlacementInspector.vue";
 import PieceForm from "../components/PieceForm.vue";
 import MembersDialog from "../components/MembersDialog.vue";
 import NameDialog from "../components/NameDialog.vue";
+import NoteDialog from "../components/NoteDialog.vue";
 import PlanCanvas from "../components/PlanCanvas.vue";
 import PlanInfoPanel from "../components/PlanInfoPanel.vue";
 import PieceStage from "../components/PieceStage.vue";
@@ -344,12 +388,13 @@ import { findDoors, sideNames } from "../doors";
 import { BLANK_DRAFT, copyName, draftOf, type PieceDraft } from "../furniture";
 import {
   orient,
+  snapToWalls,
   topLeftForCentre,
   warningText,
   warnings,
   type Placed,
 } from "../geometry";
-import type { BrushSize, Cell } from "../grid";
+import { gridLegend, type Cell, type PlanBrushSize } from "../grid";
 import { useFloorPlanStore } from "../stores/useFloorPlanStore";
 import type { Mode, Rotation } from "../types";
 import "../css/floor-planner.sass";
@@ -367,13 +412,22 @@ const mode = ref<Mode>("draw");
 const membersOpen = ref(false);
 const brush = ref<Brush>(DEFAULT_BRUSH);
 const shape = ref<"freehand" | "rectangle">("rectangle");
-const brushSize = ref<BrushSize>(1);
+const brushSize = ref<PlanBrushSize>(1);
+const straight = ref(false);
 const zoom = ref(1);
 const hover = ref<Cell | null>(null);
 const readout = ref<string | null>(null);
 const labelEdit = ref<{ id: string | null; cell: Cell; text: string } | null>(
   null,
 );
+const noteEdit = ref<{
+  id: string | null;
+  cell: Cell;
+  text: string;
+  vertical: boolean;
+} | null>(null);
+/** Arrange has no tools panel, so its ruler is a toggle of its own. */
+const arrangeMeasuring = ref(false);
 const root = ref<ComponentPublicInstance | null>(null);
 
 const selectedId = ref<string | null>(null);
@@ -401,6 +455,11 @@ const selectedPlacedId = ref<string | null>(null);
 const layoutRenaming = ref(false);
 
 const arranging = computed(() => mode.value === "arrange");
+const measuring = computed(
+  () =>
+    (mode.value === "draw" && brush.value.id === "measure") ||
+    (arranging.value && arrangeMeasuring.value),
+);
 /** Falls back to the first layout if the chosen one was deleted, here or elsewhere. */
 const activeLayout = computed(() => {
   const layouts = store.apartment?.layouts ?? [];
@@ -471,6 +530,7 @@ function pickDoor(key: string, at: { left: number; top: number }): void {
 
 watch(mode, () => {
   pickedKey.value = null;
+  arrangeMeasuring.value = false;
 });
 
 watch([mode, () => activeLayout.value?.id], () => {
@@ -481,10 +541,10 @@ function dropPiece(id: string, cx: number, cy: number): void {
   const piece = furnitureById.value.get(id);
   if (!piece || !activeLayout.value) return;
   const { x, y } = topLeftForCentre(piece, cx, cy);
+  const spot = { x_cm: x, y_cm: y, rotation: 0 };
   store.placePiece(activeLayout.value.id, id, {
-    x_cm: x,
-    y_cm: y,
-    rotation: 0,
+    ...spot,
+    ...(store.plan ? snapToWalls(piece, spot, store.plan) : {}),
   });
   selectedPlacedId.value = id;
 }
@@ -741,6 +801,35 @@ function removeLabel(): void {
   labelEdit.value = null;
 }
 
+function newNote(cell: Cell): void {
+  noteEdit.value = { id: null, cell, text: "", vertical: false };
+}
+
+function editNote(id: string): void {
+  const note = store.plan?.notes.find((n) => n.id === id);
+  if (note)
+    noteEdit.value = {
+      id,
+      cell: note,
+      text: note.text,
+      vertical: note.vertical,
+    };
+}
+
+function saveNote(text: string, vertical: boolean): void {
+  const edit = noteEdit.value;
+  if (!edit) return;
+  if (edit.id) store.updateNote(edit.id, text, vertical);
+  else
+    store.addNote(text, { col: edit.cell.col, row: edit.cell.row }, vertical);
+  noteEdit.value = null;
+}
+
+function removeNote(): void {
+  if (noteEdit.value?.id) store.deleteNote(noteEdit.value.id);
+  noteEdit.value = null;
+}
+
 function onKey(e: KeyboardEvent): void {
   const target = e.target as HTMLElement | null;
   if (target?.closest("input, textarea")) return;
@@ -823,6 +912,9 @@ onBeforeUnmount(() =>
 .fp__scale-card .fp-mono {
   font-size: 14px;
   color: var(--fp-ink);
+}
+.fp__measure {
+  align-self: flex-start;
 }
 .fp__hint {
   margin: 0;
