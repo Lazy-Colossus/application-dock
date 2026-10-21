@@ -200,14 +200,21 @@ describe("snapToWalls", () => {
   });
 
   it("pulls a piece that stops just short of a wall up against it", () => {
-    expect(snapToWalls(desk, at(22, 100), room())).toEqual({
+    expect(snapToWalls(desk, at(14, 100), room())).toEqual({
       x_cm: 10,
       y_cm: 100,
     });
   });
 
   it("sits a piece pushed into a corner against both walls", () => {
-    expect(snapToWalls(desk, at(3, 6), room())).toEqual({ x_cm: 10, y_cm: 10 });
+    expect(snapToWalls(desk, at(7, 8), room())).toEqual({ x_cm: 10, y_cm: 10 });
+  });
+
+  it("leaves a piece alone when it is more than one grid step from a wall", () => {
+    expect(snapToWalls(desk, at(20, 100), room())).toEqual({
+      x_cm: 20,
+      y_cm: 100,
+    });
   });
 
   it("leaves a piece alone away from the walls", () => {
@@ -229,7 +236,7 @@ describe("snapToWalls", () => {
     const p = room();
     // A window down the right edge: its face is at x 190.
     p.feature = p.feature.map((row) => row.slice(0, 76) + "wnwn");
-    expect(snapToWalls(desk, at(100, 100), p).x_cm).toBe(110);
+    expect(snapToWalls(desk, at(106, 100), p).x_cm).toBe(110);
   });
 
   it("rounds away from the wall, so a turned piece never ends up touching it", () => {

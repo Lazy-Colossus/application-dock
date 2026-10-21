@@ -80,7 +80,7 @@ export function topLeftForCentre(
 }
 
 /** How far a side may be from a wall face, either way, and still be pulled flush against it. */
-export const WALL_SNAP_CM = 15;
+export const WALL_SNAP_CM = SNAP_CM;
 
 /** Walls and the windows set in them; a door is an opening, so nothing snaps into it. */
 const SOLID = new Set(["wl", "wn"]);

@@ -8,6 +8,7 @@
   >
     <div class="fp__top">
       <ApartmentMenu
+        :readonly="phone"
         :apartments="store.apartments"
         :current="store.apartment"
         @show="store.fetchApartments()"
@@ -29,11 +30,11 @@
           :data-testid="`mode-${m.id}`"
           @click="mode = m.id"
         >
-          {{ m.label }}
+          {{ phone && m.id === "draw" ? "Plan" : m.label }}
         </button>
       </div>
       <div class="fp__spacer" />
-      <template v-if="store.apartment">
+      <template v-if="store.apartment && !phone">
         <button
           type="button"
           class="fp__people"
@@ -84,7 +85,11 @@
     </p>
 
     <div class="fp__body">
-      <aside class="fp__panel fp__panel--left" data-testid="fp-left">
+      <aside
+        v-if="!phone"
+        class="fp__panel fp__panel--left"
+        data-testid="fp-left"
+      >
         <DrawPanel
           v-if="mode === 'draw'"
           v-model:brush="brush"
@@ -184,7 +189,7 @@
         </div>
       </section>
       <button
-        v-if="mode === 'draw' && infoHidden"
+        v-if="!phone && mode === 'draw' && infoHidden"
         type="button"
         class="fp__rail"
         aria-label="Show plan details"
@@ -194,7 +199,11 @@
         <span class="fp__rail-arrow" aria-hidden="true">‹</span>
         <span class="fp__rail-label">Plan details</span>
       </button>
-      <aside v-else class="fp__panel fp__panel--right" data-testid="fp-right">
+      <aside
+        v-else-if="!phone"
+        class="fp__panel fp__panel--right"
+        data-testid="fp-right"
+      >
         <template v-if="mode === 'draw' && store.plan">
           <div class="fp__panel-bar">
             <button
@@ -284,6 +293,7 @@
       <LayoutTabs
         v-if="mode === 'arrange' && store.apartment"
         :layouts="store.apartment.layouts"
+        :readonly="phone"
         :active-id="activeLayout?.id ?? null"
         @select="switchLayout"
         @create="createLayout"
@@ -408,6 +418,7 @@ import { gridLegend, type Cell, type PlanBrushSize } from "../grid";
 import { moveId } from "../reorder";
 import { useFloorPlanStore } from "../stores/useFloorPlanStore";
 import type { Mode, PlanObject, Rotation } from "../types";
+import { usePhone } from "../usePhone";
 import "../css/floor-planner.sass";
 
 const modes: { id: Mode; label: string }[] = [
@@ -419,6 +430,8 @@ const modes: { id: Mode; label: string }[] = [
 const store = useFloorPlanStore();
 const route = useRoute();
 const router = useRouter();
+/** Phones get a view-only planner: browse the plan, layouts and furniture. */
+const phone = usePhone();
 const mode = ref<Mode>("draw");
 const membersOpen = ref(false);
 /** Null once a right click on the plan puts the tool down. */
@@ -469,7 +482,7 @@ const activeLayoutId = ref<string | null>(null);
 const selectedPlacedId = ref<string | null>(null);
 const layoutRenaming = ref(false);
 
-const arranging = computed(() => mode.value === "arrange");
+const arranging = computed(() => mode.value === "arrange" && !phone.value);
 const measuring = computed(
   () =>
     (mode.value === "draw" && brush.value?.id === "measure") ||
@@ -695,6 +708,7 @@ function openForm(id: string | null, draft: PieceDraft | null): void {
 }
 
 function selectPiece(id: string): void {
+  if (phone.value) return;
   const piece = furnitureById.value.get(id);
   openForm(id, piece ? draftOf(piece) : null);
 }
@@ -819,7 +833,7 @@ function afterLeaving(nextId: string): void {
   goTo(nextId, true);
 }
 
-const drawing = computed(() => mode.value === "draw");
+const drawing = computed(() => mode.value === "draw" && !phone.value);
 
 const INFO_HIDDEN_KEY = "fp-plan-info-hidden";
 /** Hidden until opened; per browser, so it stays open next time. Storage may be unavailable. */
@@ -1154,5 +1168,14 @@ onBeforeUnmount(() =>
 .fp__sheet {
   position: relative;
   margin: auto;
+}
+@media (max-width: 700px) {
+  .fp__top {
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .fp__plan {
+    padding: 12px;
+  }
 }
 </style>
