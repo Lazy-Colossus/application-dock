@@ -69,7 +69,7 @@ describe("measureAt", () => {
       h: { col: 1, row: 2, len: 8 },
       v: { col: 3, row: 1, len: 3 },
     });
-    expect(measureText(m!)).toBe("Clear 0.40 × 0.15 m");
+    expect(measureText(m!)).toBe("Dimensions 0.40 × 0.15 m");
   });
 
   it("has nothing to say outside the apartment", () => {

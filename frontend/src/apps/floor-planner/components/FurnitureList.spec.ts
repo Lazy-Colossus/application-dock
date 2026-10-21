@@ -37,16 +37,14 @@ describe("FurnitureList", () => {
     ).toBe("true");
   });
 
-  it("emits select, add and bulk", async () => {
+  it("emits select and add", async () => {
     const wrapper = mount(FurnitureList, {
       props: { pieces: [sofa], selectedId: null },
     });
     await wrapper.get("[data-testid=piece-f_1]").trigger("click");
     await wrapper.get("[data-testid=piece-add]").trigger("click");
-    await wrapper.get("[data-testid=piece-bulk]").trigger("click");
     expect(wrapper.emitted("select")?.[0]).toEqual(["f_1"]);
     expect(wrapper.emitted("add")).toHaveLength(1);
-    expect(wrapper.emitted("bulk")).toHaveLength(1);
   });
 
   it("explains the empty state", () => {

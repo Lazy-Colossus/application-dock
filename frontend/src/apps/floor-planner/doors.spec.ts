@@ -3,6 +3,7 @@ import {
   doorShape,
   findDoors,
   liveDoorSettings,
+  removeDoor,
   setDoor,
   sideNames,
 } from "./doors";
@@ -187,6 +188,17 @@ describe("door settings", () => {
     const once = setDoor(flat(), setting);
     const twice = setDoor(once, { ...setting, double: true });
     expect(twice.doors).toEqual([{ ...setting, double: true }]);
+  });
+
+  it("removes a door, leaving the opening and its floor, and drops its setting", () => {
+    const plan = setDoor(flat(), { ...setting, col: 3, row: 2 });
+    const door = findDoors(plan).find((d) => d.code === "dr")!;
+    const after = removeDoor(plan, door);
+    expect(after.feature[2].slice(6, 8)).toBe("..");
+    expect(after.feature[3].slice(6, 8)).toBe("..");
+    expect(after.feature[5]).toBe(plan.feature[5]);
+    expect(after.surface).toEqual(plan.surface);
+    expect(after.doors).toEqual([]);
   });
 
   it("keeps settings only for doors that still exist", () => {

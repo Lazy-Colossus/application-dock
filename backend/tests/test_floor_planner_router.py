@@ -51,7 +51,7 @@ def test_listing_creates_my_apartment_once() -> None:
 def test_get_one_apartment(base: str) -> None:
     body = client.get(base).json()
     assert (body["name"], body["members"], body["plan_rev"]) == ("My apartment", ["test_user"], 0)
-    assert len(body["surface"]) == 160
+    assert len(body["surface"]) == 240
     assert "plan_updated_by" not in body
 
 

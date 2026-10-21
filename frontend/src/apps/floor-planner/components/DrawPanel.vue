@@ -20,6 +20,25 @@
         Redo
       </button>
     </div>
+    <button
+      type="button"
+      class="draw-panel__measure"
+      :class="{ 'draw-panel__measure--active': brush?.id === 'measure' }"
+      :aria-pressed="brush?.id === 'measure'"
+      title="Measure: drag, or click two points; Shift keeps it straight"
+      data-testid="brush-measure"
+      @click="emit('update:brush', MEASURE_TOOL)"
+    >
+      <svg viewBox="-7 -7 14 14" aria-hidden="true">
+        <path
+          d="M -5.5 3 L 3 -5.5 M -4 1.5 l 1.5 1.5 M -1.5 -1 l 1.5 1.5 M 1 -3.5 l 1.5 1.5"
+          stroke="currentColor"
+          stroke-width="1.3"
+          stroke-linecap="round"
+        />
+      </svg>
+      Measure Tool
+    </button>
 
     <section>
       <h3 class="draw-panel__heading">Structure</h3>
@@ -29,8 +48,8 @@
           :key="s.id"
           type="button"
           class="draw-panel__row"
-          :class="{ 'draw-panel__row--active': brush.id === s.id }"
-          :aria-pressed="brush.id === s.id"
+          :class="{ 'draw-panel__row--active': brush?.id === s.id }"
+          :aria-pressed="brush?.id === s.id"
           :title="s.label"
           :data-testid="`brush-${s.id}`"
           @click="emit('update:brush', structureBrush(s))"
@@ -40,7 +59,7 @@
         </button>
       </div>
       <p
-        v-if="brush.id === 'door' || brush.id === 'front_door'"
+        v-if="brush?.id === 'door' || brush?.id === 'front_door'"
         class="draw-panel__tip"
         data-testid="door-tip"
       >
@@ -55,12 +74,12 @@
         v-for="f in FLOORS"
         :key="f.id"
         class="draw-panel__floor"
-        :class="{ 'draw-panel__floor--active': brush.id === f.id }"
+        :class="{ 'draw-panel__floor--active': brush?.id === f.id }"
       >
         <button
           type="button"
           class="draw-panel__row draw-panel__row--bare"
-          :aria-pressed="brush.id === f.id"
+          :aria-pressed="brush?.id === f.id"
           :data-testid="`brush-${f.id}`"
           @click="emit('update:brush', floorBrush(f, chosen(f)))"
         >
@@ -93,8 +112,8 @@
         <button
           type="button"
           class="draw-panel__row"
-          :class="{ 'draw-panel__row--active': brush.id === 'eraser' }"
-          :aria-pressed="brush.id === 'eraser'"
+          :class="{ 'draw-panel__row--active': brush?.id === 'eraser' }"
+          :aria-pressed="brush?.id === 'eraser'"
           data-testid="brush-eraser"
           @click="emit('update:brush', ERASER)"
         >
@@ -104,8 +123,8 @@
         <button
           type="button"
           class="draw-panel__row"
-          :class="{ 'draw-panel__row--active': brush.id === 'label' }"
-          :aria-pressed="brush.id === 'label'"
+          :class="{ 'draw-panel__row--active': brush?.id === 'label' }"
+          :aria-pressed="brush?.id === 'label'"
           title="Room label"
           data-testid="brush-label"
           @click="emit('update:brush', LABEL_TOOL)"
@@ -116,8 +135,8 @@
         <button
           type="button"
           class="draw-panel__row"
-          :class="{ 'draw-panel__row--active': brush.id === 'socket' }"
-          :aria-pressed="brush.id === 'socket'"
+          :class="{ 'draw-panel__row--active': brush?.id === 'socket' }"
+          :aria-pressed="brush?.id === 'socket'"
           title="Electricity socket: click to add, click one to remove"
           data-testid="brush-socket"
           @click="emit('update:brush', SOCKET_TOOL)"
@@ -139,37 +158,14 @@
         <button
           type="button"
           class="draw-panel__row"
-          :class="{ 'draw-panel__row--active': brush.id === 'note' }"
-          :aria-pressed="brush.id === 'note'"
+          :class="{ 'draw-panel__row--active': brush?.id === 'note' }"
+          :aria-pressed="brush?.id === 'note'"
           title="Note: click to add, click one to edit, drag to move"
           data-testid="brush-note"
           @click="emit('update:brush', NOTE_TOOL)"
         >
           <span class="draw-panel__swatch draw-panel__swatch--note">…</span>
           <span class="draw-panel__name">Note</span>
-        </button>
-        <button
-          type="button"
-          class="draw-panel__row"
-          :class="{ 'draw-panel__row--active': brush.id === 'measure' }"
-          :aria-pressed="brush.id === 'measure'"
-          title="Measure: drag, or click two points; Shift keeps it straight"
-          data-testid="brush-measure"
-          @click="emit('update:brush', MEASURE_TOOL)"
-        >
-          <svg
-            class="draw-panel__swatch draw-panel__swatch--measure"
-            viewBox="-7 -7 14 14"
-            aria-hidden="true"
-          >
-            <path
-              d="M -5.5 3 L 3 -5.5 M -4 1.5 l 1.5 1.5 M -1.5 -1 l 1.5 1.5 M 1 -3.5 l 1.5 1.5"
-              stroke="#2b2a27"
-              stroke-width="1.3"
-              stroke-linecap="round"
-            />
-          </svg>
-          <span class="draw-panel__name">Measure</span>
         </button>
       </div>
     </section>
@@ -263,7 +259,8 @@ import { CELL_CM, PLAN_BRUSH_SIZES, type PlanBrushSize } from "../grid";
 type Shape = "freehand" | "rectangle";
 
 const props = defineProps<{
-  brush: Brush;
+  /** Null once the tool is put down, with a right click on the plan. */
+  brush: Brush | null;
   shape: Shape;
   size: PlanBrushSize;
   straight: boolean;
@@ -287,7 +284,7 @@ const shapes: { id: Shape; label: string }[] = [
 
 /** The family's current colour: the active brush's if it's this family, else its default. */
 function chosen(f: FloorFamily): string {
-  return props.brush.id === f.id ? props.brush.code : f.defaultCode;
+  return props.brush?.id === f.id ? props.brush.code : f.defaultCode;
 }
 
 function swatchOf(f: FloorFamily): string {
@@ -402,8 +399,7 @@ function swatchOf(f: FloorFamily): string {
 .draw-panel__swatch--lock {
   border: none;
 }
-.draw-panel__swatch--socket,
-.draw-panel__swatch--measure {
+.draw-panel__swatch--socket {
   border: none;
 }
 .draw-panel__swatch--note {
@@ -463,5 +459,30 @@ function swatchOf(f: FloorFamily): string {
 .draw-panel__history .fp-button {
   flex: 1;
   height: 32px;
+}
+.draw-panel__measure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  border: 1px solid var(--fp-control-line);
+  border-radius: 6px;
+  background: var(--fp-chrome);
+  color: var(--fp-ink);
+  font: 600 14px/1 var(--fp-sans);
+  cursor: pointer;
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+  &:hover {
+    background: #f1efea;
+  }
+}
+.draw-panel__measure--active,
+.draw-panel__measure--active:hover {
+  border-color: var(--fp-accent);
+  background: #e8eefc;
 }
 </style>

@@ -6,10 +6,10 @@ import uuid
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, StringConstraints, model_validator
 
-DEFAULT_COLS = 200  # 10 m
-DEFAULT_ROWS = 160  # 8 m
+DEFAULT_COLS = 240  # 12 m
+DEFAULT_ROWS = 240  # 12 m
 EMPTY_CELL = ".."
 CELL_CM = 5
 SURFACE_CODES = frozenset(
@@ -35,7 +35,7 @@ APARTMENTS_MAX = 20  # per user, owned or shared
 DEFAULT_APARTMENT_NAME = "My apartment"
 
 Shape = Literal["rectangle", "round", "oval", "egg", "custom"]
-Colour = Literal[
+PresetColour = Literal[
     "white",
     "black",
     "grey",
@@ -54,6 +54,8 @@ Colour = Literal[
     "olive",
     "charcoal",
 ]
+# A preset name, or `#rrggbb` from the colour picker.
+Colour = PresetColour | Annotated[str, StringConstraints(pattern=r"^#[0-9a-fA-F]{6}$")]
 # Whole degrees clockwise (LA-4).
 Rotation = Annotated[int, Field(ge=0, lt=360)]
 
@@ -86,7 +88,7 @@ def upgrade_legacy_cells(cells: list[str], colour: str) -> list[str]:
     used = set("".join(cells))
     if _LEGACY_SQUARE not in used or used - {_LEGACY_SQUARE, EMPTY_SQUARE}:
         return cells
-    char = COLOUR_CHARS[colour]
+    char = COLOUR_CHARS.get(colour, COLOUR_CHARS["grey"])
     out: list[str] = []
     for row in cells:
         wide = "".join(char * 2 if ch == _LEGACY_SQUARE else EMPTY_SQUARE * 2 for ch in row)

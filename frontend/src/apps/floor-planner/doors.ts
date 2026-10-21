@@ -1,5 +1,5 @@
-import { EMPTY } from "./codes";
-import { CELL_CM, codeAt, type Cell, type PlanGrid } from "./grid";
+import { EMPTY, ERASER } from "./codes";
+import { CELL_CM, codeAt, paint, type Cell, type PlanGrid } from "./grid";
 import type { DoorSetting } from "./types";
 
 export const DOOR_CODES: ReadonlySet<string> = new Set(["dr", "fd"]);
@@ -288,4 +288,15 @@ export function setDoor(plan: PlanGrid, setting: DoorSetting): PlanGrid {
       setting,
     ],
   };
+}
+
+/** Takes the door out of its wall, leaving the opening and the floor under it. */
+export function removeDoor(plan: PlanGrid, door: Door): PlanGrid {
+  const cells: Cell[] = [];
+  for (let row = door.row; row < door.row + door.rows; row++)
+    for (let col = door.col; col < door.col + door.cols; col++)
+      if (codeAt(plan.feature, { col, row }) === door.code)
+        cells.push({ col, row });
+  const cleared = paint(plan, cells, { ...ERASER, layer: "feature" });
+  return { ...cleared, doors: liveDoorSettings(cleared) };
 }

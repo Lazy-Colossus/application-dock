@@ -1,8 +1,16 @@
 <template>
   <div class="furniture-list" data-testid="furniture-list">
+    <button
+      type="button"
+      class="fp-button fp-button--primary"
+      data-testid="piece-add"
+      @click="emit('add')"
+    >
+      Add a piece
+    </button>
     <h3 class="furniture-list__heading">Furniture · {{ pieces.length }}</h3>
     <p v-if="pieces.length === 0" class="furniture-list__empty">
-      Nothing yet. Add pieces one by one, or paste a list.
+      Nothing yet. Add your first piece.
     </p>
     <p v-if="pieces.length > 1" class="furniture-list__hint">
       Drag to reorder. Higher up sits on top on the plan.
@@ -40,24 +48,6 @@
         </span>
       </button>
     </div>
-    <div class="furniture-list__actions">
-      <button
-        type="button"
-        class="fp-button fp-button--primary"
-        data-testid="piece-add"
-        @click="emit('add')"
-      >
-        Add a piece
-      </button>
-      <button
-        type="button"
-        class="fp-button"
-        data-testid="piece-bulk"
-        @click="emit('bulk')"
-      >
-        Bulk add from list
-      </button>
-    </div>
   </div>
 </template>
 
@@ -72,7 +62,6 @@ defineProps<{ pieces: Furniture[]; selectedId: string | null }>();
 const emit = defineEmits<{
   select: [id: string];
   add: [];
-  bulk: [];
   move: [moved: string, target: string, after: boolean];
 }>();
 
@@ -166,11 +155,5 @@ const reorder = useReorderDrag((...args) => emit("move", ...args));
 .furniture-list__size {
   font-size: 12px;
   color: #4a4843;
-}
-.furniture-list__actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 10px;
 }
 </style>

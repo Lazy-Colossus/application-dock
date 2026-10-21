@@ -255,6 +255,9 @@ export function fillFor(code: string): string {
   return FILLS.get(code) ?? "transparent";
 }
 
+/** A code's plain colour, for places its pattern can't go, such as a cursor. */
+export const solidFill = (code: string): string => FILLS.get(code) ?? "#ffffff";
+
 /** The CSS background for a brush swatch, mimicking the canvas pattern at swatch size. */
 export function swatchBackground(code: string): string {
   if (code === "b0")

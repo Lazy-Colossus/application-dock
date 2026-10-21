@@ -86,6 +86,20 @@
           :data-testid="`colour-${c.id}`"
           @click="set({ colour: c.id })"
         />
+        <label
+          class="piece-form__colour piece-form__colour--custom"
+          :class="{ 'piece-form__colour--on': customOn }"
+          :style="customOn ? { background: draft.colour } : undefined"
+          title="Pick another colour"
+        >
+          <input
+            type="color"
+            :value="colourHex(draft.colour)"
+            aria-label="Custom colour"
+            data-testid="colour-custom"
+            @input="set({ colour: pickedColour($event) })"
+          />
+        </label>
       </div>
     </div>
 
@@ -111,11 +125,19 @@
       <button
         type="submit"
         class="fp-button fp-button--primary"
-        :disabled="problem !== null"
+        :disabled="problem !== null || !dirty"
         data-testid="piece-save"
       >
         Save
       </button>
+      <span
+        v-if="saved && !dirty"
+        class="piece-form__saved"
+        role="status"
+        data-testid="piece-saved"
+      >
+        ✓ Saved
+      </span>
     </div>
     <div v-if="piece" class="piece-form__actions">
       <button
@@ -144,17 +166,21 @@ import { canDraw, toDrawn } from "../customShape";
 import {
   COLOURS,
   SHAPES,
+  colourHex,
+  draftOf,
   draftProblem,
   sizeLabel,
   type PieceDraft,
 } from "../furniture";
-import type { Furniture, Shape } from "../types";
+import type { Colour, Furniture, Shape } from "../types";
 
 const props = defineProps<{
   /** The saved piece being edited; null for a new one. */
   piece: Furniture | null;
   placedIn: number;
   draft: PieceDraft;
+  /** The last save went through. */
+  saved?: boolean;
 }>();
 const emit = defineEmits<{
   "update:draft": [draft: PieceDraft];
@@ -212,6 +238,19 @@ function setShape(shape: Shape): void {
     size.depth_cm = Math.max(1, Math.round(size.width_cm * 0.6));
   set({ shape, cells: null, ...size });
 }
+
+const customOn = computed(() => props.draft.colour.startsWith("#"));
+
+function pickedColour(e: Event): Colour {
+  return (e.target as HTMLInputElement).value as Colour;
+}
+
+/** A new piece always has something to save; a saved one only once it differs. */
+const dirty = computed(
+  () =>
+    !props.piece ||
+    JSON.stringify(draftOf(props.piece)) !== JSON.stringify(props.draft),
+);
 
 const problem = computed(() => draftProblem(props.draft));
 
@@ -318,6 +357,25 @@ function remove(): void {
 .piece-form__colour--on {
   outline: 2px solid var(--fp-accent);
   outline-offset: 2px;
+}
+.piece-form__colour--custom {
+  position: relative;
+  overflow: hidden;
+  background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+}
+.piece-form__colour--custom input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.piece-form__saved {
+  align-self: center;
+  font-size: 13px;
+  color: var(--fp-ok-ink, #2f7a3e);
 }
 .piece-form__drawn {
   display: flex;

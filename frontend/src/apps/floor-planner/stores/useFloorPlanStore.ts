@@ -2,7 +2,7 @@ import { computed, ref, watch } from "vue";
 import { defineStore } from "pinia";
 import { api, ApiError } from "@/composables/useApi";
 import type { Brush } from "../codes";
-import { liveDoorSettings, setDoor } from "../doors";
+import { liveDoorSettings, removeDoor, setDoor, type Door } from "../doors";
 import { toggleSocket as toggled } from "../sockets";
 import type { PieceDraft } from "../furniture";
 import { paint, resize, type Cell, type PlanGrid } from "../grid";
@@ -415,6 +415,7 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
   /** A door's swing side, hinge or leaves; one undo step like a stroke. */
   const setDoorSetting = (setting: DoorSetting) =>
     step((p) => setDoor(p, setting));
+  const deleteDoor = (door: Door) => step((p) => removeDoor(p, door));
   const toggleSocket = (cell: Cell) =>
     step((p) => ({ ...p, sockets: toggled(p.sockets, cell) }));
 
@@ -546,6 +547,7 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
     updateNote,
     deleteNote,
     setDoorSetting,
+    deleteDoor,
     toggleSocket,
     undo,
     redo,

@@ -103,7 +103,6 @@
           @select="selectPiece"
           @move="reorderPiece"
           @add="startAdding"
-          @bulk="bulkOpen = true"
         />
         <LayoutTray
           v-else
@@ -117,8 +116,13 @@
       </aside>
       <section class="fp__plan" data-testid="fp-plan">
         <div class="fp__sheet">
+          <FurnitureGrid
+            v-if="mode === 'furniture' && !openDraft"
+            :pieces="store.apartment?.furniture ?? []"
+            @select="selectPiece"
+          />
           <PieceStage
-            v-if="mode === 'furniture'"
+            v-else-if="mode === 'furniture'"
             :key="formKey"
             v-model:draft="openDraft"
             :zoom="zoom"
@@ -132,14 +136,12 @@
             :shape="shape"
             :brush-size="brushSize"
             :straight="straight"
-            @stroke="(cells) => store.applyStroke(cells, brush)"
+            @stroke="(cells) => brush && store.applyStroke(cells, brush)"
             @hover="hover = $event"
             @preview="readout = $event"
             @label-at="newLabel"
-            @label-pick="editLabel"
             @label-move="store.moveLabel"
             @note-at="newNote"
-            @note-pick="editNote"
             @note-move="store.moveNote"
             @socket-toggle="store.toggleSocket"
             :measuring="measuring"
@@ -152,7 +154,8 @@
             @drop="dropPiece"
             :closed-doors="closedDoors"
             @door-toggle="toggleDoor"
-            @door-pick="pickDoor"
+            @pick="pick"
+            @deselect="deselect"
           />
           <DoorSetup
             v-if="pickedDoor && store.plan"
@@ -165,7 +168,18 @@
             }"
             @update="store.setDoorSetting"
             @open="(open) => showDoor(pickedDoor!.door.key, open)"
-            @close="pickedKey = null"
+            @remove="removePicked"
+            @close="picked = null"
+          />
+          <PlanObjectMenu
+            v-else-if="pickedMenu && picked"
+            :title="pickedMenu.title"
+            :detail="pickedMenu.detail"
+            :edit-label="pickedMenu.editLabel"
+            :style="{ left: `${picked.left}px`, top: `${picked.top}px` }"
+            @edit="editPicked"
+            @remove="removePicked"
+            @close="picked = null"
           />
         </div>
       </section>
@@ -207,6 +221,7 @@
             v-model:draft="openDraft"
             :piece="selectedPiece"
             :placed-in="selectedPiece ? store.placedIn(selectedPiece.id) : 0"
+            :saved="justSaved"
             @save="savePiece"
             @remove="removePiece"
             @copy="copyPiece"
@@ -320,14 +335,6 @@
       />
     </q-dialog>
 
-    <q-dialog v-model="bulkOpen">
-      <BulkAddDialog
-        v-if="bulkOpen"
-        @add="addBulk"
-        @cancel="bulkOpen = false"
-      />
-    </q-dialog>
-
     <q-dialog v-model="membersOpen">
       <MembersDialog
         v-if="membersOpen"
@@ -370,9 +377,9 @@ import {
   useRouter,
 } from "vue-router";
 import ApartmentMenu from "../components/ApartmentMenu.vue";
-import BulkAddDialog from "../components/BulkAddDialog.vue";
 import DoorSetup from "../components/DoorSetup.vue";
 import DrawPanel from "../components/DrawPanel.vue";
+import FurnitureGrid from "../components/FurnitureGrid.vue";
 import FurnitureList from "../components/FurnitureList.vue";
 import LayoutTabs from "../components/LayoutTabs.vue";
 import LayoutTray from "../components/LayoutTray.vue";
@@ -383,6 +390,7 @@ import NameDialog from "../components/NameDialog.vue";
 import NoteDialog from "../components/NoteDialog.vue";
 import PlanCanvas from "../components/PlanCanvas.vue";
 import PlanInfoPanel from "../components/PlanInfoPanel.vue";
+import PlanObjectMenu from "../components/PlanObjectMenu.vue";
 import PieceStage from "../components/PieceStage.vue";
 import StatusBar from "../components/StatusBar.vue";
 import { DEFAULT_BRUSH, type Brush } from "../codes";
@@ -399,7 +407,7 @@ import {
 import { gridLegend, type Cell, type PlanBrushSize } from "../grid";
 import { moveId } from "../reorder";
 import { useFloorPlanStore } from "../stores/useFloorPlanStore";
-import type { Mode, Rotation } from "../types";
+import type { Mode, PlanObject, Rotation } from "../types";
 import "../css/floor-planner.sass";
 
 const modes: { id: Mode; label: string }[] = [
@@ -413,7 +421,8 @@ const route = useRoute();
 const router = useRouter();
 const mode = ref<Mode>("draw");
 const membersOpen = ref(false);
-const brush = ref<Brush>(DEFAULT_BRUSH);
+/** Null once a right click on the plan puts the tool down. */
+const brush = ref<Brush | null>(DEFAULT_BRUSH);
 const shape = ref<"freehand" | "rectangle">("rectangle");
 const brushSize = ref<PlanBrushSize>(1);
 const straight = ref(false);
@@ -438,7 +447,9 @@ const selectedId = ref<string | null>(null);
 const pieceDraft = ref<PieceDraft | null>(null);
 /** Bumped whenever a different piece opens, so the grid starts a fresh undo history. */
 const formKey = ref(0);
-const bulkOpen = ref(false);
+
+/** Set once the open piece is saved, cleared on the next edit or when another opens. */
+const justSaved = ref(false);
 
 const selectedPiece = computed(
   () =>
@@ -449,6 +460,7 @@ const openDraft = computed({
   get: () =>
     selectedId.value && !selectedPiece.value ? null : pieceDraft.value,
   set: (d: PieceDraft | null) => {
+    justSaved.value = false;
     pieceDraft.value = d;
   },
 });
@@ -460,7 +472,7 @@ const layoutRenaming = ref(false);
 const arranging = computed(() => mode.value === "arrange");
 const measuring = computed(
   () =>
-    (mode.value === "draw" && brush.value.id === "measure") ||
+    (mode.value === "draw" && brush.value?.id === "measure") ||
     (arranging.value && arrangeMeasuring.value),
 );
 /** Falls back to the first layout if the chosen one was deleted, here or elsewhere. */
@@ -519,24 +531,71 @@ function toggleDoor(key: string): void {
   showDoor(key, closedDoors.value.includes(key));
 }
 
-const pickedKey = ref<string | null>(null);
-const pickedAt = ref({ left: 0, top: 0 });
-/** The door whose setup is open; it closes by itself if the door is painted away. */
+/** The door, socket, note or label whose menu is open, and where the menu sits. */
+const picked = ref<{ target: PlanObject; left: number; top: number } | null>(
+  null,
+);
+/** The picked door; the menu closes by itself if the door is painted away. */
 const pickedDoor = computed(() => {
-  const door =
-    pickedKey.value && store.plan
-      ? findDoors(store.plan).find((d) => d.key === pickedKey.value)
-      : undefined;
-  return door ? { door, ...pickedAt.value } : null;
+  const p = picked.value;
+  if (p?.target.kind !== "door" || !store.plan) return null;
+  const key = p.target.key;
+  const door = findDoors(store.plan).find((d) => d.key === key);
+  return door ? { door, left: p.left, top: p.top } : null;
+});
+/** The menu for anything else picked; null once that thing is gone. */
+const pickedMenu = computed(() => {
+  const t = picked.value?.target;
+  const plan = store.plan;
+  if (!t || !plan) return null;
+  if (t.kind === "socket")
+    return plan.sockets.some((s) => s.col === t.col && s.row === t.row)
+      ? { title: "Socket" }
+      : null;
+  if (t.kind === "note") {
+    const note = plan.notes.find((n) => n.id === t.id);
+    return note
+      ? { title: "Note", detail: note.text, editLabel: "Edit" }
+      : null;
+  }
+  if (t.kind === "label") {
+    const label = plan.labels.find((l) => l.id === t.id);
+    return label
+      ? { title: "Room label", detail: label.text, editLabel: "Rename" }
+      : null;
+  }
+  return null;
 });
 
-function pickDoor(key: string, at: { left: number; top: number }): void {
-  pickedKey.value = key;
-  pickedAt.value = at;
+function pick(target: PlanObject, at: { left: number; top: number }): void {
+  picked.value = { target, ...at };
+}
+
+function editPicked(): void {
+  const t = picked.value?.target;
+  picked.value = null;
+  if (t?.kind === "note") editNote(t.id);
+  else if (t?.kind === "label") editLabel(t.id);
+}
+
+function removePicked(): void {
+  const t = picked.value?.target;
+  const door = pickedDoor.value?.door;
+  picked.value = null;
+  if (!t) return;
+  if (t.kind === "socket") store.toggleSocket(t);
+  else if (t.kind === "note") store.deleteNote(t.id);
+  else if (t.kind === "label") store.deleteLabel(t.id);
+  else if (door) store.deleteDoor(door);
+}
+
+function deselect(): void {
+  brush.value = null;
+  picked.value = null;
 }
 
 watch(mode, () => {
-  pickedKey.value = null;
+  picked.value = null;
   arrangeMeasuring.value = false;
 });
 
@@ -629,6 +688,7 @@ async function deleteLayout(): Promise<void> {
 }
 
 function openForm(id: string | null, draft: PieceDraft | null): void {
+  justSaved.value = false;
   selectedId.value = id;
   pieceDraft.value = draft;
   formKey.value++;
@@ -661,9 +721,10 @@ function selectNewest(): void {
 
 async function savePiece(draft: PieceDraft): Promise<void> {
   if (selectedId.value) {
-    await store.updatePiece(selectedId.value, draft);
+    justSaved.value = await store.updatePiece(selectedId.value, draft);
   } else if (await store.addPieces([draft])) {
     selectNewest();
+    justSaved.value = true;
   }
 }
 
@@ -678,9 +739,6 @@ function reorderPiece(moved: string, target: string, after: boolean): void {
   if (next.some((id, i) => id !== ids[i])) void store.reorderFurniture(next);
 }
 
-async function addBulk(pieces: PieceDraft[]): Promise<void> {
-  if (await store.addPieces(pieces)) bulkOpen.value = false;
-}
 type ApartmentDialog = "create" | "duplicate" | "rename";
 const APARTMENT_DIALOG: Record<ApartmentDialog, string> = {
   create: "New apartment",
@@ -709,7 +767,7 @@ function resetSelection(): void {
   activeLayoutId.value = null;
   selectedPlacedId.value = null;
   labelEdit.value = null;
-  pickedKey.value = null;
+  picked.value = null;
   closedDoors.value = [];
 }
 
@@ -846,8 +904,8 @@ function removeNote(): void {
 function onKey(e: KeyboardEvent): void {
   const target = e.target as HTMLElement | null;
   if (target?.closest("input, textarea")) return;
-  if (e.key === "Escape" && pickedKey.value) {
-    pickedKey.value = null;
+  if (e.key === "Escape" && picked.value) {
+    picked.value = null;
     return;
   }
   if (arranging.value) {

@@ -1,4 +1,4 @@
-import type { Colour, Furniture, Shape } from "./types";
+import type { Colour, Furniture, PresetColour, Shape } from "./types";
 
 // Limits mirrored from backend/app/schemas/floor_planner.py.
 export const NAME_MAX = 40;
@@ -9,7 +9,7 @@ export const PIECE_CELL_CM = 10;
 export const CUSTOM_MAX = 40;
 
 /** In palette order: light to dark within each family, so the swatches read as a range. */
-export const COLOURS: { id: Colour; name: string; hex: string }[] = [
+export const COLOURS: { id: PresetColour; name: string; hex: string }[] = [
   { id: "white", name: "White", hex: "#f4f3ef" },
   { id: "beige", name: "Beige", hex: "#d9c8a5" },
   { id: "tan", name: "Tan", hex: "#c09a6b" },
@@ -31,7 +31,7 @@ export const COLOURS: { id: Colour; name: string; hex: string }[] = [
 
 export const EMPTY_SQUARE = ".";
 /** One character per colour in a drawn piece's `cells`; mirrored from the backend schema. */
-export const COLOUR_CHARS: Record<Colour, string> = {
+export const COLOUR_CHARS: Record<PresetColour, string> = {
   white: "w",
   black: "k",
   grey: "g",
@@ -50,8 +50,12 @@ export const COLOUR_CHARS: Record<Colour, string> = {
   olive: "v",
   charcoal: "c",
 };
+/** Drawn squares only come in presets, so a picked colour paints as grey. */
+export function colourChar(c: Colour): string {
+  return COLOUR_CHARS[c.startsWith("#") ? "grey" : (c as PresetColour)];
+}
 const COLOUR_OF = new Map(
-  Object.entries(COLOUR_CHARS).map(([c, ch]) => [ch, c as Colour]),
+  Object.entries(COLOUR_CHARS).map(([c, ch]) => [ch, c as PresetColour]),
 );
 
 const painted = (ch: string | undefined): boolean =>
@@ -106,6 +110,7 @@ export interface PieceDraft {
 type Sized = Pick<Furniture, "shape" | "width_cm" | "depth_cm" | "cells">;
 
 export function colourHex(c: Colour): string {
+  if (c.startsWith("#")) return c;
   return COLOURS.find((x) => x.id === c)?.hex ?? "#868c94";
 }
 

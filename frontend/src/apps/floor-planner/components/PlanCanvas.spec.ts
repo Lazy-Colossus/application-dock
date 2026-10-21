@@ -128,12 +128,15 @@ describe("PlanCanvas", () => {
       expect(wrapper.emitted("stroke")).toBeUndefined();
     });
 
-    it("opens the setup on a click with a door brush, but a drag still paints", async () => {
-      const wrapper = canvas({ plan: withDoor(), brush: door });
+    it("picks a door on a click with any brush, but a drag still paints", async () => {
+      const wrapper = canvas({ plan: withDoor() });
       const svg = wrapper.get("[data-testid=plan-canvas]");
       await svg.trigger("pointerdown", at(4, 2));
       await svg.trigger("pointerup", at(4, 2));
-      expect(wrapper.emitted("doorPick")?.[0][0]).toBe("3,2");
+      expect(wrapper.emitted("pick")?.[0][0]).toEqual({
+        kind: "door",
+        key: "3,2",
+      });
       expect(wrapper.emitted("stroke")).toBeUndefined();
 
       await svg.trigger("pointerdown", at(4, 2));
@@ -148,9 +151,8 @@ describe("PlanCanvas", () => {
           "[data-testid=door-opening]",
         );
       expect(opening().attributes("fill")).toBe("#e3a548");
-      expect(opening().attributes("pointer-events")).toBe("none");
-      expect(opening({ brush: door }).classes()).toContain(
-        "plan-canvas__door-hit",
+      expect(opening({ brush: door }).attributes("pointer-events")).toBe(
+        "none",
       );
       expect(
         opening({ editable: false, brush: null, arranging: true }).attributes(
@@ -172,13 +174,25 @@ describe("PlanCanvas", () => {
       expect(wrapper.emitted("select")).toBeUndefined();
     });
 
-    it("paints over a door with any other brush", async () => {
-      const wrapper = canvas({ plan: withDoor() });
+    it("erases a door with the eraser instead of picking it", async () => {
+      const wrapper = canvas({ plan: withDoor(), brush: ERASER });
       const svg = wrapper.get("[data-testid=plan-canvas]");
       await svg.trigger("pointerdown", at(4, 2));
       await svg.trigger("pointerup", at(4, 2));
       expect(wrapper.emitted("stroke")).toHaveLength(1);
-      expect(wrapper.emitted("doorPick")).toBeUndefined();
+      expect(wrapper.emitted("pick")).toBeUndefined();
+    });
+
+    it("picks a door with no tool out, and does nothing elsewhere", async () => {
+      const wrapper = canvas({ plan: withDoor(), brush: null });
+      const svg = wrapper.get("[data-testid=plan-canvas]");
+      await svg.trigger("pointerdown", at(4, 6));
+      await svg.trigger("pointerup", at(4, 6));
+      expect(wrapper.emitted("pick")).toBeUndefined();
+      await svg.trigger("pointerdown", at(4, 2));
+      await svg.trigger("pointerup", at(4, 2));
+      expect(wrapper.emitted("pick")).toHaveLength(1);
+      expect(wrapper.emitted("stroke")).toBeUndefined();
     });
   });
 
@@ -322,7 +336,10 @@ describe("PlanCanvas", () => {
       const svg = wrapper.get("svg");
       await svg.trigger("pointerdown", at(2, 2));
       await svg.trigger("pointerup", at(2, 2));
-      expect(wrapper.emitted("labelPick")?.[0][0]).toBe("lb_1");
+      expect(wrapper.emitted("pick")?.[0][0]).toEqual({
+        kind: "label",
+        id: "lb_1",
+      });
 
       await svg.trigger("pointerdown", at(2, 2));
       await svg.trigger("pointermove", at(5, 4));
@@ -366,7 +383,10 @@ describe("PlanCanvas", () => {
       // Along the note's text, a few squares right of where it is anchored.
       await svg.trigger("pointerdown", at(4, 2));
       await svg.trigger("pointerup", at(4, 2));
-      expect(wrapper.emitted("notePick")?.[0][0]).toBe("nt_1");
+      expect(wrapper.emitted("pick")?.[0][0]).toEqual({
+        kind: "note",
+        id: "nt_1",
+      });
 
       await svg.trigger("pointerdown", at(2, 2));
       await svg.trigger("pointermove", at(5, 5));
@@ -376,6 +396,59 @@ describe("PlanCanvas", () => {
         { col: 5, row: 5 },
       ]);
       expect(wrapper.emitted("stroke")).toBeUndefined();
+    });
+  });
+
+  describe("cursor", () => {
+    const cursorOf = (w: ReturnType<typeof canvas>) =>
+      (w.get("svg").element as SVGSVGElement).style.cursor;
+
+    it("shows a different cursor for each tool", () => {
+      const cursors = [wall, ERASER, LABEL_TOOL, NOTE_TOOL, SOCKET_TOOL].map(
+        (brush) => cursorOf(canvas({ brush })),
+      );
+      expect(cursors[0]).toContain("data:image/svg+xml");
+      expect(new Set(cursors).size).toBe(cursors.length);
+      expect(cursorOf(canvas({ brush: floorBrush(FLOORS[1]) }))).not.toBe(
+        cursors[0],
+      );
+      expect(cursorOf(canvas({ measuring: true }))).toContain("data:");
+    });
+
+    it("points at something a click would pick, and is plain with no tool", async () => {
+      const wrapper = canvas({ plan: plan({ sockets: [{ col: 2, row: 2 }] }) });
+      await wrapper.get("svg").trigger("pointermove", at(2, 2));
+      expect(cursorOf(wrapper)).toBe("pointer");
+      await wrapper.get("svg").trigger("pointermove", at(7, 7));
+      expect(cursorOf(wrapper)).toContain("data:");
+      expect(cursorOf(canvas({ brush: null }))).toBe("default");
+    });
+
+    it("keeps the eraser cursor over a socket, since the eraser takes it", async () => {
+      const wrapper = canvas({
+        brush: ERASER,
+        plan: plan({ sockets: [{ col: 2, row: 2 }] }),
+      });
+      await wrapper.get("svg").trigger("pointermove", at(2, 2));
+      expect(cursorOf(wrapper)).not.toBe("pointer");
+    });
+  });
+
+  describe("right click", () => {
+    it("puts the tool down, without painting", async () => {
+      const wrapper = canvas();
+      const svg = wrapper.get("svg");
+      await svg.trigger("pointerdown", { ...at(2, 2), button: 2 });
+      await svg.trigger("pointerup", at(2, 2));
+      await svg.trigger("contextmenu");
+      expect(wrapper.emitted("deselect")).toHaveLength(1);
+      expect(wrapper.emitted("stroke")).toBeUndefined();
+    });
+
+    it("leaves the browser menu alone when not drawing", async () => {
+      const wrapper = canvas({ editable: false, brush: null });
+      await wrapper.get("svg").trigger("contextmenu");
+      expect(wrapper.emitted("deselect")).toBeUndefined();
     });
   });
 
@@ -477,17 +550,29 @@ describe("PlanCanvas", () => {
       expect(wrapper.find("[data-testid='socket-2,2']").exists()).toBe(true);
     });
 
-    it("toggles the square clicked, or the socket under the pointer", async () => {
+    it("adds a socket on the square clicked, or picks the socket under the pointer", async () => {
       const wrapper = canvas({ brush: SOCKET_TOOL, plan: plan({ sockets }) });
       const svg = wrapper.get("svg");
       await svg.trigger("pointerdown", at(6, 6));
       await svg.trigger("pointerup", at(6, 6));
       // One square off, but still on the 12 px symbol: that socket, not a new one.
       await svg.trigger("pointerdown", at(3, 2));
-      expect(wrapper.emitted("socketToggle")).toEqual([
-        [{ col: 6, row: 6 }],
-        [{ col: 2, row: 2 }],
-      ]);
+      await svg.trigger("pointerup", at(3, 2));
+      expect(wrapper.emitted("socketToggle")).toEqual([[{ col: 6, row: 6 }]]);
+      expect(wrapper.emitted("pick")?.[0][0]).toEqual({
+        kind: "socket",
+        col: 2,
+        row: 2,
+      });
+      expect(wrapper.emitted("stroke")).toBeUndefined();
+    });
+
+    it("picks a socket with a paint brush too, rather than painting", async () => {
+      const wrapper = canvas({ plan: plan({ sockets }) });
+      const svg = wrapper.get("svg");
+      await svg.trigger("pointerdown", at(2, 2));
+      await svg.trigger("pointerup", at(2, 2));
+      expect(wrapper.emitted("pick")?.[0][0]).toMatchObject({ kind: "socket" });
       expect(wrapper.emitted("stroke")).toBeUndefined();
     });
 

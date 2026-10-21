@@ -213,6 +213,16 @@ describe("PlanPage", () => {
       expect(wrapper.find("[data-testid=door-setup]").exists()).toBe(false);
     });
 
+    it("deletes a door from its setup", async () => {
+      const wrapper = await page(withDoor());
+      const svg = wrapper.get("[data-testid=plan-canvas]");
+      await svg.trigger("pointerdown", at(4, 2));
+      await svg.trigger("pointerup", at(4, 2));
+      await wrapper.get("[data-testid=door-delete]").trigger("click");
+      expect(wrapper.find("[data-testid=door-setup]").exists()).toBe(false);
+      expect(wrapper.find("[data-testid=door-3,2]").exists()).toBe(false);
+    });
+
     it("swings a door shut for this viewer only, in Arrange too", async () => {
       const wrapper = await page(withDoor());
       await wrapper.get("[data-testid=mode-arrange]").trigger("click");
@@ -256,6 +266,26 @@ describe("PlanPage", () => {
     await wrapper.get("[data-testid=save]").trigger("click");
     await flushPromises();
     expect(putMock.mock.calls[0][1].sockets).toEqual([{ col: 10, row: 3 }]);
+  });
+
+  it("deletes a socket from its menu", async () => {
+    const wrapper = await page(apartment({ sockets: [{ col: 10, row: 3 }] }));
+    const svg = wrapper.get("[data-testid=plan-canvas]");
+    await svg.trigger("pointerdown", at(10, 3));
+    await svg.trigger("pointerup", at(10, 3));
+    expect(wrapper.get("[data-testid=object-menu]").text()).toContain("Socket");
+    await wrapper.get("[data-testid=object-menu-delete]").trigger("click");
+    expect(wrapper.find("[data-testid='socket-10,3']").exists()).toBe(false);
+    expect(wrapper.find("[data-testid=object-menu]").exists()).toBe(false);
+  });
+
+  it("puts the tool down on a right click on the plan", async () => {
+    const wrapper = await page();
+    await wrapper.get("[data-testid=brush-wall]").trigger("click");
+    await wrapper.get("[data-testid=plan-canvas]").trigger("contextmenu");
+    expect(
+      wrapper.get("[data-testid=brush-wall]").attributes("aria-pressed"),
+    ).toBe("false");
   });
 
   it("saves unsaved drawing when leaving Draw plan", async () => {
@@ -439,9 +469,7 @@ describe("PlanPage", () => {
     it("shows the open piece in the centre instead of the plan", async () => {
       const wrapper = await furniture();
       expect(wrapper.find("[data-testid=plan-canvas]").exists()).toBe(false);
-      expect(wrapper.get("[data-testid=piece-stage]").text()).toContain(
-        "No piece selected",
-      );
+      expect(wrapper.find("[data-testid=furniture-grid]").exists()).toBe(true);
       await wrapper.get("[data-testid=piece-f_1]").trigger("click");
       expect(wrapper.get("[data-testid=piece-preview]").text()).toContain(
         "220 × 95 cm",
@@ -514,22 +542,6 @@ describe("PlanPage", () => {
         "/floor-planner/apartments/a_1/furniture/f_1",
       );
       expect(wrapper.find("[data-testid=piece-hint]").exists()).toBe(true);
-    });
-
-    it("bulk adds only the lines that parse", async () => {
-      const wrapper = await furniture(apartment());
-      await wrapper.get("[data-testid=piece-bulk]").trigger("click");
-      await wrapper
-        .get("[data-testid=bulk-text]")
-        .setValue(
-          "Sofa; rectangle; 220 x 95; grey\nRug; square; 200 x 200; grey\nLamp; round; 40; yellow",
-        );
-      postMock.mockResolvedValue(apartment());
-      await wrapper.get("[data-testid=bulk-add]").trigger("click");
-      await flushPromises();
-      const body = postMock.mock.calls[0][1] as { pieces: { name: string }[] };
-      expect(body.pieces.map((p) => p.name)).toEqual(["Sofa", "Lamp"]);
-      expect(wrapper.find("[data-testid=bulk-dialog]").exists()).toBe(false);
     });
   });
 

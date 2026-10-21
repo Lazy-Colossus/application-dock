@@ -151,6 +151,7 @@ import {
 import {
   COLOURS,
   COLOUR_CHARS,
+  colourChar,
   CUSTOM_MAX,
   EMPTY_SQUARE,
   PIECE_CELL_CM,
@@ -188,7 +189,7 @@ const squarePx = computed(() => SQUARE_PX * props.zoom);
 const pxPerCm = computed(() => squarePx.value / PIECE_CELL_CM);
 const side = computed(() => CUSTOM_MAX * squarePx.value);
 
-const paint = ref(COLOUR_CHARS[props.draft?.colour ?? "grey"]);
+const paint = ref(colourChar(props.draft?.colour ?? "grey"));
 const paintHex = computed(() =>
   colourHex(
     COLOURS.find((c) => COLOUR_CHARS[c.id] === paint.value)?.id ?? "grey",
