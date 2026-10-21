@@ -210,11 +210,13 @@ describe("snapToWalls", () => {
     expect(snapToWalls(desk, at(7, 8), room())).toEqual({ x_cm: 10, y_cm: 10 });
   });
 
-  it("leaves a piece alone when it is more than one grid step from a wall", () => {
-    expect(snapToWalls(desk, at(20, 100), room())).toEqual({
-      x_cm: 20,
-      y_cm: 100,
-    });
+  it("leaves a gap of one grid step or more alone", () => {
+    for (const x of [15, 20]) {
+      expect(snapToWalls(desk, at(x, 100), room())).toEqual({
+        x_cm: x,
+        y_cm: 100,
+      });
+    }
   });
 
   it("leaves a piece alone away from the walls", () => {
