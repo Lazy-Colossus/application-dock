@@ -26,11 +26,18 @@ export const usePagemageStore = defineStore("pagemage", () => {
     }
   }
 
-  async function upload(file: File): Promise<PageSummary | null> {
+  async function upload(
+    file: File,
+    name?: string,
+  ): Promise<PageSummary | null> {
     loading.value = true;
     error.value = null;
     try {
-      const summary = await api.upload<PageSummary>("/pagemage/pages", file);
+      const summary = await api.upload<PageSummary>(
+        "/pagemage/pages",
+        file,
+        name ? { name } : undefined,
+      );
       // Newest-first list, and this one was just uploaded — put it on top.
       pages.value.unshift(summary);
       return summary;
@@ -93,6 +100,37 @@ export const usePagemageStore = defineStore("pagemage", () => {
     }
   }
 
+  async function renamePage(pageId: string, name: string): Promise<boolean> {
+    error.value = null;
+    try {
+      const saved = await api.put<Page>(`/pagemage/pages/${pageId}/name`, {
+        name,
+      });
+      const summary = pages.value.find((p) => p.id === pageId);
+      if (summary) {
+        summary.name = saved.name;
+        summary.updated_at = saved.updated_at;
+      }
+      if (currentPage.value?.id === pageId) currentPage.value = saved;
+      return true;
+    } catch (e) {
+      error.value = message(e);
+      return false;
+    }
+  }
+
+  async function deletePage(pageId: string): Promise<boolean> {
+    error.value = null;
+    try {
+      await api.del(`/pagemage/pages/${pageId}`);
+      pages.value = pages.value.filter((p) => p.id !== pageId);
+      return true;
+    } catch (e) {
+      error.value = message(e);
+      return false;
+    }
+  }
+
   return {
     pages,
     currentPage,
@@ -105,5 +143,7 @@ export const usePagemageStore = defineStore("pagemage", () => {
     savePage,
     createShare,
     revokeShare,
+    renamePage,
+    deletePage,
   };
 });

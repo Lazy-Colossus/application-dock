@@ -2,9 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
-const { getMock, uploadMock, push } = vi.hoisted(() => ({
+const { getMock, uploadMock, putMock, delMock, push } = vi.hoisted(() => ({
   getMock: vi.fn(),
   uploadMock: vi.fn(),
+  putMock: vi.fn(),
+  delMock: vi.fn(),
   push: vi.fn(),
 }));
 vi.mock("@/composables/useApi", () => ({
@@ -12,8 +14,8 @@ vi.mock("@/composables/useApi", () => ({
   api: {
     get: getMock,
     post: vi.fn(),
-    put: vi.fn(),
-    del: vi.fn(),
+    put: putMock,
+    del: delMock,
     upload: uploadMock,
   },
 }));
@@ -41,6 +43,17 @@ const STUBS = {
     template: '<span :data-testid="$attrs[\'data-testid\']">{{ label }}</span>',
     props: ["label", "color"],
   },
+  "q-dialog": {
+    template: '<div v-if="modelValue"><slot /></div>',
+    props: ["modelValue"],
+  },
+  "q-card-actions": { template: "<div><slot /></div>" },
+  "q-input": {
+    template:
+      '<input :data-testid="$attrs[\'data-testid\']" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    props: ["modelValue"],
+    emits: ["update:modelValue"],
+  },
 };
 
 function render() {
@@ -51,6 +64,8 @@ beforeEach(() => {
   setActivePinia(createPinia());
   getMock.mockReset();
   uploadMock.mockReset();
+  putMock.mockReset();
+  delMock.mockReset();
   push.mockReset();
 });
 
@@ -81,11 +96,12 @@ describe("PageMage HomePage", () => {
     expect(push).toHaveBeenCalledWith("/pagemage/pages/p-1");
   });
 
-  it("uploads a chosen file and navigates to the new page", async () => {
+  it("uploads via the name dialog and navigates to the new page", async () => {
     getMock.mockResolvedValue([]);
     uploadMock.mockResolvedValue({
       id: "p-new",
-      name: "New",
+      name: "Chosen",
+      shared: false,
       created_at: "t",
       updated_at: "t",
     });
@@ -95,9 +111,56 @@ describe("PageMage HomePage", () => {
     const input = wrapper.find('[data-testid="file-input"]');
     Object.defineProperty(input.element, "files", { value: [file] });
     await input.trigger("change");
+    // Dialog opened, name pre-filled from filename (minus extension).
+    const nameInput = wrapper.find('[data-testid="upload-name"]')
+      .element as HTMLInputElement;
+    expect(nameInput.value).toBe("new");
+    await wrapper.find('[data-testid="upload-submit"]').trigger("click");
     await flushPromises();
-    expect(uploadMock).toHaveBeenCalledWith("/pagemage/pages", file);
+    expect(uploadMock).toHaveBeenCalledWith("/pagemage/pages", file, {
+      name: "new",
+    });
     expect(push).toHaveBeenCalledWith("/pagemage/pages/p-new");
+  });
+
+  it("renames via the rename dialog", async () => {
+    getMock.mockResolvedValue([
+      { id: "p-1", name: "Old", shared: false, created_at: "t", updated_at: "t" },
+    ]);
+    putMock.mockResolvedValue({
+      id: "p-1",
+      name: "New",
+      html: "",
+      share_token: "",
+      created_at: "t",
+      updated_at: "t2",
+    });
+    const wrapper = render();
+    await flushPromises();
+    await wrapper.find('[data-testid="rename-p-1"]').trigger("click");
+    const nameInput = wrapper.find('[data-testid="rename-name"]')
+      .element as HTMLInputElement;
+    expect(nameInput.value).toBe("Old");
+    await wrapper.find('[data-testid="rename-name"]').setValue("New");
+    await wrapper.find('[data-testid="rename-submit"]').trigger("click");
+    await flushPromises();
+    expect(putMock).toHaveBeenCalledWith("/pagemage/pages/p-1/name", {
+      name: "New",
+    });
+  });
+
+  it("deletes after inline confirm and removes the card", async () => {
+    getMock.mockResolvedValue([
+      { id: "p-1", name: "A", shared: false, created_at: "t", updated_at: "t" },
+    ]);
+    delMock.mockResolvedValue(undefined);
+    const wrapper = render();
+    await flushPromises();
+    await wrapper.find('[data-testid="delete-p-1"]').trigger("click");
+    await wrapper.find('[data-testid="delete-confirm-p-1"]').trigger("click");
+    await flushPromises();
+    expect(delMock).toHaveBeenCalledWith("/pagemage/pages/p-1");
+    expect(wrapper.find('[data-testid="page-p-1"]').exists()).toBe(false);
   });
 
   it("shows a shared badge only on shared pages", async () => {

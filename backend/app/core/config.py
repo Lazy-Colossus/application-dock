@@ -48,6 +48,14 @@ class Settings(BaseSettings):
     google_maps_server_key: str = ""
     google_maps_browser_key: str = ""
 
+    # CubeCoders AMP (ADS controller) — the AMP Instances app. Server-side only.
+    # With username/password unset, the endpoints report themselves
+    # unconfigured (503) and nothing else is affected. Base URL defaults to a
+    # same-host ADS controller.
+    amp_base_url: str = "http://localhost:8080"
+    amp_username: str = ""
+    amp_password: str = ""
+
     # Kalendariq decides capability by which account you logged in as, read as a
     # DENYLIST: these usernames are guests (vote-only) and every other
     # authenticated user is an admin. See the spec's AR-2 — this fails open on

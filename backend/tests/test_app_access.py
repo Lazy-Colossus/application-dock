@@ -37,7 +37,7 @@ def test_a_limited_user_is_refused_other_apps(as_peto: None) -> None:
 
 
 def test_everyone_else_lists_every_app() -> None:
-    assert len(client.get("/api/apps").json()) == 12
+    assert len(client.get("/api/apps").json()) == 13
 
 
 def test_a_query_token_is_accepted_where_no_header_can_be_sent(
@@ -48,3 +48,23 @@ def test_a_query_token_is_accepted_where_no_header_can_be_sent(
     token = create_access_token("peto")
     assert client.get(f"/api/tea/teas/x/image?token={token}").status_code == 403
     assert client.get("/api/tea/teas/x/image").status_code == 401
+
+
+def test_every_app_endpoint_checks_access() -> None:
+    from fastapi.routing import APIRoute
+
+    def calls(dependant) -> list[str]:  # type: ignore[no-untyped-def]
+        return [n for d in dependant.dependencies for n in [d.call.__name__, *calls(d)]]
+
+    # The shell itself, sign-in, and the public share links answer anyone.
+    open_paths = ("/api/auth", "/api/apps", "/api/shell", "/api/health")
+    unchecked = [
+        r.path
+        for r in app.routes
+        if isinstance(r, APIRoute)
+        and r.path.startswith("/api/")
+        and not r.path.startswith(open_paths)
+        and "/share/" not in r.path
+        and "any_user" not in calls(r.dependant)
+    ]
+    assert unchecked == []

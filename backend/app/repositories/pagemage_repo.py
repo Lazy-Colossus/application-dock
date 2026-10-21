@@ -72,6 +72,11 @@ def list_pages_for(user: str) -> list[Page]:
     ]
 
 
+def delete_page(user: str, page_id: str) -> None:
+    """Remove a page's file; a missing file is not an error here."""
+    _page_path(user, page_id).unlink(missing_ok=True)
+
+
 def _users_dir() -> Path:
     return settings.data_dir / _APP_DIR / "users"
 

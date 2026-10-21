@@ -48,8 +48,12 @@ def _derive_name(filename: str) -> str:
     return stem or "Untitled page"
 
 
-def create_page(user: str, filename: str, raw: bytes) -> Page:
-    """Validate an uploaded HTML file and persist it as a new page."""
+def create_page(user: str, filename: str, raw: bytes, name: str | None = None) -> Page:
+    """Validate an uploaded HTML file and persist it as a new page.
+
+    `name` is the user-facing title; a blank/omitted name falls back to the
+    filename.
+    """
     if len(raw) > _MAX_BYTES:
         raise ValueError("file too large (max 2 MB)")
     base = _base_filename(filename).lower()
@@ -62,7 +66,7 @@ def create_page(user: str, filename: str, raw: bytes) -> Page:
     stamp = now_iso()
     page = Page(
         id=new_id(),
-        name=_derive_name(filename),
+        name=(name.strip() if name and name.strip() else _derive_name(filename)),
         html=html,
         created_at=stamp,
         updated_at=stamp,
@@ -127,6 +131,24 @@ def revoke_share(user: str, page_id: str) -> Page:
     page.share_token = ""
     repo.write_page(user, page)
     return page
+
+
+def rename_page(user: str, page_id: str, name: str) -> Page:
+    """Change a page's user-facing name; reject a blank name."""
+    cleaned = name.strip()
+    if not cleaned:
+        raise ValueError("name must not be blank")
+    page = get_page(user, page_id)
+    page.name = cleaned
+    page.updated_at = now_iso()
+    repo.write_page(user, page)
+    return page
+
+
+def delete_page(user: str, page_id: str) -> None:
+    """Delete a page, or raise `FileNotFoundError` if it does not exist."""
+    get_page(user, page_id)  # raises FileNotFoundError if absent
+    repo.delete_page(user, page_id)
 
 
 def get_shared_page(token: str) -> Page:

@@ -93,4 +93,11 @@ export const apps: AppDescriptor[] = [
     icon: "html",
     route: "/pagemage",
   },
+  {
+    id: "amp",
+    // A server-rack glyph — the app lists AMP game-server instances.
+    label: "AMP Instances",
+    icon: "dns",
+    route: "/amp",
+  },
 ];

@@ -97,6 +97,12 @@ _APPS: list[AppDescriptor] = [
         icon="html",
         route="/pagemage",
     ),
+    AppDescriptor(
+        id="amp",
+        label="AMP Instances",
+        icon="dns",
+        route="/amp",
+    ),
 ]
 
 
