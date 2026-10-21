@@ -79,7 +79,7 @@ export function topLeftForCentre(
   return { x: snap(cx - piece.width_cm / 2), y: snap(cy - piece.depth_cm / 2) };
 }
 
-/** How far a side may be from a wall face, either way, and still be pulled flush against it. */
+/** How far a side may poke into a wall, or stop short of it by less than, and still be sat flush. */
 export const WALL_SNAP_CM = SNAP_CM;
 
 /** Walls and the windows set in them; a door is an opening, so nothing snaps into it. */
@@ -116,10 +116,16 @@ function wallShift(
   };
   // Face i is the line between squares i - 1 and i. Whole cm, rounded away from the wall, so a
   // box on a half centimetre never ends up touching it.
-  for (const i of faces(lo))
-    if (beside(i - 1, i)) consider(Math.ceil(i * CELL_CM - lo));
-  for (const i of faces(hi))
-    if (beside(i, i - 1)) consider(Math.floor(i * CELL_CM - hi));
+  // A gap of a full WALL_SNAP_CM is left as the user placed it; only a smaller one is closed.
+  // Poking into the wall by up to WALL_SNAP_CM is still pushed back out.
+  for (const i of faces(lo)) {
+    const shift = Math.ceil(i * CELL_CM - lo);
+    if (beside(i - 1, i) && shift > -WALL_SNAP_CM) consider(shift);
+  }
+  for (const i of faces(hi)) {
+    const shift = Math.floor(i * CELL_CM - hi);
+    if (beside(i, i - 1) && shift < WALL_SNAP_CM) consider(shift);
+  }
   return best ?? 0;
 }
 
