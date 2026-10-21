@@ -67,6 +67,24 @@ class Settings(BaseSettings):
     # `KALENDARIQ_GUESTS=players,guest` a boot failure.
     kalendariq_guests: str = "players"
 
+    # Users limited to some of the apps, as `user:app,app;user:app`, by app id.
+    # An ALLOWLIST per listed user, so an app added later stays hidden from them
+    # until it is named here; anyone not listed sees every app. A plain string
+    # for the same reason as `kalendariq_guests`.
+    app_access: str = (
+        "peto:archery,iss-vanguard,floor-planner;patus:archery,iss-vanguard,floor-planner"
+    )
+
+    @property
+    def app_access_by_user(self) -> dict[str, frozenset[str]]:
+        """`app_access` parsed: each limited username to the app ids it may use."""
+        access: dict[str, frozenset[str]] = {}
+        for entry in self.app_access.split(";"):
+            user, _, apps = entry.partition(":")
+            if user.strip():
+                access[user.strip()] = frozenset(a.strip() for a in apps.split(",") if a.strip())
+        return access
+
     @property
     def kalendariq_guest_usernames(self) -> list[str]:
         """`kalendariq_guests` split on commas, blanks and padding discarded."""

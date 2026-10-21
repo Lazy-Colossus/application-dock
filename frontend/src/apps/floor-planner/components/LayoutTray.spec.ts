@@ -69,4 +69,12 @@ describe("LayoutTray", () => {
       "Add furniture first",
     );
   });
+
+  it("reorders what's on the plan by dragging", async () => {
+    const wrapper = tray({ pieces: [], placed: [sofa, bed] });
+    await wrapper.get("[data-testid=on-plan-row-f_bed]").trigger("dragstart");
+    await wrapper.get("[data-testid=on-plan-row-f_sofa]").trigger("dragover");
+    await wrapper.get("[data-testid=on-plan-row-f_sofa]").trigger("drop");
+    expect(wrapper.emitted("move")).toEqual([["f_bed", "f_sofa", false]]);
+  });
 });

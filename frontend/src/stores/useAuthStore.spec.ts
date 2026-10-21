@@ -121,4 +121,41 @@ describe("useAuthStore", () => {
       await expect(store.restoreSession()).resolves.toBeUndefined();
     });
   });
+
+  describe("app access", () => {
+    it("loads the user's apps once and limits what they can open", async () => {
+      localStorage.setItem(TOKEN_KEY, "valid-token");
+      mockGet.mockResolvedValue([{ id: "archery" }, { id: "floor-planner" }]);
+      const store = useAuthStore();
+      await store.loadApps();
+      await store.loadApps();
+      expect(mockGet).toHaveBeenCalledTimes(1);
+      expect(mockGet).toHaveBeenCalledWith("/apps");
+      expect(store.canOpen("archery")).toBe(true);
+      expect(store.canOpen("tea")).toBe(false);
+      expect(store.canVisit("/floor-planner/a_1")).toBe(true);
+      expect(store.canVisit("/tea")).toBe(false);
+      expect(store.canVisit("/tea/cabinet")).toBe(false);
+      expect(store.canVisit("/")).toBe(true);
+      expect(store.canVisit("/settings")).toBe(true);
+    });
+
+    it("forgets the apps on logout, so the next user loads their own", async () => {
+      localStorage.setItem(TOKEN_KEY, "valid-token");
+      mockGet.mockResolvedValue([{ id: "archery" }]);
+      const store = useAuthStore();
+      await store.loadApps();
+      store.logout();
+      expect(store.appIds).toBeNull();
+      expect(store.canOpen("tea")).toBe(true);
+    });
+
+    it("opens everything if the list can't be loaded", async () => {
+      localStorage.setItem(TOKEN_KEY, "valid-token");
+      mockGet.mockRejectedValue(new Error("offline"));
+      const store = useAuthStore();
+      await store.loadApps();
+      expect(store.canOpen("tea")).toBe(true);
+    });
+  });
 });

@@ -2,7 +2,7 @@
   <svg
     ref="svg"
     class="plan-canvas"
-    :class="{ 'plan-canvas--editable': editable || measuring }"
+    :style="{ cursor }"
     :viewBox="`${-RULER_CM} ${-RULER_CM} ${widthCm + RULER_CM} ${heightCm + RULER_CM}`"
     :width="(widthCm + RULER_CM) * scale"
     :height="(heightCm + RULER_CM) * scale"
@@ -14,6 +14,7 @@
     @pointerup="up"
     @pointercancel="cancel"
     @pointerleave="leave"
+    @contextmenu="contextMenu"
     @dragover="dragOver"
     @drop="dropped"
   >
@@ -315,7 +316,7 @@
       class="plan-canvas__door"
       :data-testid="`door-${d.door.key}`"
     >
-      <!-- The opening keeps the door's colour, as painted. With a door brush a click on it opens
+      <!-- The opening keeps the door's colour, as painted. While drawing, a click on it opens
            the door's setup (handled by the plan); in Arrange it swings the door. -->
       <rect
         :x="d.shape.gap.x"
@@ -323,8 +324,8 @@
         :width="d.shape.gap.w"
         :height="d.shape.gap.h"
         :fill="d.tint"
-        :class="{ 'plan-canvas__door-hit': doorsPickable || arranging }"
-        :pointer-events="doorsPickable || arranging ? 'all' : 'none'"
+        :class="{ 'plan-canvas__door-hit': arranging }"
+        :pointer-events="arranging ? 'all' : 'none'"
         data-testid="door-opening"
         @pointerdown="arranging && $event.stopPropagation()"
         @click="arranging && emit('doorToggle', d.door.key)"
@@ -588,6 +589,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import {
   BALCONY_PATTERN,
   BOARD_REPEAT,
+  MEASURE_TOOL,
   TEXTURED,
   brushName,
   fillFor,
@@ -626,7 +628,8 @@ import {
   type Span,
 } from "../measure";
 import { NOTE_PX, noteAnchor, noteAt, noteBox } from "../notes";
-import type { Furniture, Placement, PlanNote } from "../types";
+import { cursorFor } from "../cursors";
+import type { Furniture, Placement, PlanNote, PlanObject } from "../types";
 import {
   CELL_CM,
   LABEL_PX,
@@ -668,6 +671,7 @@ const props = withDefaults(
     brushSize?: PlanBrushSize;
     /** Strokes become one horizontal or vertical line at the brush width, whatever the shape. */
     straight?: boolean;
+    /** Top first: an earlier piece covers a later one. */
     placed?: PlacedPiece[];
     selectedId?: string | null;
     /** Placed pieces can be selected and dragged. */
@@ -696,21 +700,21 @@ const emit = defineEmits<{
   hover: [cell: Cell | null];
   preview: [readout: string | null];
   labelAt: [cell: Cell];
-  /** A Socket tool click: the socket under the pointer, or the square for a new one. */
+  /** A Socket tool click on a new square, or the eraser on a socket. */
   socketToggle: [cell: Cell];
-  labelPick: [id: string];
   labelMove: [id: string, cell: Cell];
   /** A Note tool click on an empty spot. */
   noteAt: [cell: Cell];
-  notePick: [id: string];
   noteMove: [id: string, cell: Cell];
+  /** A click on a door, socket, note or label; `at` is where its menu goes, in px. */
+  pick: [target: PlanObject, at: { left: number; top: number }];
+  /** A right click while drawing: put the tool down. */
+  deselect: [];
   select: [id: string | null];
   move: [id: string, x: number, y: number];
   /** A tray card dropped with its centre at (x, y) cm. */
   drop: [id: string, x: number, y: number];
   doorToggle: [key: string];
-  /** A click on a door with a door brush; `at` is where its setup panel goes, in px. */
-  doorPick: [key: string, at: { left: number; top: number }];
 }>();
 
 const svg = ref<SVGSVGElement | null>(null);
@@ -728,8 +732,10 @@ let dragged: {
 const ruler = ref<{ a: Point; b: Point; done: boolean } | null>(null);
 /** The button is still down on the ruler's first end; releasing elsewhere finishes a drag. */
 let rulerPress = false;
-/** A press on an existing door with a door brush: a click opens its setup, a drag paints. */
-let doorPress: Cell | null = null;
+/** A press on a door, socket, note or label: a click opens its menu, a drag paints. */
+let pressed: { target: PlanObject; at: Cell } | null = null;
+/** The pointer is over something a click would pick. */
+const pointing = ref(false);
 let pieceDrag: {
   id: string;
   grabX: number;
@@ -739,12 +745,9 @@ let pieceDrag: {
 /** Where the piece being dragged is drawn until it's dropped. */
 const dragPos = ref<{ id: string; x: number; y: number } | null>(null);
 
-/** The selected piece is drawn last, so it's never hidden under another one. */
+/** `placed` is top first, as the furniture list reads, so it's drawn from the end. */
 const shown = computed(() =>
-  [
-    ...props.placed.filter((p) => p.piece.id !== props.selectedId),
-    ...props.placed.filter((p) => p.piece.id === props.selectedId),
-  ].map((p) => {
+  [...props.placed].reverse().map((p) => {
     const moved = dragPos.value?.id === p.piece.id ? dragPos.value : null;
     const placement = moved
       ? { ...p.placement, x_cm: moved.x, y_cm: moved.y }
@@ -921,12 +924,55 @@ function setHovered(cell: Cell | null): void {
 
 function leave(): void {
   setHovered(null);
+  pointing.value = false;
   emit("hover", null);
 }
-/** A door brush is out, so a click on a door opens its setup rather than painting. */
-const doorsPickable = computed(
-  () => props.editable && !!props.brush && DOOR_CODES.has(props.brush.code),
+
+/** While drawing a click picks things on the plan, except with the eraser, which erases them. */
+const picking = computed(
+  () => props.editable && !props.measuring && props.brush?.id !== "eraser",
 );
+
+const MEASURE_CURSOR = cursorFor(MEASURE_TOOL);
+const cursor = computed(() => {
+  if (props.measuring) return MEASURE_CURSOR;
+  if (!props.editable) return undefined;
+  if (pointing.value) return "pointer";
+  return props.brush ? cursorFor(props.brush) : "default";
+});
+
+function doorAt(cell: Cell): Door | undefined {
+  if (!DOOR_CODES.has(codeAt(props.plan.feature, cell))) return undefined;
+  return doors.value.find(
+    (d) =>
+      cell.col >= d.col &&
+      cell.col < d.col + d.cols &&
+      cell.row >= d.row &&
+      cell.row < d.row + d.rows,
+  );
+}
+
+/** What a click there would pick, topmost first, as drawn. */
+function objectAt(e: PointerEvent, cell: Cell): PlanObject | null {
+  const at = cmOf(e);
+  const note = noteAt(props.plan.notes, at, cmPerPx.value);
+  if (note) return { kind: "note", id: note.id };
+  const socket = socketAt(props.plan.sockets, at, cmPerPx.value);
+  if (socket) return { kind: "socket", col: socket.col, row: socket.row };
+  const door = doorAt(cell);
+  if (door) return { kind: "door", key: door.key };
+  const label = labelAtCell(props.plan.labels, cell, props.zoom);
+  return label ? { kind: "label", id: label.id } : null;
+}
+
+function contextMenu(e: MouseEvent): void {
+  if (!props.editable) return;
+  e.preventDefault();
+  cancel();
+  ruler.value = null;
+  emit("deselect");
+}
+
 const doorShapes = computed(() =>
   doors.value.map((door) => {
     const shape = doorShape(door);
@@ -970,18 +1016,54 @@ function handleAt(l: Leaf, open: boolean): [number, number] {
   ];
 }
 
+/** The door's setup panel and the smaller menu everything else gets, in px. */
 const DOOR_SETUP_PX = 250;
+const MENU_PX = 200;
 
-/** Where the setup panel goes: beside the door, flipped left when it would run off the plan. */
-function setupAt(door: Door): { left: number; top: number } {
+/** The plan box, in cm, a picked thing's menu sits beside. */
+function boxOf(target: PlanObject): Box {
+  const square = (col: number, row: number, cols = 1): Box => ({
+    x: col * CELL_CM,
+    y: row * CELL_CM,
+    w: cols * CELL_CM,
+    h: CELL_CM,
+  });
+  switch (target.kind) {
+    case "door": {
+      const d = doors.value.find((d) => d.key === target.key);
+      return d
+        ? { ...square(d.col, d.row, d.cols), h: d.rows * CELL_CM }
+        : square(0, 0);
+    }
+    case "socket":
+      return square(target.col, target.row);
+    case "note": {
+      const n = props.plan.notes.find((n) => n.id === target.id);
+      if (!n) return square(0, 0);
+      const { x, y } = noteAnchor(n);
+      const b = noteBox(n.text);
+      const [w, h] = [b.w * cmPerPx.value, b.h * cmPerPx.value];
+      return n.vertical
+        ? { x: x - h / 2, y: y - w, w: h, h: w }
+        : { x, y: y - h / 2, w, h };
+    }
+    case "label": {
+      const l = props.plan.labels.find((l) => l.id === target.id);
+      return l ? square(l.col, l.row) : square(0, 0);
+    }
+  }
+}
+
+/** Where the menu goes: beside the thing, flipped left when it would run off the plan. */
+function menuAt(target: PlanObject): { left: number; top: number } {
+  const menuPx = target.kind === "door" ? DOOR_SETUP_PX : MENU_PX;
+  const box = boxOf(target);
   const px = (cm: number) => (cm + RULER_CM) * scale.value;
-  const right = px((door.col + door.cols) * CELL_CM) + 12;
+  const right = px(box.x + box.w) + 12;
   const width = px(widthCm.value);
   const left =
-    right + DOOR_SETUP_PX <= width
-      ? right
-      : Math.max(4, px(door.col * CELL_CM) - DOOR_SETUP_PX - 12);
-  return { left, top: px(door.row * CELL_CM) };
+    right + menuPx <= width ? right : Math.max(4, px(box.x) - menuPx - 12);
+  return { left, top: px(box.y) };
 }
 const metresAcross = computed(() =>
   Array.from({ length: Math.floor(widthCm.value / 100) + 1 }, (_, m) => m),
@@ -1032,6 +1114,8 @@ function cellOf(e: PointerEvent): Cell | null {
 }
 
 function down(e: PointerEvent): void {
+  // The right button belongs to the context menu, which puts the tool down.
+  if (e.button > 0) return;
   if (props.measuring) {
     rulerDown(e);
     return;
@@ -1041,35 +1125,43 @@ function down(e: PointerEvent): void {
     return;
   }
   const cell = cellOf(e);
-  if (!props.editable || !props.brush || !cell) return;
+  if (!props.editable || !cell) return;
   svg.value?.setPointerCapture?.(e.pointerId);
-  if (props.brush.id === "label") {
-    const hit = labelAtCell(props.plan.labels, cell, props.zoom);
-    if (hit) dragged = { kind: "label", id: hit.id, from: cell, to: cell };
-    else emit("labelAt", cell);
+  pointing.value = false;
+  const tool = props.brush?.id;
+  // A label or note under its own tool: a click picks it, a drag moves it.
+  const own =
+    tool === "label"
+      ? labelAtCell(props.plan.labels, cell, props.zoom)
+      : tool === "note"
+        ? noteAt(props.plan.notes, cmOf(e), cmPerPx.value)
+        : null;
+  if (own) {
+    dragged = {
+      kind: tool as "label" | "note",
+      id: own.id,
+      from: cell,
+      to: cell,
+    };
     return;
   }
-  if (props.brush.id === "note") {
-    const hit = noteAt(props.plan.notes, cmOf(e), cmPerPx.value);
-    if (hit) dragged = { kind: "note", id: hit.id, from: cell, to: cell };
-    else emit("noteAt", cell);
-    return;
-  }
-  const socket = socketAt(props.plan.sockets, cmOf(e), cmPerPx.value);
-  if (props.brush.id === "socket") {
-    emit("socketToggle", socket ?? cell);
+  const target = picking.value ? objectAt(e, cell) : null;
+  pressed = target && { target, at: cell };
+  if (!props.brush) return;
+  if (tool === "label" || tool === "note" || tool === "socket") {
+    if (target) return;
+    if (tool === "label") emit("labelAt", cell);
+    else if (tool === "note") emit("noteAt", cell);
+    else emit("socketToggle", cell);
     return;
   }
   // The eraser on a socket takes just the socket, not the wall it sits on.
-  if (props.brush.id === "eraser" && socket) {
+  const socket =
+    tool === "eraser" && socketAt(props.plan.sockets, cmOf(e), cmPerPx.value);
+  if (socket) {
     emit("socketToggle", socket);
     return;
   }
-  doorPress =
-    DOOR_CODES.has(props.brush.code) &&
-    DOOR_CODES.has(codeAt(props.plan.feature, cell))
-      ? cell
-      : null;
   start = last = cell;
   stroke.value = stamp([cell], straightFor(e));
   emit("preview", readoutText.value);
@@ -1099,14 +1191,20 @@ function move(e: PointerEvent): void {
     dragPos.value = { id, x: x_cm, y: y_cm };
     return;
   }
-  if (!cell) return;
+  if (!cell) {
+    pointing.value = false;
+    return;
+  }
   if (dragged) {
     dragged.to = cell;
     return;
   }
-  if (!start || !last) return;
-  if (doorPress && (cell.col !== doorPress.col || cell.row !== doorPress.row))
-    doorPress = null;
+  if (pressed && (cell.col !== pressed.at.col || cell.row !== pressed.at.row))
+    pressed = null;
+  if (!start || !last) {
+    pointing.value = picking.value && !pressed && objectAt(e, cell) !== null;
+    return;
+  }
   const straight = straightFor(e);
   if (straight) {
     stroke.value = stamp(lineCells(start, straightEnd(start, cell)), straight);
@@ -1139,25 +1237,14 @@ function up(): void {
   if (dragged) {
     const { kind, id, from, to } = dragged;
     dragged = null;
-    const clicked = from.col === to.col && from.row === to.row;
-    if (kind === "note") {
-      if (clicked) emit("notePick", id);
-      else emit("noteMove", id, to);
-    } else if (clicked) emit("labelPick", id);
+    if (from.col === to.col && from.row === to.row) {
+      const target = { kind, id };
+      emit("pick", target, menuAt(target));
+    } else if (kind === "note") emit("noteMove", id, to);
     else emit("labelMove", id, to);
     return;
   }
-  const pressed = doorPress;
-  const door =
-    pressed &&
-    doors.value.find(
-      (d) =>
-        pressed.col >= d.col &&
-        pressed.col < d.col + d.cols &&
-        pressed.row >= d.row &&
-        pressed.row < d.row + d.rows,
-    );
-  if (door) emit("doorPick", door.key, setupAt(door));
+  if (pressed) emit("pick", pressed.target, menuAt(pressed.target));
   else if (stroke.value.length) emit("stroke", uniqueCells(stroke.value));
   cancel();
 }
@@ -1165,7 +1252,7 @@ function up(): void {
 function cancel(): void {
   rulerPress = false;
   start = last = null;
-  doorPress = null;
+  pressed = null;
   dragged = null;
   pieceDrag = null;
   dragPos.value = null;
@@ -1195,9 +1282,6 @@ function cancel(): void {
     0 8px 24px rgba(0, 0, 0, 0.08);
   touch-action: none;
   user-select: none;
-}
-.plan-canvas--editable {
-  cursor: crosshair;
 }
 .plan-canvas__piece--movable {
   cursor: grab;

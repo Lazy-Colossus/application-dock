@@ -5,7 +5,7 @@ import { DEFAULT_BRUSH, SOCKET_TOOL, type Brush } from "../codes";
 
 function draw(
   over: Partial<{
-    brush: Brush;
+    brush: Brush | null;
     shape: "freehand" | "rectangle";
     straight: boolean;
     canUndo: boolean;
@@ -25,6 +25,23 @@ function draw(
 }
 
 describe("DrawPanel", () => {
+  it("picks the Measure Tool from its own button", async () => {
+    const wrapper = draw();
+    const button = wrapper.get("[data-testid=brush-measure]");
+    expect(button.text()).toBe("Measure Tool");
+    await button.trigger("click");
+    expect(wrapper.emitted("update:brush")?.[0][0]).toMatchObject({
+      id: "measure",
+    });
+  });
+
+  it("marks no tool once the brush is put down", () => {
+    const wrapper = draw({ brush: null });
+    expect(
+      wrapper.findAll("[data-testid^=brush-][aria-pressed=true]"),
+    ).toHaveLength(0);
+  });
+
   it("picks the Socket tool", async () => {
     const wrapper = draw();
     await wrapper.get("[data-testid=brush-socket]").trigger("click");

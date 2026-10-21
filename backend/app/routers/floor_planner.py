@@ -16,13 +16,14 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.routing import APIRoute
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_app
 from app.schemas.floor_planner import (
     AddMemberRequest,
     AddPiecesRequest,
     ApartmentNameRequest,
     ApartmentSummary,
     ApartmentView,
+    FurnitureOrderRequest,
     LayoutNameRequest,
     PieceDraft,
     PlacementRequest,
@@ -56,7 +57,12 @@ class _ApartmentRoute(APIRoute):
         return guarded
 
 
-router = APIRouter(prefix="/api/floor-planner", tags=["floor-planner"], route_class=_ApartmentRoute)
+router = APIRouter(
+    prefix="/api/floor-planner",
+    tags=["floor-planner"],
+    route_class=_ApartmentRoute,
+    dependencies=[Depends(require_app("floor-planner"))],
+)
 
 
 A = "/apartments/{apartment_id}"
@@ -114,6 +120,13 @@ def add_pieces(
     apartment_id: str, req: AddPiecesRequest, current_user: str = Depends(get_current_user)
 ) -> ApartmentView:
     return service.add_pieces(current_user, apartment_id, req.pieces)
+
+
+@router.put(f"{A}/furniture-order", response_model=ApartmentView)
+def reorder_furniture(
+    apartment_id: str, req: FurnitureOrderRequest, current_user: str = Depends(get_current_user)
+) -> ApartmentView:
+    return service.reorder_furniture(current_user, apartment_id, req.ids)
 
 
 @router.put(f"{A}/furniture/{{piece_id}}", response_model=ApartmentView)

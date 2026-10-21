@@ -65,10 +65,24 @@ describe("DoorSetup", () => {
     expect(wrapper.find("[data-testid=door-hinge-0]").exists()).toBe(false);
   });
 
-  it("names the hinge ends by the wall's direction", () => {
-    expect(setup({ dir: "v" }).get("[data-testid=door-hinge-0]").text()).toBe(
-      "Top",
+  it("names a single door's direction by the wall's", () => {
+    const across = setup();
+    expect(across.text()).toContain("Direction");
+    expect(across.get("[data-testid=door-hinge-0]").text()).toBe(
+      "Left to right",
     );
+    expect(across.get("[data-testid=door-hinge-1]").text()).toBe(
+      "Right to left",
+    );
+    expect(setup({ dir: "v" }).get("[data-testid=door-hinge-0]").text()).toBe(
+      "Top to bottom",
+    );
+  });
+
+  it("deletes the door", async () => {
+    const wrapper = setup();
+    await wrapper.get("[data-testid=door-delete]").trigger("click");
+    expect(wrapper.emitted("remove")).toHaveLength(1);
   });
 
   it("shows the door open or closed, and closes", async () => {

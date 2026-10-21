@@ -69,8 +69,8 @@ def test_a_rotation_is_whole_degrees_0_to_359(rotation: float) -> None:
 @pytest.mark.parametrize(
     ("x", "y", "ok"),
     [
-        (1000 - 110, 300, True),  # centre exactly on the right edge
-        (1000 - 109, 300, False),  # centre just past it
+        (1200 - 110, 300, True),  # centre exactly on the right edge
+        (1200 - 109, 300, False),  # centre just past it
         (-110, 300, True),  # centre exactly on the left edge
         (-111, 300, False),
         (100, -48, False),  # 95 cm deep: centre at -0.5

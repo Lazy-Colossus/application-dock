@@ -7,7 +7,7 @@ request input).
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_app
 from app.schemas.context_switch import (
     AddUpdateRequest,
     CreateListRequest,
@@ -22,7 +22,11 @@ from app.schemas.context_switch import (
 )
 from app.services import context_switch_service as service
 
-router = APIRouter(prefix="/api/context-switch", tags=["context-switch"])
+router = APIRouter(
+    prefix="/api/context-switch",
+    tags=["context-switch"],
+    dependencies=[Depends(require_app("context-switch"))],
+)
 
 
 @router.get("/lists", response_model=list[ListSummary])

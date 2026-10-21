@@ -2,7 +2,7 @@ import { computed, ref, watch } from "vue";
 import { defineStore } from "pinia";
 import { api, ApiError } from "@/composables/useApi";
 import type { Brush } from "../codes";
-import { liveDoorSettings, setDoor } from "../doors";
+import { liveDoorSettings, removeDoor, setDoor, type Door } from "../doors";
 import { toggleSocket as toggled } from "../sockets";
 import type { PieceDraft } from "../furniture";
 import { paint, resize, type Cell, type PlanGrid } from "../grid";
@@ -236,6 +236,20 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
         ...piece,
       }),
     );
+  /** Reorders locally before the request, so a dropped row never jumps back. */
+  function reorderFurniture(ids: string[]): Promise<boolean> {
+    const a = apartment.value;
+    if (a) {
+      const rank = new Map(ids.map((id, i) => [id, i]));
+      a.furniture = [...a.furniture].sort(
+        (x, y) =>
+          (rank.get(x.id) ?? ids.length) - (rank.get(y.id) ?? ids.length),
+      );
+    }
+    return write(() =>
+      api.put<Apartment>(`${base()}/furniture-order`, { ids }),
+    );
+  }
   const deletePiece = (id: string) =>
     write(() =>
       api.del<Apartment>(`${base()}/furniture/${encodeURIComponent(id)}`),
@@ -401,6 +415,7 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
   /** A door's swing side, hinge or leaves; one undo step like a stroke. */
   const setDoorSetting = (setting: DoorSetting) =>
     step((p) => setDoor(p, setting));
+  const deleteDoor = (door: Door) => step((p) => removeDoor(p, door));
   const toggleSocket = (cell: Cell) =>
     step((p) => ({ ...p, sockets: toggled(p.sockets, cell) }));
 
@@ -508,6 +523,7 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
     removeMember,
     addPieces,
     updatePiece,
+    reorderFurniture,
     deletePiece,
     placedIn,
     createLayout,
@@ -531,6 +547,7 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
     updateNote,
     deleteNote,
     setDoorSetting,
+    deleteDoor,
     toggleSocket,
     undo,
     redo,

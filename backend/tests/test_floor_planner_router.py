@@ -51,7 +51,7 @@ def test_listing_creates_my_apartment_once() -> None:
 def test_get_one_apartment(base: str) -> None:
     body = client.get(base).json()
     assert (body["name"], body["members"], body["plan_rev"]) == ("My apartment", ["test_user"], 0)
-    assert len(body["surface"]) == 160
+    assert len(body["surface"]) == 240
     assert "plan_updated_by" not in body
 
 
@@ -152,6 +152,12 @@ def test_furniture_over_http(base: str) -> None:
     too_many = client.post(f"{base}/furniture", json={"pieces": [sofa] * 101})
     assert too_many.status_code == 422
     assert client.put(f"{base}/furniture/f_gone", json=sofa).status_code == 404
+    chair_id = client.post(f"{base}/furniture", json={"pieces": [sofa]}).json()["furniture"][1][
+        "id"
+    ]
+    reordered = client.put(f"{base}/furniture-order", json={"ids": [chair_id, piece_id]})
+    assert [p["id"] for p in reordered.json()["furniture"]] == [chair_id, piece_id]
+    client.delete(f"{base}/furniture/{chair_id}")
     edited = client.put(f"{base}/furniture/{piece_id}", json={**sofa, "colour": "blue"})
     assert edited.json()["furniture"][0]["colour"] == "blue"
     assert client.delete(f"{base}/furniture/{piece_id}").json()["furniture"] == []

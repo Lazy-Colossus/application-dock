@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import can_use, get_current_user
 from app.services import update_service
 
 
@@ -107,8 +107,8 @@ _APPS: list[AppDescriptor] = [
 
 
 @router.get("/apps", response_model=list[AppDescriptor])
-def list_apps(_: str = Depends(get_current_user)) -> list[AppDescriptor]:
-    return _APPS
+def list_apps(username: str = Depends(get_current_user)) -> list[AppDescriptor]:
+    return [a for a in _APPS if can_use(username, a.id)]
 
 
 @router.get("/shell/update-status", response_model=UpdateStatus)

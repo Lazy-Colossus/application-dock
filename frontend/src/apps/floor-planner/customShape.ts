@@ -1,9 +1,9 @@
 import {
-  COLOUR_CHARS,
   CUSTOM_MAX,
   EMPTY_SQUARE,
   PIECE_CELL_CM,
   SIDE_CM_MAX,
+  colourChar,
   mainColour,
   type PieceDraft,
 } from "./furniture";
@@ -128,7 +128,7 @@ export function toDrawn(d: PieceDraft): PieceDraft {
   if (d.shape === "custom") return d;
   const shape = d.shape;
   const { cols, rows } = squaresFor(d.width_cm, d.depth_cm);
-  const ch = COLOUR_CHARS[d.colour];
+  const ch = colourChar(d.colour);
   const cells = Array.from({ length: rows }, (_, r) =>
     Array.from({ length: cols }, (_, c) =>
       inside(shape, (c + 0.5) / cols, (r + 0.5) / rows) ? ch : EMPTY_SQUARE,

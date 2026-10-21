@@ -175,6 +175,14 @@ def test_updating_keeps_the_id() -> None:
         service.update_piece("ana", _apt("ana"), "f_gone", _draft())
 
 
+def test_reordering_tolerates_pieces_added_or_deleted_meanwhile() -> None:
+    a, b, c = service.add_pieces(
+        "ana", _apt("ana"), [_draft(name="A"), _draft(name="B"), _draft(name="C")]
+    ).furniture
+    apt = service.reorder_furniture("ana", _apt("ana"), [c.id, "f_gone", a.id])
+    assert [p.name for p in apt.furniture] == ["C", "A", "B"]
+
+
 def test_deleting_a_piece_removes_it_from_every_layout() -> None:
     sofa, chair = service.add_pieces("ana", _apt("ana"), [_draft(), _draft(name="Chair")]).furniture
     with repo.apartment_transaction(_apt("ana")) as doc:

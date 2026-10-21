@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import require_app
 from app.schemas.hotaru import (
     CreateNoteRequest,
     CreateTopicRequest,
@@ -24,7 +24,7 @@ from app.services import hotaru_practice_service, hotaru_vocab_service, notes_se
 router = APIRouter(
     prefix="/api/hotaru",
     tags=["hotaru"],
-    dependencies=[Depends(get_current_user)],
+    dependencies=[Depends(require_app("hotaru"))],
 )
 
 # The canonical, hardcoded users (no auth — household app). This is the single

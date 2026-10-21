@@ -420,6 +420,18 @@ def update_piece(
     return _mutate_free(username, apartment_id, change)
 
 
+def reorder_furniture(username: str, apartment_id: str, ids: list[str]) -> ApartmentView:
+    """List order is draw order, top first. Pieces added or deleted since the client loaded
+    don't refuse the write: unknown ids are dropped and unlisted pieces keep their place at the end.
+    """
+
+    def change(doc: ApartmentDoc) -> None:
+        rank = {piece_id: i for i, piece_id in enumerate(ids)}
+        doc.furniture.sort(key=lambda p: rank.get(p.id, len(ids)))
+
+    return _mutate_free(username, apartment_id, change)
+
+
 def delete_piece(username: str, apartment_id: str, piece_id: str) -> ApartmentView:
     """Removes the piece and its placement from every layout (FU-5)."""
 

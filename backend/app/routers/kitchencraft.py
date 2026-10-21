@@ -8,7 +8,7 @@ only place KitchenCraft's stdlib exceptions become `HTTPException` (NFR-2).
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import require_app
 from app.schemas.kitchencraft import (
     AddShoppingItemRequest,
     AddShoppingItemsRequest,
@@ -25,7 +25,7 @@ from app.services import kitchencraft_service as service
 router = APIRouter(
     prefix="/api/kitchencraft",
     tags=["kitchencraft"],
-    dependencies=[Depends(get_current_user)],
+    dependencies=[Depends(require_app("kitchencraft"))],
 )
 
 

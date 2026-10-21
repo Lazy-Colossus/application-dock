@@ -8,11 +8,11 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_app
 from app.schemas.amp import Instance
 from app.services import amp_service
 
-router = APIRouter(prefix="/api/amp", tags=["amp"])
+router = APIRouter(prefix="/api/amp", tags=["amp"], dependencies=[Depends(require_app("amp"))])
 
 
 @router.get("/instances", response_model=list[Instance])

@@ -1,6 +1,6 @@
 export type Shape = "rectangle" | "round" | "oval" | "egg" | "custom";
 
-export type Colour =
+export type PresetColour =
   | "white"
   | "black"
   | "grey"
@@ -18,6 +18,9 @@ export type Colour =
   | "teal"
   | "olive"
   | "charcoal";
+
+/** A preset name, or `#rrggbb` from the colour picker. */
+export type Colour = PresetColour | `#${string}`;
 
 /** Whole degrees clockwise, 0–359. */
 export type Rotation = number;
@@ -46,6 +49,13 @@ export interface Socket {
   col: number;
   row: number;
 }
+
+/** Something on the plan a click picks, to change or delete it. */
+export type PlanObject =
+  | { kind: "door"; key: string }
+  | { kind: "socket"; col: number; row: number }
+  | { kind: "note"; id: string }
+  | { kind: "label"; id: string };
 
 export interface Label {
   id: string;

@@ -6,7 +6,7 @@ test_auth.py, which exercises the full auth flow on its own.
 
 import pytest
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import any_user, get_current_user
 from app.main import app
 
 
@@ -17,5 +17,7 @@ def bypass_auth_for_non_auth_tests(request: pytest.FixtureRequest) -> None:  # t
         yield
         return
     app.dependency_overrides[get_current_user] = lambda: "test_user"
+    app.dependency_overrides[any_user] = lambda: "test_user"
     yield
     app.dependency_overrides.pop(get_current_user, None)
+    app.dependency_overrides.pop(any_user, None)

@@ -39,9 +39,9 @@ def test_a_newcomer_gets_an_empty_apartment_called_my_apartment() -> None:
     [summary] = service.list_apartments("ana")
     assert (summary.name, summary.is_owner, summary.members) == ("My apartment", True, ["ana"])
     apt = service.get_apartment("ana", summary.id)
-    assert (apt.cols, apt.rows, apt.rev) == (200, 160, 0)
-    assert apt.surface == [".." * 200] * 160
-    assert apt.feature == [".." * 200] * 160
+    assert (apt.cols, apt.rows, apt.rev) == (240, 240, 0)
+    assert apt.surface == [".." * 240] * 240
+    assert apt.feature == [".." * 240] * 240
     assert [layout.name for layout in apt.layouts] == ["Layout A"]
     assert service.list_apartments("ana") == [summary]
 

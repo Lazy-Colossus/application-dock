@@ -12,7 +12,7 @@ stdlib exceptions and knows nothing about status codes.
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_app
 from app.schemas.kalendariq import (
     AddInviteeRequest,
     Calendar,
@@ -28,7 +28,9 @@ from app.schemas.kalendariq import (
 )
 from app.services import kalendariq_service as service
 
-router = APIRouter(prefix="/api/kalendariq", tags=["kalendariq"])
+router = APIRouter(
+    prefix="/api/kalendariq", tags=["kalendariq"], dependencies=[Depends(require_app("kalendariq"))]
+)
 
 
 @router.get("/me", response_model=Me)

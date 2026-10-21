@@ -56,7 +56,7 @@
 
     <div v-if="leaves !== 'double'" class="door-setup__row">
       <span class="door-setup__label">
-        {{ leaves === "sliding" ? "Slides to" : "Hinge" }}
+        {{ leaves === "sliding" ? "Slides to" : "Direction" }}
       </span>
       <div class="door-setup__seg" role="group" aria-label="Hinge">
         <button
@@ -93,6 +93,15 @@
         </button>
       </div>
     </div>
+
+    <button
+      type="button"
+      class="fp-button door-setup__delete"
+      data-testid="door-delete"
+      @click="emit('remove')"
+    >
+      Delete door
+    </button>
   </div>
 </template>
 
@@ -112,6 +121,7 @@ const emit = defineEmits<{
   update: [setting: DoorSetting];
   open: [open: boolean];
   close: [];
+  remove: [];
 }>();
 
 const title = computed(
@@ -131,9 +141,13 @@ const leaves = computed(() =>
       ? "double"
       : "single",
 );
-const hingeNames = computed(() =>
-  props.door.dir === "h" ? ["Left", "Right"] : ["Top", "Bottom"],
-);
+// A single door is named by the way it opens, from its hinge to its free edge.
+const hingeNames = computed(() => {
+  const [a, b] = props.door.dir === "h" ? ["Left", "Right"] : ["Top", "Bottom"];
+  return leaves.value === "sliding"
+    ? [a, b]
+    : [`${a} to ${b.toLowerCase()}`, `${b} to ${a.toLowerCase()}`];
+});
 
 function set(patch: Partial<DoorSetting>): void {
   emit("update", { ...props.door.setting, ...patch });
@@ -204,6 +218,10 @@ function set(patch: Partial<DoorSetting>): void {
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
+}
+.door-setup__delete {
+  height: 30px;
+  color: var(--fp-warn-ink);
 }
 .door-setup__seg button[aria-pressed="true"] {
   background: var(--fp-chrome);

@@ -2,14 +2,19 @@
   <q-page padding>
     <div class="section-label">YOUR APPS</div>
     <div class="app-grid">
-      <AppCard v-for="app in apps" :key="app.id" :descriptor="app" />
+      <AppCard v-for="app in shown" :key="app.id" :descriptor="app" />
     </div>
   </q-page>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import AppCard from "@/components/AppCard.vue";
 import { apps } from "@/apps/registry";
+import { useAuthStore } from "@/stores/useAuthStore";
+
+const auth = useAuthStore();
+const shown = computed(() => apps.filter((a) => auth.canOpen(a.id)));
 </script>
 
 <style lang="sass" scoped>

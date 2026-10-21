@@ -88,10 +88,10 @@ export function measureAt(index: RunIndex, cell: Cell): Measure | null {
     : { kind: "feature", code: kind, dir: "v", span: v };
 }
 
-/** "Wall · 3.40 m", or "Clear 2.85 × 3.60 m" across open floor. */
+/** "Wall · 3.40 m", or "Dimensions 2.85 × 3.60 m" across open floor. */
 export function measureText(m: Measure): string {
   if (m.kind === "floor")
-    return `Clear ${metres(m.h.len)} × ${metres(m.v.len)} m`;
+    return `Dimensions ${metres(m.h.len)} × ${metres(m.v.len)} m`;
   const name = STRUCTURE.find((s) => s.code === m.code)?.label ?? m.code;
   return `${name} · ${metres(m.span.len)} m`;
 }
