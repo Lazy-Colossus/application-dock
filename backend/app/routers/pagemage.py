@@ -10,11 +10,13 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_app
 from app.schemas.pagemage import Page, PageSummary, UpdateHtmlRequest
 from app.services import pagemage_service as service
 
-router = APIRouter(prefix="/api/pagemage", tags=["pagemage"])
+router = APIRouter(
+    prefix="/api/pagemage", tags=["pagemage"], dependencies=[Depends(require_app("pagemage"))]
+)
 
 
 @router.get("/pages", response_model=list[PageSummary])

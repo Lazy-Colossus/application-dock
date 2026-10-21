@@ -19,7 +19,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import StreamingResponse
 from fastapi.routing import APIRoute
 
-from app.core.dependencies import get_current_user, user_from_token
+from app.core.dependencies import get_current_user, require_app, user_from_token
 from app.schemas.iss_vanguard import (
     AddMemberRequest,
     ProjectWriteRequest,
@@ -51,7 +51,12 @@ class _ShipRoute(APIRoute):
         return guarded
 
 
-router = APIRouter(prefix="/api/iss-vanguard", tags=["iss-vanguard"], route_class=_ShipRoute)
+router = APIRouter(
+    prefix="/api/iss-vanguard",
+    tags=["iss-vanguard"],
+    route_class=_ShipRoute,
+    dependencies=[Depends(require_app("iss-vanguard"))],
+)
 
 
 @router.get("/ship", response_model=ShipView)

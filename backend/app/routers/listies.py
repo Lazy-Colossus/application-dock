@@ -12,7 +12,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
-from app.core.dependencies import get_current_user, user_from_token
+from app.core.dependencies import get_current_user, require_app, user_from_token
 from app.schemas.listies import (
     AddColumnRequest,
     CreateRowRequest,
@@ -36,7 +36,9 @@ from app.services import listies_events as events
 from app.services import listies_service as service
 from app.services import places_service
 
-router = APIRouter(prefix="/api/listies", tags=["listies"])
+router = APIRouter(
+    prefix="/api/listies", tags=["listies"], dependencies=[Depends(require_app("listies"))]
+)
 
 
 @router.get("/sheets", response_model=list[SheetSummary])

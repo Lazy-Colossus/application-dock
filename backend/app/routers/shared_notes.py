@@ -16,7 +16,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
-from app.core.dependencies import get_current_user, user_from_token
+from app.core.dependencies import get_current_user, require_app, user_from_token
 from app.schemas.shared_notes import (
     CreateNoteRequest,
     NoteSummary,
@@ -27,7 +27,11 @@ from app.schemas.shared_notes import (
 from app.services import shared_notes_events as events
 from app.services import shared_notes_service as service
 
-router = APIRouter(prefix="/api/shared-notes", tags=["shared-notes"])
+router = APIRouter(
+    prefix="/api/shared-notes",
+    tags=["shared-notes"],
+    dependencies=[Depends(require_app("shared-notes"))],
+)
 
 
 @router.get("/notes", response_model=list[NoteSummary])

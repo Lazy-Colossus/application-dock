@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import any_user, get_current_user
 from app.main import app
 
 client = TestClient(app)
@@ -154,6 +154,7 @@ def test_signing_in_is_still_required(monkeypatch: pytest.MonkeyPatch) -> None:
     # caller and turn the 401 into a 200.
     monkeypatch.setattr("app.core.config.settings.jwt_secret_key", "test-secret-key-for-tests-only")
     app.dependency_overrides.pop(get_current_user, None)
+    app.dependency_overrides.pop(any_user, None)
     assert client.get("/api/kitchencraft/recipes").status_code == 401
 
 

@@ -21,7 +21,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 from fastapi.routing import APIRoute
 
-from app.core.dependencies import get_current_user, user_from_token
+from app.core.dependencies import get_current_user, require_app, user_from_token
 from app.schemas.almanac import AlmanacEntryView
 from app.schemas.tea import (
     AddMemberRequest,
@@ -73,7 +73,12 @@ class _TeaRoute(APIRoute):
         return guarded
 
 
-router = APIRouter(prefix="/api/tea", tags=["tea"], route_class=_TeaRoute)
+router = APIRouter(
+    prefix="/api/tea",
+    tags=["tea"],
+    route_class=_TeaRoute,
+    dependencies=[Depends(require_app("tea"))],
+)
 
 _IMAGE_MEDIA_TYPES = {
     "jpg": "image/jpeg",

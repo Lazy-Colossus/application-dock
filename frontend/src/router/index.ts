@@ -33,6 +33,10 @@ export default route(function (/* { store, ssrContext } */) {
     if (to.path === "/login" && auth.isAuthenticated) {
       return { path: "/" };
     }
+    if (auth.isAuthenticated) {
+      await auth.loadApps();
+      if (!auth.canVisit(to.path)) return { path: "/" };
+    }
   });
 
   return Router;

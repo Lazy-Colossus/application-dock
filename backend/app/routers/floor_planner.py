@@ -16,7 +16,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.routing import APIRoute
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_app
 from app.schemas.floor_planner import (
     AddMemberRequest,
     AddPiecesRequest,
@@ -57,7 +57,12 @@ class _ApartmentRoute(APIRoute):
         return guarded
 
 
-router = APIRouter(prefix="/api/floor-planner", tags=["floor-planner"], route_class=_ApartmentRoute)
+router = APIRouter(
+    prefix="/api/floor-planner",
+    tags=["floor-planner"],
+    route_class=_ApartmentRoute,
+    dependencies=[Depends(require_app("floor-planner"))],
+)
 
 
 A = "/apartments/{apartment_id}"

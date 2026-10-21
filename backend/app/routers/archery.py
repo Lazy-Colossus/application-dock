@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Path
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_app
 from app.schemas.session import (
     AddPlayerRequest,
     CreateSessionRequest,
@@ -10,7 +10,9 @@ from app.schemas.session import (
 )
 from app.services import archery_service
 
-router = APIRouter(prefix="/api/archery", tags=["archery"])
+router = APIRouter(
+    prefix="/api/archery", tags=["archery"], dependencies=[Depends(require_app("archery"))]
+)
 
 _LABEL_PATTERN = r"^\d{4}-\d{2}-\d{2}(-\d+)?$"
 

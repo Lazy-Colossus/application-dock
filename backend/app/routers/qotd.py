@@ -13,7 +13,7 @@ exceptions and knows nothing about status codes.
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_app
 from app.schemas.qotd import (
     Answer,
     AnswerRequest,
@@ -27,7 +27,7 @@ from app.services import qotd_service as service
 router = APIRouter(
     prefix="/api/qotd",
     tags=["qotd"],
-    dependencies=[Depends(get_current_user)],
+    dependencies=[Depends(require_app("question-of-the-day"))],
 )
 
 

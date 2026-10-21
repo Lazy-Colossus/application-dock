@@ -3,7 +3,12 @@ import { createPinia, setActivePinia } from "pinia";
 import { createRouter, createMemoryHistory } from "vue-router";
 
 const mockRestoreSession = vi.fn();
-const mockAuth = { isAuthenticated: false, restoreSession: mockRestoreSession };
+const mockAuth = {
+  isAuthenticated: false,
+  restoreSession: mockRestoreSession,
+  loadApps: vi.fn(),
+  canVisit: vi.fn(() => true),
+};
 
 vi.mock("@/stores/useAuthStore", () => ({
   useAuthStore: () => mockAuth,
@@ -36,6 +41,10 @@ function makeGuardedRouter() {
     }
     if (to.path === "/login" && auth.isAuthenticated) {
       return { path: "/" };
+    }
+    if (auth.isAuthenticated) {
+      await auth.loadApps();
+      if (!auth.canVisit(to.path)) return { path: "/" };
     }
   });
 
@@ -82,5 +91,14 @@ describe("router beforeEach guard", () => {
     const router = makeGuardedRouter();
     await router.push("/login");
     expect(mockRestoreSession).toHaveBeenCalled();
+  });
+
+  it("sends a signed-in user away from an app they can't open", async () => {
+    mockAuth.isAuthenticated = true;
+    mockAuth.canVisit.mockReturnValueOnce(false);
+    const router = makeGuardedRouter();
+    await router.push("/archery");
+    expect(router.currentRoute.value.path).toBe("/");
+    expect(mockAuth.loadApps).toHaveBeenCalled();
   });
 });
