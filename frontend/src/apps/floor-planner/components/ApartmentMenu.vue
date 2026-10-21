@@ -30,7 +30,7 @@
             </button>
           </li>
         </ul>
-        <div class="apartment-menu__actions">
+        <div v-if="!readonly" class="apartment-menu__actions">
           <button
             type="button"
             class="fp-button"
@@ -92,6 +92,7 @@ import "../css/floor-planner.sass";
 defineProps<{
   apartments: ApartmentSummary[];
   current: ApartmentSummary | null;
+  readonly?: boolean;
 }>();
 
 const emit = defineEmits<{

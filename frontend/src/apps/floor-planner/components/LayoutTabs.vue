@@ -15,46 +15,52 @@
         {{ l.name }}
       </button>
     </div>
-    <button
-      type="button"
-      class="tabs__action"
-      data-testid="layout-create"
-      @click="emit('create')"
-    >
-      + New layout
-    </button>
-    <button
-      type="button"
-      class="tabs__action"
-      data-testid="layout-duplicate"
-      @click="emit('duplicate')"
-    >
-      Duplicate
-    </button>
-    <button
-      type="button"
-      class="tabs__action"
-      data-testid="layout-rename"
-      @click="emit('rename')"
-    >
-      Rename
-    </button>
-    <button
-      type="button"
-      class="tabs__action"
-      :disabled="layouts.length <= 1"
-      data-testid="layout-delete"
-      @click="emit('remove')"
-    >
-      Delete
-    </button>
+    <template v-if="!readonly">
+      <button
+        type="button"
+        class="tabs__action"
+        data-testid="layout-create"
+        @click="emit('create')"
+      >
+        + New layout
+      </button>
+      <button
+        type="button"
+        class="tabs__action"
+        data-testid="layout-duplicate"
+        @click="emit('duplicate')"
+      >
+        Duplicate
+      </button>
+      <button
+        type="button"
+        class="tabs__action"
+        data-testid="layout-rename"
+        @click="emit('rename')"
+      >
+        Rename
+      </button>
+      <button
+        type="button"
+        class="tabs__action"
+        :disabled="layouts.length <= 1"
+        data-testid="layout-delete"
+        @click="emit('remove')"
+      >
+        Delete
+      </button>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { Layout } from "../types";
 
-defineProps<{ layouts: Layout[]; activeId: string | null }>();
+defineProps<{
+  layouts: Layout[];
+  activeId: string | null;
+  readonly?: boolean;
+}>();
 
 const emit = defineEmits<{
   select: [id: string];

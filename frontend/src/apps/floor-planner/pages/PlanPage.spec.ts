@@ -703,4 +703,36 @@ describe("PlanPage", () => {
       ).toBe("true");
     });
   });
+
+  describe("on a phone", () => {
+    function phoneScreen() {
+      vi.stubGlobal("matchMedia", (query: string) => ({
+        matches: true,
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }));
+    }
+    afterEach(() => vi.unstubAllGlobals());
+
+    it("is view-only: no tool or detail panels, and the plan can be scrolled", async () => {
+      phoneScreen();
+      const wrapper = await page();
+      for (const id of ["fp-left", "fp-right", "info-show", "members-open"]) {
+        expect(wrapper.find(`[data-testid=${id}]`).exists()).toBe(false);
+      }
+      expect(wrapper.get("[data-testid=mode-draw]").text()).toBe("Plan");
+      expect(wrapper.get("[data-testid=plan-canvas]").classes()).toContain(
+        "plan-canvas--browse",
+      );
+    });
+
+    it("lists layouts without the actions that change them", async () => {
+      phoneScreen();
+      const wrapper = await page();
+      await wrapper.get("[data-testid=mode-arrange]").trigger("click");
+      expect(wrapper.find("[data-testid=layout-tabs]").exists()).toBe(true);
+      expect(wrapper.find("[data-testid=layout-create]").exists()).toBe(false);
+    });
+  });
 });

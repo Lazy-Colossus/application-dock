@@ -2,6 +2,7 @@
   <svg
     ref="svg"
     class="plan-canvas"
+    :class="{ 'plan-canvas--browse': !editable && !arranging && !measuring }"
     :style="{ cursor }"
     :viewBox="`${-RULER_CM} ${-RULER_CM} ${widthCm + RULER_CM} ${heightCm + RULER_CM}`"
     :width="(widthCm + RULER_CM) * scale"
@@ -1282,6 +1283,10 @@ function cancel(): void {
     0 8px 24px rgba(0, 0, 0, 0.08);
   touch-action: none;
   user-select: none;
+}
+// Nothing to drag, so a finger scrolls and pinches the page instead.
+.plan-canvas--browse {
+  touch-action: pan-x pan-y pinch-zoom;
 }
 .plan-canvas__piece--movable {
   cursor: grab;
