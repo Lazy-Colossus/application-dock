@@ -668,6 +668,7 @@ const props = withDefaults(
     brushSize?: PlanBrushSize;
     /** Strokes become one horizontal or vertical line at the brush width, whatever the shape. */
     straight?: boolean;
+    /** Top first: an earlier piece covers a later one. */
     placed?: PlacedPiece[];
     selectedId?: string | null;
     /** Placed pieces can be selected and dragged. */
@@ -739,12 +740,9 @@ let pieceDrag: {
 /** Where the piece being dragged is drawn until it's dropped. */
 const dragPos = ref<{ id: string; x: number; y: number } | null>(null);
 
-/** The selected piece is drawn last, so it's never hidden under another one. */
+/** `placed` is top first, as the furniture list reads, so it's drawn from the end. */
 const shown = computed(() =>
-  [
-    ...props.placed.filter((p) => p.piece.id !== props.selectedId),
-    ...props.placed.filter((p) => p.piece.id === props.selectedId),
-  ].map((p) => {
+  [...props.placed].reverse().map((p) => {
     const moved = dragPos.value?.id === p.piece.id ? dragPos.value : null;
     const placement = moved
       ? { ...p.placement, x_cm: moved.x, y_cm: moved.y }

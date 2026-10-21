@@ -254,6 +254,10 @@ class AddPiecesRequest(BaseModel):
     pieces: list[PieceDraft] = Field(min_length=1, max_length=BULK_MAX)
 
 
+class FurnitureOrderRequest(BaseModel):
+    ids: list[str]
+
+
 class LayoutNameRequest(BaseModel):
     name: str
 

@@ -410,6 +410,23 @@ describe("furniture", () => {
     expect(store.apartment?.rev).toBe(5);
   });
 
+  it("reorders furniture locally before saving the order", async () => {
+    const store = useFloorPlanStore();
+    store.apartment = apartment({
+      furniture: [
+        { ...sofa, id: "f_1" },
+        { ...sofa, id: "f_2", name: "Chair" },
+      ],
+    });
+    putMock.mockReturnValue(new Promise(() => {}));
+    void store.reorderFurniture(["f_2", "f_1"]);
+    expect(store.apartment?.furniture.map((p) => p.id)).toEqual(["f_2", "f_1"]);
+    expect(putMock).toHaveBeenCalledWith(
+      "/floor-planner/apartments/a_1/furniture-order",
+      { ids: ["f_2", "f_1"] },
+    );
+  });
+
   it("deletes by id", async () => {
     const store = useFloorPlanStore();
     store.apartment = apartment();

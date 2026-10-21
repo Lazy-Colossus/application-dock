@@ -236,6 +236,20 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
         ...piece,
       }),
     );
+  /** Reorders locally before the request, so a dropped row never jumps back. */
+  function reorderFurniture(ids: string[]): Promise<boolean> {
+    const a = apartment.value;
+    if (a) {
+      const rank = new Map(ids.map((id, i) => [id, i]));
+      a.furniture = [...a.furniture].sort(
+        (x, y) =>
+          (rank.get(x.id) ?? ids.length) - (rank.get(y.id) ?? ids.length),
+      );
+    }
+    return write(() =>
+      api.put<Apartment>(`${base()}/furniture-order`, { ids }),
+    );
+  }
   const deletePiece = (id: string) =>
     write(() =>
       api.del<Apartment>(`${base()}/furniture/${encodeURIComponent(id)}`),
@@ -508,6 +522,7 @@ export const useFloorPlanStore = defineStore("floor-planner", () => {
     removeMember,
     addPieces,
     updatePiece,
+    reorderFurniture,
     deletePiece,
     placedIn,
     createLayout,

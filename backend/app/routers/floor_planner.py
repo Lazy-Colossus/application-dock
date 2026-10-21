@@ -23,6 +23,7 @@ from app.schemas.floor_planner import (
     ApartmentNameRequest,
     ApartmentSummary,
     ApartmentView,
+    FurnitureOrderRequest,
     LayoutNameRequest,
     PieceDraft,
     PlacementRequest,
@@ -114,6 +115,13 @@ def add_pieces(
     apartment_id: str, req: AddPiecesRequest, current_user: str = Depends(get_current_user)
 ) -> ApartmentView:
     return service.add_pieces(current_user, apartment_id, req.pieces)
+
+
+@router.put(f"{A}/furniture-order", response_model=ApartmentView)
+def reorder_furniture(
+    apartment_id: str, req: FurnitureOrderRequest, current_user: str = Depends(get_current_user)
+) -> ApartmentView:
+    return service.reorder_furniture(current_user, apartment_id, req.ids)
 
 
 @router.put(f"{A}/furniture/{{piece_id}}", response_model=ApartmentView)

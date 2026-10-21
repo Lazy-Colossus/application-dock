@@ -101,6 +101,7 @@
           :pieces="store.apartment?.furniture ?? []"
           :selected-id="selectedId"
           @select="selectPiece"
+          @move="reorderPiece"
           @add="startAdding"
           @bulk="bulkOpen = true"
         />
@@ -111,6 +112,7 @@
           :layout-name="activeLayout?.name ?? ''"
           :selected-id="selectedPlacedId"
           @select="selectedPlacedId = $event"
+          @move="reorderPiece"
         />
       </aside>
       <section class="fp__plan" data-testid="fp-plan">
@@ -395,6 +397,7 @@ import {
   type Placed,
 } from "../geometry";
 import { gridLegend, type Cell, type PlanBrushSize } from "../grid";
+import { moveId } from "../reorder";
 import { useFloorPlanStore } from "../stores/useFloorPlanStore";
 import type { Mode, Rotation } from "../types";
 import "../css/floor-planner.sass";
@@ -470,12 +473,16 @@ const activeLayout = computed(() => {
 const furnitureById = computed(
   () => new Map((store.apartment?.furniture ?? []).map((p) => [p.id, p])),
 );
-const placedRaw = computed<Placed[]>(() =>
-  (activeLayout.value?.placements ?? []).flatMap((placement) => {
-    const piece = furnitureById.value.get(placement.furniture_id);
-    return piece ? [{ piece, placement }] : [];
-  }),
-);
+/** In furniture-list order, which is draw order: first on top. */
+const placedRaw = computed<Placed[]>(() => {
+  const at = new Map(
+    (activeLayout.value?.placements ?? []).map((p) => [p.furniture_id, p]),
+  );
+  return (store.apartment?.furniture ?? []).flatMap((piece) => {
+    const placement = at.get(piece.id);
+    return placement ? [{ piece, placement }] : [];
+  });
+});
 const placed = computed(() =>
   placedRaw.value.map((p) => ({
     ...p,
@@ -663,6 +670,12 @@ async function savePiece(draft: PieceDraft): Promise<void> {
 async function removePiece(): Promise<void> {
   if (selectedId.value && (await store.deletePiece(selectedId.value)))
     closeForm();
+}
+
+function reorderPiece(moved: string, target: string, after: boolean): void {
+  const ids = (store.apartment?.furniture ?? []).map((p) => p.id);
+  const next = moveId(ids, moved, target, after);
+  if (next.some((id, i) => id !== ids[i])) void store.reorderFurniture(next);
 }
 
 async function addBulk(pieces: PieceDraft[]): Promise<void> {

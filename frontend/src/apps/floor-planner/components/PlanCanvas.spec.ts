@@ -550,9 +550,9 @@ describe("PlanCanvas", () => {
       expect(group.text()).toBe("Sofa");
     });
 
-    it("draws the selected piece on top of the others", () => {
+    it("draws the first piece on top, whichever is selected", () => {
       const table = { ...sofa, id: "f_table", name: "Table" };
-      const under = {
+      const above = {
         piece: table,
         placement: {
           furniture_id: "f_table",
@@ -563,11 +563,11 @@ describe("PlanCanvas", () => {
         warned: false,
       };
       const order = (selectedId: string | null) =>
-        arranging([under, at(40, 60)], selectedId)
+        arranging([above, at(40, 60)], selectedId)
           .findAll("[data-testid^=placed-]")
           .map((g) => g.attributes("data-testid"));
-      expect(order(null)).toEqual(["placed-f_table", "placed-f_sofa"]);
-      expect(order("f_table")).toEqual(["placed-f_sofa", "placed-f_table"]);
+      expect(order(null)).toEqual(["placed-f_sofa", "placed-f_table"]);
+      expect(order("f_sofa")).toEqual(["placed-f_sofa", "placed-f_table"]);
     });
 
     it("marks the selected piece and a warned one", () => {

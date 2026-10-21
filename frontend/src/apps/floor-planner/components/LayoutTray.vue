@@ -26,19 +26,37 @@
     </section>
     <section v-if="placed.length">
       <h3 class="tray__heading">On the plan · {{ placed.length }}</h3>
-      <button
+      <p v-if="placed.length > 1" class="tray__hint">
+        Drag to reorder. Higher up sits on top.
+      </p>
+      <div
         v-for="p in placed"
         :key="p.id"
-        type="button"
-        class="tray__row"
-        :class="{ 'tray__row--on': p.id === selectedId }"
-        :aria-pressed="p.id === selectedId"
-        :data-testid="`on-plan-${p.id}`"
-        @click="emit('select', p.id)"
+        class="tray__item"
+        :class="[
+          reorder.lineOn(p.id) && `tray__item--${reorder.lineOn(p.id)}`,
+          { 'tray__item--dragging': reorder.dragging.value === p.id },
+        ]"
+        draggable="true"
+        :data-testid="`on-plan-row-${p.id}`"
+        @dragstart="reorder.start($event, p.id)"
+        @dragover="reorder.hover($event, p.id)"
+        @drop="reorder.drop"
+        @dragend="reorder.end"
       >
-        <span>{{ p.name }}</span>
-        <span class="fp-mono tray__size">{{ sizeLabel(p) }}</span>
-      </button>
+        <span class="tray__grip" aria-hidden="true">⠿</span>
+        <button
+          type="button"
+          class="tray__row"
+          :class="{ 'tray__row--on': p.id === selectedId }"
+          :aria-pressed="p.id === selectedId"
+          :data-testid="`on-plan-${p.id}`"
+          @click="emit('select', p.id)"
+        >
+          <span>{{ p.name }}</span>
+          <span class="fp-mono tray__size">{{ sizeLabel(p) }}</span>
+        </button>
+      </div>
     </section>
   </div>
 </template>
@@ -46,6 +64,7 @@
 <script setup lang="ts">
 import FurnitureShape from "./FurnitureShape.vue";
 import { PIECE_DRAG_TYPE, sizeLabel } from "../furniture";
+import { useReorderDrag } from "../reorder";
 import type { Furniture } from "../types";
 
 defineProps<{
@@ -55,7 +74,12 @@ defineProps<{
   selectedId: string | null;
 }>();
 
-const emit = defineEmits<{ select: [id: string] }>();
+const emit = defineEmits<{
+  select: [id: string];
+  move: [moved: string, target: string, after: boolean];
+}>();
+
+const reorder = useReorderDrag((...args) => emit("move", ...args));
 
 function start(e: DragEvent, id: string): void {
   if (!e.dataTransfer) return;
@@ -118,8 +142,28 @@ function start(e: DragEvent, id: string): void {
   font-size: 12px;
   color: #4a4843;
 }
+.tray__item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tray__item--dragging {
+  opacity: 0.4;
+}
+.tray__item--before {
+  box-shadow: 0 -3px 0 var(--fp-accent);
+}
+.tray__item--after {
+  box-shadow: 0 3px 0 var(--fp-accent);
+}
+.tray__grip {
+  color: var(--fp-muted);
+  cursor: grab;
+  user-select: none;
+}
 .tray__row {
   display: flex;
+  flex: 1;
   justify-content: space-between;
   gap: 8px;
   min-height: 36px;

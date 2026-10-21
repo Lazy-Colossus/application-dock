@@ -4,24 +4,42 @@
     <p v-if="pieces.length === 0" class="furniture-list__empty">
       Nothing yet. Add pieces one by one, or paste a list.
     </p>
-    <button
+    <p v-if="pieces.length > 1" class="furniture-list__hint">
+      Drag to reorder. Higher up sits on top on the plan.
+    </p>
+    <div
       v-for="p in pieces"
       :key="p.id"
-      type="button"
-      class="furniture-list__row"
-      :class="{ 'furniture-list__row--on': p.id === selectedId }"
-      :aria-pressed="p.id === selectedId"
-      :data-testid="`piece-${p.id}`"
-      @click="emit('select', p.id)"
+      class="furniture-list__item"
+      :class="[
+        reorder.lineOn(p.id) && `furniture-list__item--${reorder.lineOn(p.id)}`,
+        { 'furniture-list__item--dragging': reorder.dragging.value === p.id },
+      ]"
+      draggable="true"
+      :data-testid="`piece-row-${p.id}`"
+      @dragstart="reorder.start($event, p.id)"
+      @dragover="reorder.hover($event, p.id)"
+      @drop="reorder.drop"
+      @dragend="reorder.end"
     >
-      <span class="furniture-list__thumb">
-        <FurnitureShape :piece="p" :scale="0.8" :max-px="40" />
-      </span>
-      <span class="furniture-list__text">
-        <span class="furniture-list__name">{{ p.name }}</span>
-        <span class="fp-mono furniture-list__size">{{ sizeLabel(p) }}</span>
-      </span>
-    </button>
+      <span class="furniture-list__grip" aria-hidden="true">⠿</span>
+      <button
+        type="button"
+        class="furniture-list__row"
+        :class="{ 'furniture-list__row--on': p.id === selectedId }"
+        :aria-pressed="p.id === selectedId"
+        :data-testid="`piece-${p.id}`"
+        @click="emit('select', p.id)"
+      >
+        <span class="furniture-list__thumb">
+          <FurnitureShape :piece="p" :scale="0.8" :max-px="40" />
+        </span>
+        <span class="furniture-list__text">
+          <span class="furniture-list__name">{{ p.name }}</span>
+          <span class="fp-mono furniture-list__size">{{ sizeLabel(p) }}</span>
+        </span>
+      </button>
+    </div>
     <div class="furniture-list__actions">
       <button
         type="button"
@@ -46,11 +64,19 @@
 <script setup lang="ts">
 import FurnitureShape from "./FurnitureShape.vue";
 import { sizeLabel } from "../furniture";
+import { useReorderDrag } from "../reorder";
 import type { Furniture } from "../types";
 
 defineProps<{ pieces: Furniture[]; selectedId: string | null }>();
 
-const emit = defineEmits<{ select: [id: string]; add: []; bulk: [] }>();
+const emit = defineEmits<{
+  select: [id: string];
+  add: [];
+  bulk: [];
+  move: [moved: string, target: string, after: boolean];
+}>();
+
+const reorder = useReorderDrag((...args) => emit("move", ...args));
 </script>
 
 <style scoped lang="scss">
@@ -72,8 +98,37 @@ const emit = defineEmits<{ select: [id: string]; add: []; bulk: [] }>();
   font-size: 13px;
   color: var(--fp-muted);
 }
+.furniture-list__hint {
+  margin: -4px 0 4px;
+  font-size: 12px;
+  color: var(--fp-muted);
+}
+.furniture-list__item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 8px;
+}
+.furniture-list__item--dragging {
+  opacity: 0.4;
+}
+.furniture-list__item--before {
+  box-shadow: 0 -3px 0 var(--fp-accent);
+}
+.furniture-list__item--after {
+  box-shadow: 0 3px 0 var(--fp-accent);
+}
+.furniture-list__grip {
+  flex: 0 0 auto;
+  padding: 0 2px;
+  color: var(--fp-muted);
+  cursor: grab;
+  user-select: none;
+}
 .furniture-list__row {
   display: flex;
+  flex: 1;
+  min-width: 0;
   align-items: center;
   gap: 12px;
   min-height: 56px;
