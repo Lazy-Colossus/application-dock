@@ -120,7 +120,10 @@
         />
       </aside>
       <section class="fp__plan" data-testid="fp-plan">
-        <div class="fp__sheet">
+        <div
+          class="fp__sheet"
+          :class="{ 'fp__sheet--fill': mode === 'furniture' && !openDraft }"
+        >
           <FurnitureGrid
             v-if="mode === 'furniture' && !openDraft"
             :pieces="store.apartment?.furniture ?? []"
@@ -1168,6 +1171,13 @@ onBeforeUnmount(() =>
 .fp__sheet {
   position: relative;
   margin: auto;
+}
+// The furniture grid measures its box to fit as many cards as the screen holds,
+// so it needs the whole area rather than shrink-wrapping its content.
+.fp__sheet--fill {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
 }
 @media (max-width: 700px) {
   .fp__top {

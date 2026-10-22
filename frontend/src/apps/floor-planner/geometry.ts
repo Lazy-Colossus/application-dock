@@ -1,4 +1,3 @@
-import { EMPTY } from "./codes";
 import { CELL_CM, codeAt, type PlanGrid } from "./grid";
 import type { Furniture, Placement, Rotation } from "./types";
 
@@ -160,38 +159,33 @@ export function snapToWalls(
   return { x_cm: at.x_cm + dx, y_cm: at.y_cm + dy };
 }
 
-export type Warning = { kind: "wall" } | { kind: "outside" };
+export type Warning = { kind: "wall" };
 
 export interface Placed {
   piece: Furniture;
   placement: Placement;
 }
 
-/** LA-5, judged on the rotated bounding box. Pieces may overlap each other; warnings never block a move. */
+/**
+ * LA-5, judged on the rotated bounding box: a piece warns only when it crosses a wall. Floor is
+ * optional in a plan, so being off it, or past the plan's edge, is not a problem. Pieces may
+ * overlap each other; warnings never block a move.
+ */
 export function warnings(target: Placed, plan: PlanGrid): Warning[] {
   const box = bounds(target.piece, target.placement);
-  const out: Warning[] = [];
   const first = (v: number) => Math.floor(v / CELL_CM);
   const last = (v: number) => Math.ceil(v / CELL_CM) - 1;
-  const c0 = first(box.x);
-  const c1 = last(box.x + box.w);
-  const r0 = first(box.y);
-  const r1 = last(box.y + box.h);
-  let wall = false;
-  let outside = c0 < 0 || r0 < 0 || c1 >= plan.cols || r1 >= plan.rows;
-  for (let row = Math.max(r0, 0); row <= Math.min(r1, plan.rows - 1); row++) {
-    for (let col = Math.max(c0, 0); col <= Math.min(c1, plan.cols - 1); col++) {
-      const feature = codeAt(plan.feature, { col, row });
-      if (feature === "wl") wall = true;
-      if (feature === EMPTY && codeAt(plan.surface, { col, row }) === EMPTY)
-        outside = true;
+  const rows = Math.min(last(box.y + box.h), plan.rows - 1);
+  const cols = Math.min(last(box.x + box.w), plan.cols - 1);
+  for (let row = Math.max(first(box.y), 0); row <= rows; row++) {
+    for (let col = Math.max(first(box.x), 0); col <= cols; col++) {
+      if (codeAt(plan.feature, { col, row }) === "wl")
+        return [{ kind: "wall" }];
     }
   }
-  if (wall) out.push({ kind: "wall" });
-  if (outside) out.push({ kind: "outside" });
-  return out;
+  return [];
 }
 
-export function warningText(w: Warning): string {
-  return w.kind === "wall" ? "Overlaps a wall" : "Outside the apartment";
+export function warningText(): string {
+  return "Overlaps a wall";
 }
