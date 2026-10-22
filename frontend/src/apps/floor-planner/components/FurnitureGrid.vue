@@ -1,12 +1,15 @@
 <template>
-  <div ref="root" class="furniture-grid" data-testid="furniture-grid">
+  <div class="furniture-grid" data-testid="furniture-grid">
     <p v-if="pieces.length === 0" class="furniture-grid__empty">
       No furniture yet. Add a piece to get started.
     </p>
     <div
       v-else
       class="furniture-grid__cells"
-      :style="{ gridTemplateColumns: `repeat(${cols}, 1fr)` }"
+      :style="{
+        gridTemplateColumns: `repeat(${COLS}, 1fr)`,
+        gridTemplateRows: `repeat(${ROWS}, 1fr)`,
+      }"
     >
       <button
         v-for="p in shown"
@@ -17,7 +20,7 @@
         @click="emit('select', p.id)"
       >
         <span class="furniture-grid__thumb">
-          <FurnitureShape :piece="p" :scale="1" :max-px="thumbPx" />
+          <FurnitureShape :piece="p" :scale="1" :max-px="72" />
         </span>
         <span class="furniture-grid__name">{{ p.name }}</span>
         <span class="fp-mono furniture-grid__size">{{ sizeLabel(p) }}</span>
@@ -52,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import FurnitureShape from "./FurnitureShape.vue";
 import { sizeLabel } from "../furniture";
 import type { Furniture } from "../types";
@@ -60,52 +63,15 @@ import type { Furniture } from "../types";
 const props = defineProps<{ pieces: Furniture[] }>();
 const emit = defineEmits<{ select: [id: string] }>();
 
-/** Smallest card, in px, and the gap between cards. */
-const CARD = 150;
-const GAP = 12;
-const PAGER_PX = 48;
+const COLS = 6;
+const ROWS = 3;
+const PER_PAGE = COLS * ROWS;
 
-const root = ref<HTMLElement | null>(null);
-const size = ref({ w: 0, h: 0 });
 const page = ref(0);
-
-let observer: ResizeObserver | undefined;
-onMounted(() => {
-  const el = root.value;
-  if (!el || typeof ResizeObserver === "undefined") return;
-  observer = new ResizeObserver(([entry]) => {
-    size.value = {
-      w: entry.contentRect.width,
-      h: entry.contentRect.height,
-    };
-  });
-  observer.observe(el);
-});
-onBeforeUnmount(() => observer?.disconnect());
-
-const fit = (px: number): number =>
-  Math.max(1, Math.floor((px + GAP) / (CARD + GAP)));
-
-/** As many columns as fit the width, but no more than the pieces need. */
-const cols = computed(() =>
-  size.value.w > 0
-    ? Math.min(fit(size.value.w), Math.max(1, props.pieces.length))
-    : Math.ceil(Math.sqrt(props.pieces.length)) || 1,
-);
-/** Unmeasured (no layout yet), everything shows on one page. */
-const perPage = computed(() =>
-  size.value.h > 0
-    ? cols.value * fit(size.value.h - PAGER_PX)
-    : Math.max(props.pieces.length, 1),
-);
-const pages = computed(() => Math.ceil(props.pieces.length / perPage.value));
+const pages = computed(() => Math.ceil(props.pieces.length / PER_PAGE));
 const shown = computed(() =>
-  props.pieces.slice(
-    page.value * perPage.value,
-    (page.value + 1) * perPage.value,
-  ),
+  props.pieces.slice(page.value * PER_PAGE, (page.value + 1) * PER_PAGE),
 );
-const thumbPx = computed(() => (size.value.w > 0 ? CARD - 50 : 96));
 
 watch(pages, (n) => {
   if (page.value >= n) page.value = Math.max(0, n - 1);
@@ -124,7 +90,6 @@ watch(pages, (n) => {
 .furniture-grid__cells {
   display: grid;
   flex: 1;
-  grid-auto-rows: 1fr;
   gap: 12px;
   min-height: 0;
 }

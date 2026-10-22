@@ -7,7 +7,6 @@ import {
   snap,
   snapToWalls,
   topLeftForCentre,
-  warningText,
   warnings,
   type Placed,
 } from "./geometry";
@@ -151,23 +150,11 @@ describe("warnings", () => {
     expect(warnings(placed(box, 40, 20), p)).toEqual([]);
   });
 
-  it("warns outside the apartment and past the plan's edge", () => {
+  it("ignores missing floor and the plan's edge: only a wall warns", () => {
     const p = plan();
     band(p.surface, 0, "..");
-    expect(warnings(placed(box, 40, 0), p)).toEqual([{ kind: "outside" }]);
-    expect(warnings(placed(box, 180, 100), plan())).toEqual([
-      { kind: "outside" },
-    ]);
-  });
-
-  it("can give both warnings at once", () => {
-    const p = plan();
-    band(p.feature, 0, "wl");
-    band(p.surface, 20, "..");
-    expect(warnings(placed(box, 0, 0), p).map(warningText)).toEqual([
-      "Overlaps a wall",
-      "Outside the apartment",
-    ]);
+    expect(warnings(placed(box, 40, 0), p)).toEqual([]);
+    expect(warnings(placed(box, 180, 100), plan())).toEqual([]);
   });
 });
 
