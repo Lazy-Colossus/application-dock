@@ -1,11 +1,19 @@
-"""Unit tests for amp_ports_service. settings.data_dir is a tmp dir."""
+"""Unit tests for amp_ports_service. Each test gets its own empty data_dir."""
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
+from app.core.config import settings
 from app.repositories import amp_repo
 from app.services import amp_ports_service
+
+
+@pytest.fixture(autouse=True)
+def patch_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "data_dir", tmp_path)
 
 
 def test_public_ip_none_when_unset(monkeypatch: pytest.MonkeyPatch) -> None:

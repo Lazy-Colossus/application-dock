@@ -1,8 +1,18 @@
-"""Unit tests for amp_repo. settings.data_dir is a tmp dir (see conftest)."""
+"""Unit tests for amp_repo. Each test gets its own empty data_dir."""
 
 from __future__ import annotations
 
+from pathlib import Path
+
+import pytest
+
+from app.core.config import settings
 from app.repositories import amp_repo
+
+
+@pytest.fixture(autouse=True)
+def patch_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "data_dir", tmp_path)
 
 
 def test_read_ports_missing_file_returns_empty() -> None:
