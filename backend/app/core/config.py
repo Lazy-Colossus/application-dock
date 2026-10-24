@@ -55,6 +55,10 @@ class Settings(BaseSettings):
     amp_base_url: str = "http://localhost:8080"
     amp_username: str = ""
     amp_password: str = ""
+    # Public IP/host the AMP instances are reachable on, for the copy-link
+    # button. With this unset the copy-link buttons stay disabled and nothing
+    # else changes. Handed to the SPA at runtime, never built into the bundle.
+    amp_public_ip: str = ""
 
     # Kalendariq decides capability by which account you logged in as, read as a
     # DENYLIST: these usernames are guests (vote-only) and every other

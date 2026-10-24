@@ -17,3 +17,13 @@ class Instance(BaseModel):
     state: str
     active_users: int | None = None
     max_users: int | None = None
+    # Connect port configured for this instance, or None if not set yet.
+    port: int | None = None
+
+
+class AmpConfig(BaseModel):
+    public_ip: str | None = None
+
+
+class PortsPayload(BaseModel):
+    ports: dict[str, int]
