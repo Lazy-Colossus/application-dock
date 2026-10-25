@@ -179,6 +179,11 @@ def test_parse_steam_app_id_none_for_missing_or_garbage() -> None:
     assert amp_service._parse_steam_app_id("not-a-steam-source") is None
 
 
+def test_parse_steam_app_id_none_for_steam_scheme_without_digits() -> None:
+    assert amp_service._parse_steam_app_id("steam:") is None
+    assert amp_service._parse_steam_app_id("steam:abc") is None
+
+
 def test_map_instance_sets_steam_app_id(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_post(method_path: str, payload: dict):
         if method_path == "Core/Login":

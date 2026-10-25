@@ -48,3 +48,63 @@ def test_game_name_returns_none_and_does_not_cache_on_failure(
     monkeypatch.setattr(steam_service, "_fetch_app_name", lambda app_id: None)
     assert steam_service.game_name(999999) is None
     assert steam_repo.read_names() == {}
+
+
+class _FakeResponse:
+    """Stand-in for httpx.Response covering the bits _fetch_app_name uses."""
+
+    def __init__(self, payload: object, json_exc: Exception | None = None) -> None:
+        self._payload = payload
+        self._json_exc = json_exc
+
+    def raise_for_status(self) -> None:
+        pass
+
+    def json(self) -> object:
+        if self._json_exc is not None:
+            raise self._json_exc
+        return self._payload
+
+
+def test_fetch_app_name_parses_name_on_success(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        steam_service.httpx,
+        "get",
+        lambda *a, **k: _FakeResponse({"1623730": {"success": True, "data": {"name": "Palworld"}}}),
+    )
+    assert steam_service._fetch_app_name(1623730) == "Palworld"
+
+
+def test_fetch_app_name_none_when_success_false(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        steam_service.httpx,
+        "get",
+        lambda *a, **k: _FakeResponse({"1623730": {"success": False}}),
+    )
+    assert steam_service._fetch_app_name(1623730) is None
+
+
+def test_fetch_app_name_none_when_name_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        steam_service.httpx,
+        "get",
+        lambda *a, **k: _FakeResponse({"1623730": {"success": True, "data": {}}}),
+    )
+    assert steam_service._fetch_app_name(1623730) is None
+
+
+def test_fetch_app_name_none_on_http_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    def boom(*a: object, **k: object) -> object:
+        raise steam_service.httpx.HTTPError("down")
+
+    monkeypatch.setattr(steam_service.httpx, "get", boom)
+    assert steam_service._fetch_app_name(1623730) is None
+
+
+def test_fetch_app_name_none_on_non_json(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        steam_service.httpx,
+        "get",
+        lambda *a, **k: _FakeResponse(None, json_exc=ValueError("not json")),
+    )
+    assert steam_service._fetch_app_name(1623730) is None
