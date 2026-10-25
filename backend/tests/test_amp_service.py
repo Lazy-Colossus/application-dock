@@ -167,7 +167,9 @@ def test_parse_steam_app_id_from_steam_scheme() -> None:
 
 
 def test_parse_steam_app_id_from_apps_url() -> None:
-    url = "url:https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1623730/header.jpg"
+    url = (
+        "url:https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1623730/header.jpg"
+    )
     assert amp_service._parse_steam_app_id(url) == 1623730
 
 
