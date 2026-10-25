@@ -19,6 +19,10 @@ class Instance(BaseModel):
     max_users: int | None = None
     # Connect port configured for this instance, or None if not set yet.
     port: int | None = None
+    # Steam App ID parsed from AMP's DisplayImageSource, and the game name
+    # resolved from it. Both None for non-game instances (e.g. the controller).
+    steam_app_id: int | None = None
+    game: str | None = None
 
 
 class AmpConfig(BaseModel):
