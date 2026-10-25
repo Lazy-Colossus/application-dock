@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.schemas.amp import Instance
-from app.services import amp_service
+from app.services import amp_ports_service, amp_service
 
 client = TestClient(app)
 
@@ -77,3 +77,55 @@ def test_start_instance_upstream_returns_502(monkeypatch: pytest.MonkeyPatch) ->
 
     resp = client.post("/api/amp/instances/i1/start")
     assert resp.status_code == 502
+
+
+def test_get_instances_joins_port_and_leaves_unconfigured_none(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        amp_service,
+        "list_instances",
+        lambda: [
+            Instance(id="i1", name="MC", module="Minecraft", running=True, state="Running"),
+            Instance(id="i2", name="V", module="Valheim", running=False, state="Stopped"),
+        ],
+    )
+    monkeypatch.setattr(amp_ports_service, "reconcile", lambda ids: {"i1": 27015})
+
+    resp = client.get("/api/amp/instances")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body[0]["port"] == 27015
+    assert body[1]["port"] is None
+
+
+def test_get_config_returns_public_ip(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(amp_ports_service, "public_ip", lambda: "203.0.113.5")
+
+    resp = client.get("/api/amp/config")
+
+    assert resp.status_code == 200
+    assert resp.json() == {"public_ip": "203.0.113.5"}
+
+
+def test_put_ports_persists_and_returns(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen = {}
+    monkeypatch.setattr(amp_ports_service, "set_ports", lambda ports: seen.update(ports) or ports)
+
+    resp = client.put("/api/amp/ports", json={"ports": {"i1": 27015}})
+
+    assert resp.status_code == 200
+    assert resp.json() == {"ports": {"i1": 27015}}
+    assert seen == {"i1": 27015}
+
+
+def test_put_ports_bad_port_returns_422(monkeypatch: pytest.MonkeyPatch) -> None:
+    def boom(ports: dict) -> dict:
+        raise ValueError("port 0 for 'i1' is out of range 1-65535")
+
+    monkeypatch.setattr(amp_ports_service, "set_ports", boom)
+
+    resp = client.put("/api/amp/ports", json={"ports": {"i1": 0}})
+
+    assert resp.status_code == 422
