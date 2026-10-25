@@ -245,6 +245,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: "AMP Instances", requiresAuth: true },
       },
       {
+        path: "amp/config",
+        name: "amp-config",
+        component: () => import("@/apps/amp/pages/ConfigPage.vue"),
+        meta: { title: "AMP Config", requiresAuth: true },
+      },
+      {
         path: "iss-vanguard",
         name: "iss-vanguard-ship",
         component: () => import("@/apps/iss-vanguard/pages/ShipPage.vue"),
