@@ -19,6 +19,8 @@ function inst(id: string, over: Partial<AmpInstance> = {}): AmpInstance {
     active_users: null,
     max_users: null,
     port: null,
+    steam_app_id: null,
+    game: null,
     ...over,
   };
 }
@@ -90,5 +92,18 @@ describe("InstancesPage copy link", () => {
     await wrapper.get('[data-testid="copy-link"]').trigger("click");
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith("203.0.113.5:27015");
     expect(notifyMock).toHaveBeenCalled();
+  });
+});
+
+describe("InstancesPage game display", () => {
+  it("shows the resolved game name when present", () => {
+    const { wrapper } = mountPage([inst("i1", { module: "GenericModule", game: "Palworld" })], null);
+    expect(wrapper.text()).toContain("Palworld");
+    expect(wrapper.text()).not.toContain("GenericModule");
+  });
+
+  it("falls back to the module when there is no game", () => {
+    const { wrapper } = mountPage([inst("ads", { module: "ADS", game: null })], null);
+    expect(wrapper.text()).toContain("ADS");
   });
 });
