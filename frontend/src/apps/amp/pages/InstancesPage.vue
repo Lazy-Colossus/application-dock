@@ -82,7 +82,7 @@ onUnmounted(() => {
         <q-item-section>
           <q-item-label>{{ inst.name }}</q-item-label>
           <q-item-label caption>
-            {{ inst.module }}
+            {{ inst.game ?? inst.module }}
             <span v-if="inst.active_users !== null">
               · {{ inst.active_users
               }}<span v-if="inst.max_users">/{{ inst.max_users }}</span> players

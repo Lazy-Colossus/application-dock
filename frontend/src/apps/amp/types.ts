@@ -7,4 +7,6 @@ export interface AmpInstance {
   active_users: number | null;
   max_users: number | null;
   port: number | null;
+  steam_app_id: number | null;
+  game: string | null;
 }

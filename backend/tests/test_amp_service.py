@@ -160,3 +160,51 @@ def test_not_configured_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(amp_service.settings, "amp_username", "")
     with pytest.raises(amp_service.AmpNotConfiguredError):
         amp_service.list_instances()
+
+
+def test_parse_steam_app_id_from_steam_scheme() -> None:
+    assert amp_service._parse_steam_app_id("steam:1604030") == 1604030
+
+
+def test_parse_steam_app_id_from_apps_url() -> None:
+    url = (
+        "url:https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1623730/header.jpg"
+    )
+    assert amp_service._parse_steam_app_id(url) == 1623730
+
+
+def test_parse_steam_app_id_none_for_missing_or_garbage() -> None:
+    assert amp_service._parse_steam_app_id(None) is None
+    assert amp_service._parse_steam_app_id("") is None
+    assert amp_service._parse_steam_app_id("not-a-steam-source") is None
+
+
+def test_parse_steam_app_id_none_for_steam_scheme_without_digits() -> None:
+    assert amp_service._parse_steam_app_id("steam:") is None
+    assert amp_service._parse_steam_app_id("steam:abc") is None
+
+
+def test_map_instance_sets_steam_app_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_post(method_path: str, payload: dict):
+        if method_path == "Core/Login":
+            return {"success": True, "sessionID": "s"}
+        return [
+            {
+                "AvailableInstances": [
+                    {
+                        "InstanceID": "i1",
+                        "FriendlyName": "Pal",
+                        "Module": "GenericModule",
+                        "Running": True,
+                        "Suspended": False,
+                        "AppState": 20,
+                        "Metrics": {},
+                        "DisplayImageSource": "steam:1623730",
+                    }
+                ]
+            }
+        ]
+
+    monkeypatch.setattr(amp_service, "_post_api", fake_post)
+    result = amp_service.list_instances()
+    assert result[0].steam_app_id == 1623730

@@ -14,6 +14,7 @@ call; the router translates both.
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 import httpx
@@ -127,6 +128,24 @@ def _state_label(app_state: Any, suspended: Any) -> str:
     return "Unknown"
 
 
+_STEAM_APPS_RE = re.compile(r"/apps/(\d+)/")
+
+
+def _parse_steam_app_id(display_image_source: Any) -> int | None:
+    """The Steam App ID embedded in AMP's DisplayImageSource, or None.
+
+    Two forms are seen in the wild: `steam:<id>` and an image URL containing
+    `/apps/<id>/`. Anything else (including null) yields None.
+    """
+    if not isinstance(display_image_source, str):
+        return None
+    if display_image_source.startswith("steam:"):
+        rest = display_image_source.removeprefix("steam:")
+        return int(rest) if rest.isdigit() else None
+    match = _STEAM_APPS_RE.search(display_image_source)
+    return int(match.group(1)) if match else None
+
+
 def _map_instance(raw: dict[str, Any]) -> Instance:
     metrics = raw.get("Metrics") or {}
     users = metrics.get("Active Users") or {}
@@ -138,6 +157,7 @@ def _map_instance(raw: dict[str, Any]) -> Instance:
         state=_state_label(raw.get("AppState"), raw.get("Suspended")),
         active_users=users.get("RawValue"),
         max_users=users.get("MaxValue"),
+        steam_app_id=_parse_steam_app_id(raw.get("DisplayImageSource")),
     )
 
 

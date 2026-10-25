@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.schemas.amp import Instance
-from app.services import amp_ports_service, amp_service
+from app.services import amp_ports_service, amp_service, steam_service
 
 client = TestClient(app)
 
@@ -129,3 +129,32 @@ def test_put_ports_bad_port_returns_422(monkeypatch: pytest.MonkeyPatch) -> None
     resp = client.put("/api/amp/ports", json={"ports": {"i1": 0}})
 
     assert resp.status_code == 422
+
+
+def test_get_instances_enriches_game_from_steam(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        amp_service,
+        "list_instances",
+        lambda: [
+            Instance(
+                id="i1",
+                name="Pal",
+                module="GenericModule",
+                running=True,
+                state="Running",
+                steam_app_id=1623730,
+            ),
+            Instance(id="ads", name="ADS01", module="ADS", running=True, state="Running"),
+        ],
+    )
+    monkeypatch.setattr(amp_ports_service, "reconcile", lambda ids: {})
+    monkeypatch.setattr(
+        steam_service, "game_name", lambda app_id: "Palworld" if app_id == 1623730 else None
+    )
+
+    resp = client.get("/api/amp/instances")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body[0]["game"] == "Palworld"
+    assert body[1]["game"] is None  # no steam_app_id → not resolved

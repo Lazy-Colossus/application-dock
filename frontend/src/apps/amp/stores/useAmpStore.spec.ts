@@ -24,6 +24,8 @@ function inst(id: string, over: Partial<AmpInstance> = {}): AmpInstance {
     active_users: null,
     max_users: null,
     port: null,
+    steam_app_id: null,
+    game: null,
     ...over,
   };
 }
@@ -56,6 +58,15 @@ describe("useAmpStore", () => {
     expect(store.instances).toHaveLength(1);
     expect(store.publicIp).toBe("203.0.113.5");
     expect(store.loading).toBe(false);
+  });
+
+  it("fetch carries the resolved game name through", async () => {
+    mockFetch([inst("i1", { game: "Palworld", steam_app_id: 1623730 })], "203.0.113.5");
+    const store = useAmpStore();
+
+    await store.fetch();
+
+    expect(store.instances[0]!.game).toBe("Palworld");
   });
 
   it("fetch tolerates a failed config call and leaves publicIp null", async () => {
