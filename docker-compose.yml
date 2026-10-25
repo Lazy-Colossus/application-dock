@@ -24,6 +24,16 @@ services:
       # would pass an empty string, which overrides that default and silently
       # promotes the shared account to admin.
       KALENDARIQ_GUESTS: ${KALENDARIQ_GUESTS:-players}
+      # CubeCoders AMP (ADS controller). Unset username/password = the AMP app
+      # answers 503; nothing else changes. AMP_PUBLIC_IP feeds the copy-link button.
+      AMP_BASE_URL: ${AMP_BASE_URL:-http://localhost:8080}
+      AMP_USERNAME: ${AMP_USERNAME:-}
+      AMP_PASSWORD: ${AMP_PASSWORD:-}
+      AMP_PUBLIC_IP: ${AMP_PUBLIC_IP:-}
+      # Per-user app allowlist. The fallback MUST mirror the app default — a bare
+      # `${APP_ACCESS:-}` passes an empty string, which drops every restriction and
+      # silently grants listed users access to all apps.
+      APP_ACCESS: ${APP_ACCESS:-peto:archery,iss-vanguard,floor-planner;patus:archery,iss-vanguard,floor-planner}
     volumes:
       - dock-data:/data
       - /var/run/docker.sock:/var/run/docker.sock
