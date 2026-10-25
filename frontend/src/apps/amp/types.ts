@@ -6,4 +6,5 @@ export interface AmpInstance {
   state: string;
   active_users: number | null;
   max_users: number | null;
+  port: number | null;
 }

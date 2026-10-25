@@ -5,6 +5,7 @@ import type { AmpInstance } from "@/apps/amp/types";
 
 export const useAmpStore = defineStore("amp", () => {
   const instances = ref<AmpInstance[]>([]);
+  const publicIp = ref<string | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
   // Ids with a start request in flight — drives per-row button spinner/disable.
@@ -14,13 +15,41 @@ export const useAmpStore = defineStore("amp", () => {
     return starting.value.includes(id);
   }
 
+  // The connect address for the copy-link button, or null when it can't be
+  // formed (no public IP configured, or no port set for this instance).
+  function linkFor(inst: AmpInstance): string | null {
+    return publicIp.value && inst.port ? `${publicIp.value}:${inst.port}` : null;
+  }
+
   async function fetch(): Promise<void> {
     loading.value = true;
     error.value = null;
     try {
-      instances.value = await api.get<AmpInstance[]>("/amp/instances");
+      // The public IP is optional: a failed config call just leaves links off,
+      // so it must not fail the whole load.
+      const [list, config] = await Promise.all([
+        api.get<AmpInstance[]>("/amp/instances"),
+        api
+          .get<{ public_ip: string | null }>("/amp/config")
+          .catch(() => ({ public_ip: null })),
+      ]);
+      instances.value = list;
+      publicIp.value = config.public_ip ?? null;
     } catch (e) {
       // A failed poll keeps the last known list rather than blanking the page.
+      error.value = e instanceof Error ? e.message : String(e);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function savePorts(ports: Record<string, number>): Promise<void> {
+    loading.value = true;
+    error.value = null;
+    try {
+      await api.put("/amp/ports", { ports });
+      await fetch();
+    } catch (e) {
       error.value = e instanceof Error ? e.message : String(e);
     } finally {
       loading.value = false;
@@ -41,5 +70,16 @@ export const useAmpStore = defineStore("amp", () => {
     }
   }
 
-  return { instances, loading, error, starting, isStarting, fetch, start };
+  return {
+    instances,
+    publicIp,
+    loading,
+    error,
+    starting,
+    isStarting,
+    linkFor,
+    fetch,
+    savePorts,
+    start,
+  };
 });

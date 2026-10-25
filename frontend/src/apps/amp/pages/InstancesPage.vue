@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from "vue";
 import { storeToRefs } from "pinia";
+import { useRouter } from "vue-router";
+import { useQuasar } from "quasar";
 import { useAmpStore } from "@/apps/amp/stores/useAmpStore";
+import type { AmpInstance } from "@/apps/amp/types";
 
 const store = useAmpStore();
-const { instances, loading, error } = storeToRefs(store);
+const { instances, loading, error, publicIp } = storeToRefs(store);
+const router = useRouter();
+const $q = useQuasar();
 
 const POLL_MS = 60_000;
 let timer: ReturnType<typeof setInterval> | undefined;
@@ -29,6 +34,13 @@ function statusColor(state: string): string {
   }
 }
 
+async function copyLink(inst: AmpInstance): Promise<void> {
+  const link = store.linkFor(inst);
+  if (!link) return;
+  await navigator.clipboard.writeText(link);
+  $q.notify({ message: "Copied", color: "positive", timeout: 1500 });
+}
+
 onMounted(() => {
   void store.fetch();
   timer = setInterval(() => void store.fetch(), POLL_MS);
@@ -44,6 +56,13 @@ onUnmounted(() => {
     <div class="row items-center q-mb-md">
       <div class="text-h5">AMP Instances</div>
       <q-space />
+      <q-btn
+        flat
+        round
+        icon="settings"
+        aria-label="Configure ports"
+        @click="router.push('/amp/config')"
+      />
       <q-btn
         flat
         round
@@ -75,6 +94,27 @@ onUnmounted(() => {
           <q-chip :color="statusColor(inst.state)" text-color="white" dense>
             {{ inst.state }}
           </q-chip>
+        </q-item-section>
+
+        <q-item-section side>
+          <q-btn
+            flat
+            round
+            dense
+            icon="content_copy"
+            aria-label="Copy connect link"
+            data-testid="copy-link"
+            :disable="!store.linkFor(inst)"
+            @click="copyLink(inst)"
+          >
+            <q-tooltip v-if="!store.linkFor(inst)">
+              {{
+                publicIp
+                  ? "Set a port for this instance in config"
+                  : "Set AMP_PUBLIC_IP to enable links"
+              }}
+            </q-tooltip>
+          </q-btn>
         </q-item-section>
 
         <q-item-section side>
