@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.dependencies import get_current_user, require_app
 from app.schemas.amp import AmpConfig, Instance, PortsPayload
-from app.services import amp_ports_service, amp_service
+from app.services import amp_ports_service, amp_service, steam_service
 
 router = APIRouter(prefix="/api/amp", tags=["amp"], dependencies=[Depends(require_app("amp"))])
 
@@ -24,10 +24,13 @@ def list_instances(_: str = Depends(get_current_user)) -> list[Instance]:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except amp_service.AmpUpstreamError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
-    # Prune ports for instances that no longer exist, then join the survivors.
+    # Prune ports for instances that no longer exist, then join the survivors
+    # and resolve each instance's game from its Steam app id (cached).
     ports = amp_ports_service.reconcile([inst.id for inst in instances])
     for inst in instances:
         inst.port = ports.get(inst.id)
+        if inst.steam_app_id is not None:
+            inst.game = steam_service.game_name(inst.steam_app_id)
     return instances
 
 
