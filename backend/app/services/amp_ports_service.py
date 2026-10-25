@@ -27,10 +27,6 @@ def public_ip() -> str | None:
     return settings.amp_public_ip or None
 
 
-def get_ports() -> dict[str, int]:
-    return amp_repo.read_ports()
-
-
 def set_ports(ports: dict[str, int]) -> dict[str, int]:
     """Validate and persist the full id -> port map (replace, not merge)."""
     for instance_id, port in ports.items():
