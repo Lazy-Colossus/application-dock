@@ -93,6 +93,18 @@ describe("InstancesPage copy link", () => {
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith("203.0.113.5:27015");
     expect(notifyMock).toHaveBeenCalled();
   });
+
+  it("falls back to execCommand on an insecure origin where clipboard is unset", async () => {
+    // Plain-HTTP LAN origin: `navigator.clipboard` is undefined, which used to
+    // make the click throw silently and copy nothing.
+    Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+    const execMock = vi.fn().mockReturnValue(true);
+    document.execCommand = execMock;
+    const { wrapper } = mountPage([inst("i1", { port: 27015 })], "203.0.113.5");
+    await wrapper.get('[data-testid="copy-link"]').trigger("click");
+    expect(execMock).toHaveBeenCalledWith("copy");
+    expect(notifyMock).toHaveBeenCalled();
+  });
 });
 
 describe("InstancesPage game display", () => {

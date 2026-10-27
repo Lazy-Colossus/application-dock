@@ -4,6 +4,7 @@ import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
 import { useQuasar } from "quasar";
 import { useAmpStore } from "@/apps/amp/stores/useAmpStore";
+import { copyToClipboard } from "@/apps/amp/clipboard";
 import type { AmpInstance } from "@/apps/amp/types";
 
 const store = useAmpStore();
@@ -37,8 +38,12 @@ function statusColor(state: string): string {
 async function copyLink(inst: AmpInstance): Promise<void> {
   const link = store.linkFor(inst);
   if (!link) return;
-  await navigator.clipboard.writeText(link);
-  $q.notify({ message: "Copied", color: "positive", timeout: 1500 });
+  const ok = await copyToClipboard(link);
+  $q.notify(
+    ok
+      ? { message: "Copied", color: "positive", timeout: 1500 }
+      : { message: "Copy failed", color: "negative", timeout: 1500 },
+  );
 }
 
 onMounted(() => {

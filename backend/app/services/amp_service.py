@@ -178,5 +178,8 @@ def start_instance(instance_id: str) -> None:
     if not _configured():
         raise AmpNotConfiguredError("AMP is not configured")
     data = _call("ADSModule/StartInstance", {"InstanceID": instance_id})
+    # TEMP DIAGNOSTIC (AMP start debugging): capture exactly what AMP returns so
+    # we can see whether it accepts the call. Remove once the start fix lands.
+    logger.info("AMP StartInstance(%s) raw response: %r", instance_id, data)
     if isinstance(data, dict) and data.get("Status") is False:
         raise AmpUpstreamError(data.get("Reason") or "AMP refused to start the instance")
