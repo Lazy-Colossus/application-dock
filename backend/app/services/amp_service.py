@@ -171,6 +171,15 @@ def list_instances() -> list[Instance]:
     for target in targets:
         for raw in target.get("AvailableInstances") or []:
             instances.append(_map_instance(raw))
+            # TEMP DIAGNOSTIC (AMP "Idle"/start debugging): WARNING so it surfaces
+            # without app log config. Remove once the start fix lands.
+            logger.warning(
+                "AMP raw instance name=%r Running=%r AppState=%r Suspended=%r",
+                raw.get("InstanceName"),
+                raw.get("Running"),
+                raw.get("AppState"),
+                raw.get("Suspended"),
+            )
     return instances
 
 
