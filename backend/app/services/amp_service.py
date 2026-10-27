@@ -213,4 +213,5 @@ def start_instance(instance_id: str) -> None:
     data = _call("ADSModule/StartInstance", {"InstanceName": name})
     error = _amp_error(data)
     if error:
+        logger.warning("AMP StartInstance(name=%r, id=%s) failed: %s", name, instance_id, error)
         raise AmpUpstreamError(error)

@@ -56,7 +56,9 @@ function isTransitioning(inst: AmpInstance): boolean {
 }
 
 async function startInstance(id: string): Promise<void> {
-  await store.start(id);
+  const accepted = await store.start(id);
+  // On failure, skip the burst so it doesn't immediately wipe the error banner.
+  if (!accepted) return;
   startTimers.forEach(clearTimeout);
   startTimers = START_REFRESH_MS.map((ms) => setTimeout(() => void store.fetch(), ms));
 }

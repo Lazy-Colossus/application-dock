@@ -132,7 +132,7 @@ describe("InstancesPage start button", () => {
     vi.useFakeTimers();
     try {
       const { store, wrapper } = mountPage([inst("i1", { state: "Stopped" })], null);
-      const startSpy = vi.spyOn(store, "start").mockResolvedValue();
+      const startSpy = vi.spyOn(store, "start").mockResolvedValue(true);
       const fetchSpy = store.fetch as unknown as ReturnType<typeof vi.fn>;
       fetchSpy.mockClear(); // drop the onMounted fetch
 
@@ -141,6 +141,22 @@ describe("InstancesPage start button", () => {
 
       await vi.advanceTimersByTimeAsync(11_000);
       expect(fetchSpy).toHaveBeenCalledTimes(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not re-poll after a failed start, so the error banner survives", async () => {
+    vi.useFakeTimers();
+    try {
+      const { store, wrapper } = mountPage([inst("i1", { state: "Stopped" })], null);
+      vi.spyOn(store, "start").mockResolvedValue(false);
+      const fetchSpy = store.fetch as unknown as ReturnType<typeof vi.fn>;
+      fetchSpy.mockClear();
+
+      await wrapper.get('[data-testid="start"]').trigger("click");
+      await vi.advanceTimersByTimeAsync(11_000);
+      expect(fetchSpy).not.toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
     }

@@ -56,15 +56,19 @@ export const useAmpStore = defineStore("amp", () => {
     }
   }
 
-  async function start(id: string): Promise<void> {
-    if (starting.value.includes(id)) return;
+  // Returns whether the start request was accepted, so the caller can decide
+  // whether to kick off follow-up polling (and avoid clearing a failure banner).
+  async function start(id: string): Promise<boolean> {
+    if (starting.value.includes(id)) return false;
     starting.value.push(id);
     error.value = null;
     try {
       await api.post(`/amp/instances/${id}/start`);
       await fetch();
+      return true;
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e);
+      return false;
     } finally {
       starting.value = starting.value.filter((x) => x !== id);
     }
