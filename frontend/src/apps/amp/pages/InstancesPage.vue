@@ -13,7 +13,11 @@ const router = useRouter();
 const $q = useQuasar();
 
 const POLL_MS = 60_000;
+// After a start, AMP can briefly still report "Stopped"; refresh quickly a few
+// times so the row flips to "Starting…" without waiting for the slow poll.
+const START_REFRESH_MS = [2_000, 5_000, 10_000];
 let timer: ReturnType<typeof setInterval> | undefined;
+let startTimers: ReturnType<typeof setTimeout>[] = [];
 
 function statusColor(state: string): string {
   switch (state) {
@@ -35,6 +39,28 @@ function statusColor(state: string): string {
   }
 }
 
+// Only a stopped (or failed) instance can be started; everything else is already
+// up, coming up, or otherwise busy — so Start stays disabled, which also stops it
+// being clicked repeatedly while AMP spins the instance up.
+const STARTABLE_STATES = ["Stopped", "Failed"];
+// States AMP reports while an instance is coming online — drives the "Starting…"
+// label so the user can see their click took effect.
+const STARTING_STATES = ["Pre-start", "Configuring", "Starting", "Restarting"];
+
+function canStart(inst: AmpInstance): boolean {
+  return STARTABLE_STATES.includes(inst.state);
+}
+
+function isTransitioning(inst: AmpInstance): boolean {
+  return STARTING_STATES.includes(inst.state);
+}
+
+async function startInstance(id: string): Promise<void> {
+  await store.start(id);
+  startTimers.forEach(clearTimeout);
+  startTimers = START_REFRESH_MS.map((ms) => setTimeout(() => void store.fetch(), ms));
+}
+
 async function copyLink(inst: AmpInstance): Promise<void> {
   const link = store.linkFor(inst);
   if (!link) return;
@@ -53,6 +79,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (timer) clearInterval(timer);
+  startTimers.forEach(clearTimeout);
 });
 </script>
 
@@ -125,11 +152,12 @@ onUnmounted(() => {
         <q-item-section side>
           <q-btn
             color="primary"
-            label="Start"
+            :label="isTransitioning(inst) ? 'Starting…' : 'Start'"
             dense
-            :disable="inst.running || store.isStarting(inst.id)"
+            data-testid="start"
+            :disable="!canStart(inst) || store.isStarting(inst.id)"
             :loading="store.isStarting(inst.id)"
-            @click="store.start(inst.id)"
+            @click="startInstance(inst.id)"
           />
         </q-item-section>
       </q-item>

@@ -174,30 +174,43 @@ def list_instances() -> list[Instance]:
     return instances
 
 
+def _raw_instance(instance_id: str) -> dict[str, Any] | None:
+    """AMP's raw record for an InstanceID (GUID), or None if it no longer exists."""
+    targets = _call("ADSModule/GetInstances", {})
+    for target in targets if isinstance(targets, list) else []:
+        for raw in target.get("AvailableInstances") or []:
+            if raw.get("InstanceID") == instance_id:
+                return raw
+    return None
+
+
+def _amp_error(data: Any) -> str | None:
+    """A failure message if `data` is an AMP error response, else None.
+
+    AMP signals failure two ways: an ActionResult with ``Status: false``, or a
+    method-invocation error envelope carrying ``Title``/``Message`` (usually with
+    a ``StackTrace``) — e.g. a missing or wrong argument. The envelope has no
+    ``Status`` key, so it must be matched explicitly or it reads as success.
+    """
+    if not isinstance(data, dict):
+        return None
+    if data.get("Status") is False:
+        return data.get("Reason") or "AMP reported the call unsuccessful"
+    if "StackTrace" in data or (data.get("Title") and data.get("Message")):
+        return data.get("Message") or data.get("Title")
+    return None
+
+
 def start_instance(instance_id: str) -> None:
     if not _configured():
         raise AmpNotConfiguredError("AMP is not configured")
-    data = _call("ADSModule/StartInstance", {"InstanceID": instance_id})
-    # TEMP DIAGNOSTIC (AMP start debugging): WARNING so it surfaces without app
-    # log config. Capture AMP's StartInstance response, then re-read this
-    # instance's raw record to see whether it is coming online. Remove once the
-    # start fix lands.
-    logger.warning("AMP StartInstance(%s) raw response: %r", instance_id, data)
-    try:
-        targets = _call("ADSModule/GetInstances", {})
-        for target in targets if isinstance(targets, list) else []:
-            for raw in target.get("AvailableInstances") or []:
-                if raw.get("InstanceID") == instance_id:
-                    logger.warning(
-                        "AMP post-start snapshot of %s: Running=%r AppState=%r "
-                        "Suspended=%r keys=%s",
-                        instance_id,
-                        raw.get("Running"),
-                        raw.get("AppState"),
-                        raw.get("Suspended"),
-                        sorted(raw.keys()),
-                    )
-    except Exception as exc:  # diagnostic must never break the start call
-        logger.warning("AMP post-start snapshot failed: %r", exc)
-    if isinstance(data, dict) and data.get("Status") is False:
-        raise AmpUpstreamError(data.get("Reason") or "AMP refused to start the instance")
+    # StartInstance identifies the instance by InstanceName, but the rest of this
+    # app keys on InstanceID (a GUID), so translate via GetInstances first.
+    raw = _raw_instance(instance_id)
+    name = raw.get("InstanceName") if raw else None
+    if not isinstance(name, str) or not name:
+        raise AmpUpstreamError(f"No AMP instance with id {instance_id}")
+    data = _call("ADSModule/StartInstance", {"InstanceName": name})
+    error = _amp_error(data)
+    if error:
+        raise AmpUpstreamError(error)

@@ -107,6 +107,46 @@ describe("InstancesPage copy link", () => {
   });
 });
 
+describe("InstancesPage start button", () => {
+  it("enables Start and labels it 'Start' when the instance is Stopped", () => {
+    const { wrapper } = mountPage([inst("i1", { state: "Stopped" })], null);
+    const btn = wrapper.get('[data-testid="start"]');
+    expect((btn.element as HTMLButtonElement).disabled).toBe(false);
+    expect(btn.text()).toContain("Start");
+    expect(btn.text()).not.toContain("Starting");
+  });
+
+  it("disables Start and shows 'Starting…' while the instance is coming up", () => {
+    const { wrapper } = mountPage([inst("i1", { state: "Starting" })], null);
+    const btn = wrapper.get('[data-testid="start"]');
+    expect((btn.element as HTMLButtonElement).disabled).toBe(true);
+    expect(btn.text()).toContain("Starting");
+  });
+
+  it("disables Start once the instance is Running", () => {
+    const { wrapper } = mountPage([inst("i1", { state: "Running", running: true })], null);
+    expect((wrapper.get('[data-testid="start"]').element as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("requests start then re-polls quickly so the row flips to Starting", async () => {
+    vi.useFakeTimers();
+    try {
+      const { store, wrapper } = mountPage([inst("i1", { state: "Stopped" })], null);
+      const startSpy = vi.spyOn(store, "start").mockResolvedValue();
+      const fetchSpy = store.fetch as unknown as ReturnType<typeof vi.fn>;
+      fetchSpy.mockClear(); // drop the onMounted fetch
+
+      await wrapper.get('[data-testid="start"]').trigger("click");
+      expect(startSpy).toHaveBeenCalledWith("i1");
+
+      await vi.advanceTimersByTimeAsync(11_000);
+      expect(fetchSpy).toHaveBeenCalledTimes(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
 describe("InstancesPage game display", () => {
   it("shows the resolved game name when present", () => {
     const { wrapper } = mountPage([inst("i1", { module: "GenericModule", game: "Palworld" })], null);
