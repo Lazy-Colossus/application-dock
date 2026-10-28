@@ -176,12 +176,36 @@ describe("InstancesPage start button", () => {
         true,
       );
 
-      // Safety: if the row never transitions, the busy marker clears after the burst.
-      await vi.advanceTimersByTimeAsync(11_000);
+      // Safety: if the row never transitions, the busy marker clears after the timeout.
+      await vi.advanceTimersByTimeAsync(31_000);
       await flushPromises();
       expect((wrapper.get('[data-testid="start"]').element as HTMLButtonElement).disabled).toBe(
         false,
       );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("polls fast while an instance is coming up, then backs off once settled", async () => {
+    vi.useFakeTimers();
+    try {
+      const { store } = mountPage([inst("i1", { state: "Starting" })], null);
+      const fetchSpy = store.fetch as unknown as ReturnType<typeof vi.fn>;
+      fetchSpy.mockClear();
+
+      // A transitioning instance → polled every ~5s (≈3 times in ~16s).
+      await vi.advanceTimersByTimeAsync(16_000);
+      const whileActive = fetchSpy.mock.calls.length;
+      expect(whileActive).toBeGreaterThanOrEqual(3);
+
+      // Settle it: subsequent fetches return a Running instance, so polling backs
+      // off to the 60s cadence (no further fetches within the next 30s).
+      store.instances = [inst("i1", { state: "Running", running: true })];
+      await vi.advanceTimersByTimeAsync(6_000); // let one more fast poll observe "Running"
+      const afterSettle = fetchSpy.mock.calls.length;
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(fetchSpy.mock.calls.length).toBe(afterSettle);
     } finally {
       vi.useRealTimers();
     }

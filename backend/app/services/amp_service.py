@@ -127,23 +127,10 @@ def _instance_session(instance_id: str) -> str:
             if isinstance(data, dict) and data.get("success") and session_id:
                 return session_id
             last_error = AmpUpstreamError(f"AMP instance {instance_id} login failed")
-            # TEMP DIAGNOSTIC (instance-login readiness): remove once confirmed.
-            logger.warning(
-                "AMP instance %s login not ready (attempt %d/%d): %r",
-                instance_id,
-                attempt + 1,
-                _INSTANCE_LOGIN_ATTEMPTS,
-                data,
-            )
         except AmpUpstreamError as exc:
+            # A just-started instance briefly answers "Instance Unavailable" or
+            # errors outright; both are transient, so retry.
             last_error = exc
-            logger.warning(
-                "AMP instance %s login error (attempt %d/%d): %s",
-                instance_id,
-                attempt + 1,
-                _INSTANCE_LOGIN_ATTEMPTS,
-                exc,
-            )
         if attempt < _INSTANCE_LOGIN_ATTEMPTS - 1:
             time.sleep(_INSTANCE_LOGIN_INTERVAL_SECONDS)
     raise last_error or AmpUpstreamError(f"AMP instance {instance_id} login failed")
@@ -222,14 +209,6 @@ def list_instances() -> list[Instance]:
     for target in targets:
         for raw in target.get("AvailableInstances") or []:
             instances.append(_map_instance(raw))
-            # TEMP DIAGNOSTIC (pill-lag debugging): what AppState GetInstances
-            # reports per poll/refresh. Remove once confirmed.
-            logger.warning(
-                "AMP raw instance name=%r Running=%r AppState=%r",
-                raw.get("InstanceName"),
-                raw.get("Running"),
-                raw.get("AppState"),
-            )
     return instances
 
 

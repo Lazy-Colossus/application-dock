@@ -12,12 +12,15 @@ const { instances, loading, error, publicIp } = storeToRefs(store);
 const router = useRouter();
 const $q = useQuasar();
 
-const POLL_MS = 60_000;
-// After a start, AMP can briefly still report "Stopped"; refresh quickly a few
-// times so the row flips to "Starting…" without waiting for the slow poll.
-const START_REFRESH_MS = [2_000, 5_000, 10_000];
-let timer: ReturnType<typeof setInterval> | undefined;
-let startTimers: ReturnType<typeof setTimeout>[] = [];
+// Poll slowly when everything is settled, but quickly while any instance is
+// still coming up — a server can take a minute+ to reach Running, and that
+// transition must not fall into a 60s polling gap.
+const POLL_IDLE_MS = 60_000;
+const POLL_ACTIVE_MS = 5_000;
+// Stop forcing fast polls / a busy button if a started row never transitions.
+const PENDING_TIMEOUT_MS = 30_000;
+let pollTimer: ReturnType<typeof setTimeout> | undefined;
+const safetyTimers: ReturnType<typeof setTimeout>[] = [];
 
 function statusColor(state: string): string {
   switch (state) {
@@ -74,22 +77,31 @@ function prunePending(): void {
   });
 }
 
+function anyActive(): boolean {
+  return pending.value.length > 0 || instances.value.some(isTransitioning);
+}
+
+async function poll(): Promise<void> {
+  await store.fetch();
+  prunePending();
+  if (pollTimer) clearTimeout(pollTimer);
+  pollTimer = setTimeout(() => void poll(), anyActive() ? POLL_ACTIVE_MS : POLL_IDLE_MS);
+}
+
 async function startInstance(id: string): Promise<void> {
   const accepted = await store.start(id);
-  // On failure, skip the burst so it doesn't immediately wipe the error banner.
+  // On failure, don't force a refresh — it would wipe the error banner.
   if (!accepted) return;
   if (!pending.value.includes(id)) pending.value.push(id);
-  startTimers.forEach(clearTimeout);
-  startTimers = START_REFRESH_MS.map((ms, idx) =>
-    setTimeout(async () => {
-      await store.fetch();
-      prunePending();
-      // Safety: never leave the row stuck busy if it never transitions.
-      if (idx === START_REFRESH_MS.length - 1) {
-        pending.value = pending.value.filter((p) => p !== id);
-      }
-    }, ms),
+  // Safety: stop forcing fast polls / a busy button if it never transitions.
+  safetyTimers.push(
+    setTimeout(() => {
+      pending.value = pending.value.filter((p) => p !== id);
+    }, PENDING_TIMEOUT_MS),
   );
+  // Poll now (and keep polling fast while pending) so the row flips to
+  // "Starting…" promptly rather than at the next idle poll.
+  void poll();
 }
 
 async function copyLink(inst: AmpInstance): Promise<void> {
@@ -104,13 +116,12 @@ async function copyLink(inst: AmpInstance): Promise<void> {
 }
 
 onMounted(() => {
-  void store.fetch();
-  timer = setInterval(() => void store.fetch(), POLL_MS);
+  void poll();
 });
 
 onUnmounted(() => {
-  if (timer) clearInterval(timer);
-  startTimers.forEach(clearTimeout);
+  if (pollTimer) clearTimeout(pollTimer);
+  safetyTimers.forEach(clearTimeout);
 });
 </script>
 
