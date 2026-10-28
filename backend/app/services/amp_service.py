@@ -222,6 +222,14 @@ def list_instances() -> list[Instance]:
     for target in targets:
         for raw in target.get("AvailableInstances") or []:
             instances.append(_map_instance(raw))
+            # TEMP DIAGNOSTIC (pill-lag debugging): what AppState GetInstances
+            # reports per poll/refresh. Remove once confirmed.
+            logger.warning(
+                "AMP raw instance name=%r Running=%r AppState=%r",
+                raw.get("InstanceName"),
+                raw.get("Running"),
+                raw.get("AppState"),
+            )
     return instances
 
 
