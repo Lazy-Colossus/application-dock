@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mount } from "@vue/test-utils";
+import { mount, flushPromises } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 import { createRouter, createMemoryHistory } from "vue-router";
 import InstancesPage from "./InstancesPage.vue";
@@ -157,6 +157,31 @@ describe("InstancesPage start button", () => {
       await wrapper.get('[data-testid="start"]').trigger("click");
       await vi.advanceTimersByTimeAsync(11_000);
       expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("stays busy right after a successful start, before the row transitions", async () => {
+    vi.useFakeTimers();
+    try {
+      // Online instance whose app is stopped: Core/Start returns instantly and the
+      // state hasn't moved yet, so the button must not look clickable again.
+      const { store, wrapper } = mountPage([inst("i1", { state: "Stopped", running: true })], null);
+      vi.spyOn(store, "start").mockResolvedValue(true);
+
+      await wrapper.get('[data-testid="start"]').trigger("click");
+      await flushPromises();
+      expect((wrapper.get('[data-testid="start"]').element as HTMLButtonElement).disabled).toBe(
+        true,
+      );
+
+      // Safety: if the row never transitions, the busy marker clears after the burst.
+      await vi.advanceTimersByTimeAsync(11_000);
+      await flushPromises();
+      expect((wrapper.get('[data-testid="start"]').element as HTMLButtonElement).disabled).toBe(
+        false,
+      );
     } finally {
       vi.useRealTimers();
     }

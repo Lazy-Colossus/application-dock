@@ -245,8 +245,6 @@ def _start_application(instance_id: str) -> None:
         f"ADSModule/Servers/{instance_id}/API/Core/Start",
         {"SESSIONID": session_id},
     )
-    # TEMP DIAGNOSTIC (verify instance-session Core/Start is accepted): remove once confirmed.
-    logger.warning("AMP Core/Start(id=%s) response: %r", instance_id, data)
     _raise_if_error(data, instance_id, "Core/Start")
 
 

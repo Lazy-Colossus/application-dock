@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
 import { useQuasar } from "quasar";
@@ -55,12 +55,41 @@ function isTransitioning(inst: AmpInstance): boolean {
   return STARTING_STATES.includes(inst.state);
 }
 
+// Instances we've started and not yet seen leave the startable state. Starting an
+// already-online instance returns instantly, before AMP reports the transition,
+// so without this the button would briefly look clickable again — this keeps it
+// busy from click until the row actually moves.
+const pending = ref<string[]>([]);
+
+function isPending(id: string): boolean {
+  return pending.value.includes(id);
+}
+
+function prunePending(): void {
+  // Drop the optimistic marker once the row shows a non-startable (transitioning
+  // or running) state — the real status then drives the button.
+  pending.value = pending.value.filter((id) => {
+    const inst = instances.value.find((i) => i.id === id);
+    return inst != null && canStart(inst);
+  });
+}
+
 async function startInstance(id: string): Promise<void> {
   const accepted = await store.start(id);
   // On failure, skip the burst so it doesn't immediately wipe the error banner.
   if (!accepted) return;
+  if (!pending.value.includes(id)) pending.value.push(id);
   startTimers.forEach(clearTimeout);
-  startTimers = START_REFRESH_MS.map((ms) => setTimeout(() => void store.fetch(), ms));
+  startTimers = START_REFRESH_MS.map((ms, idx) =>
+    setTimeout(async () => {
+      await store.fetch();
+      prunePending();
+      // Safety: never leave the row stuck busy if it never transitions.
+      if (idx === START_REFRESH_MS.length - 1) {
+        pending.value = pending.value.filter((p) => p !== id);
+      }
+    }, ms),
+  );
 }
 
 async function copyLink(inst: AmpInstance): Promise<void> {
@@ -157,8 +186,8 @@ onUnmounted(() => {
             :label="isTransitioning(inst) ? 'Starting…' : 'Start'"
             dense
             data-testid="start"
-            :disable="!canStart(inst) || store.isStarting(inst.id)"
-            :loading="store.isStarting(inst.id)"
+            :disable="!canStart(inst) || store.isStarting(inst.id) || isPending(inst.id)"
+            :loading="store.isStarting(inst.id) || isPending(inst.id)"
             @click="startInstance(inst.id)"
           />
         </q-item-section>
