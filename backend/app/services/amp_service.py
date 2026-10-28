@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 import re
+import time
 from typing import Any
 
 import httpx
@@ -171,15 +172,6 @@ def list_instances() -> list[Instance]:
     for target in targets:
         for raw in target.get("AvailableInstances") or []:
             instances.append(_map_instance(raw))
-            # TEMP DIAGNOSTIC (AMP "Idle"/start debugging): WARNING so it surfaces
-            # without app log config. Remove once the start fix lands.
-            logger.warning(
-                "AMP raw instance name=%r Running=%r AppState=%r Suspended=%r",
-                raw.get("InstanceName"),
-                raw.get("Running"),
-                raw.get("AppState"),
-                raw.get("Suspended"),
-            )
     return instances
 
 
@@ -210,17 +202,76 @@ def _amp_error(data: Any) -> str | None:
     return None
 
 
-def start_instance(instance_id: str) -> None:
-    if not _configured():
-        raise AmpNotConfiguredError("AMP is not configured")
-    # StartInstance identifies the instance by InstanceName, but the rest of this
-    # app keys on InstanceID (a GUID), so translate via GetInstances first.
-    raw = _raw_instance(instance_id)
-    name = raw.get("InstanceName") if raw else None
-    if not isinstance(name, str) or not name:
-        raise AmpUpstreamError(f"No AMP instance with id {instance_id}")
-    data = _call("ADSModule/StartInstance", {"InstanceName": name})
+# How long to wait for an instance to come online after StartInstance before
+# giving up on also starting its application (it is still booting; a follow-up
+# start finishes the job). Interval * attempts ~= max wait.
+_START_POLL_INTERVAL_SECONDS = 2.0
+_START_POLL_ATTEMPTS = 15
+
+
+def _raise_if_error(data: Any, instance_id: str, action: str) -> None:
     error = _amp_error(data)
     if error:
-        logger.warning("AMP StartInstance(name=%r, id=%s) failed: %s", name, instance_id, error)
+        logger.warning("AMP %s(id=%s) failed: %s", action, instance_id, error)
         raise AmpUpstreamError(error)
+
+
+def _start_application(instance_id: str) -> None:
+    """Start the game application inside an already-online instance.
+
+    AMP proxies an instance-scoped call through the controller at
+    ``ADSModule/Servers/<id>/API/<Module>/<Method>``.
+    """
+    data = _call(f"ADSModule/Servers/{instance_id}/API/Core/Start", {})
+    # TEMP DIAGNOSTIC (verify the proxied Core/Start is accepted): remove once confirmed.
+    logger.warning("AMP Core/Start(id=%s) response: %r", instance_id, data)
+    _raise_if_error(data, instance_id, "Core/Start")
+
+
+def _bring_instance_online(instance_id: str, name: str) -> bool:
+    """StartInstance, then wait (bounded) for it to report Running.
+
+    Returns whether it came online within the poll budget.
+    """
+    data = _call("ADSModule/StartInstance", {"InstanceName": name})
+    _raise_if_error(data, instance_id, "StartInstance")
+    for _ in range(_START_POLL_ATTEMPTS):
+        time.sleep(_START_POLL_INTERVAL_SECONDS)
+        raw = _raw_instance(instance_id)
+        if raw and raw.get("Running"):
+            return True
+    return False
+
+
+def start_instance(instance_id: str) -> None:
+    """Fully start an instance's game server in one call.
+
+    AMP splits a running server into an *instance* (the AMP process managing it)
+    and the *application* (the game) inside it, each with its own lifecycle, so a
+    fully stopped server needs both brought up:
+
+    - If the instance is offline, ``ADSModule/StartInstance`` brings it online
+      (identified by InstanceName, not the InstanceID the app keys on); AMP shows
+      the in-between state — instance up, game not yet started — as "Idle".
+    - Once online, the application is started via an instance-scoped ``Core/Start``.
+
+    Both run here so a single click fully starts a stopped server. If the instance
+    is too slow to come online we stop after starting it (it is still booting) and
+    a follow-up start finishes the job.
+    """
+    if not _configured():
+        raise AmpNotConfiguredError("AMP is not configured")
+    raw = _raw_instance(instance_id)
+    if raw is None:
+        raise AmpUpstreamError(f"No AMP instance with id {instance_id}")
+    if not raw.get("Running"):
+        name = raw.get("InstanceName")
+        if not isinstance(name, str) or not name:
+            raise AmpUpstreamError(f"AMP instance {instance_id} has no InstanceName")
+        if not _bring_instance_online(instance_id, name):
+            logger.warning(
+                "AMP instance %s did not come online in time; application not started",
+                instance_id,
+            )
+            return
+    _start_application(instance_id)

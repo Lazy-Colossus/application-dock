@@ -37,6 +37,7 @@ def _instances_payload() -> list[dict]:
                 {
                     "InstanceID": "i2",
                     "FriendlyName": "Valheim",
+                    "InstanceName": "valheim01",
                     "Module": "Valheim",
                     "Running": False,
                     "Suspended": False,
@@ -115,7 +116,82 @@ def test_relogin_on_expired_session(monkeypatch: pytest.MonkeyPatch) -> None:
     assert state["logins"] == 2  # initial login + one re-login after expiry
 
 
-def test_start_instance_success(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_start_offline_instance_brings_online_then_starts_app(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(amp_service.time, "sleep", lambda _s: None)
+    seen = []
+    state = {"running": False}  # flips once StartInstance is issued
+
+    def instance(running: bool) -> list[dict]:
+        return [
+            {
+                "AvailableInstances": [
+                    {
+                        "InstanceID": "i2",
+                        "FriendlyName": "Valheim",
+                        "InstanceName": "valheim01",
+                        "Module": "Valheim",
+                        "Running": running,
+                        "Suspended": False,
+                        "AppState": 0,
+                        "Metrics": {},
+                    }
+                ]
+            }
+        ]
+
+    def fake_post(method_path: str, payload: dict):
+        seen.append((method_path, payload))
+        if method_path == "Core/Login":
+            return {"success": True, "sessionID": "s"}
+        if method_path == "ADSModule/GetInstances":
+            return instance(state["running"])
+        if method_path == "ADSModule/StartInstance":
+            state["running"] = True  # the instance comes online
+            return {"Status": True}
+        if method_path == "ADSModule/Servers/i2/API/Core/Start":
+            return None
+        raise AssertionError(method_path)
+
+    monkeypatch.setattr(amp_service, "_post_api", fake_post)
+
+    # One call brings the offline instance online, then starts the application.
+    amp_service.start_instance("i2")
+
+    start = [c for c in seen if c[0] == "ADSModule/StartInstance"][0]
+    assert start[1]["InstanceName"] == "valheim01"
+    assert "InstanceID" not in start[1]
+    assert any(c[0] == "ADSModule/Servers/i2/API/Core/Start" for c in seen)
+
+
+def test_start_offline_instance_slow_to_boot_skips_app_start(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(amp_service.time, "sleep", lambda _s: None)
+    monkeypatch.setattr(amp_service, "_START_POLL_ATTEMPTS", 2)
+    seen = []
+
+    def fake_post(method_path: str, payload: dict):
+        seen.append((method_path, payload))
+        if method_path == "Core/Login":
+            return {"success": True, "sessionID": "s"}
+        if method_path == "ADSModule/GetInstances":
+            return _instances_payload()  # i2 stays Running=False
+        if method_path == "ADSModule/StartInstance":
+            return {"Status": True}
+        raise AssertionError(method_path)
+
+    monkeypatch.setattr(amp_service, "_post_api", fake_post)
+
+    # Instance never reports online -> we stop after StartInstance, no app start.
+    amp_service.start_instance("i2")
+
+    assert any(c[0] == "ADSModule/StartInstance" for c in seen)
+    assert not any(c[0].startswith("ADSModule/Servers/") for c in seen)
+
+
+def test_start_online_instance_starts_application(monkeypatch: pytest.MonkeyPatch) -> None:
     seen = []
 
     def fake_post(method_path: str, payload: dict):
@@ -124,19 +200,18 @@ def test_start_instance_success(monkeypatch: pytest.MonkeyPatch) -> None:
             return {"success": True, "sessionID": "s"}
         if method_path == "ADSModule/GetInstances":
             return _instances_payload()
-        if method_path == "ADSModule/StartInstance":
-            return {"Status": True}
+        if method_path == "ADSModule/Servers/i1/API/Core/Start":
+            return None
         raise AssertionError(method_path)
 
     monkeypatch.setattr(amp_service, "_post_api", fake_post)
 
+    # i1 is online (Running=True) -> start the application via the proxied
+    # instance-scoped Core/Start, NOT StartInstance.
     amp_service.start_instance("i1")
 
-    # StartInstance identifies the instance by InstanceName, not the InstanceID
-    # (GUID) the rest of the app keys on — the service must translate.
-    start = [c for c in seen if c[0] == "ADSModule/StartInstance"][0]
-    assert start[1]["InstanceName"] == "mc01"
-    assert "InstanceID" not in start[1]
+    assert any(c[0] == "ADSModule/Servers/i1/API/Core/Start" for c in seen)
+    assert not any(c[0] == "ADSModule/StartInstance" for c in seen)
 
 
 def test_start_instance_refusal_raises_upstream(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -149,8 +224,9 @@ def test_start_instance_refusal_raises_upstream(monkeypatch: pytest.MonkeyPatch)
 
     monkeypatch.setattr(amp_service, "_post_api", fake_post)
 
+    # i2 is offline, so this exercises the StartInstance refusal path.
     with pytest.raises(amp_service.AmpUpstreamError, match="no such instance"):
-        amp_service.start_instance("i1")
+        amp_service.start_instance("i2")
 
 
 def test_start_instance_error_envelope_raises_upstream(monkeypatch: pytest.MonkeyPatch) -> None:
