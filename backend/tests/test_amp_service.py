@@ -259,6 +259,8 @@ def test_start_instance_error_envelope_raises_upstream(monkeypatch: pytest.Monke
 
 
 def test_start_instance_rejected_instance_login_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(amp_service.time, "sleep", lambda _s: None)
+
     def fake_post(method_path: str, payload: dict):
         if method_path == "Core/Login":
             return {"success": True, "sessionID": "s"}
@@ -270,8 +272,37 @@ def test_start_instance_rejected_instance_login_raises(monkeypatch: pytest.Monke
 
     monkeypatch.setattr(amp_service, "_post_api", fake_post)
 
+    # Login never succeeds -> retries are exhausted, then it raises.
     with pytest.raises(amp_service.AmpUpstreamError, match="instance i1 login failed"):
         amp_service.start_instance("i1")
+
+
+def test_start_instance_retries_instance_login_until_ready(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(amp_service.time, "sleep", lambda _s: None)
+    attempts = {"login": 0}
+
+    def fake_post(method_path: str, payload: dict):
+        if method_path == "Core/Login":
+            return {"success": True, "sessionID": "s"}
+        if method_path == "ADSModule/GetInstances":
+            return _instances_payload()
+        if method_path == "ADSModule/Servers/i1/API/Core/Login":
+            attempts["login"] += 1
+            if attempts["login"] < 3:
+                return {"Title": "Service Unavailable"}  # instance API not ready yet
+            return {"success": True, "sessionID": "inst-s"}
+        if method_path == "ADSModule/Servers/i1/API/Core/Start":
+            return None
+        raise AssertionError(method_path)
+
+    monkeypatch.setattr(amp_service, "_post_api", fake_post)
+
+    # A just-started instance refuses login until ready; the service retries.
+    amp_service.start_instance("i1")
+
+    assert attempts["login"] == 3
 
 
 def test_start_instance_unknown_id_raises_upstream(monkeypatch: pytest.MonkeyPatch) -> None:

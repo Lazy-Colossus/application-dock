@@ -103,6 +103,12 @@ def _login() -> str:
     return _parse_session(_post_api("Core/Login", _credentials()), "AMP login failed")
 
 
+# A freshly-started instance reports Running before its own API accepts logins,
+# so the first attempts can be refused; retry (bounded) until it is ready.
+_INSTANCE_LOGIN_ATTEMPTS = 8
+_INSTANCE_LOGIN_INTERVAL_SECONDS = 2.0
+
+
 def _instance_session(instance_id: str) -> str:
     """Log in to a managed instance and return its own session id.
 
@@ -110,10 +116,37 @@ def _instance_session(instance_id: str) -> str:
     controller's session is rejected ("requires the Session.Exists permission").
     The login is routed through the controller (``_call`` adds the controller
     session, which authorizes the proxy) while the credentials authenticate to the
-    instance itself.
+    instance itself. Retried because a just-started instance needs a moment before
+    its API accepts logins.
     """
-    data = _call(f"ADSModule/Servers/{instance_id}/API/Core/Login", _credentials())
-    return _parse_session(data, f"AMP instance {instance_id} login failed")
+    last_error: AmpUpstreamError | None = None
+    for attempt in range(_INSTANCE_LOGIN_ATTEMPTS):
+        try:
+            data = _call(f"ADSModule/Servers/{instance_id}/API/Core/Login", _credentials())
+            session_id = data.get("sessionID") if isinstance(data, dict) else None
+            if isinstance(data, dict) and data.get("success") and session_id:
+                return session_id
+            last_error = AmpUpstreamError(f"AMP instance {instance_id} login failed")
+            # TEMP DIAGNOSTIC (instance-login readiness): remove once confirmed.
+            logger.warning(
+                "AMP instance %s login not ready (attempt %d/%d): %r",
+                instance_id,
+                attempt + 1,
+                _INSTANCE_LOGIN_ATTEMPTS,
+                data,
+            )
+        except AmpUpstreamError as exc:
+            last_error = exc
+            logger.warning(
+                "AMP instance %s login error (attempt %d/%d): %s",
+                instance_id,
+                attempt + 1,
+                _INSTANCE_LOGIN_ATTEMPTS,
+                exc,
+            )
+        if attempt < _INSTANCE_LOGIN_ATTEMPTS - 1:
+            time.sleep(_INSTANCE_LOGIN_INTERVAL_SECONDS)
+    raise last_error or AmpUpstreamError(f"AMP instance {instance_id} login failed")
 
 
 def _ensure_session() -> str:
