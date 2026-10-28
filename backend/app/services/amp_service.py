@@ -83,20 +83,37 @@ def _post_api(method_path: str, payload: dict[str, Any]) -> Any:
         raise AmpUpstreamError(f"AMP request failed: {exc}") from exc
 
 
-def _login() -> str:
-    data = _post_api(
-        "Core/Login",
-        {
-            "username": settings.amp_username,
-            "password": settings.amp_password,
-            "token": "",
-            "rememberMe": False,
-        },
-    )
+def _credentials() -> dict[str, Any]:
+    return {
+        "username": settings.amp_username,
+        "password": settings.amp_password,
+        "token": "",
+        "rememberMe": False,
+    }
+
+
+def _parse_session(data: Any, failure_msg: str) -> str:
     session_id = data.get("sessionID") if isinstance(data, dict) else None
     if not isinstance(data, dict) or not data.get("success") or not session_id:
-        raise AmpUpstreamError("AMP login failed")
+        raise AmpUpstreamError(failure_msg)
     return session_id
+
+
+def _login() -> str:
+    return _parse_session(_post_api("Core/Login", _credentials()), "AMP login failed")
+
+
+def _instance_session(instance_id: str) -> str:
+    """Log in to a managed instance and return its own session id.
+
+    Instance-scoped methods require a session that exists *on that instance*; the
+    controller's session is rejected ("requires the Session.Exists permission").
+    The login is routed through the controller (``_call`` adds the controller
+    session, which authorizes the proxy) while the credentials authenticate to the
+    instance itself.
+    """
+    data = _call(f"ADSModule/Servers/{instance_id}/API/Core/Login", _credentials())
+    return _parse_session(data, f"AMP instance {instance_id} login failed")
 
 
 def _ensure_session() -> str:
@@ -220,10 +237,15 @@ def _start_application(instance_id: str) -> None:
     """Start the game application inside an already-online instance.
 
     AMP proxies an instance-scoped call through the controller at
-    ``ADSModule/Servers/<id>/API/<Module>/<Method>``.
+    ``ADSModule/Servers/<id>/API/<Module>/<Method>``, authenticated with a session
+    obtained by logging in to that instance (not the controller session).
     """
-    data = _call(f"ADSModule/Servers/{instance_id}/API/Core/Start", {})
-    # TEMP DIAGNOSTIC (verify the proxied Core/Start is accepted): remove once confirmed.
+    session_id = _instance_session(instance_id)
+    data = _post_api(
+        f"ADSModule/Servers/{instance_id}/API/Core/Start",
+        {"SESSIONID": session_id},
+    )
+    # TEMP DIAGNOSTIC (verify instance-session Core/Start is accepted): remove once confirmed.
     logger.warning("AMP Core/Start(id=%s) response: %r", instance_id, data)
     _raise_if_error(data, instance_id, "Core/Start")
 

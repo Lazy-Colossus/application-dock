@@ -150,6 +150,8 @@ def test_start_offline_instance_brings_online_then_starts_app(
         if method_path == "ADSModule/StartInstance":
             state["running"] = True  # the instance comes online
             return {"Status": True}
+        if method_path == "ADSModule/Servers/i2/API/Core/Login":
+            return {"success": True, "sessionID": "inst-s"}
         if method_path == "ADSModule/Servers/i2/API/Core/Start":
             return None
         raise AssertionError(method_path)
@@ -162,7 +164,9 @@ def test_start_offline_instance_brings_online_then_starts_app(
     start = [c for c in seen if c[0] == "ADSModule/StartInstance"][0]
     assert start[1]["InstanceName"] == "valheim01"
     assert "InstanceID" not in start[1]
-    assert any(c[0] == "ADSModule/Servers/i2/API/Core/Start" for c in seen)
+    core_start = [c for c in seen if c[0] == "ADSModule/Servers/i2/API/Core/Start"][0]
+    # The application call uses the instance's own session, not the controller's.
+    assert core_start[1]["SESSIONID"] == "inst-s"
 
 
 def test_start_offline_instance_slow_to_boot_skips_app_start(
@@ -200,6 +204,8 @@ def test_start_online_instance_starts_application(monkeypatch: pytest.MonkeyPatc
             return {"success": True, "sessionID": "s"}
         if method_path == "ADSModule/GetInstances":
             return _instances_payload()
+        if method_path == "ADSModule/Servers/i1/API/Core/Login":
+            return {"success": True, "sessionID": "inst-s"}
         if method_path == "ADSModule/Servers/i1/API/Core/Start":
             return None
         raise AssertionError(method_path)
@@ -230,22 +236,41 @@ def test_start_instance_refusal_raises_upstream(monkeypatch: pytest.MonkeyPatch)
 
 
 def test_start_instance_error_envelope_raises_upstream(monkeypatch: pytest.MonkeyPatch) -> None:
-    # AMP reports a bad/missing argument as a Title/Message/StackTrace envelope
-    # with no `Status` key — which used to slip through as a silent success.
+    # AMP reports a refused call as a Title/Message/StackTrace envelope with no
+    # `Status` key — which used to slip through as a silent success. Here Core/Start
+    # on the online instance is refused by permissions.
     def fake_post(method_path: str, payload: dict):
         if method_path == "Core/Login":
             return {"success": True, "sessionID": "s"}
         if method_path == "ADSModule/GetInstances":
             return _instances_payload()
+        if method_path == "ADSModule/Servers/i1/API/Core/Login":
+            return {"success": True, "sessionID": "inst-s"}
         return {
-            "Title": "Missing Field",
-            "Message": "StartInstance method requires InstanceName(String) argument.",
+            "Title": "Permission Denied",
+            "Message": "You do not have permission to use this method.",
             "StackTrace": "   at GSMyAdmin.WebServer...",
         }
 
     monkeypatch.setattr(amp_service, "_post_api", fake_post)
 
-    with pytest.raises(amp_service.AmpUpstreamError, match="InstanceName"):
+    with pytest.raises(amp_service.AmpUpstreamError, match="permission"):
+        amp_service.start_instance("i1")
+
+
+def test_start_instance_rejected_instance_login_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_post(method_path: str, payload: dict):
+        if method_path == "Core/Login":
+            return {"success": True, "sessionID": "s"}
+        if method_path == "ADSModule/GetInstances":
+            return _instances_payload()
+        if method_path == "ADSModule/Servers/i1/API/Core/Login":
+            return {"success": False, "sessionID": ""}
+        raise AssertionError("Core/Start must not run without an instance session")
+
+    monkeypatch.setattr(amp_service, "_post_api", fake_post)
+
+    with pytest.raises(amp_service.AmpUpstreamError, match="instance i1 login failed"):
         amp_service.start_instance("i1")
 
 
